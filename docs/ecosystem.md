@@ -117,10 +117,10 @@ All public packages graduated to **SemVer-stable v1.0.0** alongside OCCTSwift v1
 | OCCTSwiftIO | `from: "1.0.0"` | OCCTSwift |
 | OCCTSwiftMesh | `from: "1.0.0"` | OCCTSwift |
 | OCCTSwiftViewport | `from: "1.0.4"` | — (leaf; renders `ViewportBody`, no kernel dep) |
-| OCCTSwiftTools | `from: "1.1.0"` | OCCTSwift, OCCTSwiftViewport, OCCTSwiftIO |
-| OCCTSwiftAIS | `from: "1.0.1"` | OCCTSwiftTools (→ Viewport, IO, kernel) |
-| OCCTSwiftScripts | `from: "1.0.2"` | full stack |
-| OCCTMCP | `from: "1.4.1"` | OCCTSwiftScripts |
+| OCCTSwiftTools | `from: "1.1.1"` | OCCTSwift, OCCTSwiftViewport, OCCTSwiftIO |
+| OCCTSwiftAIS | `from: "1.0.2"` | OCCTSwiftTools (→ Viewport, IO, kernel) |
+| OCCTSwiftScripts | `from: "1.0.3"` | full stack |
+| OCCTMCP | `from: "1.4.2"` | OCCTSwiftScripts |
 | simpleOCCTVP | — | own C build of OCCT; independent of Swift packages |
 
 ## Notable v1.0.x patches
@@ -139,6 +139,7 @@ All public packages graduated to **SemVer-stable v1.0.0** alongside OCCTSwift v1
 - **OCCTMCP v1.3.0** — `find_correspondences` tool (closes OCCTMCP #24) for matching topology across model variants, with a history-path fix.
 - **OCCTMCP v1.4.0** — consumes OCCTSwift v1.1.0 (`findDerivedOrSelf` / `hasHistoryRecord`) and drops the identity-flag workaround `remap_selection` previously needed.
 - **OCCTMCP v1.4.1** — dependency hygiene: drops the `gsdali/swift-sdk` fork branch for the official `modelcontextprotocol/swift-sdk` at a tagged version (0.12.1), back-porting the one-property `Value.numberValue` accessor locally until it lands upstream ([swift-sdk#226](https://github.com/modelcontextprotocol/swift-sdk/pull/226)). No behavioral change; the dependency graph is now reproducible.
+- **Cohort floor alignment** (OCCTSwiftTools v1.1.1, OCCTSwiftAIS v1.0.2, OCCTSwiftScripts v1.0.3, OCCTMCP v1.4.2) — propagates the Viewport v1.0.3 `quantize()` crash fix as a hard floor through every Viewport consumer. OCCTMCP's lockfile in particular was still pinned to Viewport v1.0.2 (the crashing version) and now locks v1.0.4. All pure dep-floor bumps; no API changes.
 
 ## Versioning posture
 
