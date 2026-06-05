@@ -369,10 +369,19 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Sweep Operations
 
-    /// Sweep a 2D profile along a path to create a solid
+    /// Sweep a 2D profile along a path to create a solid.
+    ///
+    /// The resulting solid is orientation-normalised so its faces point outward
+    /// (positive volume) regardless of the profile wire's sense relative to the
+    /// path tangent. `BRepOffsetAPI_MakePipe` itself yields an inward-oriented
+    /// (negative-volume) solid whenever the section's normal runs against the path
+    /// tangent — a latent hazard for downstream booleans and `volume > 0` checks —
+    /// so callers no longer need the "point the section normal against the tangent"
+    /// incantation. See ``orientedForward()`` for the same fix applied explicitly.
     public static func sweep(profile: Wire, along path: Wire) -> Shape? {
         guard let handle = OCCTShapeCreatePipeSweep(profile.handle, path.handle) else { return nil }
-        return Shape(handle: handle)
+        let swept = Shape(handle: handle)
+        return swept.orientedForward()
     }
 
     /// Extrude a 2D profile in a direction
@@ -1529,7 +1538,16 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Create a circular pattern of the shape
+    /// Create a circular pattern of the shape.
+    ///
+    /// This duplicates **the whole body** `count` times around the axis and returns
+    /// a compound of the copies. It does **not** pattern features. If `self` is a
+    /// solid that already has a hole/pocket cut into it, the result is `count`
+    /// overlapping copies of that solid — the holes get filled by neighbouring
+    /// copies, not replicated. For the bolt-circle use case ("drill one hole, then
+    /// repeat it around the axis") pattern the *tool* shape and subtract it, or use
+    /// ``circularPatternCut(tool:axisPoint:axisDirection:count:angle:)`` which does
+    /// exactly that in one call.
     ///
     /// - Parameters:
     ///   - axisPoint: Point on the rotation axis
@@ -1543,13 +1561,14 @@ public final class Shape: @unchecked Sendable {
     ///
     /// ```swift
     /// let hole = Shape.cylinder(radius: 3, height: 10).translated(by: SIMD3(20, 0, 0))
-    /// // Create 6 holes in a circle around the Z axis
-    /// let boltPattern = hole.circularPattern(
+    /// // Create 6 hole *tools* in a circle around the Z axis, then subtract them
+    /// let tools = hole.circularPattern(
     ///     axisPoint: .zero,
     ///     axisDirection: SIMD3(0, 0, 1),
     ///     count: 6,
     ///     angle: 0  // Full circle
     /// )
+    /// let drilled = flange.subtracting(tools!)
     /// ```
     public func circularPattern(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>, count: Int, angle: Double = 0) -> Shape? {
         guard let handle = OCCTShapeCircularPattern(self.handle,
@@ -1559,6 +1578,48 @@ public final class Shape: @unchecked Sendable {
             return nil
         }
         return Shape(handle: handle)
+    }
+
+    /// Replicate a feature (a cut/tool shape) around an axis and subtract all
+    /// copies from this body in one operation.
+    ///
+    /// This is the feature-aware companion to
+    /// ``circularPattern(axisPoint:axisDirection:count:angle:)``. Where the plain
+    /// pattern duplicates the *body*, this one duplicates the *tool* `count` times
+    /// around the axis and subtracts the resulting compound from `self`. It is the
+    /// natural primitive for a bolt circle: build one hole tool, then pattern it.
+    ///
+    /// - Parameters:
+    ///   - tool: The cutting feature to replicate (e.g. a cylinder positioned at
+    ///     the first hole). Patterned about the same axis, then subtracted.
+    ///   - axisPoint: Point on the rotation axis
+    ///   - axisDirection: Direction of the rotation axis
+    ///   - count: Number of tool copies (including the original `tool`)
+    ///   - angle: Total angle to span in radians (0 for a full circle)
+    /// - Returns: This body with all `count` features cut out, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Drill one hole, then repeat it 8× around the Z axis for a bolt circle
+    /// let bcr = 40.0
+    /// let hole = Shape.cylinder(radius: 3, height: 20)
+    ///     .translated(by: SIMD3(bcr, 0, 0))
+    /// let flange = blank.circularPatternCut(
+    ///     tool: hole,
+    ///     axisPoint: .zero,
+    ///     axisDirection: SIMD3(0, 0, 1),
+    ///     count: 8
+    /// )
+    /// ```
+    public func circularPatternCut(tool: Shape, axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>, count: Int, angle: Double = 0) -> Shape? {
+        guard count > 0 else { return nil }
+        guard let tools = tool.circularPattern(axisPoint: axisPoint,
+                                               axisDirection: axisDirection,
+                                               count: count, angle: angle) else {
+            return nil
+        }
+        return subtracting(tools)
     }
 
     // MARK: - Shape Type
@@ -1911,6 +1972,33 @@ extension Shape {
     public var volume: Double? {
         let v = OCCTShapeGetVolume(handle)
         return v >= 0 ? v : nil
+    }
+
+    /// Signed volume of the shape in cubic units.
+    ///
+    /// Unlike ``volume``, this preserves the sign that `BRepGProp` reports: a
+    /// reversed-orientation solid (faces pointing inward) returns a **negative**
+    /// value. Use this to detect orientation problems; use ``orientedForward()``
+    /// to fix them.
+    public var signedVolume: Double {
+        OCCTShapeGetVolume(handle)
+    }
+
+    /// Return a copy of this solid whose faces are oriented outward (positive
+    /// volume).
+    ///
+    /// Some constructors — notably ``sweep(profile:along:)``
+    /// (`BRepOffsetAPI_MakePipe`) — can produce a geometrically correct solid whose
+    /// faces point inward, so ``signedVolume`` comes back negative. That is a latent
+    /// hazard for booleans and any `volume > 0` validation. This reverses the
+    /// orientation when, and only when, the signed volume is negative; a solid that
+    /// is already forward-oriented (or a shell/face with no enclosed volume) is
+    /// returned unchanged.
+    ///
+    /// - Returns: An outward-oriented copy, `self` when no fix is needed, or nil if
+    ///   reversal fails.
+    public func orientedForward() -> Shape? {
+        signedVolume < 0 ? reversed : self
     }
 
     /// Surface area of the shape in square units
@@ -5433,6 +5521,106 @@ extension Shape {
         }
         let count = OCCTShapeCountEdgeConcavity(handle, angle, typeValue)
         return count >= 0 ? Int(count) : nil
+    }
+
+    // MARK: - Geometric Edge Selection (v1.2.1)
+
+    /// Select edges of this shape that satisfy a geometric predicate.
+    ///
+    /// This is the robust alternative to picking edges by raw index from
+    /// ``edges()`` — the index shifts as soon as the model parameters change,
+    /// whereas a geometric predicate keeps selecting the right edge. The returned
+    /// edges carry their parent index, so they feed straight into
+    /// ``filleted(edges:radius:)`` / ``chamferedTwoDistances(_:)`` etc.
+    ///
+    /// ```swift
+    /// // Round only the long edges (> 50 mm) of a bracket
+    /// let rounded = bracket.filleted(edges: bracket.edges { $0.length > 50 }, radius: 2)
+    /// ```
+    ///
+    /// - Parameter predicate: Returns true for edges to keep.
+    /// - Returns: The matching edges (possibly empty), each with a valid index.
+    public func edges(where predicate: (Edge) -> Bool) -> [Edge] {
+        edges().filter(predicate)
+    }
+
+    /// The concave edges of this solid (interior angle > 180°, e.g. the inside
+    /// corner of an L-bracket or the bottom of a groove).
+    ///
+    /// These are the edges you usually want to *fillet* — a concave fillet adds
+    /// material to soften an inside corner. Selecting them geometrically avoids the
+    /// fragile "iterate `edges()` and guess the index" workaround.
+    ///
+    /// ```swift
+    /// let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 3)
+    /// ```
+    ///
+    /// - Parameter angle: Threshold (radians) below which an edge counts as tangent
+    ///   rather than concave (default 0.01).
+    /// - Returns: The concave edges, or an empty array if none / on error.
+    public func concaveEdges(angle: Double = 0.01) -> [Edge] {
+        (edgeConcavities(angle: angle) ?? []).compactMap { $0.1 == .concave ? $0.0 : nil }
+    }
+
+    /// The convex edges of this solid (interior angle < 180°, e.g. the outer
+    /// corners of a box).
+    ///
+    /// These are the edges you usually want to *chamfer* or round on the outside of
+    /// a part.
+    ///
+    /// - Parameter angle: Threshold (radians) below which an edge counts as tangent
+    ///   rather than convex (default 0.01).
+    /// - Returns: The convex edges, or an empty array if none / on error.
+    public func convexEdges(angle: Double = 0.01) -> [Edge] {
+        (edgeConcavities(angle: angle) ?? []).compactMap { $0.1 == .convex ? $0.0 : nil }
+    }
+
+    /// Select straight edges whose direction is parallel to the given axis.
+    ///
+    /// Only line edges are considered (curved edges have no single direction). The
+    /// test is sign-agnostic: an edge pointing along `+axis` or `-axis` both match.
+    ///
+    /// ```swift
+    /// // Round every vertical edge of an extruded prism
+    /// let rounded = part.filleted(edges: part.edges(parallelTo: SIMD3(0, 0, 1)), radius: 2)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - axis: The reference direction (need not be unit length).
+    ///   - tolerance: Maximum sine of the angle between edge and axis (default 1e-4).
+    /// - Returns: The matching straight edges, each with a valid index.
+    public func edges(parallelTo axis: SIMD3<Double>, tolerance: Double = 1e-4) -> [Edge] {
+        let axisLen = simd_length(axis)
+        guard axisLen > 0 else { return [] }
+        let a = axis / axisLen
+        return edges().filter { edge in
+            guard edge.isLine else { return false }
+            let (start, end) = edge.endpoints
+            let d = end - start
+            let len = simd_length(d)
+            guard len > 0 else { return false }
+            // |cross| = sin(theta) for unit vectors; parallel when ~0.
+            return simd_length(simd_cross(d / len, a)) <= tolerance
+        }
+    }
+
+    /// Select edges fully contained within an axis-aligned bounding region.
+    ///
+    /// An edge matches when its entire bounding box lies inside the box spanned by
+    /// `min`...`max` (inclusive). Useful for fillets that should only touch a
+    /// localised region of an already-built solid.
+    ///
+    /// - Parameters:
+    ///   - min: The lower corner of the region.
+    ///   - max: The upper corner of the region.
+    /// - Returns: The contained edges, each with a valid index.
+    public func edges(inBounds min: SIMD3<Double>, _ max: SIMD3<Double>) -> [Edge] {
+        let lo = simd_min(min, max)
+        let hi = simd_max(min, max)
+        return edges().filter { edge in
+            let b = edge.bounds
+            return all(b.min .>= lo) && all(b.max .<= hi)
+        }
     }
 
     // MARK: - Local Prism (v0.46.0)
