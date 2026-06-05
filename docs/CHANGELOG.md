@@ -2,13 +2,44 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.1.0
+## Current: v1.2.0
 
 **4,286 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.2.0 (June 2026) — TopologyGraph attribute store + Codable snapshot (closes #168)
+
+**MINOR — additive new public API.** `TopologyGraph` nodes were bare `(kind, index)` pairs with
+no payload, and the type had no serialization (it wraps an opaque C++ handle). This adds a pure
+Swift-side sidecar so callers can attach arbitrary typed metadata to any `NodeRef` and round-trip
+it. No C++ bridge change — the store never touches the C++ graph.
+
+```swift
+extension TopologyGraph {
+    public var attributes: NodeAttributeStore            // per-node typed metadata
+    public func attribute(_ key: String, for: NodeRef) -> AttrValue?
+    public func setAttribute(_ key: String, _ value: AttrValue, for: NodeRef)
+    public func snapshot() throws -> GraphSnapshot        // export attributes + source shape
+    public convenience init(snapshot: GraphSnapshot) throws  // rebuild + reattach
+}
+```
+
+- `AttrValue` — closed Codable enum: `bool` / `int` / `double` / `string` / `ints` / `doubles`
+  (`ints` for mesh-region index sets, `doubles` for fitted-surface params).
+- `NodeAttributeStore` — Codable, keyed by `NodeRef`, encodes as sorted arrays so element order
+  is deterministic; pair with `GraphSnapshot.canonicalEncoder()` (`.sortedKeys`) for byte-stable,
+  diffable output.
+- `GraphSnapshot` — Codable round-trip. The graph *structure* is not serialized; it is re-derived
+  by rebuilding from the source shape's BREP (captured at construction). Rebuild pins
+  `parallel: false`; a determinism test verifies `NodeRef` indexing is stable across rebuilds.
+- `NodeKind` and `NodeRef` gained `Codable`.
+
+Foundation for the [OCCTReconstruct](https://github.com/gsdali/OCCTReconstruct) mesh-to-solid
+pipeline (per-node fit residual / confidence / provenance + session persistence) and for OCCTMCP's
+planned `reconstruct_*` read/write graph tools ([OCCTMCP #33](https://github.com/gsdali/OCCTMCP/issues/33)).
 
 ### v1.1.0 (May 2026) — TopologyGraph history disambiguation (closes #167)
 

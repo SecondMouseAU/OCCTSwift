@@ -27,6 +27,20 @@ import OCCTBridge
 public final class TopologyGraph: @unchecked Sendable {
     internal let handle: OCCTBRepGraphRef
 
+    /// Per-node attribute store (see `TopologyGraph+Attributes.swift`).
+    ///
+    /// Holds arbitrary typed metadata keyed by ``NodeRef`` — fit residuals, provenance,
+    /// mesh-region sets, etc. Pure Swift sidecar; never touches the underlying C++ graph.
+    /// Serialized via ``snapshot()`` / ``init(snapshot:)``.
+    public var attributes = NodeAttributeStore()
+
+    /// BREP of the shape this graph was built from, captured at construction.
+    ///
+    /// Used by ``snapshot()`` so a session can be reconstructed exactly. `nil` only if the
+    /// shape failed to serialize. Reflects the shape as built; topology-mutating builder ops
+    /// after construction are not re-captured here (rebuild the graph to re-snapshot).
+    internal var sourceBREP: String?
+
     /// Build a topology graph from a shape.
     /// - Parameters:
     ///   - shape: The shape to analyze.
@@ -34,6 +48,7 @@ public final class TopologyGraph: @unchecked Sendable {
     public init?(shape: Shape, parallel: Bool = false) {
         guard let h = OCCTBRepGraphCreate(shape.handle, parallel) else { return nil }
         self.handle = h
+        self.sourceBREP = shape.toBREPString()
     }
 
     deinit {
@@ -164,7 +179,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// Topology kinds 0–5 are core hierarchy; 6/7 are containers; 8 is the
     /// face-context coedge entity. Assembly kinds (Product, Occurrence) start
     /// at 10, leaving slot 9 reserved for future topology extension.
-    public enum NodeKind: Int32, Sendable {
+    public enum NodeKind: Int32, Sendable, Codable {
         case solid = 0
         case shell = 1
         case face = 2
@@ -532,7 +547,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// This is the Swift mirror of OCCT's `BRepGraph_NodeId`. Two pairs with the
     /// same kind+index refer to the same node **within a given graph instance**;
     /// across graph rebuilds you have to translate through the history records.
-    public struct NodeRef: Sendable, Hashable {
+    public struct NodeRef: Sendable, Hashable, Codable {
         public let kind: NodeKind
         public let index: Int
 

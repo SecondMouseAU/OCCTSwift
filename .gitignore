@@ -44,3 +44,6 @@ OCCT.xcframework.zip
 
 # Claude handoff documentation (local only)
 docs/CLAUDE_HANDOFF.md
+
+# Stray scheduler lock (local only)
+.claude/scheduled_tasks.lock
