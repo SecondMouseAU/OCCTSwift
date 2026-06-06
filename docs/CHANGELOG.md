@@ -2,13 +2,30 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.2.0
+## Current: v1.3.1
 
 **4,286 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.3.1 (June 2026) — fix loft (ThruSections) SIGSEGV on mismatched profiles (closes #176)
+
+**PATCH — robustness fix, no API change.** `Shape.loft` (and any `BRepOffsetAPI_ThruSections`
+path) could SIGSEGV and abort the host process on mismatched closed profiles — e.g. machine-generated
+profile sets with differing vertex counts. The crash is an upstream OCCT null dereference in
+`BRepFill_CompatibleWires::SameNumberByPolarMethod` (unguarded correspondence-list iterator
+over-advance); because it surfaces as an OS signal, the bridge's `catch(...)` could not intercept it.
+
+Fixed by carrying a minimal source patch
+(`Scripts/patches/0001-BRepFill_CompatibleWires-guard-polar-iterator.patch`, applied by
+`build-occt.sh`) and rebuilding the xcframework. Loft now fails gracefully (`nil`) on such inputs.
+Reported and fixed upstream: OpenCASCADE/OCCT issue #1297, PR #1298.
+
+Note: the `OCC_CATCH_SIGNALS` guards added in v1.2.1/v1.2.2 are inert in this build (OCCT is not
+compiled with `OCC_CONVERT_SIGNALS`) and do not provide signal safety; this patch addresses the
+crash at its source instead.
 
 ### v1.2.0 (June 2026) — TopologyGraph attribute store + Codable snapshot (closes #168)
 
