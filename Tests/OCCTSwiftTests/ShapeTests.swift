@@ -9774,8 +9774,11 @@ struct DistAngleChamferTests {
 @Suite("OCCT signal handling (#175)")
 struct OCCTSignalHandlingTests {
     /// Degenerate / incompatible loft profiles must FAIL GRACEFULLY (return nil) rather than
-    /// SIGSEGV the process — proves OSD::SetSignal + OCC_CATCH_SIGNALS convert the OCCT signal into
-    /// a catchable Standard_Failure. If signal handling regresses, this test crashes the runner.
+    /// SIGSEGV the process. NOTE: the SIGSEGV class here is NOT caught by OCC_CATCH_SIGNALS — that
+    /// macro is inert unless OCCT is compiled with OCC_CONVERT_SIGNALS (it is not, by design: the
+    /// setjmp/longjmp path corrupts allocator state). The crash is instead prevented at source by
+    /// the BRepFill_CompatibleWires polar-iterator guard carried in Scripts/patches/ (issue #176).
+    /// If that patch is dropped from the xcframework, this test crashes the runner.
     @Test("Degenerate loft returns nil, does not crash")
     func degenerateLoftIsCaught() {
         // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire —
@@ -9789,6 +9792,40 @@ struct OCCTSignalHandlingTests {
         // Tessellating a possibly-invalid solid must also not crash.
         if let s = Shape.box(width: 1, height: 1, depth: 1) { _ = s.mesh(linearDeflection: 0.01) }
         #expect(Bool(true))   // reaching here means no crash
+    }
+}
+
+@Suite("Loft polar-method SIGSEGV regression (#176)")
+struct LoftPolarMethodCrashTests {
+    /// Exact profile set from issue #176 (Kiha 40 body 1068): 8 mismatched convex polygons
+    /// (alternating 5- and 4-vertex, with a 2.5-unit gap near z=0). On an UNPATCHED OCCT this
+    /// deterministically SIGSEGVs single-threaded inside
+    /// BRepFill_CompatibleWires::SameNumberByPolarMethod — the correspondence-list iterators
+    /// over-advance and dereference a null list node ("Address 8"). The bridge's catch(...) cannot
+    /// save it (it is an OS signal, not a C++ exception). The fix is the source patch in
+    /// Scripts/patches/0001-BRepFill_CompatibleWires-guard-polar-iterator.patch. With it, Build()
+    /// fails gracefully (this returns nil) instead of crashing. If this test ever crashes the
+    /// runner, the patch has been lost from the xcframework.
+    @Test("Mismatched polar-method profiles return without crashing")
+    func mismatchedPolarProfilesDoNotCrash() {
+        // local (x, y) per station; z is the third tuple element
+        let stations: [(z: Double, pts: [(Double, Double)])] = [
+            (-3.7500, [(-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300), (0.0123, 2.1692)]),
+            (-2.9167, [(-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053), (0.0463, 0.2250)]),
+            (-2.0833, [(-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405), (0.0007, -0.7416)]),
+            (-1.2500, [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]),
+            (1.2500,  [(-0.1048, -1.3334), (-0.0423, -1.3323), (0.0174, -1.2640), (-0.0451, -1.2651)]),
+            (2.0833,  [(-0.0451, -1.2651), (0.0174, -1.2640), (0.0689, -1.0639), (0.0632, -0.7405), (0.0007, -0.7416)]),
+            (2.9167,  [(-0.0162, 0.2239), (0.0007, -0.7416), (0.0632, -0.7405), (0.0556, -0.3053), (0.0463, 0.2250)]),
+            (3.7500,  [(-0.0502, 2.1681), (-0.0162, 0.2239), (0.0463, 0.2250), (0.0357, 0.8300), (0.0123, 2.1692)]),
+        ]
+        let profiles = stations.compactMap { station in
+            Wire.polygon3D(station.pts.map { SIMD3($0.0, $0.1, station.z) }, closed: true)
+        }
+        #expect(profiles.count == stations.count)
+        // The call must return (nil or a shape) without aborting the process.
+        _ = Shape.loft(profiles: profiles, solid: true)
+        #expect(Bool(true))   // reaching here means the polar-method crash did not fire
     }
 }
 

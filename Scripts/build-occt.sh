@@ -77,6 +77,28 @@ else
 fi
 
 # --------------------
+# Apply local OCCT patches (idempotent)
+# --------------------
+# Patches in Scripts/patches/ are upstream-bound bug fixes we carry until they
+# ship in an OCCT release. Each is applied with -p1 relative to occt-src.
+#   0001  BRepFill_CompatibleWires polar-iterator over-advance -> SIGSEGV on
+#         mismatched closed loft profiles (filed upstream; OCCTSwift issue #176)
+if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
+    echo ">>> Applying local OCCT patches..."
+    for p in "$SCRIPT_DIR"/patches/*.patch; do
+        if git -C occt-src apply --reverse --check "$p" 2>/dev/null; then
+            echo "    already applied: $(basename "$p")"
+        elif git -C occt-src apply --check "$p" 2>/dev/null; then
+            git -C occt-src apply "$p"
+            echo "    applied: $(basename "$p")"
+        else
+            echo "    ERROR: cannot apply $(basename "$p") cleanly" >&2
+            exit 1
+        fi
+    done
+fi
+
+# --------------------
 # Common CMake options (minimal build for modeling + export)
 # --------------------
 

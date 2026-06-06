@@ -79,6 +79,11 @@ Opaque handle types (`OCCTShapeRef`, `OCCTWireRef`, `OCCTFaceRef`, `OCCTEdgeRef`
 - `BRepExtrema_ExtCC` crashes when edges are parallel — guard with `if (result.isParallel) { return result; }` before accessing points
 - Container-overflow in NCollection on arm64 macOS — pre-existing OCCT race condition that manifests as non-deterministic SEGV under parallel test execution
 - `LocOpe_SplitDrafts` throws on incompatible geometry — always wrap `Perform()` in try-catch in bridge
+- `BRepOffsetAPI_ThruSections` (loft) SIGSEGVs (null deref, "Address 8") on mismatched closed profiles — `BRepFill_CompatibleWires::SameNumberByPolarMethod` over-advances an unguarded correspondence-list iterator. It's an OS signal, so the bridge `catch(...)` cannot save it. Fixed by the source patch in `Scripts/patches/0001-BRepFill_CompatibleWires-guard-polar-iterator.patch`, applied by `build-occt.sh` at xcframework build time (filed upstream; issue #176). Note: `OCC_CATCH_SIGNALS` is inert in our build (no `OCC_CONVERT_SIGNALS`) — do not rely on it for signal safety.
+
+### Carrying OCCT source patches
+
+`Scripts/patches/*.patch` are upstream-bound fixes applied to `occt-src` (idempotently) by `build-occt.sh` before each cmake build. Drop a `git diff` (`-p1`, prefixes `a/`,`b/`) in that dir to carry a new one. Existing build trees (`occt-build-*`) pin a stale macOS SDK sysroot and can no longer incrementally compile — a fresh `cmake` configure (clean build dir) is required to pick up patches.
 
 ## Release Process
 
