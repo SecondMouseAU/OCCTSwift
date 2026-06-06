@@ -2,13 +2,47 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.2.0
+## Current: v1.2.1
 
 **4,286 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.2.1 (June 2026) — feature-aware patterning, sweep orientation, geometric edge selection (closes #169, #170, #171)
+
+**PATCH — additive helpers + one orientation fix.** Three ergonomics gaps surfaced building the
+OCCTSwiftScripts cookbook recipes (pipe-flange, helical-spring, mounting-bracket). No C++ bridge
+change — everything composes existing tested primitives.
+
+- **#169 — feature-level circular pattern.** `circularPattern` duplicates the *body*, so the
+  bolt-circle intent ("drill one hole, repeat it around the axis") produced overlapping flange
+  copies with the holes filled in. New `Shape.circularPatternCut(tool:axisPoint:axisDirection:count:angle:)`
+  patterns the *tool* and subtracts the compound in one call; `circularPattern`'s doc now warns it
+  patterns the body, not features.
+
+  ```swift
+  let flange = blank.circularPatternCut(tool: hole, axisPoint: .zero,
+                                        axisDirection: SIMD3(0,0,1), count: 8)
+  ```
+
+- **#170 — sweep orientation.** `Shape.sweep` (`BRepOffsetAPI_MakePipe`) could yield an
+  inward-oriented (negative-volume) solid depending on the section wire's sense vs. the path
+  tangent — a hazard for booleans and `volume > 0` checks. `sweep` now orientation-normalises its
+  result. New `Shape.orientedForward()` applies the same fix explicitly, and `Shape.signedVolume`
+  exposes the signed `BRepGProp` mass for orientation diagnostics (unlike `volume`, which masks
+  negatives as `nil`).
+
+- **#171 — geometric edge selection.** Picking fillet edges by raw `edges()` index is fragile —
+  the index shifts with parameters. New selectors return edges that feed straight into
+  `filleted(edges:radius:)`: `concaveEdges()` / `convexEdges()` (classified via `BRepOffset_Analyse`),
+  `edges(where:)`, `edges(parallelTo:tolerance:)`, and `edges(inBounds:_:)`.
+
+  ```swift
+  let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 3)
+  ```
+
 
 ### v1.2.0 (June 2026) — TopologyGraph attribute store + Codable snapshot (closes #168)
 
