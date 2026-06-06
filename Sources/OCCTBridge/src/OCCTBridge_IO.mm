@@ -17,6 +17,7 @@
 
 // === Area-specific OCCT headers ===
 
+#include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (#175)
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
 #include <STEPControl_StepModelType.hxx>
@@ -555,7 +556,9 @@ int OCCTShapeGetType(OCCTShapeRef shape) {
 
 bool OCCTShapeIsValidSolid(OCCTShapeRef shape) {
     if (!shape) return false;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         if (shape->shape.ShapeType() != TopAbs_SOLID) return false;
         BRepCheck_Analyzer analyzer(shape->shape);
         return analyzer.IsValid();

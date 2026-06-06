@@ -25,6 +25,7 @@
 
 // === Area-specific OCCT headers ===
 
+#include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (#175)
 #include <BRep_Tool.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAdaptor_Surface.hxx>
@@ -1749,7 +1750,9 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
 double OCCTShapeGetVolume(OCCTShapeRef shape) {
     if (!shape) return -1.0;
 
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         GProp_GProps props;
         BRepGProp::VolumeProperties(shape->shape, props);
         return props.Mass();

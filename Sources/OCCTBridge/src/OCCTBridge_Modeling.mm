@@ -9470,7 +9470,9 @@ OCCTShapeRef OCCTShapeCreatePipeSweep(OCCTWireRef profile, OCCTWireRef path) {
 
 OCCTShapeRef OCCTShapeCreateExtrusion(OCCTWireRef profile, double dx, double dy, double dz, double length) {
     if (!profile) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         // Normalize direction and scale by length
         double mag = std::sqrt(dx*dx + dy*dy + dz*dz);
         if (mag < 1e-10) return nullptr;
@@ -9491,7 +9493,9 @@ OCCTShapeRef OCCTShapeCreateExtrusion(OCCTWireRef profile, double dx, double dy,
 
 OCCTShapeRef OCCTShapeCreateRevolution(OCCTWireRef profile, double axisX, double axisY, double axisZ, double dirX, double dirY, double dirZ, double angle) {
     if (!profile) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         gp_Pnt axisOrigin(axisX, axisY, axisZ);
         gp_Dir axisDirection(dirX, dirY, dirZ);
         gp_Ax1 axis(axisOrigin, axisDirection);
@@ -9586,7 +9590,9 @@ OCCTShapeRef OCCTShapeCreateLoft(const OCCTWireRef* profiles, int32_t count, boo
 
 OCCTShapeRef OCCTShapeUnion(OCCTShapeRef shape1, OCCTShapeRef shape2) {
     if (!shape1 || !shape2) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         BRepAlgoAPI_Fuse fuser(shape1->shape, shape2->shape);
         fuser.Build();
         if (!fuser.IsDone()) return nullptr;
