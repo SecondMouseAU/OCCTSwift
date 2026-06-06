@@ -141,6 +141,7 @@
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepOffsetAPI_MakeOffsetShape.hxx>
+#include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (issue #175)
 #include <BRepOffsetAPI_MakeOffset.hxx>
 #include <BRepOffset.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
@@ -7679,7 +7680,9 @@ OCCTShapeRef OCCTThickSolidWithOptions(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTShapeTransformed(OCCTShapeRef shape, const double* matrix12) {
     if (!shape || !matrix12) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         gp_Trsf trsf;
         trsf.SetValues(matrix12[0], matrix12[1], matrix12[2], matrix12[9],
                         matrix12[3], matrix12[4], matrix12[5], matrix12[10],
@@ -9555,7 +9558,9 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTShapeCreateLoft(const OCCTWireRef* profiles, int32_t count, bool solid) {
     if (!profiles || count < 2) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
         BRepOffsetAPI_ThruSections maker(solid ? Standard_True : Standard_False);
 
         // Enable compatibility checking to:

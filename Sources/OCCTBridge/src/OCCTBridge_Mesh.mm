@@ -42,6 +42,7 @@
 #include <RWStl.hxx>
 #include <OSD_Path.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (issue #175)
 #include <BRep_Tool.hxx>
 #include <BRep_Builder.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
@@ -87,8 +88,10 @@
 OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape, double linearDeflection, double angularDeflection) {
     if (!shape) return nullptr;
 
+    occtEnsureSignals();
     OCCTMesh* mesh = nullptr;
     try {
+        OCC_CATCH_SIGNALS
         // Generate mesh
         BRepMesh_IncrementalMesh mesher(shape->shape, linearDeflection, Standard_False, angularDeflection);
         mesher.Perform();

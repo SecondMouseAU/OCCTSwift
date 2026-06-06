@@ -19,6 +19,16 @@ std::recursive_mutex& occtGlobalMutex() {
 void OCCTSerialLockAcquire(void) { occtGlobalMutex().lock(); }
 void OCCTSerialLockRelease(void) { occtGlobalMutex().unlock(); }
 
+// Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
+// SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so that
+// signals raised inside OCCT become catchable via OCC_CATCH_SIGNALS instead of aborting
+// the host process. Idempotent + thread-safe via std::once_flag.
+#include <OSD.hxx>
+void occtEnsureSignals() {
+    static std::once_flag once;
+    std::call_once(once, []{ OSD::SetSignal(Standard_False); });
+}
+
 // Suppress OCCT 8.0.0 header deprecation warnings (typedef aliases still work).
 // Full migration to NCollection types is tracked for a future release.
 #pragma clang diagnostic push

@@ -177,4 +177,13 @@ struct Poly_PolygonOnTriangulationOpaque {
 std::recursive_mutex& occtGlobalMutex();
 std::mutex& igesMutex();
 
+// === OCCT signal handling ===
+//
+// Installs OCCT's signal handlers (OSD::SetSignal) once, so that OS signals
+// raised inside OCCT (SIGSEGV/SIGFPE on degenerate geometry) are converted into
+// catchable Standard_Failure exceptions when a try block uses OCC_CATCH_SIGNALS.
+// Call at the top of any modelling op that can hit degenerate input (loft,
+// booleans, sweep, fillet…). Definition lives in OCCTBridge.mm. See issue #175.
+void occtEnsureSignals();
+
 #endif /* OCCTBridge_Internal_h */

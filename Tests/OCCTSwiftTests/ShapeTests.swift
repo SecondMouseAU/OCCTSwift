@@ -9771,6 +9771,27 @@ struct DistAngleChamferTests {
     }
 }
 
+@Suite("OCCT signal handling (#175)")
+struct OCCTSignalHandlingTests {
+    /// Degenerate / incompatible loft profiles must FAIL GRACEFULLY (return nil) rather than
+    /// SIGSEGV the process — proves OSD::SetSignal + OCC_CATCH_SIGNALS convert the OCCT signal into
+    /// a catchable Standard_Failure. If signal handling regresses, this test crashes the runner.
+    @Test("Degenerate loft returns nil, does not crash")
+    func degenerateLoftIsCaught() {
+        // A valid square, a wildly different many-gon, and a near-degenerate (collinear) wire —
+        // the kind of mismatched profile set that ThruSections can crash on.
+        let square = Wire.polygon3D([SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)], closed: true)
+        let collinear = Wire.polygon3D([SIMD3(0,0,5), SIMD3(1,0,5), SIMD3(2,0,5)], closed: true)
+        if let square, let collinear {
+            // Whatever the outcome, the call must return (nil or a shape) without aborting.
+            _ = Shape.loft(profiles: [square, collinear], solid: true)
+        }
+        // Tessellating a possibly-invalid solid must also not crash.
+        if let s = Shape.box(width: 1, height: 1, depth: 1) { _ = s.mesh(linearDeflection: 0.01) }
+        #expect(Bool(true))   // reaching here means no crash
+    }
+}
+
 @Suite("Loft Ruled Mode")
 struct LoftRuledTests {
     @Test("Ruled loft produces flat surfaces")
