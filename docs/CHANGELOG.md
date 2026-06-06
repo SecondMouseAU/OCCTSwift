@@ -2,7 +2,7 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.2.1
+## Current: v1.3.1
 
 **4,286 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
@@ -10,7 +10,7 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### v1.2.1 (June 2026) — feature-aware patterning, sweep orientation, geometric edge selection (closes #169, #170, #171)
+### v1.3.1 (June 2026) — feature-aware patterning, sweep orientation, geometric edge selection (closes #169, #170, #171)
 
 **PATCH — additive helpers + one orientation fix.** Three ergonomics gaps surfaced building the
 OCCTSwiftScripts cookbook recipes (pipe-flange, helical-spring, mounting-bracket). No C++ bridge
@@ -43,6 +43,29 @@ change — everything composes existing tested primitives.
   let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 3)
   ```
 
+
+### v1.3.0 (June 2026) — full 4×4 XCAF component locations (closes #174)
+
+**MINOR — additive new public API.** XCAF assembly components could previously only be placed by a
+translation, so true instanced assemblies (shared geometry under arbitrary rigid transforms) lost
+their rotations. `Document.addComponent(matrix:)` now accepts a full 4×4 placement (row-major 12),
+and shape-driven instancing via `Shape.located(matrix:)` + `addShape(makeAssembly: true)` dedupes by
+shared `TShape` so each unique solid is written once with N located occurrences.
+
+### v1.2.2 (June 2026) — broaden OCC signal guards (#175)
+
+**PATCH — robustness.** Extended `OSD::SetSignal` + `OCC_CATCH_SIGNALS` coverage to the validity,
+volume, boolean, extrude, and revolve bridge paths (on top of v1.2.1's loft/mesh/transform guards),
+so more degenerate-input failures surface as caught errors rather than aborting the process. Note:
+`OCC_CATCH_SIGNALS` is a no-op unless `OCC_CONVERT_SIGNALS` is defined, and converting via
+setjmp/longjmp bypasses C++ unwinding — so this hardens, but does not fully tame, deterministic
+SIGSEGVs on degenerate machine-generated geometry (see #176).
+
+### v1.2.1 (June 2026) — OCC signal handling on loft/mesh/transform (#175)
+
+**PATCH — robustness.** Installed `OSD::SetSignal` and wrapped the loft (ThruSections), mesh, and
+transform bridge entry points in `OCC_CATCH_SIGNALS` so OCCT hardware-signal faults on those paths
+convert to catchable failures instead of crashing the caller.
 
 ### v1.2.0 (June 2026) — TopologyGraph attribute store + Codable snapshot (closes #168)
 
