@@ -2415,17 +2415,24 @@ extension Shape {
     }
 
     /// Sweep one or more profiles along a helix to build a worm/screw-thread helicoid,
-    /// keeping the section radial via an auxiliary-spine framing on the central axis.
+    /// keeping the section *approximately* radial via an auxiliary-spine framing on the axis.
     ///
     /// This is the turnkey form of the #180 sweep for the common helical case. It builds
     /// the helix spine and a correctly-spanning axis auxiliary spine internally, with the
     /// orientation flags (`CurvilinearEquivalence = false`, no contact) that keep the swept
-    /// section radial — avoiding the two footguns that make a hand-rolled
+    /// section roughly radial — avoiding the two footguns that make a hand-rolled
     /// `pipeShell(mode: .auxiliary(...))` return nil:
     /// 1. `Wire.helix(clockwise:)` runs the helix toward +axis or −axis depending on
     ///    handedness, so a guessed axis range can miss it entirely; and
     /// 2. the auxiliary spine must span the helix's **full** axial extent or the section
     ///    planes never intersect it.
+    ///
+    /// - Important: The auxiliary-spine framing is **not exactly radial** — the result bulges
+    ///   ~10–15% beyond the nominal radius for moderate profiles, and for **narrow / fine-pitch
+    ///   profiles (e.g. ISO thread V-forms) it balloons severely (≈2× radius) and is unusable**.
+    ///   Use this for coarse worm/auger-style ribs, not precise fastener threads. A future
+    ///   analytic-helicoid path will give an exact thread flank — see the thread-helicoid
+    ///   tracking issue. (This is why `threadedShaft`/`threadedHole` do **not** use it.)
     ///
     /// Profiles are positioned at their stations on the helix, in the (radial, axis) plane.
     /// One profile gives a uniform thread; two or more give a varying section (e.g. a
