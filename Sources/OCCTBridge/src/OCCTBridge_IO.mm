@@ -108,6 +108,8 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path) {
     if (!shape || !path) return false;
 
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         // Use a scoped block to ensure all OCCT objects are destroyed before return
         bool success = false;
         {
@@ -417,6 +419,8 @@ bool OCCTExportSTEPProgress(OCCTShapeRef shape, const char* path,
     clearCancelOut(outCancelled);
     if (!shape || !path) return false;
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
@@ -469,6 +473,8 @@ bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef doc, const char* path,
     clearCancelOut(outCancelled);
     if (!doc || !path) return false;
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPCAFControl_Writer writer;
         writer.SetColorMode(Standard_True);
         writer.SetNameMode(Standard_True);
@@ -907,6 +913,8 @@ bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection) {
 bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelType) {
     if (!shape || !path) return false;
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
@@ -921,6 +929,8 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape, const char* path,
                                          int32_t modelType, double tolerance) {
     if (!shape || !path) return false;
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
         writer.SetTolerance(tolerance);
@@ -935,6 +945,8 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape, const char* path,
 bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t modelType) {
     if (!shape || !path) return false;
     try {
+        // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);

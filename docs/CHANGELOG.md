@@ -2,13 +2,34 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.3.3
+## Current: v1.3.4
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.3.4 (June 2026) — assembly/export robustness (#181 B & C)
+
+**PATCH — robustness fixes, no API change.**
+
+- **STEP writer serialization (#181-B).** Concurrent `writeSTEP` calls could SIGSEGV because
+  OCCT's `STEPCAFControl`/`STEPControl` writers share non-thread-safe `Interface_Static` globals
+  with IGES. All STEP/IGES write entry points now serialize on the shared data-exchange mutex, so
+  parallel exports queue instead of crashing. (The crash is an uncatchable signal, so internal
+  serialization — not documentation — is the fix.)
+- **`threadedShaft` envelope guard (#181-C).** At coarse pitch / steep lead (and, observed here,
+  even at bolt pitch) the helical V-cutter self-intersects and the boolean subtract returns a
+  non-deterministic solid that BRepCheck reports "valid" yet extends well outside the blank
+  (≈Ø22 on a Ø12 blank) — which then crashed downstream STEP export. A thread cut can only remove
+  material, so `threadedShaft` now returns `nil` when the result escapes the blank envelope rather
+  than handing back garbage. Callers should fall back (e.g. a smooth-cylinder worm body).
+
+Note on #181-A (XCAF `setColor`/`setName` on auto-created component labels): could not reproduce as
+an OCCT or bridge fault — `XCAFDoc_ColorTool::SetColor` on auto-created/reference component labels is
+robust in isolation, and the bridge already fails safe on unregistered labels. Left open pending a
+minimal reproducer.
 
 ### v1.3.3 (June 2026) — multi-section pipe shell (closes #180)
 

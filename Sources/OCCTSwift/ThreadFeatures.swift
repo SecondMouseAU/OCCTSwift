@@ -322,6 +322,23 @@ extension Shape {
         }
         guard let threaded = self.subtracting(combinedCutter) else { return nil }
 
+        // A thread cut only removes material, so a correct result is a subset of the
+        // blank: its bounds must lie within the blank's (plus numeric tolerance). When
+        // the helical V-cutter self-intersects (coarse pitch / steep lead, but also
+        // observed at bolt pitch) OCCT's boolean yields a non-deterministic solid that
+        // can extend well outside the blank — BRepCheck still reports it "valid", so the
+        // envelope is the reliable signal. Such a solid crashes downstream STEP export;
+        // reject it rather than return garbage (#181-C). Callers can fall back (e.g. a
+        // smooth-cylinder worm body). NOTE: the cut is a subset of the blank, so this
+        // guard never rejects a geometrically correct thread.
+        let blank = self.bounds, cut = threaded.bounds
+        let extent = blank.max - blank.min
+        let tol = 1e-6 + 1e-3 * max(extent.x, max(extent.y, extent.z))
+        guard cut.min.x >= blank.min.x - tol, cut.min.y >= blank.min.y - tol,
+              cut.min.z >= blank.min.z - tol, cut.max.x <= blank.max.x + tol,
+              cut.max.y <= blank.max.y + tol, cut.max.z <= blank.max.z + tol
+        else { return nil }
+
         switch runout {
         case .none:
             return threaded

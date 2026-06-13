@@ -136,6 +136,9 @@ bool OCCTDocumentWriteSTEP(OCCTDocumentRef doc, const char* path) {
     if (!doc || !path) return false;
 
     try {
+        // STEP and IGES writers share OCCT's non-thread-safe Interface_Static
+        // globals; serialize all DE writes on one lock (#181-B).
+        std::lock_guard<std::mutex> deLock(igesMutex());
         STEPCAFControl_Writer writer;
         writer.SetColorMode(Standard_True);
         writer.SetNameMode(Standard_True);
