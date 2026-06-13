@@ -2414,6 +2414,72 @@ extension Shape {
         return Shape(handle: result)
     }
 
+    /// Sweep one or more profiles along a helix to build a worm/screw-thread helicoid,
+    /// keeping the section radial via an auxiliary-spine framing on the central axis.
+    ///
+    /// This is the turnkey form of the #180 sweep for the common helical case. It builds
+    /// the helix spine and a correctly-spanning axis auxiliary spine internally, with the
+    /// orientation flags (`CurvilinearEquivalence = false`, no contact) that keep the swept
+    /// section radial — avoiding the two footguns that make a hand-rolled
+    /// `pipeShell(mode: .auxiliary(...))` return nil:
+    /// 1. `Wire.helix(clockwise:)` runs the helix toward +axis or −axis depending on
+    ///    handedness, so a guessed axis range can miss it entirely; and
+    /// 2. the auxiliary spine must span the helix's **full** axial extent or the section
+    ///    planes never intersect it.
+    ///
+    /// Profiles are positioned at their stations on the helix, in the (radial, axis) plane.
+    /// One profile gives a uniform thread; two or more give a varying section (e.g. a
+    /// runout that ramps from full crest to a small rib — the original #180 motivation).
+    ///
+    /// - Parameters:
+    ///   - profiles: Rib profile wires positioned along the helix (at least one).
+    ///   - axisOrigin: A point on the worm axis (the helix base).
+    ///   - axisDirection: The worm axis direction.
+    ///   - radius: Helix (pitch) radius.
+    ///   - pitch: Axial advance per turn.
+    ///   - turns: Number of turns.
+    ///   - clockwise: Helix handedness.
+    ///   - solid: If true, create a solid; if false, a shell.
+    /// - Returns: The swept helicoid, or nil on failure.
+    public static func helicalSweep(profiles: [Wire],
+                                    axisOrigin: SIMD3<Double>,
+                                    axisDirection: SIMD3<Double>,
+                                    radius: Double,
+                                    pitch: Double,
+                                    turns: Double,
+                                    clockwise: Bool = false,
+                                    solid: Bool = true) -> Shape? {
+        guard !profiles.isEmpty, radius > 0, pitch > 0, turns > 0 else { return nil }
+        let axis = simd_normalize(axisDirection)
+        guard let helix = Wire.helix(origin: axisOrigin, axis: axis, radius: radius,
+                                     pitch: pitch, turns: turns, clockwise: clockwise) else {
+            return nil
+        }
+        // Auxiliary spine = the central axis, spanning the helix's full axial extent in
+        // BOTH directions (the helix runs +axis or −axis depending on handedness), so every
+        // section plane intersects it. A short/one-sided aux line is the usual cause of a
+        // nil auxiliary-spine sweep (#185).
+        let span = pitch * turns + max(pitch, radius)
+        guard let aux = Wire.line(from: axisOrigin - span * axis,
+                                  to: axisOrigin + span * axis) else { return nil }
+        return pipeShellMultiSection(spine: helix, profiles: profiles,
+                                     mode: .auxiliary(spine: aux), solid: solid)
+    }
+
+    /// Single-profile helical sweep — a uniform worm/screw-thread helicoid.
+    /// See ``helicalSweep(profiles:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)``.
+    public static func helicalSweep(profile: Wire,
+                                    axisOrigin: SIMD3<Double>,
+                                    axisDirection: SIMD3<Double>,
+                                    radius: Double,
+                                    pitch: Double,
+                                    turns: Double,
+                                    clockwise: Bool = false,
+                                    solid: Bool = true) -> Shape? {
+        helicalSweep(profiles: [profile], axisOrigin: axisOrigin, axisDirection: axisDirection,
+                     radius: radius, pitch: pitch, turns: turns, clockwise: clockwise, solid: solid)
+    }
+
     // MARK: - Surface Creation (v0.9.0)
 
     /// Create a B-spline surface from a grid of control points.
