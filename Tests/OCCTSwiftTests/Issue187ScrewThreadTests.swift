@@ -59,6 +59,21 @@ struct Issue187ScrewThreadTests {
         if let a, let b { #expect(abs(a - b) < 1e-4) }
     }
 
+    @Test("Thread surface is SMOOTH (analytic helicoid) — few faces, not hundreds of facets")
+    func smoothFewFaces() {
+        guard let shank = Shape.cylinder(radius: 6, height: 16) else { Issue.record("no shank"); return }
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
+        guard let threaded = shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+                                                 spec: spec, length: 14) else {
+            Issue.record("threadedShaft nil"); return
+        }
+        // The cutter is ~6 ruled helicoid faces, so the threaded solid has a handful of
+        // faces (cylinder ends + thread flank/crest/root surfaces), NOT the hundreds of
+        // facets a sectioned/lofted sweep would leave. A loose ceiling proves smoothness.
+        let faces = threaded.subShapes(ofType: .face).count
+        #expect(faces < 40)
+    }
+
     @Test("threadedHole cuts a valid in-envelope thread into a bore wall")
     func threadedHoleValid() {
         guard let outer = Shape.cylinder(radius: 12, height: 16),

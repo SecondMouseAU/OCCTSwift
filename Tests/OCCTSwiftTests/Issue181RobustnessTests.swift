@@ -24,9 +24,16 @@ struct Issue181RobustnessTests {
         let result = blank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                                          spec: spec, length: 16)
         // nil is acceptable (failed/garbage cut); a returned solid must be in-envelope.
+        // Measure the *optimal* (tight) box: the smooth analytic helicoid (v1.4.1) has a
+        // BSpline convex-hull default Bnd_Box that overshoots the real surface by ~0.1–0.35 mm
+        // — a control-pole artifact, not escaped material (AddOptimal returns the exact extent).
+        // A strict tolerance on the optimal box still catches the real >1 mm balloon this
+        // guards against (the old ~Ø22 result on a Ø12 blank).
         if let result {
-            let b = blank.bounds, c = result.bounds
-            let tol = 1e-3
+            guard let b = blank.boundingBoxOptimal(), let c = result.boundingBoxOptimal() else {
+                Issue.record("optimal bounds unavailable"); return
+            }
+            let tol = 1e-2
             #expect(c.max.x <= b.max.x + tol)
             #expect(c.max.y <= b.max.y + tol)
             #expect(c.max.z <= b.max.z + tol)

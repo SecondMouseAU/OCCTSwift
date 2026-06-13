@@ -1535,6 +1535,30 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
                                                   bool withContact, bool withCorrection,
                                                   bool solid);
 
+/// Build one thread-start cutter as a SMOOTH analytic helicoid solid (issue #187).
+/// Each of the 4 ISO-68 V-profile corners traces a BSpline helix; the cutter is the
+/// solid bounded by ruled faces (BRepFill::Face) between consecutive corner-helices plus
+/// two V end caps, sewn. O(1) faces (no faceting), in-envelope, vs the MakePipeShell sweep
+/// which bulges with the helix lead. The axis frame is given by (origin, axis-unit,
+/// radial0-unit, with tangential0 = axis x radial0 computed internally).
+/// @param ox,oy,oz Axis origin (a point on the thread axis)
+/// @param ax,ay,az Thread axis direction (unit)
+/// @param rx,ry,rz radial0 (unit, perpendicular to the axis)
+/// @param pitch Axial advance per turn; turns Number of turns
+/// @param apexSign -1 external (apex inward) / +1 internal (apex outward into the wall)
+/// @param helixRadius Thread pitch-line radius (nominal/2)
+/// @param cutDepth, rootHalf, crestHalf, bleed ISO-68 V-form dimensions
+/// @param phase Angular start offset (radians; multi-start); handed -1 left-handed / +1 right
+/// @param nSections BSpline interpolation samples per corner helix
+/// @return The cutter solid, or NULL on failure
+OCCTShapeRef OCCTShapeBuildThreadCutter(double ox, double oy, double oz,
+                                        double ax, double ay, double az,
+                                        double rx, double ry, double rz,
+                                        double pitch, double turns, double apexSign,
+                                        double helixRadius, double cutDepth,
+                                        double rootHalf, double crestHalf, double bleed,
+                                        double phase, double handed, int32_t nSections);
+
 
 // MARK: - Surfaces & Curves (v0.9.0)
 

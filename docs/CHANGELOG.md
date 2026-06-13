@@ -2,13 +2,42 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.0
+## Current: v1.4.1
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.1 (June 2026) — smooth analytic thread helicoid, with screw-loft fallback (#187)
+
+**PATCH — geometry quality, no API change.** `threadedShaft` / `threadedHole` now emit a **smooth
+analytic helicoid** instead of v1.4.0's faceted ruled loft. Same signatures, same in-envelope
+result; the difference is surface quality and face count.
+
+**What changed.** v1.4.0 swept the V-profile through ~14 screw-transformed sections per turn and
+ruled-lofted them — correct and in-envelope, but **faceted** (hundreds of flank facets) and ~1 s per
+thread. The cutter is now built analytically (new bridge op `OCCTShapeBuildThreadCutter`): the four
+ISO-68 V-corners each trace a single BSpline helix (`GeomAPI_Interpolate`), and the solid is bounded
+by four ruled faces between consecutive corner-helices plus two V end caps — sewn, made solid, and
+`BRepLib::OrientClosedSolid`-corrected. That's **~6 faces, no faceting**, regardless of turn count.
+
+**Automatic fallback.** OCCT's boolean chokes on the *tightly-wound* cutter of small, fine-pitch
+threads (e.g. M5×0.8 — 22.5 turns at radius 2.5): the subtraction comes back BRepCheck-"valid" but
+with *more* volume than the blank. The cut is validated (optimal/tight bounding box stays inside the
+blank **and** volume strictly decreases by a sane amount); if the analytic result fails, it silently
+falls back to v1.4.0's robust screw-loft. So M6/M8/M10/M12 and coarse worm pitches get the smooth
+helicoid, while pathological small-fine-pitch threads still build via the faceted-but-robust path.
+
+**Why the envelope is measured on the optimal box.** The smooth helicoid's *default* `Bnd_Box`
+(`BRepBndLib::Add`) is the BSpline **convex hull**, which overshoots the real surface by ~0.1–0.35 mm
+— a control-pole artifact, not escaped material (`AddOptimal` returns the blank's exact extent).
+Both the fallback check and the #181-C regression test now use the tight optimal box; a strict
+tolerance there still catches the real >1 mm balloon the guard exists for.
+
+**Migration.** None required. Thread mesh/STEP geometry differs again (smoother) — byte-exact
+snapshot consumers must rebaseline; everything else is unchanged.
 
 ### v1.4.0 (June 2026) — correct, in-envelope thread geometry (closes #187)
 

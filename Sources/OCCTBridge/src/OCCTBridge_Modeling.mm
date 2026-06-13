@@ -610,6 +610,85 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
     }
 }
 
+// Analytic helicoid thread cutter (#187): smooth ruled-face solid, no faceting/balloon.
+#include <BRepFill.hxx>
+#include <GeomAPI_Interpolate.hxx>
+#include <TColgp_HArray1OfPnt.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepLib.hxx>
+OCCTShapeRef OCCTShapeBuildThreadCutter(double ox, double oy, double oz,
+                                        double ax, double ay, double az,
+                                        double rx, double ry, double rz,
+                                        double pitch, double turns, double apexSign,
+                                        double helixRadius, double cutDepth,
+                                        double rootHalf, double crestHalf, double bleed,
+                                        double phase, double handed, int32_t nSections) {
+    if (pitch <= 0 || turns <= 0 || nSections < 2) return nullptr;
+    try {
+        const gp_Vec O(ox, oy, oz), A(ax, ay, az), R0(rx, ry, rz);
+        const gp_Vec T0 = A.Crossed(R0);                 // tangential0 = axis x radial0
+        const double rootR  = helixRadius - apexSign * bleed;     // root bleeds past surface
+        const double crestR = helixRadius + apexSign * cutDepth;  // crest = the deep cut
+        const double cr[4] = { rootR, crestR, crestR, rootR };
+        const double cz[4] = { -rootHalf, -crestHalf, crestHalf, rootHalf };
+        const int N = nSections;
+
+        // Each V-corner traces a single-edge BSpline helix.
+        TopoDS_Edge edges[4];
+        for (int k = 0; k < 4; ++k) {
+            Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, N + 1);
+            for (int i = 0; i <= N; ++i) {
+                const double fr = (double)i / (double)N;
+                const double theta = handed * (phase + 2.0 * M_PI * turns * fr);
+                const double zc = pitch * turns * fr + cz[k];
+                const gp_Vec radial = R0 * std::cos(theta) + T0 * std::sin(theta);
+                const gp_Vec P = O + A * zc + radial * cr[k];
+                pts->SetValue(i + 1, gp_Pnt(P.X(), P.Y(), P.Z()));
+            }
+            GeomAPI_Interpolate interp(pts, Standard_False, 1e-7);
+            interp.Perform();
+            if (!interp.IsDone()) return nullptr;
+            edges[k] = BRepBuilderAPI_MakeEdge(interp.Curve());
+            if (edges[k].IsNull()) return nullptr;
+        }
+
+        // Ruled flank/crest/root faces between consecutive corner helices, + 2 V end caps.
+        BRepBuilderAPI_Sewing sewer(1e-6);
+        for (int k = 0; k < 4; ++k) {
+            TopoDS_Face f = BRepFill::Face(edges[k], edges[(k + 1) % 4]);
+            if (f.IsNull()) return nullptr;
+            sewer.Add(f);
+        }
+        for (int cap = 0; cap < 2; ++cap) {
+            const double fr = (double)cap;
+            const double theta = handed * (phase + 2.0 * M_PI * turns * fr);
+            const double zbase = pitch * turns * fr;
+            const gp_Vec radial = R0 * std::cos(theta) + T0 * std::sin(theta);
+            BRepBuilderAPI_MakePolygon poly;
+            for (int k = 0; k < 4; ++k) {
+                const gp_Vec P = O + A * (zbase + cz[k]) + radial * cr[k];
+                poly.Add(gp_Pnt(P.X(), P.Y(), P.Z()));
+            }
+            poly.Close();
+            BRepBuilderAPI_MakeFace mf(poly.Wire(), Standard_True);
+            if (!mf.IsDone()) return nullptr;
+            sewer.Add(mf.Face());
+        }
+        sewer.Perform();
+        TopoDS_Shape shell = sewer.SewedShape();
+        if (shell.IsNull()) return nullptr;
+        TopExp_Explorer se(shell, TopAbs_SHELL);
+        if (!se.More()) return nullptr;
+        TopoDS_Solid solid = BRepBuilderAPI_MakeSolid(TopoDS::Shell(se.Current())).Solid();
+        // Orient outward so it is a proper positive-volume solid (the sewn shell can be
+        // inside-out, which would make the boolean intersect instead of subtract).
+        BRepLib::OrientClosedSolid(solid);
+        return new OCCTShape(solid);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
 // MARK: - Surface Construction (v0.9.0)
 
 OCCTShapeRef OCCTShapeCreateBSplineSurface(const double* poles, int32_t uCount, int32_t vCount,
