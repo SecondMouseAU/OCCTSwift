@@ -2,13 +2,27 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.3.5
+## Current: v1.3.6
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.3.6 (June 2026) — fix: thread envelope guard rejected valid fastener threads (closes #189)
+
+**PATCH — regression fix.** The #181-C envelope guard added in v1.3.4 used a tolerance
+(`1e-3 · extent`) far tighter than the bounding-box overrun of a *valid* `threadedShaft` /
+`threadedHole` result, so it returned **`nil` for ordinary bolts/screws** (M5–M10, ISO 4762/4014/…)
+that built in v1.3.3 — breaking 37 downstream fastener generators.
+
+The guard's tolerance is now `2 · cutDepth`. Measured overruns (relative to the thread cut depth,
+which scales the corrected-Frenet sweep's directional bulge) are ~1.25× for valid fastener threads
+and ~3.1× for the coarse-worm-pitch garbage the guard is meant to catch (#181-C, which balloons to
+~2× radius and crashes STEP export). `2 · cutDepth` sits cleanly between them — valid threads build
+again, the catastrophic balloon is still rejected. (The proper fix — a cutter that doesn't bulge at
+all — is tracked in #187.)
 
 ### v1.3.5 (June 2026) — `Shape.helicalSweep` worm/screw-thread helicoid (closes #185)
 
