@@ -2,13 +2,32 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.3.4
+## Current: v1.3.5
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.3.5 (June 2026) — `Shape.helicalSweep` worm/screw-thread helicoid (closes #185)
+
+**PATCH — additive convenience API.** Adds `Shape.helicalSweep(profile:axisOrigin:axisDirection:radius:pitch:turns:clockwise:solid:)`
+(and a multi-profile overload), the turnkey form of the #180 auxiliary-spine sweep for the helical
+case. It builds the helix spine **and** a correctly-spanning central-axis auxiliary spine internally,
+with the orientation flags (`CurvilinearEquivalence = false`, no contact) that keep the swept section
+radial — producing a worm/screw-thread helicoid in one call:
+
+```swift
+Shape.helicalSweep(profile: rib, axisOrigin: .zero, axisDirection: SIMD3(0,0,1),
+                   radius: 5, pitch: .pi, turns: 4.77)   // crest stays radial (~Ø12), not nil
+```
+
+Hand-rolling this with `pipeShell(mode: .auxiliary(...))` reliably returned nil because (a) `Wire.helix`
+runs toward +Z or −Z depending on handedness and (b) the auxiliary spine must span the helix's full
+axial extent or the section planes never intersect it. The helper handles both. (Investigation: the
+correct OCCT recipe was confirmed empirically — `SetMode(axisLine, CurvilinearEquivalence=false,
+NoContact)`; `CurvilinearEquivalence=true` and the contact modes fail to build for a helix spine.)
 
 ### v1.3.4 (June 2026) — assembly/export robustness (#181 B & C)
 
