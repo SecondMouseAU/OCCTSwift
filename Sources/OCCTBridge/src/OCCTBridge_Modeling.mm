@@ -556,6 +556,60 @@ OCCTShapeRef OCCTShapeCreatePipeShellWithAuxSpine(OCCTWireRef spine, OCCTWireRef
     }
 }
 
+// Multi-section pipe shell (#180): one MakePipeShell, several Add() calls.
+OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
+                                                  const OCCTWireRef* profiles, int32_t profileCount,
+                                                  OCCTPipeMode mode,
+                                                  double bnX, double bnY, double bnZ,
+                                                  OCCTWireRef auxSpine,
+                                                  bool withContact, bool withCorrection,
+                                                  bool solid) {
+    if (!spine || !profiles || profileCount < 1) return nullptr;
+    if (mode == OCCTPipeModeAuxiliary && !auxSpine) return nullptr;
+
+    try {
+        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
+
+        switch (mode) {
+            case OCCTPipeModeFrenet:
+                pipeShell.SetMode(Standard_False);
+                break;
+            case OCCTPipeModeCorrectedFrenet:
+                pipeShell.SetMode(Standard_True);
+                break;
+            case OCCTPipeModeFixedBinormal:
+                pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
+                break;
+            case OCCTPipeModeAuxiliary:
+                pipeShell.SetMode(auxSpine->wire, Standard_False);
+                break;
+        }
+
+        // Add every profile (variable cross-section).
+        for (int32_t i = 0; i < profileCount; ++i) {
+            if (!profiles[i]) return nullptr;
+            pipeShell.Add(profiles[i]->wire,
+                          withContact ? Standard_True : Standard_False,
+                          withCorrection ? Standard_True : Standard_False);
+        }
+
+        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
+        pipeShell.Build();
+        if (!pipeShell.IsDone()) return nullptr;
+
+        TopoDS_Shape result = pipeShell.Shape();
+        if (solid) {
+            pipeShell.MakeSolid();
+            if (pipeShell.IsDone()) {
+                result = pipeShell.Shape();
+            }
+        }
+        return new OCCTShape(result);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
 // MARK: - Surface Construction (v0.9.0)
 
 OCCTShapeRef OCCTShapeCreateBSplineSurface(const double* poles, int32_t uCount, int32_t vCount,

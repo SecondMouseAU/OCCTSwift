@@ -1275,6 +1275,54 @@ struct AdvancedModelingTests {
         #expect(shell != nil)
     }
 
+    // MARK: - Multi-section pipe shell (#180)
+
+    @Test("Multi-section pipe shell (Frenet) sweeps varying-radius circles into a valid solid")
+    func multiSectionFrenetVaryingRadius() {
+        guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)) else {
+            Issue.record("Could not create spine"); return
+        }
+        // Three coaxial circles of different radius at z = 0, 5, 10 (a "vase").
+        let stations = Array(zip([0.0, 5.0, 10.0], [2.0, 1.0, 2.0])).compactMap {
+            Wire.circle(origin: SIMD3(0, 0, $0.0), normal: SIMD3(0, 0, 1), radius: $0.1)
+        }
+        #expect(stations.count == 3)
+
+        let pipe = Shape.pipeShellMultiSection(spine: spine, profiles: stations, mode: .frenet, solid: true)
+        #expect(pipe != nil)
+        if let pipe {
+            #expect(pipe.isValid)
+            if let v = pipe.volume { #expect(v > 0) }
+        }
+    }
+
+    @Test("Multi-section pipe shell with auxiliary spine (the #180 worm-thread case)")
+    func multiSectionAuxiliarySpine() {
+        guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)),
+              let aux = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(3, 0, 10)) else {
+            Issue.record("Could not create spine/aux"); return
+        }
+        guard let c0 = Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 2.0),
+              let c1 = Wire.circle(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 1.0) else {
+            Issue.record("Could not create profiles"); return
+        }
+        let pipe = Shape.pipeShellMultiSection(
+            spine: spine, profiles: [c0, c1], mode: .auxiliary(spine: aux), solid: true)
+        #expect(pipe != nil)
+        if let pipe { #expect(pipe.isValid) }
+    }
+
+    @Test("Multi-section pipe shell: empty profiles return nil, single profile is allowed")
+    func multiSectionProfileCountBounds() {
+        guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10)),
+              let one = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 2.0) else {
+            Issue.record("Could not create spine/profile"); return
+        }
+        #expect(Shape.pipeShellMultiSection(spine: spine, profiles: []) == nil)
+        // A single profile degenerates to an ordinary pipe shell — must still build.
+        #expect(Shape.pipeShellMultiSection(spine: spine, profiles: [one], mode: .frenet) != nil)
+    }
+
     // MARK: - Curve Analysis Tests (v0.9.0)
 
     @Test("Wire length of straight line")

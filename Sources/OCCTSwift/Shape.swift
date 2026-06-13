@@ -2360,6 +2360,60 @@ extension Shape {
         return Shape(handle: result)
     }
 
+    /// Sweep several profiles along a spine for a variable-section pipe shell.
+    ///
+    /// This is the multi-section form of ``pipeShell(spine:profile:mode:solid:)``: each
+    /// profile is positioned in 3D at its station along the spine, and OCCT interpolates a
+    /// smooth solid (or shell) that passes through every section. It supports the same
+    /// orientation modes — including ``PipeSweepMode/auxiliary(spine:)``, which keeps the
+    /// section oriented by a secondary curve (e.g. a thread rib that ramps from a runout to
+    /// full crest along a helix while staying radial to the axis).
+    ///
+    /// - Parameters:
+    ///   - spine: Path wire along which to sweep.
+    ///   - profiles: Profile wires, each positioned at its station along the spine. At least
+    ///     one is required; two or more give a genuinely varying section.
+    ///   - mode: Sweep mode controlling profile orientation (incl. `.auxiliary(spine:)`).
+    ///   - withContact: If true, each profile is moved to touch the spine before sweeping.
+    ///   - withCorrection: If true, each profile is rotated to stay orthogonal to the spine.
+    ///   - solid: If true, create a solid; if false, a shell.
+    /// - Returns: Swept shape, or nil on failure.
+    public static func pipeShellMultiSection(
+        spine: Wire,
+        profiles: [Wire],
+        mode: PipeSweepMode = .frenet,
+        withContact: Bool = false,
+        withCorrection: Bool = false,
+        solid: Bool = true
+    ) -> Shape? {
+        guard !profiles.isEmpty else { return nil }
+
+        let modeValue: OCCTPipeMode
+        var binormal = SIMD3<Double>(0, 0, 0)
+        var auxHandle: OCCTWireRef? = nil
+        switch mode {
+        case .frenet:
+            modeValue = OCCTPipeModeFrenet
+        case .correctedFrenet:
+            modeValue = OCCTPipeModeCorrectedFrenet
+        case .fixed(let bn):
+            modeValue = OCCTPipeModeFixedBinormal
+            binormal = bn
+        case .auxiliary(let aux):
+            modeValue = OCCTPipeModeAuxiliary
+            auxHandle = aux.handle
+        }
+
+        let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        guard let result = handles.withUnsafeBufferPointer({ buffer in
+            OCCTShapeCreatePipeShellMultiSection(
+                spine.handle, buffer.baseAddress, Int32(profiles.count),
+                modeValue, binormal.x, binormal.y, binormal.z,
+                auxHandle, withContact, withCorrection, solid)
+        }) else { return nil }
+        return Shape(handle: result)
+    }
+
     // MARK: - Surface Creation (v0.9.0)
 
     /// Create a B-spline surface from a grid of control points.

@@ -2,13 +2,26 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.3.2
+## Current: v1.3.3
 
-**4,286 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
+**4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.3.3 (June 2026) — multi-section pipe shell (closes #180)
+
+**PATCH — additive API.** Adds `Shape.pipeShellMultiSection(spine:profiles:mode:withContact:withCorrection:solid:)`,
+the multi-section form of `pipeShell`. Several profiles positioned along the spine are swept into a
+single variable cross-section solid/shell via repeated `BRepOffsetAPI_MakePipeShell::Add`. Supports
+all orientation modes including `.auxiliary(spine:)`, so a thread rib can ramp from a runout to full
+crest along a helix while staying radial — the worm-thread case that single-profile `pipeShellWithLaw`
+(Frenet-only, degenerates on near-zero scaling) could not express.
+
+```swift
+Shape.pipeShellMultiSection(spine: helix, profiles: [fullRib, runoutRib], mode: .auxiliary(spine: axis))
+```
 
 ### v1.3.2 (June 2026) — fix loft (ThruSections) SIGSEGV on mismatched profiles (closes #176)
 

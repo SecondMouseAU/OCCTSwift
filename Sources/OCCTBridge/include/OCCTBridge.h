@@ -1511,6 +1511,30 @@ OCCTShapeRef OCCTShapeCreatePipeShellWithBinormal(OCCTWireRef spine, OCCTWireRef
 OCCTShapeRef OCCTShapeCreatePipeShellWithAuxSpine(OCCTWireRef spine, OCCTWireRef profile,
                                                    OCCTWireRef auxSpine, bool solid);
 
+/// Create a variable-section pipe shell from several profiles (issue #180).
+/// Adds each profile (positioned in 3D along the spine) to a single
+/// BRepOffsetAPI_MakePipeShell, producing a smooth swept solid/shell that
+/// interpolates between sections. Supports every orientation mode:
+///   - OCCTPipeModeFixedBinormal uses (bnX, bnY, bnZ)
+///   - OCCTPipeModeAuxiliary uses auxSpine (must be non-NULL for that mode)
+/// @param spine Path wire for sweep
+/// @param profiles Array of profile wires (length profileCount, all non-NULL)
+/// @param profileCount Number of profiles (>= 1)
+/// @param mode Sweep mode controlling profile orientation
+/// @param bnX, bnY, bnZ Fixed binormal (used only for OCCTPipeModeFixedBinormal)
+/// @param auxSpine Auxiliary spine (used only for OCCTPipeModeAuxiliary; else NULL)
+/// @param withContact If true, move each profile to touch the spine before sweeping
+/// @param withCorrection If true, rotate the profile to stay orthogonal to the spine
+/// @param solid If true, create solid; if false, create shell
+/// @return Swept shape, or NULL on failure
+OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
+                                                  const OCCTWireRef* profiles, int32_t profileCount,
+                                                  OCCTPipeMode mode,
+                                                  double bnX, double bnY, double bnZ,
+                                                  OCCTWireRef auxSpine,
+                                                  bool withContact, bool withCorrection,
+                                                  bool solid);
+
 
 // MARK: - Surfaces & Curves (v0.9.0)
 
