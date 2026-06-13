@@ -30,10 +30,18 @@ struct Issue185HelicalSweepTests {
         #expect(worm != nil)
         if let worm {
             #expect(worm.isValid)
-            // Section stays radial: crest radius ≈ 6, not frenet's ~8.18 over-inflation
-            // and certainly not the ~65 of a wrong aux helix.
-            let r = worm.bounds.max.x
-            #expect(r > 5.0 && r < 7.0)
+            // Full XY envelope check (the original test only checked max.x and missed the
+            // opposite side). The rib crest is at radius 6; the aux-spine framing is not
+            // perfectly radial — it bulges ~10–15% (measured ~6.9), so the realistic
+            // envelope is ~radius 7. The point of this bound is to catch the CATASTROPHIC
+            // failure mode (radius ~8–11) seen with narrow / fine-pitch profiles, while
+            // documenting the mild bulge that helicalSweep does have. See #187.
+            let b = worm.bounds
+            let maxR = 7.0
+            #expect(b.max.x <= maxR)
+            #expect(b.min.x >= -maxR)
+            #expect(b.max.y <= maxR)
+            #expect(b.min.y >= -maxR)
         }
     }
 
