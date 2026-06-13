@@ -2,13 +2,37 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.3.6
+## Current: v1.4.0
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.0 (June 2026) — correct, in-envelope thread geometry (closes #187)
+
+**MINOR — BEHAVIOUR CHANGE to `threadedShaft` / `threadedHole`.** The thread output geometry changes:
+both now produce a **correct, in-envelope helicoid** for every pitch, including coarse worm pitches
+that previously returned `nil` or garbage.
+
+**Why it changed.** The cutter was a `BRepOffsetAPI_MakePipeShell` sweep of a V-profile along the
+helix. That sweep re-frames the section with the helix lead, so it **bulged the thread outward**
+(~1.25× cut depth for fasteners, ~3.1× for worm pitches → a self-intersecting ≈2×-radius balloon that
+crashed STEP export — #181-C/#185). The cutter is now built by a **screw-motion sweep**: the axial
+V-profile is transported by a pure rotate-about-axis + translate-along-axis motion (every section
+stays in its own axial plane), ruled-lofted, and subtracted. The result's crest sits at the nominal
+radius (within ~0.1 mm tessellation), deterministically.
+
+**Migration.** No API change (same signatures, still `Shape?`). But:
+- the produced thread **mesh / STEP geometry differs** — snapshot/byte-exact consumers must rebaseline;
+- threads that returned `nil` at coarse/worm pitch now return a valid solid;
+- the V-form is faceted (ruled loft, ~14 sections/turn) rather than a smooth pipe surface;
+- **performance:** ~1 s per thread (loft + boolean over the section facets). For many threads, expect
+  it to dominate; a true analytic helical surface (future work) would remove the faceting/cost trade.
+
+The #181-C envelope guard is retained as a thin safety net (now 1× cut depth) but effectively never
+trips on the in-envelope result.
 
 ### v1.3.6 (June 2026) — fix: thread envelope guard rejected valid fastener threads (closes #189)
 

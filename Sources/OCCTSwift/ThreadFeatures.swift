@@ -133,58 +133,11 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
 }
 
 // MARK: - V-profile construction
-
-/// Geometry of a single thread-form cutter: a truncated trapezoidal profile with
-/// 30° flanks on either side of a central apex, living in the plane perpendicular
-/// to the helix tangent at the given anchor point.
-///
-/// For a cut that becomes a real 60° thread, this trapezoid — not a bare triangle —
-/// is the correct shape: ISO-68 truncates the crest (small flat at the tip, width
-/// `crestFlat * 2`) and the root flares wider (flat along the bore wall of width
-/// `rootFlat * 2`). Between them the flanks run at ±30° from the apex axis.
-internal struct ThreadCutterProfile {
-    let helixAnchor: SIMD3<Double>
-    let axisDirection: SIMD3<Double>
-    let radialDirection: SIMD3<Double>     // points from axis toward helixAnchor
-    let tangentialDirection: SIMD3<Double> // e_axis × e_radial
-    let radius: Double
-    let pitch: Double
-    let helixTangent: SIMD3<Double>
-
-    /// Binormal in the helix's normal plane — perpendicular to both the helix tangent
-    /// and the radial (principal-normal) direction. Mostly axial with a small tilt;
-    /// this is the "axial-ish" direction within the profile plane.
-    var binormal: SIMD3<Double> {
-        simd_normalize(simd_cross(helixTangent, radialDirection))
-    }
-
-    /// Truncated trapezoidal profile wire, apex pointing `apexSign * radialDirection`.
-    /// `apexSign = +1` → apex radially outward (internal-thread cutter, bore→wall).
-    /// `apexSign = -1` → apex radially inward (external-thread cutter, shaft→core).
-    ///
-    /// The root base is extended by `bleedDepth` in the direction opposite the apex.
-    /// Without this, the base would sit exactly on the cylindrical bore / shaft
-    /// surface, and OCCT's boolean subtract skips "touching-but-not-overlapping"
-    /// inputs — the thread would show up as a no-op.
-    func wire(spec: ThreadSpec, apexSign: Double) -> Wire? {
-        let depth = spec.cutDepth
-        let crestHalfWidth = spec.crestFlat / 2
-        let rootHalfWidth  = spec.rootFlat / 2
-        let bleedDepth = max(depth * 0.05, 1e-3)
-        let B = binormal
-        let R = radialDirection * apexSign
-
-        // Four trapezoid vertices in 3D. Ordered so the wire closes as a simple polygon.
-        // Root-base bleeds slightly *past* the helix radius on the opposite side from the
-        // apex; crest is the deepest cut point.
-        let p0 = helixAnchor + (-rootHalfWidth) * B + (-bleedDepth) * R      // root left
-        let p1 = helixAnchor + depth * R + (-crestHalfWidth) * B             // crest left
-        let p2 = helixAnchor + depth * R + ( crestHalfWidth) * B             // crest right
-        let p3 = helixAnchor + ( rootHalfWidth) * B + (-bleedDepth) * R      // root right
-
-        return Wire.polygon3D([p0, p1, p2, p3], closed: true)
-    }
-}
+//
+// The ISO-68 truncated-trapezoid V-profile is now generated directly per screw section in
+// `Shape.screwSweptThreadCutter`; the earlier `ThreadCutterProfile` (a single profile in the
+// helix tangent-normal plane, for a pipe-shell sweep) was removed in #187 because that sweep
+// bulged the section with the helix lead.
 
 private func orthonormalRadial(axis: SIMD3<Double>) -> SIMD3<Double> {
     let a = simd_normalize(axis)
@@ -254,61 +207,32 @@ extension Shape {
 
         let axis = simd_normalize(axisDirection)
 
-        // Build one cutter per thread start. The helix wire's actual start point and
-        // tangent (not our pre-computed estimates) anchor the V-profile — this matters
-        // because `Wire.helix` places θ=0 at a default X direction of its internal
-        // gp_Ax3 that we don't control.
+        // Build one cutter per thread start as a SCREW-MOTION sweep of the axial V-profile.
+        //
+        // A pipe-shell sweep (corrected-Frenet or auxiliary-spine) re-frames the section
+        // along the helix and bulges it outward with the lead — the #181-C garbage / #185
+        // over-inflation. Instead, transport the V-profile by a pure screw motion (rotate
+        // about the axis + translate along it), so every section stays in its OWN axial
+        // plane → a true, in-envelope helicoid. The screw path is approximated by ruled
+        // lofting through closely-spaced screw-transformed sections (#187).
+        let radial0 = orthonormalRadial(axis: axis)
+        let tangential0 = simd_normalize(simd_cross(axis, radial0))
+        let handed: Double = spec.leftHanded ? -1 : 1
+        // Sections per turn: trades accuracy (helix chord error) for loft + boolean cost.
+        // 14/turn keeps the crest chord error ~0.1 mm at typical fastener radii while keeping
+        // the section count (hence the boolean's face count) manageable; capped for very long
+        // fine-pitch threads. (Performance is tracked in #187 — a true helical surface would
+        // avoid the faceting/cost trade entirely.)
+        let nSections = min(220, max(20, Int((turns * 14).rounded())))
+
         var cutters: [Shape] = []
-        for i in 0..<starts {
-            let startAxisOrigin: SIMD3<Double>
-            if starts == 1 {
-                startAxisOrigin = axisOrigin
-            } else {
-                // For multi-start we need distinct helices. Can't tell Wire.helix a
-                // starting phase directly, so we offset the axis origin by a fraction
-                // of the pitch along the axis — each helix then starts at the same
-                // default X direction but at a different axial position, giving the
-                // same visual effect as angular offset for a closed-form spiral.
-                let axialOffset = spec.pitch * Double(i) / Double(starts)
-                startAxisOrigin = axisOrigin + axialOffset * axis
-            }
-            guard let helixWire = Wire.helix(origin: startAxisOrigin,
-                                             axis: axis,
-                                             radius: helixRadius,
-                                             pitch: spec.pitch,
-                                             turns: turns,
-                                             clockwise: spec.leftHanded) else { return nil }
-            guard let info = helixWire.curveInfo else { return nil }
-            let helixAnchor = info.startPoint
-            guard let startTangent = helixWire.tangent(at: 0) else { return nil }
-
-            // Derive radial direction at the helix start: vector from axis projection
-            // onto the axis line, to the helix anchor. Then build tangential from
-            // axis × radial (it's the in-plane vector perpendicular to the radial
-            // and the axis; we keep it even though we don't strictly need it for
-            // the profile wire now).
-            let anchorOffset = helixAnchor - axisOrigin
-            let axialComponent = simd_dot(anchorOffset, axis) * axis
-            let radial = anchorOffset - axialComponent
-            let radialLen = simd_length(radial)
-            guard radialLen > 1e-9 else { return nil }
-            let radialUnit = radial / radialLen
-            let tangentialUnit = simd_normalize(simd_cross(axis, radialUnit))
-
-            // Build a V-profile consistent with the ACTUAL helix tangent (accounts
-            // for whatever default X-direction OCCT picked internally).
-            let profileBuilder = ThreadCutterProfile(helixAnchor: helixAnchor,
-                                                      axisDirection: axis,
-                                                      radialDirection: radialUnit,
-                                                      tangentialDirection: tangentialUnit,
-                                                      radius: helixRadius,
-                                                      pitch: spec.pitch,
-                                                      helixTangent: startTangent)
-            guard let profile = profileBuilder.wire(spec: spec, apexSign: apexSign) else {
-                return nil
-            }
-            guard let cutter = Shape.pipeShell(spine: helixWire, profile: profile,
-                                                mode: .correctedFrenet) else {
+        for s in 0..<starts {
+            // Multi-start: distinct helices share the axis, offset by an angular phase.
+            let phase = 2 * Double.pi * Double(s) / Double(starts)
+            guard let cutter = Shape.screwSweptThreadCutter(
+                axisOrigin: axisOrigin, axis: axis, radial0: radial0, tangential0: tangential0,
+                spec: spec, turns: turns, apexSign: apexSign, helixRadius: helixRadius,
+                phase: phase, handed: handed, nSections: nSections) else {
                 return nil
             }
             cutters.append(cutter)
@@ -322,21 +246,14 @@ extension Shape {
         }
         guard let threaded = self.subtracting(combinedCutter) else { return nil }
 
-        // A thread cut should not extend FAR beyond the blank. The current corrected-Frenet
-        // sweep is imperfect: it produces an asymmetric directional bulge, so even a valid
-        // external thread's bounding box overruns the blank's by a bit. Measured overruns
-        // (relative to the thread cut depth, which scales the bulge):
-        //   - valid fastener threads (M5–M10):      ~1.25 * cutDepth
-        //   - coarse worm-pitch garbage (#181-C):   ~3.1 * cutDepth  (balloons to ~2x radius,
-        //                                            self-intersects, crashes STEP export)
-        // The v1.3.4 guard used `1e-3 * extent`, far below even the valid-thread overrun, so
-        // it wrongly nil'd ordinary bolts (#189 — broke 37 downstream fastener tests). Use a
-        // `2 * cutDepth` threshold: it sits cleanly between the two populations — valid
-        // threads pass, the catastrophic balloon is still rejected. (BRepCheck reports the
-        // garbage "valid", so this envelope check is the only signal that catches it.)
-        // The proper fix is to rebuild the cutter so it does not bulge at all — #187.
+        // Safety net: a thread cut only removes material, so the result is a subset of the
+        // blank. With the screw-motion cutter (above) the result is genuinely in-envelope
+        // (overrun is only tessellation/bleed), so this rarely trips — but it still catches
+        // any pathological boolean result that BRepCheck wrongly reports "valid" before it
+        // reaches STEP export (#181-C). Tolerance one cut depth: comfortably above the clean
+        // result's tiny overrun, well below a catastrophic balloon.
         let blank = self.bounds, cut = threaded.bounds
-        let tol = 2 * spec.cutDepth
+        let tol = spec.cutDepth
         guard cut.min.x >= blank.min.x - tol, cut.min.y >= blank.min.y - tol,
               cut.min.z >= blank.min.z - tol, cut.max.x <= blank.max.x + tol,
               cut.max.y <= blank.max.y + tol, cut.max.z <= blank.max.z + tol
@@ -355,5 +272,44 @@ extension Shape {
             // radius as a reasonable approximation.
             return threaded.filleted(radius: spec.pitch * 0.5) ?? threaded
         }
+    }
+
+    /// One thread start's cutter, built by sweeping the axial ISO-68 V-profile through a
+    /// pure screw motion (rotate about the axis + translate along it) and ruled-lofting the
+    /// closely-spaced sections. Each section stays in its own axial plane, so the helicoid
+    /// is in-envelope (no pipe-shell lead bulge — #187). Ruled lofting (straight surfaces
+    /// between sections) avoids the radial overshoot that smooth-spline lofting introduces.
+    fileprivate static func screwSweptThreadCutter(
+        axisOrigin: SIMD3<Double>, axis: SIMD3<Double>,
+        radial0: SIMD3<Double>, tangential0: SIMD3<Double>,
+        spec: ThreadSpec, turns: Double, apexSign: Double, helixRadius: Double,
+        phase: Double, handed: Double, nSections: Int
+    ) -> Shape? {
+        let depth = spec.cutDepth
+        let rootHalf = spec.rootFlat / 2
+        let crestHalf = spec.crestFlat / 2
+        let bleed = max(depth * 0.05, 1e-3)
+        // apexSign −1 (external): apex inward, root bleeds outward past the shaft surface.
+        // apexSign +1 (internal): apex outward into the bore wall, root bleeds inward.
+        let rootR = helixRadius - apexSign * bleed
+        let crestR = helixRadius + apexSign * depth
+
+        var sections: [Wire] = []
+        sections.reserveCapacity(nSections + 1)
+        for i in 0...nSections {
+            let f = Double(i) / Double(nSections)
+            let theta = handed * (phase + 2 * Double.pi * turns * f)
+            let z = spec.pitch * turns * f
+            let radial = cos(theta) * radial0 + sin(theta) * tangential0
+            let axisPt = axisOrigin + z * axis
+            // Trapezoid in the (radial, axis) plane: width along the axis, depth along radial.
+            let p0 = axisPt + rootR * radial - rootHalf * axis    // root −
+            let p1 = axisPt + crestR * radial - crestHalf * axis  // crest −
+            let p2 = axisPt + crestR * radial + crestHalf * axis  // crest +
+            let p3 = axisPt + rootR * radial + rootHalf * axis    // root +
+            guard let w = Wire.polygon3D([p0, p1, p2, p3], closed: true) else { return nil }
+            sections.append(w)
+        }
+        return Shape.loft(profiles: sections, solid: true, ruled: true)
     }
 }
