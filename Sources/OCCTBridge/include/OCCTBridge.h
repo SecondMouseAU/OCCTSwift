@@ -9391,13 +9391,15 @@ OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
 
 /// Get edges by fine-grained category from a polygon-based (fast) HLR drawing.
 /// Note: IsoLine and Outline3d categories are not available for poly HLR (returns NULL).
-/// @param shape Input shape (must be triangulated)
+/// @param shape Input shape (meshed internally for the polyhedral projection)
 /// @param dirX,dirY,dirZ View direction
 /// @param category Edge category to extract
+/// @param deflection Linear mesh deflection (mm) for the internal triangulation —
+///        smaller = finer drawing (more, shorter edges), larger = coarser/faster
 /// @return Shape containing edges, or NULL if none
 OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
     double dirX, double dirY, double dirZ,
-    OCCTHLREdgeCategory category);
+    OCCTHLREdgeCategory category, double deflection);
 
 /// Get edges using the generic CompoundOfEdges API from exact HLR.
 /// @param shape Input shape
