@@ -10061,10 +10061,24 @@ extension Shape {
     }
 
     /// Get edges by fine-grained category using fast polygon-based HLR.
-    /// Note: `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are not available for poly HLR.
-    public func hlrPolyEdges(direction: SIMD3<Double>, category: HLREdgeCategory) -> Shape? {
+    ///
+    /// Polyhedral HLR projects the shape's *triangulation*, so it is dramatically faster than
+    /// exact `hlrEdges` on curved surfaces — e.g. ~48× on an analytic helicoid thread (#196).
+    /// Prefer this for 2D drawings of threaded / curved solids.
+    ///
+    /// - Parameters:
+    ///   - direction: View direction.
+    ///   - category: Edge category to extract.
+    ///   - deflection: Linear mesh deflection (mm) for the internal triangulation. Smaller = finer
+    ///     drawing (more, shorter edges); larger = coarser and faster. Default `0.1`. Meshing is
+    ///     *incremental* (`BRepMesh_IncrementalMesh`): it refines but never coarsens an existing
+    ///     triangulation, so on a shape already meshed more finely (e.g. by a prior export) this
+    ///     value is a floor, not an override.
+    /// - Note: `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are not available for poly HLR.
+    public func hlrPolyEdges(direction: SIMD3<Double>, category: HLREdgeCategory,
+                             deflection: Double = 0.1) -> Shape? {
         guard let h = OCCTHLRPolyGetEdgesByCategory(handle, direction.x, direction.y, direction.z,
-            OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue))) else { return nil }
+            OCCTHLREdgeCategory(rawValue: UInt32(category.rawValue)), deflection) else { return nil }
         return Shape(handle: h)
     }
 

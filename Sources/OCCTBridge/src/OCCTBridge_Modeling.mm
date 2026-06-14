@@ -6288,14 +6288,14 @@ OCCTShapeRef _Nullable OCCTHLRGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
 
 OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape,
     double dirX, double dirY, double dirZ,
-    OCCTHLREdgeCategory category) {
+    OCCTHLREdgeCategory category, double deflection) {
     if (!shape) return nullptr;
     // IsoLine and Outline3d not available for poly HLR
     if (category == OCCTHLREdgeVisibleIso || category == OCCTHLREdgeHiddenIso ||
         category == OCCTHLREdgeVisibleOutline3d) return nullptr;
     try {
-        // Ensure triangulation
-        BRepMesh_IncrementalMesh mesh(shape->shape, 0.1);
+        // Ensure triangulation (caller-tunable: finer = more drawing detail, coarser = faster)
+        BRepMesh_IncrementalMesh mesh(shape->shape, deflection);
 
         gp_Dir viewDir(dirX, dirY, dirZ);
         gp_Ax2 projAxis(gp_Pnt(0, 0, 0), viewDir);

@@ -2,13 +2,31 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.2
+## Current: v1.4.3
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.3 (June 2026) — fast 2D drawings of threaded solids via polyhedral HLR (closes #196)
+
+**PATCH — additive + guidance.** The v1.4.1 smooth analytic thread helicoid is HLR-hostile under
+OCCT's **exact** HLR (`hlrEdges` / `HLRBRep_Algo`): projecting its BSpline faces computes analytic
+helical silhouettes and blows up — a downstream 2D-drawing pipeline measured **~19× slower** vs the
+v1.4.0 faceted thread.
+
+**The fix is not to change the solid.** OCCT's **polyhedral** HLR (`hlrPolyEdges` / `HLRBRep_PolyAlgo`,
+already wrapped) projects the shape's *triangulation*, so it is fast on any surface — **measured ~48×
+faster** than exact HLR on an analytic M10 thread (337 ms vs 16.4 s, side view) — while the one
+analytic solid stays smooth for STEP. **Prefer `hlrPolyEdges` for 2D drawings of threaded / curved
+solids; reserve exact `hlrEdges` for analytically simple shapes.**
+
+`hlrPolyEdges(direction:category:deflection:)` now exposes the internal mesh **`deflection`** (mm,
+default `0.1`) so drawing pipelines can trade fidelity (more, shorter edges) for speed. Non-breaking —
+the default reproduces prior output. (No GPU offload needed; the polyhedral CPU path already recovers
+the speed. The broader hardcoded-constant sweep this surfaced is tracked in #197.)
 
 ### v1.4.2 (June 2026) — long full-length threads return a usable solid, not nil (closes #193)
 
