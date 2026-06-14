@@ -250,18 +250,23 @@ extension Shape {
             return self.subtracting(combined)
         }
 
-        // A sound thread cut is a valid solid, stays within the blank (a cut only removes
-        // material), and removes *some* but not *most* material. BRepCheck alone is not enough
-        // — a botched boolean (e.g. the tightly-wound M5×0.8 analytic cutter) can be "valid"
-        // yet *add* volume, so we also bound the volume delta.
+        // A sound thread cut stays within the blank (a cut only removes material) and removes
+        // *some* but not *most* of it. These two geometric checks — envelope + volume delta —
+        // are the substantive ones; a botched boolean fails one of them (e.g. the tightly-wound
+        // M5×0.8 analytic cutter comes back BRepCheck-"valid" yet *adds* volume; a long analytic
+        // cutter subtracts to a near-no-op leaving ~full blank volume — both caught here).
         //
-        // Envelope is checked on the *optimal* (tight) box, never the default Bnd_Box: the
-        // smooth analytic helicoid's default box is its BSpline convex hull, which overshoots
-        // the real surface by ~0.1–0.35 mm (pure control-pole artifact — AddOptimal returns the
-        // blank's exact extent). Checking the loose box would wrongly flag a clean analytic cut
-        // as an escape and force the screw-loft fallback for every coarse pitch.
+        // We deliberately do NOT gate on `r.isValid`. A long faceted screw-loft thread (tens of
+        // turns) can trip BRepCheck on a benign facet self-intersection yet remain dimensionally
+        // correct and STEP-exportable (#193); gating on validity would reject it and return nil
+        // for full-length bolt threads. The smooth analytic path stays valid where it applies; the
+        // faceted fallback is allowed to be invalid-but-usable.
+        //
+        // Envelope is the *optimal* (tight) box, never the default Bnd_Box: the smooth analytic
+        // helicoid's default box is its BSpline convex hull, which overshoots the real surface by
+        // ~0.1–0.35 mm (control-pole artifact — AddOptimal returns the blank's exact extent).
         func isSoundCut(_ result: Shape?) -> Bool {
-            guard let r = result, r.isValid,
+            guard let r = result,
                   let blank = self.boundingBoxOptimal(), let cut = r.boundingBoxOptimal()
             else { return false }
             let tol = 1e-2

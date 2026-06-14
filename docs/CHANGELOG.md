@@ -2,13 +2,32 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.1
+## Current: v1.4.2
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.2 (June 2026) — long full-length threads return a usable solid, not nil (closes #193)
+
+**PATCH — regression fix.** A long full-length thread (`threadedShaft` over tens of turns, e.g. an
+ISO 4017 M10×50 full-thread shank ≈ 49 turns) came back **`nil`**. No API change.
+
+**Cause.** v1.4.1's soundness gate required `Shape.isValid`. For a long thread, the two cutter paths
+both fail that gate: the smooth analytic cutter is BRepCheck-valid but, when wound over ~40+ turns,
+OCCT's boolean degenerates to a near-no-op (the result keeps ~the full blank volume — *no groove cut*);
+the faceted screw-loft fallback *does* cut the groove correctly but trips `BRepCheck` on a benign facet
+self-intersection (`isValid == false`) — exactly the #193 symptom. With both rejected, the method
+returned `nil`.
+
+**Fix.** Soundness is now judged on **geometry, not `BRepCheck`**: the cut must stay inside the blank
+(tight/optimal envelope) and remove a sane fraction of the volume. `isValid` is no longer a gate. The
+analytic no-op is still rejected (it removes ~0 material → fails the volume check), so a long thread
+falls through to the faceted screw-loft and is returned — dimensionally correct and STEP-exportable,
+as the downstream reporter confirmed. Short/medium threads still get the smooth analytic helicoid and
+remain `isValid == true`; only the long faceted fallback is allowed to be invalid-but-usable.
 
 ### v1.4.1 (June 2026) — smooth analytic thread helicoid, with screw-loft fallback (#187)
 
