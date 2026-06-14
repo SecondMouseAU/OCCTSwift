@@ -411,12 +411,13 @@ int32_t OCCTMeshGetTrianglesWithFaces(OCCTMeshRef mesh, OCCTTriangle* outTriangl
 
 // MARK: - Mesh to Shape Conversion
 
-OCCTShapeRef OCCTMeshToShape(OCCTMeshRef mesh) {
+OCCTShapeRef OCCTMeshToShapeWithTolerance(OCCTMeshRef mesh, double weldTolerance) {
     if (!mesh || mesh->indices.empty()) return nullptr;
+    if (!(weldTolerance > 0.0)) return nullptr;  // reject 0/negative/NaN
 
     try {
         // Use sewing to create a shell from triangles
-        BRepBuilderAPI_Sewing sewing(1e-6);  // Tolerance for edge merging
+        BRepBuilderAPI_Sewing sewing(weldTolerance);  // Tolerance for edge merging
 
         int32_t triCount = static_cast<int32_t>(mesh->indices.size() / 3);
 
@@ -462,6 +463,10 @@ OCCTShapeRef OCCTMeshToShape(OCCTMeshRef mesh) {
     } catch (...) {
         return nullptr;
     }
+}
+
+OCCTShapeRef OCCTMeshToShape(OCCTMeshRef mesh) {
+    return OCCTMeshToShapeWithTolerance(mesh, 1e-6);
 }
 
 // MARK: - Mesh Booleans (via B-Rep Roundtrip)

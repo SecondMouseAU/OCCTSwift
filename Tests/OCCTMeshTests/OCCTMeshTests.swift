@@ -194,6 +194,46 @@ struct MeshTests {
         #expect(shape != nil)
     }
 
+    // issue #197: Mesh.toShape weld tolerance is now caller-tunable.
+    @Test("toShape weldTolerance: default parity, guards, and large-mesh welding")
+    func meshToShapeWeldTolerance() {
+        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let mesh = box.mesh(linearDeflection: 0.5)!
+
+        // Default and an explicit 1e-6 must behave identically (non-breaking).
+        if let d = mesh.toShape(), let e = mesh.toShape(weldTolerance: 1e-6) {
+            #expect(d.edges(where: { _ in true }).count == e.edges(where: { _ in true }).count)
+        } else {
+            #expect(Bool(false), "default / explicit-1e-6 toShape returned nil")
+        }
+
+        // Non-positive tolerances are rejected (no crash, returns nil).
+        #expect(mesh.toShape(weldTolerance: 0) == nil)
+        #expect(mesh.toShape(weldTolerance: -1) == nil)
+
+        // Two coplanar triangles whose facing edges (y=0 and y=gap) are 0.5 apart — as
+        // happens when shared vertices in an imported mesh are stored as independent,
+        // slightly-differing floats. At the default 1e-6 they stay two free edges; at a
+        // scale-appropriate tolerance they weld into one, dropping the edge count.
+        let gap: Float = 0.5
+        let verts: [SIMD3<Float>] = [
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(5, 5, 0),        // triangle 1, base edge at y=0
+            SIMD3(0, gap, 0), SIMD3(10, gap, 0), SIMD3(5, -5, 0),   // triangle 2, base edge at y=gap
+        ]
+        guard let gappy = Mesh(vertices: verts, indices: [0, 1, 2, 3, 4, 5]) else {
+            #expect(Bool(false), "Failed to build gappy mesh"); return
+        }
+        if let tight = gappy.toShape(weldTolerance: 1e-6),
+           let welded = gappy.toShape(weldTolerance: 2.0) {
+            let tightEdges = tight.edges(where: { _ in true }).count
+            let weldedEdges = welded.edges(where: { _ in true }).count
+            #expect(weldedEdges < tightEdges,
+                    "scale-appropriate weld (\(weldedEdges)) should merge edges vs 1e-6 (\(tightEdges))")
+        } else {
+            #expect(Bool(false), "gappy-mesh toShape returned nil")
+        }
+    }
+
     @Test("Mesh boolean union")
     func meshBooleanUnion() {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!

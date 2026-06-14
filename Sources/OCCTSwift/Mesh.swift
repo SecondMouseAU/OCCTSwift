@@ -434,9 +434,14 @@ public final class Mesh: @unchecked Sendable {
     /// - Note: The resulting shape is a shell/compound of planar faces.
     ///         It may not be a valid solid depending on the mesh topology.
     ///
+    /// - Parameter weldTolerance: Vertex-merge tolerance used to sew adjacent triangle
+    ///   faces into a shell, in model units. This must scale with the mesh's coordinate
+    ///   magnitude — a value too small for a large-coordinate mesh leaves shared edges
+    ///   unmerged and yields an open shell. The default (`1e-6`) suits meshes around unit
+    ///   scale; raise it for large parts. Must be positive.
     /// - Returns: A `Shape` representing the mesh geometry, or `nil` on failure
-    public func toShape() -> Shape? {
-        guard let shapeHandle = OCCTMeshToShape(handle) else {
+    public func toShape(weldTolerance: Double = 1e-6) -> Shape? {
+        guard let shapeHandle = OCCTMeshToShapeWithTolerance(handle, weldTolerance) else {
             return nil
         }
         return Shape(handle: shapeHandle)

@@ -800,6 +800,13 @@ int32_t OCCTMeshGetTrianglesWithFaces(OCCTMeshRef mesh, OCCTTriangle* outTriangl
 /// @return Shape containing triangulated faces, or NULL on failure
 OCCTShapeRef OCCTMeshToShape(OCCTMeshRef mesh);
 
+/// Convert a mesh to a B-Rep shape with a caller-supplied sewing (vertex-weld) tolerance.
+/// The weld tolerance must scale with the mesh's coordinate magnitude — too small for a
+/// large-coordinate mesh leaves the shell open. @param weldTolerance edge-merge tolerance
+/// (model units); pass 1e-6 to reproduce the default behaviour of OCCTMeshToShape.
+/// @return Shape containing triangulated faces, or NULL on failure
+OCCTShapeRef OCCTMeshToShapeWithTolerance(OCCTMeshRef mesh, double weldTolerance);
+
 // MARK: - Mesh Booleans (via B-Rep roundtrip)
 
 /// Perform boolean union on two meshes

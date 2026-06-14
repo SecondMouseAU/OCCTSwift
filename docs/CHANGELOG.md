@@ -2,13 +2,23 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.4
+## Current: v1.4.5
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.5 (June 2026) — mesh→shape weld tolerance is caller-tunable (#197)
+
+**PATCH — additive, non-breaking.** `Mesh.toShape()` sewed its triangles into a shell at a
+**hardcoded `1e-6`** weld tolerance. That tolerance must scale with the mesh's coordinate
+magnitude — too small for a large-coordinate (or imprecise, imported) mesh leaves shared edges
+unmerged and silently yields an open shell. It now takes `weldTolerance: Double = 1e-6` (the
+default reproduces prior output); non-positive values return `nil`. From the #197 hardcoded-constant
+sweep — the audit (see issue) found this the one remaining genuine knob; the rest of the `1e-X`
+literals are internal correctness epsilons left as-is.
 
 ### v1.4.4 (June 2026) — mesh deflection is caller-tunable on auto-meshing utilities (#197)
 
