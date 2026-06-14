@@ -5696,13 +5696,10 @@ struct ExtendedExtrusionTests {
     }
 
     @Test func extrudeEdgeByVector() {
-        // Extrude a wire to create a face
-        let wire = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
-        if let wire {
-            let face = Shape(handle: wire.handle)
-            // Use the wire directly via bridge
-        }
-        // Simpler: extrude a face
+        // #204: the previous body wrapped a Wire's handle in a Shape
+        // (`Shape(handle: wire.handle)`), double-owning the C++ handle — both the
+        // Wire and the Shape freed it on scope exit → double-free → SIGSEGV. That
+        // block was dead code (the resulting `face` was never used). Removed.
         let rect = Wire.rectangle(width: 5, height: 5)
         if let rect {
             let face = Shape.face(from: rect)
