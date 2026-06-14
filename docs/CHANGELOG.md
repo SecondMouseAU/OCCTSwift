@@ -2,13 +2,33 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.6
+## Current: v1.4.7
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.7 (June 2026) — boolean fuzzy value + glue options (closes #202)
+
+**PATCH — additive, non-breaking.** `Shape.union` / `subtracting` / `intersection` now expose the two
+`BRepAlgoAPI_BooleanOperation` robustness levers OCCT provides for **coincident / near-tangent faces**,
+where the default boolean can silently under-subtract or inflate volume:
+
+```swift
+func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape?
+// same trailing parameters on subtracting(_:) and intersection(_:)
+```
+
+- `fuzzyValue` → `SetFuzzyValue` (tolerance-based fuzzy boolean; `0` keeps OCCT's default, negatives ignored).
+- `glue` → `SetGlue` — new `Shape.BooleanGlue` enum: `.off` (default), `.shift` (`BOPAlgo_GlueShift`),
+  `.full` (`BOPAlgo_GlueFull`). Gluing hardens & speeds up unions/cuts of solids known to share
+  coincident faces (e.g. consecutive analytic loft chunks, thin-wall shells).
+
+Defaults reproduce prior behavior exactly. Implemented via a shared templated bridge driver
+(`OCCTShapeUnionEx`/`SubtractEx`/`IntersectEx`) over the common `BRepAlgoAPI_BooleanOperation` base.
+Source-only (no xcframework change).
 
 ### v1.4.6 (June 2026) — instanced-assembly STEP writer (closes #173)
 

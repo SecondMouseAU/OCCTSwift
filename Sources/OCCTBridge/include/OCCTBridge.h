@@ -621,6 +621,13 @@ OCCTShapeRef OCCTShapeUnion(OCCTShapeRef shape1, OCCTShapeRef shape2);
 OCCTShapeRef OCCTShapeSubtract(OCCTShapeRef shape1, OCCTShapeRef shape2);
 OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2);
 
+// Boolean ops with robustness levers: fuzzyValue (tolerance-based fuzzy boolean;
+// <= 0 keeps OCCT's default), glue (0 = off, 1 = BOPAlgo_GlueShift, 2 = BOPAlgo_GlueFull;
+// glue helps when arguments share coincident faces). #202
+OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue);
+OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue);
+OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue);
+
 // MARK: - Modifications
 
 OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius);

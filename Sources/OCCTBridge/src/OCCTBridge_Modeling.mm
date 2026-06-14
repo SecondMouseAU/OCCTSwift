@@ -9759,6 +9759,47 @@ OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2) {
     }
 }
 
+// --- Boolean ops with fuzzy value + glue (#202) ---
+// Shared driver: BRepAlgoAPI_Fuse/Cut/Common all derive from
+// BRepAlgoAPI_BooleanOperation, so the option setters are identical across ops.
+template <typename BoolOpT>
+static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1, OCCTShapeRef shape2,
+                                 double fuzzyValue, int32_t glue) {
+    if (!shape1 || !shape2) return nullptr;
+    occtEnsureSignals();
+    try {
+        OCC_CATCH_SIGNALS
+        BoolOpT op;
+        TopTools_ListOfShape args;  args.Append(shape1->shape);
+        TopTools_ListOfShape tools; tools.Append(shape2->shape);
+        op.SetArguments(args);
+        op.SetTools(tools);
+        if (fuzzyValue > 0.0) op.SetFuzzyValue(fuzzyValue);
+        switch (glue) {
+            case 1:  op.SetGlue(BOPAlgo_GlueShift); break;
+            case 2:  op.SetGlue(BOPAlgo_GlueFull);  break;
+            default: op.SetGlue(BOPAlgo_GlueOff);   break;
+        }
+        op.Build();
+        if (!op.IsDone()) return nullptr;
+        return new OCCTShape(op.Shape());
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
+    return runBooleanEx<BRepAlgoAPI_Fuse>(shape1, shape2, fuzzyValue, glue);
+}
+
+OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
+    return runBooleanEx<BRepAlgoAPI_Cut>(shape1, shape2, fuzzyValue, glue);
+}
+
+OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
+    return runBooleanEx<BRepAlgoAPI_Common>(shape1, shape2, fuzzyValue, glue);
+}
+
 // MARK: - Modifications
 
 OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius) {

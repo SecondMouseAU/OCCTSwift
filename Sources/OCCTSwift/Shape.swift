@@ -481,9 +481,31 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Boolean Operations
 
+    /// Glue mode for boolean operations (`BOPAlgo_GlueEnum`).
+    ///
+    /// Gluing speeds up and hardens booleans when the arguments share **coincident
+    /// faces**, by telling the algorithm those faces touch instead of intersecting them.
+    /// Only use it when the touching faces really are coincident — gluing two solids that
+    /// genuinely interpenetrate produces a wrong result.
+    public enum BooleanGlue: Int32, Sendable {
+        /// No gluing (OCCT default — full intersection).
+        case off = 0
+        /// `BOPAlgo_GlueShift` — arguments may share coincident faces but are otherwise disjoint.
+        case shift = 1
+        /// `BOPAlgo_GlueFull` — all arguments are known to share coincident faces (fastest, strictest).
+        case full = 2
+    }
+
     /// Union (add) two shapes together.
-    public func union(_ other: Shape) -> Shape? {
-        guard let handle = OCCTShapeUnion(self.handle, other.handle) else { return nil }
+    ///
+    /// - Parameters:
+    ///   - other: The shape to fuse with `self`.
+    ///   - fuzzyValue: Tolerance-based fuzzy value (`SetFuzzyValue`). `0` (default) keeps OCCT's
+    ///     default tolerance; a small positive value (e.g. `1e-4`) helps near-tangent / nearly
+    ///     coincident faces fuse cleanly. Negative values are ignored.
+    ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
+    public func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
+        guard let handle = OCCTShapeUnionEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
         return Shape(handle: handle)
     }
 
@@ -492,14 +514,27 @@ public final class Shape: @unchecked Sendable {
     public func union(with other: Shape) -> Shape? { union(other) }
 
     /// Subtract another shape from this one.
-    public func subtracting(_ other: Shape) -> Shape? {
-        guard let handle = OCCTShapeSubtract(self.handle, other.handle) else { return nil }
+    ///
+    /// - Parameters:
+    ///   - other: The tool shape to remove from `self`.
+    ///   - fuzzyValue: Tolerance-based fuzzy value (`SetFuzzyValue`). `0` (default) keeps OCCT's
+    ///     default tolerance; raise it slightly when a thin-wall cut under-subtracts. Negative
+    ///     values are ignored.
+    ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
+    public func subtracting(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
+        guard let handle = OCCTShapeSubtractEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
         return Shape(handle: handle)
     }
 
     /// Intersection of two shapes.
-    public func intersection(_ other: Shape) -> Shape? {
-        guard let handle = OCCTShapeIntersect(self.handle, other.handle) else { return nil }
+    ///
+    /// - Parameters:
+    ///   - other: The shape to intersect with `self`.
+    ///   - fuzzyValue: Tolerance-based fuzzy value (`SetFuzzyValue`). `0` (default) keeps OCCT's
+    ///     default tolerance. Negative values are ignored.
+    ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
+    public func intersection(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
+        guard let handle = OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
         return Shape(handle: handle)
     }
 
