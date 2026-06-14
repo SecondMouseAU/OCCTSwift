@@ -201,7 +201,7 @@ OCCTSwift/
 ├── Scripts/
 │   └── build-occt.sh           # Build OCCT from source
 ├── Tests/
-│   └── OCCTSwiftTests/         # Swift Testing (2907 tests)
+│   └── OCCT<Domain>Tests/      # Per-domain Swift Testing targets (Analysis, Modeling, Surface, …)
 └── docs/                       # Documentation
 ```
 

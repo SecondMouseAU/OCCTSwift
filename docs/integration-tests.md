@@ -4,7 +4,7 @@ Comprehensive test plan for validating the full OCCTSwift wrapper (3333 operatio
 
 These tests go beyond unit tests — they exercise realistic multi-step workflows, stress edge cases, and verify end-to-end fidelity. They are implemented across the OCCTSwift ecosystem:
 
-- **OCCTSwift** (`Tests/OCCTSwiftTests/IntegrationTests.swift`) — Swift Testing framework
+- **OCCTSwift** (`Tests/OCCTIntegrationTests/`) — Swift Testing framework
 - **OCCTSwiftScripts** — standalone script variants for longer-running stress tests
 - **OCCTSwiftViewport** — visual demos that exercise the same workflows with rendering
 

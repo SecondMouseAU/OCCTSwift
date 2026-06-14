@@ -140,7 +140,7 @@ Sources/OCCTSwift/          Swift public API
 Sources/OCCTBridge/include/ C function declarations (OCCTBridge.h)
 Sources/OCCTBridge/src/     Objective-C++ implementations (OCCTBridge.mm)
 Libraries/OCCT.xcframework  Pre-built OCCT 8.0.0 static library (arm64)
-Tests/OCCTSwiftTests/       All tests (Swift Testing framework)
+Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```
 
 Three-layer design: **Swift API** -> **C bridge** (Objective-C++) -> **OCCT C++**
