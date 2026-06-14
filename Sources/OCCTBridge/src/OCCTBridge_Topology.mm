@@ -1806,10 +1806,10 @@ int32_t OCCTBoundSortBoxCompare(OCCTBoundSortBoxRef bsb,
 
 int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef shape, double tolerance,
                                         int32_t* outFaceIdx1, int32_t* outFaceIdx2,
-                                        int32_t maxPairs) {
+                                        int32_t maxPairs, double deflection) {
     if (!shape || !outFaceIdx1 || !outFaceIdx2 || maxPairs <= 0) return -1;
     try {
-        BRepMesh_IncrementalMesh mesher(shape->shape, 0.1);
+        BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
 
         BRepExtrema_SelfIntersection selfInt(shape->shape, tolerance);
         selfInt.Perform();

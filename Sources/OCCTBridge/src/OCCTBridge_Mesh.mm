@@ -1203,11 +1203,11 @@ OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreate(void) {
     } catch (...) { return nullptr; }
 }
 
-OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRef _Nonnull shapeRef) {
+OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRef _Nonnull shapeRef, double deflection) {
     try {
         const TopoDS_Shape& shape = *(const TopoDS_Shape*)shapeRef;
         // Mesh the shape first
-        BRepMesh_IncrementalMesh mesh(shape, 0.1);
+        BRepMesh_IncrementalMesh mesh(shape, deflection);
         // Find first face triangulation
         for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
             TopoDS_Face face = TopoDS::Face(exp.Current());
@@ -1365,11 +1365,11 @@ OCCTPoint3D OCCTCoordSystemUpDirection(int system) {
 // MARK: - v0.100: RWStl direct binary/ASCII STL I/O
 // --- RWStl direct binary/ASCII STL I/O ---
 
-bool OCCTShapeWriteSTLBinary(OCCTShapeRef shape, const char* filePath) {
+bool OCCTShapeWriteSTLBinary(OCCTShapeRef shape, const char* filePath, double deflection) {
     if (!shape || !filePath) return false;
     try {
         // Mesh the shape
-        BRepMesh_IncrementalMesh mesher(shape->shape, 0.1);
+        BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
 
         // Collect first non-null triangulation
         TopExp_Explorer ex(shape->shape, TopAbs_FACE);
@@ -1385,10 +1385,10 @@ bool OCCTShapeWriteSTLBinary(OCCTShapeRef shape, const char* filePath) {
     } catch (...) { return false; }
 }
 
-bool OCCTShapeWriteSTLAscii(OCCTShapeRef shape, const char* filePath) {
+bool OCCTShapeWriteSTLAscii(OCCTShapeRef shape, const char* filePath, double deflection) {
     if (!shape || !filePath) return false;
     try {
-        BRepMesh_IncrementalMesh mesher(shape->shape, 0.1);
+        BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
 
         TopExp_Explorer ex(shape->shape, TopAbs_FACE);
         for (; ex.More(); ex.Next()) {
