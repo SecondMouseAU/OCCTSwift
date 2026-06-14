@@ -3391,10 +3391,11 @@ extension Shape {
         public let face2Index: Int
     }
 
-    /// Detect face pairs between this shape and another that are within tolerance
-    public func proximityFaces(with other: Shape, tolerance: Double) -> [FaceProximityPair] {
+    /// Detect face pairs between this shape and another that are within tolerance.
+    /// - Parameter deflection: Linear mesh deflection (mm) for the proximity triangulation. Default `0.1`.
+    public func proximityFaces(with other: Shape, tolerance: Double, deflection: Double = 0.1) -> [FaceProximityPair] {
         var buffer = [OCCTFaceProximityPair](repeating: OCCTFaceProximityPair(), count: 256)
-        let count = OCCTShapeProximity(handle, other.handle, tolerance, &buffer, 256)
+        let count = OCCTShapeProximity(handle, other.handle, tolerance, &buffer, 256, deflection)
 
         var pairs = [FaceProximityPair]()
         for i in 0..<Int(count) {
@@ -11800,8 +11801,9 @@ public final class CoherentTriangulation: @unchecked Sendable {
     }
 
     /// Create a coherent triangulation from a meshed shape's first face triangulation.
-    public static func createFromMesh(_ shape: Shape) -> CoherentTriangulation? {
-        guard let ref = OCCTCoherentTriangulationCreateFromMesh(shape.handle) else { return nil }
+    /// - Parameter deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1) -> CoherentTriangulation? {
+        guard let ref = OCCTCoherentTriangulationCreateFromMesh(shape.handle, deflection) else { return nil }
         return CoherentTriangulation(handle: ref)
     }
 

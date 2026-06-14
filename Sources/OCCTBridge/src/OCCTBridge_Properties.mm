@@ -592,13 +592,14 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
 int32_t OCCTShapeProximity(OCCTShapeRef shape1, OCCTShapeRef shape2,
                             double tolerance,
                             OCCTFaceProximityPair* outPairs,
-                            int32_t maxPairs) {
+                            int32_t maxPairs,
+                            double deflection) {
     if (!shape1 || !shape2 || !outPairs || maxPairs <= 0) return 0;
 
     try {
         // BRepExtrema_ShapeProximity requires triangulated shapes
-        BRepMesh_IncrementalMesh mesh1(shape1->shape, 0.1);
-        BRepMesh_IncrementalMesh mesh2(shape2->shape, 0.1);
+        BRepMesh_IncrementalMesh mesh1(shape1->shape, deflection);
+        BRepMesh_IncrementalMesh mesh2(shape2->shape, deflection);
 
         BRepExtrema_ShapeProximity prox(shape1->shape, shape2->shape, (Standard_Real)tolerance);
         prox.Perform();

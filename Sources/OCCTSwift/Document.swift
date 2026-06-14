@@ -6482,19 +6482,23 @@ extension Shape {
 extension Shape {
 
     /// Write this shape's triangulation to a binary STL file.
-    /// The shape is meshed automatically with 0.1 deflection.
-    /// - Parameter filePath: Output file path.
+    /// The shape is meshed automatically.
+    /// - Parameters:
+    ///   - filePath: Output file path.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
     /// - Returns: true on success.
-    public func writeSTLBinary(to filePath: String) -> Bool {
-        OCCTShapeWriteSTLBinary(handle, filePath)
+    public func writeSTLBinary(to filePath: String, deflection: Double = 0.1) -> Bool {
+        OCCTShapeWriteSTLBinary(handle, filePath, deflection)
     }
 
     /// Write this shape's triangulation to an ASCII STL file.
-    /// The shape is meshed automatically with 0.1 deflection.
-    /// - Parameter filePath: Output file path.
+    /// The shape is meshed automatically.
+    /// - Parameters:
+    ///   - filePath: Output file path.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
     /// - Returns: true on success.
-    public func writeSTLAscii(to filePath: String) -> Bool {
-        OCCTShapeWriteSTLAscii(handle, filePath)
+    public func writeSTLAscii(to filePath: String, deflection: Double = 0.1) -> Bool {
+        OCCTShapeWriteSTLAscii(handle, filePath, deflection)
     }
 
     /// Read an STL file and return as a triangulated shape.
@@ -6541,12 +6545,14 @@ extension Shape {
     /// - Parameters:
     ///   - tolerance: Overlap tolerance (default: 0.0).
     ///   - maxPairs: Maximum number of pairs to return (default: 100).
+    ///   - deflection: Linear mesh deflection (mm) for the detection triangulation. Default `0.1`.
     /// - Returns: Array of overlapping face index pairs, empty if none found.
     public func selfIntersectionPairs(tolerance: Double = 0.0,
-                                       maxPairs: Int = 100) -> [OverlapPair] {
+                                       maxPairs: Int = 100,
+                                       deflection: Double = 0.1) -> [OverlapPair] {
         var idx1 = [Int32](repeating: 0, count: maxPairs)
         var idx2 = [Int32](repeating: 0, count: maxPairs)
-        let count = OCCTShapeSelfIntersectionPairs(handle, tolerance, &idx1, &idx2, Int32(maxPairs))
+        let count = OCCTShapeSelfIntersectionPairs(handle, tolerance, &idx1, &idx2, Int32(maxPairs), deflection)
         guard count > 0 else { return [] }
         return (0..<Int(count)).map {
             OverlapPair(faceIndex1: Int(idx1[$0]), faceIndex2: Int(idx2[$0]))

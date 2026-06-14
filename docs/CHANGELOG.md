@@ -2,13 +2,28 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.3
+## Current: v1.4.4
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.4 (June 2026) — mesh deflection is caller-tunable on auto-meshing utilities (#197)
+
+**PATCH — additive, non-breaking.** Several utility functions auto-triangulated their input at a
+**hardcoded `0.1` mm** deflection, leaving callers no control over fidelity/speed. Each now takes a
+`deflection: Double = 0.1` parameter (the default reproduces prior output). First slice of the #197
+hardcoded-constant sweep — the *mesh deflection* area:
+
+- `Shape.writeSTLBinary(to:deflection:)` / `writeSTLAscii(to:deflection:)` — STL export resolution.
+- `Shape.proximityFaces(with:tolerance:deflection:)` — proximity triangulation.
+- `Shape.selfIntersectionPairs(tolerance:maxPairs:deflection:)` — self-intersection triangulation.
+- `CoherentTriangulation.createFromMesh(_:deflection:)`.
+
+(The primary STL path `Exporter.writeSTL(shape:to:deflection:)` already exposed this.) Source-only;
+remaining #197 areas — tolerances, sampling counts — tracked in the issue.
 
 ### v1.4.3 (June 2026) — fast 2D drawings of threaded solids via polyhedral HLR (closes #196)
 

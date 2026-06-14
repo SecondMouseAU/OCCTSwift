@@ -2685,7 +2685,8 @@ typedef struct {
 int32_t OCCTShapeProximity(OCCTShapeRef shape1, OCCTShapeRef shape2,
                             double tolerance,
                             OCCTFaceProximityPair* outPairs,
-                            int32_t maxPairs);
+                            int32_t maxPairs,
+                            double deflection);
 
 /// Check if a shape self-intersects
 bool OCCTShapeSelfIntersects(OCCTShapeRef shape);
@@ -10315,7 +10316,7 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
 typedef void* OCCTCoherentTriangulationRef;
 
 OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreate(void);
-OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRef _Nonnull shapeRef);
+OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRef _Nonnull shapeRef, double deflection);
 int OCCTCoherentTriangulationSetNode(OCCTCoherentTriangulationRef _Nonnull ref, double x, double y, double z);
 bool OCCTCoherentTriangulationAddTriangle(OCCTCoherentTriangulationRef _Nonnull ref, int n0, int n1, int n2);
 bool OCCTCoherentTriangulationRemoveTriangle(OCCTCoherentTriangulationRef _Nonnull ref, int triIndex);
@@ -13414,14 +13415,16 @@ OCCTShapeRef _Nullable OCCTShapeFixSmallEdges(OCCTShapeRef _Nonnull shape, doubl
 /// Write a shape's triangulation to binary STL file. Shape is meshed automatically.
 /// @param shape The shape to write
 /// @param filePath Output file path
+/// @param deflection Linear mesh deflection (mm) for the auto-triangulation
 /// @return true on success
-bool OCCTShapeWriteSTLBinary(OCCTShapeRef _Nonnull shape, const char* _Nonnull filePath);
+bool OCCTShapeWriteSTLBinary(OCCTShapeRef _Nonnull shape, const char* _Nonnull filePath, double deflection);
 
 /// Write a shape's triangulation to ASCII STL file. Shape is meshed automatically.
 /// @param shape The shape to write
 /// @param filePath Output file path
+/// @param deflection Linear mesh deflection (mm) for the auto-triangulation
 /// @return true on success
-bool OCCTShapeWriteSTLAscii(OCCTShapeRef _Nonnull shape, const char* _Nonnull filePath);
+bool OCCTShapeWriteSTLAscii(OCCTShapeRef _Nonnull shape, const char* _Nonnull filePath, double deflection);
 
 /// Read an STL file and return as a triangulated shape (face with triangulation).
 /// @param filePath Input STL file path
@@ -13450,7 +13453,7 @@ bool OCCTCurve3DIsPeriodicSA(OCCTCurve3DRef _Nonnull curve);
 int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef _Nonnull shape, double tolerance,
                                         int32_t* _Nonnull outFaceIdx1,
                                         int32_t* _Nonnull outFaceIdx2,
-                                        int32_t maxPairs);
+                                        int32_t maxPairs, double deflection);
 
 // --- Geom_OffsetCurve basis curve ---
 
