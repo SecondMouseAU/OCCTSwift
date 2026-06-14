@@ -544,6 +544,36 @@ public enum Exporter {
         }
     }
 
+    // MARK: - Instanced Assembly STEP Export (#173)
+
+    /// Write an XCAF `Document` as a **product-structured STEP assembly**.
+    ///
+    /// Unlike `writeSTEP(shape:to:)`, which flattens geometry, this preserves the document's
+    /// assembly tree: each unique part label is written once as a STEP product
+    /// (`PRODUCT` / `PRODUCT_DEFINITION`) and is referenced by its located component
+    /// occurrences (`NEXT_ASSEMBLY_USAGE_OCCURRENCE` + each component's `TopLoc_Location`).
+    /// File size therefore scales with the number of *unique parts*, not total placements —
+    /// a part placed N times stores one `MANIFOLD_SOLID_BREP`, not N copies — and the file
+    /// opens as an editable assembly in standard CAD viewers. Component names and colors set
+    /// on the document are written too.
+    ///
+    /// Build the assembly with `Document.addShape(_:makeAssembly:)` for the part prototypes
+    /// and `Document.addComponent(assemblyLabelId:shapeLabelId:matrix:)` for each full-rigid
+    /// (rotation + translation) placement, then call this. The output uses the AP214 schema,
+    /// matching the rest of the STEP writers.
+    ///
+    /// - Parameters:
+    ///   - document: The XCAF document holding the assembly tree.
+    ///   - url: Destination file URL.
+    /// - Throws: `ExportError.invalidPath` for an empty path, `ExportError.exportFailed`
+    ///   if the STEP transfer/write fails.
+    public static func writeSTEPAssembly(_ document: Document, to url: URL) throws {
+        guard !url.path.isEmpty else { throw ExportError.invalidPath }
+        if !document.writeSTEP(to: url) {
+            throw ExportError.exportFailed("STEP assembly export to \(url.lastPathComponent) failed")
+        }
+    }
+
     // MARK: - STEP Optimization (v0.28.0)
 
     /// Optimize a STEP file by merging duplicate geometric entities.

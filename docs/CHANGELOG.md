@@ -2,13 +2,28 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.5
+## Current: v1.4.6
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.4.6 (June 2026) — instanced-assembly STEP writer (closes #173)
+
+**PATCH — additive, non-breaking.** New `Exporter.writeSTEPAssembly(_ document: Document, to url:)`
+writes an XCAF `Document` as a **product-structured STEP assembly**: each unique part label
+becomes one STEP product, referenced by its located component occurrences
+(`NEXT_ASSEMBLY_USAGE_OCCURRENCE` + each component's `TopLoc_Location`). A part placed N times
+stores **one** `MANIFOLD_SOLID_BREP`, not N copies — file size scales with unique parts, and the
+result opens as an editable assembly in standard CAD viewers (AP214). Names/colors set on the
+document are preserved.
+
+The underlying capability already existed (`Document.writeSTEP` transfers the XCAF doc via
+`STEPCAFControl_Writer`, and full rotation+translation placement landed in #174); this adds the
+named, documented, throwing convenience entry point #173 asked for, plus instancing + round-trip
+tests.
 
 ### v1.4.5 (June 2026) — mesh→shape weld tolerance is caller-tunable (#197)
 
