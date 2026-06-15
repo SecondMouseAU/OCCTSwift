@@ -9759,12 +9759,41 @@ OCCTShapeRef OCCTShapeIntersect(OCCTShapeRef shape1, OCCTShapeRef shape2) {
     }
 }
 
-// --- Boolean ops with fuzzy value + glue (#202) ---
+// --- Boolean ops with fuzzy value + glue + timeout (#202, #206) ---
+#include <Message_ProgressIndicator.hxx>
+#include <Message_ProgressRange.hxx>
+#include <Message_ProgressScope.hxx>
+#include <chrono>
+
+// Wall-clock watchdog: asks the BOP to stop once a deadline passes. OCCT's
+// BRepAlgoAPI_*::Build(range) polls UserBreak() at scope boundaries and leaves
+// IsDone() == false when it trips — so a pathological operand that would
+// otherwise spin forever (#206: self-intersecting B-spline loft) returns
+// promptly instead of hanging. Verified to interrupt the real #206 operands.
+class OCCTBoolTimeoutBreaker : public Message_ProgressIndicator {
+public:
+    explicit OCCTBoolTimeoutBreaker(double seconds)
+        : myDeadline(std::chrono::steady_clock::now()
+            + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                std::chrono::duration<double>(seconds))) {}
+
+    Standard_Boolean UserBreak() override {
+        return (std::chrono::steady_clock::now() >= myDeadline) ? Standard_True : Standard_False;
+    }
+    void Show(const Message_ProgressScope&, const Standard_Boolean) override {}
+
+    DEFINE_STANDARD_RTTI_INLINE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
+private:
+    std::chrono::steady_clock::time_point myDeadline;
+};
+DEFINE_STANDARD_HANDLE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
+
 // Shared driver: BRepAlgoAPI_Fuse/Cut/Common all derive from
 // BRepAlgoAPI_BooleanOperation, so the option setters are identical across ops.
+// timeoutSeconds <= 0 means no time bound (run to completion).
 template <typename BoolOpT>
 static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1, OCCTShapeRef shape2,
-                                 double fuzzyValue, int32_t glue) {
+                                 double fuzzyValue, int32_t glue, double timeoutSeconds) {
     if (!shape1 || !shape2) return nullptr;
     occtEnsureSignals();
     try {
@@ -9780,7 +9809,15 @@ static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1, OCCTShapeRef shape2,
             case 2:  op.SetGlue(BOPAlgo_GlueFull);  break;
             default: op.SetGlue(BOPAlgo_GlueOff);   break;
         }
-        op.Build();
+        if (timeoutSeconds > 0.0) {
+            Handle(OCCTBoolTimeoutBreaker) breaker = new OCCTBoolTimeoutBreaker(timeoutSeconds);
+            Message_ProgressRange range = breaker->Start();
+            op.Build(range);
+        } else {
+            op.Build();
+        }
+        // IsDone() is false both on genuine failure and when the watchdog
+        // interrupted the build — either way there is no usable result.
         if (!op.IsDone()) return nullptr;
         return new OCCTShape(op.Shape());
     } catch (...) {
@@ -9788,16 +9825,16 @@ static OCCTShapeRef runBooleanEx(OCCTShapeRef shape1, OCCTShapeRef shape2,
     }
 }
 
-OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
-    return runBooleanEx<BRepAlgoAPI_Fuse>(shape1, shape2, fuzzyValue, glue);
+OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds) {
+    return runBooleanEx<BRepAlgoAPI_Fuse>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
 }
 
-OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
-    return runBooleanEx<BRepAlgoAPI_Cut>(shape1, shape2, fuzzyValue, glue);
+OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds) {
+    return runBooleanEx<BRepAlgoAPI_Cut>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
 }
 
-OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue) {
-    return runBooleanEx<BRepAlgoAPI_Common>(shape1, shape2, fuzzyValue, glue);
+OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds) {
+    return runBooleanEx<BRepAlgoAPI_Common>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
 }
 
 // MARK: - Modifications

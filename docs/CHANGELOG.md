@@ -2,13 +2,41 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.4.7
+## Current: v1.5.0
 
 **4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.5.0 (June 2026) — boolean ops are time-bounded; never hang indefinitely (closes #206)
+
+**MINOR — additive param + a default-behavior change.** `Shape.union` / `subtracting` /
+`intersection` could **hang indefinitely** on a self-intersecting / inside-out operand — e.g. a
+B-spline solid from `loft(ruled: false)` that reports `isValidSolid == true` yet poisons the
+boolean. `BRepAlgoAPI_Cut` on the reported operands spun for >5 min on a 66-face input.
+
+The boolean ops now run under a **wall-clock watchdog** (OCCT's `Message_ProgressRange` +
+`UserBreak`) and return `nil` at a deadline instead of spinning forever:
+
+```swift
+func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+           timeout: Double = Shape.defaultBooleanTimeout) -> Shape?   // and subtracting / intersection
+```
+
+- **`timeout`** — seconds; default `Shape.defaultBooleanTimeout` (**120s**). `0`/negative = unbounded
+  (the prior behavior). Verified to interrupt the real #206 operands (was an infinite hang → now `nil`).
+- **Default-behavior change:** a boolean that genuinely runs longer than 120s now returns `nil`
+  instead of completing/blocking. Pathological hangs are bounded; raise `timeout` (or pass `0`) for
+  legitimately heavy booleans.
+
+**Why a timeout and not an operand pre-check:** the cheap detectors don't catch the reported
+`env` operand — `BRepCheck_Analyzer` reports it *valid* and its volume sits within its bounding box;
+only `BOPAlgo_ArgumentAnalyzer` flags it, and that itself ran >50s on the input. The watchdog is the
+only general, bounded guard. (The separate `cav` operand has negative volume, so a downstream
+`volume > 0 && analyzeValidity(geometryChecks:)` gate remains a useful cheap fast-fail and is still
+recommended.) Source-only (no xcframework change).
 
 ### v1.4.7 (June 2026) — boolean fuzzy value + glue options (closes #202)
 

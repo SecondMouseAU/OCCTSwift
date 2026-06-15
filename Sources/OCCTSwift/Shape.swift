@@ -496,6 +496,12 @@ public final class Shape: @unchecked Sendable {
         case full = 2
     }
 
+    /// Default wall-clock bound (seconds) for the boolean ops. A self-intersecting /
+    /// inside-out operand (e.g. from `loft(ruled: false)`) can make `BRepAlgoAPI_Cut`
+    /// spin indefinitely; the boolean ops abort and return `nil` once this elapses rather
+    /// than hanging a pipeline. Override per call; pass `0` (or negative) to disable. (#206)
+    public static let defaultBooleanTimeout: Double = 120
+
     /// Union (add) two shapes together.
     ///
     /// - Parameters:
@@ -504,8 +510,11 @@ public final class Shape: @unchecked Sendable {
     ///     default tolerance; a small positive value (e.g. `1e-4`) helps near-tangent / nearly
     ///     coincident faces fuse cleanly. Negative values are ignored.
     ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
-    public func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
-        guard let handle = OCCTShapeUnionEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
+    ///   - timeout: Wall-clock bound in seconds (default ``defaultBooleanTimeout``, 120s). Returns
+    ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
+    public func union(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                      timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        guard let handle = OCCTShapeUnionEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout) else { return nil }
         return Shape(handle: handle)
     }
 
@@ -521,8 +530,11 @@ public final class Shape: @unchecked Sendable {
     ///     default tolerance; raise it slightly when a thin-wall cut under-subtracts. Negative
     ///     values are ignored.
     ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
-    public func subtracting(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
-        guard let handle = OCCTShapeSubtractEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
+    ///   - timeout: Wall-clock bound in seconds (default ``defaultBooleanTimeout``, 120s). Returns
+    ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
+    public func subtracting(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                            timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        guard let handle = OCCTShapeSubtractEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout) else { return nil }
         return Shape(handle: handle)
     }
 
@@ -533,8 +545,11 @@ public final class Shape: @unchecked Sendable {
     ///   - fuzzyValue: Tolerance-based fuzzy value (`SetFuzzyValue`). `0` (default) keeps OCCT's
     ///     default tolerance. Negative values are ignored.
     ///   - glue: Glue mode for coincident-face arguments (default `.off`). See ``BooleanGlue``.
-    public func intersection(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off) -> Shape? {
-        guard let handle = OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue) else { return nil }
+    ///   - timeout: Wall-clock bound in seconds (default ``defaultBooleanTimeout``, 120s). Returns
+    ///     `nil` if the operation doesn't finish in time instead of hanging. `0`/negative = unbounded.
+    public func intersection(_ other: Shape, fuzzyValue: Double = 0, glue: BooleanGlue = .off,
+                             timeout: Double = Shape.defaultBooleanTimeout) -> Shape? {
+        guard let handle = OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout) else { return nil }
         return Shape(handle: handle)
     }
 
