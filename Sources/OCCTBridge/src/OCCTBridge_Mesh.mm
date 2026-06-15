@@ -191,6 +191,7 @@ OCCTMeshParameters OCCTMeshParametersDefault(void) {
     params.internalVertices = true;
     params.controlSurfaceDeflection = true;
     params.adjustMinSize = false;
+    params.allowQualityDecrease = false;
     return params;
 }
 
@@ -211,6 +212,7 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
         meshParams.InternalVerticesMode = params.internalVertices ? Standard_True : Standard_False;
         meshParams.ControlSurfaceDeflection = params.controlSurfaceDeflection ? Standard_True : Standard_False;
         meshParams.AdjustMinSize = params.adjustMinSize ? Standard_True : Standard_False;
+        meshParams.AllowQualityDecrease = params.allowQualityDecrease ? Standard_True : Standard_False;
 
         // Generate mesh with enhanced parameters
         BRepMesh_IncrementalMesh mesher(shape->shape, meshParams);

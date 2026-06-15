@@ -294,7 +294,33 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance) {
 
 #include <BRepClass3d_SolidClassifier.hxx>
 #include <BRepClass_FaceClassifier.hxx>
+#include <BRepClass3d.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Solid.hxx>
+#include <TopoDS_Shell.hxx>
 #include <TopAbs_State.hxx>
+
+// Outer shell of a solid (BRepClass3d::OuterShell) — distinguishes the outer body from
+// internal void shells of a multi-shell solid. #211
+OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape) {
+    if (!shape) return nullptr;
+    try {
+        TopoDS_Solid solid;
+        if (shape->shape.ShapeType() == TopAbs_SOLID) {
+            solid = TopoDS::Solid(shape->shape);
+        } else {
+            // Accept a compound/compsolid wrapping a single solid.
+            TopExp_Explorer ex(shape->shape, TopAbs_SOLID);
+            if (!ex.More()) return nullptr;
+            solid = TopoDS::Solid(ex.Current());
+        }
+        TopoDS_Shell shell = BRepClass3d::OuterShell(solid);
+        if (shell.IsNull()) return nullptr;
+        return new OCCTShape(shell);
+    } catch (...) {
+        return nullptr;
+    }
+}
 
 static int32_t mapTopAbsState(TopAbs_State state) {
     switch (state) {

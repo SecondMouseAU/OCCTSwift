@@ -5582,3 +5582,66 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
         return ref;
     } catch (...) { return nullptr; }
 }
+
+// MARK: - CompCurve adaptor (#211): a multi-edge wire as one arc-length-parameterized curve
+#include <BRepAdaptor_CompCurve.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
+
+// Opaque handle: holds the adaptor by value (BRepAdaptor_CompCurve(const TopoDS_Wire&)).
+struct OCCTCompCurve {
+    BRepAdaptor_CompCurve adaptor;
+    explicit OCCTCompCurve(const TopoDS_Wire& w) : adaptor(w) {}
+};
+
+OCCTCompCurveRef OCCTCompCurveCreate(OCCTWireRef wire) {
+    if (!wire) return nullptr;
+    try { return new OCCTCompCurve(wire->wire); }
+    catch (...) { return nullptr; }
+}
+
+void OCCTCompCurveRelease(OCCTCompCurveRef ref) { delete ref; }
+
+double OCCTCompCurveLength(OCCTCompCurveRef ref) {
+    if (!ref) return -1.0;
+    try { return GCPnts_AbscissaPoint::Length(ref->adaptor); }
+    catch (...) { return -1.0; }
+}
+
+void OCCTCompCurveParamRange(OCCTCompCurveRef ref, double* first, double* last) {
+    if (!ref) return;
+    try {
+        if (first) *first = ref->adaptor.FirstParameter();
+        if (last)  *last  = ref->adaptor.LastParameter();
+    } catch (...) {}
+}
+
+bool OCCTCompCurvePointAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
+    if (!ref) return false;
+    try {
+        gp_Pnt p = ref->adaptor.Value(u);
+        if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTCompCurveTangentAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
+    if (!ref) return false;
+    try {
+        gp_Pnt p; gp_Vec d1;
+        ref->adaptor.D1(u, p, d1);
+        if (d1.Magnitude() < 1e-12) return false;   // degenerate (e.g. cusp)
+        gp_Dir dir(d1);
+        if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTCompCurveParamAtAbscissa(OCCTCompCurveRef ref, double s, double* outParam) {
+    if (!ref) return false;
+    try {
+        GCPnts_AbscissaPoint ap(ref->adaptor, s, ref->adaptor.FirstParameter());
+        if (!ap.IsDone()) return false;
+        if (outParam) *outParam = ap.Parameter();
+        return true;
+    } catch (...) { return false; }
+}

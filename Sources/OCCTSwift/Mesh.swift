@@ -52,6 +52,13 @@ public struct MeshParameters: Sendable {
     /// Auto-adjust minSize based on edge size.
     public var adjustMinSize: Bool
 
+    /// Allow replacing an existing **finer** triangulation with a coarser one
+    /// (`IMeshTools_Parameters::AllowQualityDecrease`). When re-meshing an already-tessellated
+    /// shape at a different deflection, OCCT keeps the existing mesh if it's "good enough"
+    /// unless this is `true` — set it when you need the new deflection to actually take effect
+    /// (e.g. a deviation re-measure at a finer/coarser resolution). Default `false`. (#211)
+    public var allowQualityDecrease: Bool = false
+
     /// Default mesh parameters suitable for interactive display.
     public static var `default`: MeshParameters {
         MeshParameters(
@@ -64,7 +71,8 @@ public struct MeshParameters: Sendable {
             inParallel: true,
             internalVertices: true,
             controlSurfaceDeflection: true,
-            adjustMinSize: false
+            adjustMinSize: false,
+            allowQualityDecrease: false
         )
     }
 
@@ -81,6 +89,7 @@ public struct MeshParameters: Sendable {
         params.internalVertices = internalVertices
         params.controlSurfaceDeflection = controlSurfaceDeflection
         params.adjustMinSize = adjustMinSize
+        params.allowQualityDecrease = allowQualityDecrease
         return params
     }
 }
