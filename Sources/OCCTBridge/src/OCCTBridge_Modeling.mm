@@ -9778,13 +9778,16 @@ public:
                 std::chrono::duration<double>(seconds))) {}
 
     Standard_Boolean UserBreak() override {
-        return (std::chrono::steady_clock::now() >= myDeadline) ? Standard_True : Standard_False;
+        if (std::chrono::steady_clock::now() >= myDeadline) { myTripped = true; return Standard_True; }
+        return Standard_False;
     }
     void Show(const Message_ProgressScope&, const Standard_Boolean) override {}
+    bool tripped() const { return myTripped; }   // deadline was hit at least once
 
     DEFINE_STANDARD_RTTI_INLINE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 private:
     std::chrono::steady_clock::time_point myDeadline;
+    bool myTripped = false;
 };
 DEFINE_STANDARD_HANDLE(OCCTBoolTimeoutBreaker, Message_ProgressIndicator)
 
@@ -9835,6 +9838,42 @@ OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, doubl
 
 OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds) {
     return runBooleanEx<BRepAlgoAPI_Common>(shape1, shape2, fuzzyValue, glue, timeoutSeconds);
+}
+
+// --- Self-intersection check (#208) ---
+#include <BOPAlgo_ArgumentAnalyzer.hxx>
+
+// Reports whether a shape self-intersects (overlapping/interfering sub-faces), the
+// defect that BRepCheck_Analyzer misses but that poisons downstream booleans (#206).
+// BOPAlgo_ArgumentAnalyzer's self-interference test is authoritative but can be slow
+// (>10s on the #206 B-spline operands) or unbounded, so it runs with StopOnFirstFaulty
+// and the same wall-clock watchdog as the booleans.
+//   returns:  1 = self-intersects,  0 = clean,  -1 = indeterminate (timed out / errored)
+int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds) {
+    if (!shape) return -1;
+    occtEnsureSignals();
+    try {
+        OCC_CATCH_SIGNALS
+        BOPAlgo_ArgumentAnalyzer aa;
+        aa.SetShape1(shape->shape);
+        aa.ArgumentTypeMode()  = Standard_True;   // basic argument sanity
+        aa.SelfInterMode()     = Standard_True;   // the self-interference test we care about
+        aa.StopOnFirstFaulty() = Standard_True;   // bail as soon as one fault is found
+        aa.SetRunParallel(Standard_False);
+        Handle(OCCTBoolTimeoutBreaker) breaker;
+        if (timeoutSeconds > 0.0) {
+            breaker = new OCCTBoolTimeoutBreaker(timeoutSeconds);
+            Message_ProgressRange range = breaker->Start();
+            aa.Perform(range);
+        } else {
+            aa.Perform();
+        }
+        if (aa.HasFaulty()) return 1;                              // conclusive
+        if (!breaker.IsNull() && breaker->tripped()) return -1;    // analysis may be incomplete
+        return 0;                                                  // completed clean
+    } catch (...) {
+        return -1;  // interrupted by the watchdog, or analyzer error → indeterminate
+    }
 }
 
 // MARK: - Modifications

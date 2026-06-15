@@ -2,13 +2,36 @@
 
 All notable changes to OCCTSwift.
 
-## Current: v1.5.0
+## Current: v1.5.1
 
-**4,287 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
+**4,288 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.5.1 (June 2026) — `Shape.isSelfIntersecting(timeout:)` — bounded self-intersection check (closes #208)
+
+**PATCH — additive, non-breaking.** Follow-up to #206. `isValidSolid` is a topology-level check
+(`BRepCheck_Analyzer`) that **misses global self-intersection** — a self-intersecting B-spline solid
+from `loft(ruled: false)` can report `isValidSolid == true` yet poison downstream booleans. New:
+
+```swift
+func isSelfIntersecting(timeout: Double = 30) -> Bool?   // true / false / nil(=indeterminate)
+```
+
+Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test (stop-on-first-faulty), wrapped in the
+same wall-clock watchdog as the #206 booleans so it can't hang: returns `true` (self-intersects),
+`false` (clean), or `nil` if it couldn't finish within `timeout` (**indeterminate** — treat as
+"unknown", not "clean"). The test is **expensive** (seconds on B-spline solids), so it's opt-in.
+Verified on the #206 operands: `nurbs_env` → `true` (the actual culprit), and the docs give the
+validate-at-source recipe (`orientedForward()` + `isSelfIntersecting() == false`).
+
+**Why not a cheap volume/`isValidSolid` guard (the issue's other options):** investigation showed
+the reported `env` operand passes `BRepCheck`, sits within its bounding box, and has positive volume
+— nothing cheap flags it. And a `volume <= 0` reject would false-positive on legitimately
+*reversed-orientation* solids (a known, `orientedForward()`-fixable case), so it isn't sound.
+`isValidSolid`'s doc now spells out the topology-vs-self-intersection distinction. Source-only.
 
 ### v1.5.0 (June 2026) — boolean ops are time-bounded; never hang indefinitely (closes #206)
 

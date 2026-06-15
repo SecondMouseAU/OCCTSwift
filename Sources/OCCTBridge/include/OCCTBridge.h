@@ -630,6 +630,12 @@ OCCTShapeRef OCCTShapeUnionEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double f
 OCCTShapeRef OCCTShapeSubtractEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds);
 OCCTShapeRef OCCTShapeIntersectEx(OCCTShapeRef shape1, OCCTShapeRef shape2, double fuzzyValue, int32_t glue, double timeoutSeconds);
 
+// Self-interference check (BOPAlgo_ArgumentAnalyzer), watchdog-bounded by timeoutSeconds
+// (<= 0 = unbounded). Detects the self-intersection that BRepCheck misses and that hangs
+// booleans (#206/#208). Returns 1 = self-intersects, 0 = clean, -1 = indeterminate.
+// (Distinct from the older unbounded bool OCCTShapeSelfIntersects via BOPAlgo_CheckerSI.)
+int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds);
+
 // MARK: - Modifications
 
 OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius);

@@ -1679,9 +1679,43 @@ public final class Shape: @unchecked Sendable {
         ShapeType(rawValue: Int(OCCTShapeGetType(handle))) ?? .unknown
     }
 
-    /// Whether the shape is a valid closed solid suitable for CAM operations
+    /// Whether the shape is a valid closed solid suitable for CAM operations.
+    ///
+    /// This is a **topology / per-element** validity check (`BRepCheck_Analyzer`): it does
+    /// **not** detect *global self-intersection* (overlapping faces of a single solid). A
+    /// self-intersecting B-spline solid — e.g. from `loft(ruled: false)` on imperfectly
+    /// corresponding profiles — can report `isValidSolid == true` yet poison downstream
+    /// booleans (it made `subtracting` hang indefinitely before #206 bounded it). To screen
+    /// for that, use ``isSelfIntersecting(timeout:)``. See also ``signedVolume`` /
+    /// ``orientedForward()`` for the separate reversed-orientation hazard.
     public var isValidSolid: Bool {
         OCCTShapeIsValidSolid(handle)
+    }
+
+    /// Whether this shape **self-intersects** — overlapping or interfering sub-faces, the
+    /// defect that ``isValidSolid`` (a topology check) misses but that can make booleans
+    /// hang or return garbage (#206/#208).
+    ///
+    /// Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test, which is authoritative
+    /// but **expensive** (seconds on B-spline solids) and can otherwise run unbounded, so it
+    /// is wall-clock bounded by `timeout`.
+    ///
+    /// - Parameter timeout: Seconds before the check gives up (default 30). `0`/negative = unbounded.
+    /// - Returns: `true` if a self-interference was found, `false` if the shape is clean, or
+    ///   `nil` if the check could not complete within `timeout` (**indeterminate** — treat as
+    ///   "unknown", not "clean").
+    ///
+    /// Validate-at-the-source recipe for a loft result before using it in a boolean:
+    /// ```swift
+    /// guard let solid = Shape.loft(profiles: ps, ruled: false)?.orientedForward(),
+    ///       solid.isSelfIntersecting() == false else { /* reject */ }
+    /// ```
+    public func isSelfIntersecting(timeout: Double = 30) -> Bool? {
+        switch OCCTShapeSelfIntersectsBounded(handle, timeout) {
+        case 1:  return true
+        case 0:  return false
+        default: return nil   // -1: indeterminate (timed out / errored)
+        }
     }
 
     // MARK: - Sub-Shape Extraction
