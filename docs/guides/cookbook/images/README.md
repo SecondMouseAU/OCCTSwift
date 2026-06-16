@@ -1,9 +1,14 @@
 # Cookbook figures
 
-Figures for the cookbook pages live here. They are **rendered headlessly out-of-repo** by
-[OCCTSwiftViewport](https://github.com/gsdali/OCCTSwiftViewport) (OCCTSwift ships no renderer —
-visualization is OFF in the xcframework). Each PNG is generated from the exact Swift snippet it
-illustrates, so code and figure stay in sync.
+Figures for the cookbook pages, **rendered headlessly out-of-repo** by the `CookbookRender` example
+in [OCCTSwiftViewport](https://github.com/gsdali/OCCTSwiftViewport) (`Examples/CookbookRender`) — its
+`OffscreenRenderer` (Metal). OCCTSwift ships no renderer, and can't depend on Viewport/Tools without
+a cycle, so the tool lives there. Each PNG is built from the **same OCCTSwift API** its page shows,
+so code and figure stay in sync.
 
-Pages reference figures by name (e.g. `booleans-three-ops.png`) with an HTML comment noting what to
-render; the images are committed once produced. See [`../README.md`](../README.md) → "Figures".
+Regenerate:
+```
+cd OCCTSwiftViewport/Examples/CookbookRender
+swift run CookbookRender <path-to-OCCTSwift>/docs/guides/cookbook/images
+```
+See [`../README.md`](../README.md) → "Figures".

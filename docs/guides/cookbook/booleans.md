@@ -9,16 +9,26 @@ OCCT C++ reference: [Boolean Operations user guide](https://dev.opencascade.org/
 
 ## The three operations
 
-OCCT's one-liner `TopoDS_Shape S = BRepAlgoAPI_Fuse(A, B);` becomes:
+OCCT's one-liner `TopoDS_Shape S = BRepAlgoAPI_Fuse(A, B);` becomes — here a cube and a
+cylinder passing through it:
 
 ```swift
-guard let a = Shape.box(width: 10, height: 10, depth: 10),
-      let b = Shape.sphere(radius: 6) else { return }
+guard let box = Shape.box(width: 10, height: 10, depth: 10),
+      let cyl = Shape.cylinder(at: SIMD3(0, 0, -8), direction: SIMD3(0, 0, 1),
+                               radius: 3, height: 16) else { return }
 
-let fused = a.union(b)          // BRepAlgoAPI_Fuse  — A ∪ B
-let cut = a.subtracting(b)      // BRepAlgoAPI_Cut   — A − B
-let common = a.intersection(b)  // BRepAlgoAPI_Common — A ∩ B
+let fused = box.union(cyl)          // BRepAlgoAPI_Fuse   — A ∪ B  (box + protruding rod)
+let cut = box.subtracting(cyl)      // BRepAlgoAPI_Cut    — A − B  (box with a through-hole)
+let common = box.intersection(cyl)  // BRepAlgoAPI_Common — A ∩ B  (the rod stub inside the box)
 ```
+
+<table>
+<tr>
+<td align="center"><img src="images/booleans-union.png" width="220"><br><code>union</code> (A ∪ B)</td>
+<td align="center"><img src="images/booleans-cut.png" width="220"><br><code>subtracting</code> (A − B)</td>
+<td align="center"><img src="images/booleans-common.png" width="220"><br><code>intersection</code> (A ∩ B)</td>
+</tr>
+</table>
 
 Volumes confirm the result (note `volume` is `Double?` — `nil` for non-solids / failures):
 
@@ -30,9 +40,6 @@ a.union(b)?.volume        // 1500  (1000 + 1000 − 500 overlap)
 a.intersection(b)?.volume // 500
 a.subtracting(b)?.volume  // 500   (1000 − 500)
 ```
-
-![union / cut / common of a box and sphere](images/booleans-three-ops.png)
-<!-- figure: render the three results side by side via OCCTSwiftViewport headless -->
 
 ## Fuzzy value — tolerance for near-tangent faces
 
