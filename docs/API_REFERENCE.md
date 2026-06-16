@@ -1,3 +1,8 @@
+---
+title: API Reference
+nav_order: 3
+---
+
 # API Reference
 
 Complete mapping of OCCTSwift operations to OCCT C++ classes.

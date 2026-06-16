@@ -1,3 +1,8 @@
+---
+nav_exclude: true
+search_exclude: true
+---
+
 # OCCT Upgrade History
 
 Documents breaking changes and migration steps for each OCCT version upgrade.

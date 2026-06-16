@@ -1,14 +1,21 @@
-# GitHub Pages (Jekyll) config for the OCCTSwift docs site.
-# Served from the /docs folder on main. GitHub Pages loads jekyll-optional-front-matter,
-# jekyll-default-layout, jekyll-readme-index and jekyll-relative-links by default, so the
-# existing front-matter-less Markdown renders with the theme, each directory's README.md
-# becomes its index, and relative .md links rewrite to .html automatically.
+# GitHub Pages (Jekyll) config for the OCCTSwift docs site — served from /docs on main.
+#
+# Theme: just-the-docs (left sidebar nav + search). Pinned to v0.3.3, the last release
+# compatible with GitHub Pages' native (no-Actions) build, which pins Jekyll 3.9.
+# Sidebar entries/order come from each page's `title` / `nav_order` front matter;
+# `nav_exclude: true` hides internal pages. GitHub Pages' default plugins still apply
+# (optional-front-matter, readme-index, relative-links).
 title: OCCTSwift
 description: A comprehensive Swift wrapper for OpenCASCADE Technology (OCCT 8.0.0) — B-Rep solid modeling for macOS / iOS / visionOS / tvOS.
-theme: jekyll-theme-cayman
-show_downloads: false
+remote_theme: just-the-docs/just-the-docs@v0.3.3
 
-# Keep build/internal files out of the published site.
+# just-the-docs options
+search_enabled: true
+heading_anchors: true
+aux_links:
+  "GitHub": ["https://github.com/gsdali/OCCTSwift"]
+aux_links_new_tab: true
+
 exclude:
   - "*.sh"
   - Gemfile

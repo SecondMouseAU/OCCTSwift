@@ -1,3 +1,8 @@
+---
+nav_exclude: true
+search_exclude: true
+---
+
 # OCCTSwift Integration & Stress Tests
 
 Comprehensive test plan for validating the full OCCTSwift wrapper (3333 operations).

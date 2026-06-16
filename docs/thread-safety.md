@@ -1,3 +1,8 @@
+---
+title: Thread Safety
+nav_order: 8
+---
+
 # Thread Safety in OCCTSwift
 
 ## TL;DR

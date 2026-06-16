@@ -1,3 +1,8 @@
+---
+nav_exclude: true
+search_exclude: true
+---
+
 # Platform expansion review
 
 This doc captures the analysis of expanding OCCTSwift beyond Apple platforms (Linux, Windows, Android). Written for v0.166.1 to inform the v1.0+ platform decision; not a commitment.

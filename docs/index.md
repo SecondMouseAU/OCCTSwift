@@ -1,3 +1,8 @@
+---
+title: Home
+nav_order: 1
+---
+
 # OCCTSwift documentation
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology](https://dev.opencascade.org) (OCCT 8.0.0) —

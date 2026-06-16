@@ -1,3 +1,8 @@
+---
+title: Versioning (SemVer)
+nav_order: 11
+---
+
 # SemVer Policy — OCCTSwift Ecosystem
 
 This document defines how every package in the [OCCTSwift ecosystem](ecosystem.md) versions its releases. It applies to OCCTSwift itself, OCCTSwiftIO, OCCTSwiftMesh, OCCTSwiftViewport, OCCTSwiftTools, OCCTSwiftAIS, OCCTSwiftScripts, and OCCTMCP — and to any future sibling that joins the cohort.

@@ -1,3 +1,8 @@
+---
+nav_exclude: true
+search_exclude: true
+---
+
 # OCCT visualization → Metal: research findings
 
 Research-only document scoping what it would take to render OCCT geometry on Apple's Metal API, and which of three concrete paths makes the most sense for the OCCTSwift / OCCTSwiftViewport stack.

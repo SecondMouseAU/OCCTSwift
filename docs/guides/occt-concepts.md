@@ -1,3 +1,8 @@
+---
+title: OCCT Concepts
+nav_order: 5
+---
+
 # OpenCASCADE Concepts for Swift Developers
 
 This guide explains core OCCT concepts for developers coming from iOS/Swift backgrounds who may not be familiar with CAD kernel terminology.

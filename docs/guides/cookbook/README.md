@@ -1,3 +1,9 @@
+---
+title: Cookbook
+nav_order: 2
+has_children: true
+---
+
 # OCCTSwift Cookbook
 
 Task-oriented, **example-rich** guides for the OCCTSwift Swift API — one page per area, each a

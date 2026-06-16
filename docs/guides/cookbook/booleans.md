@@ -1,3 +1,9 @@
+---
+title: Booleans
+parent: Cookbook
+nav_order: 1
+---
+
 # Booleans
 
 Boolean operations combine two solids: **union** (fuse), **subtracting** (cut), and **intersection**

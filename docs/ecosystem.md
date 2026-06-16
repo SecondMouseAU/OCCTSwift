@@ -1,3 +1,8 @@
+---
+title: Ecosystem
+nav_order: 12
+---
+
 # OCCTSwift Ecosystem
 
 OCCTSwift is the kernel of a layered family of Swift packages that wrap [OpenCASCADE Technology](https://www.opencascade.com/) for CAD on Apple platforms. Each package has a narrow, well-bounded role; you pick the ones you need.

@@ -1,3 +1,8 @@
+---
+title: Building OCCT
+nav_order: 9
+---
+
 # Building OpenCASCADE for iOS/macOS
 
 This guide explains how to build OCCT as static libraries for use with OCCTSwift.

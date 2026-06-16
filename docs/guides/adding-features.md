@@ -1,3 +1,8 @@
+---
+title: Adding Features
+nav_order: 6
+---
+
 # Adding Features to OCCTSwift
 
 This guide explains how to add new OCCT functionality to the OCCTSwift wrapper.

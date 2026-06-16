@@ -1,3 +1,8 @@
+---
+nav_exclude: true
+search_exclude: true
+---
+
 # Cookbook figures
 
 Figures for the cookbook pages, **rendered headlessly out-of-repo** by the `CookbookRender` example

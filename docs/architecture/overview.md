@@ -1,3 +1,8 @@
+---
+title: Architecture
+nav_order: 7
+---
+
 # OCCTSwift Architecture Overview
 
 ## Purpose

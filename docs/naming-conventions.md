@@ -1,3 +1,8 @@
+---
+title: Naming Conventions
+nav_order: 10
+---
+
 # Naming Conventions: OCCT vs OCCTSwift
 
 OCCTSwift translates OCCT's C++ API into idiomatic Swift. This document explains the naming conventions and how they map to the underlying OCCT classes.
