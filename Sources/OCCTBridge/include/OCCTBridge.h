@@ -750,6 +750,7 @@ typedef struct {
     bool internalVertices;       // Generate vertices inside faces
     bool controlSurfaceDeflection; // Validate surface approximation quality
     bool adjustMinSize;          // Auto-adjust minSize based on edge size
+    bool allowQualityDecrease;   // Allow replacing an existing finer triangulation with a coarser one (#211)
 } OCCTMeshParameters;
 
 /// Create mesh with enhanced parameters
@@ -2726,6 +2727,30 @@ OCCTShapeRef OCCTFaceIntersect(OCCTFaceRef face1, OCCTFaceRef face2,
 typedef struct OCCTCurve3D* OCCTCurve3DRef;
 
 void OCCTCurve3DRelease(OCCTCurve3DRef curve);
+
+// MARK: - CompCurve adaptor: treat a multi-edge wire as one arc-length curve (#211, BRepAdaptor_CompCurve)
+
+typedef struct OCCTCompCurve* OCCTCompCurveRef;
+
+OCCTCompCurveRef OCCTCompCurveCreate(OCCTWireRef wire);
+void OCCTCompCurveRelease(OCCTCompCurveRef ref);
+double OCCTCompCurveLength(OCCTCompCurveRef ref);                                  // total arc length, -1 on error
+void OCCTCompCurveParamRange(OCCTCompCurveRef ref, double* first, double* last);
+bool OCCTCompCurvePointAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z);
+bool OCCTCompCurveTangentAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z);  // unit tangent (D1)
+bool OCCTCompCurveParamAtAbscissa(OCCTCompCurveRef ref, double s, double* outParam); // param at arc length s from start
+int32_t OCCTCompCurveSampleUniform(OCCTCompCurveRef ref, int32_t count, double* outXYZ); // count equally-spaced (arc length) points; outXYZ holds count*3
+
+// EdgeCurve adaptor: a single edge as an arc-length curve (BRepAdaptor_Curve). #211/#212
+typedef struct OCCTEdgeCurve* OCCTEdgeCurveRef;
+OCCTEdgeCurveRef OCCTEdgeCurveCreate(OCCTEdgeRef edge);
+void OCCTEdgeCurveRelease(OCCTEdgeCurveRef ref);
+double OCCTEdgeCurveLength(OCCTEdgeCurveRef ref);
+void OCCTEdgeCurveParamRange(OCCTEdgeCurveRef ref, double* first, double* last);
+bool OCCTEdgeCurvePointAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z);
+bool OCCTEdgeCurveTangentAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z);
+bool OCCTEdgeCurveParamAtAbscissa(OCCTEdgeCurveRef ref, double s, double* outParam);
+int32_t OCCTEdgeCurveSampleUniform(OCCTEdgeCurveRef ref, int32_t count, double* outXYZ);
 
 /// Get the 3D curve underlying an edge as a standalone Curve3D handle.
 /// Returns nil if the edge has no 3D curve representation.
@@ -4814,6 +4839,13 @@ int32_t OCCTShapeGetSolids(OCCTShapeRef shape, OCCTShapeRef* outSolids, int32_t 
 
 /// Get the number of shell sub-shapes in a shape.
 int32_t OCCTShapeGetShellCount(OCCTShapeRef shape);
+
+/// Outer shell of a solid (BRepClass3d::OuterShell); NULL if not a solid / no shell. #211
+OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape);
+
+/// Inner (void/cavity) shells of a solid — all shells except the outer one. Count-then-fill
+/// (pass outShells=NULL to query the count). #212
+int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
 
 /// Get shell sub-shapes from a shape.
 /// @param shape The shape to explore

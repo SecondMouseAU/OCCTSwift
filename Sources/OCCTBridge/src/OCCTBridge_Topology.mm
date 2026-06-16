@@ -294,7 +294,59 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance) {
 
 #include <BRepClass3d_SolidClassifier.hxx>
 #include <BRepClass_FaceClassifier.hxx>
+#include <BRepClass3d.hxx>
+#include <TopoDS.hxx>
+#include <TopoDS_Solid.hxx>
+#include <TopoDS_Shell.hxx>
 #include <TopAbs_State.hxx>
+
+// Outer shell of a solid (BRepClass3d::OuterShell) — distinguishes the outer body from
+// internal void shells of a multi-shell solid. #211
+OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape) {
+    if (!shape) return nullptr;
+    try {
+        TopoDS_Solid solid;
+        if (shape->shape.ShapeType() == TopAbs_SOLID) {
+            solid = TopoDS::Solid(shape->shape);
+        } else {
+            // Accept a compound/compsolid wrapping a single solid.
+            TopExp_Explorer ex(shape->shape, TopAbs_SOLID);
+            if (!ex.More()) return nullptr;
+            solid = TopoDS::Solid(ex.Current());
+        }
+        TopoDS_Shell shell = BRepClass3d::OuterShell(solid);
+        if (shell.IsNull()) return nullptr;
+        return new OCCTShape(shell);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// Inner (void/cavity) shells = every shell of the solid except the outer one. #212
+int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount) {
+    if (!shape) return 0;
+    try {
+        TopoDS_Solid solid;
+        if (shape->shape.ShapeType() == TopAbs_SOLID) {
+            solid = TopoDS::Solid(shape->shape);
+        } else {
+            TopExp_Explorer se(shape->shape, TopAbs_SOLID);
+            if (!se.More()) return 0;
+            solid = TopoDS::Solid(se.Current());
+        }
+        TopoDS_Shell outer = BRepClass3d::OuterShell(solid);
+        int32_t n = 0;
+        for (TopExp_Explorer ex(solid, TopAbs_SHELL); ex.More(); ex.Next()) {
+            const TopoDS_Shape& sh = ex.Current();
+            if (!outer.IsNull() && sh.IsSame(outer)) continue;   // skip the outer shell
+            if (outShells && n < maxCount) outShells[n] = new OCCTShape(sh);
+            n++;
+        }
+        return n;
+    } catch (...) {
+        return 0;
+    }
+}
 
 static int32_t mapTopAbsState(TopAbs_State state) {
     switch (state) {
