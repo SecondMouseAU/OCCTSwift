@@ -28,13 +28,17 @@ let cut = box.subtracting(cyl)      // BRepAlgoAPI_Cut    — A − B  (box with
 let common = box.intersection(cyl)  // BRepAlgoAPI_Common — A ∩ B  (the rod stub inside the box)
 ```
 
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js"></script>
+
 <table>
 <tr>
-<td align="center"><img src="images/booleans-union.png" width="220"><br><code>union</code> (A ∪ B)</td>
-<td align="center"><img src="images/booleans-cut.png" width="220"><br><code>subtracting</code> (A − B)</td>
-<td align="center"><img src="images/booleans-common.png" width="220"><br><code>intersection</code> (A ∩ B)</td>
+<td align="center"><model-viewer src="models/booleans-union.glb" poster="images/booleans-union.png" camera-controls auto-rotate shadow-intensity="1" style="width:240px;height:220px;background:#f2f3f5;border-radius:6px"></model-viewer><br><code>union</code> (A ∪ B)</td>
+<td align="center"><model-viewer src="models/booleans-cut.glb" poster="images/booleans-cut.png" camera-controls auto-rotate shadow-intensity="1" style="width:240px;height:220px;background:#f2f3f5;border-radius:6px"></model-viewer><br><code>subtracting</code> (A − B)</td>
+<td align="center"><model-viewer src="models/booleans-common.glb" poster="images/booleans-common.png" camera-controls auto-rotate shadow-intensity="1" style="width:240px;height:220px;background:#f2f3f5;border-radius:6px"></model-viewer><br><code>intersection</code> (A ∩ B)</td>
 </tr>
 </table>
+
+<sub>🖱️ Drag to orbit · scroll to zoom · auto-rotating. The static render shows until the 3D model loads. (Models exported straight from these snippets via `Exporter.writeGLTF`.)</sub>
 
 Volumes confirm the result (note `volume` is `Double?` — `nil` for non-solids / failures):
 

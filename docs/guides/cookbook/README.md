@@ -41,6 +41,10 @@ never drift.
 > ```
 > Add a scene there (one function per figure) when you add a page. macOS-only (Metal).
 
+The same tool also exports a **GLB** per sample (via `Exporter.writeGLTF`, into `models/`), which the
+pages embed with Google's `<model-viewer>` web component for an **interactive 3D view** (orbit / zoom),
+using the static PNG as the loading poster. Code → figure → 3D model all come from the one snippet.
+
 ## Pages
 
 - [Booleans](booleans.md) — union / subtracting / intersection, fuzzy value, glue, timeout, self-intersection checks.
