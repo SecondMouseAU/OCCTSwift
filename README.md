@@ -3,6 +3,9 @@
 [![Swift](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fgsdali%2FOCCTSwift%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/gsdali/OCCTSwift)
 [![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fgsdali%2FOCCTSwift%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/gsdali/OCCTSwift)
 [![License](https://img.shields.io/badge/license-LGPL--2.1-blue)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-cookbook-2ea44f)](https://gsdali.github.io/OCCTSwift/)
+
+📖 **Documentation & cookbook:** <https://gsdali.github.io/OCCTSwift/>
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
 
