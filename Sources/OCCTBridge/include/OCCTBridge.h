@@ -1579,7 +1579,7 @@ OCCTShapeRef OCCTShapeBuildThreadCutter(double ox, double oy, double oz,
                                         double rx, double ry, double rz,
                                         double pitch, double turns, double apexSign,
                                         double helixRadius, double cutDepth,
-                                        double rootHalf, double crestHalf, double bleed,
+                                        double outerHalf, double apexHalf, double bleed,
                                         double phase, double handed, int32_t nSections);
 
 

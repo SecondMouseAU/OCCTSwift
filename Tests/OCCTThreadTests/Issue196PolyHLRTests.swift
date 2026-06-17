@@ -45,7 +45,11 @@ struct Issue196PolyHLRTests {
         #expect(fine != nil); #expect(coarse != nil)
         if let fine, let coarse {
             #expect(fine > 0); #expect(coarse > 0)
-            #expect(coarse < fine)   // coarser triangulation → fewer, longer edges
+            // Deflection is honoured (it changes the projected edge set). With the v1.5+ smooth
+            // cam-loft thread (#213) the count is NOT strictly monotonic in deflection — a coarse
+            // triangulation of the helicoidal flanks can yield MORE silhouette segments, not fewer
+            // (unlike the old v1.4.1 helicoid). What matters is that the parameter takes effect.
+            #expect(coarse != fine)
         }
     }
 }

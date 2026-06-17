@@ -31,9 +31,14 @@ struct Issue187ScrewThreadTests {
         #expect(threaded != nil)
         guard let threaded else { return }
         #expect(threaded.isValid)
-        // TIGHT envelope: the crest sits at the nominal radius. Allow only tessellation /
-        // ruled-facet margin (~0.25 mm) — far below the old ~0.6–5 mm directional bulge.
-        let b = shank.bounds, c = threaded.bounds
+        // TIGHT envelope: the crest sits at the nominal radius. Use the OPTIMAL (tight) box,
+        // not the default AABB: the smooth analytic thread (#213) is a BSpline solid whose
+        // default Bnd_Box is its control-pole hull, overshooting the real surface by ~13% — a
+        // pole artifact, not a bulge (the surface crest is exactly at the nominal radius). The
+        // optimal box returns the true extent (cf. the same rationale in `isSoundCut`).
+        guard let b = shank.boundingBoxOptimal(), let c = threaded.boundingBoxOptimal() else {
+            Issue.record("no optimal bounds"); return
+        }
         let tol = 0.25
         #expect(c.max.x <= b.max.x + tol)
         #expect(c.min.x >= b.min.x - tol)

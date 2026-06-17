@@ -621,16 +621,16 @@ OCCTShapeRef OCCTShapeBuildThreadCutter(double ox, double oy, double oz,
                                         double rx, double ry, double rz,
                                         double pitch, double turns, double apexSign,
                                         double helixRadius, double cutDepth,
-                                        double rootHalf, double crestHalf, double bleed,
+                                        double outerHalf, double apexHalf, double bleed,
                                         double phase, double handed, int32_t nSections) {
     if (pitch <= 0 || turns <= 0 || nSections < 2) return nullptr;
     try {
         const gp_Vec O(ox, oy, oz), A(ax, ay, az), R0(rx, ry, rz);
         const gp_Vec T0 = A.Crossed(R0);                 // tangential0 = axis x radial0
-        const double rootR  = helixRadius - apexSign * bleed;     // root bleeds past surface
-        const double crestR = helixRadius + apexSign * cutDepth;  // crest = the deep cut
-        const double cr[4] = { rootR, crestR, crestR, rootR };
-        const double cz[4] = { -rootHalf, -crestHalf, crestHalf, rootHalf };
+        const double outerR = helixRadius - apexSign * bleed;     // outer end bleeds past surface
+        const double apexR  = helixRadius + apexSign * cutDepth;  // apex = the deep cut
+        const double cr[4] = { outerR, apexR, apexR, outerR };
+        const double cz[4] = { -outerHalf, -apexHalf, apexHalf, outerHalf };  // wide at surface, narrow at apex (#213)
         const int N = nSections;
 
         // Each V-corner traces a single-edge BSpline helix.

@@ -5,16 +5,25 @@ import OCCTBridge
 // MARK: - Thread feature API (#66, v0.139 Thread Form v2)
 //
 // Produces real helical V-form geometry following ISO-68 / Unified thread standards.
-// OCCT ships no "thread feature" — the cutter is an ISO-68 truncated V-profile (60°
-// included flank angle) swept along the helix and booleaned against the target feature.
+// OCCT ships no "thread feature". Two strategies, in order of preference:
 //
-// The cutter has been through three forms (see `applyThreadCut`):
-//   v0.139  pipe-shell sweep of the V-profile — re-frames the section with the helix
-//           lead, so it bulged the thread outward (escaped the envelope; #181-C/#185).
-//   v1.4.0  screw-motion ruled loft — in-envelope and robust, but faceted + ~1 s/thread.
-//   v1.4.1  smooth analytic helicoid (the four V-corners trace BSpline helices, ruled
-//           faces between them) — O(1) faces, no faceting; falls back to the v1.4.0
-//           screw-loft when OCCT's boolean fails on a tightly-wound fine-pitch cutter.
+//   v1.5+ (#213) — `threadedShaft` BUILDS the threaded rod DIRECTLY with NO boolean when the
+//     target is a plain cylinder coaxial with the axis (the common case): it lofts the thread's
+//     true cross-section ("cam": root arc → flank spiral → crest arc → flank spiral) at z-slices
+//     rotated by the helix with `ruled=false`, giving one BSpline face per cam edge (a handful of
+//     faces, not hundreds of facets), flat caps, solid-to-axis, and any unthreaded margin closed
+//     by pure SEWING (shoulder + cylinder + disk). Because the boolean engine is never invoked,
+//     the result is orientation-robust AND BRepCheck-valid — where the cut path is faceted or
+//     fails. All the thread-specific geometry is composed in Swift from already-wrapped OCCT
+//     primitives (`Shape.loft`, `Wire.arc`/`.interpolate`, `Shape.face(from:)`, `Shape.sew`), so
+//     the kernel bridge stays a thin wrapper. See `buildThreadedRodDirect` / `threadedRodSolid`.
+//
+//   FALLBACK cut path (`applyThreadCut`) — for non-cylinder targets, internal threads
+//     (`threadedHole`), multi-start, or if the direct build isn't sound: a V-groove cutter swept
+//     along the helix and subtracted. Its cutter evolved v0.139 pipe-shell (bulged, #181-C/#185)
+//     → v1.4.0 screw-motion ruled loft (in-envelope, robust, faceted) → v1.4.1 smooth analytic
+//     helicoid (O(1) faces; falls back to the screw-loft when OCCT's boolean chokes on a tightly-
+//     wound fine-pitch cutter, which the correct wide-V #213 profile reliably triggers).
 //
 // Out of scope for v1: ACME / BSP / NPT forms (enum is open for future cases);
 // full ISO-68 tolerance classes (2B, 3A, etc.) — those are fit-allowance tables,
@@ -180,20 +189,212 @@ extension Shape {
     /// Cut a helical V-profile thread into a cylindrical shaft.
     ///
     /// - Parameters: as `threadedHole`, but `length` replaces `depth`.
+    ///
+    /// When `self` is a plain cylinder coaxial with the axis (the overwhelmingly common case),
+    /// this builds the threaded rod *directly* as a smooth, BRepCheck-valid solid (no boolean) —
+    /// see ``buildThreadedRodDirect`` and OCCTSwift #213. For non-cylinder targets, multi-start,
+    /// or if the direct build fails, it falls back to the boolean cut path (``applyThreadCut``).
     public func threadedShaft(axisOrigin: SIMD3<Double>,
                                axisDirection: SIMD3<Double>,
                                spec: ThreadSpec,
                                length: Double? = nil,
                                starts: Int = 1,
                                runout: RunoutStyle = .none) -> Shape? {
-        applyThreadCut(axisOrigin: axisOrigin,
+        let len = length ?? (2 * spec.nominalDiameter)
+        if starts == 1,
+           let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                                               spec: spec, length: len) {
+            switch runout {
+            case .none:            return direct
+            case .filleted(let r): return direct.filleted(radius: r) ?? direct
+            case .tapered:         return direct.filleted(radius: spec.pitch * 0.5) ?? direct
+            }
+        }
+        return applyThreadCut(axisOrigin: axisOrigin,
                        axisDirection: axisDirection,
                        spec: spec,
-                       length: length ?? (2 * spec.nominalDiameter),
+                       length: len,
                        starts: starts,
                        runout: runout,
                        apexSign: -1,
                        helixRadius: spec.nominalDiameter / 2)
+    }
+
+    /// Build a smooth external threaded rod directly (no boolean) when `self` is a plain cylinder
+    /// of radius ≈ `spec.nominalDiameter / 2` coaxial with the axis (#213). Returns nil — so the
+    /// caller falls back to the boolean cut — when `self` is not such a cylinder, or the build
+    /// isn't a sound thread. `threadedRodSolid` lofts the thread's cross-section (`ruled=false`,
+    /// smooth, solid-to-axis, flat caps) and sews on any unthreaded margin; the boolean engine is
+    /// never invoked, so the result is orientation-robust and valid where the cut path is faceted.
+    private func buildThreadedRodDirect(axisOrigin: SIMD3<Double>,
+                                        axisDirection: SIMD3<Double>,
+                                        spec: ThreadSpec,
+                                        length: Double) -> Shape? {
+        guard length > 0, spec.pitch > 0, spec.cutDepth < spec.nominalDiameter / 2 else { return nil }
+        let axis = simd_normalize(axisDirection)
+        let radial0 = orthonormalRadial(axis: axis)
+        let majorR = spec.nominalDiameter / 2
+
+        // self's extent along the axis (project the 8 AABB corners; exact for an axis-aligned
+        // cylinder, and the cylinder volume check below rejects anything else).
+        let b = self.bounds
+        var lo = Double.greatestFiniteMagnitude, hi = -Double.greatestFiniteMagnitude
+        for cx in [b.min.x, b.max.x] {
+            for cy in [b.min.y, b.max.y] {
+                for cz in [b.min.z, b.max.z] {
+                    let proj = simd_dot(SIMD3(cx, cy, cz) - axisOrigin, axis)
+                    lo = min(lo, proj); hi = max(hi, proj)
+                }
+            }
+        }
+        guard hi > lo else { return nil }
+
+        // Only build directly when `self` really is a cylinder of radius majorR over [lo,hi].
+        let expectedVol = Double.pi * majorR * majorR * (hi - lo)
+        guard let v0 = self.volume, expectedVol > 0,
+              abs(v0 - expectedVol) / expectedVol < 0.02 else { return nil }
+
+        let threadLo = max(0.0, lo)
+        let threadHi = min(length, hi)
+        guard threadHi > threadLo + 1e-6 else { return nil }
+        let handed: Double = spec.leftHanded ? -1 : 1
+
+        guard let result = Shape.threadedRodSolid(
+            origin: axisOrigin, axis: axis, radial0: radial0,
+            rodLo: lo, rodHi: hi, threadLo: threadLo, threadHi: threadHi,
+            pitch: spec.pitch, majorRadius: majorR, cutDepth: spec.cutDepth,
+            rootFlat: spec.rootFlat, crestFlat: spec.crestFlat, handed: handed, perTurn: 16)
+        else { return nil }
+        // Sound thread: valid, in-envelope, removed some (not most) material.
+        guard result.isValid, let v1 = result.volume,
+              v1 < v0 * 1.001, v1 > v0 * 0.5 else { return nil }
+        return result
+    }
+
+    /// Build the smooth external threaded rod by composing already-wrapped OCCT primitives —
+    /// NO boolean, so the result is orientation-robust AND BRepCheck-valid (#213). The kernel
+    /// bridge stays a thin wrapper; all the thread-specific geometry lives here in Swift.
+    ///
+    /// The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section
+    /// (a "cam": root arc → flank spiral → crest arc → flank spiral, rotated by the helix per
+    /// z-slice) — one BSpline face per cam edge (a handful of faces, flat caps, solid-to-axis).
+    /// Any unthreaded margin is closed by pure SEWING: a single-loop "shoulder" face (the circle's
+    /// non-crest arc + the cam's non-crest edges; the crest arc joins the thread crest band
+    /// straight to the cylinder) + the plain cylinder lateral + a flat end disk. Returns nil on
+    /// any construction failure (the caller then falls back to the boolean cut path).
+    fileprivate static func threadedRodSolid(
+        origin: SIMD3<Double>, axis: SIMD3<Double>, radial0: SIMD3<Double>,
+        rodLo: Double, rodHi: Double, threadLo: Double, threadHi: Double,
+        pitch: Double, majorRadius: Double, cutDepth: Double,
+        rootFlat: Double, crestFlat: Double, handed: Double, perTurn: Int
+    ) -> Shape? {
+        let a = simd_normalize(axis)
+        let x = simd_normalize(radial0)
+        let y = simd_cross(a, x)
+        let rMaj = majorRadius, rMin = majorRadius - cutDepth
+        let p = pitch, rf = rootFlat, cf = crestFlat
+        let b1 = rf / 2, b2 = p / 2 - cf / 2, b3 = p / 2 + cf / 2, b4 = p - rf / 2
+        let twoPi = 2 * Double.pi
+
+        // tooth radius at axial fraction t in [0, pitch]
+        func rOf(_ t: Double) -> Double {
+            if t < b1 { return rMin }
+            if t < b2 { return rMin + (rMaj - rMin) * (t - b1) / (b2 - b1) }
+            if t < b3 { return rMaj }
+            if t < b4 { return rMaj - (rMaj - rMin) * (t - b3) / (b4 - b3) }
+            return rMin
+        }
+        func ang(_ s: Double) -> Double { handed * s * twoPi / p }            // helix angle
+        func pt(_ r: Double, _ aAng: Double, _ z: Double) -> SIMD3<Double> {
+            origin + a * z + (x * cos(aAng) + y * sin(aAng)) * r
+        }
+        func arcW(_ r: Double, _ a0: Double, _ a1: Double, _ z: Double) -> Wire? {
+            Wire.arc(start: pt(r, a0, z), midpoint: pt(r, (a0 + a1) / 2, z), end: pt(r, a1, z))
+        }
+        func flankW(_ t0: Double, _ t1: Double, _ z: Double) -> Wire? {
+            var pts: [SIMD3<Double>] = []
+            let n = 10
+            for i in 0..<n {
+                let t = t0 + (t1 - t0) * Double(i) / Double(n - 1)
+                pts.append(pt(rOf(t), ang(z) + ang(t), z))
+            }
+            return Wire.interpolate(through: pts)
+        }
+        func camWire(_ z: Double) -> Wire? {
+            let al = ang(z)
+            guard let e0 = arcW(rMin, al + ang(0),  al + ang(b1), z),
+                  let e1 = flankW(b1, b2, z),
+                  let e2 = arcW(rMaj, al + ang(b2), al + ang(b3), z),
+                  let e3 = flankW(b3, b4, z),
+                  let e4 = arcW(rMin, al + ang(b4), al + ang(p), z) else { return nil }
+            return Wire.join([e0, e1, e2, e3, e4])
+        }
+        func circleWire(_ z: Double) -> Wire? {
+            var ws: [Wire] = []
+            for k in 0..<4 {
+                guard let w = arcW(rMaj, Double(k) * .pi / 2, Double(k + 1) * .pi / 2, z) else { return nil }
+                ws.append(w)
+            }
+            return Wire.join(ws)
+        }
+        func planarFace(_ wire: Wire?) -> Shape? { wire.flatMap { Shape.face(from: $0, planar: true) } }
+        func shoulderFace(_ z: Double) -> Shape? {
+            let al = ang(z)
+            let a0 = al + ang(0), aa1 = al + ang(b1), aa2 = al + ang(b2),
+                aa3 = al + ang(b3), aa4 = al + ang(b4), aa5 = al + ang(p)
+            let midLong = aa2 - (twoPi - (aa3 - aa2)) / 2     // midpoint of the non-crest arc
+            guard let cLong = Wire.arc(start: pt(rMaj, aa2, z), midpoint: pt(rMaj, midLong, z), end: pt(rMaj, aa3, z)),
+                  let fD = flankW(b3, b4, z),
+                  let rU = arcW(rMin, aa4, aa5, z),
+                  let rL = arcW(rMin, a0, aa1, z),
+                  let fU = flankW(b1, b2, z),
+                  let wire = Wire.join([cLong, fD, rU, rL, fU]) else { return nil }
+            return Shape.face(from: wire, planar: true)
+        }
+        func cylinderLateral(_ zLo: Double, _ zHi: Double) -> Shape? {
+            Shape.faceFromCylinder(origin: pt(0, 0, zLo), axis: a, radius: rMaj,
+                                   uRange: 0...twoPi, vRange: 0...(zHi - zLo))
+        }
+
+        let bottomEnd = threadLo <= rodLo + 1e-7   // thread runs off the rod's bottom face
+        let topEnd    = threadHi >= rodHi - 1e-7    // thread runs off the rod's top face
+        let fullSolid = bottomEnd && topEnd
+
+        let dz = p / Double(perTurn)
+        let n = max(2, Int(ceil((threadHi - threadLo) / dz)))
+        var profiles: [Wire] = []
+        profiles.reserveCapacity(n + 1)
+        for i in 0...n {
+            let z = threadLo + (threadHi - threadLo) * Double(i) / Double(n)
+            guard let w = camWire(z) else { return nil }
+            profiles.append(w)
+        }
+        guard let skin = Shape.loft(profiles: profiles, solid: fullSolid, ruled: false) else { return nil }
+        if fullSolid { return skin }
+
+        var faces: [Shape] = [skin]
+        if bottomEnd {
+            guard let cap = planarFace(camWire(threadLo)) else { return nil }
+            faces.append(cap)
+        } else {
+            guard let sh = shoulderFace(threadLo),
+                  let lat = cylinderLateral(rodLo, threadLo),
+                  let disk = planarFace(circleWire(rodLo)) else { return nil }
+            faces.append(contentsOf: [sh, lat, disk])
+        }
+        if topEnd {
+            guard let cap = planarFace(camWire(threadHi)) else { return nil }
+            faces.append(cap)
+        } else {
+            guard let sh = shoulderFace(threadHi),
+                  let lat = cylinderLateral(threadHi, rodHi),
+                  let disk = planarFace(circleWire(rodHi)) else { return nil }
+            faces.append(contentsOf: [sh, lat, disk])
+        }
+        guard let shell = Shape.sew(shapes: faces, tolerance: 1e-6) else { return nil }
+        let solid = Shape.solidFromShell(shell) ?? shell
+        solid.orientClosedSolid()
+        return solid
     }
 
     private func applyThreadCut(axisOrigin: SIMD3<Double>,
@@ -212,9 +413,15 @@ extension Shape {
         let radial0 = orthonormalRadial(axis: axis)
         let tangential0 = simd_normalize(simd_cross(axis, radial0))
         let handed: Double = spec.leftHanded ? -1 : 1
-        let rootHalf = spec.rootFlat / 2
-        let crestHalf = spec.crestFlat / 2
         let bleed = max(spec.cutDepth * 0.05, 1e-3)
+        // ISO-68 V-groove cutter cross-section (radial depth = cutDepth). #213:
+        //   - apex (inner end of the cut): a flat = the thread *root* flat (P/4) → rootFlat/2
+        //   - outer end (at the shaft surface, +bleed): widened by the true 30° flank over the
+        //     whole depth. Previously the corner offsets were the crest/root *truncation* flats
+        //     (P/16, P/8), which omits the cutDepth·tan(30°) flank term — the flanks came out
+        //     ~6.6° (a square groove) instead of 30° (a V).
+        let apexHalf = spec.rootFlat / 2
+        let outerHalf = apexHalf + (spec.cutDepth + bleed) * tan(spec.halfFlankAngle)
         func phase(_ s: Int) -> Double { 2 * Double.pi * Double(s) / Double(starts) }
 
         // Two ways to build a thread-start cutter:
@@ -229,7 +436,7 @@ extension Shape {
             OCCTShapeBuildThreadCutter(axisOrigin.x, axisOrigin.y, axisOrigin.z,
                                        axis.x, axis.y, axis.z, radial0.x, radial0.y, radial0.z,
                                        spec.pitch, turns, apexSign, helixRadius,
-                                       spec.cutDepth, rootHalf, crestHalf, bleed,
+                                       spec.cutDepth, outerHalf, apexHalf, bleed,
                                        phase(s), handed, nAnalytic).map { Shape(handle: $0) }
         }
         let nScrew = min(220, max(20, Int((turns * 14).rounded())))
@@ -312,9 +519,11 @@ extension Shape {
         phase: Double, handed: Double, nSections: Int
     ) -> Shape? {
         let depth = spec.cutDepth
-        let rootHalf = spec.rootFlat / 2
-        let crestHalf = spec.crestFlat / 2
         let bleed = max(depth * 0.05, 1e-3)
+        // ISO-68 V-groove: apex flat = thread root flat (rootFlat/2); the outer end widens by
+        // the 30° flank over the depth so the groove is a true 60° V, not a square slot (#213).
+        let apexHalf = spec.rootFlat / 2
+        let outerHalf = apexHalf + (depth + bleed) * tan(spec.halfFlankAngle)
         // apexSign −1 (external): apex inward, root bleeds outward past the shaft surface.
         // apexSign +1 (internal): apex outward into the bore wall, root bleeds inward.
         let rootR = helixRadius - apexSign * bleed
@@ -328,10 +537,10 @@ extension Shape {
             let z = spec.pitch * turns * f
             let radial = cos(theta) * radial0 + sin(theta) * tangential0
             let axisPt = axisOrigin + z * axis
-            let p0 = axisPt + rootR * radial - rootHalf * axis    // root −
-            let p1 = axisPt + crestR * radial - crestHalf * axis  // crest −
-            let p2 = axisPt + crestR * radial + crestHalf * axis  // crest +
-            let p3 = axisPt + rootR * radial + rootHalf * axis    // root +
+            let p0 = axisPt + rootR * radial - outerHalf * axis   // outer − (wide, at surface)
+            let p1 = axisPt + crestR * radial - apexHalf * axis   // apex −  (narrow, at depth)
+            let p2 = axisPt + crestR * radial + apexHalf * axis   // apex +
+            let p3 = axisPt + rootR * radial + outerHalf * axis   // outer +
             guard let w = Wire.polygon3D([p0, p1, p2, p3], closed: true) else { return nil }
             sections.append(w)
         }

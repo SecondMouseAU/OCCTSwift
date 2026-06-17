@@ -7,13 +7,44 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.5.2
+## Current: v1.5.3
 
 **4,294 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.5.3 (June 2026) — smooth, valid ISO V-threads built without booleans (closes #213)
+
+**PATCH — additive, non-breaking** (same `threadedShaft` API; smoother/valid result).
+
+`Shape.threadedShaft(form: .iso68)` produced a near-square groove (~6.6° flanks) instead of a true
+60° V (30° flanks): the cutter's flank offsets used the crest/root *truncation* flats and omitted
+the `cutDepth·tan(30°)` flank term. Fixing the profile, however, exposed a deeper limit — OCCT's
+boolean engine **cannot reliably subtract a smooth helical V-thread cutter** from a cylinder (it
+under-cuts / no-ops on ~half of all orientations, unfixable by bleed / fuzzy / cone / extend; only
+the faceted screw-loft is robust, because its planar facets cross the shaft transversally).
+
+So `threadedShaft` now **builds the threaded rod directly, with no boolean**, when the target is a
+plain cylinder coaxial with the axis (the common case):
+
+- The thread region is a `ruled=false` ThruSections loft of the thread's true cross-section
+  ("cam": root arc → flank spiral → crest arc → flank spiral) at z-slices rotated by the helix —
+  one BSpline face per cam edge (**~9 faces, not hundreds of facets**), flat caps, solid-to-axis.
+- Any unthreaded margin is closed by **pure sewing** — a single-loop shoulder face + plain
+  cylinder + end disk — not a fuse (a fuse is robust here but **6–71 s**; sewing is ~0.3 s).
+
+Because the kernel's BOP is never invoked, the result is **orientation-robust AND BRepCheck-valid**
+where the old cut path was faceted or failed. The boolean cut path remains the fallback for
+non-cylinder targets, internal threads (`threadedHole`), and multi-start. The whole construction is
+composed in Swift from already-wrapped primitives (`Shape.loft(ruled:)`, `Wire.arc`/`.interpolate`,
+`Shape.face(from:)`, `Shape.sew`, `Shape.solidFromShell`), so the OCCT bridge stays a thin wrapper —
+no thread-specific bridge code.
+
+> Note: the smooth thread is a BSpline solid, so its default `Bnd_Box` is the control-pole hull and
+> overshoots the true surface by ~13% (a pole artifact, not a bulge); use `boundingBoxOptimal()` for
+> the real extent (the crest sits exactly at the nominal radius).
 
 ### v1.5.2 (June 2026) — reconstruction wrapping gaps: outer shell, mesh quality flag, wire arc-length adaptor (closes #211)
 
