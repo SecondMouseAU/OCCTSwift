@@ -48,4 +48,5 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 ## Pages
 
 - [Booleans](booleans.md) — union / subtracting / intersection, fuzzy value, glue, timeout, self-intersection checks.
-- _(more areas per #210: lofting & sweeps, threads, healing & validity, meshing & export, XCAF assemblies, topology graph)_
+- [Threads](threads.md) — `threadedShaft` / `threadedHole`, ISO-68 / Unified specs, the boolean-free smooth build, runout & multi-start.
+- _(more areas per #210: lofting & sweeps, healing & validity, meshing & export, XCAF assemblies, topology graph)_
