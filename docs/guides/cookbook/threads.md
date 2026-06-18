@@ -86,8 +86,8 @@ m12.halfFlankAngle     // π/6 (30° → 60° included)
 | Whitworth (BSW) / BSP parallel (G) | `.whitworth` / `.bspParallel` | 55° |
 | ACME / metric trapezoidal (Tr) | `.acme` / `.trapezoidal` | 29° / 30° trapezoid (lead screws) |
 | Square | `.square` | 0° walls |
-| Buttress | `.buttress` | asymmetric 7° / 45° |
-| Knuckle / round | `.knuckle` | rounded |
+| Buttress (DIN 513) | `.buttress` | asymmetric 3° / 30° |
+| Knuckle / round (DIN 405) | `.knuckle` | 30° rounded |
 | NPT / BSPT (tapered pipe) | `.nptTapered` / `.bsptTapered` | 60° / 55° on a 1:16 taper |
 
 ```swift
@@ -101,7 +101,7 @@ let leadScrew = stock.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0
 <tr>
 <td align="center"><model-viewer src="models/threads-acme.glb" poster="images/threads-acme.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:220px;height:280px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>.acme</code> (29°)</td>
 <td align="center"><model-viewer src="models/threads-square.glb" poster="images/threads-square.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:220px;height:280px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>.square</code></td>
-<td align="center"><model-viewer src="models/threads-buttress.glb" poster="images/threads-buttress.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:220px;height:280px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>.buttress</code> (7°/45°)</td>
+<td align="center"><model-viewer src="models/threads-buttress.glb" poster="images/threads-buttress.png" camera-controls auto-rotate environment-image="neutral" exposure="1.1" shadow-intensity="1" style="width:220px;height:280px;background:#eef1f5;border-radius:6px"></model-viewer><br><code>.buttress</code> (DIN 513, 3°/30°)</td>
 </tr>
 </table>
 
