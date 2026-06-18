@@ -7,13 +7,23 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.1
+## Current: v1.7.2
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.2 (June 2026) — thread envelope fix (#222)
+
+**Additive, source-compatible.** `Shape.threadedShaft(…)` gains a `build: ThreadBuild = .auto`
+parameter. At coarse pitch / wide crest flats the smooth direct rod build (#213) bows the crest
+**past** the nominal major radius (+14–21% measured: M12×1.75 → r 6.85 vs 6.0; Tr12×3 → 7.28),
+which oversizes headless single-start parts (lead screws, studs, worms). `build: .boolean` forces
+the boolean cut path — cutter subtracted from a cylinder of radius exactly `nominalDiameter / 2`,
+so the crest is clamped in-envelope (≤ nominal, ~1% tessellation margin). `.auto` (default) and
+`.direct` keep the original smooth build. No existing call sites change.
 
 ### v1.7.1 (June 2026) — p1 follow-ups + xcframework header hygiene
 

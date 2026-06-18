@@ -195,6 +195,25 @@ public enum RunoutStyle: Sendable, Hashable {
     case tapered(turns: Double)
 }
 
+/// Which construction path ``Shape/threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)``
+/// uses to cut an external thread. The two paths differ in their outer envelope (#222).
+public enum ThreadBuild: Sendable, Hashable, Codable {
+    /// Original heuristic: the smooth, boolean-free direct rod build (#213) for a single-start
+    /// thread on a plain coaxial cylinder, and the boolean cut path otherwise. Best surface
+    /// quality, but the direct build's `ruled:false` loft can bow the crest **past** the nominal
+    /// major radius at coarse pitch / wide crest flats (#222).
+    case auto
+    /// Prefer the smooth direct build, falling back to the boolean cut when it is unavailable
+    /// (multi-start, non-cylinder target, or a construction failure). Same envelope caveat as
+    /// `.auto` — may exceed `spec.nominalDiameter / 2` at coarse pitch.
+    case direct
+    /// Always use the boolean cut path. The cutter is subtracted from a cylinder of radius exactly
+    /// `spec.nominalDiameter / 2`, so the crest is clamped to the nominal major radius (in-envelope)
+    /// — at the cost of the direct build's smooth crest. Use for headless single-start parts
+    /// (lead screws, studs, worms) where the outer diameter must not overshoot nominal.
+    case boolean
+}
+
 public struct ThreadSpec: Sendable, Hashable, Codable {
     public let form: ThreadForm
     /// Nominal outer diameter in mm.
@@ -444,14 +463,20 @@ extension Shape {
     /// this builds the threaded rod *directly* as a smooth, BRepCheck-valid solid (no boolean) —
     /// see ``buildThreadedRodDirect`` and OCCTSwift #213. For non-cylinder targets, multi-start,
     /// or if the direct build fails, it falls back to the boolean cut path (``applyThreadCut``).
+    ///
+    /// - Parameter build: chooses the construction path (#222). `.auto` (default) keeps the
+    ///   smooth direct build for single-start coaxial cylinders; `.boolean` forces the in-envelope
+    ///   cut path so a headless single-start part (lead screw / stud / worm) never overshoots the
+    ///   nominal major diameter. See ``ThreadBuild``.
     public func threadedShaft(axisOrigin: SIMD3<Double>,
                                axisDirection: SIMD3<Double>,
                                spec: ThreadSpec,
                                length: Double? = nil,
                                starts: Int = 1,
-                               runout: RunoutStyle = .none) -> Shape? {
+                               runout: RunoutStyle = .none,
+                               build: ThreadBuild = .auto) -> Shape? {
         let len = length ?? (2 * spec.nominalDiameter)
-        if starts == 1,
+        if build != .boolean, starts == 1,
            let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
                                                spec: spec, length: len) {
             switch runout {
