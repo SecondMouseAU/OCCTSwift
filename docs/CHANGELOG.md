@@ -7,13 +7,22 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.6.0
+## Current: v1.6.1
 
 **4,294 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.6.1 (June 2026) — smooth internal threads
+
+**PATCH — quality improvement, non-breaking.** `threadedHole` now produces **smooth** internal
+threads instead of faceted ones. An interior helix is cut into a *thick wall* (not a thin shaft), so
+OCCT's boolean subtracts a smooth (`ruled=false`) helical cutter robustly — verified valid across all
+orientations. (The external fallback is unchanged: subtracting a smooth cutter from a thin external
+cylinder is the unreliable case from #213, so non-cylinder/tapered external cuts stay faceted.)
+Cookbook nut / wing-nut / lead-screw figures re-rendered with the smooth bore threads.
 
 ### v1.6.0 (June 2026) — thread forms + custom profiles
 

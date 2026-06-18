@@ -106,7 +106,8 @@ let leadScrew = stock.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0
 </table>
 
 External threads on a cylinder use the smooth, valid direct build for every form; internal threads
-(`threadedHole`), non-cylinder targets, and the tapered pipe forms use the robust faceted cut path.
+(`threadedHole`) cut a smooth helical cutter into the wall (also valid). Non-cylinder external targets
+and the tapered pipe forms use a robust faceted cut.
 
 ### Specs from a designation
 
@@ -146,8 +147,9 @@ custom form round-trips through JSON.
 
 ## A threaded hole
 
-`threadedHole` taps the wall of an existing bore. The internal form is cut with the robust boolean
-path (it's valid, just faceted — there's no smooth-build shortcut for an interior helix), so pass the
+`threadedHole` taps the wall of an existing bore. It's cut with the boolean path — but because an
+interior helix is cut into a *thick wall* (not a thin shaft), OCCT's boolean handles a **smooth**
+helical cutter robustly, so the internal thread comes out smooth and BRepCheck-valid. Pass the
 *solid with the bore already in it*:
 
 ```swift

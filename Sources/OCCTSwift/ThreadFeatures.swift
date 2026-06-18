@@ -687,12 +687,12 @@ extension Shape {
                                        phase(s), handed, nAnalytic).map { Shape(handle: $0) }
         }
         let nScrew = min(220, max(20, Int((turns * 14).rounded())))
-        func screwLoftCutter(_ s: Int) -> Shape? {
+        func screwLoftCutter(_ s: Int, ruled: Bool) -> Shape? {
             Shape.screwSweptThreadCutter(axisOrigin: axisOrigin, axis: axis,
                                          radial0: radial0, tangential0: tangential0,
                                          spec: spec, turns: turns, apexSign: apexSign,
                                          helixRadius: helixRadius, phase: phase(s),
-                                         handed: handed, nSections: nScrew)
+                                         handed: handed, nSections: nScrew, ruled: ruled)
         }
 
         // Fuse the per-start cutters and subtract from the blank.
@@ -739,9 +739,14 @@ extension Shape {
         // which builds its cutter from the form's actual profile (no bridge change).
         let useAnalytic = (spec.form == .iso68 || spec.form == .unified) && spec.taperRatio == 0
         let analytic = useAnalytic ? threadResult(analyticCutter) : nil
-        guard let threaded = isSoundCut(analytic) ? analytic : threadResult(screwLoftCutter),
-              isSoundCut(threaded)
-        else { return nil }
+        // Internal threads (apexSign +1) cut into a thick wall, where a SMOOTH (ruled=false) helical
+        // cutter usually subtracts cleanly → a smooth internal thread. It can still fail on a complex
+        // body (e.g. a wing nut), so fall back to the faceted cutter when the smooth one isn't sound.
+        let smoothInternal = apexSign > 0 ? threadResult { screwLoftCutter($0, ruled: false) } : nil
+        let candidate = isSoundCut(analytic) ? analytic
+                      : isSoundCut(smoothInternal) ? smoothInternal
+                      : threadResult { screwLoftCutter($0, ruled: true) }
+        guard let threaded = candidate, isSoundCut(threaded) else { return nil }
 
         switch runout {
         case .none:
@@ -758,11 +763,12 @@ extension Shape {
         }
     }
 
-    /// Robust faceted cutter (the fallback for internal threads, non-cylinder targets, and any
-    /// non-60°-V form): sweep the V-groove cross-section through a pure screw motion (rotate about
-    /// the axis + translate along it) and **ruled**-loft the closely-spaced sections. The boolean on
-    /// a faceted cutter is well-behaved where a smooth helical cutter makes OCCT's BOP fail
-    /// (#187/#213).
+    /// Screw-motion cutter (the path for internal threads, non-cylinder targets, and any non-60°-V
+    /// form): sweep the V-groove cross-section through a pure screw motion (rotate about the axis +
+    /// translate along it) and loft the closely-spaced sections. Internal cuts (apexSign +1) loft it
+    /// SMOOTH (`ruled=false`) — cutting a smooth helical cutter into a thick wall is robust, so
+    /// internal threads come out smooth; external fallbacks (apexSign −1) loft it faceted, since
+    /// subtracting a smooth cutter from a thin external cylinder is the unreliable case (#187/#213).
     ///
     /// The groove is a trapezoid derived from the form's `profile`: its bottom (the thread root) is
     /// the root-flat width, its mouth (at the blank surface) is the inter-crest span (pitch − crest
@@ -774,7 +780,7 @@ extension Shape {
         axisOrigin: SIMD3<Double>, axis: SIMD3<Double>,
         radial0: SIMD3<Double>, tangential0: SIMD3<Double>,
         spec: ThreadSpec, turns: Double, apexSign: Double, helixRadius: Double,
-        phase: Double, handed: Double, nSections: Int
+        phase: Double, handed: Double, nSections: Int, ruled: Bool
     ) -> Shape? {
         let depth = spec.cutDepth
         let bleed = max(depth * 0.05, 1e-3)
@@ -811,6 +817,8 @@ extension Shape {
             guard let w = Wire.polygon3D([p0, p1, p2, p3], closed: true) else { return nil }
             sections.append(w)
         }
-        return Shape.loft(profiles: sections, solid: true, ruled: true)
+        // `ruled: false` lofts a SMOOTH helical cutter (used for internal threads — the caller falls
+        // back to a faceted `ruled: true` cutter if the smooth boolean isn't sound).
+        return Shape.loft(profiles: sections, solid: true, ruled: ruled)
     }
 }
