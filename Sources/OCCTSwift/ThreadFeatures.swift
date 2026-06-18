@@ -126,8 +126,36 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
                               rootFlatFraction: Double = 1.0 / 4) -> ThreadProfile {
         trapezoid(crestFlatFraction: crestFlatFraction, rootFlatFraction: rootFlatFraction)
     }
-    /// Whitworth / BSP 55° (crest & root truncated — a flat-truncation approximation of the rounded form).
-    public static let whitworth55 = trapezoid(crestFlatFraction: 0.1666, rootFlatFraction: 0.1666)
+    /// A rounded thread: straight `halfFlankDeg` flanks with circular-arc crest & root (radius solved
+    /// for tangency), plus a small crest/root land so the smooth direct build can attach a crest. `h`
+    /// is the depth as a fraction of pitch (must equal the form's `cutDepth / P`).
+    static func rounded(h: Double, halfFlankDeg: Double, flat: Double = 0.05, samples: Int = 4) -> ThreadProfile {
+        let beta = halfFlankDeg * Double.pi / 180
+        let phiMax = .pi / 2 - beta                              // fillet sweep: flat-tangent → flank
+        let s = sin(phiMax), cc = 1 - cos(phiMax)
+        let r = (0.5 - flat - h * tan(beta)) / (2 * s - 2 * cc * tan(beta))   // tangent fillet radius (cf = rf = flat)
+        func df(_ depthP: Double) -> Double { depthP / h }       // pitch-unit depth → 0…1 fraction
+        var left: [Vertex] = [.init(axial: 0, depth: 1), .init(axial: flat / 2, depth: 1)]   // root flat
+        for i in 1...samples {                                   // root fillet (concave)
+            let psi = phiMax * Double(i) / Double(samples)
+            left.append(.init(axial: flat / 2 + r * sin(psi), depth: df(h - r * (1 - cos(psi)))))
+        }
+        for i in 0...samples {                                   // flank, then crest fillet (convex)
+            let psi = phiMax * Double(samples - i) / Double(samples)
+            left.append(.init(axial: (0.5 - flat / 2) - r * sin(psi), depth: df(r * (1 - cos(psi)))))
+        }
+        left.append(.init(axial: 0.5, depth: 0))                 // crest flat to centre
+        var vs = left
+        for i in stride(from: left.count - 2, through: 0, by: -1) {
+            vs.append(.init(axial: 1 - left[i].axial, depth: left[i].depth))
+        }
+        return ThreadProfile(trusted: vs)
+    }
+    /// Whitworth / BSW / BSP 55° — `cutDepth = 0.640327·P`. BS 84 rounds the outer/inner sixth of the
+    /// tooth; this is the standard flat-truncation of that form (crest flat = root flat = P/6, the straight
+    /// 55° flank spanning the middle two-thirds). A truly *rounded* crest makes the deep tooth's `ruled:false`
+    /// loft spike past the nominal radius (OCCTSwift #213), so the truncation is what builds smooth.
+    public static let whitworth55 = trapezoid(crestFlatFraction: 1.0 / 6, rootFlatFraction: 1.0 / 6)
     /// ACME 29° general-purpose (crest flat = root flat = 0.3707·P at `cutDepth = P/2`).
     public static let acme29 = trapezoid(crestFlatFraction: 0.3707, rootFlatFraction: 0.3707)
     /// ISO metric trapezoidal "Tr" 30° (crest flat = root flat = 0.366·P at `cutDepth = P/2`).
@@ -138,41 +166,20 @@ public struct ThreadProfile: Sendable, Hashable, Codable {
         .init(axial: 0.25, depth: 0), .init(axial: 0.75, depth: 0),
         .init(axial: 0.75, depth: 1), .init(axial: 1,    depth: 1),
     ])
-    /// Buttress 7° load / 45° trailing (asymmetric), `cutDepth = 0.66271·P`.
-    public static let buttress7x45 = ThreadProfile(trusted: [
-        .init(axial: 0,      depth: 1), .init(axial: 0.046,  depth: 1),
-        .init(axial: 0.1274, depth: 0), .init(axial: 0.2912, depth: 0),
-        .init(axial: 0.9539, depth: 1), .init(axial: 1,      depth: 1),
+    /// Buttress (DIN 513) — asymmetric 3° load flank / 30° clearance flank (33° total), `cutDepth = 0.86777·P`.
+    /// (Bolt core d3 = d − 2·0.86777·P, verified against the DIN 513 table, e.g. S 10×2 → d3 = 6.528.)
+    /// The near-radial load flank rises steeply to the crest; the 30° clearance flank falls back to the root.
+    public static let buttress = ThreadProfile(trusted: [
+        .init(axial: 0,      depth: 1), .init(axial: 0.0968, depth: 1),   // root flat (half)
+        .init(axial: 0.1422, depth: 0),                                   // 3° load flank → crest
+        .init(axial: 0.4022, depth: 0),                                   // crest flat
+        .init(axial: 0.9032, depth: 1),                                   // 30° clearance flank → root
+        .init(axial: 1,      depth: 1),                                   // root flat (half)
     ])
     /// Knuckle / round thread (DIN 405): 30°-included (15° per side) flanks with circular-arc rounded
     /// crest and root, at the standard depth `0.55·P` (bolt minor d3 = d − 1.1·P, verified against the
-    /// DIN 405 dimension table). The rounding radius is solved so the fillets are tangent to both the
-    /// flank and a small crest/root land; the small lands let the smooth direct build attach a crest.
-    public static let knuckle: ThreadProfile = {
-        let h = 0.55                          // thread depth as a fraction of pitch (DIN 405)
-        let cf = 0.06, rf = 0.06              // small crest / root flats (fraction of pitch)
-        let beta = 15.0 * Double.pi / 180     // half flank angle from the radial (30° included)
-        let phiMax = .pi / 2 - beta           // fillet sweep, flat-tangent (90°) → flank (75°)
-        let s = sin(phiMax), c = 1 - cos(phiMax)
-        let r = (0.5 - cf / 2 - rf / 2 - h * tan(beta)) / (2 * s - 2 * c * tan(beta))  // tangent radius
-        func df(_ depthP: Double) -> Double { depthP / h }   // depth in pitch units → 0…1 fraction
-        let m = 4                             // samples per fillet
-        var left: [Vertex] = [.init(axial: 0, depth: 1), .init(axial: rf / 2, depth: 1)]   // root flat
-        for i in 1...m {                      // root fillet (concave), tangent to the root flat
-            let psi = phiMax * Double(i) / Double(m)
-            left.append(.init(axial: rf / 2 + r * sin(psi), depth: df(h - r * (1 - cos(psi)))))
-        }
-        for i in 0...m {                      // flank (first→second vertex) then crest fillet (convex)
-            let psi = phiMax * Double(m - i) / Double(m)
-            left.append(.init(axial: (0.5 - cf / 2) - r * sin(psi), depth: df(r * (1 - cos(psi)))))
-        }
-        left.append(.init(axial: 0.5, depth: 0))   // crest flat to the centre
-        var vs = left
-        for i in stride(from: left.count - 2, through: 0, by: -1) {   // mirror to the next root
-            vs.append(.init(axial: 1 - left[i].axial, depth: left[i].depth))
-        }
-        return ThreadProfile(trusted: vs)
-    }()
+    /// DIN 405 dimension table). Small crest/root lands are kept so the smooth direct build can attach a crest.
+    public static let knuckle = rounded(h: 0.55, halfFlankDeg: 15, flat: 0.06)
 }
 
 /// How a thread terminates at its ends.
@@ -225,7 +232,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         case .acme:                                 return .acme29
         case .trapezoidal:                          return .trapezoidalMetric30
         case .square:                               return .square
-        case .buttress:                             return .buttress7x45
+        case .buttress:                             return .buttress
         case .knuckle:                              return .knuckle
         case .custom:                               return customProfile ?? .iso60V()
         }
@@ -239,7 +246,7 @@ public struct ThreadSpec: Sendable, Hashable, Codable {
         case .whitworth, .bspParallel, .bsptTapered:  return 0.640327 * pitch
         case .acme, .trapezoidal, .square:            return 0.5 * pitch
         case .knuckle:                                return 0.55 * pitch       // DIN 405: d3 = d − 1.1·P
-        case .buttress:                               return 0.66271 * pitch
+        case .buttress:                               return 0.86777 * pitch    // DIN 513: d3 = d − 2·0.86777·P
         case .custom:                                 return 0.5 * pitch
         }
     }
@@ -538,6 +545,11 @@ extension Shape {
         // profiles (a pointed crest) fall back to the boolean cut path.
         let segs = profile.segments
         guard let crestIndex = segs.firstIndex(where: { $0.kind == .flat && $0.a.depth < 1e-6 }) else { return nil }
+        // Rounded profiles (knuckle/Whitworth-rounded) decompose into many small fillet chords. A
+        // `ruled:false` loft of those over a helix balloons radially past the nominal crest (a thin
+        // outward flap — OCCTSwift #213) and is slow, so route piecewise-curved profiles to the faceted
+        // cut path. Piecewise-linear forms (iso/acme/trapezoidal/square/buttress) have ≤2 straight flanks.
+        guard segs.filter({ $0.kind == .flank }).count <= 2 else { return nil }
 
         let a = simd_normalize(axis)
         let x = simd_normalize(radial0)

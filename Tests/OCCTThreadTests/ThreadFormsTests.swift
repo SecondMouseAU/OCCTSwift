@@ -7,13 +7,14 @@ import simd
 @Suite("Thread forms — Whitworth/BSP, ACME, trapezoidal, square, buttress, knuckle, taper, custom")
 struct ThreadFormsTests {
 
-    // Parallel forms that take the smooth direct external build.
-    static let parallelForms: [ThreadForm] = [
-        .iso68, .unified, .whitworth, .bspParallel, .acme, .trapezoidal, .square, .buttress, .knuckle,
+    // Piecewise-linear parallel forms that take the smooth direct external build (≤2 straight flanks,
+    // flat crest). Rounded forms (knuckle) route to the faceted cut path instead — see roundedExternalForm.
+    static let smoothForms: [ThreadForm] = [
+        .iso68, .unified, .whitworth, .bspParallel, .acme, .trapezoidal, .square, .buttress,
     ]
 
-    @Test("each parallel form builds a valid, smooth external thread",
-          arguments: ThreadFormsTests.parallelForms)
+    @Test("each piecewise-linear form builds a valid, smooth external thread",
+          arguments: ThreadFormsTests.smoothForms)
     func externalForm(_ form: ThreadForm) {
         guard let shank = Shape.cylinder(radius: 6, height: 24) else { Issue.record("shank"); return }
         let spec = ThreadSpec(form: form, nominalDiameter: 12, pitch: 2.0)
@@ -22,16 +23,43 @@ struct ThreadFormsTests {
             Issue.record("\(form) returned nil"); return
         }
         #expect(t.isValid)
-        // crest sits at the nominal radius (optimal box — the smooth BSpline default box overshoots).
-        if let bb = t.boundingBoxOptimal() {
-            #expect(bb.max.x <= 6.0 + 0.05)
+        // Crest sits at the nominal radius. The optimal Bnd_Box pole-inflates for these BSpline thread
+        // surfaces (OCCTSwift #213), so measure the actual meshed surface envelope instead.
+        if let mesh = t.mesh(linearDeflection: 0.05) {
+            var maxR = Float(0)
+            for v in mesh.vertices {
+                let r = (v.x * v.x + v.y * v.y).squareRoot()
+                if r > maxR { maxR = r }
+            }
+            #expect(maxR <= 6.0 + 0.1)
         }
         if let v0 = shank.volume, let v1 = t.volume {
             #expect(v1 < v0)            // removed a thread's worth of material
             #expect(v1 > v0 * 0.5)      // but the rod is still substantially there
         }
-        // Smooth: a handful of faces, not hundreds of facets (knuckle's rounding adds a few).
+        // Smooth: a handful of faces, not hundreds of facets.
         #expect(t.subShapes(ofType: .face).count < 40)
+    }
+
+    @Test("rounded forms (knuckle) build a valid external thread via the faceted cut path")
+    func roundedExternalForm() {
+        guard let shank = Shape.cylinder(radius: 6, height: 24) else { Issue.record("shank"); return }
+        let spec = ThreadSpec(form: .knuckle, nominalDiameter: 12, pitch: 2.0)
+        guard let t = shank.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+                                          spec: spec, length: 18) else {
+            Issue.record("knuckle returned nil"); return
+        }
+        #expect(t.isValid)
+        // The faceted cut path keeps the crest exactly at the nominal radius (no ruled:false bulge).
+        if let mesh = t.mesh(linearDeflection: 0.05) {
+            var maxR = Float(0)
+            for v in mesh.vertices {
+                let r = (v.x * v.x + v.y * v.y).squareRoot()
+                if r > maxR { maxR = r }
+            }
+            #expect(maxR <= 6.0 + 0.05)
+        }
+        if let v0 = shank.volume, let v1 = t.volume { #expect(v1 < v0); #expect(v1 > v0 * 0.5) }
     }
 
     @Test("each form builds a valid internal thread (cut path)",
@@ -102,6 +130,12 @@ struct ThreadFormsTests {
                     - p * sqrt(3) / 2 * 5 / 8) < 1e-9)
         #expect(abs(ThreadSpec(form: .acme, nominalDiameter: 12, pitch: p).cutDepth - 0.5 * p) < 1e-9)
         #expect(abs(ThreadSpec(form: .whitworth, nominalDiameter: 12, pitch: p).cutDepth - 0.640327 * p) < 1e-6)
+        #expect(ThreadProfile.whitworth55.hasCrestFlat)   // small land kept for the smooth build
+        // DIN 513 buttress: depth 0.86777·P → core d3 = d − 2·0.86777·P (matches the standard table:
+        // S 10 × 2 → d3 = 6.528).
+        let din513 = ThreadSpec(form: .buttress, nominalDiameter: 10, pitch: 2.0)
+        #expect(abs(din513.cutDepth - 0.86777 * 2.0) < 1e-9)
+        #expect(abs(din513.minorDiameter - 6.528) < 2e-3)
         // DIN 405 knuckle: depth 0.55·P → minor d3 = d − 1.1·P (matches the standard table:
         // Rd 8 × 1/10", d = 8.254, P = 2.540 → d3 = 5.460).
         let din405 = ThreadSpec(form: .knuckle, nominalDiameter: 8.254, pitch: 2.540)

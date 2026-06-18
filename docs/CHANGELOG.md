@@ -7,13 +7,33 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.6.2
+## Current: v1.6.3
 
 **4,294 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
 
 ---
 
 ## Release History
+
+### v1.6.3 (June 2026) — buttress trued to DIN 513; Whitworth & knuckle finished
+
+**PATCH — geometry corrections, non-breaking.** The last two medium-confidence thread forms are
+trued to their standards:
+
+- **`.buttress` → DIN 513** (German *Sägengewinde*): asymmetric **3° load / 30° clearance** flanks
+  (33° total) at depth **0.86777·P** (so the bolt core `d3 = d − 2·0.86777·P`, verified against the
+  DIN 513 table — e.g. S 10 × 2 → d3 = 6.528). Previously it used a reconstructed ANSI 7°/45° profile
+  at 0.66271·P, which matched no German standard.
+- **`.whitworth` / `.bspParallel`** confirmed at the correct 55° / **0.640327·P** and kept as the
+  standard BS 84 **flat-truncation** (crest = root flat = P/6). A fully *rounded* crest makes the deep
+  tooth's `ruled:false` loft spike past the nominal radius (a thin outward flap, OCCTSwift #213), so
+  the truncation is the form that builds smooth and dimensionally exact.
+- **`.knuckle`** now routes through the **faceted cut path** for the external build. The previous
+  rounded-crest direct loft was both slow (~28 s) and bulged ~6% past the nominal crest; the cut path
+  keeps the crest exactly at the nominal radius and builds in ~1 s. (Rounded profiles — those with
+  more than two straight flanks — are now detected and sent to the cut path generally.)
+
+Buttress cookbook figure re-rendered with the DIN 513 profile.
 
 ### v1.6.2 (June 2026) — knuckle thread trued to DIN 405
 
