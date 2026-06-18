@@ -19,6 +19,8 @@
 // Area-specific OCCT headers — the foundation set + handle wrappers come from
 // OCCTBridge_Internal.h, this block is just the BRepGraph-block extras.
 
+#include <set>
+#include <vector>
 #include <TopAbs_Orientation.hxx>
 #include <TopLoc_Location.hxx>
 #include <TopoDS.hxx>
@@ -58,8 +60,12 @@ static GeomAbs_Shape continuityFromInt(int val) {
 // MARK: - BRepGraph (v0.129.0)
 
 #include <BRepGraph.hxx>
-#include <BRepGraph_Builder.hxx>
 #include <BRepGraph_TopoView.hxx>
+#include <BRepGraph_Tool.hxx>
+#include <BRepGraph_ReverseIterator.hxx>
+#include <BRepGraph_RefsView.hxx>
+#include <BRepGraphInc_Relations.hxx>
+#include <BRepGraphInc_Definition.hxx>
 #include <BRepGraph_MeshView.hxx>
 #include <BRepGraph_Compact.hxx>
 #include <BRepGraph_Deduplicate.hxx>
@@ -67,9 +73,39 @@ static GeomAbs_Shape continuityFromInt(int val) {
 #include <BRepGraph_ChildExplorer.hxx>
 #include <BRepGraph_ParentExplorer.hxx>
 #include <BRepGraph_NodeId.hxx>
+// BRepGraph_RepId moved to the BRepGraphInc subpackage in OCCT 8.0.0p1 (its Kind enum was
+// also repurposed to representation kinds: EdgeCurve3D, FaceSurface, FaceTriangulation, …).
+#include <BRepGraphInc_RepId.hxx>
+// OCCT 8.0.0p1 removed BRepGraph_Builder; shape ingestion is now BRepGraph::ShapesView::Add().
+#include <BRepGraph_ShapesView.hxx>
+
+// OCCT 8.0.0p1 side-registry (issue: rep-id ABI preservation)
+// ------------------------------------------------------------
+// The pre-p1 mesh/geometry write API allocated integer "rep ids": you created a
+// representation handle, got back an int id, then bound that id to an entity. p1
+// removed rep ids entirely — handles are attached directly to topology defs / the
+// mesh cache. To keep the int-rep-id C ABI (consumed by Swift) we keep parallel
+// vectors here: Create*Rep() pushes the input handle and returns its index; the
+// Set*RepId / RepSet* / append-cached entry points look the index back up and call
+// the corresponding handle-based p1 setter.
+#include <Poly_Triangulation.hxx>
+#include <Poly_Polygon3D.hxx>
+#include <Poly_Polygon2D.hxx>
+#include <Poly_PolygonOnTriangulation.hxx>
+#include <Geom_Surface.hxx>
+#include <Geom_Curve.hxx>
+#include <Geom2d_Curve.hxx>
 
 struct OCCTBRepGraph {
     BRepGraph graph;
+    // Parallel side-registries: index == the legacy "rep id".
+    std::vector<occ::handle<Poly_Triangulation>>            triReps;
+    std::vector<occ::handle<Poly_Polygon3D>>                poly3dReps;
+    std::vector<occ::handle<Poly_Polygon2D>>                poly2dReps;
+    std::vector<occ::handle<Poly_PolygonOnTriangulation>>   polyOnTriReps;
+    std::vector<occ::handle<Geom_Surface>>                  surfReps;
+    std::vector<occ::handle<Geom_Curve>>                    curve3dReps;
+    std::vector<occ::handle<Geom2d_Curve>>                  curve2dReps;
 };
 
 static BRepGraph_NodeId::Kind kindFromInt(int32_t k) {
@@ -91,11 +127,13 @@ OCCTBRepGraphRef OCCTBRepGraphCreate(OCCTShapeRef shape, bool parallel) {
     if (!shape) return nullptr;
     try {
         auto ref = new OCCTBRepGraph();
-        BRepGraph_Builder::Options opts;
+        // OCCT 8.0.0p1 removed BRepGraph_Builder; shape ingestion is now BRepGraph::ShapesView::Add().
+        BRepGraph::ShapesView::Options opts;
         opts.Parallel = parallel;
         opts.CreateAutoProduct = false; // preserve pre-beta1 behaviour: no auto Product/Occurrence wrap
-        auto result = BRepGraph_Builder::Add(ref->graph, *(const TopoDS_Shape*)shape, opts);
-        if (!result.Ok || !ref->graph.IsDone()) { delete ref; return nullptr; }
+        auto result = ref->graph.Shapes().Add(*(const TopoDS_Shape*)shape, opts);
+        // OCCT 8.0.0p1: BRepGraph::IsDone() was removed; a freshly built graph is valid if Add succeeded.
+        if (!result.IsOk()) { delete ref; return nullptr; }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -104,7 +142,8 @@ void OCCTBRepGraphRelease(OCCTBRepGraphRef graph) { delete graph; }
 
 bool OCCTBRepGraphIsDone(OCCTBRepGraphRef graph) {
     if (!graph) return false;
-    return graph->graph.IsDone();
+    // OCCT 8.0.0p1: BRepGraph::IsDone() removed; report "built" as having at least one node.
+    return graph->graph.Topo().Gen().NbNodes() > 0;
 }
 
 int32_t OCCTBRepGraphNbNodes(OCCTBRepGraphRef graph) {
@@ -128,53 +167,66 @@ int32_t OCCTBRepGraphNbCompounds(OCCTBRepGraphRef g) { return g ? g->graph.Topo(
 
 // --- Geometry Counts ---
 
-int32_t OCCTBRepGraphNbSurfaces(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbSurfaces() : 0; }
-int32_t OCCTBRepGraphNbCurves3D(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbCurves3D() : 0; }
-int32_t OCCTBRepGraphNbCurves2D(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbCurves2D() : 0; }
+int32_t OCCTBRepGraphNbSurfaces(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbFaceSurfaces() : 0; }
+int32_t OCCTBRepGraphNbCurves3D(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbEdgeCurves3D() : 0; }
+int32_t OCCTBRepGraphNbCurves2D(OCCTBRepGraphRef g) { return g ? g->graph.Topo().Geometry().NbCoEdgeCurves2D() : 0; }
 
 // --- Face Queries ---
 
+// OCCT 8.0.0p1: TopoView::FaceOps dropped the direct face-face Adjacent()/SharedEdges() helpers, but
+// the relation is derivable from the surviving edge->faces incidence (BRepGraph_FacesOfEdge): two
+// faces are adjacent iff they share an edge.
+static std::set<int32_t> bgAdjacentFaces(OCCTBRepGraphRef g, int32_t faceIndex) {
+    std::set<int32_t> adj;
+    uint32_t ne = g->graph.Topo().Edges().Nb();
+    for (uint32_t e = 0; e < ne; ++e) {
+        std::vector<int32_t> faces; bool has = false;
+        for (BRepGraph_FacesOfEdge it(g->graph, BRepGraph_EdgeId(e)); it.More(); it.Next()) {
+            int32_t fi = (int32_t)it.CurrentId().Index;
+            faces.push_back(fi);
+            if (fi == faceIndex) has = true;
+        }
+        if (has) for (int32_t fi : faces) if (fi != faceIndex) adj.insert(fi);
+    }
+    return adj;
+}
+static std::vector<int32_t> bgSharedEdges(OCCTBRepGraphRef g, int32_t faceA, int32_t faceB) {
+    std::vector<int32_t> shared;
+    uint32_t ne = g->graph.Topo().Edges().Nb();
+    for (uint32_t e = 0; e < ne; ++e) {
+        bool a = false, b = false;
+        for (BRepGraph_FacesOfEdge it(g->graph, BRepGraph_EdgeId(e)); it.More(); it.Next()) {
+            int32_t fi = (int32_t)it.CurrentId().Index;
+            if (fi == faceA) a = true;
+            if (fi == faceB) b = true;
+        }
+        if (a && b) shared.push_back((int32_t)e);
+    }
+    return shared;
+}
 int32_t OCCTBRepGraphFaceAdjacentCount(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
-    try {
-        auto adj = g->graph.Topo().Faces().Adjacent(BRepGraph_FaceId(faceIndex), g->graph.Allocator());
-        return (int32_t)adj.Size();
-    } catch (...) { return 0; }
+    try { return (int32_t)bgAdjacentFaces(g, faceIndex).size(); } catch (...) { return 0; }
 }
-
-void OCCTBRepGraphFaceAdjacentIndices(OCCTBRepGraphRef g, int32_t faceIndex, int32_t* outIndices) {
-    if (!g || !outIndices) return;
-    try {
-        auto adj = g->graph.Topo().Faces().Adjacent(BRepGraph_FaceId(faceIndex), g->graph.Allocator());
-        for (int i = 0; i < adj.Size(); i++)
-            outIndices[i] = adj(i).Index;
-    } catch (...) {}
+void OCCTBRepGraphFaceAdjacentIndices(OCCTBRepGraphRef g, int32_t faceIndex, int32_t* out) {
+    if (!g || !out) return;
+    try { int i = 0; for (int32_t f : bgAdjacentFaces(g, faceIndex)) out[i++] = f; } catch (...) {}
 }
-
 int32_t OCCTBRepGraphFaceSharedEdgeCount(OCCTBRepGraphRef g, int32_t faceA, int32_t faceB) {
     if (!g) return 0;
-    try {
-        auto shared = g->graph.Topo().Faces().SharedEdges(
-            BRepGraph_FaceId(faceA), BRepGraph_FaceId(faceB), g->graph.Allocator());
-        return (int32_t)shared.Size();
-    } catch (...) { return 0; }
+    try { return (int32_t)bgSharedEdges(g, faceA, faceB).size(); } catch (...) { return 0; }
 }
-
-void OCCTBRepGraphFaceSharedEdgeIndices(OCCTBRepGraphRef g, int32_t faceA, int32_t faceB, int32_t* outIndices) {
-    if (!g || !outIndices) return;
-    try {
-        auto shared = g->graph.Topo().Faces().SharedEdges(
-            BRepGraph_FaceId(faceA), BRepGraph_FaceId(faceB), g->graph.Allocator());
-        for (int i = 0; i < shared.Size(); i++)
-            outIndices[i] = shared(i).Index;
-    } catch (...) {}
+void OCCTBRepGraphFaceSharedEdgeIndices(OCCTBRepGraphRef g, int32_t faceA, int32_t faceB, int32_t* out) {
+    if (!g || !out) return;
+    try { int i = 0; for (int32_t e : bgSharedEdges(g, faceA, faceB)) out[i++] = e; } catch (...) {}
 }
 
 int32_t OCCTBRepGraphFaceOuterWire(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return -1;
     try {
-        auto wid = g->graph.Topo().Faces().OuterWire(BRepGraph_FaceId(faceIndex));
-        return wid.Index;
+        // OCCT 8.0.0p1: OuterWire moved to BRepGraph_Tool::Face.
+        auto wid = BRepGraph_Tool::Face::OuterWire(g->graph, BRepGraph_FaceId(faceIndex));
+        return wid.IsValid() ? (int32_t)wid.Index : -1;
     } catch (...) { return -1; }
 }
 
@@ -189,39 +241,48 @@ int32_t OCCTBRepGraphEdgeNbFaces(OCCTBRepGraphRef g, int32_t edgeIndex) {
 void OCCTBRepGraphEdgeFaceIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t* outIndices) {
     if (!g || !outIndices) return;
     try {
-        auto& faces = g->graph.Topo().Edges().Faces(BRepGraph_EdgeId(edgeIndex));
-        for (int i = 0; i < faces.Size(); i++)
-            outIndices[i] = faces(i).Index;
+        // OCCT 8.0.0p1: EdgeOps::Faces() became FacesOf() returning an iterator.
+        int i = 0;
+        for (BRepGraph_FacesOfEdge it(g->graph, BRepGraph_EdgeId(edgeIndex)); it.More(); it.Next())
+            outIndices[i++] = (int32_t)it.CurrentId().Index;
     } catch (...) {}
 }
 
 bool OCCTBRepGraphEdgeIsBoundary(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try { return g->graph.Topo().Edges().IsBoundary(BRepGraph_EdgeId(edgeIndex)); }
+    try { return BRepGraph_Tool::Edge::IsBoundary(g->graph, BRepGraph_EdgeId(edgeIndex)); }
     catch (...) { return false; }
 }
 
 bool OCCTBRepGraphEdgeIsManifold(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try { return g->graph.Topo().Edges().IsManifold(BRepGraph_EdgeId(edgeIndex)); }
+    try { return BRepGraph_Tool::Edge::IsManifold(g->graph, BRepGraph_EdgeId(edgeIndex)); }
     catch (...) { return false; }
 }
 
+// OCCT 8.0.0p1: derived from vertex->edges incidence (VertexOps::Edges) — two edges are adjacent iff
+// they share a vertex.
+static std::set<int32_t> bgAdjacentEdges(OCCTBRepGraphRef g, int32_t edgeIndex) {
+    std::set<int32_t> adj;
+    uint32_t nv = g->graph.Topo().Vertices().Nb();
+    for (uint32_t v = 0; v < nv; ++v) {
+        const auto& edges = g->graph.Topo().Vertices().Edges(BRepGraph_VertexId(v));
+        bool has = false;
+        for (int i = 0; i < edges.Size(); ++i) if ((int32_t)edges(i).Index == edgeIndex) { has = true; break; }
+        if (has) for (int i = 0; i < edges.Size(); ++i) {
+            int32_t ei = (int32_t)edges(i).Index;
+            if (ei != edgeIndex) adj.insert(ei);
+        }
+    }
+    return adj;
+}
 int32_t OCCTBRepGraphEdgeAdjacentCount(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return 0;
-    try {
-        auto adj = g->graph.Topo().Edges().Adjacent(BRepGraph_EdgeId(edgeIndex), g->graph.Allocator());
-        return (int32_t)adj.Size();
-    } catch (...) { return 0; }
+    try { return (int32_t)bgAdjacentEdges(g, edgeIndex).size(); } catch (...) { return 0; }
 }
-
-void OCCTBRepGraphEdgeAdjacentIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t* outIndices) {
-    if (!g || !outIndices) return;
-    try {
-        auto adj = g->graph.Topo().Edges().Adjacent(BRepGraph_EdgeId(edgeIndex), g->graph.Allocator());
-        for (int i = 0; i < adj.Size(); i++)
-            outIndices[i] = adj(i).Index;
-    } catch (...) {}
+void OCCTBRepGraphEdgeAdjacentIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t* out) {
+    if (!g || !out) return;
+    try { int i = 0; for (int32_t e : bgAdjacentEdges(g, edgeIndex)) out[i++] = e; } catch (...) {}
 }
 
 // --- Vertex Queries ---
@@ -391,9 +452,9 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g) {
         s.coedges = topo.CoEdges().Nb();
         s.compounds = topo.Compounds().Nb();
         s.totalNodes = topo.Gen().NbNodes();
-        s.surfaces = topo.Geometry().NbSurfaces();
-        s.curves3d = topo.Geometry().NbCurves3D();
-        s.curves2d = topo.Geometry().NbCurves2D();
+        s.surfaces = topo.Geometry().NbFaceSurfaces();
+        s.curves3d = topo.Geometry().NbEdgeCurves3D();
+        s.curves2d = topo.Geometry().NbCoEdgeCurves2D();
     } catch (...) {}
     return s;
 }
@@ -406,7 +467,6 @@ OCCTBRepGraphStats OCCTBRepGraphGetStats(OCCTBRepGraphRef g) {
 #include <BRepGraph_ShapesView.hxx>
 #include <BRepGraph_Copy.hxx>
 #include <BRepGraph_Transform.hxx>
-#include <BRepGraph_History.hxx>
 
 // --- Shape Reconstruction ---
 
@@ -472,16 +532,33 @@ bool OCCTBRepGraphEdgeIsDegenerated(OCCTBRepGraphRef g, int32_t edgeIndex) {
     catch (...) { return false; }
 }
 
+// OCCT 8.0.0p1 made SameParameter / SameRange per-CoEdge derived properties (BRepGraph_Tool::CoEdge),
+// no longer edge-level state. We resolve the edge to one of its coedges (via FindCoEdgeId over the
+// edge's faces) and query that; a free edge with no coedge defaults to true (nothing to mismatch).
+static BRepGraph_CoEdgeId bgFirstCoEdgeOfEdge(OCCTBRepGraphRef g, int32_t edgeIndex) {
+    BRepGraph_EdgeId eid(edgeIndex);
+    uint32_t nf = g->graph.Topo().Faces().Nb();
+    for (uint32_t fi = 0; fi < nf; ++fi) {
+        auto cid = BRepGraph_Tool::Edge::FindCoEdgeId(g->graph, eid, BRepGraph_FaceId(fi));
+        if (cid.IsValid()) return cid;
+    }
+    return BRepGraph_CoEdgeId();   // invalid
+}
+
 bool OCCTBRepGraphEdgeIsSameParameter(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try { return BRepGraph_Tool::Edge::SameParameter(g->graph, BRepGraph_EdgeId(edgeIndex)); }
-    catch (...) { return false; }
+    try {
+        auto cid = bgFirstCoEdgeOfEdge(g, edgeIndex);
+        return cid.IsValid() ? BRepGraph_Tool::CoEdge::SameParameter(g->graph, cid) : true;
+    } catch (...) { return false; }
 }
 
 bool OCCTBRepGraphEdgeIsSameRange(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try { return BRepGraph_Tool::Edge::SameRange(g->graph, BRepGraph_EdgeId(edgeIndex)); }
-    catch (...) { return false; }
+    try {
+        auto cid = bgFirstCoEdgeOfEdge(g, edgeIndex);
+        return cid.IsValid() ? BRepGraph_Tool::CoEdge::SameRange(g->graph, cid) : true;
+    } catch (...) { return false; }
 }
 
 void OCCTBRepGraphEdgeRange(OCCTBRepGraphRef g, int32_t edgeIndex,
@@ -503,24 +580,23 @@ bool OCCTBRepGraphEdgeHasCurve(OCCTBRepGraphRef g, int32_t edgeIndex) {
 bool OCCTBRepGraphEdgeIsClosedOnFace(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t faceIndex) {
     if (!g) return false;
     try {
-        return BRepGraph_Tool::Edge::IsClosedOnFace(g->graph,
+        // OCCT 8.0.0p1: IsClosedOnFace replaced by IsSeamOnFace (an edge closed on a face is its seam).
+        return BRepGraph_Tool::Edge::IsSeamOnFace(g->graph,
             BRepGraph_EdgeId(edgeIndex), BRepGraph_FaceId(faceIndex));
     } catch (...) { return false; }
 }
 
 bool OCCTBRepGraphEdgeHasPolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try { return BRepGraph_Tool::Edge::HasPolygon3D(g->graph, BRepGraph_EdgeId(edgeIndex)); }
-    catch (...) { return false; }
+    try {
+        // OCCT 8.0.0p1: polygon presence is now a MeshView query (cache or persistent).
+        return g->graph.Mesh().Effective().Edges().Has(BRepGraph_EdgeId(edgeIndex));
+    } catch (...) { return false; }
 }
 
-int32_t OCCTBRepGraphEdgeMaxContinuity(OCCTBRepGraphRef g, int32_t edgeIndex) {
-    if (!g) return 0;
-    try {
-        return static_cast<int32_t>(
-            BRepGraph_Tool::Edge::MaxContinuity(g->graph, BRepGraph_EdgeId(edgeIndex)));
-    } catch (...) { return 0; }
-}
+// OCCT 8.0.0p1: per-edge max-regularity continuity is no longer exposed publicly
+// (continuity is per (edge, face1, face2) and not aggregated). Stubbed.
+int32_t OCCTBRepGraphEdgeMaxContinuity(OCCTBRepGraphRef, int32_t) { return 0; }
 
 // --- Face Geometry ---
 
@@ -530,11 +606,9 @@ double OCCTBRepGraphFaceTolerance(OCCTBRepGraphRef g, int32_t faceIndex) {
     catch (...) { return 0; }
 }
 
-bool OCCTBRepGraphFaceIsNaturalRestriction(OCCTBRepGraphRef g, int32_t faceIndex) {
-    if (!g) return false;
-    try { return BRepGraph_Tool::Face::NaturalRestriction(g->graph, BRepGraph_FaceId(faceIndex)); }
-    catch (...) { return false; }
-}
+// OCCT 8.0.0p1: the face "natural restriction" flag is no longer stored or exposed publicly
+// (the incidence model derives restriction from wires). Stubbed.
+bool OCCTBRepGraphFaceIsNaturalRestriction(OCCTBRepGraphRef, int32_t) { return false; }
 
 bool OCCTBRepGraphFaceHasSurface(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return false;
@@ -544,8 +618,10 @@ bool OCCTBRepGraphFaceHasSurface(OCCTBRepGraphRef g, int32_t faceIndex) {
 
 bool OCCTBRepGraphFaceHasTriangulation(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return false;
-    try { return BRepGraph_Tool::Face::HasTriangulation(g->graph, BRepGraph_FaceId(faceIndex)); }
-    catch (...) { return false; }
+    try {
+        // OCCT 8.0.0p1: triangulation presence is now a MeshView query (cache or persistent).
+        return g->graph.Mesh().Effective().Faces().Has(BRepGraph_FaceId(faceIndex));
+    } catch (...) { return false; }
 }
 
 // --- Wire Queries ---
@@ -565,18 +641,21 @@ int32_t OCCTBRepGraphWireNbCoEdges(OCCTBRepGraphRef g, int32_t wireIndex) {
 int32_t OCCTBRepGraphWireFaceCount(OCCTBRepGraphRef g, int32_t wireIndex) {
     if (!g) return 0;
     try {
-        auto& faces = g->graph.Topo().Wires().Faces(BRepGraph_WireId(wireIndex));
-        return (int32_t)faces.Size();
+        // OCCT 8.0.0p1: WireOps::Faces() removed; resolve parent faces from the wire's parent wire refs.
+        const auto& rel = g->graph.Topo().Wires().Relations(BRepGraph_WireId(wireIndex));
+        int32_t n = 0;
+        for (BRepGraph_FacesOfWire it(g->graph, rel.ParentWireRefIds); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 void OCCTBRepGraphWireFaceIndices(OCCTBRepGraphRef g, int32_t wireIndex, int32_t* outIndices) {
     if (!g || !outIndices) return;
     try {
-        auto& faces = g->graph.Topo().Wires().Faces(BRepGraph_WireId(wireIndex));
-        for (int i = 0; i < faces.Size(); ++i) {
-            outIndices[i] = faces(i).Index;
-        }
+        const auto& rel = g->graph.Topo().Wires().Relations(BRepGraph_WireId(wireIndex));
+        int i = 0;
+        for (BRepGraph_FacesOfWire it(g->graph, rel.ParentWireRefIds); it.More(); it.Next())
+            outIndices[i++] = (int32_t)it.CurrentId().Index;
     } catch (...) {}
 }
 
@@ -601,8 +680,9 @@ int32_t OCCTBRepGraphCoEdgeFace(OCCTBRepGraphRef g, int32_t coedgeIndex) {
 int32_t OCCTBRepGraphCoEdgeSeamPair(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return -1;
     try {
-        auto pid = g->graph.Topo().CoEdges().SeamPair(BRepGraph_CoEdgeId(coedgeIndex));
-        return pid.IsValid() ? pid.Index : -1;
+        // OCCT 8.0.0p1: SeamPair moved to BRepGraph_Tool::CoEdge.
+        auto pid = BRepGraph_Tool::CoEdge::SeamPair(g->graph, BRepGraph_CoEdgeId(coedgeIndex));
+        return pid.IsValid() ? (int32_t)pid.Index : -1;
     } catch (...) { return -1; }
 }
 
@@ -627,18 +707,21 @@ void OCCTBRepGraphCoEdgeRange(OCCTBRepGraphRef g, int32_t coedgeIndex,
 int32_t OCCTBRepGraphShellSolidCount(OCCTBRepGraphRef g, int32_t shellIndex) {
     if (!g) return 0;
     try {
-        auto& solids = g->graph.Topo().Shells().Solids(BRepGraph_ShellId(shellIndex));
-        return (int32_t)solids.Size();
+        // OCCT 8.0.0p1: ShellOps::Solids() removed; resolve parent solids from the shell's parent shell refs.
+        const auto& rel = g->graph.Topo().Shells().Relations(BRepGraph_ShellId(shellIndex));
+        int32_t n = 0;
+        for (BRepGraph_SolidsOfShell it(g->graph, rel.ParentShellRefIds); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 void OCCTBRepGraphShellSolidIndices(OCCTBRepGraphRef g, int32_t shellIndex, int32_t* outIndices) {
     if (!g || !outIndices) return;
     try {
-        auto& solids = g->graph.Topo().Shells().Solids(BRepGraph_ShellId(shellIndex));
-        for (int i = 0; i < solids.Size(); ++i) {
-            outIndices[i] = solids(i).Index;
-        }
+        const auto& rel = g->graph.Topo().Shells().Relations(BRepGraph_ShellId(shellIndex));
+        int i = 0;
+        for (BRepGraph_SolidsOfShell it(g->graph, rel.ParentShellRefIds); it.More(); it.Next())
+            outIndices[i++] = (int32_t)it.CurrentId().Index;
     } catch (...) {}
 }
 
@@ -647,41 +730,52 @@ void OCCTBRepGraphShellSolidIndices(OCCTBRepGraphRef g, int32_t shellIndex, int3
 int32_t OCCTBRepGraphSolidCompSolidCount(OCCTBRepGraphRef g, int32_t solidIndex) {
     if (!g) return 0;
     try {
-        auto& cs = g->graph.Topo().Solids().CompSolids(BRepGraph_SolidId(solidIndex));
-        return (int32_t)cs.Size();
+        // OCCT 8.0.0p1: SolidOps::CompSolids() removed; resolve via the solid's parent solid refs.
+        const auto& rel = g->graph.Topo().Solids().Relations(BRepGraph_SolidId(solidIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompSolidsOfSolid it(g->graph, rel.ParentSolidRefIds); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 // --- History ---
+// OCCT 8.0.0p1: history moved from BRepGraph::History() to the registered BRepGraph_LayerHistory
+// layer (via LayerRegistry().FindLayer<>() / Ensure<>()); records are now `Event`s whose Mapping
+// value type is NCollection_LinearVector (was NCollection_DynamicArray).
+#include <BRepGraph_LayerHistory.hxx>
+#include <BRepGraph_LayerRegistry.hxx>
+
+// Read the history layer if one has been registered (null otherwise). Reads do not create it.
+static occ::handle<BRepGraph_LayerHistory> bgHistory(OCCTBRepGraphRef g) {
+    return g->graph.LayerRegistry().FindLayer<BRepGraph_LayerHistory>();
+}
 
 int32_t OCCTBRepGraphHistoryNbRecords(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.History().NbRecords(); }
+    try { auto h = bgHistory(g); return h.IsNull() ? 0 : (int32_t)h->NbRecords(); }
     catch (...) { return 0; }
 }
 
 bool OCCTBRepGraphHistoryIsEnabled(OCCTBRepGraphRef g) {
     if (!g) return false;
-    try { return g->graph.History().IsEnabled(); }
+    try { auto h = bgHistory(g); return h.IsNull() ? false : h->IsEnabled(); }
     catch (...) { return false; }
 }
 
 void OCCTBRepGraphHistorySetEnabled(OCCTBRepGraphRef g, bool enabled) {
     if (!g) return;
-    try { g->graph.History().SetEnabled(enabled); }
-    catch (...) {}
+    // Enabling creates the layer if absent; disabling on an absent layer is a no-op.
+    try {
+        if (enabled) g->graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>()->SetEnabled(true);
+        else { auto h = bgHistory(g); if (!h.IsNull()) h->SetEnabled(false); }
+    } catch (...) {}
 }
 
 void OCCTBRepGraphHistoryClear(OCCTBRepGraphRef g) {
     if (!g) return;
-    try { g->graph.History().Clear(); }
+    try { auto h = bgHistory(g); if (!h.IsNull()) h->Clear(); }
     catch (...) {}
 }
-
-// --- History Record Readback (v0.141, #72 Phase 0) ---
-
-#include <BRepGraph_HistoryRecord.hxx>
-#include <BRepGraph_History.hxx>
 
 bool OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
                                         int32_t recordIdx,
@@ -690,15 +784,15 @@ bool OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
                                         int32_t* outSequenceNumber) {
     if (!g || !outOpName || !outSequenceNumber || outOpNameMax <= 0) return false;
     try {
-        const auto& hist = g->graph.History();
-        if (recordIdx < 0 || recordIdx >= hist.NbRecords()) return false;
-        const auto& rec = hist.Record(recordIdx);
+        auto hist = bgHistory(g);
+        if (hist.IsNull() || recordIdx < 0 || recordIdx >= (int32_t)hist->NbRecords()) return false;
+        const auto& rec = hist->Record((size_t)recordIdx);
         const char* src = rec.OperationName.ToCString();
         int srcLen = rec.OperationName.Length();
         int copy = std::min(srcLen, outOpNameMax - 1);
         memcpy(outOpName, src, copy);
         outOpName[copy] = '\0';
-        *outSequenceNumber = rec.SequenceNumber;
+        *outSequenceNumber = (int32_t)rec.SequenceNumber;
         return true;
     } catch (...) { return false; }
 }
@@ -706,9 +800,9 @@ bool OCCTBRepGraphHistoryGetRecordInfo(OCCTBRepGraphRef g,
 int32_t OCCTBRepGraphHistoryGetRecordOriginalsCount(OCCTBRepGraphRef g, int32_t recordIdx) {
     if (!g) return 0;
     try {
-        const auto& hist = g->graph.History();
-        if (recordIdx < 0 || recordIdx >= hist.NbRecords()) return 0;
-        const auto& rec = hist.Record(recordIdx);
+        auto hist = bgHistory(g);
+        if (hist.IsNull() || recordIdx < 0 || recordIdx >= (int32_t)hist->NbRecords()) return 0;
+        const auto& rec = hist->Record((size_t)recordIdx);
         return (int32_t)rec.Mapping.Extent();
     } catch (...) { return 0; }
 }
@@ -720,11 +814,11 @@ int32_t OCCTBRepGraphHistoryGetRecordOriginals(OCCTBRepGraphRef g,
                                                 int32_t maxCount) {
     if (!g || !outKinds || !outIndices) return 0;
     try {
-        const auto& hist = g->graph.History();
-        if (recordIdx < 0 || recordIdx >= hist.NbRecords()) return 0;
-        const auto& rec = hist.Record(recordIdx);
+        auto hist = bgHistory(g);
+        if (hist.IsNull() || recordIdx < 0 || recordIdx >= (int32_t)hist->NbRecords()) return 0;
+        const auto& rec = hist->Record((size_t)recordIdx);
         int32_t total = 0;
-        typedef NCollection_DataMap<BRepGraph_NodeId, NCollection_DynamicArray<BRepGraph_NodeId>> MapT;
+        typedef NCollection_DataMap<BRepGraph_NodeId, NCollection_LinearVector<BRepGraph_NodeId>> MapT;
         for (MapT::Iterator it(rec.Mapping); it.More(); it.Next()) {
             if (total < maxCount) {
                 outKinds[total] = (int32_t)it.Key().NodeKind;
@@ -745,13 +839,13 @@ int32_t OCCTBRepGraphHistoryGetRecordMapping(OCCTBRepGraphRef g,
                                               int32_t maxCount) {
     if (!g || !outKinds || !outIndices) return -1;
     try {
-        const auto& hist = g->graph.History();
-        if (recordIdx < 0 || recordIdx >= hist.NbRecords()) return -1;
-        const auto& rec = hist.Record(recordIdx);
+        auto hist = bgHistory(g);
+        if (hist.IsNull() || recordIdx < 0 || recordIdx >= (int32_t)hist->NbRecords()) return -1;
+        const auto& rec = hist->Record((size_t)recordIdx);
         BRepGraph_NodeId key((BRepGraph_NodeId::Kind)origKind, origIndex);
         if (!rec.Mapping.IsBound(key)) return -1;
         const auto& repls = rec.Mapping.Find(key);
-        int32_t total = repls.Length();
+        int32_t total = (int32_t)repls.Size();
         int32_t copy = std::min(total, maxCount);
         for (int32_t i = 0; i < copy; i++) {
             outKinds[i] = (int32_t)repls.Value(i).NodeKind;
@@ -768,9 +862,10 @@ bool OCCTBRepGraphHistoryFindOriginal(OCCTBRepGraphRef g,
                                        int32_t* outIndex) {
     if (!g || !outKind || !outIndex) return false;
     try {
-        const auto& hist = g->graph.History();
+        auto hist = bgHistory(g);
+        if (hist.IsNull()) return false;
         BRepGraph_NodeId derived((BRepGraph_NodeId::Kind)derivedKind, derivedIndex);
-        BRepGraph_NodeId orig = hist.FindOriginal(derived);
+        BRepGraph_NodeId orig = hist->FindOriginal(derived);
         *outKind = (int32_t)orig.NodeKind;
         *outIndex = orig.Index;
         return true;
@@ -785,10 +880,11 @@ int32_t OCCTBRepGraphHistoryFindDerived(OCCTBRepGraphRef g,
                                          int32_t maxCount) {
     if (!g || !outKinds || !outIndices) return 0;
     try {
-        const auto& hist = g->graph.History();
+        auto hist = bgHistory(g);
+        if (hist.IsNull()) return 0;
         BRepGraph_NodeId orig((BRepGraph_NodeId::Kind)origKind, origIndex);
-        auto derived = hist.FindDerived(orig);
-        int32_t total = derived.Length();
+        auto derived = hist->FindDerived(orig);
+        int32_t total = (int32_t)derived.Size();
         int32_t copy = std::min(total, maxCount);
         for (int32_t i = 0; i < copy; i++) {
             outKinds[i] = (int32_t)derived.Value(i).NodeKind;
@@ -807,13 +903,15 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef g,
                                  int32_t replCount) {
     if (!g || !opName) return;
     try {
-        auto& hist = g->graph.History();
+        // Recording creates the history layer if absent (Ensure); the new Record() takes an Array1.
+        auto hist = g->graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>();
+        if (hist.IsNull()) return;
         BRepGraph_NodeId orig((BRepGraph_NodeId::Kind)origKind, origIndex);
-        NCollection_DynamicArray<BRepGraph_NodeId> repls;
+        NCollection_Array1<BRepGraph_NodeId> repls(0, std::max(0, replCount) - 1);
         for (int32_t i = 0; i < replCount; i++) {
-            repls.Append(BRepGraph_NodeId((BRepGraph_NodeId::Kind)replKinds[i], replIndices[i]));
+            repls.SetValue(i, BRepGraph_NodeId((BRepGraph_NodeId::Kind)replKinds[i], replIndices[i]));
         }
-        hist.Record(TCollection_AsciiString(opName), orig, repls);
+        hist->Record(TCollection_AsciiString(opName), orig, repls);
     } catch (...) {}
 }
 
@@ -821,13 +919,14 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef g,
 
 int32_t OCCTBRepGraphNbTriangulations(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Mesh().Poly().NbTriangulations(); }
+    // OCCT 8.0.0p1: PolyOps count getters were renamed (Nb*FaceTriangulations / NbEdgePolygons3D / ...).
+    try { return g->graph.Mesh().Poly().NbFaceTriangulations(); }
     catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphNbPolygons3D(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Mesh().Poly().NbPolygons3D(); }
+    try { return g->graph.Mesh().Poly().NbEdgePolygons3D(); }
     catch (...) { return 0; }
 }
 
@@ -835,13 +934,13 @@ int32_t OCCTBRepGraphNbPolygons3D(OCCTBRepGraphRef g) {
 
 int32_t OCCTBRepGraphMeshNbPolygons2D(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Mesh().Poly().NbPolygons2D(); }
+    try { return g->graph.Mesh().Poly().NbCoEdgePolygons2D(); }
     catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphMeshNbPolygonsOnTri(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Mesh().Poly().NbPolygonsOnTri(); }
+    try { return g->graph.Mesh().Poly().NbCoEdgePolygonsOnTri(); }
     catch (...) { return 0; }
 }
 
@@ -870,12 +969,13 @@ int32_t OCCTBRepGraphMeshNbActivePolygonsOnTri(OCCTBRepGraphRef g) {
 }
 
 // MeshView FaceOps: cache-first triangulation queries.
+// OCCT 8.0.0p1: the mesh cache no longer exposes per-entity RepIds. These now return a presence
+// sentinel (0 = a mesh entry exists, -1 = none) instead of the former rep index.
 
 int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Mesh().Faces().ActiveTriangulationRepId(BRepGraph_FaceId(faceIndex));
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1;
     } catch (...) { return -1; }
 }
 
@@ -884,8 +984,7 @@ int32_t OCCTBRepGraphMeshFaceActiveTriangulationRepId(OCCTBRepGraphRef g, int32_
 int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Mesh().Edges().Polygon3DRepId(BRepGraph_EdgeId(edgeIndex));
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        return g->graph.Mesh().Cache().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1;
     } catch (...) { return -1; }
 }
 
@@ -893,20 +992,22 @@ int32_t OCCTBRepGraphMeshEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeInde
 
 bool OCCTBRepGraphMeshCoEdgeHasMesh(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return false;
-    try { return g->graph.Mesh().CoEdges().HasMesh(BRepGraph_CoEdgeId(coedgeIndex)); }
+    try { return g->graph.Mesh().Cache().CoEdges().Has(BRepGraph_CoEdgeId(coedgeIndex)); }
     catch (...) { return false; }
 }
 
-// MeshCache write API (v0.160.0). All BRepGraph_Tool::Mesh statics. RepId allocations
-// return the Index field; -1 indicates failure. Writes are no-ops on invalid ids.
+// MeshCache write API (v0.160.0), rewrapped for OCCT 8.0.0p1 via the side-registry.
+// p1 removed integer RepIds: the cache editor (Mesh().Editor()) takes Poly_* handles directly.
+// We preserve the int-rep-id ABI by stashing the input handle in the side-registry (returning its
+// index as the "rep id") and resolving that index back to the handle in the Set/Append entry points.
 
 int32_t OCCTBRepGraphMeshCreateTriangulationRep(OCCTBRepGraphRef g, OCCTPolyTriangulationRef tri) {
     if (!g || !tri) return -1;
     try {
         const Handle(Poly_Triangulation)& h = reinterpret_cast<Poly_TriangulationOpaque*>(tri)->triangulation;
         if (h.IsNull()) return -1;
-        auto rid = BRepGraph_Tool::Mesh::CreateTriangulationRep(g->graph, h);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        g->triReps.push_back(h);
+        return (int32_t)(g->triReps.size() - 1);
     } catch (...) { return -1; }
 }
 
@@ -915,63 +1016,59 @@ int32_t OCCTBRepGraphMeshCreatePolygon3DRep(OCCTBRepGraphRef g, OCCTPolyPolygon3
     try {
         const Handle(Poly_Polygon3D)& h = reinterpret_cast<Poly_Polygon3DOpaque*>(poly)->polygon;
         if (h.IsNull()) return -1;
-        auto rid = BRepGraph_Tool::Mesh::CreatePolygon3DRep(g->graph, h);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        g->poly3dReps.push_back(h);
+        return (int32_t)(g->poly3dReps.size() - 1);
     } catch (...) { return -1; }
 }
 
 int32_t OCCTBRepGraphMeshCreatePolygonOnTriRep(OCCTBRepGraphRef g, OCCTPolyPolygonOnTriRef poly, int32_t triRepId) {
-    if (!g || !poly || triRepId < 0) return -1;
+    // p1 no longer links a polygon-on-tri to a triangulation by id at creation time (the link is
+    // resolved at attach time via CoEdgeDef.FaceId). triRepId is accepted for ABI compat but unused.
+    (void)triRepId;
+    if (!g || !poly) return -1;
     try {
         const Handle(Poly_PolygonOnTriangulation)& h = reinterpret_cast<Poly_PolygonOnTriangulationOpaque*>(poly)->polygon;
         if (h.IsNull()) return -1;
-        BRepGraph_TriangulationRepId tid;
-        tid.Index = (uint32_t)triRepId;
-        auto rid = BRepGraph_Tool::Mesh::CreatePolygonOnTriRep(g->graph, h, tid);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        g->polyOnTriReps.push_back(h);
+        return (int32_t)(g->polyOnTriReps.size() - 1);
     } catch (...) { return -1; }
 }
 
 void OCCTBRepGraphMeshAppendCachedTriangulation(OCCTBRepGraphRef g, int32_t faceIndex, int32_t triRepId) {
-    if (!g || triRepId < 0) return;
+    if (!g || triRepId < 0 || (size_t)triRepId >= g->triReps.size()) return;
     try {
-        BRepGraph_TriangulationRepId tid;
-        tid.Index = (uint32_t)triRepId;
-        BRepGraph_Tool::Mesh::AppendCachedTriangulation(g->graph, BRepGraph_FaceId(faceIndex), tid);
+        g->graph.Mesh().Editor().Faces().SetCachedTriangulation(
+            BRepGraph_FaceId(faceIndex), g->triReps[triRepId]);
     } catch (...) {}
 }
 
 void OCCTBRepGraphMeshSetCachedActiveIndex(OCCTBRepGraphRef g, int32_t faceIndex, int32_t activeIndex) {
-    if (!g) return;
-    try {
-        BRepGraph_Tool::Mesh::SetCachedActiveIndex(g->graph, BRepGraph_FaceId(faceIndex), activeIndex);
-    } catch (...) {}
+    // OCCT 8.0.0p1: a face's cached mesh holds exactly ONE triangulation; there is no public
+    // multi-LOD active-index selection on the cache. No-op (the single cached triangulation is active).
+    (void)g; (void)faceIndex; (void)activeIndex;
 }
 
 void OCCTBRepGraphMeshSetCachedPolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t polyRepId) {
-    if (!g || polyRepId < 0) return;
+    if (!g || polyRepId < 0 || (size_t)polyRepId >= g->poly3dReps.size()) return;
     try {
-        BRepGraph_Polygon3DRepId rid;
-        rid.Index = (uint32_t)polyRepId;
-        BRepGraph_Tool::Mesh::SetCachedPolygon3D(g->graph, BRepGraph_EdgeId(edgeIndex), rid);
+        g->graph.Mesh().Editor().Edges().SetCachedPolygon3D(
+            BRepGraph_EdgeId(edgeIndex), g->poly3dReps[polyRepId]);
     } catch (...) {}
 }
 
 void OCCTBRepGraphMeshAppendCachedPolygonOnTri(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t polyRepId) {
-    if (!g || polyRepId < 0) return;
+    if (!g || polyRepId < 0 || (size_t)polyRepId >= g->polyOnTriReps.size()) return;
     try {
-        BRepGraph_PolygonOnTriRepId rid;
-        rid.Index = (uint32_t)polyRepId;
-        BRepGraph_Tool::Mesh::AppendCachedPolygonOnTri(g->graph, BRepGraph_CoEdgeId(coedgeIndex), rid);
+        g->graph.Mesh().Editor().CoEdges().AppendCachedPolygonOnTri(
+            BRepGraph_CoEdgeId(coedgeIndex), g->polyOnTriReps[polyRepId]);
     } catch (...) {}
 }
 
 void OCCTBRepGraphMeshSetCachedPolygon2D(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t poly2DRepId) {
-    if (!g || poly2DRepId < 0) return;
+    if (!g || poly2DRepId < 0 || (size_t)poly2DRepId >= g->poly2dReps.size()) return;
     try {
-        BRepGraph_Polygon2DRepId rid;
-        rid.Index = (uint32_t)poly2DRepId;
-        BRepGraph_Tool::Mesh::SetCachedPolygon2D(g->graph, BRepGraph_CoEdgeId(coedgeIndex), rid);
+        g->graph.Mesh().Editor().CoEdges().SetCachedPolygon2D(
+            BRepGraph_CoEdgeId(coedgeIndex), g->poly2dReps[poly2DRepId]);
     } catch (...) {}
 }
 
@@ -979,44 +1076,27 @@ void OCCTBRepGraphMeshSetCachedPolygon2D(OCCTBRepGraphRef g, int32_t coedgeIndex
 
 int32_t OCCTBRepGraphNbActiveSurfaces(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Topo().Geometry().NbActiveSurfaces(); }
+    try { return g->graph.Topo().Geometry().NbActiveFaceSurfaces(); }
     catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphNbActiveCurves3D(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Topo().Geometry().NbActiveCurves3D(); }
+    try { return g->graph.Topo().Geometry().NbActiveEdgeCurves3D(); }
     catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphNbActiveCurves2D(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Topo().Geometry().NbActiveCurves2D(); }
+    try { return g->graph.Topo().Geometry().NbActiveCoEdgeCurves2D(); }
     catch (...) { return 0; }
 }
 
 // --- SameDomain ---
-
-int32_t OCCTBRepGraphFaceSameDomainCount(OCCTBRepGraphRef g, int32_t faceIndex) {
-    if (!g) return 0;
-    try {
-        auto sd = g->graph.Topo().Faces().SameDomain(
-            BRepGraph_FaceId(faceIndex), g->graph.Allocator());
-        return (int32_t)sd.Size();
-    } catch (...) { return 0; }
-}
-
-void OCCTBRepGraphFaceSameDomainIndices(OCCTBRepGraphRef g, int32_t faceIndex,
-                                        int32_t* outIndices) {
-    if (!g || !outIndices) return;
-    try {
-        auto sd = g->graph.Topo().Faces().SameDomain(
-            BRepGraph_FaceId(faceIndex), g->graph.Allocator());
-        for (int i = 0; i < sd.Size(); ++i) {
-            outIndices[i] = sd(i).Index;
-        }
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: TopoView::FaceOps no longer exposes a SameDomain() query (no public same-domain
+// adjacency survived the incidence-table redesign). Stubbed.
+int32_t OCCTBRepGraphFaceSameDomainCount(OCCTBRepGraphRef, int32_t) { return 0; }
+void OCCTBRepGraphFaceSameDomainIndices(OCCTBRepGraphRef, int32_t, int32_t*) {}
 
 // --- Copy and Transform ---
 
@@ -1024,8 +1104,9 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom) {
     if (!g) return nullptr;
     try {
         auto ref = new OCCTBRepGraph();
-        ref->graph = BRepGraph_Copy::Perform(g->graph, copyGeom);
-        if (!ref->graph.IsDone()) { delete ref; return nullptr; }
+        // OCCT 8.0.0p1: Perform now copies source INTO a target graph and returns bool.
+        auto geomPolicy = copyGeom ? BRepGraph_Copy::GeomPolicy::Copy : BRepGraph_Copy::GeomPolicy::Share;
+        if (!BRepGraph_Copy::Perform(g->graph, ref->graph, geomPolicy)) { delete ref; return nullptr; }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -1034,12 +1115,13 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
     if (!g) return nullptr;
     try {
         auto ref = new OCCTBRepGraph();
-        // OCCT 8.0.0 beta1: BRepGraph_Copy::CopyFace replaced by CopyNode taking any NodeId.
-        ref->graph = BRepGraph_Copy::CopyNode(
-            g->graph,
+        // OCCT 8.0.0p1: CopyNode copies into a target graph and returns the mapped node id.
+        auto geomPolicy = copyGeom ? BRepGraph_Copy::GeomPolicy::Copy : BRepGraph_Copy::GeomPolicy::Share;
+        auto mapped = BRepGraph_Copy::CopyNode(
+            g->graph, ref->graph,
             BRepGraph_NodeId(BRepGraph_NodeId::Kind::Face, faceIndex),
-            copyGeom);
-        if (!ref->graph.IsDone()) { delete ref; return nullptr; }
+            geomPolicy);
+        if (!mapped.IsValid()) { delete ref; return nullptr; }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -1052,8 +1134,9 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
         gp_Trsf trsf;
         trsf.SetTranslation(gp_Vec(dx, dy, dz));
         auto ref = new OCCTBRepGraph();
-        ref->graph = BRepGraph_Transform::Perform(g->graph, trsf, copyGeom);
-        if (!ref->graph.IsDone()) { delete ref; return nullptr; }
+        // OCCT 8.0.0p1: Perform now transforms source INTO a target graph and returns bool.
+        auto geomPolicy = copyGeom ? BRepGraph_Copy::GeomPolicy::Copy : BRepGraph_Copy::GeomPolicy::Share;
+        if (!BRepGraph_Transform::Perform(g->graph, ref->graph, trsf, geomPolicy)) { delete ref; return nullptr; }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -1063,11 +1146,14 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
 #include <BRepGraph_RefsView.hxx>
 
 static BRepGraph_RefId::Kind refKindFromInt(int32_t k) {
+    // OCCT 8.0.0p1: BRepGraph_RefId::Kind::CoEdge was removed (coedges are no longer
+    // reference-counted). The historic ABI code 3 (CoEdge) now maps to Shell as an inert fallback;
+    // the remaining codes keep their original Swift-facing meaning.
     switch (k) {
         case 0: return BRepGraph_RefId::Kind::Shell;
         case 1: return BRepGraph_RefId::Kind::Face;
         case 2: return BRepGraph_RefId::Kind::Wire;
-        case 3: return BRepGraph_RefId::Kind::CoEdge;
+        case 3: return BRepGraph_RefId::Kind::Shell;   // was CoEdge (removed)
         case 4: return BRepGraph_RefId::Kind::Vertex;
         case 5: return BRepGraph_RefId::Kind::Solid;
         case 6: return BRepGraph_RefId::Kind::Child;
@@ -1195,9 +1281,11 @@ int32_t OCCTBRepGraphNbWireRefs(OCCTBRepGraphRef g) {
     catch (...) { return 0; }
 }
 
+// OCCT 8.0.0p1: coedges became first-class topology entities (no longer separate refs in RefsView).
+// The per-use count maps to the coedge count in the topology view (e.g. 24 for a box).
 int32_t OCCTBRepGraphNbCoEdgeRefs(OCCTBRepGraphRef g) {
     if (!g) return 0;
-    try { return g->graph.Refs().CoEdges().Nb(); }
+    try { return (int32_t)g->graph.Topo().CoEdges().Nb(); }
     catch (...) { return 0; }
 }
 
@@ -1230,8 +1318,9 @@ int32_t OCCTBRepGraphNbOccurrenceRefs(OCCTBRepGraphRef g) {
 int32_t OCCTBRepGraphRefChildNodeKind(OCCTBRepGraphRef g, int32_t refKind, int32_t refIndex) {
     if (!g) return -1;
     try {
+        // OCCT 8.0.0p1: cross-kind ref queries moved to RefsView::Gen().
         BRepGraph_RefId rid(refKindFromInt(refKind), refIndex);
-        auto nid = g->graph.Refs().ChildNode(rid);
+        auto nid = g->graph.Refs().Gen().ChildNode(rid);
         if (!nid.IsValid()) return -1;
         return nodeKindToInt(nid.NodeKind);
     } catch (...) { return -1; }
@@ -1241,7 +1330,7 @@ int32_t OCCTBRepGraphRefChildNodeIndex(OCCTBRepGraphRef g, int32_t refKind, int3
     if (!g) return -1;
     try {
         BRepGraph_RefId rid(refKindFromInt(refKind), refIndex);
-        auto nid = g->graph.Refs().ChildNode(rid);
+        auto nid = g->graph.Refs().Gen().ChildNode(rid);
         if (!nid.IsValid()) return -1;
         return nid.Index;
     } catch (...) { return -1; }
@@ -1251,7 +1340,7 @@ bool OCCTBRepGraphRefIsRemoved(OCCTBRepGraphRef g, int32_t refKind, int32_t refI
     if (!g) return false;
     try {
         BRepGraph_RefId rid(refKindFromInt(refKind), refIndex);
-        return g->graph.Refs().IsRemoved(rid);
+        return g->graph.Refs().Gen().IsRemoved(rid);
     } catch (...) { return false; }
 }
 
@@ -1259,7 +1348,7 @@ int32_t OCCTBRepGraphRefOrientation(OCCTBRepGraphRef g, int32_t refKind, int32_t
     if (!g) return 0;
     try {
         BRepGraph_RefId rid(refKindFromInt(refKind), refIndex);
-        return (int32_t)g->graph.Refs().Orientation(rid);
+        return (int32_t)g->graph.Refs().Gen().Orientation(rid);
     } catch (...) { return 0; }
 }
 
@@ -1268,43 +1357,45 @@ int32_t OCCTBRepGraphRefOrientation(OCCTBRepGraphRef g, int32_t refKind, int32_t
 int32_t OCCTBRepGraphFaceNbWires(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
     try {
-        auto& def = g->graph.Topo().Faces().Definition(BRepGraph_FaceId(faceIndex));
-        return (int32_t)def.WireRefIds.Length();
+        // OCCT 8.0.0p1: wire refs moved off FaceDef into FaceRelations; NbWires exposed via Tool.
+        return (int32_t)BRepGraph_Tool::Face::NbWires(g->graph, BRepGraph_FaceId(faceIndex));
     } catch (...) { return 0; }
 }
 
-int32_t OCCTBRepGraphFaceNbVertexRefs(OCCTBRepGraphRef g, int32_t faceIndex) {
-    if (!g) return 0;
-    try {
-        auto& def = g->graph.Topo().Faces().Definition(BRepGraph_FaceId(faceIndex));
-        return (int32_t)def.VertexRefIds.Length();
-    } catch (...) { return 0; }
-}
+// OCCT 8.0.0p1: faces no longer carry direct vertex references (FaceRelations holds only
+// WireRefIds + ParentFaceRefIds). No public face-vertex-ref count. Stubbed.
+int32_t OCCTBRepGraphFaceNbVertexRefs(OCCTBRepGraphRef, int32_t) { return 0; }
 
 // --- Edge Definition Details ---
+
+// OCCT 8.0.0p1: Edge::StartVertexId/EndVertexId return a VertexRefId (a per-edge USE reference), not
+// the shared vertex definition. Resolve the ref to its vertex def id (ChildVertexId) so callers get a
+// valid index into the vertex table.
+static int32_t bgVertexDefOfRef(OCCTBRepGraphRef g, BRepGraph_VertexRefId ref) {
+    if (!ref.IsValid()) return -1;
+    auto def = g->graph.Refs().Vertices().Entry(ref).ChildVertexId;
+    return def.IsValid() ? (int32_t)def.Index : -1;
+}
 
 int32_t OCCTBRepGraphEdgeStartVertex(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return -1;
     try {
-        auto vid = BRepGraph_Tool::Edge::StartVertexId(g->graph, BRepGraph_EdgeId(edgeIndex));
-        return vid.IsValid() ? vid.Index : -1;
+        return bgVertexDefOfRef(g, BRepGraph_Tool::Edge::StartVertexId(g->graph, BRepGraph_EdgeId(edgeIndex)));
     } catch (...) { return -1; }
 }
 
 int32_t OCCTBRepGraphEdgeEndVertex(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return -1;
     try {
-        auto vid = BRepGraph_Tool::Edge::EndVertexId(g->graph, BRepGraph_EdgeId(edgeIndex));
-        return vid.IsValid() ? vid.Index : -1;
+        return bgVertexDefOfRef(g, BRepGraph_Tool::Edge::EndVertexId(g->graph, BRepGraph_EdgeId(edgeIndex)));
     } catch (...) { return -1; }
 }
 
 bool OCCTBRepGraphEdgeIsClosed(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try {
-        auto& def = g->graph.Topo().Edges().Definition(BRepGraph_EdgeId(edgeIndex));
-        return def.IsClosed;
-    } catch (...) { return false; }
+    // OCCT 8.0.0p1: edge closure is derived, not a stored EdgeDef flag; query via Tool::Edge.
+    try { return BRepGraph_Tool::Edge::IsClosed(g->graph, BRepGraph_EdgeId(edgeIndex)); }
+    catch (...) { return false; }
 }
 
 // --- Compound/CompSolid Queries ---
@@ -1312,32 +1403,41 @@ bool OCCTBRepGraphEdgeIsClosed(OCCTBRepGraphRef g, int32_t edgeIndex) {
 int32_t OCCTBRepGraphCompoundParentCount(OCCTBRepGraphRef g, int32_t compoundIndex) {
     if (!g) return 0;
     try {
-        auto& parents = g->graph.Topo().Compounds().ParentCompounds(BRepGraph_CompoundId(compoundIndex));
-        return (int32_t)parents.Length();
+        // OCCT 8.0.0p1: ParentCompounds() removed; resolve via the node's compound child refs.
+        const auto& refs = g->graph.Topo().Gen().CompoundRefIds(
+            BRepGraph_NodeId(BRepGraph_NodeId::Kind::Compound, compoundIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompoundsOfCompound it(g->graph, refs); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphCompoundChildCount(OCCTBRepGraphRef g, int32_t compoundIndex) {
     if (!g) return 0;
     try {
-        auto& def = g->graph.Topo().Compounds().Definition(BRepGraph_CompoundId(compoundIndex));
-        return (int32_t)def.ChildRefIds.Length();
+        // OCCT 8.0.0p1: child refs moved off CompoundDef into CompoundRelations.
+        auto& rel = g->graph.Topo().Compounds().Relations(BRepGraph_CompoundId(compoundIndex));
+        return (int32_t)rel.ChildRefIds.Size();
     } catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphCompSolidSolidCount(OCCTBRepGraphRef g, int32_t compSolidIndex) {
     if (!g) return 0;
     try {
-        auto& def = g->graph.Topo().CompSolids().Definition(BRepGraph_CompSolidId(compSolidIndex));
-        return (int32_t)def.SolidRefIds.Length();
+        // OCCT 8.0.0p1: solid refs moved off CompSolidDef into CompSolidRelations.
+        auto& rel = g->graph.Topo().CompSolids().Relations(BRepGraph_CompSolidId(compSolidIndex));
+        return (int32_t)rel.SolidRefIds.Size();
     } catch (...) { return 0; }
 }
 
 int32_t OCCTBRepGraphCompSolidCompoundCount(OCCTBRepGraphRef g, int32_t compSolidIndex) {
     if (!g) return 0;
     try {
-        auto& compounds = g->graph.Topo().CompSolids().Compounds(BRepGraph_CompSolidId(compSolidIndex));
-        return (int32_t)compounds.Length();
+        const auto& refs = g->graph.Topo().Gen().CompoundRefIds(
+            BRepGraph_NodeId(BRepGraph_NodeId::Kind::CompSolid, compSolidIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompoundsOfCompSolid it(g->graph, refs); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
@@ -1346,18 +1446,19 @@ int32_t OCCTBRepGraphCompSolidCompoundCount(OCCTBRepGraphRef g, int32_t compSoli
 int32_t OCCTBRepGraphEdgeWireCount(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return 0;
     try {
-        auto& wires = g->graph.Topo().Edges().Wires(BRepGraph_EdgeId(edgeIndex));
-        return (int32_t)wires.Length();
+        // OCCT 8.0.0p1: EdgeOps::Wires() removed; iterate parent wires via BRepGraph_WiresOfEdge.
+        int32_t n = 0;
+        for (BRepGraph_WiresOfEdge it(g->graph, BRepGraph_EdgeId(edgeIndex)); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 void OCCTBRepGraphEdgeWireIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t* outIndices) {
     if (!g || !outIndices) return;
     try {
-        auto& wires = g->graph.Topo().Edges().Wires(BRepGraph_EdgeId(edgeIndex));
-        for (int i = 0; i < wires.Length(); ++i) {
-            outIndices[i] = wires.Value(i).Index;
-        }
+        int i = 0;
+        for (BRepGraph_WiresOfEdge it(g->graph, BRepGraph_EdgeId(edgeIndex)); it.More(); it.Next())
+            outIndices[i++] = (int32_t)it.CurrentId().Index;
     } catch (...) {}
 }
 
@@ -1365,7 +1466,7 @@ int32_t OCCTBRepGraphEdgeCoEdgeCount(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return 0;
     try {
         auto& coedges = g->graph.Topo().Edges().CoEdges(BRepGraph_EdgeId(edgeIndex));
-        return (int32_t)coedges.Length();
+        return (int32_t)coedges.Size();
     } catch (...) { return 0; }
 }
 
@@ -1373,8 +1474,8 @@ void OCCTBRepGraphEdgeCoEdgeIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32
     if (!g || !outIndices) return;
     try {
         auto& coedges = g->graph.Topo().Edges().CoEdges(BRepGraph_EdgeId(edgeIndex));
-        for (int i = 0; i < coedges.Length(); ++i) {
-            outIndices[i] = coedges.Value(i).Index;
+        for (size_t i = 0; i < coedges.Size(); ++i) {
+            outIndices[i] = (int32_t)coedges.Value(i).Index;
         }
     } catch (...) {}
 }
@@ -1384,26 +1485,32 @@ void OCCTBRepGraphEdgeCoEdgeIndices(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 int32_t OCCTBRepGraphFaceShellCount(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
     try {
-        auto& shells = g->graph.Topo().Faces().Shells(BRepGraph_FaceId(faceIndex));
-        return (int32_t)shells.Length();
+        // OCCT 8.0.0p1: FaceOps::Shells() removed; resolve parent shells from the face's parent face refs.
+        const auto& rel = g->graph.Topo().Faces().Relations(BRepGraph_FaceId(faceIndex));
+        int32_t n = 0;
+        for (BRepGraph_ShellsOfFace it(g->graph, rel.ParentFaceRefIds); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 void OCCTBRepGraphFaceShellIndices(OCCTBRepGraphRef g, int32_t faceIndex, int32_t* outIndices) {
     if (!g || !outIndices) return;
     try {
-        auto& shells = g->graph.Topo().Faces().Shells(BRepGraph_FaceId(faceIndex));
-        for (int i = 0; i < shells.Length(); ++i) {
-            outIndices[i] = shells.Value(i).Index;
-        }
+        const auto& rel = g->graph.Topo().Faces().Relations(BRepGraph_FaceId(faceIndex));
+        int i = 0;
+        for (BRepGraph_ShellsOfFace it(g->graph, rel.ParentFaceRefIds); it.More(); it.Next())
+            outIndices[i++] = (int32_t)it.CurrentId().Index;
     } catch (...) {}
 }
 
 int32_t OCCTBRepGraphFaceCompoundCount(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
     try {
-        auto& compounds = g->graph.Topo().Faces().Compounds(BRepGraph_FaceId(faceIndex));
-        return (int32_t)compounds.Length();
+        const auto& refs = g->graph.Topo().Gen().CompoundRefIds(
+            BRepGraph_NodeId(BRepGraph_NodeId::Kind::Face, faceIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompoundsOfFace it(g->graph, refs); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
@@ -1412,17 +1519,19 @@ int32_t OCCTBRepGraphFaceCompoundCount(OCCTBRepGraphRef g, int32_t faceIndex) {
 int32_t OCCTBRepGraphShellCompoundCount(OCCTBRepGraphRef g, int32_t shellIndex) {
     if (!g) return 0;
     try {
-        auto& compounds = g->graph.Topo().Shells().Compounds(BRepGraph_ShellId(shellIndex));
-        return (int32_t)compounds.Length();
+        const auto& refs = g->graph.Topo().Gen().CompoundRefIds(
+            BRepGraph_NodeId(BRepGraph_NodeId::Kind::Shell, shellIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompoundsOfShell it(g->graph, refs); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
 bool OCCTBRepGraphShellIsClosed(OCCTBRepGraphRef g, int32_t shellIndex) {
     if (!g) return false;
-    try {
-        auto& def = g->graph.Topo().Shells().Definition(BRepGraph_ShellId(shellIndex));
-        return def.IsClosed;
-    } catch (...) { return false; }
+    // OCCT 8.0.0p1: shell closure is derived, not a stored ShellDef flag; query via Tool::Shell.
+    try { return BRepGraph_Tool::Shell::IsClosed(g->graph, BRepGraph_ShellId(shellIndex)); }
+    catch (...) { return false; }
 }
 
 // --- Solid Additional Queries ---
@@ -1430,8 +1539,11 @@ bool OCCTBRepGraphShellIsClosed(OCCTBRepGraphRef g, int32_t shellIndex) {
 int32_t OCCTBRepGraphSolidCompoundCount(OCCTBRepGraphRef g, int32_t solidIndex) {
     if (!g) return 0;
     try {
-        auto& compounds = g->graph.Topo().Solids().Compounds(BRepGraph_SolidId(solidIndex));
-        return (int32_t)compounds.Length();
+        const auto& refs = g->graph.Topo().Gen().CompoundRefIds(
+            BRepGraph_NodeId(BRepGraph_NodeId::Kind::Solid, solidIndex));
+        int32_t n = 0;
+        for (BRepGraph_CompoundsOfSolid it(g->graph, refs); it.More(); it.Next()) ++n;
+        return n;
     } catch (...) { return 0; }
 }
 
@@ -1448,8 +1560,9 @@ int32_t OCCTBRepGraphNbCompSolids(OCCTBRepGraphRef g) {
 int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t faceIndex) {
     if (!g) return -1;
     try {
-        auto cid = g->graph.Topo().Edges().FindCoEdgeId(BRepGraph_EdgeId(edgeIndex), BRepGraph_FaceId(faceIndex));
-        return cid.IsValid() ? cid.Index : -1;
+        // OCCT 8.0.0p1: FindCoEdgeId moved to BRepGraph_Tool::Edge.
+        auto cid = BRepGraph_Tool::Edge::FindCoEdgeId(g->graph, BRepGraph_EdgeId(edgeIndex), BRepGraph_FaceId(faceIndex));
+        return cid.IsValid() ? (int32_t)cid.Index : -1;
     } catch (...) { return -1; }
 }
 
@@ -1458,7 +1571,6 @@ int32_t OCCTBRepGraphEdgeFindCoEdge(OCCTBRepGraphRef g, int32_t edgeIndex, int32
 // MARK: - BRepGraph Builder (v0.135.0; migrated to EditorView in v0.157.0 / OCCT 8.0.0 beta1)
 
 #include <BRepGraph_EditorView.hxx>
-#include <BRepGraph_Builder.hxx>
 #include <BRepGraph_Tool.hxx>
 #include <BRepGraph_DeferredScope.hxx>
 
@@ -1501,46 +1613,50 @@ int32_t OCCTBRepGraphBuilderAddSolid(OCCTBRepGraphRef g) {
 int32_t OCCTBRepGraphBuilderAddFaceToShell(OCCTBRepGraphRef g, int32_t shellIndex, int32_t faceIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().Shells().AddFace(
+        // OCCT 8.0.0p1: ShellOps::AddFace renamed to Append.
+        auto rid = g->graph.Editor().Shells().Append(
             BRepGraph_ShellId(shellIndex),
             BRepGraph_FaceId(faceIndex),
             oriFromInt(orientation));
-        return rid.IsValid() ? rid.Index : -1;
+        return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
 
 int32_t OCCTBRepGraphBuilderAddShellToSolid(OCCTBRepGraphRef g, int32_t solidIndex, int32_t shellIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().Solids().AddShell(
+        // OCCT 8.0.0p1: SolidOps::AddShell renamed to Append.
+        auto rid = g->graph.Editor().Solids().Append(
             BRepGraph_SolidId(solidIndex),
             BRepGraph_ShellId(shellIndex),
             oriFromInt(orientation));
-        return rid.IsValid() ? rid.Index : -1;
+        return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
 }
 
 int32_t OCCTBRepGraphBuilderAddCompound(OCCTBRepGraphRef g, const int32_t* kinds, const int32_t* indices, int32_t count) {
     if (!g || !kinds || !indices || count <= 0) return -1;
     try {
-        NCollection_DynamicArray<BRepGraph_NodeId> children;
+        // OCCT 8.0.0p1: CompoundOps::Add takes NCollection_Array1 (was DynamicArray).
+        NCollection_Array1<BRepGraph_NodeId> children(0, count - 1);
         for (int32_t i = 0; i < count; ++i) {
-            children.Append(BRepGraph_NodeId(kindFromInt(kinds[i]), indices[i]));
+            children.SetValue(i, BRepGraph_NodeId(kindFromInt(kinds[i]), indices[i]));
         }
         auto cid = g->graph.Editor().Compounds().Add(children);
-        return cid.IsValid() ? cid.Index : -1;
+        return cid.IsValid() ? (int32_t)cid.Index : -1;
     } catch (...) { return -1; }
 }
 
 int32_t OCCTBRepGraphBuilderAddCompSolid(OCCTBRepGraphRef g, const int32_t* solidIndices, int32_t count) {
     if (!g || !solidIndices || count <= 0) return -1;
     try {
-        NCollection_DynamicArray<BRepGraph_SolidId> solids;
+        // OCCT 8.0.0p1: CompSolidOps::Add takes NCollection_Array1 (was DynamicArray).
+        NCollection_Array1<BRepGraph_SolidId> solids(0, count - 1);
         for (int32_t i = 0; i < count; ++i) {
-            solids.Append(BRepGraph_SolidId(solidIndices[i]));
+            solids.SetValue(i, BRepGraph_SolidId(solidIndices[i]));
         }
         auto csid = g->graph.Editor().CompSolids().Add(solids);
-        return csid.IsValid() ? csid.Index : -1;
+        return csid.IsValid() ? (int32_t)csid.Index : -1;
     } catch (...) { return -1; }
 }
 
@@ -1568,21 +1684,21 @@ void OCCTBRepGraphBuilderRemoveSubgraph(OCCTBRepGraphRef g, int32_t nodeKind, in
 void OCCTBRepGraphBuilderAppendFlattenedShape(OCCTBRepGraphRef g, OCCTShapeRef shape, bool parallel) {
     if (!g || !shape) return;
     try {
-        BRepGraph_Builder::Options opts;
+        BRepGraph::ShapesView::Options opts;
         opts.Parallel = parallel;
         opts.CreateAutoProduct = false;
         opts.Flatten = true;
-        (void)BRepGraph_Builder::Add(g->graph, *(const TopoDS_Shape*)shape, opts);
+        (void)g->graph.Shapes().Add(*(const TopoDS_Shape*)shape, opts);
     } catch (...) {}
 }
 
 void OCCTBRepGraphBuilderAppendFullShape(OCCTBRepGraphRef g, OCCTShapeRef shape, bool parallel) {
     if (!g || !shape) return;
     try {
-        BRepGraph_Builder::Options opts;
+        BRepGraph::ShapesView::Options opts;
         opts.Parallel = parallel;
         opts.CreateAutoProduct = false;
-        (void)BRepGraph_Builder::Add(g->graph, *(const TopoDS_Shape*)shape, opts);
+        (void)g->graph.Shapes().Add(*(const TopoDS_Shape*)shape, opts);
     } catch (...) {}
 }
 
@@ -1667,16 +1783,15 @@ bool OCCTBRepGraphBuilderRemoveRef(OCCTBRepGraphRef g, int32_t refKind, int32_t 
 
 void OCCTBRepGraphBuilderClearFaceMesh(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return;
-    try {
-        BRepGraph_Tool::Mesh::ClearFaceCache(g->graph, BRepGraph_FaceId(faceIndex));
-    } catch (...) {}
+    // OCCT 8.0.0p1: cache clear moved to MeshView::Editor (BRepGraph_Tool::Mesh removed).
+    try { g->graph.Mesh().Editor().Faces().Clear(BRepGraph_FaceId(faceIndex)); }
+    catch (...) {}
 }
 
 void OCCTBRepGraphBuilderClearEdgePolygon3D(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return;
-    try {
-        BRepGraph_Tool::Mesh::ClearEdgeCache(g->graph, BRepGraph_EdgeId(edgeIndex));
-    } catch (...) {}
+    try { g->graph.Mesh().Editor().Edges().Clear(BRepGraph_EdgeId(edgeIndex)); }
+    catch (...) {}
 }
 
 // --- Validate Mutation Boundary ---
@@ -1726,33 +1841,16 @@ void OCCTBRepGraphSetEdgeParamRange(OCCTBRepGraphRef g, int32_t edgeIndex, doubl
     } catch (...) {}
 }
 
-void OCCTBRepGraphSetEdgeSameParameter(OCCTBRepGraphRef g, int32_t edgeIndex, bool sameParameter) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Edges().SetSameParameter(BRepGraph_EdgeId(edgeIndex), sameParameter);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: SameParameter / SameRange are now derived per-CoEdge properties (computed from the
+// pcurve vs 3D curve), not settable edge flags — the Edges editor no longer exposes setters. These
+// are kept as no-ops for ABI compatibility; the getters report the derived value.
+void OCCTBRepGraphSetEdgeSameParameter(OCCTBRepGraphRef, int32_t, bool) {}
+void OCCTBRepGraphSetEdgeSameRange(OCCTBRepGraphRef, int32_t, bool) {}
 
-void OCCTBRepGraphSetEdgeSameRange(OCCTBRepGraphRef g, int32_t edgeIndex, bool sameRange) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Edges().SetSameRange(BRepGraph_EdgeId(edgeIndex), sameRange);
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetEdgeDegenerate(OCCTBRepGraphRef g, int32_t edgeIndex, bool degenerate) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Edges().SetDegenerate(BRepGraph_EdgeId(edgeIndex), degenerate);
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetEdgeIsClosed(OCCTBRepGraphRef g, int32_t edgeIndex, bool isClosed) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Edges().SetIsClosed(BRepGraph_EdgeId(edgeIndex), isClosed);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: edge degeneracy and closure are derived from geometry/topology, no longer
+// settable EdgeDef flags — the Edges editor exposes no setters. Kept as no-ops for ABI compat.
+void OCCTBRepGraphSetEdgeDegenerate(OCCTBRepGraphRef, int32_t, bool) {}
+void OCCTBRepGraphSetEdgeIsClosed(OCCTBRepGraphRef, int32_t, bool) {}
 
 // CoEdgeOps
 
@@ -1772,12 +1870,8 @@ void OCCTBRepGraphSetCoEdgeOrientation(OCCTBRepGraphRef g, int32_t coedgeIndex, 
 
 // WireOps
 
-void OCCTBRepGraphSetWireIsClosed(OCCTBRepGraphRef g, int32_t wireIndex, bool isClosed) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Wires().SetIsClosed(BRepGraph_WireId(wireIndex), isClosed);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: wire closure is derived from the ordered coedge chain; no settable flag. No-op.
+void OCCTBRepGraphSetWireIsClosed(OCCTBRepGraphRef, int32_t, bool) {}
 
 // FaceOps
 
@@ -1788,21 +1882,13 @@ void OCCTBRepGraphSetFaceTolerance(OCCTBRepGraphRef g, int32_t faceIndex, double
     } catch (...) {}
 }
 
-void OCCTBRepGraphSetFaceNaturalRestriction(OCCTBRepGraphRef g, int32_t faceIndex, bool naturalRestriction) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Faces().SetNaturalRestriction(BRepGraph_FaceId(faceIndex), naturalRestriction);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: face "natural restriction" flag is no longer stored/settable. No-op.
+void OCCTBRepGraphSetFaceNaturalRestriction(OCCTBRepGraphRef, int32_t, bool) {}
 
 // ShellOps
 
-void OCCTBRepGraphSetShellIsClosed(OCCTBRepGraphRef g, int32_t shellIndex, bool isClosed) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Shells().SetIsClosed(BRepGraph_ShellId(shellIndex), isClosed);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: shell closure is derived from face-boundary edge incidence; no settable flag. No-op.
+void OCCTBRepGraphSetShellIsClosed(OCCTBRepGraphRef, int32_t, bool) {}
 
 // MARK: - BRepGraph EditorView Add/Remove + Ref Setters (v0.161.0)
 //
@@ -1812,37 +1898,22 @@ void OCCTBRepGraphSetShellIsClosed(OCCTBRepGraphRef g, int32_t shellIndex, bool 
 
 // --- Add operations ---
 
-int32_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef g, int32_t edgeIndex,
-                                            int32_t vertexIndex, int32_t orientation) {
-    if (!g) return -1;
-    try {
-        auto rid = g->graph.Editor().Edges().AddInternalVertex(
-            BRepGraph_EdgeId(edgeIndex),
-            BRepGraph_VertexId(vertexIndex),
-            oriFromInt(orientation));
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
-    } catch (...) { return -1; }
-}
+// OCCT 8.0.0p1: edges no longer support adding internal/supplemental vertex usages through the
+// public Editor (only boundary start/end vertex refs persist). No equivalent — stubbed.
+int32_t OCCTBRepGraphEdgeAddInternalVertex(OCCTBRepGraphRef, int32_t, int32_t, int32_t) { return -1; }
 
-int32_t OCCTBRepGraphFaceAddVertex(OCCTBRepGraphRef g, int32_t faceIndex,
-                                    int32_t vertexIndex, int32_t orientation) {
-    if (!g) return -1;
-    try {
-        auto rid = g->graph.Editor().Faces().AddVertex(
-            BRepGraph_FaceId(faceIndex),
-            BRepGraph_VertexId(vertexIndex),
-            oriFromInt(orientation));
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
-    } catch (...) { return -1; }
-}
+// OCCT 8.0.0p1: faces no longer carry direct vertex usages (FaceRelations has only wires). Stubbed.
+int32_t OCCTBRepGraphFaceAddVertex(OCCTBRepGraphRef, int32_t, int32_t, int32_t) { return -1; }
 
 int32_t OCCTBRepGraphShellAddChild(OCCTBRepGraphRef g, int32_t shellIndex,
                                     int32_t childKind, int32_t childIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().Shells().AddChild(
+        // OCCT 8.0.0p1: ShellOps::AddChild removed; shells only own faces (Append takes a FaceId).
+        if (kindFromInt(childKind) != BRepGraph_NodeId::Kind::Face) return -1;
+        auto rid = g->graph.Editor().Shells().Append(
             BRepGraph_ShellId(shellIndex),
-            BRepGraph_NodeId(kindFromInt(childKind), childIndex),
+            BRepGraph_FaceId(childIndex),
             oriFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
@@ -1852,9 +1923,11 @@ int32_t OCCTBRepGraphSolidAddChild(OCCTBRepGraphRef g, int32_t solidIndex,
                                     int32_t childKind, int32_t childIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().Solids().AddChild(
+        // OCCT 8.0.0p1: SolidOps::AddChild removed; solids only own shells (Append takes a ShellId).
+        if (kindFromInt(childKind) != BRepGraph_NodeId::Kind::Shell) return -1;
+        auto rid = g->graph.Editor().Solids().Append(
             BRepGraph_SolidId(solidIndex),
-            BRepGraph_NodeId(kindFromInt(childKind), childIndex),
+            BRepGraph_ShellId(childIndex),
             oriFromInt(orientation));
         return rid.IsValid() ? (int32_t)rid.Index : -1;
     } catch (...) { return -1; }
@@ -1864,7 +1937,8 @@ int32_t OCCTBRepGraphCompoundAddChild(OCCTBRepGraphRef g, int32_t compoundIndex,
                                        int32_t childKind, int32_t childIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().Compounds().AddChild(
+        // OCCT 8.0.0p1: CompoundOps::AddChild renamed to Append (still takes a NodeId).
+        auto rid = g->graph.Editor().Compounds().Append(
             BRepGraph_CompoundId(compoundIndex),
             BRepGraph_NodeId(kindFromInt(childKind), childIndex),
             oriFromInt(orientation));
@@ -1876,7 +1950,8 @@ int32_t OCCTBRepGraphCompSolidAddSolid(OCCTBRepGraphRef g, int32_t compSolidInde
                                         int32_t solidIndex, int32_t orientation) {
     if (!g) return -1;
     try {
-        auto rid = g->graph.Editor().CompSolids().AddSolid(
+        // OCCT 8.0.0p1: CompSolidOps::AddSolid renamed to Append.
+        auto rid = g->graph.Editor().CompSolids().Append(
             BRepGraph_CompSolidId(compSolidIndex),
             BRepGraph_SolidId(solidIndex),
             oriFromInt(orientation));
@@ -1909,18 +1984,14 @@ int32_t OCCTBRepGraphEdgeReplaceVertex(OCCTBRepGraphRef g, int32_t edgeIndex,
 bool OCCTBRepGraphWireRemoveCoEdge(OCCTBRepGraphRef g, int32_t wireIndex, int32_t coedgeRefIndex) {
     if (!g) return false;
     try {
+        // OCCT 8.0.0p1: RemoveCoEdge now takes the exact CoEdgeId (coedges are not ref-counted).
         return g->graph.Editor().Wires().RemoveCoEdge(
-            BRepGraph_WireId(wireIndex), BRepGraph_CoEdgeRefId(coedgeRefIndex));
+            BRepGraph_WireId(wireIndex), BRepGraph_CoEdgeId(coedgeRefIndex));
     } catch (...) { return false; }
 }
 
-bool OCCTBRepGraphFaceRemoveVertex(OCCTBRepGraphRef g, int32_t faceIndex, int32_t vertexRefIndex) {
-    if (!g) return false;
-    try {
-        return g->graph.Editor().Faces().RemoveVertex(
-            BRepGraph_FaceId(faceIndex), BRepGraph_VertexRefId(vertexRefIndex));
-    } catch (...) { return false; }
-}
+// OCCT 8.0.0p1: faces no longer own direct vertex refs (FaceOps::RemoveVertex removed). Stubbed.
+bool OCCTBRepGraphFaceRemoveVertex(OCCTBRepGraphRef, int32_t, int32_t) { return false; }
 
 bool OCCTBRepGraphFaceRemoveWire(OCCTBRepGraphRef g, int32_t faceIndex, int32_t wireRefIndex) {
     if (!g) return false;
@@ -1938,11 +2009,13 @@ bool OCCTBRepGraphShellRemoveFace(OCCTBRepGraphRef g, int32_t shellIndex, int32_
     } catch (...) { return false; }
 }
 
+// OCCT 8.0.0p1: ShellOps::RemoveChild removed — shells own only faces, so the legacy "child ref"
+// is a face ref. Map onto ShellOps::RemoveFace(shellId, faceRefId).
 bool OCCTBRepGraphShellRemoveChild(OCCTBRepGraphRef g, int32_t shellIndex, int32_t childRefIndex) {
     if (!g) return false;
     try {
-        return g->graph.Editor().Shells().RemoveChild(
-            BRepGraph_ShellId(shellIndex), BRepGraph_ChildRefId(childRefIndex));
+        return g->graph.Editor().Shells().RemoveFace(
+            BRepGraph_ShellId(shellIndex), BRepGraph_FaceRefId(childRefIndex));
     } catch (...) { return false; }
 }
 
@@ -1954,11 +2027,13 @@ bool OCCTBRepGraphSolidRemoveShell(OCCTBRepGraphRef g, int32_t solidIndex, int32
     } catch (...) { return false; }
 }
 
+// OCCT 8.0.0p1: SolidOps::RemoveChild removed — solids own only shells, so the legacy "child ref"
+// is a shell ref. Map onto SolidOps::RemoveShell(solidId, shellRefId).
 bool OCCTBRepGraphSolidRemoveChild(OCCTBRepGraphRef g, int32_t solidIndex, int32_t childRefIndex) {
     if (!g) return false;
     try {
-        return g->graph.Editor().Solids().RemoveChild(
-            BRepGraph_SolidId(solidIndex), BRepGraph_ChildRefId(childRefIndex));
+        return g->graph.Editor().Solids().RemoveShell(
+            BRepGraph_SolidId(solidIndex), BRepGraph_ShellRefId(childRefIndex));
     } catch (...) { return false; }
 }
 
@@ -1978,13 +2053,28 @@ bool OCCTBRepGraphCompSolidRemoveSolid(OCCTBRepGraphRef g, int32_t compSolidInde
     } catch (...) { return false; }
 }
 
+// OCCT 8.0.0p1: GenOps::RemoveRep removed — representations are owned by their topology defs and
+// cleared through the per-kind editors. For the side-registry rep ids we expose, "removing" a rep
+// nullifies its registry slot so a later Set*RepId() resolving the same id becomes a safe no-op.
+// repKind follows BRepGraphInc_RepId::Kind ordering (0=FaceSurface, 1=FaceTriangulation,
+// 2=EdgeCurve3D, 3=EdgePolygon3D, 4=CoEdgeCurve2D, 5=CoEdgePolygon2D, 6=CoEdgePolygonOnTri); any
+// out-of-range kind/index is ignored.
 void OCCTBRepGraphRemoveRep(OCCTBRepGraphRef g, int32_t repKind, int32_t repIndex) {
-    if (!g) return;
+    if (!g || repIndex < 0) return;
+    auto nullifyAt = [](auto& vec, int32_t idx) {
+        if (idx >= 0 && (size_t)idx < vec.size()) vec[idx].Nullify();
+    };
     try {
-        BRepGraph_RepId rid;
-        rid.RepKind = (BRepGraph_RepId::Kind)repKind;
-        rid.Index = (uint32_t)repIndex;
-        g->graph.Editor().Gen().RemoveRep(rid);
+        switch (repKind) {
+            case 0: nullifyAt(g->surfReps,      repIndex); break;
+            case 1: nullifyAt(g->triReps,       repIndex); break;
+            case 2: nullifyAt(g->curve3dReps,   repIndex); break;
+            case 3: nullifyAt(g->poly3dReps,    repIndex); break;
+            case 4: nullifyAt(g->curve2dReps,   repIndex); break;
+            case 5: nullifyAt(g->poly2dReps,    repIndex); break;
+            case 6: nullifyAt(g->polyOnTriReps, repIndex); break;
+            default: break;
+        }
     } catch (...) {}
 }
 
@@ -2000,8 +2090,9 @@ void OCCTBRepGraphSetVertexRefOrientation(OCCTBRepGraphRef g, int32_t vertexRefI
 
 void OCCTBRepGraphSetVertexRefVertexDefId(OCCTBRepGraphRef g, int32_t vertexRefIndex, int32_t vertexIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefVertexDefId renamed to SetRefChildVertexId.
     try {
-        g->graph.Editor().Vertices().SetRefVertexDefId(
+        g->graph.Editor().Vertices().SetRefChildVertexId(
             BRepGraph_VertexRefId(vertexRefIndex), BRepGraph_VertexId(vertexIndex));
     } catch (...) {}
 }
@@ -2022,36 +2113,33 @@ void OCCTBRepGraphSetEdgeEndVertexRefId(OCCTBRepGraphRef g, int32_t edgeIndex, i
     } catch (...) {}
 }
 
+// OCCT 8.0.0p1: edge geometry rep-ids are gone; p1 takes handles directly. We resolve the legacy
+// rep id through the side-registry and call the handle-based setter (SetCurve / SetPersistentPolygon3D).
 void OCCTBRepGraphSetEdgeCurve3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t curve3DRepId) {
-    if (!g) return;
+    if (!g || curve3DRepId < 0 || (size_t)curve3DRepId >= g->curve3dReps.size()) return;
     try {
-        BRepGraph_Curve3DRepId rid;
-        rid.Index = (uint32_t)curve3DRepId;
-        g->graph.Editor().Edges().SetCurve3DRepId(BRepGraph_EdgeId(edgeIndex), rid);
+        const Handle(Geom_Curve)& c = g->curve3dReps[curve3DRepId];
+        if (c.IsNull()) return;
+        double f = c->FirstParameter(), l = c->LastParameter();
+        g->graph.Editor().Edges().SetCurve(BRepGraph_EdgeId(edgeIndex), c, f, l);
     } catch (...) {}
 }
-
 void OCCTBRepGraphSetEdgePolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t polygon3DRepId) {
-    if (!g) return;
+    if (!g || polygon3DRepId < 0 || (size_t)polygon3DRepId >= g->poly3dReps.size()) return;
     try {
-        BRepGraph_Polygon3DRepId rid;
-        rid.Index = (uint32_t)polygon3DRepId;
-        g->graph.Editor().Edges().SetPolygon3DRepId(BRepGraph_EdgeId(edgeIndex), rid);
+        g->graph.Editor().Edges().SetPersistentPolygon3D(
+            BRepGraph_EdgeId(edgeIndex), g->poly3dReps[polygon3DRepId]);
     } catch (...) {}
 }
 
-void OCCTBRepGraphSetCoEdgeRefCoEdgeDefId(OCCTBRepGraphRef g, int32_t coedgeRefIndex, int32_t coedgeIndex) {
-    if (!g) return;
-    try {
-        g->graph.Editor().CoEdges().SetRefCoEdgeDefId(
-            BRepGraph_CoEdgeRefId(coedgeRefIndex), BRepGraph_CoEdgeId(coedgeIndex));
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: coedges are not reference-counted (no CoEdgeRefId / SetRefCoEdgeDefId). No-op.
+void OCCTBRepGraphSetCoEdgeRefCoEdgeDefId(OCCTBRepGraphRef, int32_t, int32_t) {}
 
 void OCCTBRepGraphSetCoEdgeEdgeDefId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t edgeIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetEdgeDefId renamed to SetChildEdgeId.
     try {
-        g->graph.Editor().CoEdges().SetEdgeDefId(
+        g->graph.Editor().CoEdges().SetChildEdgeId(
             BRepGraph_CoEdgeId(coedgeIndex), BRepGraph_EdgeId(edgeIndex));
     } catch (...) {}
 }
@@ -2059,51 +2147,45 @@ void OCCTBRepGraphSetCoEdgeEdgeDefId(OCCTBRepGraphRef g, int32_t coedgeIndex, in
 void OCCTBRepGraphSetCoEdgeFaceDefId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t faceIndex) {
     if (!g) return;
     try {
-        g->graph.Editor().CoEdges().SetFaceDefId(
+        // OCCT 8.0.0p1: SetFaceDefId renamed to SetFaceId.
+        g->graph.Editor().CoEdges().SetFaceId(
             BRepGraph_CoEdgeId(coedgeIndex), BRepGraph_FaceId(faceIndex));
     } catch (...) {}
 }
 
+// OCCT 8.0.0p1: coedge geometry rep-ids are gone; p1 takes handles directly. We resolve the legacy
+// rep id through the side-registry and call the handle-based setter.
 void OCCTBRepGraphSetCoEdgeCurve2DRepId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t curve2DRepId) {
-    if (!g) return;
+    if (!g || curve2DRepId < 0 || (size_t)curve2DRepId >= g->curve2dReps.size()) return;
     try {
-        BRepGraph_Curve2DRepId rid;
-        rid.Index = (uint32_t)curve2DRepId;
-        g->graph.Editor().CoEdges().SetCurve2DRepId(BRepGraph_CoEdgeId(coedgeIndex), rid);
+        g->graph.Editor().CoEdges().SetPCurve(BRepGraph_CoEdgeId(coedgeIndex), g->curve2dReps[curve2DRepId]);
     } catch (...) {}
 }
-
 void OCCTBRepGraphSetCoEdgePolygon2DRepId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t polygon2DRepId) {
-    if (!g) return;
+    if (!g || polygon2DRepId < 0 || (size_t)polygon2DRepId >= g->poly2dReps.size()) return;
     try {
-        BRepGraph_Polygon2DRepId rid;
-        rid.Index = (uint32_t)polygon2DRepId;
-        g->graph.Editor().CoEdges().SetPolygon2DRepId(BRepGraph_CoEdgeId(coedgeIndex), rid);
+        g->graph.Editor().CoEdges().SetPersistentPolygon2D(
+            BRepGraph_CoEdgeId(coedgeIndex), g->poly2dReps[polygon2DRepId]);
     } catch (...) {}
 }
-
 void OCCTBRepGraphSetCoEdgePolygonOnTriRepId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t polygonOnTriRepId) {
-    if (!g) return;
+    if (!g || polygonOnTriRepId < 0 || (size_t)polygonOnTriRepId >= g->polyOnTriReps.size()) return;
     try {
-        BRepGraph_PolygonOnTriRepId rid;
-        rid.Index = (uint32_t)polygonOnTriRepId;
-        g->graph.Editor().CoEdges().SetPolygonOnTriRepId(BRepGraph_CoEdgeId(coedgeIndex), rid);
+        g->graph.Editor().CoEdges().SetPersistentPolygonOnTri(
+            BRepGraph_CoEdgeId(coedgeIndex), g->polyOnTriReps[polygonOnTriRepId]);
     } catch (...) {}
 }
 
 void OCCTBRepGraphClearCoEdgePCurveBinding(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return;
-    try {
-        g->graph.Editor().CoEdges().ClearPCurveBinding(BRepGraph_CoEdgeId(coedgeIndex));
-    } catch (...) {}
+    // OCCT 8.0.0p1: ClearPCurveBinding renamed to ClearPCurve.
+    try { g->graph.Editor().CoEdges().ClearPCurve(BRepGraph_CoEdgeId(coedgeIndex)); }
+    catch (...) {}
 }
 
-void OCCTBRepGraphSetWireRefIsOuter(OCCTBRepGraphRef g, int32_t wireRefIndex, bool isOuter) {
-    if (!g) return;
-    try {
-        g->graph.Editor().Wires().SetRefIsOuter(BRepGraph_WireRefId(wireRefIndex), isOuter);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: a wire reference's "is outer" flag is no longer settable (outer-wire is derived as
+// the first active wire of the owning face). No-op.
+void OCCTBRepGraphSetWireRefIsOuter(OCCTBRepGraphRef, int32_t, bool) {}
 
 void OCCTBRepGraphSetWireRefOrientation(OCCTBRepGraphRef g, int32_t wireRefIndex, int32_t orientation) {
     if (!g) return;
@@ -2115,18 +2197,21 @@ void OCCTBRepGraphSetWireRefOrientation(OCCTBRepGraphRef g, int32_t wireRefIndex
 
 void OCCTBRepGraphSetWireRefWireDefId(OCCTBRepGraphRef g, int32_t wireRefIndex, int32_t wireIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefWireDefId renamed to SetRefChildWireId.
     try {
-        g->graph.Editor().Wires().SetRefWireDefId(
+        g->graph.Editor().Wires().SetRefChildWireId(
             BRepGraph_WireRefId(wireRefIndex), BRepGraph_WireId(wireIndex));
     } catch (...) {}
 }
 
+// OCCT 8.0.0p1: face surface is gone-by-rep-id; resolve the legacy rep id through the side-registry
+// and call the handle-based FaceOps::SetSurface().
 void OCCTBRepGraphSetFaceSurfaceRepId(OCCTBRepGraphRef g, int32_t faceIndex, int32_t surfaceRepId) {
-    if (!g) return;
+    if (!g || surfaceRepId < 0 || (size_t)surfaceRepId >= g->surfReps.size()) return;
     try {
-        BRepGraph_SurfaceRepId rid;
-        rid.Index = (uint32_t)surfaceRepId;
-        g->graph.Editor().Faces().SetSurfaceRepId(BRepGraph_FaceId(faceIndex), rid);
+        const Handle(Geom_Surface)& s = g->surfReps[surfaceRepId];
+        if (s.IsNull()) return;
+        g->graph.Editor().Faces().SetSurface(BRepGraph_FaceId(faceIndex), s);
     } catch (...) {}
 }
 
@@ -2140,8 +2225,9 @@ void OCCTBRepGraphSetFaceRefOrientation(OCCTBRepGraphRef g, int32_t faceRefIndex
 
 void OCCTBRepGraphSetFaceRefFaceDefId(OCCTBRepGraphRef g, int32_t faceRefIndex, int32_t faceIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefFaceDefId renamed to SetRefFaceId.
     try {
-        g->graph.Editor().Faces().SetRefFaceDefId(
+        g->graph.Editor().Faces().SetRefFaceId(
             BRepGraph_FaceRefId(faceRefIndex), BRepGraph_FaceId(faceIndex));
     } catch (...) {}
 }
@@ -2156,8 +2242,9 @@ void OCCTBRepGraphSetShellRefOrientation(OCCTBRepGraphRef g, int32_t shellRefInd
 
 void OCCTBRepGraphSetShellRefShellDefId(OCCTBRepGraphRef g, int32_t shellRefIndex, int32_t shellIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefShellDefId renamed to SetRefChildShellId.
     try {
-        g->graph.Editor().Shells().SetRefShellDefId(
+        g->graph.Editor().Shells().SetRefChildShellId(
             BRepGraph_ShellRefId(shellRefIndex), BRepGraph_ShellId(shellIndex));
     } catch (...) {}
 }
@@ -2172,8 +2259,9 @@ void OCCTBRepGraphSetSolidRefOrientation(OCCTBRepGraphRef g, int32_t solidRefInd
 
 void OCCTBRepGraphSetSolidRefSolidDefId(OCCTBRepGraphRef g, int32_t solidRefIndex, int32_t solidIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefSolidDefId renamed to SetRefChildSolidId.
     try {
-        g->graph.Editor().Solids().SetRefSolidDefId(
+        g->graph.Editor().Solids().SetRefChildSolidId(
             BRepGraph_SolidRefId(solidRefIndex), BRepGraph_SolidId(solidIndex));
     } catch (...) {}
 }
@@ -2181,8 +2269,9 @@ void OCCTBRepGraphSetSolidRefSolidDefId(OCCTBRepGraphRef g, int32_t solidRefInde
 void OCCTBRepGraphSetOccurrenceChildDefId(OCCTBRepGraphRef g, int32_t occurrenceIndex,
                                             int32_t childKind, int32_t childIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetChildDefId renamed to SetChildNodeId.
     try {
-        g->graph.Editor().Occurrences().SetChildDefId(
+        g->graph.Editor().Occurrences().SetChildNodeId(
             BRepGraph_OccurrenceId(occurrenceIndex),
             BRepGraph_NodeId(kindFromInt(childKind), childIndex));
     } catch (...) {}
@@ -2191,8 +2280,9 @@ void OCCTBRepGraphSetOccurrenceChildDefId(OCCTBRepGraphRef g, int32_t occurrence
 void OCCTBRepGraphSetOccurrenceRefOccurrenceDefId(OCCTBRepGraphRef g, int32_t occurrenceRefIndex,
                                                     int32_t occurrenceIndex) {
     if (!g) return;
+    // OCCT 8.0.0p1: SetRefOccurrenceDefId renamed to SetRefChildOccurrenceId.
     try {
-        g->graph.Editor().Occurrences().SetRefOccurrenceDefId(
+        g->graph.Editor().Occurrences().SetRefChildOccurrenceId(
             BRepGraph_OccurrenceRefId(occurrenceRefIndex),
             BRepGraph_OccurrenceId(occurrenceIndex));
     } catch (...) {}
@@ -2210,7 +2300,8 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g, int32_t childRefInde
                                           int32_t childKind, int32_t childIndex) {
     if (!g) return;
     try {
-        g->graph.Editor().Gen().SetChildRefChildDefId(
+        // OCCT 8.0.0p1: SetChildRefChildDefId renamed to SetChildRefChildNodeId.
+        g->graph.Editor().Gen().SetChildRefChildNodeId(
             BRepGraph_ChildRefId(childRefIndex),
             BRepGraph_NodeId(kindFromInt(childKind), childIndex));
     } catch (...) {}
@@ -2220,52 +2311,42 @@ void OCCTBRepGraphSetChildRefChildDefId(OCCTBRepGraphRef g, int32_t childRefInde
 
 // CoEdge geometric setters
 
-void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef g, int32_t coedgeIndex,
-                                  double u1, double v1, double u2, double v2) {
-    if (!g) return;
-    try {
-        g->graph.Editor().CoEdges().SetUVBox(
-            BRepGraph_CoEdgeId(coedgeIndex), gp_Pnt2d(u1, v1), gp_Pnt2d(u2, v2));
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: per-coedge UV bounding box is no longer a settable definition field
+// (UV endpoints are derived from the PCurve via BRepGraph_Tool::CoEdge::UVPoints). No-op.
+void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, double, double) {}
 
-// OCCT 8.0.0 GA moved continuity from per-coedge to per-(edge, face1, face2):
-// EditorView::EdgeOps::SetRegularity replaces the three former CoEdgeOps setters.
-// face1Index == face2Index sets the seam continuity across a closed-surface seam.
-// SetSeamPairId has no GA equivalent (seam-pair-id is now structural — derived from
-// two coedges on the same edge/face with opposite orientations).
-int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t face1Index, int32_t face2Index, int32_t continuity) {
-    if (!g) return 0;
-    try {
-        bool ok = g->graph.Editor().Edges().SetRegularity(
-            BRepGraph_EdgeId(edgeIndex),
-            BRepGraph_FaceId(face1Index),
-            BRepGraph_FaceId(face2Index),
-            continuityFromInt(continuity));
-        return ok ? 1 : 0;
-    } catch (...) { return 0; }
+// OCCT 8.0.0p1: EdgeOps::SetRegularity was removed — edge continuity across an (edge, face1, face2)
+// is no longer a settable field (continuity is derived). No public equivalent; report failure.
+int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef, int32_t, int32_t, int32_t, int32_t) {
+    // continuityFromInt() is otherwise unused now; keep it referenced to avoid an unused-static warning.
+    (void)&continuityFromInt;
+    return 0;
 }
 
 // Face triangulation rep binding
-
+// OCCT 8.0.0p1: triangulation is bound by handle. Resolve the legacy rep id via the side-registry
+// and write it to the face's mesh cache (SetCachedTriangulation), which is what
+// meshFaceActiveTriangulationRepId() reads back.
 void OCCTBRepGraphSetFaceTriangulationRep(OCCTBRepGraphRef g, int32_t faceIndex, int32_t triRepId) {
-    if (!g) return;
+    if (!g || triRepId < 0 || (size_t)triRepId >= g->triReps.size()) return;
     try {
-        BRepGraph_TriangulationRepId rid;
-        rid.Index = (uint32_t)triRepId;
-        g->graph.Editor().Faces().SetTriangulationRep(BRepGraph_FaceId(faceIndex), rid);
+        g->graph.Mesh().Editor().Faces().SetCachedTriangulation(
+            BRepGraph_FaceId(faceIndex), g->triReps[triRepId]);
     } catch (...) {}
 }
 
 // CoEdge PCurve operations (Geom2d_Curve handle from OCCTCurve2D opaque)
 
+// OCCT 8.0.0p1: standalone Curve2D rep creation (returning a RepId) was removed. We preserve the
+// int-rep-id ABI by stashing the curve handle in the side-registry; SetCoEdgeCurve2DRepId() resolves
+// it back and calls CoEdges().SetPCurve() (handle-based).
 int32_t OCCTBRepGraphCoEdgeCreateCurve2DRep(OCCTBRepGraphRef g, OCCTCurve2DRef curve2d) {
     if (!g || !curve2d) return -1;
     try {
         const Handle(Geom2d_Curve)& h = reinterpret_cast<OCCTCurve2D*>(curve2d)->curve;
         if (h.IsNull()) return -1;
-        auto rid = g->graph.Editor().CoEdges().CreateCurve2DRep(h);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        g->curve2dReps.push_back(h);
+        return (int32_t)(g->curve2dReps.size() - 1);
     } catch (...) { return -1; }
 }
 
@@ -2285,7 +2366,9 @@ void OCCTBRepGraphCoEdgeAddPCurve(OCCTBRepGraphRef g, int32_t edgeIndex, int32_t
     try {
         const Handle(Geom2d_Curve)& h = reinterpret_cast<OCCTCurve2D*>(curve2d)->curve;
         if (h.IsNull()) return;
-        g->graph.Editor().CoEdges().AddPCurve(
+        // OCCT 8.0.0p1: AddPCurve(edge, face, curve, ...) folded into CoEdges().Add(...) which
+        // creates a coedge carrying the PCurve for the edge-face pair.
+        (void)g->graph.Editor().CoEdges().Add(
             BRepGraph_EdgeId(edgeIndex),
             BRepGraph_FaceId(faceIndex),
             h, first, last, oriFromInt(orientation));
@@ -2303,53 +2386,16 @@ static TopLoc_Location locationFromMatrix(const double m[12]) {
     return TopLoc_Location(trsf);
 }
 
-void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef g, int32_t vertexRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().Vertices().SetRefLocalLocation(
-            BRepGraph_VertexRefId(vertexRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef g, int32_t coedgeRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().CoEdges().SetRefLocalLocation(
-            BRepGraph_CoEdgeRefId(coedgeRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetWireRefLocalLocation(OCCTBRepGraphRef g, int32_t wireRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().Wires().SetRefLocalLocation(
-            BRepGraph_WireRefId(wireRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetFaceRefLocalLocation(OCCTBRepGraphRef g, int32_t faceRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().Faces().SetRefLocalLocation(
-            BRepGraph_FaceRefId(faceRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetShellRefLocalLocation(OCCTBRepGraphRef g, int32_t shellRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().Shells().SetRefLocalLocation(
-            BRepGraph_ShellRefId(shellRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
-
-void OCCTBRepGraphSetSolidRefLocalLocation(OCCTBRepGraphRef g, int32_t solidRefIndex, const double* matrix) {
-    if (!g || !matrix) return;
-    try {
-        g->graph.Editor().Solids().SetRefLocalLocation(
-            BRepGraph_SolidRefId(solidRefIndex), locationFromMatrix(matrix));
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: only occurrence and child references carry a local location; the per-topology
+// references (vertex/coedge/wire/face/shell/solid) no longer store a location, so their editors
+// expose no SetRefLocalLocation. These are no-ops for ABI compatibility. (CoEdge refs were removed
+// entirely — coedges are not reference-counted.)
+void OCCTBRepGraphSetVertexRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
+void OCCTBRepGraphSetCoEdgeRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
+void OCCTBRepGraphSetWireRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
+void OCCTBRepGraphSetFaceRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
+void OCCTBRepGraphSetShellRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
+void OCCTBRepGraphSetSolidRefLocalLocation(OCCTBRepGraphRef, int32_t, const double*) {}
 
 void OCCTBRepGraphSetOccurrenceRefLocalLocation(OCCTBRepGraphRef g, int32_t occurrenceRefIndex, const double* matrix) {
     if (!g || !matrix) return;
@@ -2376,7 +2422,11 @@ int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
     try {
         TopLoc_Location loc = placementMatrix ? locationFromMatrix(placementMatrix) : TopLoc_Location();
         BRepGraph_NodeId root(kindFromInt(shapeRootKind), shapeRootIndex);
-        auto pid = g->graph.Editor().Products().LinkProductToTopology(root, loc);
+        // OCCT 8.0.0p1: LinkProductToTopology folded into ProductOps::Add(root, placement). Add() does
+        // NOT register the product as a graph root, so call AppendDocumentRoot() to expose it via
+        // RootProductIds() (what OCCTBRepGraphRootNodes iterates).
+        auto pid = g->graph.Editor().Products().Add(root, loc);
+        if (pid.IsValid()) g->graph.Editor().Products().AppendDocumentRoot(pid);
         return pid.IsValid() ? (int32_t)pid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2384,7 +2434,8 @@ int32_t OCCTBRepGraphLinkProductToTopology(OCCTBRepGraphRef g,
 int32_t OCCTBRepGraphCreateEmptyProduct(OCCTBRepGraphRef g) {
     if (!g) return -1;
     try {
-        auto pid = g->graph.Editor().Products().CreateEmptyProduct();
+        // OCCT 8.0.0p1: CreateEmptyProduct folded into the no-arg ProductOps::Add().
+        auto pid = g->graph.Editor().Products().Add();
         return pid.IsValid() ? (int32_t)pid.Index : -1;
     } catch (...) { return -1; }
 }
@@ -2403,7 +2454,8 @@ int32_t OCCTBRepGraphLinkProducts(OCCTBRepGraphRef g, int32_t parentProductIndex
                 ? BRepGraph_OccurrenceId(parentOccurrenceIndex)
                 : BRepGraph_OccurrenceId();
         BRepGraph_OccurrenceRefId outRefId;
-        auto oid = g->graph.Editor().Products().LinkProducts(
+        // OCCT 8.0.0p1: LinkProducts renamed to ProductOps::Append.
+        auto oid = g->graph.Editor().Products().Append(
             BRepGraph_ProductId(parentProductIndex),
             BRepGraph_ProductId(referencedProductIndex),
             loc, parentOcc, &outRefId);
@@ -2436,191 +2488,141 @@ bool OCCTBRepGraphProductRemoveShapeRoot(OCCTBRepGraphRef g, int32_t productInde
 #include <Geom_Curve.hxx>
 #include <Geom2d_Curve.hxx>
 
+// OCCT 8.0.0p1: EditorView::Reps() (the standalone representation editor addressed by RepId) was
+// removed. p1 attaches representation handles directly to topology defs via the per-kind editors,
+// with no public RepId slot to overwrite. We preserve the RepId-keyed ABI through the side-registry:
+// RepSet* overwrites the handle stored in the registry slot identified by the legacy rep id (the slot
+// the matching Create*Rep() returned). A later Set*RepId() then resolves the updated handle. Setting
+// a null/invalid input ref nullifies the slot.
 void OCCTBRepGraphRepSetSurface(OCCTBRepGraphRef g, int32_t surfaceRepId, OCCTSurfaceRef surface) {
-    if (!g || !surface) return;
-    try {
-        BRepGraph_SurfaceRepId rid; rid.Index = (uint32_t)surfaceRepId;
-        const Handle(Geom_Surface)& h = reinterpret_cast<OCCTSurface*>(surface)->surface;
-        g->graph.Editor().Reps().SetSurface(rid, h);
-    } catch (...) {}
+    if (!g || surfaceRepId < 0 || (size_t)surfaceRepId >= g->surfReps.size()) return;
+    g->surfReps[surfaceRepId] = surface ? reinterpret_cast<OCCTSurface*>(surface)->surface : Handle(Geom_Surface)();
 }
-
 void OCCTBRepGraphRepSetCurve3D(OCCTBRepGraphRef g, int32_t curve3DRepId, OCCTCurve3DRef curve) {
-    if (!g || !curve) return;
-    try {
-        BRepGraph_Curve3DRepId rid; rid.Index = (uint32_t)curve3DRepId;
-        const Handle(Geom_Curve)& h = reinterpret_cast<OCCTCurve3D*>(curve)->curve;
-        g->graph.Editor().Reps().SetCurve3D(rid, h);
-    } catch (...) {}
+    if (!g || curve3DRepId < 0 || (size_t)curve3DRepId >= g->curve3dReps.size()) return;
+    g->curve3dReps[curve3DRepId] = curve ? reinterpret_cast<OCCTCurve3D*>(curve)->curve : Handle(Geom_Curve)();
 }
-
 void OCCTBRepGraphRepSetCurve2D(OCCTBRepGraphRef g, int32_t curve2DRepId, OCCTCurve2DRef curve) {
-    if (!g || !curve) return;
-    try {
-        BRepGraph_Curve2DRepId rid; rid.Index = (uint32_t)curve2DRepId;
-        const Handle(Geom2d_Curve)& h = reinterpret_cast<OCCTCurve2D*>(curve)->curve;
-        g->graph.Editor().Reps().SetCurve2D(rid, h);
-    } catch (...) {}
+    if (!g || curve2DRepId < 0 || (size_t)curve2DRepId >= g->curve2dReps.size()) return;
+    g->curve2dReps[curve2DRepId] = curve ? reinterpret_cast<OCCTCurve2D*>(curve)->curve : Handle(Geom2d_Curve)();
 }
-
 void OCCTBRepGraphRepSetTriangulation(OCCTBRepGraphRef g, int32_t triRepId, OCCTPolyTriangulationRef tri) {
-    if (!g || !tri) return;
-    try {
-        BRepGraph_TriangulationRepId rid; rid.Index = (uint32_t)triRepId;
-        const Handle(Poly_Triangulation)& h = reinterpret_cast<Poly_TriangulationOpaque*>(tri)->triangulation;
-        g->graph.Editor().Reps().SetTriangulation(rid, h);
-    } catch (...) {}
+    if (!g || triRepId < 0 || (size_t)triRepId >= g->triReps.size()) return;
+    g->triReps[triRepId] = tri ? reinterpret_cast<Poly_TriangulationOpaque*>(tri)->triangulation : Handle(Poly_Triangulation)();
 }
-
 void OCCTBRepGraphRepSetPolygon3D(OCCTBRepGraphRef g, int32_t polyRepId, OCCTPolyPolygon3DRef poly) {
-    if (!g || !poly) return;
-    try {
-        BRepGraph_Polygon3DRepId rid; rid.Index = (uint32_t)polyRepId;
-        const Handle(Poly_Polygon3D)& h = reinterpret_cast<Poly_Polygon3DOpaque*>(poly)->polygon;
-        g->graph.Editor().Reps().SetPolygon3D(rid, h);
-    } catch (...) {}
+    if (!g || polyRepId < 0 || (size_t)polyRepId >= g->poly3dReps.size()) return;
+    g->poly3dReps[polyRepId] = poly ? reinterpret_cast<Poly_Polygon3DOpaque*>(poly)->polygon : Handle(Poly_Polygon3D)();
 }
-
 void OCCTBRepGraphRepSetPolygon2D(OCCTBRepGraphRef g, int32_t polyRepId, OCCTPolyPolygon2DRef poly) {
-    if (!g || !poly) return;
-    try {
-        BRepGraph_Polygon2DRepId rid; rid.Index = (uint32_t)polyRepId;
-        const Handle(Poly_Polygon2D)& h = reinterpret_cast<Poly_Polygon2DOpaque*>(poly)->polygon;
-        g->graph.Editor().Reps().SetPolygon2D(rid, h);
-    } catch (...) {}
+    if (!g || polyRepId < 0 || (size_t)polyRepId >= g->poly2dReps.size()) return;
+    g->poly2dReps[polyRepId] = poly ? reinterpret_cast<Poly_Polygon2DOpaque*>(poly)->polygon : Handle(Poly_Polygon2D)();
 }
-
 void OCCTBRepGraphRepSetPolygonOnTri(OCCTBRepGraphRef g, int32_t polyRepId, OCCTPolyPolygonOnTriRef poly) {
-    if (!g || !poly) return;
-    try {
-        BRepGraph_PolygonOnTriRepId rid; rid.Index = (uint32_t)polyRepId;
-        const Handle(Poly_PolygonOnTriangulation)& h = reinterpret_cast<Poly_PolygonOnTriangulationOpaque*>(poly)->polygon;
-        g->graph.Editor().Reps().SetPolygonOnTri(rid, h);
-    } catch (...) {}
+    if (!g || polyRepId < 0 || (size_t)polyRepId >= g->polyOnTriReps.size()) return;
+    g->polyOnTriReps[polyRepId] = poly ? reinterpret_cast<Poly_PolygonOnTriangulationOpaque*>(poly)->polygon : Handle(Poly_PolygonOnTriangulation)();
 }
-
-void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef g, int32_t polyOnTriRepId, int32_t triRepId) {
-    if (!g) return;
-    try {
-        BRepGraph_PolygonOnTriRepId polyRid; polyRid.Index = (uint32_t)polyOnTriRepId;
-        BRepGraph_TriangulationRepId triRid; triRid.Index = (uint32_t)triRepId;
-        g->graph.Editor().Reps().SetPolygonOnTriTriangulationId(polyRid, triRid);
-    } catch (...) {}
-}
+// OCCT 8.0.0p1: a polygon-on-tri's owning triangulation is resolved at attach time
+// (CoEdgeDef.FaceId -> FaceDef triangulation), not stored as a rep-id link on the polygon rep.
+// There is no slot to rebind by id; no-op for ABI compatibility.
+void OCCTBRepGraphRepSetPolygonOnTriTriangulationId(OCCTBRepGraphRef, int32_t, int32_t) {}
 
 // MARK: - BRepGraph MeshView v0.164.0 — cache entry inspection
 
-#include <BRepGraph_MeshCache.hxx>
+// OCCT 8.0.0p1 restructured the mesh cache into Cache()/Persistent()/Effective() sub-views. Each
+// cache entry now holds a SINGLE handle (no rep-id list, no per-face active index): see
+// BRepGraph_CacheMesh::{Face,Edge,CoEdge}MeshEntry. These read-only introspection functions are
+// rewrapped onto Cache().{Faces,Edges,CoEdges}().Has()/Entry():
+//   - IsPresent       -> Has() (entry exists & is fresh).
+//   - StoredOwnGen    -> the entry's generation field (FaceMeshEntry::MeshGeneration,
+//                        EdgeMeshEntry::Stamp.SlotGeneration, CoEdgeMeshEntry::FaceMeshGeneration).
+//   - *RepCount       -> 1 if present, else 0 (single-handle model; the rep-id LIST is gone).
+//   - ActiveIndex     -> 0 if present, else -1 (single handle is always index 0).
+//   - *RepId          -> 0 if present, else -1 (present-sentinel; there are no rep ids in p1).
 
 bool OCCTBRepGraphCachedFaceMeshIsPresent(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return false;
-    try {
-        const auto* entry = g->graph.Mesh().Faces().CachedMesh(BRepGraph_FaceId(faceIndex));
-        return entry && entry->IsPresent();
-    } catch (...) { return false; }
+    try { return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)); }
+    catch (...) { return false; }
 }
-
 int32_t OCCTBRepGraphCachedFaceMeshTriRepCount(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
-    try {
-        const auto* entry = g->graph.Mesh().Faces().CachedMesh(BRepGraph_FaceId(faceIndex));
-        return entry ? (int32_t)entry->TriangulationRepIds.Length() : 0;
-    } catch (...) { return 0; }
+    try { return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 1 : 0; }
+    catch (...) { return 0; }
 }
-
 int32_t OCCTBRepGraphCachedFaceMeshActiveIndex(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return -1;
-    try {
-        const auto* entry = g->graph.Mesh().Faces().CachedMesh(BRepGraph_FaceId(faceIndex));
-        return entry ? (int32_t)entry->ActiveTriangulationIndex : -1;
-    } catch (...) { return -1; }
+    try { return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1; }
+    catch (...) { return -1; }
 }
-
 uint32_t OCCTBRepGraphCachedFaceMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t faceIndex) {
     if (!g) return 0;
     try {
-        const auto* entry = g->graph.Mesh().Faces().CachedMesh(BRepGraph_FaceId(faceIndex));
-        return entry ? entry->StoredOwnGen : 0u;
+        const auto* e = g->graph.Mesh().Cache().Faces().Entry(BRepGraph_FaceId(faceIndex));
+        return e ? e->MeshGeneration : 0;
     } catch (...) { return 0; }
 }
-
+// OCCT 8.0.0p1: a present-sentinel — the cache holds one triangulation handle, no rep ids.
 int32_t OCCTBRepGraphCachedFaceMeshTriRepId(OCCTBRepGraphRef g, int32_t faceIndex, int32_t repIndex) {
-    if (!g) return -1;
-    try {
-        const auto* entry = g->graph.Mesh().Faces().CachedMesh(BRepGraph_FaceId(faceIndex));
-        if (!entry) return -1;
-        if (repIndex < 0 || repIndex >= entry->TriangulationRepIds.Length()) return -1;
-        const auto& rid = entry->TriangulationRepIds.Value(repIndex);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
-    } catch (...) { return -1; }
+    if (!g || repIndex != 0) return -1;
+    try { return g->graph.Mesh().Cache().Faces().Has(BRepGraph_FaceId(faceIndex)) ? 0 : -1; }
+    catch (...) { return -1; }
 }
 
 bool OCCTBRepGraphCachedEdgeMeshIsPresent(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return false;
-    try {
-        const auto* entry = g->graph.Mesh().Edges().CachedMesh(BRepGraph_EdgeId(edgeIndex));
-        return entry && entry->IsPresent();
-    } catch (...) { return false; }
+    try { return g->graph.Mesh().Cache().Edges().Has(BRepGraph_EdgeId(edgeIndex)); }
+    catch (...) { return false; }
 }
-
+// OCCT 8.0.0p1: a present-sentinel — the cache holds one Polygon3D handle, no rep id.
 int32_t OCCTBRepGraphCachedEdgeMeshPolygon3DRepId(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return -1;
-    try {
-        const auto* entry = g->graph.Mesh().Edges().CachedMesh(BRepGraph_EdgeId(edgeIndex));
-        if (!entry) return -1;
-        return entry->Polygon3DRepId.IsValid() ? (int32_t)entry->Polygon3DRepId.Index : -1;
-    } catch (...) { return -1; }
+    try { return g->graph.Mesh().Cache().Edges().Has(BRepGraph_EdgeId(edgeIndex)) ? 0 : -1; }
+    catch (...) { return -1; }
 }
-
 uint32_t OCCTBRepGraphCachedEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t edgeIndex) {
     if (!g) return 0;
     try {
-        const auto* entry = g->graph.Mesh().Edges().CachedMesh(BRepGraph_EdgeId(edgeIndex));
-        return entry ? entry->StoredOwnGen : 0u;
+        const auto* e = g->graph.Mesh().Cache().Edges().Entry(BRepGraph_EdgeId(edgeIndex));
+        return e ? e->Stamp.SlotGeneration : 0;
     } catch (...) { return 0; }
 }
 
 bool OCCTBRepGraphCachedCoEdgeMeshIsPresent(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return false;
-    try {
-        const auto* entry = g->graph.Mesh().CoEdges().CachedMesh(BRepGraph_CoEdgeId(coedgeIndex));
-        return entry && entry->IsPresent();
-    } catch (...) { return false; }
+    try { return g->graph.Mesh().Cache().CoEdges().Has(BRepGraph_CoEdgeId(coedgeIndex)); }
+    catch (...) { return false; }
 }
-
+// OCCT 8.0.0p1: present-sentinel keyed on whether a fresh Polygon2D is bound to the coedge.
 int32_t OCCTBRepGraphCachedCoEdgeMeshPolygon2DRepId(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return -1;
     try {
-        const auto* entry = g->graph.Mesh().CoEdges().CachedMesh(BRepGraph_CoEdgeId(coedgeIndex));
-        if (!entry) return -1;
-        return entry->Polygon2DRepId.IsValid() ? (int32_t)entry->Polygon2DRepId.Index : -1;
+        const auto* e = g->graph.Mesh().Cache().CoEdges().FindPolygon2D(BRepGraph_CoEdgeId(coedgeIndex));
+        return (e && !e->Polygon2D.IsNull()) ? 0 : -1;
     } catch (...) { return -1; }
 }
-
+// OCCT 8.0.0p1: the coedge cache holds a list of polygons-on-triangulation (PolygonsOnTri); report
+// its size as the rep count (this is the one place the single-handle model does NOT apply).
 int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return 0;
     try {
-        const auto* entry = g->graph.Mesh().CoEdges().CachedMesh(BRepGraph_CoEdgeId(coedgeIndex));
-        return entry ? (int32_t)entry->PolygonOnTriRepIds.Length() : 0;
+        const auto* e = g->graph.Mesh().Cache().CoEdges().FindPolygonOnTri(BRepGraph_CoEdgeId(coedgeIndex));
+        return e ? (int32_t)e->PolygonsOnTri.Size() : 0;
     } catch (...) { return 0; }
 }
-
+// OCCT 8.0.0p1: present-sentinel — 0 when the requested list slot exists, -1 otherwise (no rep ids).
 int32_t OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId(OCCTBRepGraphRef g, int32_t coedgeIndex, int32_t repIndex) {
-    if (!g) return -1;
+    if (!g || repIndex < 0) return -1;
     try {
-        const auto* entry = g->graph.Mesh().CoEdges().CachedMesh(BRepGraph_CoEdgeId(coedgeIndex));
-        if (!entry) return -1;
-        if (repIndex < 0 || repIndex >= entry->PolygonOnTriRepIds.Length()) return -1;
-        const auto& rid = entry->PolygonOnTriRepIds.Value(repIndex);
-        return rid.IsValid() ? (int32_t)rid.Index : -1;
+        const auto* e = g->graph.Mesh().Cache().CoEdges().FindPolygonOnTri(BRepGraph_CoEdgeId(coedgeIndex));
+        return (e && repIndex < (int32_t)e->PolygonsOnTri.Size()) ? 0 : -1;
     } catch (...) { return -1; }
 }
-
 uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef g, int32_t coedgeIndex) {
     if (!g) return 0;
     try {
-        const auto* entry = g->graph.Mesh().CoEdges().CachedMesh(BRepGraph_CoEdgeId(coedgeIndex));
-        return entry ? entry->StoredOwnGen : 0u;
+        const auto* e = g->graph.Mesh().Cache().CoEdges().FindRaw(BRepGraph_CoEdgeId(coedgeIndex));
+        return e ? e->FaceMeshGeneration : 0;
     } catch (...) { return 0; }
 }
 

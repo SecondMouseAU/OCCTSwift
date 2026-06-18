@@ -2,11 +2,17 @@ import Foundation
 import simd
 import OCCTBridge
 
-/// Constrained least-squares B-spline curve approximation with exact interpolation constraints.
+/// Least-squares B-spline curve approximation through a set of 3D points.
 ///
-/// Fits a B-spline curve through a set of 3D points, where each point can be either
-/// approximated (least-squares) or exactly interpolated. Selected interpolation points
-/// can be marked as "kinks" to insert C0 discontinuities.
+/// Fits a B-spline curve to the points, minimising the 3D deviation. Inspect
+/// ``maxError`` for the worst-case residual.
+///
+/// > Note: OCCT 8.0.0p1 removed the `Approx_BSplineApproxInterp` solver this type
+/// > originally wrapped, so it is now backed by `GeomAPI_PointsToBSpline`. As a result
+/// > `nbControlPoints` is **advisory** (the approximator chooses the pole count needed to
+/// > meet the tolerance) and the per-point ``interpolatePoint(_:withKink:)`` constraints
+/// > are **no-ops** — the fit still passes close to every point. Drive accuracy with
+/// > ``setConvergenceTolerance(_:)`` / ``setProjectionTolerance(_:)``.
 ///
 /// ## Example
 ///
@@ -58,6 +64,9 @@ public final class BSplineApproxInterp: @unchecked Sendable {
     }
 
     /// Mark a point to be exactly interpolated (0-based index).
+    ///
+    /// > Note: No-op since OCCT 8.0.0p1 — `GeomAPI_PointsToBSpline` has no per-point exact
+    /// > interpolation or C0-break control. The approximation still passes near every point.
     /// - Parameters:
     ///   - index: 0-based point index
     ///   - withKink: if true, inserts a C0 discontinuity at this parameter

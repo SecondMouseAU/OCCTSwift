@@ -7,13 +7,90 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.6.3
+## Current: v1.7.0
 
-**4,294 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0**
+**4,294 wrapped operations | macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.0 (June 2026) — OCCT 8.0.0p1 upgrade; BRepGraph realigned to its redesigned model
+
+**MINOR — dependency upgrade with API-behaviour changes confined to the BRepGraph domain.** OCCT
+shipped **8.0.0p1** as a hot patch on top of 8.0.0. OCCTSwift now pins it (`V8_0_0_p1`). Everything
+outside BRepGraph is a transparent upgrade; BRepGraph itself was comprehensively redesigned upstream
+and our wrapper has been realigned to the new model rather than shimmed back to the old one.
+
+#### Upstream fix landed
+Our `BRepFill_CompatibleWires::SameNumberByPolarMethod()` polar-iterator guard (OCCTSwift #176 — the
+loft/ThruSections SIGSEGV on mismatched closed profiles) **shipped in 8.0.0p1**. The source patch we
+carried (`Scripts/patches/0001-…`) is therefore removed; `build-occt.sh` pins `OCCT_RC="p1"`.
+
+#### Removed/changed OCCT classes migrated (non-BRepGraph)
+- **`Approx_BSplineApproxInterp` (removed)** → `BSplineApproxInterp` is reimplemented on
+  `GeomAPI_PointsToBSpline` (the documented replacement). The C/Swift ABI is unchanged, but
+  `nbControlPoints` is now **advisory** (the approximator chooses the pole count to meet tolerance)
+  and `interpolatePoint(_:withKink:)` is a **no-op** (no per-point exact-interpolation/kink control
+  in the replacement). `maxError` is computed by projecting the inputs onto the fitted curve.
+- **`GeomFill_Gordon` (reworked)** — API remained source-compatible; no wrapper change.
+- **`BRepGraph_RepId`** moved to the `BRepGraphInc` subpackage (header `BRepGraphInc_RepId.hxx`).
+
+#### p1 crash fixes (OS-signal null-derefs that `catch(...)` cannot trap)
+- **`Extrema_ExtElCS` (line ∥ cylinder axis)** — infinite/degenerate extrema crash. `ExtremaElCS.lineToCylinder`
+  now returns 0 when the line is parallel to the cylinder axis.
+- **`ShapeUpgrade_WireDivide` / `ShapeFix_ComposeShell`** — p1 made the `ShapeBuild_ReShape` context
+  mandatory; `Perform()` null-derefs without one. Both bridges now set a context (plus WireDivide
+  guards a wire whose edges have no pcurve on the target face).
+- **`Wire.rectangle`** with sub-`Precision::Confusion()` dimensions made degenerate edges that crashed
+  downstream; such dimensions are now rejected (returns nil).
+
+#### BRepGraph realigned to the 8.0.x model
+BRepGraph is OCCT's explicit graph-oriented topology model (see
+[Open-Cascade-SAS/OCCT discussion #1291](https://github.com/Open-Cascade-SAS/OCCT/discussions/1291)).
+8.0.0p1 reworked it around nine separated concerns — topology **definitions** vs **references/usages**,
+**geometry reps**, **mesh reps**, **products/occurrences**, persistent **UIDs**, metadata **layers**,
+modification **stamps** (version counters, *not* booleans), and self-invalidating **caches**. The
+wrapper was rewritten to that model. Upstream notes the interface "will change slightly in 8.1 and in
+development versions after 8.0," so expect further churn here.
+
+Concretely:
+- **Shape ingestion**: `BRepGraph_Builder` removed → `BRepGraph::ShapesView::Add()`.
+- **History**: `BRepGraph::History()` removed → the registered `BRepGraph_LayerHistory` layer
+  (`LayerRegistry().FindLayer<>()` / `.Ensure<>()`); records are `Event`s.
+- **Topology queries** moved across views: counts to `Topo().Geometry().NbFaceSurfaces()` etc.;
+  `IsBoundary`/`IsManifold`/`FindCoEdgeId` to `BRepGraph_Tool::Edge`; `SameParameter`/`SameRange` to
+  `BRepGraph_Tool::CoEdge` (per-coedge, derived). Edge→faces / vertex→edges are first-class reverse
+  relations (`FacesOf`, `VertexOps::Edges`); **face/edge adjacency and shared-edges are derived from
+  them** (no direct adjacency call survived, but the data does).
+- **Mesh + geometry representations are handle-based**: integer "rep ids" are gone. The wrapper keeps
+  its rep-id Swift API working via a per-graph handle registry that backs the new
+  `Mesh().Editor().Faces().SetCachedTriangulation(face, handle)` / persistent-rep setters. Mesh cache
+  inspection reads `Mesh().Cache().*.Entry()` (each holds a single handle + a `MeshGeneration` stamp).
+- **Edge start/end vertex** now resolves a `VertexRefId` (a per-edge use) to its vertex definition.
+- **Root products** require explicit `AppendDocumentRoot()` after creation.
+
+##### Deliberately-removed concepts (now no-ops or derived-getter-only — by design, not breakage)
+These reflect BRepGraph's intent; the *capability* lives elsewhere in the new model:
+- **Flags are derived from geometry, not stored** → `SameParameter`/`SameRange`/`Degenerated`/`IsClosed`
+  setters are no-ops; the **getters return the live derived value**.
+- **Regularity/ownership are controlled layers**, not inline flags → the old `SetEdgeRegularity` /
+  `EdgeMaxContinuity` inline path is gone.
+- **Natural-bound faces are normalized away** (explicit topology is required below a bounded face) →
+  `…NaturalRestriction` get/set no longer apply.
+- **Locations live on assembly references** (occurrence/child), not per-subshape → the per-vertex/edge/
+  wire/face/shell/solid/coedge `…RefLocalLocation` setters are gone; occurrence/child placement setters
+  remain.
+- **Coedges are first-class** (a coedge *is* the edge-on-face use, carrying orientation/pcurve/seam) →
+  the coedge-as-separate-reference setters are gone; `NbCoEdgeRefs` reports the coedge count.
+- **Vertices are references with reverse relations** → face/edge vertex add/remove mutators are gone
+  (population builds them); query via the reverse relations instead.
+
+#### Test/behaviour notes
+- `GC_MakeHyperbola` (3-point) is stricter in p1: a collinear `S2` (zero minor radius) is rejected;
+  the test now uses a valid off-axis `S2`.
+- Run the suite with `swift test --no-parallel` — the pre-existing non-deterministic NCollection
+  arm64 race makes the parallel run flaky (unrelated to p1).
 
 ### v1.6.3 (June 2026) — buttress trued to DIN 513; Whitworth & knuckle finished
 

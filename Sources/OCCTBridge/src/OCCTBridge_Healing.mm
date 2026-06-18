@@ -98,6 +98,7 @@
 #include <ShapeUpgrade_FixSmallBezierCurves.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
+#include <ShapeBuild_ReShape.hxx>
 #include <BRepLib_ValidateEdge.hxx>
 #include <ShapeCustom_BSplineRestriction.hxx>
 #include <ShapeCustom_ConvertToBSpline.hxx>
@@ -2417,6 +2418,7 @@ double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape, OCCTShapeRef faceS
 #include <ShapeExtend_Explorer.hxx>
 #include <ShapeUpgrade_FaceDivide.hxx>
 #include <ShapeUpgrade_WireDivide.hxx>
+#include <ShapeBuild_ReShape.hxx>
 #include <ShapeUpgrade_EdgeDivide.hxx>
 #include <ShapeUpgrade_ClosedEdgeDivide.hxx>
 #include <ShapeUpgrade_FixSmallCurves.hxx>
@@ -2608,7 +2610,19 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeWireDivideOnFace(OCCTShapeRef wireShape, 
     try {
         TopoDS_Wire wire = TopoDS::Wire(wireShape->shape);
         TopoDS_Face face = TopoDS::Face(faceShape->shape);
+        // OCCT 8.0.0p1: ShapeUpgrade_WireDivide::Perform() null-derefs (SIGSEGV, Address 0) when a wire
+        // edge has no pcurve on the target face (e.g. a wire that doesn't lie on the face) — an OS
+        // signal catch(...) cannot trap. Guard by requiring every edge to carry a pcurve on the face.
+        for (TopExp_Explorer ex(wire, TopAbs_EDGE); ex.More(); ex.Next()) {
+            double f2 = 0, l2 = 0;
+            if (BRep_Tool::CurveOnSurface(TopoDS::Edge(ex.Current()), face, f2, l2).IsNull())
+                return nullptr;
+        }
         Handle(ShapeUpgrade_WireDivide) wd = new ShapeUpgrade_WireDivide();
+        // OCCT 8.0.0p1: ShapeUpgrade_WireDivide::Perform() null-derefs its ReShape context when none is
+        // set (SIGSEGV, Address 0). ShapeUpgrade_FaceDivide always sets a context before driving its
+        // internal WireDivide; mirror that here.
+        wd->SetContext(new ShapeBuild_ReShape());
         wd->Init(wire, face);
         wd->Perform();
         TopoDS_Wire resultWire = wd->Wire();
@@ -2931,6 +2945,9 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
         Handle(ShapeExtend_CompositeSurface) compSurf = new ShapeExtend_CompositeSurface(grid);
 
         Handle(ShapeFix_ComposeShell) cs = new ShapeFix_ComposeShell();
+        // OCCT 8.0.0p1: ShapeFix_ComposeShell::Perform() null-derefs its ReShape context if none is set
+        // (SIGSEGV, Address 0). Provide one (the fix-tools that drive it expect a live context).
+        cs->SetContext(new ShapeBuild_ReShape());
         cs->Init(compSurf, TopLoc_Location(), face, precision);
         bool ok = cs->Perform();
 

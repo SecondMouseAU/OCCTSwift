@@ -7,9 +7,9 @@
 
 📖 **Documentation & cookbook:** <https://gsdali.github.io/OCCTSwift/>
 
-A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
+A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0p1, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
 
-**4,287 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0
+**4,287 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
 
 ## Quick Start
 
@@ -54,7 +54,7 @@ OCCTSwift is the kernel of a layered family of packages, all SemVer-stable from 
 
 | Package | Role |
 |---------|------|
-| **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, TopologyGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0 GA xcframework. |
+| **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, TopologyGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
 | [OCCTSwiftIO](https://github.com/gsdali/OCCTSwiftIO) | Headless CAD file I/O — STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
 | [OCCTSwiftMesh](https://github.com/gsdali/OCCTSwiftMesh) | Mesh-domain algorithms — decimation, smoothing, repair (vendors `meshoptimizer`). |
 | [OCCTSwiftViewport](https://github.com/gsdali/OCCTSwiftViewport) | Metal-based 3D viewport component (UIKit / AppKit / SwiftUI). |
@@ -142,7 +142,7 @@ try Exporter.writeGLB(shape: model, to: glbURL)
 Sources/OCCTSwift/          Swift public API
 Sources/OCCTBridge/include/ C function declarations (OCCTBridge.h)
 Sources/OCCTBridge/src/     Objective-C++ implementations (OCCTBridge.mm)
-Libraries/OCCT.xcframework  Pre-built OCCT 8.0.0 static library (arm64)
+Libraries/OCCT.xcframework  Pre-built OCCT 8.0.0p1 static library (arm64)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```
 

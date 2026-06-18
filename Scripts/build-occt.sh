@@ -19,8 +19,8 @@
 set -e
 
 OCCT_VERSION="8.0.0"
-OCCT_RC=""
-# Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2, release uses V8_0_0
+OCCT_RC="p1"
+# Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0.
 if [ -n "$OCCT_RC" ]; then
     OCCT_TAG="V${OCCT_VERSION//./_}_${OCCT_RC}"
 else
@@ -81,8 +81,8 @@ fi
 # --------------------
 # Patches in Scripts/patches/ are upstream-bound bug fixes we carry until they
 # ship in an OCCT release. Each is applied with -p1 relative to occt-src.
-#   0001  BRepFill_CompatibleWires polar-iterator over-advance -> SIGSEGV on
-#         mismatched closed loft profiles (filed upstream; OCCTSwift issue #176)
+#   (none currently — the BRepFill_CompatibleWires polar-iterator guard, OCCTSwift
+#    issue #176, shipped upstream in V8_0_0_p1, so its patch was removed.)
 if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
     echo ">>> Applying local OCCT patches..."
     for p in "$SCRIPT_DIR"/patches/*.patch; do

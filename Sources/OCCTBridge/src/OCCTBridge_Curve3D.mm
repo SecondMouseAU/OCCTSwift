@@ -68,7 +68,14 @@
 #include <GeomEval_TBezierCurve.hxx>
 #include <GeomEval_AHTBezierCurve.hxx>
 #include <GeomAdaptor_TransformedCurve.hxx>
-#include <Approx_BSplineApproxInterp.hxx>
+// Approx_BSplineApproxInterp was removed in OCCT 8.0.0p1 (it backed the old Gordon
+// prototype). The wrapper below is reimplemented on GeomAPI_PointsToBSpline — the
+// documented replacement — keeping the same C ABI; see that section's comment for the
+// resulting semantic changes (nbControlPoints/interpolation kinks become advisory).
+#include <GeomAPI_PointsToBSpline.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
+#include <Geom_BSplineCurve.hxx>
+#include <GeomAbs_Shape.hxx>
 #include <Extrema_ExtPC.hxx>
 #include <ExtremaPC_Curve.hxx>
 #include <TColStd_HArray1OfBoolean.hxx>
@@ -3913,8 +3920,13 @@ int32_t OCCTExtremaElCSLinCylinder(double lpx, double lpy, double lpz, double ld
                                      double cx, double cy, double cz, double nx, double ny, double nz, double radius,
                                      OCCTExtremaElResult* out, int32_t max) {
     try {
-        gp_Lin l(gp_Pnt(lpx, lpy, lpz), gp_Dir(ldx, ldy, ldz));
-        gp_Cylinder cyl(gp_Ax3(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), radius);
+        gp_Dir lineDir(ldx, ldy, ldz), cylAxis(nx, ny, nz);
+        // A line parallel to the cylinder axis has infinitely many equidistant extrema; OCCT 8.0.0p1's
+        // Extrema_ExtElCS dereferences a null in this degenerate case (an OS SIGSEGV that catch(...)
+        // cannot trap). Return 0 extrema, matching the documented "may be 0 if parallel to axis".
+        if (Abs(lineDir.Dot(cylAxis)) > 1.0 - 1.0e-9) return 0;
+        gp_Lin l(gp_Pnt(lpx, lpy, lpz), lineDir);
+        gp_Cylinder cyl(gp_Ax3(gp_Pnt(cx, cy, cz), cylAxis), radius);
         Extrema_ExtElCS ext(l, cyl);
         if (!ext.IsDone()) return -1;
         int n = ext.NbExt();
@@ -5403,24 +5415,57 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,
     } catch (...) { return -1.0; }
 }
 
-// --- Approx_BSplineApproxInterp ---
-
+// --- Approx_BSplineApproxInterp (reimplemented on GeomAPI_PointsToBSpline) ---
+//
+// OCCT 8.0.0p1 removed Approx_BSplineApproxInterp. The C ABI here is preserved, but the
+// fit is now produced by GeomAPI_PointsToBSpline (least-squares B-spline approximation),
+// the migration target named in the p1 release notes. Semantic differences vs the old
+// solver, kept so callers compile & run unchanged:
+//   * nbControlPoints is ADVISORY — PointsToBSpline picks the pole count needed to meet
+//     the tolerance within [DegMin, DegMax]; it is no longer an exact constraint.
+//   * InterpolatePoint()/kink markers are no-ops (PointsToBSpline has no per-point exact
+//     interpolation or C0-break control). The approximation still passes near the points.
+//   * MaxError() is computed by projecting the input points back onto the fitted curve.
+//   * The Gauss-solver / parametrization / closed-curve tuning setters are no-ops; the
+//     convergence and projection tolerance setters drive the 3D fit tolerance.
 struct OCCTBSplineApproxInterp {
-    Approx_BSplineApproxInterp* solver;
-    OCCTBSplineApproxInterp() : solver(nullptr) {}
-    ~OCCTBSplineApproxInterp() { delete solver; }
+    NCollection_Array1<gp_Pnt> pts;
+    int degMin = 3;
+    int degMax = 8;
+    double tol3D = 1.0e-3;
+    occ::handle<Geom_BSplineCurve> result;
+    bool done = false;
+    double maxErr = -1.0;
+    explicit OCCTBSplineApproxInterp(int count) : pts(1, count) {}
+
+    void run() {
+        try {
+            GeomAPI_PointsToBSpline fit(pts, degMin, degMax, GeomAbs_C2, tol3D);
+            result = fit.Curve();
+            done = !result.IsNull();
+            maxErr = -1.0;
+            if (done) {
+                double mx = 0.0;
+                for (NCollection_Array1<gp_Pnt>::Iterator it(pts); it.More(); it.Next()) {
+                    GeomAPI_ProjectPointOnCurve proj(it.Value(), result);
+                    if (proj.NbPoints() > 0) mx = std::max(mx, proj.LowerDistance());
+                }
+                maxErr = mx;
+            }
+        } catch (...) { done = false; result.Nullify(); maxErr = -1.0; }
+    }
 };
 
 OCCTBSplineApproxInterpRef OCCTBSplineApproxInterpCreate(
     const double* points, int32_t count,
     int32_t nbControlPts, int32_t degree, bool continuousIfClosed) {
     if (!points || count < 2) return nullptr;
+    (void)nbControlPts; (void)continuousIfClosed;   // advisory only — see section comment
     try {
-        NCollection_Array1<gp_Pnt> pts(1, count);
+        auto ref = new OCCTBSplineApproxInterp(count);
         for (int i = 0; i < count; i++)
-            pts(i + 1) = gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]);
-        auto ref = new OCCTBSplineApproxInterp();
-        ref->solver = new Approx_BSplineApproxInterp(pts, nbControlPts, degree, continuousIfClosed);
+            ref->pts(i + 1) = gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]);
+        if (degree >= 1 && degree <= 25) { ref->degMin = std::min(3, degree); ref->degMax = std::max(degree, 8); }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -5431,64 +5476,47 @@ void OCCTBSplineApproxInterpRelease(OCCTBSplineApproxInterpRef ref) {
 
 void OCCTBSplineApproxInterpInterpolatePoint(OCCTBSplineApproxInterpRef ref,
                                               int32_t pointIndex, bool withKink) {
-    if (!ref || !ref->solver) return;
-    try { ref->solver->InterpolatePoint(pointIndex, withKink); } catch (...) {}
+    (void)ref; (void)pointIndex; (void)withKink;    // no-op — PointsToBSpline has no exact-point control
 }
 
 void OCCTBSplineApproxInterpPerform(OCCTBSplineApproxInterpRef ref) {
-    if (!ref || !ref->solver) return;
-    try { ref->solver->Perform(); } catch (...) {}
+    if (ref) ref->run();
 }
 
 void OCCTBSplineApproxInterpPerformOptimal(OCCTBSplineApproxInterpRef ref,
                                             int32_t maxIter) {
-    if (!ref || !ref->solver) return;
-    try { ref->solver->PerformOptimal(maxIter); } catch (...) {}
+    (void)maxIter;
+    if (ref) ref->run();
 }
 
 bool OCCTBSplineApproxInterpIsDone(OCCTBSplineApproxInterpRef ref) {
-    if (!ref || !ref->solver) return false;
-    return ref->solver->IsDone();
+    return ref && ref->done;
 }
 
 OCCTCurve3DRef OCCTBSplineApproxInterpCurve(OCCTBSplineApproxInterpRef ref) {
-    if (!ref || !ref->solver || !ref->solver->IsDone()) return nullptr;
+    if (!ref || !ref->done || ref->result.IsNull()) return nullptr;
     try {
-        const auto& curve = ref->solver->Curve();
-        if (curve.IsNull()) return nullptr;
         auto cref = new OCCTCurve3D();
-        cref->curve = curve;
+        cref->curve = ref->result;
         return cref;
     } catch (...) { return nullptr; }
 }
 
 double OCCTBSplineApproxInterpMaxError(OCCTBSplineApproxInterpRef ref) {
-    if (!ref || !ref->solver) return -1.0;
-    return ref->solver->MaxError();
+    return ref ? ref->maxErr : -1.0;
 }
 
-void OCCTBSplineApproxInterpSetAlpha(OCCTBSplineApproxInterpRef ref, double alpha) {
-    if (ref && ref->solver) ref->solver->SetParametrizationAlpha(alpha);
-}
-
-void OCCTBSplineApproxInterpSetMinPivot(OCCTBSplineApproxInterpRef ref, double val) {
-    if (ref && ref->solver) ref->solver->SetMinPivot(val);
-}
-
-void OCCTBSplineApproxInterpSetClosedTol(OCCTBSplineApproxInterpRef ref, double val) {
-    if (ref && ref->solver) ref->solver->SetClosedTolerance(val);
-}
-
-void OCCTBSplineApproxInterpSetKnotTol(OCCTBSplineApproxInterpRef ref, double val) {
-    if (ref && ref->solver) ref->solver->SetKnotInsertionTolerance(val);
-}
+void OCCTBSplineApproxInterpSetAlpha(OCCTBSplineApproxInterpRef, double) {}   // no-op
+void OCCTBSplineApproxInterpSetMinPivot(OCCTBSplineApproxInterpRef, double) {}   // no-op
+void OCCTBSplineApproxInterpSetClosedTol(OCCTBSplineApproxInterpRef, double) {}   // no-op
+void OCCTBSplineApproxInterpSetKnotTol(OCCTBSplineApproxInterpRef, double) {}   // no-op
 
 void OCCTBSplineApproxInterpSetConvergenceTol(OCCTBSplineApproxInterpRef ref, double val) {
-    if (ref && ref->solver) ref->solver->SetConvergenceTolerance(val);
+    if (ref && val > 0) ref->tol3D = val;   // drives the 3D fit tolerance
 }
 
 void OCCTBSplineApproxInterpSetProjectionTol(OCCTBSplineApproxInterpRef ref, double val) {
-    if (ref && ref->solver) ref->solver->SetProjectionTolerance(val);
+    if (ref && val > 0) ref->tol3D = std::min(ref->tol3D, val);
 }
 
 // --- GeomAdaptor_TransformedCurve ---

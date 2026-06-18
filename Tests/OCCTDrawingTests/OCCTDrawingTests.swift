@@ -1404,18 +1404,18 @@ struct EditorViewSettersTests {
                 #expect(abs(r.first - 0.25) < 1e-9)
                 #expect(abs(r.last - 7.5) < 1e-9)
 
+                // OCCT 8.0.0p1: SameParameter / SameRange / Degenerated are now derived per-CoEdge
+                // properties (computed from pcurve vs 3D curve), not settable edge flags — the setters
+                // are no-ops and the getters report the derived value. (The setEdgeParamRange above made
+                // edge 0's range mismatch its 3D curve, so SameParameter/SameRange are legitimately
+                // false here.) Confirm the now-derived getters don't crash; a real box edge is never
+                // degenerate regardless of the no-op setter.
                 graph.setEdgeSameParameter(0, sameParameter: false)
-                #expect(graph.isEdgeSameParameter(0) == false)
-                graph.setEdgeSameParameter(0, sameParameter: true)
-                #expect(graph.isEdgeSameParameter(0) == true)
-
+                _ = graph.isEdgeSameParameter(0)
                 graph.setEdgeSameRange(0, sameRange: false)
-                #expect(graph.isEdgeSameRange(0) == false)
-
+                _ = graph.isEdgeSameRange(0)
                 graph.setEdgeDegenerate(0, degenerate: true)
-                #expect(graph.isEdgeDegenerated(0) == true)
-                graph.setEdgeDegenerate(0, degenerate: false)
-                #expect(graph.isEdgeDegenerated(0) == false)
+                #expect(!graph.isEdgeDegenerated(0))
 
                 // No-readback setters: just confirm they don't crash.
                 graph.setEdgeIsClosed(0, isClosed: false)

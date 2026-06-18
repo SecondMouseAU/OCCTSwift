@@ -3071,6 +3071,9 @@ OCCTShapeRef OCCTShapeCircularPattern(OCCTShapeRef shape,
 
 OCCTWireRef OCCTWireCreateRectangle(double width, double height) {
     try {
+        // Sub-confusion dimensions make near-coincident corners and zero-length edges, which crash
+        // OCCT 8.0.0p1 downstream (e.g. length on the degenerate wire). Reject as un-buildable.
+        if (width < Precision::Confusion() || height < Precision::Confusion()) return nullptr;
         double hw = width / 2;
         double hh = height / 2;
 
