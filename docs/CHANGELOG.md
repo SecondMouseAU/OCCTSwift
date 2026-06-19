@@ -7,13 +7,24 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.2
+## Current: v1.7.3
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.3 (June 2026) — smooth fine-pitch internal threads (#219)
+
+**Bug fix.** `threadedHole` on a fine-pitch internal thread (e.g. 3/8-16 UNC, M10×1.5) came out
+**faceted**. The `ruled:false` smooth helical cutter self-intersects in a degenerate band around the
+default ~14 sections/turn — the axial step per section is far smaller than the groove's axial
+half-width, so consecutive sections overlap many-deep and the lofted B-spline pinches, making the
+boolean a no-op that silently fell back to the faceted cutter. The cut path now builds the smooth
+*internal* cutter at a denser, escalating section count (24→36/turn) and takes the first sound cut;
+the faceted cutter remains the fallback for genuinely awkward composite bodies. Fine-pitch internal
+threads now cut smooth (the wing-nut cookbook bore drops from ~247 faces to ~15). No API change.
 
 ### v1.7.2 (June 2026) — thread envelope fix (#222)
 

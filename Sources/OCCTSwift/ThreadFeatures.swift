@@ -731,13 +731,20 @@ extension Shape {
                                        spec.cutDepth, outerHalf, apexHalf, bleed,
                                        phase(s), handed, nAnalytic).map { Shape(handle: $0) }
         }
+        // Faceted fallback density (~14 sections/turn): enough for a usable cut, not so many that
+        // the long-thread boolean slows to a crawl.
         let nScrew = min(220, max(20, Int((turns * 14).rounded())))
-        func screwLoftCutter(_ s: Int, ruled: Bool) -> Shape? {
+        // Smooth internal density (#219): the `ruled:false` loft self-intersects in a degenerate
+        // band around ~14 sections/turn (axial step per section ≪ the groove's axial half-width, so
+        // consecutive sections overlap many-deep and the BSpline pinches → a no-op boolean → faceted
+        // fallback). A denser loft (~24+/turn) conditions cleanly; the volume converges by 24.
+        func nSmooth(_ mult: Int) -> Int { min(260, max(48, Int((turns * Double(mult)).rounded()))) }
+        func screwLoftCutter(_ s: Int, ruled: Bool, nSections: Int) -> Shape? {
             Shape.screwSweptThreadCutter(axisOrigin: axisOrigin, axis: axis,
                                          radial0: radial0, tangential0: tangential0,
                                          spec: spec, turns: turns, apexSign: apexSign,
                                          helixRadius: helixRadius, phase: phase(s),
-                                         handed: handed, nSections: nScrew, ruled: ruled)
+                                         handed: handed, nSections: nSections, ruled: ruled)
         }
 
         // Fuse the per-start cutters and subtract from the blank.
@@ -785,12 +792,21 @@ extension Shape {
         let useAnalytic = (spec.form == .iso68 || spec.form == .unified) && spec.taperRatio == 0
         let analytic = useAnalytic ? threadResult(analyticCutter) : nil
         // Internal threads (apexSign +1) cut into a thick wall, where a SMOOTH (ruled=false) helical
-        // cutter usually subtracts cleanly → a smooth internal thread. It can still fail on a complex
-        // body (e.g. a wing nut), so fall back to the faceted cutter when the smooth one isn't sound.
-        let smoothInternal = apexSign > 0 ? threadResult { screwLoftCutter($0, ruled: false) } : nil
+        // cutter subtracts cleanly → a smooth internal thread. The default ~14 sections/turn lands in
+        // a degenerate band for fine pitch (the loft pinches → no-op boolean → faceted), so escalate
+        // the section density past it and take the first sound cut (#219); any remaining failure (a
+        // genuinely awkward composite body) still falls through to the faceted cutter below.
+        func smoothInternalCut() -> Shape? {
+            guard apexSign > 0 else { return nil }
+            for mult in [24, 36] {
+                let c = threadResult { screwLoftCutter($0, ruled: false, nSections: nSmooth(mult)) }
+                if isSoundCut(c) { return c }
+            }
+            return nil
+        }
         let candidate = isSoundCut(analytic) ? analytic
-                      : isSoundCut(smoothInternal) ? smoothInternal
-                      : threadResult { screwLoftCutter($0, ruled: true) }
+                      : smoothInternalCut()
+                      ?? threadResult { screwLoftCutter($0, ruled: true, nSections: nScrew) }
         guard let threaded = candidate, isSoundCut(threaded) else { return nil }
 
         switch runout {
