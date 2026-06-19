@@ -50,4 +50,5 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [Booleans](booleans.md) — union / subtracting / intersection, fuzzy value, glue, timeout, self-intersection checks.
 - [Threads](threads.md) — `threadedShaft` / `threadedHole`, ISO-68 / Unified specs, the boolean-free smooth build, runout & multi-start.
 - [Helices & Springs](helices.md) — `Wire.helix`, sweeping a circle into a coiled spring, tapered / variable-section coils, and why threads can't be built this way.
-- _(more areas per #210: lofting & sweeps, healing & validity, meshing & export, XCAF assemblies, topology graph)_
+- [Lofting & Sweeps](lofting-and-sweeps.md) — extrude, revolve, sweep along a path, loft (ruled / smooth / point-capped), and multi-section pipe shells.
+- _(more areas per #210: healing & validity, meshing & export, XCAF assemblies, topology graph)_
