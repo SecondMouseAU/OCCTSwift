@@ -1755,7 +1755,14 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Bounds
 
-    /// Get the axis-aligned bounding box of the shape
+    /// Get the axis-aligned bounding box of the shape.
+    ///
+    /// - Important: This is OCCT's **default** `Bnd_Box`, which for B-spline / faceted surfaces is
+    ///   the *control-point hull* — it can **over-report** the true extent (e.g. by ~one thread lead
+    ///   for a threaded shaft, OCCTSwift #232 / #213). For a tight extent use ``boundingBoxOptimal()``
+    ///   (`Bnd_Box::AddOptimal`), or — the unambiguous ground truth — the min/max of ``mesh(linearDeflection:angularDeflection:)``
+    ///   vertices. A `threadedShaft` / `threadedHole` solid is bounded *exactly* to its `length` / `depth`;
+    ///   `bounds` reporting past that is the hull artifact, not real geometry.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
