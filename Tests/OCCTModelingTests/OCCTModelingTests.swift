@@ -1365,10 +1365,11 @@ struct LoftPolarMethodCrashTests {
     /// deterministically SIGSEGVs single-threaded inside
     /// BRepFill_CompatibleWires::SameNumberByPolarMethod — the correspondence-list iterators
     /// over-advance and dereference a null list node ("Address 8"). The bridge's catch(...) cannot
-    /// save it (it is an OS signal, not a C++ exception). The fix is the source patch in
-    /// Scripts/patches/0001-BRepFill_CompatibleWires-guard-polar-iterator.patch. With it, Build()
-    /// fails gracefully (this returns nil) instead of crashing. If this test ever crashes the
-    /// runner, the patch has been lost from the xcframework.
+    /// save it (it is an OS signal, not a C++ exception). Fixed UPSTREAM in OCCT 8.0.0p1
+    /// (Open-Cascade-SAS/OCCT#1298, OCCTSwift #178) — the guard is now native to the pinned
+    /// xcframework, so Build() fails gracefully (this returns nil) instead of crashing. (Previously
+    /// carried as Scripts/patches/0001-*, dropped once p1 shipped.) If this test ever crashes the
+    /// runner, the upstream guard has been lost from the xcframework.
     @Test("Mismatched polar-method profiles return without crashing")
     func mismatchedPolarProfilesDoNotCrash() {
         // local (x, y) per station; z is the third tuple element
