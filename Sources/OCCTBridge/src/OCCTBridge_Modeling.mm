@@ -167,6 +167,9 @@
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
+#include <GCE2d_MakeSegment.hxx>
+#include <Geom2d_TrimmedCurve.hxx>
+#include <ShapeFix_Face.hxx>
 #include <BRepPrimAPI_MakeRevol.hxx>
 #include <Geom_Circle.hxx>
 #include <Geom_TrimmedCurve.hxx>
@@ -2105,6 +2108,59 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurface(OCCTSurfaceRef surface,
         BRepBuilderAPI_MakeFace maker(surface->surface, uMin, uMax, vMin, vMax, tolerance);
         if (!maker.IsDone()) return nullptr;
         return new OCCTShape(maker.Face());
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// Build a face on a surface trimmed to a non-rectangular region given by a closed UV-space
+// polygon (uv = [u0,v0,u1,v1,...], count points). Each segment becomes a 2D edge with a pcurve
+// on the surface, so the face footprint follows the polygon rather than a rectangular UV patch
+// (OCCTSwift #233). Returns NULL on failure.
+OCCTShapeRef OCCTShapeCreateFaceFromSurfaceUVPolygon(OCCTSurfaceRef surface,
+                                                     const double* uv, int32_t count) {
+    if (!surface || surface->surface.IsNull() || !uv || count < 3) return nullptr;
+    try {
+        Handle(Geom_Surface) surf = surface->surface;
+        BRepBuilderAPI_MakeWire wireMaker;
+        for (int32_t i = 0; i < count; i++) {
+            int32_t j = (i + 1) % count;
+            gp_Pnt2d a(uv[2 * i], uv[2 * i + 1]);
+            gp_Pnt2d b(uv[2 * j], uv[2 * j + 1]);
+            if (a.Distance(b) < Precision::Confusion()) continue;   // skip degenerate segment
+            Handle(Geom2d_TrimmedCurve) seg = GCE2d_MakeSegment(a, b).Value();
+            TopoDS_Edge e = BRepBuilderAPI_MakeEdge(seg, surf).Edge();
+            wireMaker.Add(e);
+        }
+        if (!wireMaker.IsDone()) return nullptr;
+        BRepBuilderAPI_MakeFace faceMaker(surf, wireMaker.Wire(), Standard_True);
+        if (!faceMaker.IsDone()) return nullptr;
+        TopoDS_Face face = faceMaker.Face();
+        BRepLib::BuildCurves3d(face);   // add 3D curves from the pcurves
+        return new OCCTShape(face);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// Build a face from a surface bounded by a 3D wire that (approximately) lies on the surface.
+// The wire's edges may lack pcurves, so ShapeFix_Face projects them onto the surface. Returns
+// NULL on failure (OCCTSwift #233).
+OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWireRef wire) {
+    if (!surface || surface->surface.IsNull() || !wire || wire->wire.IsNull()) return nullptr;
+    try {
+        Handle(Geom_Surface) surf = surface->surface;
+        BRepBuilderAPI_MakeFace faceMaker(surf, wire->wire, Standard_True);
+        if (!faceMaker.IsDone()) return nullptr;
+        TopoDS_Face face = faceMaker.Face();
+        // The 3D wire's edges likely have no pcurves on this surface — project to add them.
+        ShapeFix_Face fixer(face);
+        fixer.Perform();
+        TopoDS_Face fixed = fixer.Face();
+        BRepLib::BuildCurves3d(fixed);
+        BRepCheck_Analyzer chk(fixed);
+        if (!chk.IsValid()) return nullptr;
+        return new OCCTShape(fixed);
     } catch (...) {
         return nullptr;
     }

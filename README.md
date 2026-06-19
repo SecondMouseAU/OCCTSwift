@@ -9,7 +9,7 @@
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0p1, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
 
-**4,288 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
+**4,290 wrapped operations** | macOS 12+ / iOS 15+ / visionOS 1+ / tvOS 15+ (arm64) | OCCT 8.0.0p1
 
 ## Quick Start
 
@@ -76,7 +76,7 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 | Wires & Edges | 56 | rectangle, circle, polygon, arc, BSpline, NURBS, helix, fillet2D, chamfer2D |
 | 2D Curves | 97 | full Geom2d — lines, conics, BSplines, Bezier, Gcc constraint solver, hatching |
 | 3D Curves | 84 | full Geom — lines, conics, BSplines, Bezier, interpolation, projection, evaluation |
-| Surfaces | 86 | analytic, swept, freeform, plate, NLPlate, curvature, projection, trimming |
+| Surfaces | 88 | analytic, swept, freeform, plate, NLPlate, curvature, projection, trimming (rectangular UV, UV-polygon, or 3D-wire bounded) |
 | Face / Edge Analysis | 54 | UV queries, normals, curvature, projection, classification, primary axis, surface type predicates |
 | Feature-Based | 36 | boss, pocket, drill, split, pattern, rib, revolution, draft prism |
 | Healing & Analysis | 69 | fix, unify, simplify, NURBS convert, sew, wire/face/shell repair |

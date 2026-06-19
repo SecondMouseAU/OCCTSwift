@@ -4426,6 +4426,17 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurface(OCCTSurfaceRef surface,
                                              double vMin, double vMax,
                                              double tolerance);
 
+/// Build a face on a surface trimmed to a non-rectangular region given by a closed UV-space
+/// boundary polygon (uv = [u0,v0,u1,v1,...], `count` points, >= 3). #233.
+/// @return Trimmed face shape, or NULL on failure.
+OCCTShapeRef OCCTShapeCreateFaceFromSurfaceUVPolygon(OCCTSurfaceRef surface,
+                                                     const double* uv, int32_t count);
+
+/// Build a face from a surface bounded by a 3D wire lying (approximately) on it; pcurves are
+/// projected via ShapeFix_Face. #233.
+/// @return Trimmed face shape, or NULL on failure.
+OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWireRef wire);
+
 
 // MARK: - Edges to Faces (v0.33.0)
 

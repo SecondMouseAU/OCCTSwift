@@ -1755,7 +1755,14 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Bounds
 
-    /// Get the axis-aligned bounding box of the shape
+    /// Get the axis-aligned bounding box of the shape.
+    ///
+    /// - Important: This is OCCT's **default** `Bnd_Box`, which for B-spline / faceted surfaces is
+    ///   the *control-point hull* — it can **over-report** the true extent (e.g. by ~one thread lead
+    ///   for a threaded shaft, OCCTSwift #232 / #213). For a tight extent use ``boundingBoxOptimal()``
+    ///   (`Bnd_Box::AddOptimal`), or — the unambiguous ground truth — the min/max of ``mesh(linearDeflection:angularDeflection:)``
+    ///   vertices. A `threadedShaft` / `threadedHole` solid is bounded *exactly* to its `length` / `depth`;
+    ///   `bounds` reporting past that is the hull artifact, not real geometry.
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
@@ -4239,6 +4246,45 @@ extension Shape {
                                                       vRange.lowerBound, vRange.upperBound,
                                                       tolerance) else { return nil }
         return Shape(handle: h)
+    }
+
+    /// Create a face from a surface bounded by a **3D wire**, trimming the surface to the wire's
+    /// footprint. Useful for reconstruction: trim a fitted analytic surface (cylinder / cone /
+    /// sphere / B-spline) to a region's real boundary instead of a rectangular UV patch.
+    ///
+    /// Two strategies, tried in order:
+    /// 1. If the wire genuinely lies on the surface (its edges have, or admit, pcurves), build the
+    ///    face directly (`BRepBuilderAPI_MakeFace` + `ShapeFix_Face` to project pcurves) — exact.
+    /// 2. Otherwise (e.g. a sampled boundary polyline whose straight chords don't lie on the
+    ///    surface), project the wire's ordered points onto the surface's UV and trim by that
+    ///    polygon — robust, the same path as ``Surface/toFace(uvBoundary:)``.
+    ///
+    /// If you already have the boundary in UV space, call ``Surface/toFace(uvBoundary:)`` directly.
+    ///
+    /// - Parameters:
+    ///   - surface: The parametric surface to trim.
+    ///   - boundary: A closed wire on (or near) the surface.
+    /// - Returns: The trimmed face, or nil on failure. Note: a boundary crossing a periodic seam
+    ///   (e.g. the u = 0/2π seam of a cylinder) isn't handled by the projection fallback.
+    public static func face(from surface: Surface, boundary: Wire) -> Shape? {
+        // 1) Exact: the wire lies on the surface.
+        if let h = OCCTShapeCreateFaceFromSurfaceWire(surface.handle, boundary.handle) {
+            return Shape(handle: h)
+        }
+        // 2) Fallback: project the wire's ordered boundary points to UV and trim by that polygon.
+        var uv: [SIMD2<Double>] = []
+        for i in 0..<boundary.orderedEdgeCount {
+            guard let pts = boundary.orderedEdgePoints(at: i) else { continue }
+            for p in pts {
+                guard let proj = surface.projectPoint(p) else { continue }
+                let q = SIMD2(proj.u, proj.v)
+                if let last = uv.last, simd_distance(last, q) < 1e-9 { continue }   // dedup shared vertices
+                uv.append(q)
+            }
+        }
+        if let f = uv.first, let l = uv.last, simd_distance(f, l) < 1e-9 { uv.removeLast() }
+        guard uv.count >= 3 else { return nil }
+        return surface.toFace(uvBoundary: uv)
     }
 }
 

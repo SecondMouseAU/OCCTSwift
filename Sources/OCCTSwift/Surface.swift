@@ -879,6 +879,26 @@ extension Surface {
         return Shape.face(from: self, uRange: uRange, vRange: vRange, tolerance: tolerance)
     }
 
+    /// Create a face trimmed to a **non-rectangular** region of this surface, given by a closed
+    /// boundary polygon in **UV space** (≥ 3 points, e.g. `[SIMD2(u,v), …]`). Each segment becomes
+    /// a 2D edge carrying a pcurve on the surface, so the face footprint follows the polygon —
+    /// unlike ``toFace(uRange:vRange:tolerance:)``, which can only make a rectangular UV patch.
+    ///
+    /// Ideal for reconstructing a fitted analytic surface (cylinder / cone / sphere / B-spline)
+    /// trimmed to a region's real boundary rather than over-extending to the UV bounding box.
+    ///
+    /// - Parameter uvBoundary: Closed polygon of `(u, v)` points (the closing segment is implicit).
+    /// - Returns: The trimmed face, or nil on failure.
+    public func toFace(uvBoundary: [SIMD2<Double>]) -> Shape? {
+        guard uvBoundary.count >= 3 else { return nil }
+        var flat = [Double](); flat.reserveCapacity(uvBoundary.count * 2)
+        for p in uvBoundary { flat.append(p.x); flat.append(p.y) }
+        guard let h = flat.withUnsafeBufferPointer({ buf in
+            OCCTShapeCreateFaceFromSurfaceUVPolygon(handle, buf.baseAddress, Int32(uvBoundary.count))
+        }) else { return nil }
+        return Shape(handle: h)
+    }
+
     // MARK: - Surface-Surface Intersection (v0.35.0)
 
     /// Compute intersection curves between this surface and another.
