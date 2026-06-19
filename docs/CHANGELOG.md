@@ -7,13 +7,26 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.7
+## Current: v1.7.8
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.8 (June 2026) — cookbook: surfaces from points + working with meshes (#230, #231)
+
+**Documentation only — no code, API, or xcframework change.** Two new cookbook pages; snippets
+compile-checked against the shipped API.
+
+- **Surfaces from Points** (#230) — fit a B-spline `Surface` through 3D points: a regular grid via
+  `Surface.fromPointGrid` (`GeomAPI_PointsToBSplineSurface`), a scattered cloud via
+  `Surface.plateThrough` (`GeomPlate`), and deform-an-existing-surface-to-targets via
+  `nlPlateDeformed` (NLPlate). With a which-to-use table (vs. `Surface.gordon` for curve networks).
+- **Working with Meshes** (#231) — operating on the `Mesh` value type (distinct from Meshing &
+  Export): build from vertex/index arrays, inspect, triangle ↔ B-Rep face picking
+  (`trianglesWithFaces`), mesh-level booleans, `toShape`, and SceneKit / RealityKit / Metal interop.
 
 ### v1.7.7 (June 2026) — cookbook: Gordon surfaces (#229)
 
