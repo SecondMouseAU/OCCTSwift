@@ -7,13 +7,32 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.8
+## Current: v1.7.9
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.9 (June 2026) — face from surface bounded by a wire / UV polygon (#233)
+
+**Additive, source-compatible.** Trim a curved analytic surface (cylinder / cone / sphere /
+B-spline) to a **non-rectangular** region, instead of only a rectangular UV patch.
+
+- **`Surface.toFace(uvBoundary: [SIMD2<Double>])`** — a closed UV-space boundary polygon becomes 2D
+  edges with pcurves on the surface → `BRepBuilderAPI_MakeFace(surface, wire)` + `BuildCurves3d`.
+- **`Shape.face(from: Surface, boundary: Wire)`** — a 3D boundary wire: exact `MakeFace` +
+  `ShapeFix_Face` when the wire lies on the surface, else a fallback that projects the wire's ordered
+  points to UV and trims by that polygon (handles sampled boundary polylines; a seam-crossing
+  boundary isn't handled by the fallback).
+
+Bridge: `OCCTShapeCreateFaceFromSurfaceUVPolygon`, `OCCTShapeCreateFaceFromSurfaceWire`. Surfaces
+86→88, total **4,290** operations. No xcframework change.
+
+Also lands the #232 investigation (doc + tests, no behavior change): `Shape.bounds` over-reports for
+B-spline/faceted geometry (control-hull artifact) — threaded solids are bounded *exactly* to
+`length`/`depth`; `Issue232BoundsTests` asserts the true (mesh-vertex) extent.
 
 ### v1.7.8 (June 2026) — cookbook: surfaces from points + working with meshes (#230, #231)
 
