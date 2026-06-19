@@ -7,13 +7,27 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.10
+## Current: v1.7.11
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.11 (June 2026) — fix: `fromPointGrid` degree clamp prevents a BRepMesh hang (#244)
+
+**Bug fix.** `Surface.fromPointGrid` now clamps the B-spline fit degree to `min(uCount, vCount) − 1`.
+Passing a `degMax` higher than the grid supports (e.g. the default `degMax: 8` on a 7×7 grid)
+over-parameterised the fit — a degree-8 surface from only 7 samples/direction oscillates (Runge
+phenomenon) and can self-overlap in 3D. The face was *topologically* valid (`BRepCheck` passes) but
+geometrically rippling, so `BRepMesh`'s adaptive refinement never converged — an in-process,
+uninterruptible hang (the OCCTReconstruct blocker). Clamping the degree keeps the fit well-posed; the
+7×7 case now meshes in ~40 ms.
+
+Prevention is the fix: a watchdog-based bounded mesh was prototyped and **rejected** — BRepMesh does
+not poll `UserBreak` during heavy meshing (verified: a fine sphere ran ~13 min / 5 GB ignoring a
+0.01s deadline), so an in-process time bound can't be made both reliable and safe. No xcframework change.
 
 ### v1.7.10 (June 2026) — crash fix: degenerate hole wires (#234); housekeeping (#178, #210)
 
