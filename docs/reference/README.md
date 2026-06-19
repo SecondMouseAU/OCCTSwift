@@ -99,11 +99,11 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Surface | 261 | `Surface-*.md` | ☐ todo |
 | Curve3D | 195 | `Curve3D-*.md` | ☐ todo |
 | Curve2D | 233 | `Curve2D-*.md` | ☐ todo |
-| Edge | 34 | `Edge.md` | ☐ todo |
-| Face | 30 | `Face.md` | ☐ todo |
-| Mesh | 34 | `Mesh.md` | ☐ todo |
-| Exporter | 40 | `Exporter.md` | ☐ todo |
+| Edge | 36 | `Edge.md` | ✅ done |
+| Face | 32 | `Face.md` | ✅ done |
+| Mesh | 34 | `Mesh.md` | ✅ done |
+| Exporter | 39 | `Exporter.md` | ✅ done |
 | Document | 1865 | `Document-*.md` (chunked) | ☐ todo |
 | BRepGraph (TopologyGraph) | 302 | `TopologyGraph-*.md` | ☐ todo |
-| ThreadFeatures | 30 | `ThreadFeatures.md` | ☐ todo |
+| ThreadFeatures | 30 | `ThreadFeatures.md` | ✅ done |
 | _(remaining ~30 files)_ | — | — | ☐ todo |
