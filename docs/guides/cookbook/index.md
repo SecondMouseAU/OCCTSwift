@@ -56,3 +56,4 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [Meshing & Export](meshing-and-export.md) — `mesh` (deflection), the `Mesh` type, `mesh.toShape`, and STL / OBJ / STEP / IGES / BREP / glTF export + import.
 - [XCAF Assemblies](xcaf-assemblies.md) — `Document` trees, components & instancing, names / colors / materials, and structured STEP / GLB round-trip.
 - [Topology Graph](topology-graph.md) — `TopologyGraph` node counts, adjacency & shared edges, durable UIDs, and history tracking through operations.
+- [Gordon Surfaces](gordon-surfaces.md) — skin a surface through a network of profile + guide curves (`Surface.gordon` / `gordonReport`), with build diagnostics.
