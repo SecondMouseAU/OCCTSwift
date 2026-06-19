@@ -7,13 +7,24 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.11
+## Current: v1.8.0
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.8.0 (June 2026) — feat: `Exporter.writeBREP(allowInvalid:)`
+
+**Feature (additive).** `Exporter.writeBREP` (and the `Shape.writeBREP` instance wrapper) gain an
+`allowInvalid: Bool = false` parameter. When `true`, the `shape.isValid` pre-check is skipped and the
+shape is serialized as-is. BREP is OCCT's lossless native format and `BRepTools::Write` does not
+require a topologically valid shape, so an in-progress reconstruction — a compound of loose analytic
+faces, possibly with a few invalid faces — can be persisted and later reloaded for measurement /
+diagnostics (`Shape.loadBREP` already does not gate on validity). Default `false` preserves the
+existing validity gate, matching the other exporters. Enables OCCTMCP #41 (measure an imperfect
+reconstruction without forcing it through the validity gate). No xcframework change.
 
 ### v1.7.11 (June 2026) — fix: `fromPointGrid` degree clamp prevents a BRepMesh hang (#244)
 

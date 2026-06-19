@@ -392,13 +392,21 @@ public enum Exporter {
     /// - Fast caching of intermediate geometry results
     /// - Debugging geometry issues
     /// - Archiving exact geometry for later processing
+    /// - Parameter allowInvalid: When `true`, skip the `shape.isValid`
+    ///   pre-check and serialize the shape as-is. BREP is OCCT's lossless
+    ///   native format and `BRepTools::Write` does not require a topologically
+    ///   valid shape, so an in-progress reconstruction (a compound of loose
+    ///   analytic faces, possibly with a few invalid faces) can be persisted
+    ///   and later loaded for measurement / diagnostics. Defaults to `false`
+    ///   (the validity gate, matching the other exporters).
     public static func writeBREP(
         shape: Shape,
         to url: URL,
         withTriangles: Bool = true,
-        withNormals: Bool = false
+        withNormals: Bool = false,
+        allowInvalid: Bool = false
     ) throws {
-        guard shape.isValid else {
+        guard allowInvalid || shape.isValid else {
             throw ExportError.invalidShape
         }
 
@@ -699,8 +707,10 @@ extension Shape {
     ///   - url: Destination file URL
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
-    public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false) throws {
-        try Exporter.writeBREP(shape: self, to: url, withTriangles: withTriangles, withNormals: withNormals)
+    public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
+                          allowInvalid: Bool = false) throws {
+        try Exporter.writeBREP(shape: self, to: url, withTriangles: withTriangles,
+                               withNormals: withNormals, allowInvalid: allowInvalid)
     }
 
     /// Get BREP data for this shape.
