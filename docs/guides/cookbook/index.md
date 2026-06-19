@@ -52,4 +52,7 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [Helices & Springs](helices.md) — `Wire.helix`, sweeping a circle into a coiled spring, tapered / variable-section coils, and why threads can't be built this way.
 - [Lofting & Sweeps](lofting-and-sweeps.md) — extrude, revolve, sweep along a path, loft (ruled / smooth / point-capped), and multi-section pipe shells.
 - [Helical Sweeps](helical-sweeps.md) — `helicalSweep` helicoids, `threadedRod` worms/screws from a custom profile, and why you can't boolean a helicoid onto a shaft.
-- _(more areas per #210: healing & validity, meshing & export, XCAF assemblies, topology graph)_
+- [Healing & Validity](healing-and-validity.md) — `isValid` / `isValidSolid` / `isSelfIntersecting`, `analyze`, `orientedForward`, and the repair ops (`healed` / `fixed` / `unified` / `sewn`).
+- [Meshing & Export](meshing-and-export.md) — `mesh` (deflection), the `Mesh` type, `mesh.toShape`, and STL / OBJ / STEP / IGES / BREP / glTF export + import.
+- [XCAF Assemblies](xcaf-assemblies.md) — `Document` trees, components & instancing, names / colors / materials, and structured STEP / GLB round-trip.
+- [Topology Graph](topology-graph.md) — `TopologyGraph` node counts, adjacency & shared edges, durable UIDs, and history tracking through operations.
