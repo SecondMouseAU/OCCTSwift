@@ -102,6 +102,37 @@ struct BREPTests {
         #expect(data.count > 0)
     }
 
+    @Test("writeBREP(allowInvalid:) persists an invalid shape that the default gate rejects")
+    func writeBREPAllowInvalid() throws {
+        // A long full-length thread comes back invalid-but-usable (faceted
+        // screw-loft; benign facet self-intersection trips BRepCheck) — the
+        // canonical "loose/invalid but dimensionally real" shape (#193).
+        let shank = Shape.cylinder(radius: 5, height: 50)!
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.0)
+        guard let invalid = shank.threadedShaft(
+            axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+            spec: spec, length: 49, runout: .none), !invalid.isValid else {
+            // If this build produced a valid thread, the fixture no longer
+            // exercises the gate — skip rather than assert a false negative.
+            return
+        }
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_allow_invalid_\(UUID().uuidString).brep")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        // Default gate rejects it.
+        #expect(throws: Exporter.ExportError.self) {
+            try invalid.writeBREP(to: tempURL)
+        }
+        // allowInvalid: true serializes as-is...
+        try invalid.writeBREP(to: tempURL, allowInvalid: true)
+        #expect(FileManager.default.fileExists(atPath: tempURL.path))
+        // ...and it loads back for measurement (loadBREP doesn't gate on validity).
+        let reloaded = try Shape.loadBREP(from: tempURL)
+        #expect(reloaded.faces().count == invalid.faces().count)
+    }
+
     @Test("BREP roundtrip preserves geometry exactly")
     func brepRoundtrip() throws {
         let original = Shape.box(width: 20, height: 15, depth: 10)!
