@@ -193,6 +193,7 @@ See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 | [Naming Conventions](docs/naming-conventions.md) | Bridge and Swift naming patterns |
 | [OCCT Upgrades](docs/occt-upgrades.md) | Breaking changes and migration for each OCCT version |
 | [Wrapping Status](docs/occtswift-wrapping-gaps.md) | What's wrapped, what's not, and why |
+| [WebAssembly Plan](docs/wasm-feasibility.md) | Feasibility + phased plan for reusing the API in a SwiftWasm app |
 | [Changelog](docs/CHANGELOG.md) | Release history |
 
 ## License
