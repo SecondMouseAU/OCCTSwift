@@ -1,21 +1,8 @@
-<!-- Follow the OS dark/light setting. just-the-docs v0.3.3 ships both
-     `just-the-docs-default.css` (light) and `just-the-docs-dark.css`; the theme's
-     <head> loads the light one unconditionally (and gives it no id), so we swap the
-     stylesheet href based on `prefers-color-scheme`. This include is rendered *after*
-     that <link>, so the swap runs synchronously in <head> before first paint. -->
-<script>
-(function () {
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  function applyScheme() {
-    var link = document.querySelector('link[rel="stylesheet"][href*="just-the-docs-"]');
-    if (!link) return;
-    link.href = link.href.replace(
-      /just-the-docs-(default|dark)\.css/,
-      'just-the-docs-' + (mq.matches ? 'dark' : 'default') + '.css'
-    );
-  }
-  applyScheme();
-  if (mq.addEventListener) { mq.addEventListener('change', applyScheme); }
-  else if (mq.addListener) { mq.addListener(applyScheme); }   // older Safari
-})();
-</script>
+<!-- Follow the OS dark/light setting (no JS). The theme's <head> always loads
+     just-the-docs-default.css (light); here we additionally load the dark scheme,
+     gated to `prefers-color-scheme: dark`. This include renders *after* the theme's
+     stylesheet <link>, so in dark mode the dark rules win by source order. The browser
+     applies/removes it natively as the OS appearance changes — no flash, no script. -->
+<link rel="stylesheet"
+      href="{{ '/assets/css/just-the-docs-dark.css' | relative_url }}"
+      media="(prefers-color-scheme: dark)">

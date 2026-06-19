@@ -1,6 +1,6 @@
 ---
 title: Adding Features
-nav_order: 6
+nav_order: 7
 ---
 
 # Adding Features to OCCTSwift

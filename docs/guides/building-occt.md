@@ -1,6 +1,6 @@
 ---
 title: Building OCCT
-nav_order: 9
+nav_order: 8
 ---
 
 # Building OpenCASCADE for iOS/macOS

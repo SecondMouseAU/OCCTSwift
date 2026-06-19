@@ -1,11 +1,12 @@
 ---
-title: API Reference
-nav_order: 3
+title: API Map (Swift ↔ OCCT)
+nav_order: 4
 ---
 
-# API Reference
+# API Map (Swift ↔ OCCT)
 
-Complete mapping of OCCTSwift operations to OCCT C++ classes.
+Complete mapping of OCCTSwift operations to OCCT C++ classes. For the detailed per-type function
+reference (signatures, parameters, examples), see [API Reference](reference/).
 
 ## Wrapped Operations Summary
 
