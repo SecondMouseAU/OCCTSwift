@@ -188,7 +188,8 @@ See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 | [Architecture Overview](docs/architecture/overview.md) | Three-layer design, memory management, conventions |
 | [Adding Features](docs/guides/adding-features.md) | How to wrap new OCCT operations |
 | [OCCT Concepts](docs/guides/occt-concepts.md) | B-Rep topology, handles, shapes primer |
-| [API Reference](docs/API_REFERENCE.md) | Full operation-by-operation mapping to OCCT classes |
+| [API Reference (mapping)](docs/API_REFERENCE.md) | Full operation-by-operation mapping to OCCT classes |
+| [API Reference (detailed)](docs/reference/) | Per-type function reference — signatures, OCCT mapping, examples (built progressively) |
 | [Thread Safety](docs/thread-safety.md) | OCCTSerial mutex, parallel execution notes |
 | [Naming Conventions](docs/naming-conventions.md) | Bridge and Swift naming patterns |
 | [OCCT Upgrades](docs/occt-upgrades.md) | Breaking changes and migration for each OCCT version |
