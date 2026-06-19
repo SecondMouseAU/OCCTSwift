@@ -2,11 +2,36 @@ import Testing
 import simd
 @testable import OCCTSwift
 
-/// Issue #244: `Surface.fromPointGrid` with `degMax` higher than the grid supports (e.g. the default
-/// `degMax: 8` on a 7×7 grid) over-parameterises the B-spline fit — it can oscillate/self-overlap in
-/// 3D, producing a topologically-valid-but-geometrically-rippling face that makes `BRepMesh` (an
-/// in-process, uninterruptible loop) never converge. The fix clamps the fit degree to the grid size
-/// (`degree ≤ min(uCount, vCount) − 1`), keeping the surface well-posed so it meshes normally.
+/// Issue #244 — why the reproducer surface produced "invalid" (un-meshable) output, in detail.
+///
+/// `Surface.fromPointGrid` wraps `GeomAPI_PointsToBSplineSurface`, a least-squares B-spline fit
+/// through the grid. The bug was passing `degMax: 8` (the default) for a **7×7** grid. The chain:
+///
+/// 1. **Under-determined high-degree fit → oscillation.** A B-spline of degree _d_ needs ≥ _d_+1
+///    samples per direction to be well-posed; degree 8 with only 7 samples leaves the fit with more
+///    freedom than data pins down. The least-squares solution is then free to swing between the
+///    sparse nodes — the classic Runge phenomenon for high-degree approximation of few points. The
+///    surface passes *through/near* the 49 grid points but **overshoots wildly between them**, with
+///    large local curvature and, in the worst regions, **folds/self-overlaps in 3D**.
+///
+/// 2. **`isValid == true` anyway.** `BRepCheck` (and `Shape.isValid`/`isValidSolid`) validate
+///    *topology* and *per-element tolerances* — pcurves exist, the wire is closed, edges are
+///    same-parameter, etc. They do **not** measure global geometric quality, oscillation, or
+///    self-overlap. So the rippling face reports valid, which is what made the bug confusing.
+///
+/// 3. **`BRepMesh` never converges.** `BRepMesh_IncrementalMesh` tessellates by *adaptive
+///    refinement*: subdivide until every facet is within `linearDeflection` (chord distance to the
+///    true surface) and `angularDeflection` (normal deviation). On a surface that ripples below the
+///    chord tolerance *everywhere*, the deflection criterion is never satisfied, so it keeps
+///    subdividing; the oscillating fit also has wildly varying parametric speed (near-zero Jacobian
+///    in folded regions), which defeats the refinement's termination heuristics. The result is a
+///    non-terminating subdivision loop — an in-process hang that no signal/`try`/`UserBreak`
+///    deadline reliably interrupts (BRepMesh doesn't poll progress during this work).
+///
+/// **Fix (prevention):** clamp the fit degree to `min(uCount, vCount) − 1`. The fit becomes
+/// well-posed (enough samples for the degree), the surface stops oscillating, and `BRepMesh`
+/// converges normally. There is no "valid partial mesh" to recover from the pathological surface —
+/// the only sound output is to not build it. These tests lock that in.
 @Suite("Issue #244 — fromPointGrid degree clamp keeps surfaces meshable")
 struct Issue244PointGridDegreeTests {
 
