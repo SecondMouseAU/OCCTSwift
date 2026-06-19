@@ -58,3 +58,4 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [Topology Graph](topology-graph.md) — `TopologyGraph` node counts, adjacency & shared edges, durable UIDs, and history tracking through operations.
 - [Gordon Surfaces](gordon-surfaces.md) — skin a surface through a network of profile + guide curves (`Surface.gordon` / `gordonReport`), with build diagnostics.
 - [Surfaces from Points](surfaces-from-points.md) — fit a B-spline through a grid (`fromPointGrid`) or a scattered cloud (`plateThrough`), and deform-to-targets (`nlPlateDeformed`).
+- [Working with Meshes](working-with-meshes.md) — the `Mesh` type: build from arrays, inspect, mesh-level booleans, triangle↔face picking, `toShape`, and SceneKit / RealityKit / Metal interop.
