@@ -2128,15 +2128,26 @@ extension Surface {
 
     /// Approximate a BSpline surface through a grid of 3D points.
     /// Points are in row-major order: point[v*uCount+u].
+    ///
+    /// - Note: `degMax` is **clamped to the grid size** (`min(uCount, vCount) − 1`). A B-spline of
+    ///   degree _d_ needs at least _d_+1 samples per direction; asking for a degree higher than the
+    ///   grid supports (e.g. the default `degMax: 8` on a 7×7 grid) over-parameterises the fit, which
+    ///   can oscillate/self-overlap in 3D and make downstream meshing (`BRepMesh`) never converge
+    ///   (OCCTSwift #244). The clamp keeps the fit well-posed; pass a smaller `degMax` for an even
+    ///   smoother result.
     public static func fromPointGrid(points: [SIMD3<Double>], uCount: Int, vCount: Int,
                                      degMin: Int = 3, degMax: Int = 8,
                                      continuity: Int = 2, tolerance: Double = 1e-3) -> Surface? {
-        guard points.count == uCount * vCount else { return nil }
+        guard points.count == uCount * vCount, uCount >= 2, vCount >= 2 else { return nil }
+        // Clamp the degree to what the grid can support (#244): degree ≤ samples − 1.
+        let fitMaxDegree = max(1, min(uCount, vCount) - 1)
+        let cappedMax = min(degMax, fitMaxDegree)
+        let cappedMin = min(max(1, degMin), cappedMax)
         var flat = [Double]()
         for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
         guard let ref = flat.withUnsafeBufferPointer({ buf in
             OCCTPointsToSurfaceBSpline(buf.baseAddress!, Int32(uCount), Int32(vCount),
-                                        Int32(degMin), Int32(degMax), Int32(continuity), tolerance)
+                                        Int32(cappedMin), Int32(cappedMax), Int32(continuity), tolerance)
         }) else { return nil }
         return Surface(handle: ref)
     }
