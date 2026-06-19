@@ -7,13 +7,29 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.3
+## Current: v1.7.4
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.4 (June 2026) — docs: cookbook lofting & sweeps, context7 onboarding
+
+**Documentation only — no code, API, or xcframework change.**
+
+- **Cookbook: Lofting & Sweeps** (#226) — new example-rich page covering extrude, revolve,
+  sweep-along-path, loft (square→round, ruled vs smooth, point-capped cones), and multi-section
+  pipe shells, with a "loft vs multi-section sweep — which?" decision section. Every snippet is
+  compile- and run-checked against the shipped API; four figures (pipe elbow, frustum, cone, vase)
+  rendered headlessly as PNG posters + interactive `<model-viewer>` GLB models.
+- **context7 onboarding** (#224) — added `context7.json` scoping context7's crawl to the Swift API
+  (`docs/`, `Sources/OCCTSwift`) with usage rules, so the Swift surface becomes queryable on
+  context7 (issue #210).
+- **WebAssembly feasibility plan** (#223) — `docs/wasm-feasibility.md`: analysis + phased plan for
+  reusing the OCCTSwift API in a SwiftWasm app (deferred; the wasi-sdk-vs-Emscripten ABI split is
+  the central obstacle).
 
 ### v1.7.3 (June 2026) — smooth fine-pitch internal threads (#219)
 
