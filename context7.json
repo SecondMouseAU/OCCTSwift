@@ -1,0 +1,25 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "OCCTSwift",
+  "description": "Comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.0 — B-Rep solid modeling for macOS, iOS, visionOS and tvOS. Shapes, wires, surfaces, curves, booleans, fillets, sweeps, lofts, threads, healing, meshing, STEP/IGES/STL/glTF I/O, and XDE/OCAF assemblies.",
+  "folders": [
+    "docs",
+    "Sources/OCCTSwift"
+  ],
+  "excludeFolders": [
+    "Tests",
+    "Scripts",
+    "Libraries",
+    "Sources/OCCTBridge",
+    "Sources/OCCTTest"
+  ],
+  "rules": [
+    "Import the module with `import OCCTSwift`; the pre-built OCCT xcframework is bundled, no source build is needed.",
+    "Factory methods are static on the type: `Shape.box(...)`, `Shape.cylinder(...)`, `Wire.rectangle(...)`, `Curve3D.interpolate(...)`.",
+    "Fallible factories and operations return optionals — unwrap with `guard let` / `if let`, never force-unwrap.",
+    "Boolean operators on `Shape`: `a - b` subtract, `a + b` union, `a & b` intersect; method forms are `subtracting`, `union`, `intersection`.",
+    "Memory is handle-based with release-on-deinit — there is no manual free/release in Swift; just let values go out of scope.",
+    "`vertices()` is a method, not a property; edge indices may vary between runs, so iterate edges to find one when testing edge-specific operations.",
+    "Export via `Exporter` (e.g. `Exporter.writeSTEP`, `writeSTL`, `writeGLTF`); load assemblies via `Document.load(from:)`."
+  ]
+}
