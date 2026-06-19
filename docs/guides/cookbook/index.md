@@ -57,3 +57,4 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [XCAF Assemblies](xcaf-assemblies.md) — `Document` trees, components & instancing, names / colors / materials, and structured STEP / GLB round-trip.
 - [Topology Graph](topology-graph.md) — `TopologyGraph` node counts, adjacency & shared edges, durable UIDs, and history tracking through operations.
 - [Gordon Surfaces](gordon-surfaces.md) — skin a surface through a network of profile + guide curves (`Surface.gordon` / `gordonReport`), with build diagnostics.
+- [Surfaces from Points](surfaces-from-points.md) — fit a B-spline through a grid (`fromPointGrid`) or a scattered cloud (`plateThrough`), and deform-to-targets (`nlPlateDeformed`).
