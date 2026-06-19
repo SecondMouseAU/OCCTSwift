@@ -7,13 +7,32 @@ nav_order: 4
 
 All notable changes to OCCTSwift.
 
-## Current: v1.7.9
+## Current: v1.7.10
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.7.10 (June 2026) — crash fix: degenerate hole wires (#234); housekeeping (#178, #210)
+
+**Bug fix + docs.**
+
+- **#234 — `faceAddHole` rejects degenerate hole wires.** A 2-vertex / zero-area / collinear hole
+  wire was accepted, producing an invalid face whose extruded prism **SIGSEGV'd** OCCT's `ShapeFix`
+  (`healed()`) — an uncatchable OS signal. `OCCTMakeFaceAddHole` now returns `nil` for a hole wire
+  with < 3 distinct vertices or all-collinear points, breaking the crash chain at the source. (The
+  general "`healed()` never crashes on any invalid input" can't be defended in-process — the fault
+  is inside OCCT's uncatchable `ShapeFix`.)
+- **#178 — loft polar-iterator fix is upstream.** The `BRepFill_CompatibleWires` guard (#176) shipped
+  in OCCT 8.0.0p1; the carried `Scripts/patches/0001-*` was dropped. Corrected the stale CLAUDE.md
+  note + #176 regression test comment (the test passes against the unpatched p1 xcframework).
+- **#210 — context7.** Runnable-snippet doc comments on the core ops (primitives + booleans) and a
+  CLAUDE.md doc-standards rule ("document with a runnable Swift snippet so context7 indexes it"). The
+  Swift API is now indexed and queryable on context7 (`/gsdali/occtswift`).
+
+No new operations; no xcframework change.
 
 ### v1.7.9 (June 2026) — face from surface bounded by a wire / UV polygon (#233)
 
