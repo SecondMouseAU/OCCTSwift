@@ -95,7 +95,7 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Type | decls | page | status |
 |------|------:|------|--------|
 | Wire | 61 | `Wire.md` | ✅ done |
-| Shape | 993 | `Shape-*.md` (chunked) | ☐ todo |
+| Shape | 867 | `Shape.md` + 8 (Features, Healing, Measurement, Builders I/II, HLR-Geom, Recognition, Completions) | ✅ done |
 | Surface | 234 | `Surface.md` + 4 (Analytic Types, BSpline & Bezier, Analysis, Advanced) | ✅ done |
 | Curve3D | 177 | `Curve3D.md` + 3 (Analytic Types, Analysis, Construction) | ✅ done |
 | Curve2D | 205 | `Curve2D.md` + 3 (Analytic Types, Analysis, Constraint Solvers) | ✅ done |
