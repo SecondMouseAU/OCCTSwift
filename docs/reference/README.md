@@ -103,7 +103,7 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Face | 32 | `Face.md` | ✅ done |
 | Mesh | 34 | `Mesh.md` | ✅ done |
 | Exporter | 39 | `Exporter.md` | ✅ done |
-| Document | 1865 | `Document-*.md` (chunked) | ☐ todo |
+| Document | 1735 | `Document.md` + 12 (Persistence-IO, XCAF-Notes, OCAF-Attributes, Math-Bounds, Analysis-Builders, Geometry-Constructors, BSpline-Extrema, Math-Solvers, Mesh-Fixing, Transforms, Builders-Fillet, Completions) | ✅ done |
 | BRepGraph (TopologyGraph) | 302 | `TopologyGraph-*.md` | ☐ todo |
 | ThreadFeatures | 30 | `ThreadFeatures.md` | ✅ done |
 | _(remaining ~30 files)_ | — | — | ☐ todo |
