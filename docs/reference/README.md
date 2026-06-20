@@ -104,6 +104,6 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Mesh | 34 | `Mesh.md` | ✅ done |
 | Exporter | 39 | `Exporter.md` | ✅ done |
 | Document | 1735 | `Document.md` + 12 (Persistence-IO, XCAF-Notes, OCAF-Attributes, Math-Bounds, Analysis-Builders, Geometry-Constructors, BSpline-Extrema, Math-Solvers, Mesh-Fixing, Transforms, Builders-Fillet, Completions) | ✅ done |
-| BRepGraph (TopologyGraph) | 302 | `TopologyGraph-*.md` | ☐ todo |
+| TopologyGraph (BRepGraph) | 375 | `TopologyGraph.md` + 4 (Detail-History, Builders, Editor-Identity, Attributes) | ✅ done |
 | ThreadFeatures | 30 | `ThreadFeatures.md` | ✅ done |
 | _(remaining ~30 files)_ | — | — | ☐ todo |
