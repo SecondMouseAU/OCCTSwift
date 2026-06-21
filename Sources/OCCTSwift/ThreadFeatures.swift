@@ -206,21 +206,30 @@ public enum RunoutStyle: Sendable, Hashable {
 }
 
 /// Which construction path ``Shape/threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)``
-/// uses to cut an external thread. The two paths differ in their outer envelope (#222).
+/// uses to build an external thread.
+///
+/// For a **single-start** thread on a plain coaxial cylinder (the overwhelmingly common case) all
+/// surviving modes now produce the same smooth, BRepCheck-valid **direct** build (#213) — there is
+/// no longer a reason to choose between them. The boolean cut path remains only for the cases the
+/// direct build cannot handle (multi-start, non-cylinder targets), where it is **faceted and
+/// unreliable** — see ``boolean`` and #254.
 public enum ThreadBuild: Sendable, Hashable, Codable {
-    /// Original heuristic: the smooth, boolean-free direct rod build (#213) for a single-start
-    /// thread on a plain coaxial cylinder, and the boolean cut path otherwise. Best surface
-    /// quality, but the direct build's `ruled:false` loft can bow the crest **past** the nominal
-    /// major radius at coarse pitch / wide crest flats (#222).
+    /// Smooth, boolean-free direct rod build (#213) for a single-start thread on a plain coaxial
+    /// cylinder; the boolean cut path otherwise (multi-start / non-cylinder). The recommended
+    /// default. The earlier crest-overshoot concern (#222) was shown by #232 to be a `Bnd_Box`
+    /// control-hull over-report, not real geometry — the direct crest is in-envelope.
     case auto
-    /// Prefer the smooth direct build, falling back to the boolean cut when it is unavailable
-    /// (multi-start, non-cylinder target, or a construction failure). Same envelope caveat as
-    /// `.auto` — may exceed `spec.nominalDiameter / 2` at coarse pitch.
+    /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build
+    /// is unavailable (multi-start, non-cylinder target, or a construction failure). For a
+    /// single-start coaxial cylinder this is identical to ``auto``.
     case direct
-    /// Always use the boolean cut path. The cutter is subtracted from a cylinder of radius exactly
-    /// `spec.nominalDiameter / 2`, so the crest is clamped to the nominal major radius (in-envelope)
-    /// — at the cost of the direct build's smooth crest. Use for headless single-start parts
-    /// (lead screws, studs, worms) where the outer diameter must not overshoot nominal.
+    /// **Deprecated (#254).** Formerly forced the boolean cut path to clamp a supposed crest
+    /// overshoot — but #232 established that overshoot was only a `Bnd_Box` over-report, so the
+    /// direct build was correct all along. The forced cut path produces a *faceted, frequently
+    /// disconnected* thread (a helical scatter of rectangular notches rather than a continuous
+    /// groove) and offers no envelope advantage. Now treated exactly like ``auto`` — single-start
+    /// coaxial cylinders get the smooth direct build. Use ``auto`` or ``direct``.
+    @available(*, deprecated, message: "Use .auto or .direct — .boolean no longer differs for buildable threads and its forced cut path is faceted/unreliable (#254/#232).")
     case boolean
 }
 
@@ -474,10 +483,15 @@ extension Shape {
     /// see ``buildThreadedRodDirect`` and OCCTSwift #213. For non-cylinder targets, multi-start,
     /// or if the direct build fails, it falls back to the boolean cut path (``applyThreadCut``).
     ///
-    /// - Parameter build: chooses the construction path (#222). `.auto` (default) keeps the
-    ///   smooth direct build for single-start coaxial cylinders; `.boolean` forces the in-envelope
-    ///   cut path so a headless single-start part (lead screw / stud / worm) never overshoots the
-    ///   nominal major diameter. See ``ThreadBuild``.
+    /// - Parameter build: chooses the construction path. `.auto` (default) and `.direct` use the
+    ///   smooth, boolean-free direct build for single-start coaxial cylinders and fall back to the
+    ///   faceted cut path only for multi-start / non-cylinder targets. `.boolean` is **deprecated**
+    ///   (#254): it formerly forced the cut path, which produces a faceted, frequently disconnected
+    ///   thread; it is now treated like `.auto`. See ``ThreadBuild``.
+    ///
+    /// - Note: **Multi-start** threads (`starts > 1`) currently have no direct build and use the
+    ///   faceted boolean cut, which can come out as a helical scatter of disconnected notches rather
+    ///   than a continuous thread (#254). For multi-start a smooth direct build is a known gap.
     public func threadedShaft(axisOrigin: SIMD3<Double>,
                                axisDirection: SIMD3<Double>,
                                spec: ThreadSpec,
@@ -486,7 +500,11 @@ extension Shape {
                                runout: RunoutStyle = .none,
                                build: ThreadBuild = .auto) -> Shape? {
         let len = length ?? (2 * spec.nominalDiameter)
-        if build != .boolean, starts == 1,
+        // Single-start coaxial cylinders always take the smooth direct build, regardless of `build`
+        // (#254): the cut path's only historical advantage — an "in-envelope" crest — was disproved
+        // by #232, and it otherwise yields a faceted/disconnected thread. `.boolean` is deprecated
+        // and handled here identically to `.auto`/`.direct`.
+        if starts == 1,
            let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
                                                spec: spec, length: len) {
             switch runout {

@@ -7,13 +7,34 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.0
+## Current: v1.8.1
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.8.1 (June 2026) — fix: single-start `threadedShaft` is always a smooth helix; deprecate `.boolean` (#254)
+
+**Fix.** `threadedShaft(build: .boolean)` produced a *faceted, disconnected* thread — a helical
+scatter of rectangular notches rather than a continuous groove — because it forced the screw-loft
+boolean cut path, whose tightly-wound helical cutter is the classic OCCT BOP failure (cf. #213/#225).
+The solid was `isValid` with roughly the right volume, so only rendering exposed it.
+
+`.boolean` only ever existed to clamp a supposed crest "overshoot" from #222 — but #232 established
+that overshoot is a `Bnd_Box` control-hull **artifact** (verified here: the direct build's crest
+measures **exactly nominal** by both `boundingBoxOptimal()` and mesh vertices, while `.bounds`
+over-reads +14–21%). With no remaining reason to prefer it, **single-start coaxial-cylinder threads
+now take the smooth, boolean-free direct build (#213) for every build mode**, and `ThreadBuild.boolean`
+is **deprecated** (now treated as `.auto`). Use `.auto` or `.direct`.
+
+`.auto` / `.direct` single-start behaviour is unchanged (they already built direct). Swift-only change —
+no xcframework rebuild.
+
+**Known limitation:** multi-start threads (`starts > 1`) and non-cylinder targets still use the
+faceted cut path, which can come out as disconnected notches — a smooth multi-start/internal direct
+build is a tracked gap.
 
 ### v1.8.0 (June 2026) — feat: `Exporter.writeBREP(allowInvalid:)`
 
