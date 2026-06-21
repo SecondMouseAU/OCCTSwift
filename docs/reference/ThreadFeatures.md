@@ -29,7 +29,7 @@ public func threadedShaft(axisOrigin: SIMD3<Double>,
                            build: ThreadBuild = .auto) -> Shape?
 ```
 
-When `self` is a plain cylinder coaxial with the axis (the common case) and `starts == 1`, this builds the threaded rod **directly with no boolean** for every build mode (`.boolean` is deprecated and treated as `.auto` since #254): the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. Any unthreaded margin is closed by pure sewing (shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, multi-start, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
+When `self` is a plain cylinder coaxial with the axis (the common case), this builds the threaded rod **directly with no boolean** for every build mode (`.boolean` is deprecated and treated as `.auto` since #254): the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. **Multi-start** threads (`starts > 1`) build directly too (#257): N teeth tile the turn at lead = N·pitch, sampled per pitch so the loft stays in-envelope, giving a continuous interleaved multi-helix. Any unthreaded margin is closed by pure sewing (per-start shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, rounded/tapered forms, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
 
 - **Parameters:**
   - `axisOrigin` — a point on the shaft axis (typically the centre of the bottom face).
@@ -50,7 +50,7 @@ When `self` is a plain cylinder coaxial with the axis (the common case) and `sta
                                             spec: spec, length: 18) else { return }
   // threaded.isValid == true; ~9 faces (smooth), crest at nominal radius (6 mm)
   ```
-- **Note:** For a multi-start or left-handed thread the boolean cut path is used automatically (`starts: 2` or `spec.leftHanded == true`). The tapered pipe forms (`.nptTapered`, `.bsptTapered`) always use the cut path since the smooth direct build supports parallel forms only.
+- **Note:** Multi-start threads (`starts: 2`, `3`, …) build via the smooth direct path too (#257). The tapered pipe forms (`.nptTapered`, `.bsptTapered`) and rounded forms (`.knuckle`, rounded Whitworth) always use the cut path since the smooth direct build supports parallel piecewise-linear forms only.
 
 ---
 
@@ -588,12 +588,12 @@ public enum ThreadBuild: Sendable, Hashable, Codable {
 
 | Case | Behaviour |
 |---|---|
-| `.auto` | Smooth boolean-free direct build for single-start coaxial cylinders; falls back to the boolean cut otherwise (multi-start / non-cylinder). The recommended default. |
-| `.direct` | Prefer the smooth direct build; fall back to the boolean cut when unavailable (multi-start, non-cylinder, construction failure). Identical to `.auto` for single-start coaxial cylinders. |
+| `.auto` | Smooth boolean-free direct build for single- and multi-start coaxial cylinders (#213/#257); falls back to the boolean cut otherwise (non-cylinder / rounded / tapered). The recommended default. |
+| `.direct` | Prefer the smooth direct build; fall back to the boolean cut when unavailable (non-cylinder, rounded/tapered form, construction failure). Identical to `.auto` for coaxial cylinders. |
 | `.boolean` | **Deprecated (#254).** Formerly forced the boolean cut path; now treated exactly like `.auto` (single-start coaxial cylinders take the smooth direct build). Its forced cut path produced a *faceted, frequently disconnected* thread and offered no envelope advantage. Use `.auto` or `.direct`. |
 
 - **Note (#222 / #232 / #254):** the direct build's crest sits **at** the nominal major radius — the earlier "overshoot" report was a `Bnd_Box` control-hull artifact. Measure the true crest with `boundingBoxOptimal()` or mesh vertices (both read nominal); `bounds` over-reads by ~13–21% on the B-spline helicoid. There is no longer a reason to force the cut path for an "exact outer diameter".
-- **Known limitation:** multi-start threads (`starts > 1`) and non-cylinder targets still use the faceted boolean cut, which can come out as disconnected notches rather than a continuous helix — a smooth multi-start/internal direct build is a tracked gap.
+- **Multi-start (#257):** single- and multi-start threads on a coaxial cylinder both build via the smooth direct path. The faceted cut path now only handles non-cylinder targets, rounded forms (knuckle / rounded Whitworth), and tapered pipe forms (NPT/BSPT).
 
 ---
 

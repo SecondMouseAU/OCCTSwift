@@ -7,13 +7,30 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.1
+## Current: v1.8.2
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.8.2 (June 2026) — feat: smooth multi-start `threadedShaft` direct build (#257)
+
+**Feature.** Multi-start threads (`threadedShaft(starts: N)`, N > 1) now build via the smooth,
+boolean-free **direct** path instead of falling to the faceted boolean cut (which produced
+disconnected notches, #254). The single-start cam-slice loft is generalised to **N teeth tiling the
+turn at lead = N·pitch**, giving a continuous interleaved multi-helix — a low-face-count,
+BRepCheck-valid solid with the crest exactly at the nominal major radius. Partial-length multi-start
+(thread + plain shank) closes via per-start shoulder faces; full-length is the lofted solid directly.
+
+Covers the piecewise-linear forms the direct build already supports (ISO/Unified, trapezoidal/ACME,
+square, buttress). Rounded (knuckle / rounded Whitworth), tapered (NPT/BSPT), and non-cylinder
+targets still use the cut path.
+
+Key detail: the loft samples **per pitch** (not per lead) — sampling per turn under-samples each
+tooth at N > 1 and the `ruled:false` loft balloons the crest radially past nominal. Swift-only — no
+xcframework rebuild. Verified: 2-/3-start crest = nominal by mesh vertices; start count = N.
 
 ### v1.8.1 (June 2026) — fix: single-start `threadedShaft` is always a smooth helix; deprecate `.boolean` (#254)
 
