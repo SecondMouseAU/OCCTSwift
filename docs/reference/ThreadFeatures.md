@@ -29,7 +29,7 @@ public func threadedShaft(axisOrigin: SIMD3<Double>,
                            build: ThreadBuild = .auto) -> Shape?
 ```
 
-When `self` is a plain cylinder coaxial with the axis (the common case) and `build != .boolean` and `starts == 1`, this builds the threaded rod **directly with no boolean**: the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. Any unthreaded margin is closed by pure sewing (shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, multi-start, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
+When `self` is a plain cylinder coaxial with the axis (the common case) and `starts == 1`, this builds the threaded rod **directly with no boolean** for every build mode (`.boolean` is deprecated and treated as `.auto` since #254): the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. Any unthreaded margin is closed by pure sewing (shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, multi-start, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
 
 - **Parameters:**
   - `axisOrigin` — a point on the shaft axis (typically the centre of the bottom face).
@@ -38,8 +38,8 @@ When `self` is a plain cylinder coaxial with the axis (the common case) and `bui
   - `length` — threaded length in mm (default: `2 * spec.nominalDiameter`).
   - `starts` — number of thread starts (1 for standard fasteners; >1 for lead screws). Multi-start forces the boolean cut path.
   - `runout` — thread termination style at each end (see `RunoutStyle`).
-  - `build` — construction path selector; `.auto` (default) uses the smooth direct build for single-start coaxial cylinders; `.boolean` forces the in-envelope cut path so the major diameter never overshoots `spec.nominalDiameter / 2` (see `ThreadBuild`).
-- **Returns:** Threaded shape, or `nil` on sweep / boolean failure. Use `boundingBoxOptimal()` (not `bounds`) to measure the true crest radius — the BSpline pole hull overshoots by ~13%.
+  - `build` — construction path selector; `.auto` (default) and `.direct` use the smooth direct build for single-start coaxial cylinders. `.boolean` is **deprecated** (#254) and now behaves like `.auto`. See `ThreadBuild`.
+- **Returns:** Threaded shape, or `nil` on sweep / boolean failure. Use `boundingBoxOptimal()` (not `bounds`) to measure the true crest radius — the BSpline pole hull overshoots by ~13–21%.
 - **OCCT:** Pure-Swift direct path: `Shape.loft`, `Wire.arc`, `Wire.interpolate`, `Wire.join`, `Shape.face(from:)`, `Shape.sew`, `Shape.solidFromShell` — no boolean. Fallback cut path: `OCCTShapeBuildThreadCutter` (bridge: analytic helicoid cutter), `Shape.screwSweptThreadCutter`, `Shape.subtracting`.
 - **Example:**
   ```swift
@@ -588,11 +588,12 @@ public enum ThreadBuild: Sendable, Hashable, Codable {
 
 | Case | Behaviour |
 |---|---|
-| `.auto` | Smooth boolean-free direct build for single-start coaxial cylinders; falls back to boolean cut otherwise. Best surface quality. |
-| `.direct` | Prefer the smooth direct build; fall back to boolean cut when unavailable (multi-start, non-cylinder, construction failure). Same as `.auto` for the common case. |
-| `.boolean` | Always use the boolean cut path. Cutter subtracted from a cylinder of radius exactly `spec.nominalDiameter / 2`, so the crest is clamped to the nominal major radius (in-envelope). Use for lead screws, studs, or worms where the outer diameter must not overshoot nominal. |
+| `.auto` | Smooth boolean-free direct build for single-start coaxial cylinders; falls back to the boolean cut otherwise (multi-start / non-cylinder). The recommended default. |
+| `.direct` | Prefer the smooth direct build; fall back to the boolean cut when unavailable (multi-start, non-cylinder, construction failure). Identical to `.auto` for single-start coaxial cylinders. |
+| `.boolean` | **Deprecated (#254).** Formerly forced the boolean cut path; now treated exactly like `.auto` (single-start coaxial cylinders take the smooth direct build). Its forced cut path produced a *faceted, frequently disconnected* thread and offered no envelope advantage. Use `.auto` or `.direct`. |
 
-- **Note:** The smooth `ruled=false` loft can bow the crest **past** the nominal major radius at coarse pitch / wide crest flats (OCCTSwift #222). Use `.boolean` when an exact outer diameter is required.
+- **Note (#222 / #232 / #254):** the direct build's crest sits **at** the nominal major radius — the earlier "overshoot" report was a `Bnd_Box` control-hull artifact. Measure the true crest with `boundingBoxOptimal()` or mesh vertices (both read nominal); `bounds` over-reads by ~13–21% on the B-spline helicoid. There is no longer a reason to force the cut path for an "exact outer diameter".
+- **Known limitation:** multi-start threads (`starts > 1`) and non-cylinder targets still use the faceted boolean cut, which can come out as disconnected notches rather than a continuous helix — a smooth multi-start/internal direct build is a tracked gap.
 
 ---
 

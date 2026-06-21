@@ -87,7 +87,7 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 | Colors & Materials | 63 | Quantity_Color, sRGB/Lab/HLS, PBR materials, named colors |
 | Geometry Factories | 90+ | GC/GCE2d/gce factories, convert to BSpline, analytical recognition |
 | Drawings & Dimensions | 32 | HLR projection, visible/hidden/outline edges, linear/radial/diameter/angular dimensions, centrelines, auto-centreline from revolution axes, DXF R12 writer |
-| Thread Features | 23 | ThreadForm (ISO-68/Unified), ThreadSpec parser (M5x0.8, 1/4-20 UNC), truncated 60° V-profile, multi-start, runout styles, Shape.threadedHole, Shape.threadedShaft (ThreadBuild `.auto`/`.direct`/`.boolean` — in-envelope cut for headless lead screws/studs/worms), Shape.threadedRod (smooth worm/screw from a custom ThreadProfile, boolean-free) |
+| Thread Features | 23 | ThreadForm (ISO-68/Unified), ThreadSpec parser (M5x0.8, 1/4-20 UNC), truncated 60° V-profile, multi-start, runout styles, Shape.threadedHole, Shape.threadedShaft (smooth direct build for single-start; ThreadBuild `.auto`/`.direct`, `.boolean` deprecated — #254), Shape.threadedRod (smooth worm/screw from a custom ThreadProfile, boolean-free) |
 | Sheet Metal | 3 | `SheetMetal.Flange` + `Bend` + `Builder.build` — declarative flange-and-bend composition via extrude + union + fillet |
 
 For the full operation-by-operation mapping to OCCT classes, see [docs/API_REFERENCE.md](docs/API_REFERENCE.md).

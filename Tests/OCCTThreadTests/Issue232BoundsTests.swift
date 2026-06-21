@@ -2,10 +2,11 @@ import Testing
 import simd
 @testable import OCCTSwift
 
-/// Issue #232: `threadedShaft(build: .boolean)` / `threadedHole` were reported to run ~one lead
-/// past `length`/`depth`. Investigation found the threaded **solid is bounded exactly to the
-/// requested span** — the overshoot is `Shape.bounds` (OCCT's default `Bnd_Box`) over-reporting for
-/// the B-spline/faceted thread surfaces (the control-hull artifact, cf. #213), not real geometry.
+/// Issue #232: `threadedShaft` / `threadedHole` were reported to run ~one lead past `length`/`depth`.
+/// Investigation found the threaded **solid is bounded exactly to the requested span** — the overshoot
+/// is `Shape.bounds` (OCCT's default `Bnd_Box`) over-reporting for the B-spline/faceted thread surfaces
+/// (the control-hull artifact, cf. #213), not real geometry. (Originally exercised via the now-deprecated
+/// `.boolean` cut path; uses `.direct` since #254 routes single-start builds there.)
 ///
 /// These tests lock that in using the **mesh-vertex extent** (the unambiguous ground truth: mesh
 /// vertices lie on the actual faces), not `bounds`.
@@ -26,7 +27,7 @@ struct Issue232BoundsTests {
         guard let rod = Shape.cylinder(radius: 6, height: length),
               let t = rod.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                                         spec: ThreadSpec(form: .trapezoidal, nominalDiameter: 12, pitch: pitch),
-                                        length: length, build: .boolean),
+                                        length: length, build: .direct),
               let z = Self.meshZExtent(t) else {
             Issue.record("build/mesh failed"); return
         }
@@ -44,7 +45,7 @@ struct Issue232BoundsTests {
         guard let rod = Shape.cylinder(radius: 5, height: length),
               let t = rod.threadedShaft(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                                         spec: ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: pitch),
-                                        length: length, build: .boolean),
+                                        length: length, build: .direct),
               let z = Self.meshZExtent(t) else {
             Issue.record("build/mesh failed"); return
         }
