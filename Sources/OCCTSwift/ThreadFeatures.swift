@@ -18,8 +18,10 @@ import OCCTBridge
 //     primitives (`Shape.loft`, `Wire.arc`/`.interpolate`, `Shape.face(from:)`, `Shape.sew`), so
 //     the kernel bridge stays a thin wrapper. See `buildThreadedRodDirect` / `threadedRodSolid`.
 //
+//   The direct build also covers MULTI-START threads (#257): N teeth tile the turn at lead = N·pitch.
+//
 //   FALLBACK cut path (`applyThreadCut`) — for non-cylinder targets, internal threads
-//     (`threadedHole`), multi-start, or if the direct build isn't sound: a V-groove cutter swept
+//     (`threadedHole`), rounded/tapered forms, or if the direct build isn't sound: a V-groove cutter swept
 //     along the helix and subtracted. Its cutter evolved v0.139 pipe-shell (bulged, #181-C/#185)
 //     → v1.4.0 screw-motion ruled loft (in-envelope, robust, faceted) → v1.4.1 smooth analytic
 //     helicoid (O(1) faces; falls back to the screw-loft when OCCT's boolean chokes on a tightly-
@@ -208,20 +210,21 @@ public enum RunoutStyle: Sendable, Hashable {
 /// Which construction path ``Shape/threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)``
 /// uses to build an external thread.
 ///
-/// For a **single-start** thread on a plain coaxial cylinder (the overwhelmingly common case) all
-/// surviving modes now produce the same smooth, BRepCheck-valid **direct** build (#213) — there is
-/// no longer a reason to choose between them. The boolean cut path remains only for the cases the
-/// direct build cannot handle (multi-start, non-cylinder targets), where it is **faceted and
+/// For a thread on a plain coaxial cylinder (the overwhelmingly common case) all surviving modes now
+/// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257) — there is no
+/// longer a reason to choose between them. The boolean cut path remains only for the cases the direct
+/// build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted and
 /// unreliable** — see ``boolean`` and #254.
 public enum ThreadBuild: Sendable, Hashable, Codable {
-    /// Smooth, boolean-free direct rod build (#213) for a single-start thread on a plain coaxial
-    /// cylinder; the boolean cut path otherwise (multi-start / non-cylinder). The recommended
-    /// default. The earlier crest-overshoot concern (#222) was shown by #232 to be a `Bnd_Box`
-    /// control-hull over-report, not real geometry — the direct crest is in-envelope.
+    /// Smooth, boolean-free direct rod build (#213; multi-start #257) for single- and multi-start
+    /// threads on a plain coaxial cylinder; the boolean cut path otherwise (non-cylinder / rounded /
+    /// tapered). The recommended default. The earlier crest-overshoot concern (#222) was shown by
+    /// #232 to be a `Bnd_Box` control-hull over-report, not real geometry — the direct crest is
+    /// in-envelope.
     case auto
-    /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build
-    /// is unavailable (multi-start, non-cylinder target, or a construction failure). For a
-    /// single-start coaxial cylinder this is identical to ``auto``.
+    /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build is
+    /// unavailable (non-cylinder target, rounded/tapered form, or a construction failure). For a
+    /// coaxial cylinder this is identical to ``auto``.
     case direct
     /// **Deprecated (#254).** Formerly forced the boolean cut path to clamp a supposed crest
     /// overshoot — but #232 established that overshoot was only a `Bnd_Box` over-report, so the
@@ -480,18 +483,16 @@ extension Shape {
     ///
     /// When `self` is a plain cylinder coaxial with the axis (the overwhelmingly common case),
     /// this builds the threaded rod *directly* as a smooth, BRepCheck-valid solid (no boolean) —
-    /// see ``buildThreadedRodDirect`` and OCCTSwift #213. For non-cylinder targets, multi-start,
-    /// or if the direct build fails, it falls back to the boolean cut path (``applyThreadCut``).
+    /// see ``buildThreadedRodDirect`` and OCCTSwift #213. **Multi-start** threads (`starts > 1`)
+    /// build directly too (#257): N teeth tile the turn at lead = N·pitch, giving a continuous
+    /// interleaved multi-helix. For non-cylinder targets, rounded/tapered forms, or if the direct
+    /// build fails, it falls back to the boolean cut path (``applyThreadCut``).
     ///
     /// - Parameter build: chooses the construction path. `.auto` (default) and `.direct` use the
-    ///   smooth, boolean-free direct build for single-start coaxial cylinders and fall back to the
-    ///   faceted cut path only for multi-start / non-cylinder targets. `.boolean` is **deprecated**
-    ///   (#254): it formerly forced the cut path, which produces a faceted, frequently disconnected
-    ///   thread; it is now treated like `.auto`. See ``ThreadBuild``.
-    ///
-    /// - Note: **Multi-start** threads (`starts > 1`) currently have no direct build and use the
-    ///   faceted boolean cut, which can come out as a helical scatter of disconnected notches rather
-    ///   than a continuous thread (#254). For multi-start a smooth direct build is a known gap.
+    ///   smooth, boolean-free direct build for single- and multi-start coaxial cylinders, falling
+    ///   back to the faceted cut path only for non-cylinder / rounded / tapered cases. `.boolean` is
+    ///   **deprecated** (#254): it formerly forced the cut path, which produces a faceted, frequently
+    ///   disconnected thread; it is now treated like `.auto`. See ``ThreadBuild``.
     public func threadedShaft(axisOrigin: SIMD3<Double>,
                                axisDirection: SIMD3<Double>,
                                spec: ThreadSpec,
@@ -500,13 +501,14 @@ extension Shape {
                                runout: RunoutStyle = .none,
                                build: ThreadBuild = .auto) -> Shape? {
         let len = length ?? (2 * spec.nominalDiameter)
-        // Single-start coaxial cylinders always take the smooth direct build, regardless of `build`
-        // (#254): the cut path's only historical advantage — an "in-envelope" crest — was disproved
-        // by #232, and it otherwise yields a faceted/disconnected thread. `.boolean` is deprecated
-        // and handled here identically to `.auto`/`.direct`.
-        if starts == 1,
+        // Coaxial cylinders take the smooth direct build, regardless of `build` (#254): the cut path's
+        // only historical advantage — an "in-envelope" crest — was disproved by #232, and it otherwise
+        // yields a faceted/disconnected thread. `.boolean` is deprecated and handled identically to
+        // `.auto`/`.direct`. The direct build now also covers multi-start threads (#257); it returns
+        // nil for the cases it can't do (rounded forms, non-cylinder, taper) → faceted cut fallback.
+        if starts >= 1,
            let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
-                                               spec: spec, length: len) {
+                                               spec: spec, length: len, starts: starts) {
             switch runout {
             case .none:            return direct
             case .filleted(let r): return direct.filleted(radius: r) ?? direct
@@ -585,8 +587,10 @@ extension Shape {
     private func buildThreadedRodDirect(axisOrigin: SIMD3<Double>,
                                         axisDirection: SIMD3<Double>,
                                         spec: ThreadSpec,
-                                        length: Double) -> Shape? {
-        guard length > 0, spec.pitch > 0, spec.cutDepth < spec.nominalDiameter / 2 else { return nil }
+                                        length: Double,
+                                        starts: Int = 1) -> Shape? {
+        guard length > 0, spec.pitch > 0, starts >= 1,
+              spec.cutDepth < spec.nominalDiameter / 2 else { return nil }
         let axis = simd_normalize(axisDirection)
         let radial0 = orthonormalRadial(axis: axis)
         let majorR = spec.nominalDiameter / 2
@@ -619,7 +623,8 @@ extension Shape {
             origin: axisOrigin, axis: axis, radial0: radial0,
             rodLo: lo, rodHi: hi, threadLo: threadLo, threadHi: threadHi,
             pitch: spec.pitch, majorRadius: majorR, cutDepth: spec.cutDepth,
-            profile: spec.profile, taperRatio: spec.taperRatio, handed: handed, perTurn: 16)
+            profile: spec.profile, taperRatio: spec.taperRatio, handed: handed,
+            starts: starts, perTurn: 16)
         else { return nil }
         // Sound thread: valid, in-envelope, removed some material but not collapsed. Deep forms
         // (square/buttress/Whitworth) remove much more than a 60° V, so the floor is generous.
@@ -643,7 +648,8 @@ extension Shape {
         origin: SIMD3<Double>, axis: SIMD3<Double>, radial0: SIMD3<Double>,
         rodLo: Double, rodHi: Double, threadLo: Double, threadHi: Double,
         pitch: Double, majorRadius: Double, cutDepth: Double,
-        profile: ThreadProfile, taperRatio: Double, handed: Double, perTurn: Int
+        profile: ThreadProfile, taperRatio: Double, handed: Double,
+        starts: Int = 1, perTurn: Int
     ) -> Shape? {
         // Taper (NPT/BSPT) is handled by the cut path for now; the smooth direct build is parallel-only.
         guard taperRatio == 0 else { return nil }
@@ -663,9 +669,14 @@ extension Shape {
         let rMaj = majorRadius
         let p = pitch
         let twoPi = 2 * Double.pi
+        let nStart = max(1, starts)
+        let lead = Double(nStart) * p          // axial advance per full turn (lead = N·pitch)
 
-        func ang(_ s: Double) -> Double { handed * s * twoPi / p }            // helix angle from axial length
-        func angF(_ axialFraction: Double) -> Double { handed * axialFraction * twoPi }   // ... from 0…1 fraction
+        func ang(_ s: Double) -> Double { handed * s * twoPi / lead }   // helix angle from axial length
+        // Angle of profile axial-fraction `af` within thread-start `k` (0…N−1). Each start's one-pitch
+        // profile occupies a 2π/N angular slot; the N slots tile the full turn (single-start: k=0 →
+        // af·2π, unchanged).
+        func angN(_ k: Int, _ af: Double) -> Double { handed * (Double(k) + af) * twoPi / Double(nStart) }
         func rOf(_ depth: Double) -> Double { rMaj - depth * cutDepth }
         func pt(_ r: Double, _ aAng: Double, _ z: Double) -> SIMD3<Double> {
             origin + a * z + (x * cos(aAng) + y * sin(aAng)) * r
@@ -673,11 +684,11 @@ extension Shape {
         func arcW(_ r: Double, _ a0: Double, _ a1: Double, _ z: Double) -> Wire? {
             Wire.arc(start: pt(r, a0, z), midpoint: pt(r, (a0 + a1) / 2, z), end: pt(r, a1, z))
         }
-        // One cam edge per profile segment, at slice z: flat→arc, wall→radial line, flank→spline.
-        func camEdge(_ seg: ThreadProfile.Segment, _ z: Double) -> Wire? {
+        // One cam edge per profile segment of start `k`, at slice z: flat→arc, wall→radial line, flank→spline.
+        func camEdge(_ seg: ThreadProfile.Segment, start k: Int, _ z: Double) -> Wire? {
             let al = ang(z)
             let ra = rOf(seg.a.depth), rb = rOf(seg.b.depth)
-            let angA = al + angF(seg.a.axial), angB = al + angF(seg.b.axial)
+            let angA = al + angN(k, seg.a.axial), angB = al + angN(k, seg.b.axial)
             switch seg.kind {
             case .flat: return arcW(ra, angA, angB, z)
             case .wall: return Wire.line(from: pt(ra, angA, z), to: pt(rb, angB, z))
@@ -688,14 +699,17 @@ extension Shape {
                     let f = Double(i) / Double(nS)
                     let af = seg.a.axial + (seg.b.axial - seg.a.axial) * f
                     let df = seg.a.depth + (seg.b.depth - seg.a.depth) * f
-                    pts.append(pt(rOf(df), al + angF(af), z))
+                    pts.append(pt(rOf(df), al + angN(k, af), z))
                 }
                 return Wire.interpolate(through: pts)
             }
         }
+        // The cross-section wire: N teeth tiling the full turn (single-start → one tooth, unchanged).
         func camWire(_ z: Double) -> Wire? {
             var ws: [Wire] = []
-            for seg in segs { guard let e = camEdge(seg, z) else { return nil }; ws.append(e) }
+            for k in 0..<nStart {
+                for seg in segs { guard let e = camEdge(seg, start: k, z) else { return nil }; ws.append(e) }
+            }
             return Wire.join(ws)
         }
         func circleWire(_ z: Double) -> Wire? {
@@ -707,22 +721,34 @@ extension Shape {
             return Wire.join(ws)
         }
         func planarFace(_ wire: Wire?) -> Shape? { wire.flatMap { Shape.face(from: $0, planar: true) } }
-        // Single-loop shoulder at z: the major-radius arc over the NON-crest angular span + the
-        // profile's non-crest cam edges. The crest flat joins the thread crest band straight to the
-        // margin cylinder, so it is excluded here.
-        func shoulderFace(_ z: Double) -> Shape? {
+        // Shoulder faces (partial-length thread): one planar face per start, each closing that start's
+        // groove to the major-radius arc spanning its groove mouth. The crest flat joins the margin
+        // cylinder straight (both at rMaj), so it's excluded — the arc runs from start k's crest end to
+        // the next start's crest start (single-start → the long ~2π−crest arc, unchanged).
+        func shoulderFaces(_ z: Double) -> [Shape]? {
             let al = ang(z)
             let crest = segs[crestIndex]
-            let aStart = al + angF(crest.a.axial), aEnd = al + angF(crest.b.axial)
-            let midLong = aStart - (twoPi - (aEnd - aStart)) / 2
-            guard let cLong = Wire.arc(start: pt(rMaj, aStart, z), midpoint: pt(rMaj, midLong, z),
-                                       end: pt(rMaj, aEnd, z)) else { return nil }
-            var ws: [Wire] = [cLong]
-            for k in 1..<segs.count {
-                guard let e = camEdge(segs[(crestIndex + k) % segs.count], z) else { return nil }
-                ws.append(e)
+            var faces: [Shape] = []
+            for k in 0..<nStart {
+                // The groove between start k's crest and start k+1's crest spans the TRAILING segments
+                // of start k (crest.b → af 1) and the LEADING segments of start k+1 (af 0 → crest.a),
+                // crossing the slot boundary (af 1 of k ≡ af 0 of k+1). Using `start: k+1` (not mod N)
+                // gives the correct +2π wrap so the leading segments land in the next slot — for N=1
+                // this reduces to the single tooth's groove with the +2π wrap (unchanged behaviour).
+                let aEnd  = al + angN(k, crest.b.axial)        // end of start k's crest flat
+                let aNext = al + angN(k + 1, crest.a.axial)    // start of the next start's crest flat
+                guard let arc = arcW(rMaj, aNext, aEnd, z) else { return nil }  // closes the groove mouth
+                var ws: [Wire] = [arc]
+                for j in (crestIndex + 1)..<segs.count {       // trailing non-crest segments of start k
+                    guard let e = camEdge(segs[j], start: k, z) else { return nil }; ws.append(e)
+                }
+                for j in 0..<crestIndex {                       // leading non-crest segments of start k+1
+                    guard let e = camEdge(segs[j], start: k + 1, z) else { return nil }; ws.append(e)
+                }
+                guard let f = Wire.join(ws).flatMap({ Shape.face(from: $0, planar: true) }) else { return nil }
+                faces.append(f)
             }
-            return Wire.join(ws).flatMap { Shape.face(from: $0, planar: true) }
+            return faces
         }
         func cylinderLateral(_ zLo: Double, _ zHi: Double) -> Shape? {
             Shape.faceFromCylinder(origin: pt(0, 0, zLo), axis: a, radius: rMaj,
@@ -733,12 +759,15 @@ extension Shape {
         let topEnd    = threadHi >= rodHi - 1e-7    // thread runs off the rod's top face
         let fullSolid = bottomEnd && topEnd
 
+        // Sample per PITCH (not per lead): perTurn sections per pitch keeps the ruled:false loft
+        // well-conditioned for any start count — sampling per turn (lead/perTurn) under-samples each
+        // tooth at N>1 and the loft balloons the crest radially past nominal (#257).
         let dz = p / Double(perTurn)
-        let n = max(2, Int(ceil((threadHi - threadLo) / dz)))
+        let nSec = max(2, Int(ceil((threadHi - threadLo) / dz)))
         var profiles: [Wire] = []
-        profiles.reserveCapacity(n + 1)
-        for i in 0...n {
-            let z = threadLo + (threadHi - threadLo) * Double(i) / Double(n)
+        profiles.reserveCapacity(nSec + 1)
+        for i in 0...nSec {
+            let z = threadLo + (threadHi - threadLo) * Double(i) / Double(nSec)
             guard let w = camWire(z) else { return nil }
             profiles.append(w)
         }
@@ -750,19 +779,21 @@ extension Shape {
             guard let cap = planarFace(camWire(threadLo)) else { return nil }
             faces.append(cap)
         } else {
-            guard let sh = shoulderFace(threadLo),
+            guard let sh = shoulderFaces(threadLo),
                   let lat = cylinderLateral(rodLo, threadLo),
                   let disk = planarFace(circleWire(rodLo)) else { return nil }
-            faces.append(contentsOf: [sh, lat, disk])
+            faces.append(contentsOf: sh)
+            faces.append(contentsOf: [lat, disk])
         }
         if topEnd {
             guard let cap = planarFace(camWire(threadHi)) else { return nil }
             faces.append(cap)
         } else {
-            guard let sh = shoulderFace(threadHi),
+            guard let sh = shoulderFaces(threadHi),
                   let lat = cylinderLateral(threadHi, rodHi),
                   let disk = planarFace(circleWire(rodHi)) else { return nil }
-            faces.append(contentsOf: [sh, lat, disk])
+            faces.append(contentsOf: sh)
+            faces.append(contentsOf: [lat, disk])
         }
         guard let shell = Shape.sew(shapes: faces, tolerance: 1e-6) else { return nil }
         let solid = Shape.solidFromShell(shell) ?? shell
