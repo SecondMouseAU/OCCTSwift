@@ -106,4 +106,21 @@ Coverage tracker — update as pages land. (Counts = public decls in the source 
 | Document | 1735 | `Document.md` + 12 (Persistence-IO, XCAF-Notes, OCAF-Attributes, Math-Bounds, Analysis-Builders, Geometry-Constructors, BSpline-Extrema, Math-Solvers, Mesh-Fixing, Transforms, Builders-Fillet, Completions) | ✅ done |
 | TopologyGraph (BRepGraph) | 375 | `TopologyGraph.md` + 4 (Detail-History, Builders, Editor-Identity, Attributes) | ✅ done |
 | ThreadFeatures | 30 | `ThreadFeatures.md` | ✅ done |
-| _(remaining ~30 files)_ | — | — | ☐ todo |
+| DrawingAnnotation | 100 | `DrawingAnnotation.md` | ✅ done |
+| Drawing & Sheets (Drawing, DrawingSheet, DrawingStyle, DisplayDrawer) | 94 | `Drawing.md` | ✅ done |
+| Drawing Automation (Composition, AutoCenterlines/Dimensions, ThreadAnnotation, Symbols, HatchPattern) | 39 | `Drawing-Automation.md` | ✅ done |
+| Annotation & GD&T (Annotation, GDTWrite) | 75 | `Annotation.md` | ✅ done |
+| Construction & Sketching (ConstructionContext/Layer/Entity, Sketch, Section2D) | 91 | `Construction.md` | ✅ done |
+| 2D Geometry Primitives (Point2D, Transform2D, ShapeAxis, AxisPlacement2D) | 52 | `Geometry2D.md` | ✅ done |
+| FeatureReconstructor | 67 | `FeatureReconstructor.md` | ✅ done |
+| Feature Recognition & Medial Axis (FeatureRecognition, MedialAxis) | 63 | `FeatureRecognition.md` | ✅ done |
+| Vector & Raster Export (PDF, SVG, DXF, PixMap) | 72 | `Export-Vector.md` | ✅ done |
+| Color & Material (Color, Material) | 76 | `Color-Material.md` | ✅ done |
+| Display & Presentation (ZLayerSettings, ClipPlane, Camera, PresentationMesh, FontManager) | 77 | `Display.md` | ✅ done |
+| Measurement (MeasurementHelpers, ShapeMeasurements) | 32 | `Measurement.md` | ✅ done |
+| Sheet Metal (SheetMetal, SheetLayout) | 39 | `SheetMetal.md` | ✅ done |
+| Bill of Materials & Selection (BillOfMaterials, Selector, Selection) | 48 | `Selection.md` | ✅ done |
+| Date & Period (Date, Period) | 33 | `DateTime.md` | ✅ done |
+| Curve Adaptors & Wire Ordering (WireCurve, EdgeCurve, WireOrder) | 31 | `CurveAdaptors.md` | ✅ done |
+| Geometry Solvers & Builders (BSplineApproxInterp, PlateSolver, FillingSurface, LawFunction, PolynomialSolver, KDTree) | 59 | `GeometrySolvers.md` | ✅ done |
+| Concurrency & Progress (OCCTSerial, ImportProgress) | 6 | `Concurrency.md` | ✅ done |
