@@ -4,13 +4,22 @@
 import PackageDescription
 import Foundation
 
-// Use local xcframework when developing (repo checkout), remote URL when consumed as a dependency.
-// Set OCCTSWIFT_LOCAL=1 to force local path, or OCCTSWIFT_REMOTE=1 to force remote URL.
+// Use local xcframework when developing (repo checkout) or when consumed via a LOCAL PATH dependency;
+// remote URL when consumed by URL (CI / SPI / remote SPM). Set OCCTSWIFT_LOCAL=1 to force local path,
+// or OCCTSWIFT_REMOTE=1 to force remote URL.
+//
+// Detection resolves against THIS manifest's own directory (`#filePath`), NOT the process CWD. When
+// OCCTSwift is a path dependency the manifest is evaluated with CWD = the *consumer's* root, so a
+// CWD-relative "Libraries/…" check fails and falls back to the URL — making every local consumer
+// download + extract its own 1.3 GB copy. Resolving against `#filePath` lets a path-dep consumer find
+// OCCTSwift's in-place (gitignored) `Libraries/OCCT.xcframework` and SHARE the single copy. A URL
+// consumer clones OCCTSwift into .build/checkouts (no `Libraries/`), so this still falls back to the
+// remote zip there.
+let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 let useLocalBinary: Bool = {
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
     if ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1" { return true }
-    // Auto-detect: use local if Libraries/OCCT.xcframework exists
-    return FileManager.default.fileExists(atPath: "Libraries/OCCT.xcframework/Info.plist")
+    return FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
 let occtTarget: Target = useLocalBinary
