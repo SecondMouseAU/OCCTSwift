@@ -1,0 +1,23 @@
+# codebase-memory ignore — SecondMouse org standard.
+# See SecondMouseAU/ecosystem/MEMORY-STANDARD.md. Keeps the structural index fast + clean.
+
+# Build outputs
+.build/
+build/
+DerivedData/
+.swiftpm/
+
+# Large gitignored-but-locally-present OCCT binary, and any xcframeworks
+Libraries/
+*.xcframework/
+
+# Language caches / vendored deps
+.venv/
+venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+node_modules/
+
+# The codebase-memory artifact itself
+.codebase-memory/
