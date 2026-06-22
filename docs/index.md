@@ -51,6 +51,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 - [Architecture](architecture/overview.md) — the three-layer design and memory model.
 - [Adding Features](guides/adding-features.md) — bridge header → impl → Swift → test.
 - [Building OCCT](guides/building-occt.md) — rebuild the `OCCT.xcframework` from source.
+- [Sharing the xcframework](guides/sharing-the-xcframework.md) — one shared local copy across repos + the `Package.resolved` pin footgun (#260).
 - [Thread Safety](thread-safety.md) · [Naming Conventions](naming-conventions.md) ·
   [Versioning (SemVer)](SEMVER.md) · [Ecosystem](ecosystem.md)
 

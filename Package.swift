@@ -15,6 +15,12 @@ import Foundation
 // OCCTSwift's in-place (gitignored) `Libraries/OCCT.xcframework` and SHARE the single copy. A URL
 // consumer clones OCCTSwift into .build/checkouts (no `Libraries/`), so this still falls back to the
 // remote zip there.
+//
+// ⚠️ Package.resolved FOOTGUN (#260): a consumer that reaches OCCTSwift via a LOCAL PATH dep (or a
+// local-path SPM mirror) turns it into a *local package*, which SPM does NOT pin — so the occtswift
+// pin (and its transitive OCCT-family pins) is silently dropped from the consumer's Package.resolved
+// on every build. Do NOT commit that churn: the committed Package.resolved must be the URL-pinned one
+// produced with NO local sibling present (i.e. on CI / a fresh clone). See docs/guides/sharing-the-xcframework.md.
 let occtPackageDir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().path
 let useLocalBinary: Bool = {
     if ProcessInfo.processInfo.environment["OCCTSWIFT_REMOTE"] == "1" { return false }
