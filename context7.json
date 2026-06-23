@@ -1,7 +1,7 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "OCCTSwift",
-  "description": "Comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.0 — B-Rep solid modeling for macOS, iOS, visionOS and tvOS. Shapes, wires, surfaces, curves, booleans, fillets, sweeps, lofts, threads, healing, meshing, STEP/IGES/STL/glTF I/O, and XDE/OCAF assemblies.",
+  "description": "Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.0: B-Rep solid modeling for macOS, iOS, visionOS, tvOS. Shapes, wires, surfaces, curves, booleans, fillets, sweeps, lofts, threads, healing, mesh.",
   "folders": [
     "docs",
     "Sources/OCCTSwift"
