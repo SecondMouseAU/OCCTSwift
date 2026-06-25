@@ -7,13 +7,31 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.2
+## Current: v1.8.3
 
 **macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
 
 ---
 
 ## Release History
+
+### v1.8.3 (June 2026) — fix: guard prism/heal against self-intersecting profiles (#263)
+
+**Bug fix.** A self-intersecting mesh-derived outline (`BRepCheck` `SelfIntersectingWire`) extruded
+into a prism and then healed by OCCT's `ShapeFix_Shape` corrupts the heap and aborts the process with
+an uncatchable OS signal — the exact #263 fault (`ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve`
+→ `BRep_TEdge::EmptyCopy`). Isolated to a **pure-OCCT** reproducer (a 4-point "bowtie" face: extrude
+succeeds, healing the prism crashes 3/3) and reported upstream as
+[Open-Cascade-SAS/OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322).
+
+`OCC_CATCH_SIGNALS` is inert in this build, so the signal cannot be caught once raised. The fix
+**prevents** it: a cheap, no-meshing `BRepCheck_Analyzer` guard (`occtHasSelfIntersectingWire`) makes
+`Shape.extrude` / `Shape.extruded(by:)` / `Shape.healed()` return `nil` for a self-intersecting
+profile instead of building/healing the crashing solid (such a profile can never form a valid
+extruded solid). Consumers (e.g. OCCTReconstruct `reify`) now degrade gracefully instead of aborting.
+
+**Swift-only — no xcframework rebuild.** New `SelfIntersectingProfileGuard263` suite + full Modeling
+(409) and ShapeHealing (208) domains green. Closes #263.
 
 ### v1.8.2 (June 2026) — feat: smooth multi-start `threadedShaft` direct build (#257)
 
