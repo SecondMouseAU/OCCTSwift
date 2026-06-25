@@ -11,16 +11,18 @@ until a rebuild + release.
 **Fixes the upstream OCCT crash behind [#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)**
 (reported upstream as [Open-Cascade-SAS/OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322)).
 
-`ShapeFix_Face::Perform` computes `S = Context()->Apply(myFace)` and then unconditionally casts it
-with `TopoDS::Face(S.EmptyCopied())`. When an earlier fix sharing the same `ShapeBuild_ReShape`
+`ShapeFix_Face::Perform` casts `Context()->Apply(myFace)` with `TopoDS::Face(S.EmptyCopied())` in
+three places, none of which check the type. When an earlier fix sharing the same `ShapeBuild_ReShape`
 context has replaced the face with a **compound** (e.g. a self-intersecting face split into several
 faces), `Apply()` returns a non-face. The unchecked cast then builds an invalid `TopoDS_Face` handle
 over a compound `TShape`; subsequent topology operations corrupt the heap and abort the process with
 an uncatchable OS signal (`ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve` → `BRep_TEdge::EmptyCopy`,
 SIGSEGV/SIGBUS at varying addresses).
 
-The patch guards the cast: if `S` is not a `TopAbs_FACE`, record it as the result and return — the
-replacement is already in the context, so there is nothing to fix for this face.
+The compound replacement already exists on entry to `Perform` (it was recorded by a prior face's
+fix), so the patch adds a single guard at the top of `Perform`: if `Context()->Apply(myFace)` is not
+a face, record it as the result and return — the replacement is already in the context, so there is
+nothing to fix here. This one guard covers all three cast sites.
 
 **Validation** (fast path, no full rebuild): compile the single patched TU and link it *before*
 `libOCCT-macos.a` so it overrides that symbol:
