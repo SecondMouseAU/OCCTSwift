@@ -1,0 +1,21 @@
+diff --git a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+index 8556543a..a14e6150 100644
+--- a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
++++ b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+@@ -379,6 +379,16 @@ bool ShapeFix_Face::Perform(const Message_ProgressRange& theProgress)
+     {
+       S = Context()->Apply(myFace);
+     }
++    // An earlier fix sharing this context may have replaced the face with a compound (e.g. a
++    // self-intersecting face split into several faces). Context()->Apply() then returns a non-face;
++    // the TopoDS::Face cast below would build an invalid face handle over a compound TShape and
++    // corrupt the shape, crashing downstream in ShapeFix/BRep (uncatchable heap corruption). The
++    // replacement is already recorded in the context, so there is nothing to fix here. (OCCTSwift #263)
++    if (S.ShapeType() != TopAbs_FACE)
++    {
++      myResult = S;
++      return false;
++    }
+     TopoDS_Shape emptyCopied = S.EmptyCopied();
+     TopoDS_Face  tmpFace     = TopoDS::Face(emptyCopied);
+     tmpFace.Orientation(TopAbs_FORWARD);
