@@ -4398,6 +4398,10 @@ bool OCCTShapeIsValid(OCCTShapeRef shape) {
 OCCTShapeRef OCCTShapeHeal(OCCTShapeRef shape) {
     if (!shape) return nullptr;
     try {
+        // #263: ShapeFix_Shape heap-corrupts (uncatchable OS signal) when healing a solid built
+        // from a self-intersecting wire — e.g. a prism extruded from a degenerate mesh-derived
+        // outline. ShapeFix cannot repair a self-intersection anyway, so refuse such input.
+        if (occtHasSelfIntersectingWire(shape->shape)) return nullptr;
         Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(shape->shape);
         fixer->Perform();
         return new OCCTShape(fixer->Shape());

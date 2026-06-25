@@ -401,3 +401,34 @@ struct OCCTSewing {
 // OCCTShape, OCCTWire, OCCTMesh, OCCTFace, OCCTEdge, OCCTDocument, OCCTDrawing
 // are now defined in OCCTBridge_Internal.h (imported above).
 
+// MARK: - #263 self-intersecting-wire guard
+
+#include <BRepCheck_Result.hxx>
+#include <BRepCheck_ListOfStatus.hxx>
+
+// A self-intersecting wire (BRepCheck_SelfIntersectingWire) — typically a mesh-derived
+// outline that crosses itself — extrudes into a prism whose subsequent ShapeFix_Shape
+// heal corrupts the heap and aborts with an uncatchable OS signal (#263; backtrace
+// ShapeFix_Face::FixOrientation → BRep_Tool::Curve → BRep_TEdge::EmptyCopy). The bug is
+// upstream in OCCT, but OCC_CATCH_SIGNALS is inert in this build, so the only safe defence
+// is to PREVENT the crashing prism: detect the bad wire and refuse the op. Such a profile
+// can never form a valid extruded solid, so returning nil loses nothing.
+bool occtHasSelfIntersectingWire(const TopoDS_Shape& s) {
+    if (s.IsNull()) return false;
+    try {
+        BRepCheck_Analyzer analyzer(s);
+        if (analyzer.IsValid()) return false;   // fast path: a valid shape can't carry the flag
+        for (TopExp_Explorer we(s, TopAbs_WIRE); we.More(); we.Next()) {
+            Handle(BRepCheck_Result) res = analyzer.Result(we.Current());
+            if (res.IsNull()) continue;
+            for (BRepCheck_ListIteratorOfListOfStatus it(res->Status()); it.More(); it.Next()) {
+                if (it.Value() == BRepCheck_SelfIntersectingWire) return true;
+            }
+        }
+    } catch (...) {
+        // A BRepCheck that itself throws on the input is a strong "do not proceed" signal.
+        return true;
+    }
+    return false;
+}
+

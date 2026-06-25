@@ -9703,6 +9703,10 @@ OCCTShapeRef OCCTShapeCreateExtrusion(OCCTWireRef profile, double dx, double dy,
         BRepBuilderAPI_MakeFace faceMaker(profile->wire);
         if (!faceMaker.IsDone()) return nullptr;
 
+        // #263: a self-intersecting profile extrudes into a prism that heap-corrupts OCCT's
+        // ShapeFix downstream (uncatchable OS signal). Refuse it here so the chain breaks with nil.
+        if (occtHasSelfIntersectingWire(faceMaker.Face())) return nullptr;
+
         BRepPrimAPI_MakePrism maker(faceMaker.Face(), direction);
         maker.Build();
         if (!maker.IsDone()) return nullptr;
@@ -9745,7 +9749,12 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
 OCCTShapeRef OCCTShapeCreateExtrusionShape(OCCTShapeRef shape,
     double dx, double dy, double dz) {
     if (!shape) return nullptr;
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
+        // #263: a self-intersecting profile (e.g. a face-with-holes whose outline crosses itself)
+        // extrudes into a prism that heap-corrupts OCCT's ShapeFix downstream. Refuse it here.
+        if (occtHasSelfIntersectingWire(shape->shape)) return nullptr;
         gp_Vec vec(dx, dy, dz);
         BRepPrimAPI_MakePrism maker(shape->shape, vec);
         maker.Build();

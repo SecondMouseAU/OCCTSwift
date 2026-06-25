@@ -186,4 +186,15 @@ std::mutex& igesMutex();
 // booleans, sweep, fillet…). Definition lives in OCCTBridge.mm. See issue #175.
 void occtEnsureSignals();
 
+// === #263: self-intersecting-wire guard ===
+//
+// Returns true if `s` contains a wire that BRepCheck flags as SelfIntersectingWire
+// (and/or a face/shape flagged UnorientableShape). Such a profile extrudes into a
+// prism that crashes OCCT's ShapeFix_Shape with uncatchable heap corruption (#263) —
+// and an OS signal raised inside OCCT cannot be caught here (OCC_CATCH_SIGNALS is inert
+// without OCC_CONVERT_SIGNALS in this build). So the prism/heal wrappers must DETECT and
+// refuse the input (return nil) rather than build/heal the crashing solid. Cheap: a pure
+// BRepCheck topology pass, no meshing. Definition lives in OCCTBridge.mm. See issue #263.
+bool occtHasSelfIntersectingWire(const TopoDS_Shape& s);
+
 #endif /* OCCTBridge_Internal_h */
