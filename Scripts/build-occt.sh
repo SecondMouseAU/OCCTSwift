@@ -34,6 +34,12 @@ LIBRARIES_DIR="$PROJECT_DIR/Libraries"
 # Parallelism
 JOBS=$(sysctl -n hw.ncpu)
 
+# Slice selection. The shipped xcframework defaults to the core slices the ecosystem actually
+# builds against — macOS, iOS device, iOS simulator. visionOS / tvOS slices are NOT built by
+# default (they ~doubled the artifact and nobody ships against them yet). Set BUILD_ALL_PLATFORMS=1
+# to build the full 7-slice set if you need to target those platforms.
+BUILD_ALL_PLATFORMS="${BUILD_ALL_PLATFORMS:-0}"
+
 # SDK paths
 IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
 SIM_SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
@@ -248,6 +254,11 @@ cmake --install . || true
 cd ..
 
 # --------------------
+# visionOS / tvOS slices — only when BUILD_ALL_PLATFORMS=1 (see top of script).
+# --------------------
+if [ "$BUILD_ALL_PLATFORMS" = "1" ]; then
+
+# --------------------
 # Build for visionOS Device
 # --------------------
 
@@ -383,6 +394,8 @@ cmake --build . --parallel "$JOBS" || true
 cmake --install . || true
 cd ..
 
+fi  # BUILD_ALL_PLATFORMS
+
 # --------------------
 # Create combined libraries
 # --------------------
@@ -400,6 +413,7 @@ libtool -static -o libOCCT-sim.a $(find occt-install-sim -name "*.a")
 libtool -static -o libOCCT-macos.a occt-install-macos/lib/*.a 2>/dev/null || \
 libtool -static -o libOCCT-macos.a $(find occt-install-macos -name "*.a")
 
+if [ "$BUILD_ALL_PLATFORMS" = "1" ]; then
 libtool -static -o libOCCT-xros.a occt-install-xros/lib/*.a 2>/dev/null || \
 libtool -static -o libOCCT-xros.a $(find occt-install-xros -name "*.a" 2>/dev/null) || true
 
@@ -411,6 +425,13 @@ libtool -static -o libOCCT-tvos.a $(find occt-install-tvos -name "*.a" 2>/dev/nu
 
 libtool -static -o libOCCT-tvsim.a occt-install-tvsim/lib/*.a 2>/dev/null || \
 libtool -static -o libOCCT-tvsim.a $(find occt-install-tvsim -name "*.a" 2>/dev/null) || true
+else
+# Slim build: drop any stale visionOS/tvOS artifacts from a previous full build so the
+# create-xcframework `-s` guards don't pick them up.
+rm -f libOCCT-xros.a libOCCT-xrsim.a libOCCT-tvos.a libOCCT-tvsim.a
+rm -rf occt-install-xros occt-install-xrsim occt-install-tvos occt-install-tvsim
+rm -rf occt-build-xros occt-build-xrsim occt-build-tvos occt-build-tvsim
+fi
 
 # --------------------
 # Prepare headers

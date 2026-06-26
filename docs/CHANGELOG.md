@@ -7,13 +7,27 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.4
+## Current: v1.8.5
 
-**macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.8.5 (June 2026) — chore: slim xcframework to the core slices (≈57% smaller download)
+
+**Packaging only — identical kernel/source to v1.8.4.** The shipped `OCCT.xcframework` now contains
+just the slices the ecosystem actually builds against — **macOS arm64, iOS arm64, iOS-arm64-simulator**
+— dropping the visionOS and tvOS device/simulator slices. Result: download **344 MB → ~149 MB**,
+extracted **~1.3 GB → ~594 MB**. Each shipped slice keeps its own `Headers/` (SwiftPM auto-exposes
+per-slice headers to the C++ bridge — they cannot be de-duplicated to a single copy without breaking
+remote/URL consumers), so the header reduction comes from shipping 3 slices instead of 7.
+
+**Need visionOS / tvOS?** Rebuild the full set with `BUILD_ALL_PLATFORMS=1 Scripts/build-occt.sh`
+(the package still declares those platforms). The build script defaults to the 3 core slices.
+
+No API or behaviour change; the #263 ShapeFix kernel patch from v1.8.4 is retained.
 
 ### v1.8.4 (June 2026) — fix: OCCT kernel patch for ShapeFix_Face heap corruption (#263)
 
