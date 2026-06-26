@@ -36,3 +36,7 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - Binary target auto-selects a local `Libraries/OCCT.xcframework` (path-dep / dev) or the remote
   release zip (URL / CI); see `Package.swift` for the `#filePath`-based detection.
 - Published to the Swift Package Index via `.spi.yml`.
+
+## Policies
+
+- [Query `context` first for OCCT / OCCTSwift docs](policies/context-first.md)
