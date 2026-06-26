@@ -991,6 +991,72 @@ extension Surface {
         singularityCount(tolerance: tolerance) > 0
     }
 
+    // MARK: - ShapeAnalysis_Surface extras (#266 follow-up)
+
+    /// Refine a (U,V) for a 3D point by projecting it onto this surface's iso-lines — more robust
+    /// near degeneracies than plain ``projectPoint(_:)``. Returns the parameters and the 3D gap; a
+    /// very large gap means the projection effectively failed.
+    public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6) -> (u: Double, v: Double, gap: Double)? {
+        var u = 0.0, v = 0.0
+        let gap = OCCTSurfaceUVFromIso(handle, point.x, point.y, point.z, precision, &u, &v)
+        guard gap >= 0 else { return nil }
+        return (u, v, gap)
+    }
+
+    /// Detail of a surface singularity (a degenerate iso-line collapsing to a pole), e.g. the apex
+    /// of a cone or the poles of a sphere.
+    public struct Singularity: Sendable {
+        /// The 3D pole point.
+        public let point: SIMD3<Double>
+        /// First / last 2D (u,v) points of the degenerate iso-line.
+        public let firstUV: SIMD2<Double>
+        public let lastUV: SIMD2<Double>
+        /// First / last parameter along the iso-line.
+        public let firstParameter: Double
+        public let lastParameter: Double
+        /// True if the degenerate iso-line is a U-iso (else a V-iso).
+        public let isUIso: Bool
+        /// The precision at which the singularity was detected.
+        public let precision: Double
+    }
+
+    /// Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`), or nil if out
+    /// of range. Unlike ``singularityCount(tolerance:)`` (count only) this returns the pole point,
+    /// iso-line 2D endpoints + parameters, and the iso direction.
+    public func singularity(_ index: Int, precision: Double = 1e-6) -> Singularity? {
+        var pr = precision, px = 0.0, py = 0.0, pz = 0.0
+        var fu = 0.0, fv = 0.0, lu = 0.0, lv = 0.0, fp = 0.0, lp = 0.0
+        var uiso = false
+        guard OCCTSurfaceSingularityDetail(handle, Int32(index + 1), &pr, &px, &py, &pz,
+                                           &fu, &fv, &lu, &lv, &fp, &lp, &uiso) else { return nil }
+        return Singularity(point: SIMD3(px, py, pz), firstUV: SIMD2(fu, fv), lastUV: SIMD2(lu, lv),
+                           firstParameter: fp, lastParameter: lp, isUIso: uiso, precision: pr)
+    }
+
+    /// Resolve the indeterminate 2D coordinate of a point lying in a singularity (e.g. a cone apex),
+    /// taking the well-defined coordinate from a `neighbour` 2D point. Returns the resolved (u,v).
+    public func projectDegenerated(_ point: SIMD3<Double>, neighbour: SIMD2<Double>,
+                                   precision: Double = 1e-6) -> SIMD2<Double>? {
+        var ru = 0.0, rv = 0.0
+        guard OCCTSurfaceProjectDegenerated(handle, point.x, point.y, point.z, precision,
+                                            neighbour.x, neighbour.y, &ru, &rv) else { return nil }
+        return SIMD2(ru, rv)
+    }
+
+    /// Project a 3D point onto this surface, restricting the parameter search to the given U/V
+    /// domain — disambiguates projection on periodic or self-overlapping surfaces. Returns the (u,v)
+    /// and the 3D gap, or nil on failure.
+    public func projectPoint(_ point: SIMD3<Double>, uDomain: ClosedRange<Double>,
+                             vDomain: ClosedRange<Double>, precision: Double = 1e-6)
+        -> (uv: SIMD2<Double>, gap: Double)? {
+        var u = 0.0, v = 0.0
+        let gap = OCCTSurfaceProjectPointUVInDomain(handle, point.x, point.y, point.z, precision,
+                                                    uDomain.lowerBound, uDomain.upperBound,
+                                                    vDomain.lowerBound, vDomain.upperBound, &u, &v)
+        guard gap >= 0 else { return nil }
+        return (SIMD2(u, v), gap)
+    }
+
     public func toBezierPatches() -> [Surface] {
         let maxPatches: Int32 = 256
         var patchRefs = [OCCTSurfaceRef?](repeating: nil, count: Int(maxPatches))

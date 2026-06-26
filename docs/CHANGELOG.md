@@ -7,13 +7,33 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.6
+## Current: v1.8.7
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.8.7 (June 2026) — feat: face healing & validation surface (#266 follow-up)
+
+**New APIs (~16 ops).** Rounds out the face-analysis surface flagged by the coverage audit:
+
+- **`ShapeFix_Face` per-pass control** (`FaceFixer`): `setMode(_:_:)` toggles any of the 11 healing
+  passes (wire, orientation, **addNaturalBound**, missingSeam, smallAreaWire, removeSmallAreaFace,
+  intersectingWires, loopWires, splitFace, autoCorrectPrecision, periodicDegenerated) before
+  `perform()`; plus `fixIntersectingWires()`, `fixPeriodicDegenerated()`, `fixWiresTwoCoincEdges()`,
+  `fixLoopWire()`, `result` (Face **or** Shell), and `status(_:)`. Previously `perform()` ran with
+  hardcoded defaults — e.g. no way to turn off the natural-bound pass that can balloon a trimmed face.
+- **`BRepCheck_Face` per-wire diagnostics** (`Shape`): `checkFaceIntersectingWires`,
+  `checkFaceWireImbrication`, `checkFaceWireOrientation` — the specific `BRepCheck_Status` per check.
+- **`ShapeAnalysis_Surface` extras** (`Surface`): `uvFromIso`, `singularity(_:)` (full pole/iso
+  detail), `projectDegenerated`, and domain-restricted `projectPoint(_:uDomain:vDomain:)`.
+- **`BRepGProp_Face`** (`Shape`): `faceIntegrationOrders`, `faceIntegrationKnotsU()`.
+
+Swift-only; no xcframework change. The audit's "rebound a face on its own surface" and "3D point
+classifier" candidates were verified **already wrapped** (`faceAddHole` and `OCCTClassifyPointOnFace`)
+and not duplicated.
 
 ### v1.8.6 (June 2026) — feat: face-from-surface with interior holes (#266)
 

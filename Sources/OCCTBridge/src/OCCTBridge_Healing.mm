@@ -63,6 +63,8 @@
 #include <ShapeAnalysis_Shell.hxx>
 #include <ShapeAnalysis_Wire.hxx>
 #include <ShapeFix_Face.hxx>
+#include <ShapeExtend_Status.hxx>
+#include <NCollection_Sequence.hxx>
 #include <ShapeFix_Shape.hxx>
 #include <ShapeFix_Wire.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
@@ -1629,6 +1631,42 @@ OCCTShapeCheckResult OCCTCheckFace(OCCTFaceRef face) {
         result.firstError = OCCTCheckCheckFail;
         return result;
     }
+}
+
+// --- BRepCheck_Face per-check diagnostics (#266 follow-up) ---
+// Each returns the specific BRepCheck_Status for one wire-topology check. The checks build on each
+// other (intersection → imbrication/classification → orientation), so the later ones run the
+// prerequisite passes first to be robust when called standalone.
+
+OCCTCheckStatus OCCTBRepCheckFaceIntersectWires(OCCTShapeRef face, bool geometricControls) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return OCCTCheckCheckFail;
+    try {
+        Handle(BRepCheck_Face) checker = new BRepCheck_Face(TopoDS::Face(face->shape));
+        checker->GeometricControls(geometricControls);
+        return mapBRepCheckStatus(checker->IntersectWires());
+    } catch (...) { return OCCTCheckCheckFail; }
+}
+
+OCCTCheckStatus OCCTBRepCheckFaceClassifyWires(OCCTShapeRef face, bool geometricControls) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return OCCTCheckCheckFail;
+    try {
+        Handle(BRepCheck_Face) checker = new BRepCheck_Face(TopoDS::Face(face->shape));
+        checker->GeometricControls(geometricControls);
+        checker->IntersectWires();
+        return mapBRepCheckStatus(checker->ClassifyWires());
+    } catch (...) { return OCCTCheckCheckFail; }
+}
+
+OCCTCheckStatus OCCTBRepCheckFaceOrientationOfWires(OCCTShapeRef face, bool geometricControls) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return OCCTCheckCheckFail;
+    try {
+        Handle(BRepCheck_Face) checker = new BRepCheck_Face(TopoDS::Face(face->shape));
+        checker->GeometricControls(geometricControls);
+        checker->IntersectWires();
+        checker->ClassifyWires();
+        BRepCheck_Status st = checker->OrientationOfWires();
+        return mapBRepCheckStatus(st);
+    } catch (...) { return OCCTCheckCheckFail; }
 }
 
 OCCTShapeCheckResult OCCTCheckSolid(OCCTShapeRef shape) {
@@ -3917,6 +3955,72 @@ OCCTShapeRef OCCTFaceFixerFace(OCCTFaceFixerRef fixer) {
         ref->shape = f;
         return ref;
     } catch (...) { return nullptr; }
+}
+
+// --- ShapeFix_Face control surface (#266 follow-up) ---
+
+void OCCTFaceFixerSetMode(OCCTFaceFixerRef fixer, int32_t modeId, int32_t value) {
+    if (!fixer || fixer->fixer.IsNull()) return;
+    try {
+        ShapeFix_Face& f = *fixer->fixer;
+        switch (modeId) {
+            case 0:  f.FixWireMode() = value; break;
+            case 1:  f.FixOrientationMode() = value; break;
+            case 2:  f.FixAddNaturalBoundMode() = value; break;
+            case 3:  f.FixMissingSeamMode() = value; break;
+            case 4:  f.FixSmallAreaWireMode() = value; break;
+            case 5:  f.RemoveSmallAreaFaceMode() = value; break;
+            case 6:  f.FixIntersectingWiresMode() = value; break;
+            case 7:  f.FixLoopWiresMode() = value; break;
+            case 8:  f.FixSplitFaceMode() = value; break;
+            case 9:  f.AutoCorrectPrecisionMode() = value; break;
+            case 10: f.FixPeriodicDegeneratedMode() = value; break;
+            default: break;
+        }
+    } catch (...) {}
+}
+
+bool OCCTFaceFixerFixIntersectingWires(OCCTFaceFixerRef fixer) {
+    if (!fixer || fixer->fixer.IsNull()) return false;
+    try { return fixer->fixer->FixIntersectingWires(); }
+    catch (...) { return false; }
+}
+
+bool OCCTFaceFixerFixPeriodicDegenerated(OCCTFaceFixerRef fixer) {
+    if (!fixer || fixer->fixer.IsNull()) return false;
+    try { return fixer->fixer->FixPeriodicDegenerated(); }
+    catch (...) { return false; }
+}
+
+bool OCCTFaceFixerFixWiresTwoCoincEdges(OCCTFaceFixerRef fixer) {
+    if (!fixer || fixer->fixer.IsNull()) return false;
+    try { return fixer->fixer->FixWiresTwoCoincEdges(); }
+    catch (...) { return false; }
+}
+
+bool OCCTFaceFixerFixLoopWire(OCCTFaceFixerRef fixer) {
+    if (!fixer || fixer->fixer.IsNull()) return false;
+    try {
+        NCollection_Sequence<TopoDS_Shape> resWires;
+        return fixer->fixer->FixLoopWire(resWires);
+    } catch (...) { return false; }
+}
+
+OCCTShapeRef OCCTFaceFixerResult(OCCTFaceFixerRef fixer) {
+    if (!fixer || fixer->fixer.IsNull()) return nullptr;
+    try {
+        TopoDS_Shape s = fixer->fixer->Result();
+        if (s.IsNull()) return nullptr;
+        auto ref = new OCCTShape();
+        ref->shape = s;
+        return ref;
+    } catch (...) { return nullptr; }
+}
+
+bool OCCTFaceFixerStatus(OCCTFaceFixerRef fixer, int32_t status) {
+    if (!fixer || fixer->fixer.IsNull()) return false;
+    try { return fixer->fixer->Status(static_cast<ShapeExtend_Status>(status)); }
+    catch (...) { return false; }
 }
 
 // MARK: - WireFixer extended (hoisted with struct)

@@ -6297,6 +6297,47 @@ extension Shape {
             CheckStatus(rawValue: Int32(buffer[i].rawValue))
         }
     }
+
+    // MARK: - BRepCheck_Face per-wire diagnostics (#266 follow-up)
+
+    /// `BRepCheck_Face` — do this face's boundary wires intersect one another? Returns
+    /// `.intersectingWires` / `.selfIntersectingWire` on a hit, `.noError` if clean, `.checkFail`
+    /// if the shape isn't a single face. `geometricControls` enables the (costlier) geometric checks.
+    public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus {
+        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceIntersectWires(handle, geometricControls).rawValue)) ?? .checkFail
+    }
+
+    /// `BRepCheck_Face` — are the face's wires correctly nested (one outer, the rest enclosed as
+    /// holes)? Returns `.invalidImbricationOfWires` when nesting is wrong.
+    public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus {
+        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceClassifyWires(handle, geometricControls).rawValue)) ?? .checkFail
+    }
+
+    /// `BRepCheck_Face` — are the face's wires correctly oriented (outer CCW, holes CW)? Returns
+    /// `.badOrientationOfSubshape` / `.unorientableShape` on a problem.
+    public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus {
+        CheckStatus(rawValue: Int32(OCCTBRepCheckFaceOrientationOfWires(handle, geometricControls).rawValue)) ?? .checkFail
+    }
+
+    // MARK: - BRepGProp_Face integration (#266 follow-up)
+
+    /// `BRepGProp_Face` Gauss-integration orders (number of integration points) in U and V — the
+    /// quadrature this face needs for exact surface integrals. Non-trivial only for BSpline faces;
+    /// nil if the shape isn't a single face.
+    public var faceIntegrationOrders: (u: Int, v: Int)? {
+        var u: Int32 = 0, v: Int32 = 0
+        guard OCCTBRepGPropFaceIntegrationOrders(handle, &u, &v) else { return nil }
+        return (Int(u), Int(v))
+    }
+
+    /// `BRepGProp_Face` U-direction integration knots — the BSpline span boundaries used when
+    /// integrating over the face's U range (just `[uMin, uMax]` for non-BSpline faces).
+    public func faceIntegrationKnotsU() -> [Double] {
+        var buffer = [Double](repeating: 0, count: 256)
+        let n = OCCTBRepGPropFaceUKnots(handle, &buffer, 256)
+        guard n > 0 else { return [] }
+        return Array(buffer.prefix(Int(n)))
+    }
 }
 
 // MARK: - Face Validity Checking (v0.47.0)
