@@ -3539,6 +3539,107 @@ bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef surface, double preci) {
     } catch (...) { return false; }
 }
 
+// --- ShapeAnalysis_Surface extras + BRepGProp_Face (#266 follow-up) ---
+#include <gp_Pnt2d.hxx>
+#include <BRepGProp_Face.hxx>
+#include <NCollection_HArray1.hxx>
+
+/// UVFromIso: refine a (U,V) for P3D by projecting onto the surface's iso-lines; returns the best
+/// 3D gap (very large on failure).
+double OCCTSurfaceUVFromIso(OCCTSurfaceRef surface, double px, double py, double pz,
+                            double preci, double* u, double* v) {
+    try {
+        Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
+        double U = 0, V = 0;
+        double d = sas->UVFromIso(gp_Pnt(px, py, pz), preci, U, V);
+        if (u) *u = U;
+        if (v) *v = V;
+        return d;
+    } catch (...) { if (u) *u = 0; if (v) *v = 0; return -1.0; }
+}
+
+/// Detail of singularity #num (1-based): 3D pole point, first/last 2D points of the degenerate
+/// iso-line, its first/last parameters, and whether it is a U-iso (else V-iso). `preci` is in/out.
+bool OCCTSurfaceSingularityDetail(OCCTSurfaceRef surface, int32_t num, double* preci,
+                                  double* px, double* py, double* pz,
+                                  double* firstU, double* firstV, double* lastU, double* lastV,
+                                  double* firstPar, double* lastPar, bool* uIsoDegenerate) {
+    try {
+        Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
+        gp_Pnt P3d; gp_Pnt2d f2, l2; double fp = 0, lp = 0; Standard_Boolean uiso = Standard_False;
+        double pr = preci ? *preci : 0.0;
+        if (!sas->Singularity(num, pr, P3d, f2, l2, fp, lp, uiso)) return false;
+        if (preci) *preci = pr;
+        if (px) *px = P3d.X(); if (py) *py = P3d.Y(); if (pz) *pz = P3d.Z();
+        if (firstU) *firstU = f2.X(); if (firstV) *firstV = f2.Y();
+        if (lastU) *lastU = l2.X(); if (lastV) *lastV = l2.Y();
+        if (firstPar) *firstPar = fp; if (lastPar) *lastPar = lp;
+        if (uIsoDegenerate) *uIsoDegenerate = uiso;
+        return true;
+    } catch (...) { return false; }
+}
+
+/// ProjectDegenerated: adjust the indeterminate 2D coordinate of a point lying in a surface
+/// singularity, taking the fixed coordinate from a `neighbour` 2D point. Returns the resolved (ru,rv).
+bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef surface, double px, double py, double pz,
+                                   double preci, double neighbourU, double neighbourV,
+                                   double* ru, double* rv) {
+    try {
+        Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
+        gp_Pnt2d result;
+        if (!sas->ProjectDegenerated(gp_Pnt(px, py, pz), preci, gp_Pnt2d(neighbourU, neighbourV), result))
+            return false;
+        if (ru) *ru = result.X();
+        if (rv) *rv = result.Y();
+        return true;
+    } catch (...) { return false; }
+}
+
+/// Like OCCTSurfaceProjectPointUV but restricts the search to the [u1,u2]×[v1,v2] domain
+/// (ShapeAnalysis_Surface::SetDomain) — disambiguates projection on periodic / self-overlapping
+/// surfaces. Returns the 3D gap (Gap()), or -1 on failure.
+double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef surface, double px, double py, double pz,
+                                         double preci, double u1, double u2, double v1, double v2,
+                                         double* u, double* v) {
+    try {
+        Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
+        sas->SetDomain(u1, u2, v1, v2);
+        gp_Pnt2d uv = sas->ValueOfUV(gp_Pnt(px, py, pz), preci);
+        if (u) *u = uv.X();
+        if (v) *v = uv.Y();
+        return sas->Gap();
+    } catch (...) { if (u) *u = 0; if (v) *v = 0; return -1.0; }
+}
+
+/// BRepGProp_Face Gauss-integration orders (number of integration points) in U and V — non-zero
+/// only for BSpline faces. Returns false if `face` is not a face.
+bool OCCTBRepGPropFaceIntegrationOrders(OCCTShapeRef face, int32_t* uOrder, int32_t* vOrder) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return false;
+    try {
+        BRepGProp_Face gf(TopoDS::Face(face->shape));
+        if (uOrder) *uOrder = gf.UIntegrationOrder();
+        if (vOrder) *vOrder = gf.VIntegrationOrder();
+        return true;
+    } catch (...) { return false; }
+}
+
+/// BRepGProp_Face U-direction integration knots (BSpline spans over the face's U range). Fills up to
+/// `maxCount` into `buffer` and returns the count, or 0 on failure.
+int32_t OCCTBRepGPropFaceUKnots(OCCTShapeRef face, double* buffer, int32_t maxCount) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return 0;
+    try {
+        BRepGProp_Face gf(TopoDS::Face(face->shape));
+        double u1, u2, v1, v2; gf.Bounds(u1, u2, v1, v2);
+        Handle(NCollection_HArray1<double>) knots = gf.GetUKnots(u1, u2);
+        if (knots.IsNull()) return 0;
+        int32_t n = 0;
+        for (int i = knots->Lower(); i <= knots->Upper() && n < maxCount; i++, n++) {
+            if (buffer) buffer[n] = knots->Value(i);
+        }
+        return n;
+    } catch (...) { return 0; }
+}
+
 // MARK: - v0.105: GeomConvert_BSplineSurfaceKnotSplitting
 // MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
 

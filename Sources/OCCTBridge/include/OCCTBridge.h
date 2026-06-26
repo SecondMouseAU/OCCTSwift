@@ -5766,6 +5766,13 @@ typedef struct {
 /// @return Check result
 OCCTShapeCheckResult OCCTCheckFace(OCCTFaceRef face);
 
+/// BRepCheck_Face per-check diagnostics — the specific BRepCheck_Status for one wire-topology check
+/// of a face. `geometricControls` toggles the (more expensive) geometric intersection checks.
+/// Returns OCCTCheckCheckFail if `face` is not a face. #266 follow-up.
+OCCTCheckStatus OCCTBRepCheckFaceIntersectWires(OCCTShapeRef face, bool geometricControls);
+OCCTCheckStatus OCCTBRepCheckFaceClassifyWires(OCCTShapeRef face, bool geometricControls);
+OCCTCheckStatus OCCTBRepCheckFaceOrientationOfWires(OCCTShapeRef face, bool geometricControls);
+
 /// Check validity of a solid.
 /// @param shape Solid shape to check
 /// @return Check result
@@ -13648,6 +13655,40 @@ bool OCCTSurfaceIsUClosedSA(OCCTSurfaceRef _Nonnull surface, double preci);
 /// Check if surface is spatially V-closed at given precision.
 bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef _Nonnull surface, double preci);
 
+// --- ShapeAnalysis_Surface extras + BRepGProp_Face (#266 follow-up) ---
+
+/// Refine a (U,V) for a 3D point by projecting onto the surface's iso-lines; returns the 3D gap.
+double OCCTSurfaceUVFromIso(OCCTSurfaceRef _Nonnull surface, double px, double py, double pz,
+                            double preci, double* _Nonnull u, double* _Nonnull v);
+
+/// Detail of singularity #num (1-based): pole 3D point, first/last 2D points + params of the
+/// degenerate iso-line, and whether it is U-iso. `preci` is in/out. Returns false if num out of range.
+bool OCCTSurfaceSingularityDetail(OCCTSurfaceRef _Nonnull surface, int32_t num, double* _Nonnull preci,
+                                  double* _Nonnull px, double* _Nonnull py, double* _Nonnull pz,
+                                  double* _Nonnull firstU, double* _Nonnull firstV,
+                                  double* _Nonnull lastU, double* _Nonnull lastV,
+                                  double* _Nonnull firstPar, double* _Nonnull lastPar,
+                                  bool* _Nonnull uIsoDegenerate);
+
+/// Adjust the indeterminate 2D coordinate of a point in a surface singularity, taking the fixed
+/// coordinate from a neighbour 2D point. Returns the resolved (ru, rv).
+bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef _Nonnull surface, double px, double py, double pz,
+                                   double preci, double neighbourU, double neighbourV,
+                                   double* _Nonnull ru, double* _Nonnull rv);
+
+/// Project a 3D point onto a surface restricted to the [u1,u2]×[v1,v2] domain (SetDomain) — for
+/// periodic / self-overlapping surfaces. Returns the 3D gap, or -1 on failure.
+double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef _Nonnull surface, double px, double py, double pz,
+                                         double preci, double u1, double u2, double v1, double v2,
+                                         double* _Nonnull u, double* _Nonnull v);
+
+/// BRepGProp_Face Gauss-integration orders in U and V (non-zero only for BSpline faces).
+bool OCCTBRepGPropFaceIntegrationOrders(OCCTShapeRef _Nonnull face, int32_t* _Nonnull uOrder,
+                                        int32_t* _Nonnull vOrder);
+
+/// BRepGProp_Face U-direction integration knots; fills up to maxCount, returns the count.
+int32_t OCCTBRepGPropFaceUKnots(OCCTShapeRef _Nonnull face, double* _Nullable buffer, int32_t maxCount);
+
 // --- Resource_Manager ---
 
 typedef struct OCCTResourceManager* OCCTResourceManagerRef;
@@ -16483,6 +16524,34 @@ bool OCCTFaceFixerFixSmallAreaWire(OCCTFaceFixerRef _Nonnull fixer);
 
 /// Get the resulting fixed face.
 OCCTShapeRef _Nullable OCCTFaceFixerFace(OCCTFaceFixerRef _Nonnull fixer);
+
+// --- ShapeFix_Face control surface (#266 follow-up) ---
+
+/// Toggle an individual ShapeFix_Face healing pass before Perform(). `modeId` selects the pass
+/// (0 FixWire, 1 FixOrientation, 2 FixAddNaturalBound, 3 FixMissingSeam, 4 FixSmallAreaWire,
+/// 5 RemoveSmallAreaFace, 6 FixIntersectingWires, 7 FixLoopWires, 8 FixSplitFace,
+/// 9 AutoCorrectPrecision, 10 FixPeriodicDegenerated). `value`: -1 = default/auto, 0 = off, 1 = on.
+void OCCTFaceFixerSetMode(OCCTFaceFixerRef _Nonnull fixer, int32_t modeId, int32_t value);
+
+/// Fix self-intersecting wires on the face.
+bool OCCTFaceFixerFixIntersectingWires(OCCTFaceFixerRef _Nonnull fixer);
+
+/// Reconstruct a degenerate edge at a pole on a periodic surface.
+bool OCCTFaceFixerFixPeriodicDegenerated(OCCTFaceFixerRef _Nonnull fixer);
+
+/// Remove coincident-edge pairs from the face's wires.
+bool OCCTFaceFixerFixWiresTwoCoincEdges(OCCTFaceFixerRef _Nonnull fixer);
+
+/// Split a wire that loops back on itself (result wires are discarded; returns whether it fixed).
+bool OCCTFaceFixerFixLoopWire(OCCTFaceFixerRef _Nonnull fixer);
+
+/// The result of the fix — a Face, or a Shell when FixMissingSeam split the face. May differ from
+/// OCCTFaceFixerFace (which always returns a Face).
+OCCTShapeRef _Nullable OCCTFaceFixerResult(OCCTFaceFixerRef _Nonnull fixer);
+
+/// Query which fixes fired after Perform(). `status`: 0 = OK (no flags), 1..8 = DONE1..DONE8,
+/// 9..16 = FAIL1..FAIL8, 17 = DONE (any), 18 = FAIL (any).
+bool OCCTFaceFixerStatus(OCCTFaceFixerRef _Nonnull fixer, int32_t status);
 
 // --- BRepBuilderAPI_MakeFace completions ---
 

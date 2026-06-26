@@ -11870,6 +11870,64 @@ public final class FaceFixer: @unchecked Sendable {
         guard let r = OCCTFaceFixerFace(ref) else { return nil }
         return Shape(handle: r)
     }
+
+    // MARK: - Per-pass control (#266 follow-up)
+
+    /// An individual `ShapeFix_Face` healing pass that can be toggled before ``perform()``.
+    public enum Pass: Int32, Sendable {
+        case wire = 0, orientation, addNaturalBound, missingSeam, smallAreaWire,
+             removeSmallAreaFace, intersectingWires, loopWires, splitFace,
+             autoCorrectPrecision, periodicDegenerated
+    }
+
+    /// Whether a pass runs: `.auto` (the default heuristic), `.off`, or `.on` (force).
+    public enum Toggle: Int32, Sendable { case auto = -1, off = 0, on = 1 }
+
+    /// Enable / disable an individual healing pass before calling ``perform()``.
+    ///
+    /// ```swift
+    /// // Heal a face but DON'T add the surface's natural bound (which can balloon a trimmed face):
+    /// let fixer = FaceFixer(face: f)
+    /// fixer?.setMode(.addNaturalBound, .off)
+    /// fixer?.perform()
+    /// ```
+    public func setMode(_ pass: Pass, _ toggle: Toggle) {
+        OCCTFaceFixerSetMode(ref, pass.rawValue, toggle.rawValue)
+    }
+
+    /// Fix self-intersecting wires on the face.
+    @discardableResult public func fixIntersectingWires() -> Bool { OCCTFaceFixerFixIntersectingWires(ref) }
+
+    /// Reconstruct a degenerate edge at a pole on a periodic surface.
+    @discardableResult public func fixPeriodicDegenerated() -> Bool { OCCTFaceFixerFixPeriodicDegenerated(ref) }
+
+    /// Remove coincident-edge pairs from the face's wires.
+    @discardableResult public func fixWiresTwoCoincEdges() -> Bool { OCCTFaceFixerFixWiresTwoCoincEdges(ref) }
+
+    /// Split a wire that loops back on itself.
+    @discardableResult public func fixLoopWire() -> Bool { OCCTFaceFixerFixLoopWire(ref) }
+
+    /// The result of the fix — usually a face, but a **shell** when ``fixMissingSeam()`` split the
+    /// face into several. Unlike ``face`` (always a face), this returns the true multi-face result.
+    public var result: Shape? {
+        guard let r = OCCTFaceFixerResult(ref) else { return nil }
+        return Shape(handle: r)
+    }
+
+    /// A status flag recorded by the fixer (which passes fired / failed) — query after ``perform()``.
+    public enum Status: Int32, Sendable {
+        case ok = 0
+        case done1 = 1, done2, done3, done4, done5, done6, done7, done8
+        case fail1 = 9, fail2, fail3, fail4, fail5, fail6, fail7, fail8
+        /// Any DONEi flag set (a fix fired).
+        case done = 17
+        /// Any FAILi flag set (a fix failed).
+        case fail = 18
+    }
+
+    /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was fixed,
+    /// `.fail` = a pass failed).
+    public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
 }
 
 // --- IntCSResult class ---
