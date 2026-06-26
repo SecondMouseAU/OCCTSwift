@@ -7,13 +7,32 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.3
+## Current: v1.8.4
 
-**macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1**
+**macOS / iOS / visionOS / tvOS | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.8.4 (June 2026) — fix: OCCT kernel patch for ShapeFix_Face heap corruption (#263)
+
+**Binary release.** Rebuilds `OCCT.xcframework` carrying a one-function OCCT source patch
+(`Scripts/patches/0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch`) that fixes the
+upstream crash behind #263 at the kernel level.
+
+`ShapeFix_Face::Perform` cast `Context()->Apply(myFace)` to `TopoDS_Face` without a type check; when
+an earlier fix in the shared `ShapeBuild_ReShape` context had replaced the face with a compound (a
+self-intersecting face split into several faces), the cast built an invalid face handle over a
+compound `TShape` and corrupted the heap (`ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve` →
+`BRep_TEdge::EmptyCopy`, SIGSEGV/SIGBUS). The patch guards the entry of `Perform`: if the applied
+shape is not a face, return — the replacement is already recorded in the context. Submitted upstream
+as [Open-Cascade-SAS/OCCT#1323](https://github.com/Open-Cascade-SAS/OCCT/pull/1323) (CI green) and
+will be dropped from `Scripts/patches/` once it ships in an OCCT release.
+
+With this binary, a self-intersecting prism now *heals to a valid solid* instead of crashing; the
+v1.8.3 in-wrapper `occtHasSelfIntersectingWire` guard remains as defence-in-depth. **xcframework
+rebuilt** — remote SPM consumers get the new binary via the bumped `Package.swift` URL + checksum.
 
 ### v1.8.3 (June 2026) — fix: guard prism/heal against self-intersecting profiles (#263)
 

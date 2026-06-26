@@ -1,0 +1,26 @@
+diff --git a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+index 8556543a..48ae1347 100644
+--- a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
++++ b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+@@ -352,6 +352,21 @@ bool ShapeFix_Face::Perform(const Message_ProgressRange& theProgress)
+     return false;
+   }
+ 
++  // #263: if a fix sharing this context has already replaced this face with another shape — e.g.
++  // a self-intersecting face split into a compound of faces — Context()->Apply() no longer returns
++  // a face, and the casts below (TopoDS::Face(S.EmptyCopied())) would build an invalid face handle
++  // over a non-face TShape and corrupt the shape. The replacement is already recorded in the
++  // context, so there is nothing to fix here.
++  if (!Context().IsNull())
++  {
++    const TopoDS_Shape anApplied = Context()->Apply(myFace);
++    if (anApplied.ShapeType() != TopAbs_FACE)
++    {
++      myResult = anApplied;
++      return false;
++    }
++  }
++
+   BRep_Builder B;
+   TopoDS_Shape aInitFace = myFace;
+   // perform first part of fixes on wires
