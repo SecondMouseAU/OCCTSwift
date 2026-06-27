@@ -40,3 +40,8 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
   no release ships with stale docs. Any change to a public API surface updates, in the same release,
   `README.md`, `docs/API_REFERENCE.md`, `docs/CHANGELOG.md`, the relevant `docs/reference/` page, and
   the `///` doc comments (with a runnable ```swift``` snippet for context7). See `CLAUDE.md` → Release Process.
+
+## Policies
+
+- [Query `context` first for OCCT / OCCTSwift docs](policies/context-first.md)
+- [Documentation updates are mandatory](policies/docs-current.md)
