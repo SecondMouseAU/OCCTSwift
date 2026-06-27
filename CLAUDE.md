@@ -128,8 +128,15 @@ Each release adds ~100 new operations following this strict order:
 5. `swift build` — zero errors
 6. Tests
 7. `swift test` — all pass
-8. Update README.md (table counts, feature bullets, totals)
+8. **Update docs — MANDATORY every release (OKF release discipline), even for a one-method change:**
+   - `README.md` (table counts, feature bullets, totals)
+   - `docs/API_REFERENCE.md` (op-count tables + Total + Swift→OCCT mapping rows for the new ops)
+   - `docs/CHANGELOG.md` (the release entry)
+   - any `docs/reference/<Type>.md` page covering a changed type
+   - `///` doc comments with a fenced ```swift``` snippet on every new public API (context7 harvests these)
 9. `git commit`, `git push`, `git tag vX.Y.Z`, `gh release create`
+
+> No release ships with stale docs. If an API surface changed, the docs change in the **same** release.
 
 ## Workflow Automations
 

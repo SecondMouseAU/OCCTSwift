@@ -36,6 +36,10 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - Binary target auto-selects a local `Libraries/OCCT.xcframework` (path-dep / dev) or the remote
   release zip (URL / CI); see `Package.swift` for the `#filePath`-based detection.
 - Published to the Swift Package Index via `.spi.yml`.
+- **Release discipline (OKF standard):** documentation updates are **mandatory with every release** —
+  no release ships with stale docs. Any change to a public API surface updates, in the same release,
+  `README.md`, `docs/API_REFERENCE.md`, `docs/CHANGELOG.md`, the relevant `docs/reference/` page, and
+  the `///` doc comments (with a runnable ```swift``` snippet for context7). See `CLAUDE.md` → Release Process.
 
 ## Policies
 

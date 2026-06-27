@@ -311,7 +311,7 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **ShapeAnalysis_FreeBounds Simplified** | 3 | freeBoundsClosedCount, freeBoundsClosedWires, freeBoundsOpenWires |
 | **Geom_TrimmedCurve** | 5 | trimmed, startPoint, endPoint, trimmedBasis, setTrim |
 | **BRepLib_FindSurface** | 3 | findSurface, findSurfaceTolerance, findSurfaceExisted |
-| **ShapeAnalysis_Surface Extensions** | 5 | projectPointUV, hasSingularitiesSA, singularityCountSA, isUClosedSA, isVClosedSA |
+| **ShapeAnalysis_Surface Extensions** | 9 | projectPointUV, hasSingularitiesSA, singularityCountSA, isUClosedSA, isVClosedSA, uvFromIso, singularity(detail), projectDegenerated, projectPoint(uDomain:vDomain:) |
 | **Resource_Manager** | 9 | create, release, setString, setInt, setReal, find, getString, getInt, getReal |
 | **TopExp Adjacency** | 9 | edgeFirstVertex, edgeLastVertex, edgeVertices, wireVertices, commonVertex, edgeFaceAdjacency, vertexEdgeAdjacency, adjacentFaces(forEdge), adjacentEdges(forVertex) |
 | **Poly_Connect Mesh Adjacency** | 3 | meshTriangleAdjacency, meshNodeTriangle, meshNodeTriangleCount |
@@ -370,7 +370,7 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **BSplineCurve 2D Manipulation** | 12 | knotCount, poleCount, degree, isRational, getPole, setPole, setWeight, insertKnot, removeKnot, segment, increaseDegree, resolution |
 | **BezierCurve Manipulation** | 10 | getPole, setPole, setWeight, insertPoleAfter, removePole, segment, increaseDegree, isRational, degree, poleCount |
 | **BRepTools/BRepLib Utilities** | 10 | clean, cleanGeometry, removeUnusedPCurves, update, checkSameRange, sameRange, buildCurve3d, updateTolerances, updateInnerTolerances, updateEdgeTolerance |
-| **MakeFace Extras** | 6 | fromSphere, fromTorus, fromCone, fromSurfaceWire, addHole, copy |
+| **MakeFace Extras** | 7 | fromSphere, fromTorus, fromCone, fromSurfaceWire, fromSurfaceWireWithHoles, addHole, copy |
 | **BRepBuilderAPI_Sewing Detailed** | 8 | create, release, add, perform, result, nbFreeEdges, nbContigousEdges, nbDegeneratedShapes |
 | **Hatch_Hatcher** | 7 | create, release, addXLine, addYLine, trim, nbLines, nbIntervals |
 | **Edge/Face Extraction** | 9 | extractCurve3D, extractPCurve, edgeTolerance, isDegenerated, extractSurface, faceTolerance, wireCount, vertexTolerance, vertexPoint |
@@ -426,7 +426,9 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **ProjectionOnSurface** | 8 | create, release, nbPoints, point, parameters, distance, lowerDistance, lowerParams |
 | **ShapeDistance (DistShapeShape)** | 12 | create, release, isDone, value, nbSolution, pointOnShape1, pointOnShape2, supportType1, supportType2, supportShape1, supportShape2 |
 | **WireFixer** | 12 | create, release, fixReorder, fixConnected, fixSmall, fixDegenerated, fixSelfIntersection, fixLacking, fixClosed, fixGaps3d, fixEdgeCurves, wire |
-| **FaceFixer** | 8 | create, release, perform, fixOrientation, fixAddNaturalBound, fixMissingSeam, fixSmallAreaWire, face |
+| **FaceFixer** | 15 | create, release, perform, fixOrientation, fixAddNaturalBound, fixMissingSeam, fixSmallAreaWire, face, setMode, fixIntersectingWires, fixPeriodicDegenerated, fixWiresTwoCoincEdges, fixLoopWire, result, status |
+| **BRepCheck_Face Diagnostics** | 3 | checkFaceIntersectingWires, checkFaceWireImbrication, checkFaceWireOrientation |
+| **BRepGProp_Face Integration** | 2 | faceIntegrationOrders, faceIntegrationKnotsU |
 | **MakeFace Completions** | 3 | fromSurfaceUV, fromGpPlane, fromGpCylinder |
 | **IntCS Full Results** | 6 | create, release, nbPoints, point (with params), nbSegments |
 | **BSplineCurve Mutations** | 8 | setKnot, getKnotSequence, getWeights, insertKnots, movePoint, localValue, maxDegree, locateU |
@@ -479,7 +481,7 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **3408** | |
+| **Total** | **3425** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -680,6 +682,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 |-----------|------------|
 | `Shape.face(from:)` | `BRepBuilderAPI_MakeFace` |
 | `Shape.face(outer:holes:)` | `BRepBuilderAPI_MakeFace` |
+| `Shape.face(from:outer:innerWires:)` | `BRepBuilderAPI_MakeFace(surface, outer)` + `.Add(hole)` + `ShapeFix_Face` |
 | `Shape.solid(from:)` | `BRepBuilderAPI_MakeSolid` |
 | `Shape.sew(shapes:tolerance:)` | `BRepBuilderAPI_Sewing` |
 | `Wire.interpolate(through:)` | `GeomAPI_Interpolate` |
