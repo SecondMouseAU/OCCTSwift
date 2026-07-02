@@ -62,4 +62,57 @@ struct Issue266FaceAnalysisFollowupTests {
         #expect(knots.count >= 2)
         if knots.count >= 2 { #expect(knots.first! <= knots.last!) }
     }
+
+    // A 10×10 planar face on z=0.
+    private func planarFace() -> Shape? {
+        guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
+              let outer = Wire.polygon3D([
+                  SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)
+              ], closed: true) else { return nil }
+        return Shape.face(from: plane, outer: outer, innerWires: [])
+    }
+
+    @Test("tangent plane is two-sided: TangentU and TangentV both defined and independent")
+    func faceTangentUandV() {
+        guard let face = planarFace() else { Issue.record("setup"); return }
+        guard let tu = face.faceLPropTangentU(u: 5, v: 5),
+              let tv = face.faceLPropTangentV(u: 5, v: 5) else {
+            Issue.record("tangent nil"); return
+        }
+        // On a plane the two tangents span the plane — not parallel.
+        let cross = simd_cross(tu, tv)
+        #expect(simd_length(cross) > 0.5)   // ~unit (orthonormal axes) ⇒ well clear of parallel
+    }
+
+    @Test("BRepGProp_Face V knots + surface-integration params")
+    func vKnotsAndSurfaceIntegration() {
+        guard let face = planarFace() else { Issue.record("setup"); return }
+        #expect(face.faceIntegrationKnotsV().count >= 1)
+        guard let si = face.faceSurfaceIntegration() else { Issue.record("surfaceIntegration nil"); return }
+        #expect(si.order >= 1)          // some Gauss order
+        #expect(si.uSubs >= 1)
+        #expect(si.vSubs >= 1)
+    }
+
+    @Test("BRepGProp_Face boundary integration on a face edge")
+    func boundaryIntegration() {
+        guard let face = planarFace() else { Issue.record("setup"); return }
+        guard let bi = face.faceBoundaryIntegration(edgeIndex: 0) else {
+            Issue.record("boundaryIntegration nil"); return
+        }
+        #expect(bi.order >= 1)
+        #expect(bi.subs >= 1)
+        #expect(bi.knots.count >= 1)
+        // An out-of-range edge index fails cleanly.
+        #expect(face.faceBoundaryIntegration(edgeIndex: 99) == nil)
+    }
+
+    @Test("FaceFixer tolerance clamps run without crashing")
+    func faceFixerTolerances() {
+        guard let face = planarFace(), let fixer = FaceFixer(face: face) else { Issue.record("setup"); return }
+        fixer.setMinTolerance(1e-7)
+        fixer.setMaxTolerance(1e-2)
+        fixer.perform()
+        if let r = fixer.result { #expect(r.isValid) }
+    }
 }

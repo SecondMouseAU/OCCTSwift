@@ -1636,6 +1636,20 @@ bool OCCTFaceLPropTangentU(OCCTShapeRef face, double u, double v, double* dx, do
     } catch (...) { return false; }
 }
 
+bool OCCTFaceLPropTangentV(OCCTShapeRef face, double u, double v, double* dx, double* dy, double* dz) {
+    *dx = 0; *dy = 0; *dz = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props(as, u, v, 2, 1e-6);
+        if (!props.IsTangentVDefined()) return false;
+        gp_Dir tan;
+        props.TangentV(tan);
+        *dx = tan.X(); *dy = tan.Y(); *dz = tan.Z();
+        return true;
+    } catch (...) { return false; }
+}
+
 // MARK: - v0.114: Shape mass properties expansion
 // --- Shape mass properties expansion ---
 

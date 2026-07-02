@@ -7,13 +7,28 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.7
+## Current: v1.8.8
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.8.8 (July 2026) — feat: close the face-analysis tail (#266 follow-up, 6 ops)
+
+Wraps the five low-value leftovers from the post-v1.8.7 face-gap re-audit — the face surface is now
+complete:
+
+- **`BRepLProp_SLProps` V tangent** (`Shape.faceLPropTangentV`) — the tangent plane is now two-sided
+  (was `TangentU`-only).
+- **`BRepGProp_Face` integration internals** (`Shape`): `faceIntegrationKnotsV`, `faceSurfaceIntegration`
+  (precision-driven Gauss order + U/V subinterval counts), `faceBoundaryIntegration(edgeIndex:)`
+  (edge-loaded boundary order/subs/knots).
+- **`ShapeFix_Face` tolerance clamps** (`FaceFixer`): `setMaxTolerance`, `setMinTolerance`.
+
+Swift-only; no xcframework change. `BRepGProp_Face::GetTKnots` remains deliberately unwrapped
+(needs a loaded boundary arc and is subsumed by `faceBoundaryIntegration`).
 
 ### v1.8.7 (June 2026) — feat: face healing & validation surface (#266 follow-up)
 

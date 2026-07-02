@@ -6338,6 +6338,35 @@ extension Shape {
         guard n > 0 else { return [] }
         return Array(buffer.prefix(Int(n)))
     }
+
+    /// `BRepGProp_Face` V-direction integration knots — companion to ``faceIntegrationKnotsU()``.
+    public func faceIntegrationKnotsV() -> [Double] {
+        var buffer = [Double](repeating: 0, count: 256)
+        let n = OCCTBRepGPropFaceVKnots(handle, &buffer, 256)
+        guard n > 0 else { return [] }
+        return Array(buffer.prefix(Int(n)))
+    }
+
+    /// `BRepGProp_Face` precision-driven surface integration parameters: the Gauss `order` (number of
+    /// points) needed for tolerance `precision`, and the number of U / V subintervals. nil if the
+    /// shape isn't a single face.
+    public func faceSurfaceIntegration(precision: Double = 1e-6) -> (order: Int, uSubs: Int, vSubs: Int)? {
+        var order: Int32 = 0, u: Int32 = 0, v: Int32 = 0
+        guard OCCTBRepGPropFaceSurfaceIntegration(handle, precision, &order, &u, &v) else { return nil }
+        return (Int(order), Int(u), Int(v))
+    }
+
+    /// `BRepGProp_Face` boundary integration: loads face edge `edgeIndex` as the boundary arc and
+    /// returns its integration `order` (for `precision`), subinterval count, and knot values.
+    /// nil if the shape isn't a face or the edge can't be loaded.
+    public func faceBoundaryIntegration(edgeIndex: Int, precision: Double = 1e-6)
+        -> (order: Int, subs: Int, knots: [Double])? {
+        var order: Int32 = 0, subs: Int32 = 0, knotCount: Int32 = 0
+        var buffer = [Double](repeating: 0, count: 256)
+        guard OCCTBRepGPropFaceBoundaryIntegration(handle, Int32(edgeIndex), precision,
+                                                   &order, &subs, &buffer, 256, &knotCount) else { return nil }
+        return (Int(order), Int(subs), Array(buffer.prefix(Int(knotCount))))
+    }
 }
 
 // MARK: - Face Validity Checking (v0.47.0)

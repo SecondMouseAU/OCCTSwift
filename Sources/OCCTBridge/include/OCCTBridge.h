@@ -13689,6 +13689,23 @@ bool OCCTBRepGPropFaceIntegrationOrders(OCCTShapeRef _Nonnull face, int32_t* _No
 /// BRepGProp_Face U-direction integration knots; fills up to maxCount, returns the count.
 int32_t OCCTBRepGPropFaceUKnots(OCCTShapeRef _Nonnull face, double* _Nullable buffer, int32_t maxCount);
 
+/// BRepGProp_Face V-direction integration knots (companion to UKnots); fills up to maxCount, returns count.
+int32_t OCCTBRepGPropFaceVKnots(OCCTShapeRef _Nonnull face, double* _Nullable buffer, int32_t maxCount);
+
+/// BRepGProp_Face precision-driven surface integration parameters: order (points) for tolerance `eps`,
+/// and the U / V subinterval counts. Returns false if `face` is not a face.
+bool OCCTBRepGPropFaceSurfaceIntegration(OCCTShapeRef _Nonnull face, double eps,
+                                         int32_t* _Nonnull order, int32_t* _Nonnull uSubs,
+                                         int32_t* _Nonnull vSubs);
+
+/// BRepGProp_Face boundary (edge-loaded) integration: loads face edge #edgeIndex as the boundary arc
+/// and returns its integration order (for tolerance `eps`), subinterval count, and knots (up to
+/// maxKnots into knotBuffer). Returns false if the face/edge is invalid or the edge can't be loaded.
+bool OCCTBRepGPropFaceBoundaryIntegration(OCCTShapeRef _Nonnull face, int32_t edgeIndex, double eps,
+                                          int32_t* _Nonnull order, int32_t* _Nonnull subs,
+                                          double* _Nullable knotBuffer, int32_t maxKnots,
+                                          int32_t* _Nonnull knotCount);
+
 // --- Resource_Manager ---
 
 typedef struct OCCTResourceManager* OCCTResourceManagerRef;
@@ -16009,6 +16026,10 @@ bool OCCTFaceLPropIsUmbilic(OCCTShapeRef _Nonnull face, double u, double v);
 bool OCCTFaceLPropTangentU(OCCTShapeRef _Nonnull face, double u, double v,
                               double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
+/// Get tangent in V direction on face at (u, v) — the other axis of the tangent plane. #266 follow-up.
+bool OCCTFaceLPropTangentV(OCCTShapeRef _Nonnull face, double u, double v,
+                              double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
+
 // MARK: - MathPoly_Laguerre (v0.111.0)
 
 /// Find real roots of a polynomial using Laguerre's method.
@@ -16552,6 +16573,10 @@ OCCTShapeRef _Nullable OCCTFaceFixerResult(OCCTFaceFixerRef _Nonnull fixer);
 /// Query which fixes fired after Perform(). `status`: 0 = OK (no flags), 1..8 = DONE1..DONE8,
 /// 9..16 = FAIL1..FAIL8, 17 = DONE (any), 18 = FAIL (any).
 bool OCCTFaceFixerStatus(OCCTFaceFixerRef _Nonnull fixer, int32_t status);
+
+/// Clamp the max / min tolerance the fixer may set on the healed face (ShapeFix_Root). Call before Perform().
+void OCCTFaceFixerSetMaxTolerance(OCCTFaceFixerRef _Nonnull fixer, double maxTolerance);
+void OCCTFaceFixerSetMinTolerance(OCCTFaceFixerRef _Nonnull fixer, double minTolerance);
 
 // --- BRepBuilderAPI_MakeFace completions ---
 

@@ -426,9 +426,10 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **ProjectionOnSurface** | 8 | create, release, nbPoints, point, parameters, distance, lowerDistance, lowerParams |
 | **ShapeDistance (DistShapeShape)** | 12 | create, release, isDone, value, nbSolution, pointOnShape1, pointOnShape2, supportType1, supportType2, supportShape1, supportShape2 |
 | **WireFixer** | 12 | create, release, fixReorder, fixConnected, fixSmall, fixDegenerated, fixSelfIntersection, fixLacking, fixClosed, fixGaps3d, fixEdgeCurves, wire |
-| **FaceFixer** | 15 | create, release, perform, fixOrientation, fixAddNaturalBound, fixMissingSeam, fixSmallAreaWire, face, setMode, fixIntersectingWires, fixPeriodicDegenerated, fixWiresTwoCoincEdges, fixLoopWire, result, status |
+| **FaceFixer** | 17 | create, release, perform, fixOrientation, fixAddNaturalBound, fixMissingSeam, fixSmallAreaWire, face, setMode, fixIntersectingWires, fixPeriodicDegenerated, fixWiresTwoCoincEdges, fixLoopWire, result, status, setMaxTolerance, setMinTolerance |
 | **BRepCheck_Face Diagnostics** | 3 | checkFaceIntersectingWires, checkFaceWireImbrication, checkFaceWireOrientation |
-| **BRepGProp_Face Integration** | 2 | faceIntegrationOrders, faceIntegrationKnotsU |
+| **BRepGProp_Face Integration** | 5 | faceIntegrationOrders, faceIntegrationKnotsU, faceIntegrationKnotsV, faceSurfaceIntegration, faceBoundaryIntegration |
+| **BRepLProp_SLProps Face Tangent** | 1 | faceLPropTangentV (companion to faceLPropTangentU) |
 | **MakeFace Completions** | 3 | fromSurfaceUV, fromGpPlane, fromGpCylinder |
 | **IntCS Full Results** | 6 | create, release, nbPoints, point (with params), nbSegments |
 | **BSplineCurve Mutations** | 8 | setKnot, getKnotSequence, getWeights, insertKnots, movePoint, localValue, maxDegree, locateU |
@@ -481,7 +482,7 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **3425** | |
+| **Total** | **3431** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
