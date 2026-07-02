@@ -10832,6 +10832,14 @@ extension Shape {
         let ok = OCCTFaceLPropTangentU(handle, u, v, &dx, &dy, &dz)
         return ok ? SIMD3(dx, dy, dz) : nil
     }
+
+    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane
+    /// (companion to ``faceLPropTangentU(u:v:)``). Returns nil if the V tangent is undefined.
+    public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTFaceLPropTangentV(handle, u, v, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
 }
 
 // MARK: - GridEval Curve3D Extensions (v0.111.0)
@@ -11928,6 +11936,12 @@ public final class FaceFixer: @unchecked Sendable {
     /// Whether the given status flag is set after ``perform()`` (e.g. `.done` = something was fixed,
     /// `.fail` = a pass failed).
     public func status(_ status: Status) -> Bool { OCCTFaceFixerStatus(ref, status.rawValue) }
+
+    /// Clamp the maximum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    public func setMaxTolerance(_ maxTolerance: Double) { OCCTFaceFixerSetMaxTolerance(ref, maxTolerance) }
+
+    /// Clamp the minimum tolerance the fixer may assign to the healed face. Call before ``perform()``.
+    public func setMinTolerance(_ minTolerance: Double) { OCCTFaceFixerSetMinTolerance(ref, minTolerance) }
 }
 
 // --- IntCSResult class ---

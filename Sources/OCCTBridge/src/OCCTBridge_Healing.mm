@@ -4023,6 +4023,16 @@ bool OCCTFaceFixerStatus(OCCTFaceFixerRef fixer, int32_t status) {
     catch (...) { return false; }
 }
 
+void OCCTFaceFixerSetMaxTolerance(OCCTFaceFixerRef fixer, double maxTolerance) {
+    if (!fixer || fixer->fixer.IsNull()) return;
+    try { fixer->fixer->SetMaxTolerance(maxTolerance); } catch (...) {}
+}
+
+void OCCTFaceFixerSetMinTolerance(OCCTFaceFixerRef fixer, double minTolerance) {
+    if (!fixer || fixer->fixer.IsNull()) return;
+    try { fixer->fixer->SetMinTolerance(minTolerance); } catch (...) {}
+}
+
 // MARK: - WireFixer extended (hoisted with struct)
 // --- WireFixer extended ---
 

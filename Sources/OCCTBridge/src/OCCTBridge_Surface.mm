@@ -3543,6 +3543,10 @@ bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef surface, double preci) {
 #include <gp_Pnt2d.hxx>
 #include <BRepGProp_Face.hxx>
 #include <NCollection_HArray1.hxx>
+#include <NCollection_Array1.hxx>
+#include <TopExp.hxx>
+#include <TopoDS_Edge.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
 
 /// UVFromIso: refine a (U,V) for P3D by projecting onto the surface's iso-lines; returns the best
 /// 3D gap (very large on failure).
@@ -3638,6 +3642,60 @@ int32_t OCCTBRepGPropFaceUKnots(OCCTShapeRef face, double* buffer, int32_t maxCo
         }
         return n;
     } catch (...) { return 0; }
+}
+
+int32_t OCCTBRepGPropFaceVKnots(OCCTShapeRef face, double* buffer, int32_t maxCount) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return 0;
+    try {
+        BRepGProp_Face gf(TopoDS::Face(face->shape));
+        int n = gf.SVIntSubs(); if (n < 1) n = 1;   // array is sized to the V subinterval count
+        NCollection_Array1<double> k(1, n);
+        gf.VKnots(k);
+        int32_t c = 0;
+        for (int i = k.Lower(); i <= k.Upper() && c < maxCount; i++, c++) {
+            if (buffer) buffer[c] = k.Value(i);
+        }
+        return c;
+    } catch (...) { return 0; }
+}
+
+bool OCCTBRepGPropFaceSurfaceIntegration(OCCTShapeRef face, double eps,
+                                         int32_t* order, int32_t* uSubs, int32_t* vSubs) {
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return false;
+    try {
+        BRepGProp_Face gf(TopoDS::Face(face->shape));
+        if (order) *order = gf.SIntOrder(eps);
+        if (uSubs) *uSubs = gf.SUIntSubs();
+        if (vSubs) *vSubs = gf.SVIntSubs();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTBRepGPropFaceBoundaryIntegration(OCCTShapeRef face, int32_t edgeIndex, double eps,
+                                          int32_t* order, int32_t* subs,
+                                          double* knotBuffer, int32_t maxKnots, int32_t* knotCount) {
+    if (knotCount) *knotCount = 0;
+    if (!face || face->shape.IsNull() || face->shape.ShapeType() != TopAbs_FACE) return false;
+    try {
+        TopoDS_Face f = TopoDS::Face(face->shape);
+        TopTools_IndexedMapOfShape emap;
+        TopExp::MapShapes(f, TopAbs_EDGE, emap);
+        if (edgeIndex < 0 || edgeIndex >= emap.Extent()) return false;
+        BRepGProp_Face gf(f);
+        if (!gf.Load(TopoDS::Edge(emap(edgeIndex + 1)))) return false;   // load the boundary arc
+        if (order) *order = gf.LIntOrder(eps);
+        int s = gf.LIntSubs();
+        if (subs) *subs = s;
+        int n = s < 1 ? 1 : s;
+        NCollection_Array1<double> k(1, n);
+        gf.LKnots(k);
+        int32_t c = 0;
+        for (int i = k.Lower(); i <= k.Upper() && c < maxKnots; i++, c++) {
+            if (knotBuffer) knotBuffer[c] = k.Value(i);
+        }
+        if (knotCount) *knotCount = c;
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - v0.105: GeomConvert_BSplineSurfaceKnotSplitting
