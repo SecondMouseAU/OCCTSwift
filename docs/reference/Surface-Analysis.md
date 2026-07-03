@@ -372,6 +372,75 @@ More efficient than `valueOfUV(point:precision:)` when projecting a sequence of 
 
 ---
 
+### `uvFromIso(_:precision:)` (#266)
+
+Refine a `(u, v)` for a 3D point by projecting it onto the surface's iso-lines — more robust near
+degeneracies than plain `projectPoint(_:)`. Returns the parameters and the 3D gap (a very large gap
+means the projection effectively failed).
+
+```swift
+public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6)
+    -> (u: Double, v: Double, gap: Double)?
+```
+
+- **OCCT:** `ShapeAnalysis_Surface::UVFromIso`.
+
+---
+
+### `singularity(_:precision:)` (#266)
+
+Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`) — the pole point, the
+degenerate iso-line's 2D endpoints + parameters, and its direction. Complements
+`singularityCount(tolerance:)` (count only).
+
+```swift
+public struct Singularity: Sendable {
+    public let point: SIMD3<Double>       // 3D pole
+    public let firstUV, lastUV: SIMD2<Double>
+    public let firstParameter, lastParameter: Double
+    public let isUIso: Bool               // degenerate iso is U-iso (else V-iso)
+    public let precision: Double
+}
+public func singularity(_ index: Int, precision: Double = 1e-6) -> Singularity?
+```
+
+- **OCCT:** `ShapeAnalysis_Surface::Singularity`.
+- **Example:**
+  ```swift
+  if let apex = cone.singularity(0) { print("apex at", apex.point) }
+  ```
+
+---
+
+### `projectDegenerated(_:neighbour:precision:)` (#266)
+
+Resolve the indeterminate 2D coordinate of a point lying in a singularity (e.g. a cone apex), taking
+the well-defined coordinate from a `neighbour` 2D point.
+
+```swift
+public func projectDegenerated(_ point: SIMD3<Double>, neighbour: SIMD2<Double>,
+                               precision: Double = 1e-6) -> SIMD2<Double>?
+```
+
+- **OCCT:** `ShapeAnalysis_Surface::ProjectDegenerated`.
+
+---
+
+### `projectPoint(_:uDomain:vDomain:precision:)` (#266)
+
+Project a 3D point onto the surface **restricted to a U/V domain** (`SetDomain`) — disambiguates
+projection on periodic or self-overlapping surfaces. Returns the `(u, v)` and the 3D gap.
+
+```swift
+public func projectPoint(_ point: SIMD3<Double>, uDomain: ClosedRange<Double>,
+                         vDomain: ClosedRange<Double>, precision: Double = 1e-6)
+    -> (uv: SIMD2<Double>, gap: Double)?
+```
+
+- **OCCT:** `ShapeAnalysis_Surface::SetDomain` + `ValueOfUV` + `Gap`.
+
+---
+
 ## Curve Projection (v0.22.0)
 
 Project curves and points onto surfaces, returning UV-space or 3D curves. Backed by `GeomProjLib` and `GeomAPI_ProjectPointOnSurf`.

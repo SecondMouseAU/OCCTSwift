@@ -1758,6 +1758,76 @@ public var face: Shape? { get }
 
 ---
 
+### `FaceFixer.setMode(_:_:)` — per-pass control (#266)
+
+Enable / disable an individual `ShapeFix_Face` healing pass before `perform()`. Previously
+`perform()` ran with hardcoded defaults; this exposes each pass so callers can, e.g., turn off the
+natural-bound pass that can balloon a trimmed face.
+
+```swift
+public enum Pass: Int32, Sendable {
+    case wire, orientation, addNaturalBound, missingSeam, smallAreaWire,
+         removeSmallAreaFace, intersectingWires, loopWires, splitFace,
+         autoCorrectPrecision, periodicDegenerated
+}
+public enum Toggle: Int32, Sendable { case auto = -1, off = 0, on = 1 }
+public func setMode(_ pass: Pass, _ toggle: Toggle)
+```
+
+- **OCCT:** `ShapeFix_Face::Fix*Mode()` reference setters.
+- **Example:**
+  ```swift
+  let fixer = FaceFixer(face: trimmedFace)
+  fixer?.setMode(.addNaturalBound, .off)   // don't add the surface's natural bound
+  fixer?.perform()
+  ```
+
+---
+
+### `FaceFixer` — individual fix passes (#266)
+
+Run a single fix pass directly.
+
+```swift
+@discardableResult public func fixIntersectingWires() -> Bool
+@discardableResult public func fixPeriodicDegenerated() -> Bool
+@discardableResult public func fixWiresTwoCoincEdges() -> Bool
+@discardableResult public func fixLoopWire() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixIntersectingWires` / `FixPeriodicDegenerated` / `FixWiresTwoCoincEdges` / `FixLoopWire`.
+
+---
+
+### `FaceFixer.result` / `FaceFixer.status(_:)` (#266)
+
+`result` returns the true fix output — a **face**, or a **shell** when `fixMissingSeam()` split the
+face into several (unlike `face`, which is always a face). `status(_:)` queries which passes fired /
+failed after `perform()`.
+
+```swift
+public var result: Shape? { get }
+public enum Status: Int32, Sendable { case ok, done1, /* … */ done8, fail1, /* … */ fail8, done, fail }
+public func status(_ status: Status) -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::Result` / `ShapeFix_Root::Status`.
+
+---
+
+### `FaceFixer.setMaxTolerance(_:)` / `setMinTolerance(_:)` (#266)
+
+Clamp the tolerance the fixer may assign to the healed face. Call before `perform()`.
+
+```swift
+public func setMaxTolerance(_ maxTolerance: Double)
+public func setMinTolerance(_ minTolerance: Double)
+```
+
+- **OCCT:** `ShapeFix_Root::SetMaxTolerance` / `SetMinTolerance`.
+
+---
+
 ### `IntCSResult`
 
 Full multi-result curve-surface intersection using `GeomAPI_IntCS`.
