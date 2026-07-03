@@ -1371,6 +1371,74 @@ If you already have the boundary in UV space, call `Surface.toFace(uvBoundary:)`
 
 ---
 
+### `Shape.face(from:outer:innerWires:)` (#266)
+
+Trim a surface by an **outer** boundary **with interior hole wires** (windows / cutouts) — a single
+face with real openings. Wraps `BRepBuilderAPI_MakeFace(surface, outer)` + `.Add(hole)` per hole +
+`ShapeFix_Face`; hole winding is normalized automatically.
+
+```swift
+public static func face(from surface: Surface, outer: Wire, innerWires: [Wire]) -> Shape?
+```
+
+- **OCCT:** `BRepBuilderAPI_MakeFace(surface, outer)` + `Add(hole)` + `ShapeFix_Face`.
+- **Example:**
+  ```swift
+  // A fitted panel surface trimmed to its outline, with two window cutouts:
+  let panel = Shape.face(from: fittedSurface, outer: outline, innerWires: [window1, window2])
+  ```
+
+---
+
+## Face Analysis (#266 follow-up)
+
+Per-wire validity checks (`BRepCheck_Face`), Gauss-integration introspection (`BRepGProp_Face`), and
+the V tangent (`BRepLProp_SLProps`) for a single face.
+
+### `Shape.checkFaceIntersectingWires/WireImbrication/WireOrientation(geometricControls:)`
+
+The specific `BRepCheck_Status` for one wire-topology check: do the boundary wires intersect, are they
+correctly nested (one outer, the rest holes), and are they correctly oriented. `.checkFail` if the
+shape isn't a single face.
+
+```swift
+public func checkFaceIntersectingWires(geometricControls: Bool = true) -> CheckStatus
+public func checkFaceWireImbrication(geometricControls: Bool = true) -> CheckStatus
+public func checkFaceWireOrientation(geometricControls: Bool = true) -> CheckStatus
+```
+
+- **OCCT:** `BRepCheck_Face::IntersectWires` / `ClassifyWires` / `OrientationOfWires`.
+
+### `Shape.faceIntegrationOrders` / `faceIntegrationKnotsU()` / `faceIntegrationKnotsV()` / `faceSurfaceIntegration(precision:)` / `faceBoundaryIntegration(edgeIndex:precision:)`
+
+`BRepGProp_Face` Gauss-integration introspection — the quadrature a face needs for exact surface
+integrals (non-trivial only for BSpline faces), and per-boundary-edge integration.
+
+```swift
+public var faceIntegrationOrders: (u: Int, v: Int)? { get }
+public func faceIntegrationKnotsU() -> [Double]
+public func faceIntegrationKnotsV() -> [Double]
+public func faceSurfaceIntegration(precision: Double = 1e-6) -> (order: Int, uSubs: Int, vSubs: Int)?
+public func faceBoundaryIntegration(edgeIndex: Int, precision: Double = 1e-6)
+    -> (order: Int, subs: Int, knots: [Double])?
+```
+
+- **OCCT:** `BRepGProp_Face::UIntegrationOrder`/`VIntegrationOrder`, `GetUKnots`/`VKnots`, `SIntOrder`/`SUIntSubs`/`SVIntSubs`, and the edge-loaded `LIntOrder`/`LIntSubs`/`LKnots`.
+
+### `Shape.faceLPropTangentU/V(u:v:)`
+
+The two axes of the tangent plane at a face `(u, v)` — the V companion (`faceLPropTangentV`) makes the
+tangent plane two-sided.
+
+```swift
+public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>?
+public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>?
+```
+
+- **OCCT:** `BRepLProp_SLProps::TangentU` / `TangentV`.
+
+---
+
 ## Edges to Faces
 
 ### `Shape.facesFromEdges(_:onlyPlanar:)`
