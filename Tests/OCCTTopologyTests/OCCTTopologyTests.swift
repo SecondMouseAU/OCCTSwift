@@ -388,6 +388,46 @@ struct EdgeDiscretizationTests {
         #expect(large.cost < small.cost * 8,
                 "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges — allEdgePolylines looks quadratic again (#275)")
     }
+
+    /// `allEdgePolylinesIndexed` must carry ORIGINAL edge indices across skips: a sphere
+    /// has degenerate pole edges the discretizer skips, so the dense variant's positions
+    /// drift out of the `edgePolyline(at:)` index space exactly there. The indexed variant
+    /// exists for consumers (wireframe pick identity) that can't tolerate that drift.
+    @Test("allEdgePolylinesIndexed preserves the edgePolyline(at:) index space across skips")
+    func indexedEdgePolylinesSurviveSkips() {
+        let sphere = Shape.sphere(radius: 5)!
+        let indexed = sphere.allEdgePolylinesIndexed(deflection: 0.1)
+
+        // Something must actually be skipped for this fixture to prove anything.
+        #expect(indexed.count < sphere.edgeCount,
+                "sphere fixture no longer has a skipped (degenerate) edge — pick a new fixture")
+
+        // Every returned pair must match the per-index accessor at that exact index…
+        for (edgeIndex, points) in indexed {
+            let single = sphere.edgePolyline(at: edgeIndex, deflection: 0.1, maxPoints: 1000)
+            #expect(single != nil)
+            #expect(single?.count == points.count)
+            if let single {
+                for (a, b) in zip(single, points) {
+                    #expect(a.x == b.x); #expect(a.y == b.y); #expect(a.z == b.z)
+                }
+            }
+        }
+
+        // …and the skipped indices must be exactly those the per-index accessor also rejects.
+        let returned = Set(indexed.map(\.edgeIndex))
+        for i in 0..<sphere.edgeCount where !returned.contains(i) {
+            #expect(sphere.edgePolyline(at: i, deflection: 0.1, maxPoints: 1000) == nil,
+                    "edge \(i) was skipped by the bulk pass but discretizes fine per-index")
+        }
+
+        // The dense variant is the indexed one minus the indices.
+        let dense = sphere.allEdgePolylines(deflection: 0.1)
+        #expect(dense.count == indexed.count)
+        for (d, ip) in zip(dense, indexed) {
+            #expect(d.count == ip.points.count)
+        }
+    }
 }
 
 

@@ -1324,7 +1324,7 @@ Discretises every edge in a single bridge pass, building the shape's edge map on
 - **Parameters:**
   - `deflection` — maximum chord deviation per edge.
   - `maxPointsPerEdge` — maximum points per edge (values below 2 return `[]`).
-- **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped.
+- **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped — the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
 - **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTShapeBuildCurves3d` and `OCCTShapeComputeAllEdgePolylines`).
 - **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 - **Example:**
@@ -1332,6 +1332,31 @@ Discretises every edge in a single bridge pass, building the shape's edge map on
   let wireframe = shape.allEdgePolylines(deflection: 0.05)
   for polyline in wireframe {
       // draw polyline.map { CGPoint(x: $0.x, y: $0.y) }
+  }
+  ```
+
+---
+
+### `allEdgePolylinesIndexed(deflection:maxPointsPerEdge:)`
+
+As `allEdgePolylines`, but each polyline carries its original edge index.
+
+```swift
+public func allEdgePolylinesIndexed(
+    deflection: Double = 0.1,
+    maxPointsPerEdge: Int = 1000
+) -> [(edgeIndex: Int, points: [SIMD3<Double>])]
+```
+
+Same single bulk bridge pass as `allEdgePolylines` (O(edges), [#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)), but the skip of a degenerate/failed edge (e.g. a sphere's pole seams) no longer shifts later polylines out of the `edgePolyline(at:)` / `edge(at:)` index space — each pair records which edge it came from.
+
+- **Parameters:** as `allEdgePolylines`.
+- **Returns:** `(edgeIndex, points)` pairs, ascending by `edgeIndex`, one per successfully discretised edge.
+- **Use when:** mapping wireframe polylines back to topology — per-segment edge pick indices, polyline → `TopoDS_Edge` round-trips. Use the plain variant when only the geometry matters.
+- **Example:**
+  ```swift
+  for (edgeIndex, points) in shape.allEdgePolylinesIndexed(deflection: 0.05) {
+      register(polyline: points, pickTarget: shape.edge(at: edgeIndex))
   }
   ```
 
