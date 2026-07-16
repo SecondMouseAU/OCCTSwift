@@ -20,6 +20,8 @@
 #include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (#175)
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
+#include <STEPControl_Controller.hxx>
+#include <XSControl_WorkSession.hxx>
 #include <STEPControl_StepModelType.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
@@ -104,6 +106,48 @@ bool OCCTExportSTLWithMode(OCCTShapeRef shape, const char* path, double deflecti
     }
 }
 
+
+namespace {
+
+/// Repair the STEP writer's shape-processing config, which an XDE read silently breaks.
+///
+/// Upstream OCCT bug (8.0.0p1). `STEPCAFControl_Controller`'s constructor replaces the actor
+/// its base class just configured:
+///
+///     STEPControl_Controller::STEPControl_Controller() {          // base: configures its actor
+///       ActWrite->SetShapeProcessFlags({SplitCommonVertex, DirectFaces});
+///     }
+///     STEPCAFControl_Controller::STEPCAFControl_Controller() {    // derived: overwrites it,
+///       myAdaptorWrite = new STEPCAFControl_ActorWrite;           // and configures nothing
+///     }
+///
+/// `STEPCAFControl_Controller::Init()` then `AutoRecord()`s that controller under the *same*
+/// "STEP"/"step" names as the plain one, and `STEPControl_Writer::SetWS()` unconditionally does
+/// `SelectNorm("STEP")` — so after any XDE STEP read (`Document.loadSTEP`, i.e. a
+/// `STEPCAFControl_Reader` merely being constructed) every shape-level write resolves to an actor
+/// with EMPTY OperationsFlags. `DirectFaces` therefore never runs, and faces built on indirect
+/// (left-handed) surfaces are silently dropped: a cone frustum writes as a 2-face solid missing
+/// its lateral CONICAL_SURFACE and 63% of its volume, still reporting `isValid == true`.
+///
+/// Isolated to exactly that flag: applying `DirectFaces` alone fixes it; `SplitCommonVertex` alone
+/// does not, and the ShapeFix parameters are irrelevant. See SecondMouseAU/OCCTSwift#280.
+///
+/// FIXED UPSTREAM, NOT IN OUR BUILD: OCCT PR #1334 ("Data Exchange - initialize STEP writer healing
+/// parameters", merged 2026-07-10) added an `InitializeMissingParameters()` call to
+/// `STEPControl_Writer::Transfer`, which restores exactly these flags. Our pinned V8_0_0_p1 (tagged
+/// 2026-06-16) *defines* that method but never calls it — it is dead code there — and it is
+/// `private`, so we cannot invoke it ourselves. Retire this workaround once the bundled OCCT moves
+/// past that commit; the test in OCCTIOTests covers the behaviour either way.
+///
+/// Installing a freshly-constructed plain controller restores the configuration the writer should
+/// have had. The session is created fresh per write, so this has no global effect. Document-level
+/// writes are unaffected — they use `STEPCAFControl_Writer` and want the CAF actor.
+void repairSTEPWriterActor(STEPControl_Writer& writer) {
+    writer.WS()->SetController(new STEPControl_Controller);
+}
+
+}  // namespace
+
 bool OCCTExportSTEP(OCCTShapeRef shape, const char* path) {
     if (!shape || !path) return false;
 
@@ -114,6 +158,7 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path) {
         bool success = false;
         {
             STEPControl_Writer writer;
+            repairSTEPWriterActor(writer);   // #280
             Interface_Static::SetCVal("write.step.schema", "AP214");
 
             IFSelect_ReturnStatus status = writer.Transfer(shape->shape, STEPControl_AsIs);
@@ -140,6 +185,7 @@ bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* na
         bool success = false;
         {
             STEPControl_Writer writer;
+            repairSTEPWriterActor(writer);   // #280
             Interface_Static::SetCVal("write.step.schema", "AP214");
             if (name) {
                 Interface_Static::SetCVal("write.step.product.name", name);
@@ -422,6 +468,7 @@ bool OCCTExportSTEPProgress(OCCTShapeRef shape, const char* path,
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         Interface_Static::SetCVal("write.step.schema", "AP214");
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
@@ -438,6 +485,7 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef shape, const char* path, int32_
     if (!shape || !path) return false;
     try {
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         Interface_Static::SetCVal("write.step.schema", "AP214");
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
@@ -729,6 +777,7 @@ bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath) {
         reader.TransferRoots();
 
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         for (int i = 1; i <= reader.NbShapes(); i++) {
             writer.Transfer(reader.Shape(i), STEPControl_AsIs);
         }
@@ -916,6 +965,7 @@ bool OCCTExportSTEPWithMode(OCCTShapeRef shape, const char* path, int32_t modelT
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         Interface_Static::SetCVal("write.step.schema", "AP214");
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
         IFSelect_ReturnStatus status = writer.Transfer(shape->shape, mode);
@@ -932,6 +982,7 @@ bool OCCTExportSTEPWithModeAndTolerance(OCCTShapeRef shape, const char* path,
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         Interface_Static::SetCVal("write.step.schema", "AP214");
         writer.SetTolerance(tolerance);
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
@@ -948,6 +999,7 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
+        repairSTEPWriterActor(writer);   // #280
         Interface_Static::SetCVal("write.step.schema", "AP214");
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
         IFSelect_ReturnStatus status = writer.Transfer(shape->shape, mode);

@@ -1933,21 +1933,23 @@ struct STEPWriterCAFCorruptionTests {
         )
     }
 
-    /// Regression guard for #280 (currently a known issue — see below).
+    /// Regression guard for #280.
     ///
     /// Merely constructing a `STEPCAFControl_Reader` — i.e. any XDE STEP read, such as
-    /// `Document.loadSTEP` — permanently corrupts every later shape-level STEP write in the
-    /// process: the frustum's periodic conical face is silently dropped from the written file,
-    /// leaving a 2-face solid missing 63% of its volume that still reports `isValid == true`.
+    /// `Document.loadSTEP` — used to permanently corrupt every later shape-level STEP write in the
+    /// process: the frustum's lateral conical face was silently dropped from the written file,
+    /// leaving a 2-face solid missing 63% of its volume that still reported `isValid == true`.
     ///
-    /// The mechanism is NOT understood. Ruled out empirically (#280): the controller name
-    /// registration (pinning/re-recording the plain `STEPControl_Controller` changes nothing) and
-    /// `Interface_Static` (values are byte-identical between a good and a corrupted write). No
-    /// `StepModelType` dodges it. Suspected upstream OCCT 8.0.0p1.
+    /// Upstream OCCT 8.0.0p1 bug: `STEPCAFControl_Controller`'s constructor overwrites the actor
+    /// its base class configured, without re-applying `SetShapeProcessFlags`, and then
+    /// `AutoRecord()`s itself under the same "STEP" name the plain writer resolves by. The actor's
+    /// OperationsFlags end up empty, so `DirectFaces` never runs and faces on indirect
+    /// (left-handed) surfaces — a frustum's cone — are dropped. Worked around in the bridge by
+    /// installing a freshly-constructed plain controller on each shape-level write.
     ///
-    /// A write must not care what was read earlier in the process. This is also the real cause of
-    /// the long-standing `cone()` failure in OCCTStressTests, which passes in isolation and fails
-    /// in a full run purely because OCCTIOTests does a CAF read first.
+    /// This is also the cause of the long-standing `cone()` failure in OCCTStressTests, which
+    /// passed in isolation and failed in every full run purely because OCCTIOTests reads a STEP
+    /// first.
     @Test("A CAF STEP read must not corrupt later shape-level STEP writes")
     func cafReadDoesNotPoisonShapeWriter() throws {
         let analyticVolume = (Double.pi * 10 / 3) * (25 + 10 + 4)   // 130π ≈ 408.407
@@ -1964,21 +1966,12 @@ struct STEPWriterCAFCorruptionTests {
         try box.writeSTEP(to: boxURL)
         #expect(Document.loadSTEP(from: boxURL, modes: STEPReaderModes()) != nil)
 
-        // KNOWN ISSUE (#280) — unfixed. Wrapped so it documents the bug without adding a red
-        // test, and so this flips to an *unexpected pass* (a failure telling you to delete this
-        // wrapper) the moment the underlying bug is fixed.
-        //
-        // Mechanism is still unknown: it is NOT the controller name registration and NOT
-        // Interface_Static (both ruled out empirically — see #280). Trigger is narrowed to the
-        // mere construction of a STEPCAFControl_Reader. Suspected upstream OCCT 8.0.0p1.
-        try withKnownIssue("#280: a CAF STEP read corrupts later shape-level STEP writes") {
-            let after = try coneRoundTrip("after")
-            #expect(after.conicalInFile == 1,
-                    "CONICAL_SURFACE dropped from the written file (#280)")
-            #expect(after.faces == 3,
-                    "frustum lost a face: \(after.faces) (#280)")
-            #expect(abs(after.volume - analyticVolume) / analyticVolume < 0.01,
-                    "frustum volume corrupted: \(after.volume) vs \(analyticVolume) (#280)")
-        }
+        let after = try coneRoundTrip("after")
+        #expect(after.conicalInFile == 1,
+                "CONICAL_SURFACE dropped from the written file (#280)")
+        #expect(after.faces == 3,
+                "frustum lost a face: \(after.faces) (#280)")
+        #expect(abs(after.volume - analyticVolume) / analyticVolume < 0.01,
+                "frustum volume corrupted: \(after.volume) vs \(analyticVolume) (#280)")
     }
 }

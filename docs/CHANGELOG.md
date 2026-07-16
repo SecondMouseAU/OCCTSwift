@@ -34,6 +34,35 @@ mesh-scale STL imports (OCCTMCP#75).
 New test: sphere fixture proves indices survive a real skip (returned pairs match the per-index
 accessor exactly; skipped indices are exactly those the per-index accessor rejects).
 
+### v1.9.2 (July 2026) — fix: an XDE STEP read silently corrupted every later STEP write (#280)
+
+Reading a STEP through `Document.loadSTEP` permanently corrupted every subsequent
+`Exporter.writeSTEP` in the process. A cone frustum wrote as a **2-face solid missing its lateral
+`CONICAL_SURFACE` and 63% of its volume** (408.407 → 151.844), still reporting `isValid == true`.
+Read a STEP, write a STEP, geometry silently gone — an ordinary app sequence.
+
+Upstream OCCT bug. `STEPCAFControl_Controller`'s constructor overwrites the actor its base class
+just configured, without re-applying `SetShapeProcessFlags`, then `AutoRecord()`s itself under the
+same `"STEP"` name the plain writer resolves by — and `STEPControl_Writer::SetWS()` unconditionally
+re-runs `SelectNorm("STEP")`. So after any XDE read (a `STEPCAFControl_Reader` merely being
+*constructed* is enough) every shape-level write ran with **empty** `OperationsFlags`:
+`DirectFaces` never ran, and faces on indirect (left-handed) surfaces — a frustum's cone — were
+dropped. That is why only the cone was affected; box/cylinder/sphere/torus have no indirect
+surfaces.
+
+Fixed upstream in OCCT PR #1334 (merged 2026-07-10), which added an `InitializeMissingParameters()`
+call to `STEPControl_Writer::Transfer`. Our pinned **V8_0_0_p1** (tagged 2026-06-16) predates it —
+it *defines* that method but never calls it, and it is `private`. The bridge therefore installs a
+freshly-constructed plain controller on each shape-level write, restoring the flags the writer
+should have had. Retire the workaround when the bundled OCCT moves past that commit.
+
+This was also the cause of the long-standing `cone()` failure in `StressFormatRoundTripTests`, which
+passed in isolation and failed in every full run purely because `OCCTIOTests` reads a STEP first. It
+was never flaky — it was correctly reporting this bug. **The full suite is now green: 4,359 tests,
+0 failures.**
+
+Bumped **PATCH**: bug fix, no public API change.
+
 ### v1.9.1 (July 2026) — fix: a new Document could inherit a dead Document's construction context (#277)
 
 `Document.constructionContext` is resolved through a side table keyed on `ObjectIdentifier(document)`
