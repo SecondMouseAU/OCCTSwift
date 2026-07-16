@@ -19,6 +19,9 @@ public final class Document: @unchecked Sendable {
     }
 
     deinit {
+        // Must happen before this instance's memory can be recycled — the construction-context
+        // association is keyed on the instance pointer (#277).
+        releaseConstructionContext()
         OCCTDocumentRelease(handle)
     }
 
