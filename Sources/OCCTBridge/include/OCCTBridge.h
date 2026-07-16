@@ -786,6 +786,10 @@ OCCTMeshRef OCCTMeshCreateFromArrays(
 void OCCTShapeBuildCurves3d(OCCTShapeRef shape);
 
 /// Get discretized edge as polyline points
+///
+/// Rebuilds the shape's edge map on every call, so looping this over every edge is O(edges²) —
+/// use OCCTShapeComputeAllEdgePolylines for iterate-all-edges consumers (issue #275).
+///
 /// @param shape The shape containing edges
 /// @param edgeIndex Index of the edge (0-based)
 /// @param deflection Linear deflection for discretization
@@ -793,6 +797,37 @@ void OCCTShapeBuildCurves3d(OCCTShapeRef shape);
 /// @param maxPoints Maximum points to return
 /// @return Number of points written, or -1 on error
 int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape, int32_t edgeIndex, double deflection, double* outPoints, int32_t maxPoints);
+
+// --- Bulk edge discretisation (handle-based) — issue #275 ---
+
+/// An immutable set of discretised edge polylines, computed in one pass.
+typedef struct OCCTEdgePolylines* OCCTEdgePolylinesRef;
+
+/// Discretise every edge of `shape` in a single pass, building the edge map once — O(edges),
+/// versus O(edges²) for an OCCTShapeGetEdgePolyline loop over the same shape.
+///
+/// Edge ordering matches OCCTShapeGetTotalEdgeCount / OCCTShapeGetEdgePolyline (the same
+/// TopExp::MapShapes ordering). Degenerate edges and edges that fail discretisation are kept as
+/// entries with a point count of 0, so indices stay aligned with the shape's edge indices.
+///
+/// @param shape The shape containing edges
+/// @param deflection Linear deflection for discretization
+/// @param maxPointsPerEdge Maximum points per edge (must be >= 2)
+/// @return A handle the caller must release with OCCTEdgePolylinesRelease, or NULL on error
+OCCTEdgePolylinesRef _Nullable OCCTShapeComputeAllEdgePolylines(OCCTShapeRef shape, double deflection, int32_t maxPointsPerEdge);
+
+/// Release a polyline set.
+void OCCTEdgePolylinesRelease(OCCTEdgePolylinesRef _Nullable polys);
+
+/// Number of edges in the set (matches the source shape's edge count).
+int32_t OCCTEdgePolylinesGetEdgeCount(OCCTEdgePolylinesRef _Nullable polys);
+
+/// Number of points for the edge at `edgeIndex` (0-based); 0 if degenerate or failed.
+int32_t OCCTEdgePolylinesGetPointCount(OCCTEdgePolylinesRef _Nullable polys, int32_t edgeIndex);
+
+/// Copy the edge's points as [x,y,z,...] into `outPoints` (caller allocates).
+/// @return Number of points written (never more than maxPoints), or 0.
+int32_t OCCTEdgePolylinesCopyPoints(OCCTEdgePolylinesRef _Nullable polys, int32_t edgeIndex, double* outPoints, int32_t maxPoints);
 
 // MARK: - Triangle Access
 

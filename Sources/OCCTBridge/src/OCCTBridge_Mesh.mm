@@ -301,11 +301,87 @@ void OCCTShapeBuildCurves3d(OCCTShapeRef shape) {
     } catch (...) {}
 }
 
+namespace {
+
+/// Discretise one edge into `outPoints` (flat xyz triples). Returns points written, or -1.
+///
+/// `parentShape` + `fallbackMap` back the pcurve fallback: the edge→face ancestor map is built
+/// lazily on first use and reused across calls, so a bulk caller pays for it at most once
+/// (and not at all when no edge needs the fallback).
+int32_t DiscretizeEdgeInto(const TopoDS_Edge& edge,
+                           double deflection,
+                           int32_t maxPoints,
+                           const TopoDS_Shape& parentShape,
+                           std::unique_ptr<TopTools_IndexedDataMapOfShapeListOfShape>& fallbackMap,
+                           double* outPoints) {
+    // Skip degenerate edges (zero-length, e.g. poles of spheres)
+    if (BRep_Tool::Degenerated(edge)) return -1;
+
+    // Try primary path: BRepAdaptor_Curve + TangentialDeflection
+    try {
+        BRepAdaptor_Curve curve(edge);
+        GCPnts_TangentialDeflection discretizer(curve, deflection, 0.1);
+
+        if (discretizer.NbPoints() >= 2) {
+            int32_t numPoints = std::min(discretizer.NbPoints(), maxPoints);
+            for (int32_t i = 0; i < numPoints; i++) {
+                gp_Pnt pt = discretizer.Value(i + 1);
+                outPoints[i * 3 + 0] = pt.X();
+                outPoints[i * 3 + 1] = pt.Y();
+                outPoints[i * 3 + 2] = pt.Z();
+            }
+            return numPoints;
+        }
+    } catch (...) {
+        // BRepAdaptor_Curve failed — fall through to pcurve fallback
+    }
+
+    // Fallback: evaluate pcurve on parent surface
+    // Find a face that owns this edge and use its pcurve + surface
+    if (!fallbackMap) {
+        fallbackMap.reset(new TopTools_IndexedDataMapOfShapeListOfShape());
+        TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, *fallbackMap);
+    }
+
+    int32_t mapIndex = fallbackMap->FindIndex(edge);
+    if (mapIndex > 0) {
+        const TopTools_ListOfShape& faces = (*fallbackMap)(mapIndex);
+        if (!faces.IsEmpty()) {
+            TopoDS_Face face = TopoDS::Face(faces.First());
+            Standard_Real first, last;
+            Handle(Geom2d_Curve) pcurve = BRep_Tool::CurveOnSurface(edge, face, first, last);
+            if (!pcurve.IsNull()) {
+                Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+                if (!surface.IsNull()) {
+                    int32_t numPoints = std::min(maxPoints, (int32_t)50);
+                    if (numPoints < 2) numPoints = 2;
+                    for (int32_t i = 0; i < numPoints; i++) {
+                        double t = (numPoints == 1) ? first : first + (last - first) * i / (numPoints - 1);
+                        gp_Pnt2d uv = pcurve->Value(t);
+                        gp_Pnt pt;
+                        surface->D0(uv.X(), uv.Y(), pt);
+                        outPoints[i * 3 + 0] = pt.X();
+                        outPoints[i * 3 + 1] = pt.Y();
+                        outPoints[i * 3 + 2] = pt.Z();
+                    }
+                    return numPoints;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+}  // namespace
+
 int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape, int32_t edgeIndex, double deflection, double* outPoints, int32_t maxPoints) {
     if (!shape || !outPoints || maxPoints < 2 || edgeIndex < 0) return -1;
 
     try {
-        // Use IndexedMap to match OCCTShapeGetTotalEdgeCount ordering
+        // Use IndexedMap to match OCCTShapeGetTotalEdgeCount ordering.
+        // NOTE: this rebuilds the map on every call — O(edges²) across a whole shape. Use
+        // OCCTShapeComputeAllEdgePolylines for iterate-all-edges consumers (issue #275).
         TopTools_IndexedMapOfShape edgeMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
@@ -313,64 +389,83 @@ int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape, int32_t edgeIndex, double d
 
         TopoDS_Edge edge = TopoDS::Edge(edgeMap(edgeIndex + 1));  // OCCT is 1-based
 
-        // Skip degenerate edges (zero-length, e.g. poles of spheres)
-        if (BRep_Tool::Degenerated(edge)) return -1;
-
-        // Try primary path: BRepAdaptor_Curve + TangentialDeflection
-        try {
-            BRepAdaptor_Curve curve(edge);
-            GCPnts_TangentialDeflection discretizer(curve, deflection, 0.1);
-
-            if (discretizer.NbPoints() >= 2) {
-                int32_t numPoints = std::min(discretizer.NbPoints(), maxPoints);
-                for (int32_t i = 0; i < numPoints; i++) {
-                    gp_Pnt pt = discretizer.Value(i + 1);
-                    outPoints[i * 3 + 0] = pt.X();
-                    outPoints[i * 3 + 1] = pt.Y();
-                    outPoints[i * 3 + 2] = pt.Z();
-                }
-                return numPoints;
-            }
-        } catch (...) {
-            // BRepAdaptor_Curve failed — fall through to pcurve fallback
-        }
-
-        // Fallback: evaluate pcurve on parent surface
-        // Find a face that owns this edge and use its pcurve + surface
-        TopTools_IndexedDataMapOfShapeListOfShape edgeFaceMap;
-        TopExp::MapShapesAndAncestors(shape->shape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
-
-        int32_t mapIndex = edgeFaceMap.FindIndex(edge);
-        if (mapIndex > 0) {
-            const TopTools_ListOfShape& faces = edgeFaceMap(mapIndex);
-            if (!faces.IsEmpty()) {
-                TopoDS_Face face = TopoDS::Face(faces.First());
-                Standard_Real first, last;
-                Handle(Geom2d_Curve) pcurve = BRep_Tool::CurveOnSurface(edge, face, first, last);
-                if (!pcurve.IsNull()) {
-                    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
-                    if (!surface.IsNull()) {
-                        int32_t numPoints = std::min(maxPoints, (int32_t)50);
-                        if (numPoints < 2) numPoints = 2;
-                        for (int32_t i = 0; i < numPoints; i++) {
-                            double t = (numPoints == 1) ? first : first + (last - first) * i / (numPoints - 1);
-                            gp_Pnt2d uv = pcurve->Value(t);
-                            gp_Pnt pt;
-                            surface->D0(uv.X(), uv.Y(), pt);
-                            outPoints[i * 3 + 0] = pt.X();
-                            outPoints[i * 3 + 1] = pt.Y();
-                            outPoints[i * 3 + 2] = pt.Z();
-                        }
-                        return numPoints;
-                    }
-                }
-            }
-        }
-
-        return -1;
+        std::unique_ptr<TopTools_IndexedDataMapOfShapeListOfShape> fallbackMap;
+        return DiscretizeEdgeInto(edge, deflection, maxPoints, shape->shape, fallbackMap, outPoints);
     } catch (...) {
         return -1;
     }
+}
+
+// MARK: - Bulk Edge Discretization (issue #275)
+
+struct OCCTEdgePolylines {
+    std::vector<double> points;    // flat xyz triples, all edges concatenated
+    std::vector<int32_t> offsets;  // per-edge start index into `points`, in triples
+    std::vector<int32_t> counts;   // per-edge point count (0 = degenerate / failed)
+};
+
+OCCTEdgePolylinesRef OCCTShapeComputeAllEdgePolylines(OCCTShapeRef shape, double deflection, int32_t maxPointsPerEdge) {
+    if (!shape || maxPointsPerEdge < 2) return nullptr;
+
+    try {
+        // The whole point of this entry: build the edge map ONCE, then walk it.
+        TopTools_IndexedMapOfShape edgeMap;
+        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
+        const int32_t edgeCount = edgeMap.Extent();
+
+        std::unique_ptr<OCCTEdgePolylines> result(new OCCTEdgePolylines());
+        result->offsets.reserve(edgeCount);
+        result->counts.reserve(edgeCount);
+
+        std::unique_ptr<TopTools_IndexedDataMapOfShapeListOfShape> fallbackMap;
+        std::vector<double> scratch(static_cast<size_t>(maxPointsPerEdge) * 3);
+
+        for (int32_t i = 1; i <= edgeCount; i++) {  // OCCT is 1-based
+            TopoDS_Edge edge = TopoDS::Edge(edgeMap(i));
+            int32_t n = DiscretizeEdgeInto(edge, deflection, maxPointsPerEdge, shape->shape,
+                                           fallbackMap, scratch.data());
+            if (n <= 0) {
+                result->offsets.push_back(0);
+                result->counts.push_back(0);
+                continue;
+            }
+            result->offsets.push_back(static_cast<int32_t>(result->points.size() / 3));
+            result->counts.push_back(n);
+            result->points.insert(result->points.end(), scratch.begin(), scratch.begin() + static_cast<size_t>(n) * 3);
+        }
+
+        return result.release();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void OCCTEdgePolylinesRelease(OCCTEdgePolylinesRef polys) {
+    delete polys;
+}
+
+int32_t OCCTEdgePolylinesGetEdgeCount(OCCTEdgePolylinesRef polys) {
+    if (!polys) return 0;
+    return static_cast<int32_t>(polys->counts.size());
+}
+
+int32_t OCCTEdgePolylinesGetPointCount(OCCTEdgePolylinesRef polys, int32_t edgeIndex) {
+    if (!polys || edgeIndex < 0 || edgeIndex >= static_cast<int32_t>(polys->counts.size())) return 0;
+    return polys->counts[edgeIndex];
+}
+
+int32_t OCCTEdgePolylinesCopyPoints(OCCTEdgePolylinesRef polys, int32_t edgeIndex, double* outPoints, int32_t maxPoints) {
+    if (!polys || !outPoints || maxPoints < 1) return 0;
+    if (edgeIndex < 0 || edgeIndex >= static_cast<int32_t>(polys->counts.size())) return 0;
+
+    const int32_t n = std::min(polys->counts[edgeIndex], maxPoints);
+    if (n <= 0) return 0;
+
+    const size_t start = static_cast<size_t>(polys->offsets[edgeIndex]) * 3;
+    std::copy(polys->points.begin() + start,
+              polys->points.begin() + start + static_cast<size_t>(n) * 3,
+              outPoints);
+    return n;
 }
 
 // MARK: - Direct Triangle Access

@@ -858,12 +858,13 @@ public final class Shape: @unchecked Sendable {
 
     /// Get all edges as discretized polylines.
     ///
-    /// Convenience method that calls `edgePolyline` for each edge in the shape.
+    /// Discretizes every edge in a single bridge pass. Edges that fail discretization
+    /// (including degenerate ones) are skipped.
     ///
     /// - Parameters:
     ///   - deflection: Maximum chord deviation
     ///   - maxPointsPerEdge: Maximum points per edge
-    /// - Returns: Array of polylines, one per edge
+    /// - Returns: Array of polylines, one per successfully discretized edge
     public func allEdgePolylines(
         deflection: Double = 0.1,
         maxPointsPerEdge: Int = 1000
@@ -872,14 +873,35 @@ public final class Shape: @unchecked Sendable {
         // have pcurves; this ensures explicit 3D curves exist before discretization.
         OCCTShapeBuildCurves3d(handle)
 
-        let count = Int(OCCTShapeGetTotalEdgeCount(handle))
+        // One bulk pass: the bridge builds the edge map once. Looping `edgePolyline(at:)`
+        // instead rebuilds it per call, making this O(edges²) — 20 s for a 12k-edge shell,
+        // and unusable on mesh-scale shapes (issue #275).
+        guard maxPointsPerEdge >= 2,
+              let polys = OCCTShapeComputeAllEdgePolylines(handle, deflection, Int32(maxPointsPerEdge))
+        else { return [] }
+        defer { OCCTEdgePolylinesRelease(polys) }
+
+        let count = Int(OCCTEdgePolylinesGetEdgeCount(polys))
         var result: [[SIMD3<Double>]] = []
         result.reserveCapacity(count)
 
+        var scratch = [Double](repeating: 0, count: maxPointsPerEdge * 3)
         for i in 0..<count {
-            if let polyline = edgePolyline(at: i, deflection: deflection, maxPoints: maxPointsPerEdge) {
-                result.append(polyline)
+            let written = scratch.withUnsafeMutableBufferPointer { buffer in
+                Int(OCCTEdgePolylinesCopyPoints(polys, Int32(i), buffer.baseAddress, Int32(maxPointsPerEdge)))
             }
+            guard written > 0 else { continue }  // degenerate / failed — skipped, as before
+
+            var polyline: [SIMD3<Double>] = []
+            polyline.reserveCapacity(written)
+            for j in 0..<written {
+                polyline.append(SIMD3(
+                    scratch[j * 3],
+                    scratch[j * 3 + 1],
+                    scratch[j * 3 + 2]
+                ))
+            }
+            result.append(polyline)
         }
 
         return result
