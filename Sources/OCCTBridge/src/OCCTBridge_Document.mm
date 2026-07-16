@@ -3907,7 +3907,7 @@ int32_t OCCTAssemblyItemIdPathCount(const char *str) {
     try {
         TCollection_AsciiString aStr(str);
         XCAFDoc_AssemblyItemId id(aStr);
-        return id.GetPath().Size();
+        return static_cast<int32_t>(id.GetPath().Size());
     } catch (...) { return 0; }
 }
 
@@ -4594,7 +4594,7 @@ int OCCTDocumentDimTolDimensionCount(OCCTDocumentRef document) {
         XCAFDimTolObjects_Tool tool(document->doc);
         NCollection_Sequence<Handle(XCAFDimTolObjects_DimensionObject)> dims;
         tool.GetDimensions(dims);
-        return dims.Size();
+        return static_cast<int>(dims.Size());
     } catch (...) { return 0; }
 }
 
@@ -4605,7 +4605,7 @@ int OCCTDocumentDimTolToleranceCount(OCCTDocumentRef document) {
         NCollection_Sequence<Handle(XCAFDimTolObjects_DatumObject)> datums;
         NCollection_DataMap<Handle(XCAFDimTolObjects_GeomToleranceObject), Handle(XCAFDimTolObjects_DatumObject)> datumMap;
         tool.GetGeomTolerances(tols, datums, datumMap);
-        return tols.Size();
+        return static_cast<int>(tols.Size());
     } catch (...) { return 0; }
 }
 
@@ -5725,7 +5725,7 @@ int32_t OCCTDeltaEndTime(void* delta) {
 int32_t OCCTDeltaAttributeDeltaCount(void* delta) {
     try {
         auto* ptr = static_cast<Handle(TDF_Delta)*>(delta);
-        return (*ptr)->AttributeDeltas().Size();
+        return static_cast<int32_t>((*ptr)->AttributeDeltas().Size());
     } catch (...) { return 0; }
 }
 
@@ -6927,7 +6927,7 @@ int32_t OCCTDocumentColorToolGetAllColors(OCCTDocumentRef doc, int64_t** outLabe
     try {
         NCollection_Sequence<TDF_Label> labels;
         doc->colorTool->GetColors(labels);
-        int count = labels.Size();
+        int count = static_cast<int>(labels.Size());
         if (count == 0) return 0;
         int64_t* ids = (int64_t*)malloc(count * sizeof(int64_t));
         if (!ids) return 0;

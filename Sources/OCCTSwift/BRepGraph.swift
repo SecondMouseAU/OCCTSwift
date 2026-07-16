@@ -585,7 +585,11 @@ public final class TopologyGraph: @unchecked Sendable {
                                               &sequence)
         }
         guard ok else { return nil }
-        let opName = String(cString: opNameBuffer)
+        // The bridge fills a fixed 128-byte buffer and NUL-terminates it. Decode only up to that
+        // terminator — String(decoding:as:) over the whole buffer would carry the NUL padding into
+        // the string.
+        let opName = String(decoding: opNameBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
+                            as: UTF8.self)
 
         // Collect originals.
         let count = Int(OCCTBRepGraphHistoryGetRecordOriginalsCount(handle, Int32(index)))

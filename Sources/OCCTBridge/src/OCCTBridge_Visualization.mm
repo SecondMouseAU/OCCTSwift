@@ -1808,7 +1808,7 @@ void OCCTFontMgrInitDatabase(void) {
 int OCCTFontMgrFontCount(void) {
     try {
         ensureFontList();
-        return g_fontList.Size();
+        return static_cast<int>(g_fontList.Size());
     } catch (...) { return 0; }
 }
 

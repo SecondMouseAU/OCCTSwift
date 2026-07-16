@@ -5146,7 +5146,7 @@ bool OCCTLocOpeBuildWires(OCCTShapeRef shape, int32_t faceIndex,
         if (!bw.IsDone()) return false;
 
         const NCollection_List<TopoDS_Shape>& result = bw.Result();
-        int32_t n = result.Size();
+        int32_t n = static_cast<int32_t>(result.Size());
         *outCount = n;
         if (n == 0) { *outWires = nullptr; return true; }
         *outWires = (OCCTShapeRef*)malloc(n * sizeof(OCCTShapeRef));
@@ -5602,7 +5602,7 @@ bool OCCTBOPAlgoBuilderFace(OCCTShapeRef _Nonnull baseFace,
         }
 
         const TopTools_ListOfShape& areas = bf.Areas();
-        int32_t n = areas.Size();
+        int32_t n = static_cast<int32_t>(areas.Size());
         *outFaceCount = n;
         if (n == 0) {
             *outFaces = nullptr;
@@ -5640,7 +5640,7 @@ bool OCCTBOPAlgoBuilderSolid(const OCCTShapeRef _Nonnull * _Nonnull faces, int32
         }
 
         const TopTools_ListOfShape& areas = bs.Areas();
-        int32_t n = areas.Size();
+        int32_t n = static_cast<int32_t>(areas.Size());
         *outSolidCount = n;
         if (n == 0) {
             *outSolids = nullptr;
@@ -5676,7 +5676,7 @@ bool OCCTBOPAlgoShellSplitter(OCCTShapeRef _Nonnull shell,
         }
 
         const TopTools_ListOfShape& shells = ss.Shells();
-        int32_t n = shells.Size();
+        int32_t n = static_cast<int32_t>(shells.Size());
         *outShellCount = n;
         if (n == 0) {
             *outShells = nullptr;
@@ -5879,7 +5879,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(OCCTShapeRef _Nonnull sha
 
         // Left faces
         const TopTools_ListOfShape& leftList = splitter.Left();
-        int32_t nl = leftList.Size();
+        int32_t nl = static_cast<int32_t>(leftList.Size());
         *outLeftCount = nl;
         if (nl > 0) {
             *outLeft = (OCCTShapeRef*)malloc(nl * sizeof(OCCTShapeRef));
@@ -5891,7 +5891,7 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(OCCTShapeRef _Nonnull sha
 
         // Right faces
         const TopTools_ListOfShape& rightList = splitter.Right();
-        int32_t nr = rightList.Size();
+        int32_t nr = static_cast<int32_t>(rightList.Size());
         *outRightCount = nr;
         if (nr > 0) {
             *outRight = (OCCTShapeRef*)malloc(nr * sizeof(OCCTShapeRef));
@@ -6031,7 +6031,7 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWires(OCCTShapeRef _Nonnull shape,
 
         // Direct left faces
         const TopTools_ListOfShape& dl = spliter.DirectLeft();
-        int32_t n = dl.Size();
+        int32_t n = static_cast<int32_t>(dl.Size());
         *outDirectLeftCount = n;
         if (n > 0) {
             *outDirectLeft = (OCCTShapeRef*)malloc(n * sizeof(OCCTShapeRef));
@@ -6886,7 +6886,7 @@ int32_t OCCTShapeBuildLoops(OCCTShapeRef shape, int32_t faceIndex) {
             edgeExp.Next();
         }
         loop.Perform();
-        return loop.NewWires().Size();
+        return static_cast<int32_t>(loop.NewWires().Size());
     } catch (...) { return -1; }
 }
 // MARK: - Draft_Modification (v0.98.0)
@@ -8789,7 +8789,7 @@ int32_t OCCTFilletBuilderGenerated(OCCTFilletBuilderRef builder, OCCTShapeRef sh
     *outShapes = nullptr;
     try {
         const TopTools_ListOfShape& list = builder->fillet.Generated(shape->shape);
-        int count = list.Size();
+        int count = static_cast<int>(list.Size());
         if (count == 0) return 0;
         OCCTShapeRef* shapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
         if (!shapes) return 0;
@@ -8808,7 +8808,7 @@ int32_t OCCTFilletBuilderModified(OCCTFilletBuilderRef builder, OCCTShapeRef sha
     *outShapes = nullptr;
     try {
         const TopTools_ListOfShape& list = builder->fillet.Modified(shape->shape);
-        int count = list.Size();
+        int count = static_cast<int>(list.Size());
         if (count == 0) return 0;
         OCCTShapeRef* shapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
         if (!shapes) return 0;
@@ -8841,7 +8841,7 @@ int32_t OCCTChamferBuilderGenerated(OCCTChamferBuilderRef builder, OCCTShapeRef 
     *outShapes = nullptr;
     try {
         const TopTools_ListOfShape& list = builder->chamfer.Generated(shape->shape);
-        int32_t count = list.Size();
+        int32_t count = static_cast<int32_t>(list.Size());
         if (count == 0) return 0;
         *outShapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
         int32_t i = 0;
@@ -8858,7 +8858,7 @@ int32_t OCCTChamferBuilderModified(OCCTChamferBuilderRef builder, OCCTShapeRef s
     *outShapes = nullptr;
     try {
         const TopTools_ListOfShape& list = builder->chamfer.Modified(shape->shape);
-        int32_t count = list.Size();
+        int32_t count = static_cast<int32_t>(list.Size());
         if (count == 0) return 0;
         *outShapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
         int32_t i = 0;

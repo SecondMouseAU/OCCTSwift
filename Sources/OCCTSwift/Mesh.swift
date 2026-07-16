@@ -214,7 +214,7 @@ public final class Mesh: @unchecked Sendable {
 
         let handle: OCCTMeshRef? = vertexFloats.withUnsafeBufferPointer { vbuf in
             indices.withUnsafeBufferPointer { ibuf in
-                if var nFloats = normalFloatsStorage {
+                if let nFloats = normalFloatsStorage {
                     return nFloats.withUnsafeBufferPointer { nbuf in
                         OCCTMeshCreateFromArrays(
                             vbuf.baseAddress,

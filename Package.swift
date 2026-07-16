@@ -33,10 +33,14 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
+    // v1.10.1 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263) and
+    // 0002 (backport of upstream OCCT#1334, #280). Bump BOTH url and checksum whenever the
+    // xcframework is rebuilt, or URL-resolving consumers silently keep the previous kernel while
+    // local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.8.5/OCCT.xcframework.zip",
-        checksum: "c15e1a32ef4bbf28157f9d8d413cdf2f9cd065f86b5e8ade1391e562fbe78572"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.10.1/OCCT.xcframework.zip",
+        checksum: "a1f816ea9b5308dafc9187933431b3f36793377ed7fa2567692305fac0255927"
     )
 
 let package = Package(
@@ -80,7 +84,22 @@ let package = Package(
                 .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
                 .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
                 .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
-                .define("OCCT_AVAILABLE", to: "1")
+                .define("OCCT_AVAILABLE", to: "1"),
+                // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
+                // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
+                // and explicit NCollection_* templates. This bridge still uses the legacy names, so
+                // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files —
+                // drowning out real warnings downstream (issue #281).
+                //
+                // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
+                // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
+                // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
+                // is rejected by SwiftPM for any package consumed as a dependency, which would break
+                // every downstream consumer.
+                //
+                // This buys quiet, not absolution — the legacy spellings are still deprecated and
+                // will eventually be removed upstream. Migrating the call sites is tracked in #281.
+                .define("OCCT_NO_DEPRECATED")
             ],
             linkerSettings: [
                 .linkedLibrary("c++")
