@@ -1910,3 +1910,75 @@ struct SVGWriterTests {
         #expect(content.contains("297"))
     }
 }
+
+// MARK: - #280: a CAF STEP read corrupts later shape-level STEP writes
+
+@Suite("STEP writer corruption after a CAF read (#280)")
+struct STEPWriterCAFCorruptionTests {
+
+    /// Round-trip a frustum (3 faces: lateral cone + two discs) and report what survives.
+    private func coneRoundTrip(_ tag: String) throws -> (faces: Int, volume: Double, conicalInFile: Int) {
+        let cone = Shape.cone(bottomRadius: 5, topRadius: 2, height: 10)!
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt-280-\(tag)-\(UUID().uuidString).step")
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        try Exporter.writeSTEP(shape: cone, to: url, modelType: .asIs)
+        let text = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        let reimported = try Shape.load(from: url)
+        return (
+            faces: reimported.subShapeCount(ofType: .face),
+            volume: reimported.volume ?? 0,
+            conicalInFile: text.components(separatedBy: "CONICAL_SURFACE").count - 1
+        )
+    }
+
+    /// Regression guard for #280 (currently a known issue — see below).
+    ///
+    /// Merely constructing a `STEPCAFControl_Reader` — i.e. any XDE STEP read, such as
+    /// `Document.loadSTEP` — permanently corrupts every later shape-level STEP write in the
+    /// process: the frustum's periodic conical face is silently dropped from the written file,
+    /// leaving a 2-face solid missing 63% of its volume that still reports `isValid == true`.
+    ///
+    /// The mechanism is NOT understood. Ruled out empirically (#280): the controller name
+    /// registration (pinning/re-recording the plain `STEPControl_Controller` changes nothing) and
+    /// `Interface_Static` (values are byte-identical between a good and a corrupted write). No
+    /// `StepModelType` dodges it. Suspected upstream OCCT 8.0.0p1.
+    ///
+    /// A write must not care what was read earlier in the process. This is also the real cause of
+    /// the long-standing `cone()` failure in OCCTStressTests, which passes in isolation and fails
+    /// in a full run purely because OCCTIOTests does a CAF read first.
+    @Test("A CAF STEP read must not corrupt later shape-level STEP writes")
+    func cafReadDoesNotPoisonShapeWriter() throws {
+        let analyticVolume = (Double.pi * 10 / 3) * (25 + 10 + 4)   // 130π ≈ 408.407
+
+        // Do the CAF read ourselves so the test is self-contained. Note we deliberately do NOT
+        // assert a clean "before" baseline: the poison is process-wide and permanent, and in a
+        // full run another suite's CAF read has usually already tripped it before we get here —
+        // a baseline assertion would make this test order-dependent (and fail for the wrong
+        // reason). The invariant below holds regardless of what ran earlier.
+        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let boxURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt-280-poison-\(UUID().uuidString).step")
+        defer { try? FileManager.default.removeItem(at: boxURL) }
+        try box.writeSTEP(to: boxURL)
+        #expect(Document.loadSTEP(from: boxURL, modes: STEPReaderModes()) != nil)
+
+        // KNOWN ISSUE (#280) — unfixed. Wrapped so it documents the bug without adding a red
+        // test, and so this flips to an *unexpected pass* (a failure telling you to delete this
+        // wrapper) the moment the underlying bug is fixed.
+        //
+        // Mechanism is still unknown: it is NOT the controller name registration and NOT
+        // Interface_Static (both ruled out empirically — see #280). Trigger is narrowed to the
+        // mere construction of a STEPCAFControl_Reader. Suspected upstream OCCT 8.0.0p1.
+        try withKnownIssue("#280: a CAF STEP read corrupts later shape-level STEP writes") {
+            let after = try coneRoundTrip("after")
+            #expect(after.conicalInFile == 1,
+                    "CONICAL_SURFACE dropped from the written file (#280)")
+            #expect(after.faces == 3,
+                    "frustum lost a face: \(after.faces) (#280)")
+            #expect(abs(after.volume - analyticVolume) / analyticVolume < 0.01,
+                    "frustum volume corrupted: \(after.volume) vs \(analyticVolume) (#280)")
+        }
+    }
+}
