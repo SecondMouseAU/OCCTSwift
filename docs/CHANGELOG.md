@@ -7,13 +7,32 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.9.1
+## Current: v1.10.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.10.0 (July 2026) — feat: `allEdgePolylinesIndexed` — bulk wireframe with pick identity (#275 follow-up)
+
+`allEdgePolylines` is dense: when a degenerate/failed edge is skipped (a sphere's pole seams, a
+scan's broken edge), every later polyline shifts down, so a polyline's position no longer equals its
+edge index — consumers that round-trip wireframe back to topology (per-segment edge pick indices,
+polyline → `TopoDS_Edge`) silently mis-map from the first skip onward.
+
+**New:** `Shape.allEdgePolylinesIndexed(deflection:maxPointsPerEdge:) -> [(edgeIndex: Int, points:
+[SIMD3<Double>])]` — the same single O(edges) bulk pass (#275), with each polyline carrying its
+original `edgePolyline(at:)` / `edge(at:)` index. `allEdgePolylines` now delegates to it (`.map(\.points)`)
+— dense output unchanged, byte-identical.
+
+The first consumer is OCCTSwiftTools' `extractEdgePolylines` (the `shapeToBodyAndMetadata` wireframe
+pass), whose per-index loop was the O(edges²) hot path that hung OCCTMCP's `render_preview` on
+mesh-scale STL imports (OCCTMCP#75).
+
+New test: sphere fixture proves indices survive a real skip (returned pairs match the per-index
+accessor exactly; skipped indices are exactly those the per-index accessor rejects).
 
 ### v1.9.1 (July 2026) — fix: a new Document could inherit a dead Document's construction context (#277)
 

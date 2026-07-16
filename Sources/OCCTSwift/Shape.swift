@@ -861,6 +861,11 @@ public final class Shape: @unchecked Sendable {
     /// Discretizes every edge in a single bridge pass. Edges that fail discretization
     /// (including degenerate ones) are skipped.
     ///
+    /// The result is dense — when an edge is skipped, later polylines shift down, so a
+    /// polyline's position does NOT reliably equal its edge index. Consumers that map
+    /// polylines back to topology (`edge(at:)`, pick identity) should use
+    /// ``allEdgePolylinesIndexed(deflection:maxPointsPerEdge:)`` instead.
+    ///
     /// - Parameters:
     ///   - deflection: Maximum chord deviation
     ///   - maxPointsPerEdge: Maximum points per edge
@@ -869,6 +874,30 @@ public final class Shape: @unchecked Sendable {
         deflection: Double = 0.1,
         maxPointsPerEdge: Int = 1000
     ) -> [[SIMD3<Double>]] {
+        allEdgePolylinesIndexed(deflection: deflection, maxPointsPerEdge: maxPointsPerEdge)
+            .map(\.points)
+    }
+
+    /// As ``allEdgePolylines(deflection:maxPointsPerEdge:)``, but each polyline carries
+    /// its ORIGINAL edge index — the same index space as ``edgePolyline(at:deflection:maxPoints:)``
+    /// and ``edge(at:)``.
+    ///
+    /// Edges that fail discretization (including degenerate ones — e.g. sphere pole
+    /// seams) are skipped, and with the dense variant that skip silently shifts every
+    /// later polyline's position. Consumers that need to round-trip a polyline back to
+    /// topology (per-segment edge pick indices, wireframe → `TopoDS_Edge` mapping) need
+    /// the explicit index this variant preserves. Same single bulk bridge pass —
+    /// O(edges), issue #275.
+    ///
+    /// - Parameters:
+    ///   - deflection: Maximum chord deviation
+    ///   - maxPointsPerEdge: Maximum points per edge
+    /// - Returns: `(edgeIndex, points)` pairs, ascending by `edgeIndex`, one per
+    ///   successfully discretized edge
+    public func allEdgePolylinesIndexed(
+        deflection: Double = 0.1,
+        maxPointsPerEdge: Int = 1000
+    ) -> [(edgeIndex: Int, points: [SIMD3<Double>])] {
         // Build 3D curves for all edges upfront. Lofted/swept shapes may only
         // have pcurves; this ensures explicit 3D curves exist before discretization.
         OCCTShapeBuildCurves3d(handle)
@@ -882,7 +911,7 @@ public final class Shape: @unchecked Sendable {
         defer { OCCTEdgePolylinesRelease(polys) }
 
         let count = Int(OCCTEdgePolylinesGetEdgeCount(polys))
-        var result: [[SIMD3<Double>]] = []
+        var result: [(edgeIndex: Int, points: [SIMD3<Double>])] = []
         result.reserveCapacity(count)
 
         var scratch = [Double](repeating: 0, count: maxPointsPerEdge * 3)
@@ -901,7 +930,7 @@ public final class Shape: @unchecked Sendable {
                     scratch[j * 3 + 2]
                 ))
             }
-            result.append(polyline)
+            result.append((edgeIndex: i, points: polyline))
         }
 
         return result
