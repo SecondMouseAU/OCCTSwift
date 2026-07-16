@@ -232,12 +232,32 @@ extension Document {
         return new
     }
 
-    // Weak-key associated storage for construction contexts, since Document is
-    // a final class we can't extend with stored properties. Uses ObjectIdentifier
-    // keyed on the instance pointer; cleans up when the Document deinits.
+    /// Drop this document's associated construction context. Called from `Document.deinit`.
+    ///
+    /// This is not optional bookkeeping: the association is keyed on `ObjectIdentifier`, which is
+    /// the instance pointer and is therefore only unique among *live* objects. If the entry
+    /// outlives the document, the next `Document` allocated at the recycled address resolves to
+    /// this one's context and silently inherits its entities (#277).
+    internal func releaseConstructionContext() {
+        Self.constructionContextStorage.clear(for: self)
+    }
+
+    // Associated storage for construction contexts, since Document is a final class we can't
+    // extend with stored properties. Strongly keyed on ObjectIdentifier (the instance pointer);
+    // entries are removed in `Document.deinit` via `releaseConstructionContext()` — see #277 for
+    // why that cleanup is load-bearing rather than mere tidiness.
     fileprivate static let constructionContextStorage = DocumentAssociatedStorage<ConstructionContext>()
 }
 
+/// Side-table associating a value with an object, for final classes that can't take stored
+/// properties via an extension.
+///
+/// - Important: keys are `ObjectIdentifier`, i.e. the raw instance pointer, which is unique only
+///   among **live** objects. Owners MUST call ``clear(for:)`` from their `deinit`. An entry that
+///   outlives its owner is not merely a leak — the allocator readily hands the same address to the
+///   next instance, which then resolves to the dead owner's value and inherits its state. This is
+///   not theoretical: it shipped, and in a tight create/destroy loop *every* new instance inherited
+///   its predecessor's context (#277).
 internal final class DocumentAssociatedStorage<T: AnyObject>: @unchecked Sendable {
     private let lock = NSLock()
     private var table: [ObjectIdentifier: T] = [:]

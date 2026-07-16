@@ -774,6 +774,7 @@ public var constructionContext: ConstructionContext { get }
 
 Construction entities live alongside the document's shapes but are not part of the XDE shape tree. Each `Document` instance gets exactly one `ConstructionContext`; repeated access returns the same object.
 
+- **Lifetime:** the context is tied to the `Document` instance and is released with it. A newly created `Document` always starts with an empty context, and its entities are never visible to any other document. (Before v1.9.1 this did not hold — see [#277](https://github.com/SecondMouseAU/OCCTSwift/issues/277).)
 - **Example:**
   ```swift
   let doc = Document()

@@ -7,13 +7,35 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.9.0
+## Current: v1.9.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.9.1 (July 2026) — fix: a new Document could inherit a dead Document's construction context (#277)
+
+`Document.constructionContext` is resolved through a side table keyed on `ObjectIdentifier(document)`
+— the raw instance pointer, which is unique only among **live** objects. The entry was never removed
+(a `clear(for:)` existed but was never wired to `Document.deinit`), so a context outlived its
+document; the allocator then readily handed the same address to the next `Document`, which resolved
+to the dead one's context and silently inherited its entities.
+
+This was not a rare race. In a tight create/destroy loop **every** new `Document` reused the address
+and accumulated its predecessors' entities monotonically (1 → 2 → 3 → …). It surfaced as an
+intermittent failure in the `materializeAll()` test — 4 entities materialized where 3 were added — but
+the same fault hits any app that creates and releases documents over its lifetime: fresh documents
+silently carrying dead ones' construction geometry, plus an unbounded leak of every
+`ConstructionContext` ever created.
+
+`Document.deinit` now clears the association before the instance's memory can be recycled. No API
+change — the documented guarantee (one context per `Document` instance, released with it) is simply
+true now. `DocumentAssociatedStorage` carries a warning that owners must clear on `deinit`, since the
+pattern silently reintroduces this if they don't.
+
+Bumped **PATCH** per the cohort SemVer policy: bug fix, no public API change.
 
 ### v1.9.0 (July 2026) — perf: `allEdgePolylines` is O(edges), not O(edges²) (#275)
 

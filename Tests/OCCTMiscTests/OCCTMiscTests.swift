@@ -370,6 +370,36 @@ struct ConstructionLayerTests {
         // Each materialized shape shows up on the CONSTRUCTION layer.
         #expect(doc.constructionShapeLabels.count >= 3)
     }
+
+    /// Regression guard for #277.
+    ///
+    /// `Document.constructionContext` is associated via a table keyed on
+    /// `ObjectIdentifier(document)` — i.e. the instance pointer, which is only unique among
+    /// *live* objects. The entry used to never be removed, so once a Document died its context
+    /// stayed in the table; a later Document allocated at the recycled address would then
+    /// inherit the dead one's entities. That surfaced as intermittent failures in
+    /// `materializeAll()` above (4 entities materialized where the test added 3).
+    ///
+    /// Every freshly created Document must start with an empty context, always.
+    @Test("A fresh Document never inherits a dead Document's construction context (#277)")
+    func constructionContextDoesNotLeakAcrossDocuments() {
+        for i in 0..<200 {
+            autoreleasepool {
+                guard let doc = Document.create() else {
+                    Issue.record("Document.create() returned nil"); return
+                }
+                let ctx = doc.constructionContext
+
+                #expect(ctx.count == (planes: 0, axes: 0, points: 0),
+                        "iteration \(i): a fresh Document inherited a dead Document's construction context (#277)")
+
+                // Populate, then let the document die at scope exit so the next iteration is
+                // very likely to reuse this address.
+                _ = ctx.add(.absolute(SIMD3(1, 2, 3)), name: "origin")
+                _ = ctx.add(.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)), name: "XY")
+            }
+        }
+    }
 }
 
 // MARK: - v0.145 #76: Sheet templates, title blocks, projection symbols
