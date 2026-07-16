@@ -482,10 +482,10 @@ public enum SheetMetal {
             let aOuterOffset = thickness * a.normal
             let bOuterOffset = thickness * b.normal
 
+            // Only the v=0 (kissStart) cross-section is constructed; the far end at
+            // kissEnd falls out of the extrusion along the seam below.
             let aOuter0 = kissStart + aOuterOffset
-            let aOuter1 = kissEnd   + aOuterOffset
             let bOuter0 = kissStart + bOuterOffset
-            let bOuter1 = kissEnd   + bOuterOffset
 
             // Wire for the cross-section at v=0 (kissStart end). Three
             // edges: line K→A, line K→C, arc C→A.
@@ -496,20 +496,11 @@ public enum SheetMetal {
             if abs(radius - radiusB) > 1e-4 * max(radius, radiusB) {
                 return nil
             }
-            // The arc plane normal: must be parallel to the seam (so the
-            // arc lies in the cross-section plane). Use seamUnit; sign
-            // determines the arc traversal direction.
-            //
-            // We want the arc to curve through the "open" quadrant of
-            // the bend — the side opposite to where the flanges' bodies
-            // sit. That open direction = `-(aNormalDir + bNormalDir)`
-            // projected to the cross-section plane. We pick the seamUnit
-            // sign so the arc bulges that way.
-            let arcNormalCandidate = seamUnit
-            // Determine the sign empirically by checking which sign of
-            // arcNormal makes the arc midpoint lie on the open side.
-            // The arc midpoint at angle (startAngle+endAngle)/2 around
-            // the kiss point with radius `radius`.
+            // The arc must curve through the "open" quadrant of the bend — the side
+            // opposite to where the flanges' bodies sit. Rather than pick an arc-plane
+            // normal and derive a traversal sign from it, the arc is built through three
+            // points (start → midpoint → end) below, so the midpoint alone fixes the
+            // curvature direction.
             let aDir = Vector3DMath.normalize(aOuter0 - kissStart) ?? SIMD3(0, 0, 0)
             let cDir = Vector3DMath.normalize(bOuter0 - kissStart) ?? SIMD3(0, 0, 0)
             // The "expected" arc midpoint direction = (aDir + cDir)/2,
@@ -542,13 +533,11 @@ public enum SheetMetal {
 
             guard let face = Shape.face(from: wire, planar: true) else { return nil }
 
-            // Extrude the cross-section face along the seam direction.
-            let seamLength = Vector3DMath.modulus(kissEnd - kissStart)
+            // Extrude the cross-section face along the seam. `extruded(by:)` takes the full
+            // vector (direction and length together), unlike
+            // `Shape.extrude(profile:direction:length:)`, which wants a wire profile rather
+            // than the face we have here.
             let extrudeVec = (kissEnd - kissStart)
-            // Extrude direction is from kissStart toward kissEnd; length
-            // is seamLength. `Shape.extrude(profile:direction:length:)`
-            // takes a wire profile, but we have a face — use
-            // Shape.extruded(by:) instead, which extrudes any shape.
             return face.extruded(by: extrudeVec)
         }
 

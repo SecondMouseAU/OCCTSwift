@@ -19,7 +19,7 @@ print("   - Sphere: \(sphere.isValid ? "valid" : "invalid")")
 // Test 2: Boolean operations
 print()
 print("2. Boolean operations...")
-let combined = box.union(with: cylinder.translated(by: [5, 0, 0])!)!
+let combined = box.union(cylinder.translated(by: [5, 0, 0])!)!
 print("   - Union: \(combined.isValid ? "valid" : "invalid")")
 
 let subtracted = box.subtracting(sphere)!

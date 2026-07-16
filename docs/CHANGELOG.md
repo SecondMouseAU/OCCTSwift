@@ -15,6 +15,41 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### v1.10.1 (July 2026) — OCCT rebuild carrying the #280 kernel fix; consumer builds are warning-free (#281)
+
+**Rebuilt `OCCT.xcframework`** (all three slices) carrying a new carried patch,
+`0002-STEPControl_Writer-initialize-missing-shape-processing-1334.patch` — a backport of upstream
+[OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334) (merged 2026-07-10), which lands after
+our `V8_0_0_p1` pin (2026-06-16). This fixes [#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280)
+**in the kernel**, so the v1.9.2 bridge workaround (`repairSTEPWriterActor`, which installed a plain
+controller on each of the 8 shape-level write paths) is **removed** — verified by deleting it and
+confirming the regression test still passes against the rebuilt binary.
+
+**Build warnings: 797 → 0** ([#281](https://github.com/SecondMouseAU/OCCTSwift/issues/281)).
+
+- **684 `-Wdeprecated-declarations` → 0.** OCCT 8.0 deprecates its own legacy spellings
+  (`Standard_True`, `Standard_Real`, `TopTools_*`, `TColStd_Array1Of*`, …) which this bridge still
+  uses. Defining OCCT's own `OCCT_NO_DEPRECATED` opt-out on the `OCCTBridge` target silences exactly
+  those attributes and nothing else. Deliberately a `.define` and not `.unsafeFlags` — SwiftPM rejects
+  `unsafeFlags` in any package consumed as a dependency, which would break every downstream consumer.
+  This buys quiet, not absolution: migrating the call sites off the legacy spellings is still tracked
+  in #281.
+- **23 `-Wshorten-64-to-32` → 0.** All 23 were the same shape — an `NCollection` container's
+  `.Size()` (`size_t`) assigned to `int32_t`/`int`. Now explicit `static_cast`. To be clear, these were
+  **not** latent bugs: unlike the `quantize()` Int32 overflow (OCCTSwiftViewport#30), a container with
+  >2^31 elements is not reachable here. The casts document intent and stop the noise.
+- **Swift hygiene.** Removed four dead bindings in `SheetMetal.swift` (`aOuter1`/`bOuter1`,
+  `arcNormalCandidate`, `seamLength`) — each was leftover from a superseded approach that the
+  surrounding comments already described, so the stale comments went too; none was an unfinished
+  calculation. `Mesh.swift` `var`→`let`. Also fixed two warnings not listed in #281 that a cached build
+  had been hiding: a deprecated `String(cString:)` in `BRepGraph.swift` (decoding now stops at the
+  bridge's NUL terminator — `String(decoding:as:)` over the whole fixed 128-byte buffer would have
+  carried the NUL padding into the string) and a deprecated `union(with:)` in `OCCTTest`.
+
+Full suite: **4,359 tests, 0 failures.** Consumer builds inherit no warnings from this package.
+
+Bumped **PATCH**: no public API change — a kernel rebuild, a workaround removal, and build hygiene.
+
 ### v1.10.0 (July 2026) — feat: `allEdgePolylinesIndexed` — bulk wireframe with pick identity (#275 follow-up)
 
 `allEdgePolylines` is dense: when a degenerate/failed edge is skipped (a sphere's pole seams, a

@@ -42,3 +42,34 @@ likewise survive. `ShapeFix_Shape` output on valid box/sphere/cylinder is byte-i
 
 Until the xcframework is rebuilt with this patch, the in-wrapper guard shipped in v1.8.3
 (`occtHasSelfIntersectingWire`) prevents the crash from reaching this code.
+
+## 0002-STEPControl_Writer-initialize-missing-shape-processing-1334.patch
+
+**Backports [Open-Cascade-SAS/OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334)** ("Data
+Exchange - initialize STEP writer healing parameters", merged 2026-07-10), which lands *after* our
+`V8_0_0_p1` pin (tagged 2026-06-16). Fixes [#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280).
+
+`STEPCAFControl_Controller`'s constructor replaces the actor its base `STEPControl_Controller`
+constructor had just configured, without re-applying `SetShapeProcessFlags`, and then `AutoRecord()`s
+itself under the same `"STEP"`/`"step"` names the plain writer resolves by —
+`STEPControl_Writer::SetWS()` unconditionally re-runs `SelectNorm("STEP")`. So after **any** XDE STEP
+read (merely *constructing* a `STEPCAFControl_Reader` is enough — no `ReadFile`, no `Transfer`, no
+document), every shape-level STEP write ran with **empty** `OperationsFlags`: `DirectFaces` never ran,
+and faces built on indirect (left-handed) surfaces were silently dropped.
+
+A cone frustum (r1=5, r2=2, h=10) wrote as a 2-face solid with its lateral `CONICAL_SURFACE` and seam
+`LINE`s missing and 63% of its volume gone (408.407 → 151.844) — while still reporting
+`isValid == true`. Only cones were affected: box/cylinder/sphere/torus have no indirect surfaces.
+
+p1 already *defines* `STEPControl_Writer::InitializeMissingParameters()` (which restores the default
+ShapeFix parameters **and** the `SplitCommonVertex`/`DirectFaces` flags when absent) but never calls
+it — dead code there, and `private`, so a consumer cannot invoke it either. The patch is upstream's
+one-line fix: call it at the point of transfer.
+
+**Validation:** `STEPWriterCAFCorruptionTests` in `Tests/OCCTIOTests` does the XDE read itself and
+asserts the frustum still round-trips (3 faces, `CONICAL_SURFACE` present in the file, volume within
+1% of the analytic 130π). Red against the stock p1 binary, green after this rebuild. It also fixes the
+long-standing `cone()` failure in `StressFormatRoundTripTests`, which passed in isolation and failed in
+every full run because `OCCTIOTests` reads a STEP first.
+
+**Retire** once the bundled OCCT moves past upstream `e2de4398ca6bf034074e6921599da76a9941c792`.
