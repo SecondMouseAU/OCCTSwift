@@ -7,13 +7,42 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.8.8
+## Current: v1.9.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.9.0 (July 2026) — perf: `allEdgePolylines` is O(edges), not O(edges²) (#275)
+
+`Shape.allEdgePolylines` looped `edgePolyline(at:)`, and every one of those calls rebuilt the shape's
+full `TopTools_IndexedMapOfShape` — so extracting a wireframe was quadratic in edge count. Measured on
+a box compound: **12,288 edges went from 15.5 s to 0.017 s (~900x)**; 3,072 edges from 0.93 s to
+0.004 s. The old cost curve made mesh-scale shapes effectively unusable (an STL lands one face per
+facet, so a 442k-triangle scan is ~1.3M edges), which is what forced OCCTMCP to route around the
+bridge in v1.13.0 (OCCTMCP#75/#77).
+
+The bridge now discretises every edge in one pass, building the edge map once:
+
+- **New C API** — `OCCTShapeComputeAllEdgePolylines(shape, deflection, maxPointsPerEdge)` returns an
+  `OCCTEdgePolylinesRef` handle, read via `OCCTEdgePolylinesGetEdgeCount` / `…GetPointCount` /
+  `…CopyPoints` and freed with `OCCTEdgePolylinesRelease`. Edge ordering matches
+  `OCCTShapeGetTotalEdgeCount` / `OCCTShapeGetEdgePolyline`; failed/degenerate edges are retained as
+  0-point entries so indices stay aligned with the shape's edge indices.
+- The pcurve fallback's edge→face ancestor map is now also built at most once per call, instead of
+  once per edge that needs it.
+
+**No Swift API change.** `allEdgePolylines`' signature, ordering and skip-on-failure behaviour are
+unchanged — output is byte-identical to the old per-index path (covered by a parity test over box and
+cylinder), just dramatically faster. `edgePolyline(at:)` is unchanged and still rebuilds the map per
+call; it is now documented as one-off-lookup only. Bumped **MINOR** per the cohort SemVer policy: new
+C surface, additive.
+
+This fixes the `allEdgePolylines` hot path only — the ~24 other per-index accessors (`edge(at:)`,
+face/vertex variants) still rebuild their maps per call. Caching the map on `OCCTShape` with
+mutation-invalidation is the structural fix, left open on #275.
 
 ### v1.8.8 (July 2026) — feat: close the face-analysis tail (#266 follow-up, 6 ops)
 

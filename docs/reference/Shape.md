@@ -1304,6 +1304,7 @@ Adaptively samples points along a B-Rep edge using curvature-based deflection co
   }
   ```
 - **Note:** Edge indices may vary between runs for complex shapes; iterate to find a working index.
+- **Performance:** This rebuilds the shape's edge map on every call. Use it for one-off lookups; to walk every edge use [`allEdgePolylines(deflection:maxPointsPerEdge:)`](#alledgepolylinesdeflectionmaxpointsperedge), which builds the map once — looping this instead is O(edges²) ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 
 ---
 
@@ -1318,13 +1319,14 @@ public func allEdgePolylines(
 ) -> [[SIMD3<Double>]]
 ```
 
-Calls `edgePolyline` for each edge in the shape. Also calls `OCCTShapeBuildCurves3d` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
+Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls `OCCTShapeBuildCurves3d` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
 
 - **Parameters:**
   - `deflection` — maximum chord deviation per edge.
-  - `maxPointsPerEdge` — maximum points per edge.
-- **Returns:** Array of polylines, one per edge. Edges that fail discretisation are skipped.
-- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTShapeBuildCurves3d` and `OCCTShapeGetEdgePolyline`).
+  - `maxPointsPerEdge` — maximum points per edge (values below 2 return `[]`).
+- **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped.
+- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTShapeBuildCurves3d` and `OCCTShapeComputeAllEdgePolylines`).
+- **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 - **Example:**
   ```swift
   let wireframe = shape.allEdgePolylines(deflection: 0.05)

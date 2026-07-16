@@ -315,6 +315,79 @@ struct EdgeDiscretizationTests {
         let polyline = box.edgePolyline(at: 100, deflection: 0.1)
         #expect(polyline == nil)
     }
+
+    // MARK: - Bulk edge discretisation (#275)
+
+    /// The bulk path must agree point-for-point with the per-index accessor it replaced —
+    /// same edge ordering, same discretisation, same skip behaviour.
+    @Test("Bulk allEdgePolylines matches the per-index accessor exactly")
+    func bulkEdgePolylinesMatchPerIndex() {
+        // A box (planar edges) and a cylinder (curved edges + the seam) cover both the
+        // BRepAdaptor_Curve path and multi-point discretisation.
+        for shape in [Shape.box(width: 10, height: 10, depth: 10)!,
+                      Shape.cylinder(radius: 5, height: 20)!] {
+            let bulk = shape.allEdgePolylines(deflection: 0.1)
+
+            var perIndex: [[SIMD3<Double>]] = []
+            for i in 0..<shape.edgeCount {
+                if let poly = shape.edgePolyline(at: i, deflection: 0.1, maxPoints: 1000) {
+                    perIndex.append(poly)
+                }
+            }
+
+            #expect(bulk.count == perIndex.count)
+            for (b, p) in zip(bulk, perIndex) {
+                #expect(b.count == p.count)
+                for (bp, pp) in zip(b, p) {
+                    #expect(bp.x == pp.x)
+                    #expect(bp.y == pp.y)
+                    #expect(bp.z == pp.z)
+                }
+            }
+        }
+    }
+
+    /// Regression guard for #275: `allEdgePolylines` must scale ~linearly in edge count.
+    ///
+    /// The old implementation rebuilt the full `TopTools_IndexedMapOfShape` inside every
+    /// per-index call, so total work grew quadratically (measured on the issue: 800 edges
+    /// 0.11 s → 3,136 edges 1.29 s → 12,033 edges 20.3 s). We compare per-edge cost between
+    /// a small and a ~10x larger shape: linear keeps the ratio ~flat, quadratic makes it grow
+    /// with the edge count. The bound is deliberately loose (8x) so this asserts the
+    /// complexity class, not wall-clock — it should not go red on a slow or busy machine.
+    @Test("allEdgePolylines scales linearly, not quadratically, in edge count")
+    func allEdgePolylinesScalesLinearly() {
+        func perEdgeCost(gridSide: Int) -> (cost: Double, edges: Int) {
+            // A compound of many small boxes: edge count scales with the box count, and
+            // every edge is independent, so total work should be linear in edges.
+            var boxes: [Shape] = []
+            for i in 0..<gridSide {
+                for j in 0..<gridSide {
+                    boxes.append(Shape.box(width: 1, height: 1, depth: 1)!
+                        .translated(by: SIMD3(Double(i) * 2, Double(j) * 2, 0))!)
+                }
+            }
+            let compound = Shape.compound(boxes)!
+            let edges = compound.edgeCount
+
+            let start = Date()
+            let polylines = compound.allEdgePolylines(deflection: 0.1)
+            let elapsed = Date().timeIntervalSince(start)
+
+            #expect(polylines.count == edges)
+            return (elapsed / Double(edges), edges)
+        }
+
+        let small = perEdgeCost(gridSide: 3)    // 9 boxes   → 108 edges
+        let large = perEdgeCost(gridSide: 10)   // 100 boxes → 1200 edges
+
+        // Sanity: the large case really is ~10x the edges, or the guard proves nothing.
+        #expect(large.edges > small.edges * 5)
+
+        // Linear → per-edge cost stays roughly constant. Quadratic → it grows ~11x here.
+        #expect(large.cost < small.cost * 8,
+                "per-edge cost grew \(large.cost / small.cost)x from \(small.edges) to \(large.edges) edges — allEdgePolylines looks quadratic again (#275)")
+    }
 }
 
 
