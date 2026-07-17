@@ -716,7 +716,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `shape.writeSTL(to:deflection:)` | `StlAPI_Writer` |
 | `shape.writeSTEP(to:)` | `STEPControl_Writer` |
 | `shape.writeIGES(to:)` | `IGESControl_Writer` |
-| `shape.writeBREP(to:)` | `BRepTools::Write` |
+| `shape.writeBREP(to:allowInvalid:)` | `BRepTools::Write` |
 | `shape.writeOBJ(to:deflection:)` | `RWObj_CafWriter` |
 | `shape.writePLY(to:deflection:)` | `RWPly_CafWriter` |
 | `Exporter.optimizeSTEP(input:output:)` | `StepTidy_DuplicateCleaner` |

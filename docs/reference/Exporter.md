@@ -444,7 +444,7 @@ public static func igesData(shape: Shape) throws -> Data
 
 ## BREP Export
 
-### `Exporter.writeBREP(shape:to:withTriangles:withNormals:)`
+### `Exporter.writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)`
 
 Writes a shape to OCCT's native BREP format.
 
@@ -453,8 +453,19 @@ public static func writeBREP(
     shape: Shape,
     to url: URL,
     withTriangles: Bool = true,
-    withNormals: Bool = false
+    withNormals: Bool = false,
+    allowInvalid: Bool = false
 ) throws
+```
+
+`allowInvalid` (added in v1.8.0) skips the `shape.isValid` pre-check and serializes the shape
+as-is. `BRepTools::Write` does not require a topologically valid shape, so an in-progress
+reconstruction can be persisted and reloaded for measurement / diagnostics:
+
+```swift
+try Exporter.writeBREP(shape: partialCompound,
+                       to: URL(fileURLWithPath: "/tmp/wip.brep"),
+                       allowInvalid: true)
 ```
 
 BREP is OCCT's own serialisation format. It preserves full B-Rep precision (curves, surfaces,
@@ -786,10 +797,11 @@ public func writeIGESBRep(to url: URL) throws
 
 ---
 
-### `Shape.writeBREP(to:withTriangles:withNormals:)`
+### `Shape.writeBREP(to:withTriangles:withNormals:allowInvalid:)`
 
 ```swift
-public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false) throws
+public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
+                      allowInvalid: Bool = false) throws
 ```
 
 ---

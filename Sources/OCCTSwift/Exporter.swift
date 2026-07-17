@@ -384,21 +384,31 @@ public enum Exporter {
     ///   - url: Destination file URL (should end in .brep)
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
+    ///   - allowInvalid: When `true`, skip the `shape.isValid` pre-check and
+    ///     serialize the shape as-is. BREP is OCCT's lossless native format and
+    ///     `BRepTools::Write` does not require a topologically valid shape, so an
+    ///     in-progress reconstruction (a compound of loose analytic faces, possibly
+    ///     with a few invalid faces) can be persisted and later loaded for
+    ///     measurement / diagnostics. Defaults to `false` (the validity gate,
+    ///     matching the other exporters).
     ///
     /// - Throws: `ExportError` if export fails
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// try Exporter.writeBREP(shape: box, to: URL(fileURLWithPath: "/tmp/box.brep"))
+    ///
+    /// // Persist an in-progress reconstruction that has not been healed yet.
+    /// try Exporter.writeBREP(shape: partialCompound,
+    ///                        to: URL(fileURLWithPath: "/tmp/wip.brep"),
+    ///                        allowInvalid: true)
+    /// ```
     ///
     /// ## Use Cases
     ///
     /// - Fast caching of intermediate geometry results
     /// - Debugging geometry issues
     /// - Archiving exact geometry for later processing
-    /// - Parameter allowInvalid: When `true`, skip the `shape.isValid`
-    ///   pre-check and serialize the shape as-is. BREP is OCCT's lossless
-    ///   native format and `BRepTools::Write` does not require a topologically
-    ///   valid shape, so an in-progress reconstruction (a compound of loose
-    ///   analytic faces, possibly with a few invalid faces) can be persisted
-    ///   and later loaded for measurement / diagnostics. Defaults to `false`
-    ///   (the validity gate, matching the other exporters).
     public static func writeBREP(
         shape: Shape,
         to url: URL,
@@ -707,6 +717,13 @@ extension Shape {
     ///   - url: Destination file URL
     ///   - withTriangles: Include triangulation data (default: true)
     ///   - withNormals: Include normals with triangulation (default: false)
+    ///   - allowInvalid: Skip the `isValid` pre-check and serialize as-is
+    ///     (default: false). See ``Exporter/writeBREP(shape:to:withTriangles:withNormals:allowInvalid:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)
+    /// try box.writeBREP(to: URL(fileURLWithPath: "/tmp/box.brep"))
+    /// ```
     public func writeBREP(to url: URL, withTriangles: Bool = true, withNormals: Bool = false,
                           allowInvalid: Bool = false) throws {
         try Exporter.writeBREP(shape: self, to: url, withTriangles: withTriangles,
