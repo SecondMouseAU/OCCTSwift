@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.10.1
+## Current: v1.10.2
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
@@ -15,57 +15,40 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### v1.10.3 (July 2026) — docs: correct the #286 mechanism (root-caused to the mesher's splitter choice)
-
-Corrects v1.10.2, which named the wrong OCCT code. The conclusion there was right — `Shape.mesh` can
-hang unboundedly on offset surfaces, and no in-process timeout can bound it — but the stated mechanism
-was wrong, and it pointed anyone investigating at the wrong function.
-
-**v1.10.2 said:** the hang is in the range-less `BRepMesh_Delaun` constructor, so cancellation is never
-polled.
-
-**Actually** (from a stack sample of the hang, plus OCCT `V8_0_0_p1` source): the hang is in
-`BRepMesh_Delaun::createTrianglesOnNewVertices`, reached via `postProcessMesh → insertNodes →
-AddVertices`. That function *does* receive a progress range and *does* poll it (`aPS.More()`) in its
-outer per-vertex loop — but the hang is inside a *single* iteration, so the poll is never reached. The
-"no timeout is possible" conclusion is unchanged and is now **verified rather than inferred**: a 10 s
-cancel deadline via `meshWithProgress` was measured not to fire at all (killed at 120 s).
-
-**Root cause, now identified:** `BRepMesh_MeshAlgoFactory::GetAlgo` lumps `GeomAbs_OffsetSurface` in
-with `GeomAbs_OtherSurface` and hands it a `BRepMesh_UndefinedRangeSplitter`, whose
-`getUndefinedIntervalNb()` returns a constant `1`. An offset surface therefore gets **no parametric
-subdivision at all**, however wiggly its basis B-spline is, while the same B-spline meshed directly
-gets `BRepMesh_NURBSRangeSplitter` (subdividing by `NbUPoles()-1`). The Delaunay insertion starts from
-a near-empty grid and blows up. This also explains why the documented
-`withSurfacesAsBSpline(offset: true)` mitigation works: it converts the surface to a B-spline, which
-routes it to the correct splitter.
-
-An upstream OCCT fix is being attempted against this root cause; see #286.
-
 ### v1.10.2 (July 2026) — docs: `Shape.mesh` can hang unboundedly on offset surfaces (#286)
 
-Documentation only; no code change. `Shape.mesh(linearDeflection:angularDeflection:)` can put OCCT's
-mesher into an effectively non-terminating state on the `Geom_OffsetSurface` geometry that
-`shelled(thickness:)` / `offset(by:)` produce.
+Documentation only; no code change — because there is no correct in-process code change to make, and
+saying so precisely is the useful output.
 
-Reproduced standalone from a real fitted-then-offset B-spline panel: a **single face meshed for
->300 s without returning**, at a *coarse* deflection (2.48 against a 1583 bbox diagonal — 1/638). This
-is a kernel pathology, not a workload cost.
+`Shape.mesh(linearDeflection:angularDeflection:)` can put OCCT's mesher into an effectively
+non-terminating state on the `Geom_OffsetSurface` geometry that `shelled(thickness:)` / `offset(by:)`
+produce. Reproduced standalone from a real fitted-then-offset B-spline panel: a **single face meshed
+for >300 s without returning**, at a *coarse* deflection (2.48 against a 1583 bbox diagonal — 1/638).
+A kernel pathology, not a workload cost.
+
+**Root cause** (OCCT `V8_0_0_p1`): `BRepMesh_MeshAlgoFactory::GetAlgo` lumps `GeomAbs_OffsetSurface`
+in with `GeomAbs_OtherSurface`, handing it a `BRepMesh_UndefinedRangeSplitter` whose
+`getUndefinedIntervalNb()` returns a constant `1`. An offset surface therefore gets **no parametric
+subdivision at all**, however wiggly its basis B-spline is, while that same B-spline meshed directly
+gets `BRepMesh_NURBSRangeSplitter` (`NbUPoles()-1` intervals). The Delaunay insertion starts from a
+near-empty grid and `BRepMesh_Delaun::createTrianglesOnNewVertices` blows up.
 
 Two things this is **not**, both worth recording because both were the obvious first guesses:
 
-- **Not fixable with a timeout.** OCCT polls cancellation only *between* faces
-  (`BRepMesh_FaceDiscret::FaceListFunctor::operator()` checks `myScope.More()` before `process()`),
-  and the Delaunay triangulation itself (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → the
-  `BRepMesh_Delaun` constructor) takes no progress range and never polls. A hang inside **one** face
-  is uninterruptible, so `meshWithProgress` cannot rescue it — its docs now say so rather than
-  implying a cancellation guarantee it can't honour.
+- **Not fixable with a timeout — measured, not inferred.** `createTrianglesOnNewVertices` *does* poll
+  (`aPS.More()`) in its outer per-vertex loop, but the hang is inside a single iteration, so the poll
+  is never reached. A 10 s cancel deadline via `meshWithProgress` was measured **not to fire at all**
+  (killed at 120 s). `meshWithProgress`'s docs previously implied a cancellation guarantee it cannot
+  honour; they now state the checkpoint granularity explicitly.
 - **Not catchable by a validity pre-check.** The offending solid reports `isValid == true`.
 
 Mitigations documented on `mesh`, best first: sanity-check with `bounds` (a cheap `Bnd_Box` query, no
 tessellation) before meshing untrusted offsets; `withSurfacesAsBSpline(offset: true)`, which converts
-the offset surface to a plain B-spline and turns the hang into a bounded 125 s / 526 k verts (a rescue
-path, not a default); or mesh out-of-process.
+the offset surface to a plain B-spline and turns the hang into a bounded 125 s / 526 k verts — this
+also explains *why* that mitigation works, since it routes the surface to the correct splitter (a
+rescue path, not a default); or mesh out-of-process.
+
+An upstream OCCT fix is being attempted against the root cause; see #286.
 
 Well-formed offset solids are unaffected.
 
