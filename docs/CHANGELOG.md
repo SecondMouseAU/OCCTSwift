@@ -7,13 +7,59 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.11.1
+## Current: v1.11.2
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.11.2 (July 2026) — fix: robust-import healing ran outside the caller's progress range (#300)
+
+**`Shape.loadIGESRobust` now honours a deadline during healing.** The sweep of the remaining
+`*Progress` entry points that #299 called for found the #286 *constructor* pattern does not recur —
+the other entry points all hand the range to a range-taking method. But it found the same *family* of
+defect: `OCCTImportIGESRobustProgress` gave `TransferRoots` the entire `Message_ProgressRange` and
+then ran `ShapeFix_Shape::Perform()` with **no range at all**. Healing is not a coda to a robust
+import — measured at **38–50%** of transfer+heal across box/sphere/cylinder/torus compounds — so a
+caller's deadline could not bound roughly half the call. `shouldCancel()` returning `true` during
+healing was ignored entirely: the heal ran to completion and the import returned a **shape** rather
+than reporting cancellation.
+
+Fixed with a `Message_ProgressScope` subdividing the range: transfer takes `fraction` 0…0.5, healing
+0.5…1.0. **This changes the reported `fraction` curve** — transfer previously spanned 0…1.0 and then
+the import paused silently and uncancellably. The even split is what the measurements support, not a
+guess; and because the scope closes out on destruction, `fraction` still reaches 1.0. Wiring a live
+range into healing costs nothing measurable (−4.7%, i.e. noise, over 3 reps).
+
+`ShapeFix_Shape::Perform(range)` and `BRepBuilderAPI_Sewing::Perform(range)` were both verified to
+*honour* the break, not merely poll it — 1.85 s full heal vs 0.005 s cancelled, and a mid-flight
+deadline interrupted at 0.478 s against a 0.463 s budget. Since the abort leaves a partially-healed
+shape behind, the bridge now reports cancellation rather than handing that back.
+
+The regression test asserts on **elapsed time** with the deadline set *past* the transfer, so it
+lands inside healing — the part that was unreachable. Confirmed to fail against the old bridge:
+*"loadIGESRobust returned a shape instead of cancelling"*. A cancel triggered on reported `fraction`
+would have been a false negative: under the old bridge the transfer alone spanned 0…1.0, so any
+fraction-based trigger fired while the transfer was still running and cancelled correctly even with
+the bug present.
+
+Also in this release:
+
+- **`OCCTImportSTEPRobustProgress` fixed identically** (transfer/sew/heal, with sewing taking a thin
+  slice of the repair half since it costs ~1% of what healing does). No Swift API reaches this
+  bridge function today — `loadRobust` calls the non-progress variant — so it is fixed for
+  correctness but is not regression-tested. Exposing a `loadRobust(progress:)` overload is a
+  separate decision.
+- **Docs corrected:** `loadIGESRobust` was documented as "sewing and healing". It has never called
+  `BRepBuilderAPI_Sewing` — it only transfers and heals.
+- **Documented OCCT limitation:** `IGESControl_Reader::ReadFile` takes no `Message_ProgressRange`
+  (verified against the pinned `V8_0_0_p1` headers), so parsing happens *before* the indicator
+  exists and can be neither reported nor cancelled. The same is true of `STEPControl_Reader::ReadFile`
+  and the STEP/IGES writers. Stated rather than papered over, per the #286 lesson.
+- **Redundant `Perform()` dropped** from `OCCTExportSTL`/`OCCTExportSTLWithMode`, whose constructor
+  already meshes. Measured as redundant, *not* a 2× cost: 0.0003 s against a 1.29 s mesh.
 
 ### v1.11.1 (July 2026) — fix: `meshWithProgress` could never cancel; retract the #286 kernel story (#286)
 

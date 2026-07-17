@@ -2036,3 +2036,70 @@ struct STEPWriterCAFCorruptionTests {
                 "frustum volume corrupted: \(after.volume) vs \(analyticVolume) (#280)")
     }
 }
+
+@Suite("v1.11.2 Robust import progress (issue #300)")
+struct RobustImportProgressTests {
+
+    /// Regression for #300: a deadline must interrupt the *healing* phase of a robust import,
+    /// not merely the transfer that precedes it.
+    ///
+    /// `OCCTImportIGESRobustProgress` handed `TransferRoots` the entire `Message_ProgressRange`
+    /// and then ran `ShapeFix_Shape::Perform()` with no range at all. Healing is not a coda —
+    /// it is 38-50% of a robust import (measured across box/sphere/cylinder/torus compounds) —
+    /// so a caller's deadline could not bound the call: `shouldCancel()` returning `true` during
+    /// healing was ignored entirely, the heal ran to completion, and the import returned a
+    /// *shape* rather than reporting cancellation. Same family as #286.
+    ///
+    /// The deadline is deliberately set *past* the transfer so it lands inside healing, the part
+    /// that was out of reach. Wall-clock phase costs are identical before and after the fix, so
+    /// this discriminates properly: the old bridge returns a shape here, the fixed one throws.
+    /// A cancel triggered on reported `fraction` instead would be a false negative — under the
+    /// old bridge the transfer alone spanned 0...1, so any fraction-based trigger fired while
+    /// the transfer was still running and cancelled correctly even with the bug present.
+    ///
+    /// Self-calibrating against a baseline import so it does not encode machine speed.
+    @Test("Shape.loadIGESRobust interrupts healing, not just the transfer (#300)")
+    func igesRobustHealCancellation() throws {
+        // Healing's share of the import is largest for many-faced solids; 400 boxes makes the
+        // import measurable without making the fixture slow to write.
+        let boxes = (0..<400).compactMap { i in
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(Double(i) * 30, 0, 0))
+        }
+        guard boxes.count == 400, let subject = Shape.compound(boxes) else {
+            Issue.record("compound construction failed"); return
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt300_robust_heal.igs")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try subject.writeIGES(to: url)
+
+        let t0 = Date()
+        _ = try Shape.loadIGESRobust(fromPath: url.path)
+        let full = Date().timeIntervalSince(t0)
+
+        // Too quick to time meaningfully; there is no interruption window to observe. The
+        // import measures ~0.47s here, so this leaves >2x margin: the discrimination itself
+        // is scale-free (the budget sits at 75% and the transfer ends near 55%, whatever the
+        // absolute cost), and the guard only needs to keep the arithmetic clear of timer noise.
+        guard full > 0.2 else { return }
+
+        // Past the transfer (~55% of the import), so the deadline falls inside healing.
+        let deadline = MeshAndExportProgressTests.Deadline(budget: full * 0.75)
+        let t1 = Date()
+        do {
+            _ = try Shape.loadIGESRobust(fromPath: url.path, progress: deadline)
+            Issue.record("loadIGESRobust returned a shape instead of cancelling — healing ran outside the caller's progress range (#300)")
+            return
+        } catch ImportError.cancelled {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)"); return
+        }
+        let elapsed = Date().timeIntervalSince(t1)
+        #expect(deadline.polls > 0, "cancellation was never polled — the range was not consumed")
+        #expect(elapsed < full * 0.95,
+                "cancelled after \(elapsed)s against a \(full)s uncancelled import — healing ran to completion before the deadline could bite (#300)")
+    }
+}

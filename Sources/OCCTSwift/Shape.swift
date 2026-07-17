@@ -1202,18 +1202,55 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Load an IGES file with automatic repair (sewing and healing)
+    /// Load an IGES file, healing the transferred geometry (`ShapeFix_Shape`).
+    ///
+    /// Recommended for IGES files whose geometry needs repair before use. Note this heals but does
+    /// **not** sew — unlike ``loadRobust(from:)``, which sews STEP shells into solids.
+    ///
+    /// ## Progress and cancellation
+    ///
+    /// `progress` observes the import and cancels it cooperatively. The two phases each take half
+    /// the reported `fraction` — transfer spans 0…0.5, healing 0.5…1.0 — which matches their
+    /// measured cost (healing is 38–50% of the work). `shouldCancel()` interrupts **either** phase:
+    /// a deadline bounds the whole call, and cancelling mid-heal throws rather than returning the
+    /// partially-healed shape.
+    ///
+    /// ```swift
+    /// final class Deadline: ImportProgress, @unchecked Sendable {
+    ///     private let start = Date()
+    ///     func progress(fraction: Double, step: String) { print("\(Int(fraction * 100))%") }
+    ///     func shouldCancel() -> Bool { Date().timeIntervalSince(start) > 10 }
+    /// }
+    ///
+    /// do {
+    ///     let shape = try Shape.loadIGESRobust(from: igesURL, progress: Deadline())
+    ///     print(shape.isValid)
+    /// } catch ImportError.cancelled {
+    ///     // Gave up after 10s — healing untrusted geometry can be pathological.
+    /// }
+    /// ```
+    ///
+    /// - Note: **Parsing is not covered.** OCCT's `IGESControl_Reader::ReadFile` takes no
+    ///   `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists.
+    ///   Reading a large IGES file reports nothing and cannot be cancelled; `fraction` and the
+    ///   deadline only bound the transfer and healing that follow.
     ///
     /// - Parameters:
     ///   - url: URL to the IGES file
     ///   - progress: Optional progress + cancellation channel.
-    /// - Returns: Processed shape with healing applied
+    /// - Returns: Transferred shape with healing applied
     /// - Throws: `ImportError.cancelled` if cancelled, `ImportError.importFailed` on failure.
     public static func loadIGESRobust(from url: URL, progress: ImportProgress? = nil) throws -> Shape {
         try loadIGESRobust(fromPath: url.path, progress: progress)
     }
 
-    /// Load an IGES file with automatic repair from a path.
+    /// Load an IGES file from a path, healing the transferred geometry.
+    ///
+    /// See ``loadIGESRobust(from:progress:)`` for the progress/cancellation contract and its limits.
+    ///
+    /// ```swift
+    /// let shape = try Shape.loadIGESRobust(fromPath: "/tmp/part.igs")
+    /// ```
     public static func loadIGESRobust(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape {
         var cancelled: Bool = false
         let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in

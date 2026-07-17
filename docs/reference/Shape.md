@@ -1692,28 +1692,53 @@ public static func loadIGES(fromPath path: String, progress: ImportProgress? = n
 
 ### `Shape.loadIGESRobust(from:progress:)`
 
-Load an IGES file with automatic repair (sewing and healing).
+Load an IGES file, healing the transferred geometry.
 
 ```swift
 public static func loadIGESRobust(from url: URL, progress: ImportProgress? = nil) throws -> Shape
 ```
 
+Recommended for IGES files whose geometry needs repair before use. This heals but does **not** sew — unlike [`loadRobust(from:)`](#shapeloadrobustfrom), which sews STEP shells into solids. (Documented as "sewing and healing" before v1.11.2; the IGES path has never called `BRepBuilderAPI_Sewing`.)
+
+Both phases are bounded by `progress`: transfer spans `fraction` 0…0.5 and healing 0.5…1.0, matching their measured cost — healing is **38–50%** of the work (measured across box/sphere/cylinder/torus compounds), not a coda to the transfer. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-heal throws rather than returning the partially-healed shape.
+
 - **Parameters:** `url` — URL to the IGES file; `progress` — optional progress/cancellation channel.
-- **Returns:** Processed shape with healing applied.
+- **Returns:** Transferred shape with healing applied.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
-- **OCCT:** `IGESControl_Reader` + `BRepBuilderAPI_Sewing` + `ShapeFix_Shape` (via `OCCTImportIGESRobustProgress`).
+- **OCCT:** `IGESControl_Reader` + `ShapeFix_Shape` (via `OCCTImportIGESRobustProgress`).
+- **Example:**
+  ```swift
+  final class Deadline: ImportProgress, @unchecked Sendable {
+      private let start = Date()
+      func progress(fraction: Double, step: String) { print("\(Int(fraction * 100))%") }
+      func shouldCancel() -> Bool { Date().timeIntervalSince(start) > 10 }
+  }
+
+  do {
+      let shape = try Shape.loadIGESRobust(from: igesURL, progress: Deadline())
+      print(shape.isValid)
+  } catch ImportError.cancelled {
+      // Gave up after 10s — healing untrusted geometry can be pathological.
+  }
+  ```
+- **Limitation — parsing is not covered:** OCCT's `IGESControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large IGES file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and healing that follow.
+- **Fixed in v1.11.2:** healing previously ran outside the caller's progress range entirely (`ShapeFix_Shape::Perform()` was called with no range), so `shouldCancel()` during healing was ignored — the heal ran to completion and the call returned a *shape* rather than reporting cancellation. Same family as the [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286) defect fixed in v1.11.1 ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)).
 
 ---
 
 ### `Shape.loadIGESRobust(fromPath:progress:)`
 
-Load an IGES file with automatic repair from a path.
+Load an IGES file from a path, healing the transferred geometry.
 
 ```swift
 public static func loadIGESRobust(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape
 ```
 
-- **OCCT:** `IGESControl_Reader` + sewing + healing (via `OCCTImportIGESRobustProgress`).
+- **OCCT:** `IGESControl_Reader` + `ShapeFix_Shape` (via `OCCTImportIGESRobustProgress`).
+- **Example:**
+  ```swift
+  let shape = try Shape.loadIGESRobust(fromPath: "/tmp/part.igs")
+  ```
 
 ---
 

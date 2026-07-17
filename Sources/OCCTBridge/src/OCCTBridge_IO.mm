@@ -78,9 +78,9 @@ bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection) {
     if (!shape || !path) return false;
 
     try {
-        // Mesh the shape first
+        // The ctor meshes; a following Perform() would only re-check the triangulation it
+        // just built (measured at 0.0003s against a 1.29s mesh -- redundant, not costly).
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-        mesher.Perform();
 
         StlAPI_Writer writer;
         writer.ASCIIMode() = Standard_False; // Binary STL for smaller files
@@ -94,8 +94,8 @@ bool OCCTExportSTLWithMode(OCCTShapeRef shape, const char* path, double deflecti
     if (!shape || !path) return false;
 
     try {
+        // Ctor meshes; the following Perform() was redundant (see OCCTExportSTL).
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-        mesher.Perform();
 
         StlAPI_Writer writer;
         writer.ASCIIMode() = ascii ? Standard_True : Standard_False;
@@ -246,8 +246,10 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
         if (status != IFSelect_RetDone) return nullptr;
 
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
-        Message_ProgressRange range = indicator->Start();
-        if (reader.TransferRoots(range) == 0) return nullptr;
+        // Split the range: the repair phase below is comparable in cost to the transfer and
+        // must stay within the caller's reach. See OCCTImportIGESRobustProgress (#300).
+        Message_ProgressScope scope(indicator->Start(), "Import", 2);
+        if (reader.TransferRoots(scope.Next()) == 0) return nullptr;
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
 
         TopoDS_Shape shape = reader.OneShape();
@@ -256,15 +258,21 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
         TopAbs_ShapeEnum shapeType = shape.ShapeType();
         if (shapeType == TopAbs_SOLID) {
             ShapeFix_Shape fixer(shape);
-            fixer.Perform();
+            fixer.Perform(scope.Next());
+            if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
             TopoDS_Shape fixed = fixer.Shape();
             return new OCCTShape(fixed.IsNull() ? shape : fixed);
         }
         if (shapeType == TopAbs_COMPOUND || shapeType == TopAbs_SHELL || shapeType == TopAbs_FACE) {
+            // Sewing costs ~1% of what healing does, so it takes a thin slice of the repair
+            // half rather than an even one -- an even split would stall the reported fraction
+            // at the handover.
+            Message_ProgressScope repair(scope.Next(), "Repair", 10);
             BRepBuilderAPI_Sewing sewing(1.0e-4);
             sewing.SetNonManifoldMode(Standard_False);
             sewing.Add(shape);
-            sewing.Perform();
+            sewing.Perform(repair.Next(1));
+            if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
             TopoDS_Shape sewedShape = sewing.SewedShape();
             if (sewedShape.IsNull()) sewedShape = shape;
 
@@ -277,12 +285,14 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
                 }
             }
             ShapeFix_Shape fixer(resultShape);
-            fixer.Perform();
+            fixer.Perform(repair.Next(9));
+            if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
             TopoDS_Shape fixed = fixer.Shape();
             return new OCCTShape(fixed.IsNull() ? resultShape : fixed);
         }
         ShapeFix_Shape fixer(shape);
-        fixer.Perform();
+        fixer.Perform(scope.Next());
+        if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
         TopoDS_Shape fixed = fixer.Shape();
         return new OCCTShape(fixed.IsNull() ? shape : fixed);
     } catch (...) { return nullptr; }
@@ -347,15 +357,23 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char* path,
         if (status != IFSelect_RetDone) return nullptr;
 
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
-        Message_ProgressRange range = indicator->Start();
-        if (reader.TransferRoots(range) == 0) return nullptr;
+        // Healing is half the work of a robust import, not a coda to it: measured at 38-50%
+        // of transfer+heal across box/sphere/cylinder/torus compounds. Giving TransferRoots
+        // the whole range therefore left ~40% of the import running where the caller's
+        // range could never reach it, so shouldCancel() during healing was ignored and a
+        // deadline could not bound the call (#300, same family as #286). Split it evenly.
+        Message_ProgressScope scope(indicator->Start(), "Import", 2);
+        if (reader.TransferRoots(scope.Next()) == 0) return nullptr;
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
 
         TopoDS_Shape shape = reader.OneShape();
         if (shape.IsNull()) return nullptr;
 
         ShapeFix_Shape fixer(shape);
-        fixer.Perform();
+        fixer.Perform(scope.Next());
+        // Perform() honours the break by returning early, which leaves a partially-healed
+        // shape behind; report cancellation rather than handing that back as a result.
+        if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
         TopoDS_Shape fixed = fixer.Shape();
         return new OCCTShape(fixed.IsNull() ? shape : fixed);
     } catch (...) { return nullptr; }

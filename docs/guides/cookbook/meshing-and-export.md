@@ -91,7 +91,7 @@ Instance methods mirror the statics where handy: `box.writeSTL(to:deflection:)`,
 
 ```swift
 let step = try Shape.load(from: stepURL)            // STEP (also Shape.loadSTEP)
-let iges = try Shape.loadIGES(from: igesURL)        // loadIGESRobust sews/heals tolerance issues
+let iges = try Shape.loadIGES(from: igesURL)        // loadIGESRobust heals tolerance issues
 let brep = try Shape.loadBREP(from: brepURL)        // exact + triangulation if exported with it
 let stl  = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-6)   // auto sew + heal
 ```
