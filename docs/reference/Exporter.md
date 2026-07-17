@@ -474,7 +474,8 @@ embeds existing triangulation data so that re-meshing on import is not required.
 
 - **Parameters:** `shape` — shape to export; `url` — output URL (conventionally `.brep`);
   `withTriangles` — embed triangulation (default `true`);
-  `withNormals` — embed per-vertex normals with the triangulation (default `false`).
+  `withNormals` — embed per-vertex normals with the triangulation (default `false`);
+  `allowInvalid` — skip the `isValid` pre-check and serialise as-is (default `false`).
 - **Returns:** `Void`.
 - **Throws:** `ExportError.invalidShape`; `ExportError.invalidPath`;
   `ExportError.exportFailed` if `BRepTools::Write` fails.
