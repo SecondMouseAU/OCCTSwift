@@ -71,6 +71,8 @@
 #include <BinTools.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Builder.hxx>
+#include <TopoDS_Iterator.hxx>
+#include <TopoDS_Compound.hxx>
 
 // MARK: - Export
 
@@ -207,6 +209,50 @@ static inline void setCancelOut(bool* outCancelled, opencascade::handle<BridgePr
     if (outCancelled && !ind.IsNull()) *outCancelled = ind->UserBreak() ? true : false;
 }
 
+// Turn every shell a sewing produced into a solid, rather than only the first (#302).
+//
+// The robust importers used to do `TopExp_Explorer(sewed, TopAbs_SHELL)` and keep `.Current()`
+// alone, so every body after the first was silently discarded: 10 boxes in, 1 box out, no error.
+// Sewing itself is fine -- it returns one shell per body -- the truncation was ours.
+//
+// Iterates a compound's IMMEDIATE children rather than exploring for shells, because an explorer
+// descends INTO solids: a hollow body owns an outer shell plus one per void, and solidifying those
+// separately would split one body into several. Shapes we cannot solidify are passed through
+// untouched rather than dropped -- losing them silently is the defect being fixed.
+//
+// Shape of the result follows the input, since a sewing yields a bare SHELL for a single body and
+// a compound of shells for several: one body in, one solid out; several in, a compound of solids.
+// theSolidsCreated counts only shells actually converted, matching `solidCreated`'s meaning.
+static TopoDS_Shape occtSolidifyShells(const TopoDS_Shape& theShape, int& theSolidsCreated) {
+    if (theShape.IsNull()) return theShape;
+
+    const TopAbs_ShapeEnum type = theShape.ShapeType();
+    if (type == TopAbs_SHELL) {
+        BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(theShape));
+        if (makeSolid.IsDone()) { theSolidsCreated++; return makeSolid.Solid(); }
+        return theShape;
+    }
+    if (type == TopAbs_COMPOUND || type == TopAbs_COMPSOLID) {
+        BRep_Builder builder;
+        TopoDS_Compound out;
+        builder.MakeCompound(out);
+        int children = 0;
+        for (TopoDS_Iterator it(theShape); it.More(); it.Next()) {
+            builder.Add(out, occtSolidifyShells(it.Value(), theSolidsCreated));
+            children++;
+        }
+        if (children == 0) return theShape;
+        if (children == 1) {
+            // One body in, a plain solid out -- don't wrap it in a compound. Only unwrap to a
+            // SOLID: a lone face or an unsolidifiable shell stays wrapped, as it was before.
+            TopoDS_Iterator it(out);
+            if (it.Value().ShapeType() == TopAbs_SOLID) return it.Value();
+        }
+        return out;
+    }
+    return theShape; // SOLID, FACE, anything else: not ours to touch
+}
+
 }
 
 OCCTShapeRef OCCTImportSTEPProgress(const char* path,
@@ -278,11 +324,8 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
 
             TopoDS_Shape resultShape = sewedShape;
             if (sewedShape.ShapeType() != TopAbs_SOLID) {
-                TopExp_Explorer shellExp(sewedShape, TopAbs_SHELL);
-                if (shellExp.More()) {
-                    BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
-                    if (makeSolid.IsDone()) resultShape = makeSolid.Solid();
-                }
+                int solidsCreated = 0;
+                resultShape = occtSolidifyShells(sewedShape, solidsCreated);
             }
             ShapeFix_Shape fixer(resultShape);
             fixer.Perform(repair.Next(9));
@@ -643,16 +686,11 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path) {
             TopoDS_Shape sewedShape = sewing.SewedShape();
             if (sewedShape.IsNull()) sewedShape = shape;
 
-            // Try to create solid from shell
+            // Create a solid from every shell, not just the first (#302)
             TopoDS_Shape resultShape = sewedShape;
             if (sewedShape.ShapeType() != TopAbs_SOLID) {
-                TopExp_Explorer shellExp(sewedShape, TopAbs_SHELL);
-                if (shellExp.More()) {
-                    BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
-                    if (makeSolid.IsDone()) {
-                        resultShape = makeSolid.Solid();
-                    }
-                }
+                int solidsCreated = 0;
+                resultShape = occtSolidifyShells(sewedShape, solidsCreated);
             }
 
             // Apply shape healing
@@ -674,7 +712,7 @@ OCCTShapeRef OCCTImportSTEPRobust(const char* path) {
 }
 
 OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path) {
-    OCCTSTEPImportResult result = {nullptr, -1, -1, false, false, false};
+    OCCTSTEPImportResult result = {nullptr, -1, -1, false, false, false, 0};
     if (!path) return result;
 
     try {
@@ -707,15 +745,14 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path) {
                 result.sewingApplied = true;
             }
 
-            // Try solid creation
+            // Create a solid from every shell, not just the first (#302)
             if (shape.ShapeType() != TopAbs_SOLID) {
-                TopExp_Explorer shellExp(shape, TopAbs_SHELL);
-                if (shellExp.More()) {
-                    BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
-                    if (makeSolid.IsDone()) {
-                        shape = makeSolid.Solid();
-                        result.solidCreated = true;
-                    }
+                int solidsCreated = 0;
+                TopoDS_Shape solidified = occtSolidifyShells(shape, solidsCreated);
+                if (solidsCreated > 0) {
+                    shape = solidified;
+                    result.solidCreated = true;
+                    result.solidsCreated = solidsCreated;
                 }
             }
         }
@@ -799,16 +836,11 @@ OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
         TopoDS_Shape sewedShape = sewing.SewedShape();
         if (sewedShape.IsNull()) sewedShape = shape;
 
-        // Try to create solid from shell
+        // Create a solid from every shell, not just the first (#302)
         TopoDS_Shape resultShape = sewedShape;
         if (sewedShape.ShapeType() != TopAbs_SOLID) {
-            TopExp_Explorer shellExp(sewedShape, TopAbs_SHELL);
-            if (shellExp.More()) {
-                BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
-                if (makeSolid.IsDone()) {
-                    resultShape = makeSolid.Solid();
-                }
-            }
+            int solidsCreated = 0;
+            resultShape = occtSolidifyShells(sewedShape, solidsCreated);
         }
 
         // Apply shape healing

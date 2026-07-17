@@ -1062,6 +1062,7 @@ typedef struct {
     bool sewingApplied;
     bool solidCreated;
     bool healingApplied;
+    int solidsCreated;  // How many shells became solids: >1 means a multibody file (#302)
 } OCCTSTEPImportResult;
 
 /// Import STEP file with robust handling: sewing, solid creation, and shape healing

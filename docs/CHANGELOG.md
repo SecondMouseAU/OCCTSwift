@@ -7,13 +7,62 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.11.2
+## Current: v1.11.3
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.11.3 (July 2026) — fix: robust importers silently dropped all but the first body (#302)
+
+**A multibody file lost every body after the first.** Ten boxes in, one box out — no error, no
+diagnostic, and a perfectly valid solid returned. Found while sweeping the robust import paths for
+#300; it is a data-loss defect rather than a progress one, so it was filed and fixed separately.
+
+Every robust importer sewed and then took **the first shell only**:
+
+```cpp
+TopExp_Explorer shellExp(sewedShape, TopAbs_SHELL);
+if (shellExp.More()) {                                    // <-- first shell, no loop
+    BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
+    if (makeSolid.IsDone()) resultShape = makeSolid.Solid();
+}
+```
+
+Measured on a 10-box compound (10 solids, 60 faces), through the public API:
+
+| API | before | after |
+|---|---|---|
+| `Shape.loadRobust` (STEP) | 1 solid, 6 faces | **10 solids, 60 faces** |
+| `Shape.loadSTLRobust` | 1 solid, 12 faces | **10 solids** |
+| `Shape.loadWithDiagnostics` | 1 solid, 6 faces | **10 solids**, `solidsCreated == 10` |
+
+The sewing was never at fault — `BRepBuilderAPI_Sewing` returns one shell per body, and the bridge
+discarded nine of them. `Shape.load` / `loadSTL` (the plain loaders) were never affected, and
+`loadIGESRobust` is not either: the IGES path only transfers and heals, so it has no `MakeSolid`
+step to truncate.
+
+**Behaviour change — the return type now follows the file.** A multibody import returns a
+**compound of solids**; a single-body import still returns a plain **solid**, exactly as before, so
+existing single-body callers are untouched. Callers that handle both must not assume `.solid`.
+
+**`ImportResult.solidsCreated: Int`** (new) reports how many shells became solids, alongside the
+existing `solidCreated: Bool`. The count is precisely the fact that was silently wrong.
+
+Shells that `MakeSolid` rejects are now carried through as shells rather than dropped — losing them
+quietly is the defect being fixed.
+
+The fix walks a compound's **immediate children** rather than exploring for shells, because an
+explorer descends *into* solids: a hollow body owns an outer shell plus one per void, and
+solidifying those separately would split one body into two — trading data loss for corruption. A
+regression test covers it (a box with an internal spherical void survives with both shells and its
+exact volume).
+
+Regression tests assert on **body count**, not validity. That distinction is the point: a truncated
+import returned a well-formed solid and `isValid` was true throughout, which is why this shipped
+unnoticed. Same lesson as #286/#300 — assert the property that was actually broken.
 
 ### v1.11.2 (July 2026) — fix: robust-import healing ran outside the caller's progress range (#300)
 

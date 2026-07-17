@@ -1211,7 +1211,8 @@ public final class Shape: @unchecked Sendable {
             resultType: ShapeType(rawValue: Int(result.resultType)) ?? .unknown,
             sewingApplied: result.sewingApplied,
             solidCreated: result.solidCreated,
-            healingApplied: result.healingApplied
+            healingApplied: result.healingApplied,
+            solidsCreated: Int(result.solidsCreated)
         )
     }
 
@@ -2164,11 +2165,20 @@ public struct ImportResult: Sendable {
     /// Whether shape healing was applied
     public let healingApplied: Bool
 
+    /// How many shells were turned into solids.
+    ///
+    /// `> 1` means the file held several bodies and ``shape`` is a compound of that many solids.
+    /// Before v1.11.3 every body after the first was silently discarded, so this count is the fact
+    /// that was quietly wrong — a truncated import still returned a perfectly valid solid (#302).
+    public let solidsCreated: Int
+
     /// Human-readable summary of the import processing
     public var summary: String {
         var steps: [String] = []
         if sewingApplied { steps.append("sewing") }
-        if solidCreated { steps.append("solid creation") }
+        if solidCreated {
+            steps.append(solidsCreated > 1 ? "solid creation (\(solidsCreated) bodies)" : "solid creation")
+        }
         if healingApplied { steps.append("healing") }
         let processing = steps.isEmpty ? "none" : steps.joined(separator: ", ")
         return "\(originalType) → \(resultType) (processing: \(processing))"
