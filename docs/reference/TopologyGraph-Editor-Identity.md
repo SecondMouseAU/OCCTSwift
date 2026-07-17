@@ -994,14 +994,14 @@ Identity here is the graph object, not the geometry: two graphs built from the s
 
 ### `generation` *(deprecated)*
 
-**Always 0.** Deprecated in v1.12.0.
+**Always 1.** Deprecated in v1.12.0; value changed from 0 to 1 in v1.12.2.
 
 ```swift
 @available(*, deprecated)
 public var generation: UInt32 { get }
 ```
 
-OCCT advances this only from `BRepGraph::Clear()`, which nothing in OCCTSwift calls, so it never changes: it cannot tell two graphs apart, and it cannot detect a stale cache. Nothing replaces it — `node(forUID:)` rejects a UID from another graph on its own, and `instanceID` compares graph identity directly.
+OCCT advances this only from `BRepGraph::Clear()`. Since v1.12.2 ([#303](https://github.com/SecondMouseAU/OCCTSwift/issues/303)) OCCTSwift calls `Clear()` exactly once, when it builds a graph, and never rebuilds an existing one — so the counter lands at 1 and stays there. It is the same 1 for every graph, so it still cannot tell two graphs apart or detect a stale cache. Nothing replaces it — `node(forUID:)` rejects a UID from another graph on its own, and `instanceID` compares graph identity directly.
 
 Earlier revisions of this page suggested comparing a cached `storedOwnGen` against `generation` to detect a stale mesh. That recipe never worked and has been removed: `storedOwnGen` is a per-entity mesh field (`FaceMeshEntry::MeshGeneration`), not this counter, so the two were never comparable ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 

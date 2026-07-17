@@ -2332,13 +2332,14 @@ public final class TopologyGraph: @unchecked Sendable {
         OCCTBRepGraphInstanceID(handle)
     }
 
-    /// The graph generation counter — **always 0**.
+    /// The graph generation counter — **always 1**.
     ///
-    /// OCCT advances this only from `BRepGraph::Clear()`, which nothing in OCCTSwift calls, so it
-    /// never changes and cannot tell two graphs apart or detect a stale cache. Nothing replaces it:
-    /// ``node(forUID:)`` already rejects a UID from another graph, and ``instanceID`` compares graph
-    /// identity directly (#295).
-    @available(*, deprecated, message: "Always 0 — OCCTSwift never clears a graph, so this counter never advances and guards nothing. node(forUID:) rejects foreign UIDs on its own; use instanceID to compare graph identity.")
+    /// OCCT advances this only from `BRepGraph::Clear()`. OCCTSwift calls `Clear()` exactly once,
+    /// when it builds the graph (#303), and never rebuilds an existing one — so the counter lands
+    /// at 1 and stays there. It is the same 1 for every graph, so it still cannot tell two graphs
+    /// apart or detect a stale cache. Nothing replaces it: ``node(forUID:)`` already rejects a UID
+    /// from another graph, and ``instanceID`` compares graph identity directly (#295).
+    @available(*, deprecated, message: "Always 1 — OCCTSwift clears a graph once at build and never rebuilds it, so this counter never advances past 1 and is identical for every graph. node(forUID:) rejects foreign UIDs on its own; use instanceID to compare graph identity.")
     public var generation: UInt32 {
         OCCTBRepGraphGeneration(handle)
     }

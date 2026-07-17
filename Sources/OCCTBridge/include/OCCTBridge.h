@@ -20910,9 +20910,10 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef _Nonnull graph,
 
 /// Return the current graph generation counter.
 ///
-/// NOTE: always 0 in practice. OCCT only advances it from BRepGraph::Clear(), which
-/// nothing in this bridge calls, so it cannot distinguish two graphs. Use
-/// OCCTBRepGraphInstanceID for that. See issue #295.
+/// NOTE: always 1 in practice. OCCT advances it only from BRepGraph::Clear(); this bridge
+/// calls Clear() exactly once, when it builds a graph (#303), and never rebuilds one, so the
+/// counter lands at 1 and is identical for every graph. It cannot distinguish two graphs — use
+/// OCCTBRepGraphInstanceID for that. See issues #295 and #303.
 uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef _Nonnull graph);
 
 /// Return this graph's instance id — unique among every graph this process creates, and

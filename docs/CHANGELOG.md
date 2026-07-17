@@ -7,13 +7,47 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.1
+## Current: v1.12.2
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.12.2 (July 2026) — fix: graph construction now runs OCCT's `Clear()` rebuild boundary (#303)
+
+**Every graph OCCTSwift built reported `generation == 0` and an all-zero `GraphGUID`.** The bridge
+built a graph with the constructor plus `Shapes().Add(shape)`, and never called `BRepGraph::Clear()`
+— which upstream treats as *the* rebuild boundary (PR #1237) and is the only call that stamps a
+graph's identity (`IncrementGeneration()` + `SetGraphGUID(random)`). Skipping it left the kernel's
+own version-stamp machinery unarmed on our path: `GraphGUID` stayed the default all-zeros, so
+`BRepGraph_VersionStamp::ToGUID` — documented as making per-node GUIDs *"globally unique across
+different graph instances"* — would have hashed in the zero GUID and returned identical GUIDs for
+different graphs. Nothing user-visible broke (none of `GraphGUID` / `StampOf` / `IsStale` / `ToGUID`
+is wrapped), but it was a live trap for whoever wraps that surface next.
+
+Surfaced while fixing #295, and verified independent of it: giving graphs real GUIDs does **not** stop
+a foreign UID resolving, because `BRepGraph_UID` is `(Kind, Counter)` and carries no GUID for
+`NodeIdFrom` to compare. #295's `instanceID` provenance check is still needed and unchanged.
+
+**Fix.** `OCCTBRepGraphCreate` and `OCCTBRepGraphCopyFace` now call `graph.Clear()` before ingesting
+the shape, matching upstream's declared lifecycle. `copy()` / `translated()` deliberately do not:
+`BRepGraph_Copy`/`_Transform::Perform` transplant the source's whole identity (generation + GUID)
+into the target, so a pre-`Clear()` would just be overwritten — the inheritance is what we want.
+`copyFace()` does get a `Clear()`: it is a fresh build with counters restarting at 1, and
+ground truth on the pinned 8.0.0p1 kernel confirms `CopyNode` does **not** transplant the source
+GUID, so the fresh stamp survives and matches the graph's fresh `instanceID`.
+
+**Verified safe first** (the issue's load-bearing unknown): `Clear()` calls
+`LayerRegistry::ClearAll()`, which the header documents as clearing layer data *"without
+unregistering services"* — so the `BRepGraph_LayerHistory` layer the constructor registers, which
+#290's `add(_:absorbing:…)` depends on, survives. Ground-truth-confirmed against the pinned kernel:
+after `Clear()`-then-`Add()`, the history layer is still registered and recording works; the #290
+history-absorb suite and the #295 provenance suite both stay green.
+
+- **Changed:** `TopologyGraph.generation` is now a constant **1** (was 0). Still deprecated and still
+  useless as identity — it is the same 1 for every graph. Use `instanceID` to compare graph identity.
 
 ### v1.12.1 (July 2026) — fix: concurrent 3D fillet/chamfer builds no longer corrupt each other (#298)
 

@@ -2550,20 +2550,26 @@ struct TopologyGraphDurableUIDTests {
         }
     }
 
-    /// `generation` is deprecated because it is a constant 0, not a counter: OCCT only advances it
-    /// from `BRepGraph::Clear()`, which OCCTSwift never calls. Pinned so the deprecation note stays
-    /// honest — if a future OCCT or bridge change ever makes it move, this fails and the docs and
-    /// the `@available` message have to be revisited (#295).
+    /// `generation` is deprecated because it is a constant, not a counter: OCCT only advances it
+    /// from `BRepGraph::Clear()`, which OCCTSwift calls exactly once at build (#303) and never
+    /// again — so every graph reports 1, and compaction (which preserves identity) leaves it 1.
+    /// Pinned so the deprecation note stays honest — if a future OCCT or bridge change ever makes
+    /// it move past 1, this fails and the docs and the `@available` message have to be revisited
+    /// (#295, #303).
     @available(*, deprecated, message: "Exercises the deprecated `generation` on purpose.")
-    @Test func generationIsAlwaysZero() {
+    @Test func generationIsAlwaysOne() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let graph = TopologyGraph(shape: box) else { return }
-        #expect(graph.generation == 0)
+        #expect(graph.generation == 1)          // Clear()-at-build stamps generation 1 (#303)
         graph.compact()
-        #expect(graph.generation == 0)
+        #expect(graph.generation == 1)          // compaction preserves identity
         if let other = TopologyGraph(shape: box) {
-            #expect(other.generation == 0)      // a second graph: same 0, hence useless as identity
+            #expect(other.generation == 1)      // a second graph: same 1, hence useless as identity
             #expect(other.instanceID != graph.instanceID)
+        }
+        // copyFace is a fresh build, so it too is stamped 1 (its instanceID is fresh — #295).
+        if let copied = graph.copyFace(0) {
+            #expect(copied.generation == 1)
         }
     }
 
