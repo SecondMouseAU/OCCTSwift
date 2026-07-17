@@ -1,11 +1,11 @@
 # OCCTSwift
 
-[![Swift](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fgsdali%2FOCCTSwift%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/SecondMouseAU/OCCTSwift)
-[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fgsdali%2FOCCTSwift%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/SecondMouseAU/OCCTSwift)
+[![Swift](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FSecondMouseAU%2FOCCTSwift%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/SecondMouseAU/OCCTSwift)
+[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FSecondMouseAU%2FOCCTSwift%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/SecondMouseAU/OCCTSwift)
 [![License](https://img.shields.io/badge/license-LGPL--2.1-blue)](LICENSE)
-[![Docs](https://img.shields.io/badge/docs-cookbook-2ea44f)](https://gsdali.github.io/OCCTSwift/)
+[![Docs](https://img.shields.io/badge/docs-cookbook-2ea44f)](https://secondmouseau.github.io/OCCTSwift/)
 
-📖 **Documentation & cookbook:** <https://gsdali.github.io/OCCTSwift/>
+📖 **Documentation & cookbook:** <https://secondmouseau.github.io/OCCTSwift/>
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.0p1, providing B-Rep solid modeling for macOS and iOS. **v1.0.0 — SemVer-stable as of 2026-05-07.**
 
@@ -19,7 +19,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/gsdali/OCCTSwift.git", from: "1.0.0")
+    .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", from: "1.0.0")
 ]
 ```
 
@@ -55,14 +55,14 @@ OCCTSwift is the kernel of a layered family of packages, all SemVer-stable from 
 | Package | Role |
 |---------|------|
 | **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, TopologyGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
-| [OCCTSwiftIO](https://github.com/gsdali/OCCTSwiftIO) | Headless CAD file I/O — STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
-| [OCCTSwiftMesh](https://github.com/gsdali/OCCTSwiftMesh) | Mesh-domain algorithms — decimation, smoothing, repair (vendors `meshoptimizer`). |
-| [OCCTSwiftViewport](https://github.com/gsdali/OCCTSwiftViewport) | Metal-based 3D viewport component (UIKit / AppKit / SwiftUI). |
-| [OCCTSwiftTools](https://github.com/gsdali/OCCTSwiftTools) | Bridge layer: converts kernel `Shape` to `ViewportBody` with picking metadata. |
-| [OCCTSwiftAIS](https://github.com/gsdali/OCCTSwiftAIS) | High-level interactive services — selection, manipulator widgets, dimension annotations, scene objects. |
-| [OCCTSwiftScripts](https://github.com/gsdali/OCCTSwiftScripts) | `occtkit` CLI + ScriptHarness — JSON-driven verbs for compose / reconstruct / drawing-export / metrics / mesh / render-preview / XCAF. |
-| [OCCTMCP](https://github.com/gsdali/OCCTMCP) | MCP server exposing CAD modeling to AI tools via Model Context Protocol. |
-| [simpleOCCTVP](https://github.com/gsdali/simpleOCCTVP) | Pure C API over OCCT for non-Swift consumers — shape I/O, healing, mesh extraction, offscreen rendering. |
+| [OCCTSwiftIO](https://github.com/SecondMouseAU/OCCTSwiftIO) | Headless CAD file I/O — STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
+| [OCCTSwiftMesh](https://github.com/SecondMouseAU/OCCTSwiftMesh) | Mesh-domain algorithms — decimation, smoothing, repair (vendors `meshoptimizer`). |
+| [OCCTSwiftViewport](https://github.com/SecondMouseAU/OCCTSwiftViewport) | Metal-based 3D viewport component (UIKit / AppKit / SwiftUI). |
+| [OCCTSwiftTools](https://github.com/SecondMouseAU/OCCTSwiftTools) | Bridge layer: converts kernel `Shape` to `ViewportBody` with picking metadata. |
+| [OCCTSwiftAIS](https://github.com/SecondMouseAU/OCCTSwiftAIS) | High-level interactive services — selection, manipulator widgets, dimension annotations, scene objects. |
+| [OCCTSwiftScripts](https://github.com/SecondMouseAU/OCCTSwiftScripts) | `occtkit` CLI + ScriptHarness — JSON-driven verbs for compose / reconstruct / drawing-export / metrics / mesh / render-preview / XCAF. |
+| [OCCTMCP](https://github.com/SecondMouseAU/OCCTMCP) | MCP server exposing CAD modeling to AI tools via Model Context Protocol. |
+| [simpleOCCTVP](https://github.com/SecondMouseAU/simpleOCCTVP) | Pure C API over OCCT for non-Swift consumers — shape I/O, healing, mesh extraction, offscreen rendering. |
 
 ## What's Wrapped
 
