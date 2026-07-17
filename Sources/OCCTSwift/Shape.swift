@@ -4773,7 +4773,9 @@ public struct ShapeHistoryRecord: Sendable {
 /// selection IDs across boolean / split mutations (e.g. OCCTMCP's
 /// `remap_selection`, parametric editors that want feature replay).
 public final class ShapeHistoryRef: @unchecked Sendable {
-    fileprivate let handle: OCCTBooleanHistoryRef
+    // internal, not fileprivate: TopologyGraph.add(_:absorbing:inputRoots:operationName:)
+    // in BRepGraph.swift needs it to synthesize a BRepTools_History (issue #290).
+    let handle: OCCTBooleanHistoryRef
 
     fileprivate init(_ handle: OCCTBooleanHistoryRef) {
         self.handle = handle

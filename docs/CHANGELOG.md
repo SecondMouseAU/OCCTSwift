@@ -7,13 +7,74 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.10.3
+## Current: v1.11.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.11.0 (July 2026) — feat: absorb a boolean's history into the graph, so a picked face survives it (#290)
+
+Holding a reference to a picked face across an operation that rebuilds the shape had no supported
+path. `ShapeHistoryRef` (TopoDS-level, from the `*WithFullHistory` helpers) and the `TopologyGraph`
+history log were two disconnected systems: the boolean never wrote a record into the graph's log, so
+`resolve(.splitOf(…))` / `.createdBy(…)` / `currentForms(of:)` had nothing to walk and callers were
+left correlating `ShapeHistoryRecord.modified` back to graph nodes by hand — in practice by geometry.
+
+OCCT 8.0.0p1 already ships the bridge; it was simply unwrapped.
+`BRepGraph::ShapesView::AddWithHistory` collects the input map via `CollectHistoryInputs`, the output
+map via `Options::TrackAddedNodes`, and hands both to `BRepGraph_LayerHistory::Absorb`.
+
+**New**
+
+- **`TopologyGraph.add(_:absorbing:inputRoots:operationName:)`** — add an operation's result to the
+  graph and absorb its history. Afterwards the entities you already held resolve to their successors.
+- **`TopologyGraph.historyIsDeleted(_:)`** / **`.historyDeletedNodes`** — distinguish "consumed by the
+  operation" from "never touched". Absence of a record is not deletion.
+
+```swift
+let graph = TopologyGraph(shape: base)!
+let root = graph.findNode(for: base)!               // topology root — NOT rootNodes (see below)
+let topNode = graph.findNode(for: topFace)!         // pin the face BEFORE the cut
+let pinned = TopologyGraph.NodeRef(kind: topNode.kind, index: topNode.index)
+
+let (result, history) = base.subtractedWithFullHistory(tool)!
+graph.add(result, absorbing: history,
+          inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+          operationName: "channel-cut")
+
+let strips = graph.currentForms(of: pinned).filter { $0.kind == .face }   // the two successors
+graph.resolve(.splitOf(original: .literal(pinned), occurrence: 0))        // .success(face)
+```
+
+**One graph, not two.** `AddWithHistory` resolves its input roots against the *receiving* graph, so
+the input and the result share one graph and history is NodeId-keyed. The `NodeRef`s and `GraphUID`s
+a caller already holds stay valid: there is no generation boundary to cross and no cross-graph UID
+resolution — which sidesteps the aliasing hazard in
+[#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295) entirely. Build the graph from the
+operation's **input**, then hand it the result. The two-graph `Absorb` overload and the UID-keyed
+record path (`RecordUid` / `HasKnownInput`) are deliberately left unwrapped: strictly more dangerous,
+and no consumer.
+
+**Works for all nine `*WithFullHistory` ops.** `OCCTBooleanHistoryAsBRepToolsHistory` synthesizes a
+real `BRepTools_History` from the retained builder via the `(arguments, algo)` template constructor,
+which needs only `Modified` / `Generated` / `IsDeleted` — all virtual on `BRepBuilderAPI_MakeShape`.
+That matters because only the `BRepAlgoAPI_*` builders expose a native `History()`; fillet, chamfer
+and thick-solid do not. `OCCTBooleanHistory` now retains its arguments, since a type-erased builder
+cannot report its own inputs.
+
+**Known edges, documented rather than papered over:**
+
+- `currentForms(of:)` returns the cut's new section **edges** alongside the split faces, because
+  `BRepGraph_LayerHistory::FindDerived` unions Modified and Generated descendants transitively.
+  Filter by `.kind` when you want only faces. Existing behaviour, unchanged.
+- Only **vertices, edges, faces and solids** are carried — `BRepTools_History::IsSupportedType`
+  tracks nothing else, so absorbing records nothing for wires, shells or compounds.
+- `TopologyGraph.rootNodes` is **Products**, and shape-built graphs set `CreateAutoProduct = false`,
+  so it is always empty for them. The topology root is `findNode(for: inputShape)`. This trips people
+  up; the reference page now says so.
 
 ### v1.10.3 (July 2026) — docs: canonical operation count, derived not hand-maintained (#289)
 

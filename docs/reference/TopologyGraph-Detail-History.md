@@ -408,6 +408,114 @@ Use this when mutating the graph outside BRepGraph's own builder API so the chan
 
 ---
 
+## Absorbing an Operation's History
+
+Hand-written `recordHistory` calls are for graph mutations you perform yourself. When the mutation is
+an OCCT operation that *rebuilds the shape* — a boolean, a fillet, a chamfer — use
+`add(_:absorbing:inputRoots:operationName:)` instead: it imports the operation's own history, so you
+do not have to correlate result sub-shapes back to nodes by hand.
+
+### `add(_:absorbing:inputRoots:operationName:)`
+
+Adds an operation's result to the graph and absorbs its history, so entities you were already holding
+keep resolving to their successors ([#290](https://github.com/SecondMouseAU/OCCTSwift/issues/290)).
+
+```swift
+@discardableResult
+public func add(_ result: Shape,
+                absorbing history: ShapeHistoryRef,
+                inputRoots: [NodeRef],
+                operationName: String) -> NodeRef?
+```
+
+**The input and the result share one graph.** Build the graph from the operation's *input* shape, then
+hand it the result. History is NodeId-keyed, so the `NodeRef`s and `GraphUID`s you already hold stay
+valid — there is no generation boundary to cross, and no cross-graph UID lookup (which would be unsafe;
+see [#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
+
+- **Parameters:**
+  - `result` — the operation's result shape.
+  - `history` — the handle returned alongside it by any `*WithFullHistory` operation.
+  - `inputRoots` — nodes in *this* graph whose subshapes to track; normally the input shape's root.
+    Get it with `findNode(for: inputShape)` — **not** `rootNodes`, which is Products and is empty for
+    a shape-built graph (`CreateAutoProduct = false`).
+  - `operationName` — the label recorded on every emitted record, and the string
+    `TopologyRef.createdBy(operationName:)` matches on.
+- **Returns:** the added result's topology-root node, or `nil` if the add or the absorb failed.
+- **OCCT:** `BRepGraph::ShapesView::AddWithHistory` → `BRepGraph_LayerHistory::Absorb`, via
+  `OCCTBRepGraphAddWithHistory`. The `BRepTools_History` is synthesized from the retained builder by
+  `OCCTBooleanHistoryAsBRepToolsHistory`.
+- **Only vertices, edges, faces and solids are carried** — `BRepTools_History::IsSupportedType` tracks
+  nothing else, so nothing is recorded for wires, shells or compounds.
+- **Example:** cut a channel across a box's top face and keep hold of the face.
+  ```swift
+  let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+  let graph = TopologyGraph(shape: base)!
+  let rootNode = graph.findNode(for: base)!
+  let root = NodeRef(kind: rootNode.kind, index: rootNode.index)
+
+  // Pin the top face BEFORE the cut.
+  let faces = base.faces()
+  let centroids = base.measure().faceCentroids
+  let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset
+  let topFace = Shape.fromFace(faces[topIndex])!
+  let topNode = graph.findNode(for: topFace)!
+  let pinned = NodeRef(kind: topNode.kind, index: topNode.index)
+
+  let tool = Shape.box(origin: SIMD3(-1, 4, 8), width: 12, height: 2, depth: 4)!
+  let (result, history) = base.subtractedWithFullHistory(tool)!
+  graph.add(result, absorbing: history, inputRoots: [root], operationName: "channel-cut")
+
+  // The pinned face now resolves to the two strips it was split into.
+  let strips = graph.currentForms(of: pinned).filter { $0.kind == .face }   // 2 faces
+  graph.resolve(.splitOf(original: .literal(pinned), occurrence: 0))        // .success(face)
+  graph.resolve(.createdBy(operationName: "channel-cut", kind: .face))      // .success(face)
+  ```
+
+> **Filter `currentForms(of:)` by kind.** It returns the cut's new section *edges* alongside the split
+> faces, because `FindDerived` unions Modified and Generated descendants transitively. When you want
+> the faces a face became, filter on `.kind == .face`.
+
+### `historyIsDeleted(_:)`
+
+True if a recorded operation consumed `node`, leaving it no image in the result.
+
+```swift
+public func historyIsDeleted(_ node: NodeRef) -> Bool
+```
+
+Distinct from having no successors: a node with **no record at all** was simply untouched, whereas a
+deleted node was explicitly consumed. Use this to tell "the cut removed this edge" from "the cut never
+saw it".
+
+- **OCCT:** `BRepGraph_LayerHistory::IsDeleted`, via `OCCTBRepGraphHistoryIsDeleted`.
+- **Example:**
+  ```swift
+  let successors = graph.currentForms(of: pinned)
+  if successors.isEmpty && graph.historyIsDeleted(pinned) {
+      // consumed by the operation, not merely unrecorded
+  }
+  ```
+
+### `historyDeletedNodes`
+
+Every node a recorded operation consumed with no image in the result.
+
+```swift
+public var historyDeletedNodes: [NodeRef] { get }
+```
+
+- **OCCT:** `BRepGraph_LayerHistory::DeletedNodes`, via `OCCTBRepGraphHistoryDeletedNodes`.
+- **Example:**
+  ```swift
+  graph.add(result, absorbing: history, inputRoots: [root], operationName: "channel-cut")
+  for gone in graph.historyDeletedNodes {
+      print("consumed by the cut: \(gone.kind) \(gone.index)")
+  }
+  ```
+
+---
+
 ## Poly Counts
 
 ### `triangulationCount`
