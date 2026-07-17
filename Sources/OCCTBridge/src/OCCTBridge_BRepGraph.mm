@@ -965,6 +965,84 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef g,
     } catch (...) {}
 }
 
+// True if some recorded operation consumed this node with no image in the result.
+// Distinct from "has no Modified record": absence of a record is not deletion.
+bool OCCTBRepGraphHistoryIsDeleted(OCCTBRepGraphRef g, int32_t kind, int32_t index) {
+    if (!g) return false;
+    try {
+        auto hist = bgHistory(g);
+        if (hist.IsNull()) return false;
+        return hist->IsDeleted(BRepGraph_NodeId((BRepGraph_NodeId::Kind)kind, index));
+    } catch (...) { return false; }
+}
+
+// Full deleted set. Returns the total count; writes up to maxCount pairs.
+int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef g,
+                                          int32_t* outKinds,
+                                          int32_t* outIndices,
+                                          int32_t maxCount) {
+    if (!g) return 0;
+    try {
+        auto hist = bgHistory(g);
+        if (hist.IsNull()) return 0;
+        const auto& deleted = hist->DeletedNodes();
+        int32_t total = 0;
+        for (NCollection_FlatMap<BRepGraph_NodeId>::Iterator it(deleted); it.More(); it.Next()) {
+            if (outKinds && outIndices && total < maxCount) {
+                outKinds[total] = (int32_t)it.Key().NodeKind;
+                outIndices[total] = it.Key().Index;
+            }
+            total++;
+        }
+        return total;
+    } catch (...) { return 0; }
+}
+
+// Add an algorithm result and absorb its BRepTools_History (issue #290).
+//
+// The input roots and the result share one graph, so ShapesView::AddWithHistory
+// records NodeId-keyed history against nodes that remain valid — no generation
+// boundary, no cross-graph UID resolution. AddWithHistory internally collects the
+// input map via CollectHistoryInputs and the output map via Options::TrackAddedNodes,
+// then hands both to BRepGraph_LayerHistory::Absorb.
+bool OCCTBRepGraphAddWithHistory(OCCTBRepGraphRef g,
+                                  OCCTShapeRef resultShape,
+                                  OCCTHistoryRef history,
+                                  const int32_t* inputRootKinds,
+                                  const int32_t* inputRootIndices,
+                                  int32_t inputRootCount,
+                                  const char* opName,
+                                  int32_t* outRootKind,
+                                  int32_t* outRootIndex) {
+    if (outRootKind) *outRootKind = -1;
+    if (outRootIndex) *outRootIndex = -1;
+    if (!g || !resultShape || !opName) return false;
+    if (!inputRootKinds || !inputRootIndices || inputRootCount < 1) return false;
+    if (!history) return false;
+    try {
+        auto* hs = static_cast<OCCTHistoryStorage*>(history);
+        if (hs->history.IsNull()) return false;
+
+        NCollection_Array1<BRepGraph_NodeId> roots(0, inputRootCount - 1);
+        for (int32_t i = 0; i < inputRootCount; i++) {
+            roots.SetValue(i, BRepGraph_NodeId((BRepGraph_NodeId::Kind)inputRootKinds[i],
+                                               inputRootIndices[i]));
+        }
+
+        // Ensure the history layer exists before the absorb; AddWithHistory writes
+        // into the registered layer and silently records nothing without one.
+        (void)g->graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>();
+
+        auto result = g->graph.Shapes().AddWithHistory(resultShape->shape, roots,
+                                                        hs->history,
+                                                        TCollection_AsciiString(opName));
+        if (!result.IsOk()) return false;
+        if (outRootKind) *outRootKind = (int32_t)result.TopologyRoot.NodeKind;
+        if (outRootIndex) *outRootIndex = result.TopologyRoot.Index;
+        return true;
+    } catch (...) { return false; }
+}
+
 // --- Poly Counts ---
 
 int32_t OCCTBRepGraphNbTriangulations(OCCTBRepGraphRef g) {

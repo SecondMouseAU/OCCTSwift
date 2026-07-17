@@ -40,6 +40,7 @@
 #include <Poly_Polygon3D.hxx>
 #include <Poly_Polygon2D.hxx>
 #include <Poly_PolygonOnTriangulation.hxx>
+#include <BRepTools_History.hxx>
 #include <XCAFApp_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
@@ -167,6 +168,15 @@ struct Poly_Polygon2DOpaque {
 
 struct Poly_PolygonOnTriangulationOpaque {
     Handle(Poly_PolygonOnTriangulation) polygon;
+};
+
+// === History ===
+
+// Wrapper for a BRepTools_History handle. Shared rather than area-local because
+// two areas exchange it: the modeling area synthesizes one from a retained
+// builder, and the BRepGraph area absorbs it into a graph's history layer.
+struct OCCTHistoryStorage {
+    Handle(BRepTools_History) history;
 };
 
 // === Mutex helpers ===

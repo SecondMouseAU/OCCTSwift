@@ -4722,6 +4722,20 @@ int32_t OCCTBooleanHistoryGenerated(OCCTBooleanHistoryRef _Nonnull history,
 bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef _Nonnull history,
                                    OCCTShapeRef _Nonnull inputSubShape);
 
+/// Opaque handle to BRepTools_History.
+typedef void* _Nullable OCCTHistoryRef;
+
+/// Synthesize a standalone BRepTools_History from the retained builder (issue #290).
+///
+/// Works for every *WithHistory op, including fillet / chamfer / thick-solid,
+/// which have no native History(). Only VERTEX / EDGE / FACE / SOLID are carried
+/// (BRepTools_History::IsSupportedType) — wires, shells and compounds are not.
+///
+/// @return An OCCTHistoryRef the caller owns (free with OCCTHistoryDestroy), or
+///         NULL on failure. Feed it to OCCTBRepGraphAddWithHistory to record the
+///         operation into a graph's history log.
+OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef _Nonnull history);
+
 void OCCTBooleanHistoryRelease(OCCTBooleanHistoryRef _Nonnull history);
 
 /// Top-level children of a compound shape (TopoDS_Iterator). Returns count,
@@ -6421,8 +6435,8 @@ typedef struct {
 /// Shapes must be meshed beforehand (BRepMesh_IncrementalMesh).
 OCCTPolyDistanceResult OCCTShapePolyhedralDistance(OCCTShapeRef shape1, OCCTShapeRef shape2);
 
-/// Opaque handle to BRepTools_History.
-typedef void* _Nullable OCCTHistoryRef;
+// OCCTHistoryRef is typedef'd at its first use, in the boolean-history section
+// above (OCCTBooleanHistoryAsBRepToolsHistory).
 
 /// Create an empty shape modification history.
 OCCTHistoryRef OCCTHistoryCreate(void);
@@ -20208,6 +20222,53 @@ void OCCTBRepGraphHistoryRecord(OCCTBRepGraphRef _Nonnull graph,
                                  const int32_t* _Nullable replKinds,
                                  const int32_t* _Nullable replIndices,
                                  int32_t replCount);
+
+/// True if a recorded operation consumed this node, leaving no image in the result.
+/// Distinct from "has no modified record" — absence of a record is not deletion.
+bool OCCTBRepGraphHistoryIsDeleted(OCCTBRepGraphRef _Nonnull graph,
+                                    int32_t kind,
+                                    int32_t index);
+
+/// The graph's full deleted set. Returns the total count; writes up to maxCount pairs.
+int32_t OCCTBRepGraphHistoryDeletedNodes(OCCTBRepGraphRef _Nonnull graph,
+                                          int32_t* _Nullable outKinds,
+                                          int32_t* _Nullable outIndices,
+                                          int32_t maxCount);
+
+/// Add an OCCT algorithm result to `graph` and absorb its BRepTools_History into
+/// the graph's history log (issue #290).
+///
+/// This is the supported way to keep referring to an entity across an operation
+/// that rebuilds the shape (booleans, fillets, ...). The input and the result live
+/// in the SAME graph, so history is NodeId-keyed and the input's existing NodeRefs
+/// and UIDs stay valid — there is no generation boundary and no cross-graph UID
+/// lookup involved. After this call, currentForms(of:) on an input node returns
+/// its successors, and the TopologyRef recipes (.splitOf / .createdBy) resolve
+/// against the emitted records.
+///
+/// `inputRootKinds` / `inputRootIndices` name the nodes in `graph` whose subshapes
+/// should be tracked; the input map is collected via
+/// BRepGraph_ShapesView::CollectHistoryInputs, so those roots must already be in
+/// `graph` (i.e. the graph the operation's input shape was built from).
+///
+/// Only VERTEX / EDGE / FACE / SOLID are carried (BRepTools_History::IsSupportedType).
+///
+/// @param graph       graph holding the inputs, and receiving the result
+/// @param resultShape the OCCT algorithm's result shape
+/// @param history     from OCCTBooleanHistoryAsBRepToolsHistory (NULL is a no-op)
+/// @param opName      label written into every emitted record
+/// @param outRootKind  if non-null, set to the added result's topology-root kind
+/// @param outRootIndex if non-null, set to the added result's topology-root index
+/// @return true if the result was added and the history absorbed.
+bool OCCTBRepGraphAddWithHistory(OCCTBRepGraphRef _Nonnull graph,
+                                  OCCTShapeRef _Nonnull resultShape,
+                                  OCCTHistoryRef history,
+                                  const int32_t* _Nonnull inputRootKinds,
+                                  const int32_t* _Nonnull inputRootIndices,
+                                  int32_t inputRootCount,
+                                  const char* _Nonnull opName,
+                                  int32_t* _Nullable outRootKind,
+                                  int32_t* _Nullable outRootIndex);
 
 // --- Poly Counts ---
 

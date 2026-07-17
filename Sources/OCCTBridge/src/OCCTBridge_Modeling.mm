@@ -1688,9 +1688,30 @@ struct OCCTBooleanHistory {
     // safely copyable. Upcast from concrete Fuse / Cut / Common / Splitter.
     std::unique_ptr<BRepBuilderAPI_MakeShape> op;
 
-    explicit OCCTBooleanHistory(std::unique_ptr<BRepBuilderAPI_MakeShape> theOp)
-        : op(std::move(theOp)) {}
+    // The shapes the builder ran on. Retained because BRepTools_History's
+    // template constructor needs the argument list to know which subshapes to
+    // walk, and a type-erased BRepBuilderAPI_MakeShape cannot report its own
+    // inputs. See OCCTBooleanHistoryAsBRepToolsHistory.
+    TopTools_ListOfShape args;
+
+    OCCTBooleanHistory(std::unique_ptr<BRepBuilderAPI_MakeShape> theOp,
+                       const TopTools_ListOfShape& theArgs)
+        : op(std::move(theOp)), args(theArgs) {}
 };
+
+// Convenience for the common 1- and 2-argument builders.
+static TopTools_ListOfShape occtArgList(const TopoDS_Shape& a) {
+    TopTools_ListOfShape l;
+    l.Append(a);
+    return l;
+}
+
+static TopTools_ListOfShape occtArgList(const TopoDS_Shape& a, const TopoDS_Shape& b) {
+    TopTools_ListOfShape l;
+    l.Append(a);
+    l.Append(b);
+    return l;
+}
 
 OCCTBooleanHistoryRef OCCTBooleanUnionWithHistory(OCCTShapeRef shape1, OCCTShapeRef shape2,
                                                     OCCTShapeRef* outResult) {
@@ -1700,7 +1721,7 @@ OCCTBooleanHistoryRef OCCTBooleanUnionWithHistory(OCCTShapeRef shape1, OCCTShape
         std::unique_ptr<BRepAlgoAPI_Fuse> op(new BRepAlgoAPI_Fuse(shape1->shape, shape2->shape));
         if (!op->IsDone()) return nullptr;
         if (outResult) *outResult = new OCCTShape(op->Shape());
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape1->shape, shape2->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1712,7 +1733,7 @@ OCCTBooleanHistoryRef OCCTBooleanSubtractWithHistory(OCCTShapeRef shape1, OCCTSh
         std::unique_ptr<BRepAlgoAPI_Cut> op(new BRepAlgoAPI_Cut(shape1->shape, shape2->shape));
         if (!op->IsDone()) return nullptr;
         if (outResult) *outResult = new OCCTShape(op->Shape());
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape1->shape, shape2->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1724,7 +1745,7 @@ OCCTBooleanHistoryRef OCCTBooleanIntersectWithHistory(OCCTShapeRef shape1, OCCTS
         std::unique_ptr<BRepAlgoAPI_Common> op(new BRepAlgoAPI_Common(shape1->shape, shape2->shape));
         if (!op->IsDone()) return nullptr;
         if (outResult) *outResult = new OCCTShape(op->Shape());
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape1->shape, shape2->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1743,7 +1764,7 @@ OCCTBooleanHistoryRef OCCTBooleanSplitWithHistory(OCCTShapeRef shape1, OCCTShape
         op->Build();
         if (!op->IsDone()) return nullptr;
         if (outResult) *outResult = new OCCTShape(op->Shape());
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape1->shape, shape2->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1788,6 +1809,26 @@ bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef h, OCCTShapeRef inputSubS
     try {
         return h->op->IsDeleted(inputSubShape->shape);
     } catch (...) { return false; }
+}
+
+// Synthesize a standalone BRepTools_History from the retained builder.
+//
+// BRepTools_History's template constructor walks the argument list and copies
+// Modified / Generated / IsDeleted for each supported subshape, so it works off
+// the virtual base and does not need the concrete builder type. That matters:
+// only the BRepAlgoAPI_* builders expose a native History(); fillet, chamfer and
+// thick-solid do not, and this path covers all of them uniformly.
+//
+// Note BRepTools_History only tracks VERTEX / EDGE / FACE / SOLID
+// (BRepTools_History::IsSupportedType) — wires, shells and compounds are not
+// carried, so absorbing this into a graph records nothing for those kinds.
+OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef h) {
+    if (!h || !h->op) return nullptr;
+    try {
+        auto* ref = new OCCTHistoryStorage();
+        ref->history = new BRepTools_History(h->args, *h->op);
+        return ref;
+    } catch (...) { return nullptr; }
 }
 
 void OCCTBooleanHistoryRelease(OCCTBooleanHistoryRef h) {
@@ -1846,7 +1887,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
         TopoDS_Shape result = op->Shape();
         if (result.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1874,7 +1915,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
         TopoDS_Shape result = op->Shape();
         if (result.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1898,7 +1939,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef shape,
         TopoDS_Shape result = op->Shape();
         if (result.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1925,7 +1966,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromShell(OCCTShapeRef shape,
         TopoDS_Shape result = op->Shape();
         if (result.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -1951,7 +1992,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromDefeature(OCCTShapeRef shape,
         TopoDS_Shape result = op->Shape();
         if (result.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
-        return new OCCTBooleanHistory(std::move(op));
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
 }
 
@@ -4306,9 +4347,8 @@ int32_t OCCTLocOpeCSIntersectLine(OCCTShapeRef shape,
 }
 
 // MARK: - BRepTools_History (v0.50)
-struct OCCTHistoryStorage {
-    Handle(BRepTools_History) history;
-};
+// OCCTHistoryStorage now lives in OCCTBridge_Internal.h — the BRepGraph area
+// needs it to absorb a synthesized history into a graph's history layer.
 
 OCCTHistoryRef OCCTHistoryCreate(void) {
     try {

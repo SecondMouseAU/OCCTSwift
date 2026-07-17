@@ -775,6 +775,127 @@ public final class TopologyGraph: @unchecked Sendable {
         }
     }
 
+    /// True if a recorded operation consumed `node`, leaving it no image in the result.
+    ///
+    /// This is distinct from having no successors: a node with no history record at
+    /// all is simply untouched, whereas a deleted node was explicitly consumed. Use
+    /// this to tell "the cut removed this edge" apart from "the cut never saw it".
+    ///
+    /// ```swift
+    /// let strips = graph.currentForms(of: pinned)
+    /// if strips.isEmpty && graph.historyIsDeleted(pinned) {
+    ///     // consumed by the operation, not merely unrecorded
+    /// }
+    /// ```
+    public func historyIsDeleted(_ node: NodeRef) -> Bool {
+        OCCTBRepGraphHistoryIsDeleted(handle, node.kind.rawValue, Int32(node.index))
+    }
+
+    /// Every node a recorded operation consumed with no image in the result.
+    public var historyDeletedNodes: [NodeRef] {
+        let total = OCCTBRepGraphHistoryDeletedNodes(handle, nil, nil, 0)
+        guard total > 0 else { return [] }
+        var kinds = [Int32](repeating: 0, count: Int(total))
+        var indices = [Int32](repeating: 0, count: Int(total))
+        _ = kinds.withUnsafeMutableBufferPointer { kBuf in
+            indices.withUnsafeMutableBufferPointer { iBuf in
+                OCCTBRepGraphHistoryDeletedNodes(handle, kBuf.baseAddress, iBuf.baseAddress, total)
+            }
+        }
+        return (0..<Int(total)).compactMap { i in
+            NodeKind(rawValue: kinds[i]).map { NodeRef(kind: $0, index: Int(indices[i])) }
+        }
+    }
+
+    /// Add an operation's result to this graph and absorb its history, so the
+    /// entities you were already holding keep resolving to their successors.
+    ///
+    /// This is the supported way to carry a picked face (or edge, or vertex)
+    /// across an operation that rebuilds the shape — a boolean, a fillet, a
+    /// chamfer. Because the input and the result live in the *same* graph, the
+    /// `NodeRef`s and `GraphUID`s you already hold stay valid: there is no
+    /// generation boundary to cross and no cross-graph UID lookup.
+    ///
+    /// After this call, ``currentForms(of:)`` on an input node returns its
+    /// successors, and the ``TopologyRef`` recipes (`.splitOf`, `.createdBy`)
+    /// resolve against the records this emits.
+    ///
+    /// Build the graph from the operation's *input* shape, not its result — the
+    /// input roots must already be in this graph.
+    ///
+    /// ```swift
+    /// // Cut a channel across a box's top face, then keep hold of the face.
+    /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let graph = TopologyGraph(shape: base)!
+    /// let root = graph.rootNodes.first!
+    ///
+    /// // Identify the top face and pin it BEFORE the cut.
+    /// let faces = base.faces()
+    /// let centroids = base.measure().faceCentroids
+    /// let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset
+    /// let topFace = Shape.fromFace(faces[topIndex])!
+    /// let topNode = graph.findNode(for: topFace)!
+    /// let pinned = TopologyGraph.NodeRef(kind: topNode.kind, index: topNode.index)
+    ///
+    /// // Cut, then hand the result and its history back to the same graph.
+    /// let tool = Shape.box(origin: SIMD3(-1, 4, 8), width: 12, height: 2, depth: 4)!
+    /// let (result, history) = base.subtractedWithFullHistory(tool)!
+    /// graph.add(result, absorbing: history,
+    ///           inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+    ///           operationName: "channel-cut")
+    ///
+    /// // The pinned face now resolves to the two strips it was split into.
+    /// let strips = graph.currentForms(of: pinned)   // 2 face nodes
+    /// ```
+    ///
+    /// - Note: Only vertices, edges, faces and solids are tracked
+    ///   (`BRepTools_History` carries no wires, shells or compounds), so nothing
+    ///   is recorded for those kinds.
+    ///
+    /// - Parameters:
+    ///   - result: The operation's result shape.
+    ///   - history: The history handle returned alongside it by any
+    ///     `*WithFullHistory` operation.
+    ///   - inputRoots: Nodes in this graph whose subshapes should be tracked —
+    ///     normally the root(s) the input shape was added as.
+    ///   - operationName: Label recorded on every emitted record; the same string
+    ///     `TopologyRef.createdBy(operationName:)` matches on.
+    /// - Returns: The added result's topology-root node, or nil if the add or the
+    ///   absorb failed.
+    @discardableResult
+    public func add(_ result: Shape,
+                    absorbing history: ShapeHistoryRef,
+                    inputRoots: [NodeRef],
+                    operationName: String) -> NodeRef? {
+        guard !inputRoots.isEmpty else { return nil }
+        // Synthesize a BRepTools_History from the retained builder. Owned here and
+        // released once absorbed — the graph copies what it needs into its log.
+        guard let btHistory = OCCTBooleanHistoryAsBRepToolsHistory(history.handle) else {
+            return nil
+        }
+        defer { OCCTHistoryDestroy(btHistory) }
+
+        let rootKinds = inputRoots.map { $0.kind.rawValue }
+        let rootIndices = inputRoots.map { Int32($0.index) }
+        var outKind: Int32 = -1
+        var outIndex: Int32 = -1
+
+        let ok = operationName.withCString { namePtr in
+            rootKinds.withUnsafeBufferPointer { kindsBuf in
+                rootIndices.withUnsafeBufferPointer { indicesBuf in
+                    OCCTBRepGraphAddWithHistory(handle, result.handle, btHistory,
+                                                 kindsBuf.baseAddress!,
+                                                 indicesBuf.baseAddress!,
+                                                 Int32(inputRoots.count),
+                                                 namePtr,
+                                                 &outKind, &outIndex)
+                }
+            }
+        }
+        guard ok, outKind >= 0, let kind = NodeKind(rawValue: outKind) else { return nil }
+        return NodeRef(kind: kind, index: Int(outIndex))
+    }
+
     // MARK: - Poly Counts (v0.133.0)
 
     /// Number of triangulations in the graph.
