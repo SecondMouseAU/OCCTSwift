@@ -7,13 +7,57 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.11.0
+## Current: v1.11.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.11.1 (July 2026) — fix: `meshWithProgress` could never cancel; retract the #286 kernel story (#286)
+
+**`Shape.meshWithProgress` now actually cancels.** The bridge used the
+`BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)` constructor, which calls `Perform()`
+*internally* with a null `Message_ProgressRange`. The entire mesh was therefore built uninterruptibly
+inside the constructor, before the range we passed to the following `Perform(range)` was ever polled —
+and that second call meshed the shape a **second time**. Cancellation still *threw*, because
+`UserBreak()` was checked afterwards, so the pre-existing test passed and the defect shipped. Fixed by
+using the `IMeshTools_Parameters` + `Message_ProgressRange` constructor, the only one that consumes a
+range. Meshing behaviour is otherwise unchanged: both constructors leave
+`AngleInterior`/`MinSize`/`DeflectionInterior` at defaults, which `Perform()` resolves identically.
+
+Measured on the #286 face (249 s to mesh in full): a 10 s deadline now throws `ImportError.cancelled`
+after 10.1 s, having polled 154,898 times. Previously it ran past 400 s without cancelling.
+
+**v1.10.2's account of #286 was wrong in every substantive claim, and is retracted.** Each was checked
+by measuring or building it rather than by reading:
+
+| Claim (v1.10.2) | Measured |
+|---|---|
+| `Shape.mesh` hangs unboundedly on offset surfaces | **Terminates in 249 s**, `status=0`, 1.4 M triangles. Earlier "hangs" were 120 s / 300 s timeouts set below that. |
+| No in-process timeout can bound it — "measured, not inferred" | **A 10 s deadline returns in 10.1 s.** The "10 s cancel never fired" measurement was our own `meshWithProgress` bug, above — not an OCCT limitation. |
+| Root cause is `BRepMesh_MeshAlgoFactory::GetAlgo` handing offsets a `BRepMesh_UndefinedRangeSplitter` | **Disproven by building it.** Routing `GeomAbs_OffsetSurface` to `BRepMesh_NURBSRangeSplitter` leaves the runtime identical. `getUndefinedIntervalNb()` is dead code here: `NbUIntervals(CN)` forwards to the basis adaptor and returns **11, not 1**, so the `if (aIntervalsNb == 1)` branch never runs and the two splitters behave identically. (`NbUPoles()` also *throws* `Standard_NoSuchObject` on an offset adaptor, so the proposed one-liner was unsafe regardless.) |
+| The hang is in `BRepMesh_Delaun::createTrianglesOnNewVertices` | Stack samples put 100 % of time in `BRepMesh_DelaunayDeflectionControlMeshAlgo::optimizeMesh`. |
+
+**Actual cause — invalid input, not an OCCT defect.** The offset surface is *self-intersecting*.
+Offsetting by more than the local radius of curvature produces cusps: the #286 basis fit's minimum
+principal curvature radius is `2.6e-05` against an offset of `1.27`, so **23.8 %** of its domain is
+cusped and the surface normal swings by up to `π` across one. `BRepMesh` splits any triangle link whose
+end normals differ by more than `AngleInterior` (= `2 × angularDeflection`), but at a normal
+*discontinuity* splitting never converges — halving a link that straddles a cusp just moves the cusp
+into one half. So `optimizeMesh` runs all 11 passes demanding ~80 k splits each, long after linear
+deflection is satisfied (1.82 against a 2.48 target by pass 6, with linear splits at **zero** from pass
+4); `MinSize` (= `linearDeflection / 10`) is the only backstop, rejecting ~200 k splits per pass.
+
+**No upstream OCCT issue or patch is warranted** — retracting v1.10.2's "an upstream OCCT fix is being
+attempted". No xcframework rebuild either: the binary is unchanged. A well-formed offset surface meshes
+normally.
+
+`Shape.mesh` and `Shape.meshWithProgress` docs and `docs/reference/Shape.md` rewritten against the
+measurements, and the mitigation list now leads with the deadline that actually works. The `bounds`
+pre-check remains the best first line of defence, and `isValid` still will not catch this (a
+self-intersecting offset surface is a topologically valid face).
 
 ### v1.11.0 (July 2026) — feat: absorb a boolean's history into the graph, so a picked face survives it (#290)
 
@@ -107,6 +151,10 @@ were counted in API_REFERENCE's own example lists while being undocumented — `
 documented beside their siblings. The remaining 37 are tracked in #294.
 
 ### v1.10.2 (July 2026) — docs: `Shape.mesh` can hang unboundedly on offset surfaces (#286)
+
+> **Retracted by v1.11.1.** Every substantive claim below is false: the mesh is not unbounded (249 s),
+> cancellation *does* work (the failed 10 s deadline was our own bridge bug), and the splitter root
+> cause was disproven by building the proposed fix. Kept for history; see v1.11.1.
 
 Documentation only; no code change — because there is no correct in-process code change to make, and
 saying so precisely is the useful output.

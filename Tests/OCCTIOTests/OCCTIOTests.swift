@@ -1507,6 +1507,67 @@ struct MeshAndExportProgressTests {
         }
     }
 
+    /// Cancels once a wall-clock budget elapses, and counts how often it was asked.
+    final class Deadline: ImportProgress, @unchecked Sendable {
+        private let lock = NSLock()
+        private let start = Date()
+        private let budget: TimeInterval
+        private var _polls = 0
+
+        init(budget: TimeInterval) { self.budget = budget }
+        var polls: Int { lock.lock(); defer { lock.unlock() }; return _polls }
+        func progress(fraction: Double, step: String) {}
+        func shouldCancel() -> Bool {
+            lock.lock(); _polls += 1; lock.unlock()
+            return Date().timeIntervalSince(start) > budget
+        }
+    }
+
+    /// Regression for #286: cancellation must *interrupt* meshing, not be evaluated after it
+    /// has already finished.
+    ///
+    /// The bridge used to call `BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)`,
+    /// whose constructor runs `Perform()` internally with a null progress range. The whole mesh
+    /// was therefore built uninterruptibly before the range was ever polled, and the following
+    /// `Perform(range)` meshed the shape a second time. Cancellation still *threw* — `UserBreak()`
+    /// was checked afterwards — which is why `meshCancellation` above passed the entire time and
+    /// the defect reached users as "no in-process timeout can bound this". Assert on elapsed time,
+    /// which is the part that was actually broken.
+    ///
+    /// Self-calibrating against a baseline mesh so it does not encode machine speed.
+    @Test("Shape.meshWithProgress interrupts meshing rather than cancelling after it (#286)")
+    func meshCancellationInterrupts() throws {
+        guard let baseline = Shape.sphere(radius: 10) else {
+            Issue.record("sphere construction failed"); return
+        }
+        let t0 = Date()
+        _ = try baseline.meshWithProgress(linearDeflection: 0.001, angularDeflection: 0.1)
+        let full = Date().timeIntervalSince(t0)
+
+        // Too quick to time meaningfully; there is no interruption window to observe.
+        guard full > 0.5 else { return }
+
+        guard let subject = Shape.sphere(radius: 10) else {
+            Issue.record("sphere construction failed"); return
+        }
+        let deadline = Deadline(budget: full * 0.25)
+        let t1 = Date()
+        do {
+            _ = try subject.meshWithProgress(linearDeflection: 0.001, angularDeflection: 0.1,
+                                             progress: deadline)
+            Issue.record("meshWithProgress ran to completion instead of cancelling")
+            return
+        } catch ImportError.cancelled {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)"); return
+        }
+        let elapsed = Date().timeIntervalSince(t1)
+        #expect(deadline.polls > 0, "cancellation was never polled — the progress range was not consumed")
+        #expect(elapsed < full * 0.7,
+                "cancelled after \(elapsed)s against a \(full)s uncancelled mesh — meshing ran to completion before the range was polled (#286)")
+    }
+
     @Test("Exporter.writeSTEP with progress: nil round-trips a file")
     func exportSTEPWithProgressNil() throws {
         guard let box = Shape.box(width: 4, height: 4, depth: 4) else {
