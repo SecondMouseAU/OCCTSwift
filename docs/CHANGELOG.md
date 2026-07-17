@@ -7,13 +7,48 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.0
+## Current: v1.12.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.12.1 (July 2026) — fix: concurrent 3D fillet/chamfer builds no longer corrupt each other (#298)
+
+**Filleting a shape on two threads at once returned wrong-but-plausible geometry.** Reported as
+`SheetMetal.Builder.build` returning an invalid solid under parallel test execution (~8 of 10 runs),
+but the root cause is upstream and independent of the wrapper. `BRepFilletAPI_MakeFillet`'s
+constant- and evolutive-radius blend solvers (`BlendFunc_ConstRad`, `BlendFunc_EvolRad`) and the
+shared `ChFi3d_Builder` curve checker keep their geometric work variables in function-local
+`static`s — process-global state, "to avoid systematic reallocation". Two threads filleting at once
+interleave writes to those statics, the solver converges on a corrupted surface, and the result is a
+solid with one shell and a positive volume that nonetheless fails `BRepCheck` — silent bad geometry,
+not a crash and not a thrown error.
+
+Reproduced in **pure OCCT with no OCCTSwift code involved**: a fuse-then-fillet on eight threads
+produced BRepCheck-invalid solids with volumes scattered across several wrong values, while the same
+build on one thread was bit-for-bit deterministic and correct. A plain box fillet (which takes OCCT's
+analytic `ChFiKPart` fast path, not the numerical blend) is unaffected; only filleting a boolean
+result, which needs the general path, trips it.
+
+The issue's own diagnosis was corrected on three points: the result is *not* an empty shape (so the
+suggested "reject empty results" guard would not have caught it), the boolean is *not* implicated
+(the fuse is thread-safe and returns the correct shape every time), and it is unrelated to the
+NCollection arm64 SEGV.
+
+**Fix.** The bridge now serialises every 3D fillet and chamfer build under a dedicated recursive
+mutex (`occtFilletMutex`), distinct from `OCCTSerial`. Fillet/chamfer are now always safe to call
+concurrently with no caller-side lock; booleans, meshing, sweeps, and everything else stay fully
+parallel — only fillet/chamfer builds serialise against each other. 2D fillets
+(`BRepFilletAPI_MakeFillet2d`, the analytic `ChFi2d` toolkit) have no such statics and are not
+guarded. Verified: the originally-failing `OCCTMiscTests` target passes 8/8 parallel runs, and a new
+`Issue298FilletThreadSafetyTests` regression fails reliably without the lock and passes with it.
+
+This is a mitigation. The permanent fix de-statics the work variables in OCCT itself so the lock can
+be dropped and fillet/chamfer become genuinely parallel — tracked as a follow-up `occt-src` patch
+and an upstream report. See `docs/thread-safety.md` for the full write-up.
 
 ### v1.12.0 (July 2026) — fix: a `GraphUID` no longer resolves against a graph that didn't mint it (#295)
 

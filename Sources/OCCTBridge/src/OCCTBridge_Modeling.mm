@@ -321,6 +321,7 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
     if (!shape || !edgeIndices || edgeCount <= 0 || radius <= 0) return nullptr;
 
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         // Build edge index map for lookup
@@ -350,6 +351,7 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeI
     if (startRadius <= 0 || endRadius <= 0) return nullptr;
 
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         // Build edge index map for lookup
@@ -1221,6 +1223,7 @@ OCCTShapeRef OCCTShapeChamferTwoDistances(OCCTShapeRef shape,
                                            int32_t count) {
     if (!shape || !edgeIndices || !faceIndices || !dist1 || !dist2 || count <= 0) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeChamfer chamfer(shape->shape);
         TopTools_IndexedMapOfShape edgeMap, faceMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
@@ -1251,6 +1254,7 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef shape,
                                         int32_t count) {
     if (!shape || !edgeIndices || !faceIndices || !distances || !anglesDeg || count <= 0) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeChamfer chamfer(shape->shape);
         TopTools_IndexedMapOfShape edgeMap, faceMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
@@ -1876,6 +1880,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
     try {
         TopTools_IndexedMapOfShape edgeMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
         for (int32_t i = 0; i < count; i++) {
             int32_t idx = edgeIndices[i] + 1; // 0-based to 1-based
@@ -1903,6 +1908,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
         int32_t idx = edgeIndex + 1;
         if (idx < 1 || idx > edgeMap.Extent()) return nullptr;
         TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx));
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
         op->Add(edge);
         // Map the variable radius along the edge: (param=0, startR), (param=1, endR).
@@ -1928,6 +1934,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef shape,
     try {
         TopTools_IndexedMapOfShape edgeMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         std::unique_ptr<BRepFilletAPI_MakeChamfer> op(new BRepFilletAPI_MakeChamfer(shape->shape));
         for (int32_t i = 0; i < count; i++) {
             int32_t idx = edgeIndices[i] + 1;
@@ -2346,6 +2353,7 @@ OCCTShapeRef OCCTShapeFuseAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, dou
         const TopTools_ListOfShape& sectionEdges = fuse.SectionEdges();
 
         // Step 3: Fillet those edges
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(fuseResult);
         // Add section edges
         for (TopTools_ListIteratorOfListOfShape it(sectionEdges); it.More(); it.Next()) {
@@ -2401,6 +2409,7 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
         }
 
         // Step 2: Fillet
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(cutResult);
         for (TopTools_ListIteratorOfListOfShape it(sectionEdges); it.More(); it.Next()) {
             if (it.Value().ShapeType() == TopAbs_EDGE) {
@@ -2434,6 +2443,7 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
         TopTools_IndexedMapOfShape edgeMap;
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         int rpOffset = 0;
@@ -8365,6 +8375,7 @@ bool OCCTFilletBuilderAddEdgeEvolving(OCCTFilletBuilderRef builder, OCCTEdgeRef 
 OCCTShapeRef OCCTFilletBuilderBuild(OCCTFilletBuilderRef builder) {
     if (!builder) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         builder->fillet.Build();
         if (!builder->fillet.IsDone()) return nullptr;
         return new OCCTShape(builder->fillet.Shape());
@@ -8470,6 +8481,7 @@ bool OCCTChamferBuilderAddEdgeDistAngle(OCCTChamferBuilderRef builder,
 OCCTShapeRef OCCTChamferBuilderBuild(OCCTChamferBuilderRef builder) {
     if (!builder) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         builder->chamfer.Build();
         if (!builder->chamfer.IsDone()) return nullptr;
         return new OCCTShape(builder->chamfer.Shape());
@@ -10055,6 +10067,7 @@ int32_t OCCTShapeSelfIntersectsBounded(OCCTShapeRef shape, double timeoutSeconds
 OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius) {
     if (!shape) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         // Add fillet to all edges
@@ -10075,6 +10088,7 @@ OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius) {
 OCCTShapeRef OCCTShapeChamfer(OCCTShapeRef shape, double distance) {
     if (!shape) return nullptr;
     try {
+        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeChamfer chamfer(shape->shape);
 
         // Add chamfer to all edges

@@ -19,6 +19,13 @@ std::recursive_mutex& occtGlobalMutex() {
 void OCCTSerialLockAcquire(void) { occtGlobalMutex().lock(); }
 void OCCTSerialLockRelease(void) { occtGlobalMutex().unlock(); }
 
+// #298: serialises 3D fillet/chamfer builds against each other (non-reentrant
+// blend statics in OCCT's TKFillet). See OCCTBridge_Internal.h for the full why.
+std::recursive_mutex& occtFilletMutex() {
+    static std::recursive_mutex mutex;
+    return mutex;
+}
+
 // Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
 // SIGSEGV/SIGBUS/SIGFPE handlers without enabling the FPE-trapping FP mask, so that
 // signals raised inside OCCT become catchable via OCC_CATCH_SIGNALS instead of aborting

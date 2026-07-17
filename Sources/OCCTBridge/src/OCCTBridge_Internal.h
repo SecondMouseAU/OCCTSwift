@@ -187,6 +187,28 @@ struct OCCTHistoryStorage {
 std::recursive_mutex& occtGlobalMutex();
 std::mutex& igesMutex();
 
+// #298: 3D fillet/chamfer serialization lock.
+//
+// BRepFilletAPI_MakeFillet's constant- and evolutive-radius blend solvers
+// (BlendFunc_ConstRad / BlendFunc_EvolRad) and the shared ChFi3d_Builder curve
+// checker keep their geometric work variables in function-local `static`s ("to
+// avoid systematic reallocation"). That makes the blend evaluation NON-REENTRANT:
+// two threads filleting at once interleave writes to the same statics, the solver
+// converges on a corrupted surface, and the result is a wrong-but-plausible solid
+// that fails BRepCheck — silent bad geometry, not a crash or a thrown error.
+// Reproduced in pure OCCT with no wrapper involved (issue #298).
+//
+// Hold this lock around every 3D fillet/chamfer Build(). It is DISTINCT from
+// occtGlobalMutex(): booleans, meshing, and everything else stay fully parallel —
+// only fillet/chamfer builds serialise against each other. Recursive so a fillet
+// wrapper that nests another cannot self-deadlock. 2D fillets
+// (BRepFilletAPI_MakeFillet2d) use the separate analytic ChFi2d toolkit with no
+// such statics and are intentionally NOT guarded.
+//
+// This is a mitigation. The real fix de-statics those OCCT work variables
+// (Scripts/patches/0003) so the lock can be dropped. See docs/thread-safety.md.
+std::recursive_mutex& occtFilletMutex();
+
 // === OCCT signal handling ===
 //
 // Installs OCCT's signal handlers (OSD::SetSignal) once, so that OS signals
