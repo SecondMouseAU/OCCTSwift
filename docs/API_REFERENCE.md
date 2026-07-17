@@ -691,7 +691,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | Swift API | OCCT Class |
 |-----------|------------|
 | `Shape.load(from:)` | `STEPControl_Reader` |
-| `Shape.loadRobust(from:)` | `STEPControl_Reader` + `ShapeFix_*` |
+| `Shape.loadRobust(from:progress:)` | `STEPControl_Reader` + `ShapeFix_*` (via `OCCTImportSTEPRobustProgress`) |
 | `Shape.loadIGES(from:)` | `IGESControl_Reader` |
 | `Shape.loadIGESRobust(from:)` | `IGESControl_Reader` + `ShapeFix_*` |
 | `Shape.loadBREP(from:)` | `BRepTools::Read` |

@@ -2036,3 +2036,163 @@ struct STEPWriterCAFCorruptionTests {
                 "frustum volume corrupted: \(after.volume) vs \(analyticVolume) (#280)")
     }
 }
+
+/// `.serialized` because both cancellation tests calibrate a deadline against a baseline import
+/// they time themselves. Run concurrently they compete for CPU, inflating each other's baseline
+/// until `budget = 0.75 * full` overshoots the real import and the deadline never fires — the
+/// import then completes and the test reports a shape where it wanted a cancellation. The budget
+/// has to sit above the transfer (~55% of the import) and below 100%, so there is no margin to
+/// widen; serialising is the fix. Observed: both pass alone, the IGES one fails beside the STEP one.
+@Suite("v1.11.2 Robust import progress (issue #300)", .serialized)
+struct RobustImportProgressTests {
+
+    /// Regression for #300: a deadline must interrupt the *healing* phase of a robust import,
+    /// not merely the transfer that precedes it.
+    ///
+    /// `OCCTImportIGESRobustProgress` handed `TransferRoots` the entire `Message_ProgressRange`
+    /// and then ran `ShapeFix_Shape::Perform()` with no range at all. Healing is not a coda —
+    /// it is 38-50% of a robust import (measured across box/sphere/cylinder/torus compounds) —
+    /// so a caller's deadline could not bound the call: `shouldCancel()` returning `true` during
+    /// healing was ignored entirely, the heal ran to completion, and the import returned a
+    /// *shape* rather than reporting cancellation. Same family as #286.
+    ///
+    /// The deadline is deliberately set *past* the transfer so it lands inside healing, the part
+    /// that was out of reach. Wall-clock phase costs are identical before and after the fix, so
+    /// this discriminates properly: the old bridge returns a shape here, the fixed one throws.
+    /// A cancel triggered on reported `fraction` instead would be a false negative — under the
+    /// old bridge the transfer alone spanned 0...1, so any fraction-based trigger fired while
+    /// the transfer was still running and cancelled correctly even with the bug present.
+    ///
+    /// Self-calibrating against a baseline import so it does not encode machine speed.
+    @Test("Shape.loadIGESRobust interrupts healing, not just the transfer (#300)")
+    func igesRobustHealCancellation() throws {
+        // Healing's share of the import is largest for many-faced solids; 400 boxes makes the
+        // import measurable without making the fixture slow to write.
+        let boxes = (0..<400).compactMap { i in
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(Double(i) * 30, 0, 0))
+        }
+        guard boxes.count == 400, let subject = Shape.compound(boxes) else {
+            Issue.record("compound construction failed"); return
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt300_robust_heal.igs")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try subject.writeIGES(to: url)
+
+        let t0 = Date()
+        _ = try Shape.loadIGESRobust(fromPath: url.path)
+        let full = Date().timeIntervalSince(t0)
+
+        // Too quick to time meaningfully; there is no interruption window to observe. The
+        // import measures ~0.47s here, so this leaves >2x margin: the discrimination itself
+        // is scale-free (the budget sits at 75% and the transfer ends near 55%, whatever the
+        // absolute cost), and the guard only needs to keep the arithmetic clear of timer noise.
+        guard full > 0.2 else { return }
+
+        // Past the transfer (~55% of the import), so the deadline falls inside healing.
+        let budget = full * 0.75
+        let deadline = MeshAndExportProgressTests.Deadline(budget: budget)
+        let t1 = Date()
+        do {
+            _ = try Shape.loadIGESRobust(fromPath: url.path, progress: deadline)
+            // Distinguish "the bug is back" from "this run was simply faster than the baseline
+            // the budget was calibrated against". If the import finished before its own deadline
+            // came due, nothing was ever asked to stop and the run proves nothing either way.
+            // With the defect present the import takes ~full, so the deadline always comes due
+            // and this cannot swallow a real regression.
+            if Date().timeIntervalSince(t1) < budget { return }
+            Issue.record("loadIGESRobust returned a shape instead of cancelling — healing ran outside the caller's progress range (#300)")
+            return
+        } catch ImportError.cancelled {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)"); return
+        }
+        let elapsed = Date().timeIntervalSince(t1)
+        #expect(deadline.polls > 0, "cancellation was never polled — the range was not consumed")
+        #expect(elapsed < full * 0.95,
+                "cancelled after \(elapsed)s against a \(full)s uncancelled import — healing ran to completion before the deadline could bite (#300)")
+    }
+
+    /// Regression for #300 (STEP side): `loadRobust`'s repair phase must honour the deadline too.
+    ///
+    /// `OCCTImportSTEPRobustProgress` had the identical defect but no Swift caller could reach it —
+    /// `loadRobust` called the non-progress bridge variant — so it was unreachable and untestable.
+    /// v1.11.2 exposes `progress:` on `loadRobust`, which is what makes this test possible.
+    ///
+    /// The fixture is a convex N-gon prism: one many-faced **solid**, so the import takes the robust
+    /// path's SOLID branch (transfer, then heal — no sewing), where healing measures ~50% of the
+    /// work. That share is what lets a deadline land in the repair phase at all: on a *compound*
+    /// the same import spends only ~6% there, and a deadline would fall in the transfer instead —
+    /// which was already cancellable, so such a test would pass with the bug present. Convex also
+    /// keeps clear of #263 (ShapeFix heap-corrupts healing a self-intersecting-wire prism).
+    @Test("Shape.loadRobust interrupts repair, not just the transfer (#300)")
+    func stepRobustRepairCancellation() throws {
+        let sides = 1200
+        let points = (0..<sides).map { i -> SIMD2<Double> in
+            let a = 2 * Double.pi * Double(i) / Double(sides)
+            return SIMD2(1000 * cos(a), 1000 * sin(a))
+        }
+        guard let profile = Wire.polygon(points),
+              let subject = Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 50) else {
+            Issue.record("prism construction failed"); return
+        }
+
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt300_robust_repair.step")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try subject.writeSTEP(to: url)
+
+        let t0 = Date()
+        let baseline = try Shape.loadRobust(fromPath: url.path)
+        let full = Date().timeIntervalSince(t0)
+
+        // Guards the premise: a compound here would mean the sewing branch and a ~6% repair
+        // share, and the deadline below would land in the transfer instead of the repair.
+        #expect(baseline.shapeType == .solid,
+                "fixture is no longer a solid — the deadline would land in the transfer, not the repair (#300)")
+
+        // Too quick to time meaningfully; the import measures ~1.4s here.
+        guard full > 0.2 else { return }
+
+        // Past the transfer (~55% of the import, parsing included), so the deadline falls inside repair.
+        let budget = full * 0.75
+        let deadline = MeshAndExportProgressTests.Deadline(budget: budget)
+        let t1 = Date()
+        do {
+            _ = try Shape.loadRobust(fromPath: url.path, progress: deadline)
+            // See the IGES case above: an import that beat its own deadline was never asked to
+            // stop, so it is inconclusive rather than a failure.
+            if Date().timeIntervalSince(t1) < budget { return }
+            Issue.record("loadRobust returned a shape instead of cancelling — repair ran outside the caller's progress range (#300)")
+            return
+        } catch ImportError.cancelled {
+            // Expected.
+        } catch {
+            Issue.record("Unexpected error: \(error)"); return
+        }
+        let elapsed = Date().timeIntervalSince(t1)
+        #expect(deadline.polls > 0, "cancellation was never polled — the range was not consumed")
+        #expect(elapsed < full * 0.95,
+                "cancelled after \(elapsed)s against a \(full)s uncancelled import — repair ran to completion before the deadline could bite (#300)")
+    }
+
+    /// `progress: nil` must still import normally — the default path now routes through the
+    /// progress-capable bridge function, so this guards the re-route rather than the cancellation.
+    @Test("Shape.loadRobust with progress: nil round-trips a file (#300)")
+    func stepRobustNilProgress() throws {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box construction failed"); return
+        }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt300_robust_nil.step")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try box.writeSTEP(to: url)
+
+        let shape = try Shape.loadRobust(fromPath: url.path)
+        #expect(shape.isValid)
+        #expect(shape.faceCount == 6, "expected the box back, got \(shape.faceCount) faces")
+    }
+}
