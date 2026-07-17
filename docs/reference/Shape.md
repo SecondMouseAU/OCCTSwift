@@ -947,9 +947,40 @@ public func shelled(thickness: Double) -> Shape?
 - **Parameters:** `thickness` — wall thickness (positive = shell walls of this thickness).
 - **Returns:** Hollow shell, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid`.
+- **Warning:** The offset surfaces this produces (`Geom_OffsetSurface`) can hang the mesher unboundedly on pathological input — see the warning on [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
 - **Example:**
   ```swift
   if let shell = Shape.box(width: 10, height: 10, depth: 10)?.shelled(thickness: 1) { }
+  ```
+
+---
+
+### `hollowed(removingFaces:thickness:tolerance:joinType:)`
+
+Remove the specified faces and shell the rest to a uniform wall thickness — the removed faces become the openings.
+
+```swift
+public func hollowed(removingFaces faceIndices: [Int],
+                     thickness: Double,
+                     tolerance: Double = 1e-3,
+                     joinType: OffsetJoinType = .arc) -> Shape?
+```
+
+Where `shelled(thickness:)` closes the solid entirely, this is the open-box case: pass the 0-based indices of the faces to remove. Returns `nil` if `faceIndices` is empty.
+
+- **Parameters:**
+  - `faceIndices` — 0-based indices of the faces to remove (they become openings).
+  - `thickness` — wall thickness (positive = offset inward).
+  - `tolerance` — tolerance for the operation (default `1e-3`).
+  - `joinType` — how to join offset edges (default `.arc`).
+- **Returns:** Hollowed solid, or `nil` on failure.
+- **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTShapeMakeThickSolid`).
+- **Warning:** As with `shelled(thickness:)`, the resulting offset surfaces can hang the mesher on pathological input ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
+- **Example:**
+  ```swift
+  // An open-topped box: remove face 5, keep 1 mm walls.
+  if let tray = Shape.box(width: 20, height: 20, depth: 10)?
+                     .hollowed(removingFaces: [5], thickness: 1) { }
   ```
 
 ---

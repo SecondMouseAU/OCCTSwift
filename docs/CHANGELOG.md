@@ -7,13 +7,43 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.10.2
+## Current: v1.10.3
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
 ---
 
 ## Release History
+
+### v1.10.3 (July 2026) — docs: canonical operation count, derived not hand-maintained (#289)
+
+The headline operation count was stated in two places with **three numbers in play**: README said
+4,313, `docs/API_REFERENCE.md`'s `Total` said 3,431, and that table's own 470 category rows summed to
+3,320. Both headline figures were last written in the *same* commit, so at most one was ever right,
+and both predated v1.10.0.
+
+**Canonical rule, now written down** (`docs/API_REFERENCE.md` § How operations are counted):
+
+> One row per distinct public Swift entry point; overloads counted separately.
+
+An operation is any `public func`/`static func`, `public init`, `public var` **with an accessor
+block**, or `public subscript` in the `OCCTSwift` module. Stored properties, types and enum cases are
+data, not entry points, and are not counted. The derived count is **4,234**.
+
+**Derived, not hand-maintained.** `Scripts/count-operations.py` computes it from source and rewrites
+both figures (`--fix`), exiting 1 if they disagree — the drift class is now mechanically impossible.
+`--audit` lists counted entry points with no reference page.
+
+The 882 gap turned out to be exactly what #289 suspected: **two divergent methodologies.** README's
+4,313 was ~the full entry-point surface (80 off today's derived 4,234 — stale, not wrong-in-kind),
+while API_REFERENCE's rows are a curated *categorisation* covering 3,320 (~78%) of the surface. The
+`Total` and the row sum were never measuring the same thing; the table now says so explicitly rather
+than implying the rows should add up.
+
+**Docs coverage audit** (the same pass): 39 counted entry points had no reference documentation. Two
+were counted in API_REFERENCE's own example lists while being undocumented — `Shape.commonAll(_:)`
+(Booleans) and `hollowed(removingFaces:thickness:tolerance:joinType:)` (Modifications) — both now
+documented beside their siblings. The remaining 37 are tracked in #294.
 
 ### v1.10.2 (July 2026) — docs: `Shape.mesh` can hang unboundedly on offset surfaces (#286)
 

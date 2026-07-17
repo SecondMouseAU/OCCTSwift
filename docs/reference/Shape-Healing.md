@@ -1628,6 +1628,26 @@ More robust than sequential pairwise `union(with:)` calls — processes all inte
 
 ---
 
+### `Shape.commonAll(_:)`
+
+Intersect multiple shapes simultaneously — the intersection counterpart to `fuseAll(_:)`.
+
+```swift
+public static func commonAll(_ shapes: [Shape]) -> Shape?
+```
+
+Computes the common volume of all inputs at once. Same rationale as `fuseAll(_:)`: multi-tool mode avoids the intermediate tolerance accumulation of chained pairwise `intersection(_:)` calls. Requires at least two shapes.
+
+- **Parameters:** `shapes` — array of shapes to intersect (must have ≥ 2 elements).
+- **Returns:** Common shape (intersection of all), or nil on failure.
+- **OCCT:** `BRepAlgoAPI_Common` multi-tool mode (via `OCCTShapeCommonMulti`).
+- **Example:**
+  ```swift
+  if let overlap = Shape.commonAll([a, b, c]) { }
+  ```
+
+---
+
 ## Multi-Offset Wire
 
 ### `multiOffsetWires(offsets:joinType:)`
