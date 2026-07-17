@@ -1123,23 +1123,63 @@ public final class Shape: @unchecked Sendable {
     /// - Shells that need conversion to solids
     /// - Geometry issues that require healing
     ///
-    /// - Parameter url: URL to the STEP file
+    /// ## Progress and cancellation
+    ///
+    /// `progress` observes the import and cancels it cooperatively. Every phase is bounded by it:
+    /// the transfer takes `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching
+    /// their measured cost — repair is 38–50% of the work, not a coda to the transfer. A wall-clock
+    /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
+    /// throws rather than returning the partially-repaired shape.
+    ///
+    /// ```swift
+    /// final class Deadline: ImportProgress, @unchecked Sendable {
+    ///     private let start = Date()
+    ///     func progress(fraction: Double, step: String) { print("\(Int(fraction * 100))%") }
+    ///     func shouldCancel() -> Bool { Date().timeIntervalSince(start) > 10 }
+    /// }
+    ///
+    /// do {
+    ///     let shape = try Shape.loadRobust(from: stepURL, progress: Deadline())
+    ///     print(shape.isValid)
+    /// } catch ImportError.cancelled {
+    ///     // Gave up after 10s — repairing untrusted geometry can be pathological.
+    /// }
+    /// ```
+    ///
+    /// - Note: **Parsing is not covered.** OCCT's `STEPControl_Reader::ReadFile` takes no
+    ///   `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists.
+    ///   Reading a large STEP file reports nothing and cannot be cancelled; `fraction` and the
+    ///   deadline only bound the transfer and repair that follow.
+    ///
+    /// - Parameters:
+    ///   - url: URL to the STEP file
+    ///   - progress: Optional progress + cancellation channel.
     /// - Returns: Processed shape suitable for CAM operations
-    /// - Throws: ImportError if import fails
-    public static func loadRobust(from url: URL) throws -> Shape {
-        guard let handle = OCCTImportSTEPRobust(url.path) else {
-            throw ImportError.importFailed("Failed to import: \(url.lastPathComponent)")
-        }
-        return Shape(handle: handle)
+    /// - Throws: `ImportError.cancelled` if cancelled, `ImportError.importFailed` on failure.
+    public static func loadRobust(from url: URL, progress: ImportProgress? = nil) throws -> Shape {
+        try loadRobust(fromPath: url.path, progress: progress)
     }
 
     /// Load a STEP file with robust handling: sewing, solid creation, and shape healing.
     ///
-    /// - Parameter path: Path to the STEP file
+    /// See ``loadRobust(from:progress:)`` for the progress/cancellation contract and its limits.
+    ///
+    /// ```swift
+    /// let shape = try Shape.loadRobust(fromPath: "/tmp/part.step")
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - path: Path to the STEP file
+    ///   - progress: Optional progress + cancellation channel.
     /// - Returns: Processed shape suitable for CAM operations
-    /// - Throws: ImportError if import fails
-    public static func loadRobust(fromPath path: String) throws -> Shape {
-        guard let handle = OCCTImportSTEPRobust(path) else {
+    /// - Throws: `ImportError.cancelled` if cancelled, `ImportError.importFailed` on failure.
+    public static func loadRobust(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape {
+        var cancelled: Bool = false
+        let handle: OCCTShapeRef? = withImportProgress(progress) { ctx in
+            OCCTImportSTEPRobustProgress(path, ctx, &cancelled)
+        }
+        if cancelled { throw ImportError.cancelled }
+        guard let handle else {
             throw ImportError.importFailed("Failed to import: \(path)")
         }
         return Shape(handle: handle)

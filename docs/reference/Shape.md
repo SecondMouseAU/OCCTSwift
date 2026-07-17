@@ -1598,37 +1598,60 @@ public static func stepShapeCount(path: String) -> Int
 
 ## Robust STEP Import
 
-### `Shape.loadRobust(from:)`
+### `Shape.loadRobust(from:progress:)`
 
 Load a STEP file with robust handling: sewing, solid creation, and shape healing.
 
 ```swift
-public static func loadRobust(from url: URL) throws -> Shape
+public static func loadRobust(from url: URL, progress: ImportProgress? = nil) throws -> Shape
 ```
 
 Recommended for STEP files that may contain disconnected faces needing sewing, shells needing conversion to solids, or geometry issues requiring healing.
 
-- **Parameters:** `url` — URL to the STEP file.
+Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching their measured cost — repair is ~50% of the work on a solid. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair throws rather than returning the partially-repaired shape.
+
+- **Parameters:** `url` — URL to the STEP file; `progress` — optional progress/cancellation channel.
 - **Returns:** Processed shape suitable for CAM operations.
-- **Throws:** `ImportError.importFailed` on failure.
-- **OCCT:** `STEPControl_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTEPRobust`).
+- **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
+- **OCCT:** `STEPControl_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTEPRobustProgress`).
 - **Example:**
   ```swift
   let shape = try Shape.loadRobust(from: stepURL)
   print(shape.isValid)   // typically true
   ```
+- **Example — bounding an untrusted import with a deadline:**
+  ```swift
+  final class Deadline: ImportProgress, @unchecked Sendable {
+      private let start = Date()
+      func progress(fraction: Double, step: String) { print("\(Int(fraction * 100))%") }
+      func shouldCancel() -> Bool { Date().timeIntervalSince(start) > 10 }
+  }
+
+  do {
+      let shape = try Shape.loadRobust(from: stepURL, progress: Deadline())
+      print(shape.isValid)
+  } catch ImportError.cancelled {
+      // Gave up after 10s — repairing untrusted geometry can be pathological.
+  }
+  ```
+- **Limitation — parsing is not covered:** OCCT's `STEPControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large STEP file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and repair that follow.
+- **New in v1.11.2:** `progress:`. The progress-capable bridge function existed but no Swift API reached it, so a robust STEP import could not be observed or cancelled at all ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)). Existing `loadRobust(from:)` call sites are unaffected — the parameter defaults to `nil`.
 
 ---
 
-### `Shape.loadRobust(fromPath:)`
+### `Shape.loadRobust(fromPath:progress:)`
 
 Load a STEP file with robust handling from a file path.
 
 ```swift
-public static func loadRobust(fromPath path: String) throws -> Shape
+public static func loadRobust(fromPath path: String, progress: ImportProgress? = nil) throws -> Shape
 ```
 
-- **OCCT:** `STEPControl_Reader` + sewing + solid creation + healing (via `OCCTImportSTEPRobust`).
+- **OCCT:** `STEPControl_Reader` + sewing + solid creation + healing (via `OCCTImportSTEPRobustProgress`).
+- **Example:**
+  ```swift
+  let shape = try Shape.loadRobust(fromPath: "/tmp/part.step")
+  ```
 
 ---
 

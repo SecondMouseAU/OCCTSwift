@@ -45,13 +45,28 @@ would have been a false negative: under the old bridge the transfer alone spanne
 fraction-based trigger fired while the transfer was still running and cancelled correctly even with
 the bug present.
 
-Also in this release:
+**`Shape.loadRobust` gains a `progress:` channel** (new API). `OCCTImportSTEPRobustProgress` had the
+identical defect, and was fixed identically (transfer/sew/heal, with sewing taking a thin slice of the
+repair half since it costs ~1% of what healing does) — but no Swift API reached it: `loadRobust` called
+the non-progress bridge variant, so a robust STEP import could not be observed or cancelled **at all**.
+It now routes through the progress-capable variant, mirroring its `loadIGESRobust` sibling:
 
-- **`OCCTImportSTEPRobustProgress` fixed identically** (transfer/sew/heal, with sewing taking a thin
-  slice of the repair half since it costs ~1% of what healing does). No Swift API reaches this
-  bridge function today — `loadRobust` calls the non-progress variant — so it is fixed for
-  correctness but is not regression-tested. Exposing a `loadRobust(progress:)` overload is a
-  separate decision.
+```swift
+let shape = try Shape.loadRobust(from: stepURL, progress: Deadline())
+```
+
+Source-compatible — `progress` defaults to `nil`, so existing `loadRobust(from:)` call sites are
+unaffected. The one visible change is the failure message for the URL overload, which now carries the
+full path rather than the last component (it delegates to the path overload, as `loadIGESRobust` does).
+
+Exposing it is also what makes the STEP path **testable**: the new regression test drives it through a
+convex N-gon prism, which imports as a single many-faced *solid* and so takes the SOLID branch, where
+repair is ~50% of the work. That share is load-bearing — on a *compound* the same import spends only
+~6% in repair, so a deadline would land in the transfer, which was already cancellable, and the test
+would pass with the bug present. Confirmed to fail against an unfixed repair phase: *"loadRobust
+returned a shape instead of cancelling"*.
+
+Also in this release:
 - **Docs corrected:** `loadIGESRobust` was documented as "sewing and healing". It has never called
   `BRepBuilderAPI_Sewing` — it only transfers and heals.
 - **Documented OCCT limitation:** `IGESControl_Reader::ReadFile` takes no `Message_ProgressRange`
