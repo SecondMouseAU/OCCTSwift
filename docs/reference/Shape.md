@@ -1217,8 +1217,10 @@ public func mesh(
   ```
 - **⚠️ Can hang unboundedly on offset surfaces.** The geometry `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`) can put OCCT's mesher into an effectively non-terminating state. Measured on a fitted-then-offset B-spline panel: one face meshed for **>300 s without returning** at a *coarse* deflection (1/638 of the bbox diagonal) — a kernel pathology, not a workload cost ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
 
+  **Cause** (OCCT `V8_0_0_p1`): `BRepMesh_MeshAlgoFactory::GetAlgo` lumps `GeomAbs_OffsetSurface` in with `GeomAbs_OtherSurface`, handing it a `BRepMesh_UndefinedRangeSplitter` whose `getUndefinedIntervalNb()` returns a constant `1` — so an offset surface gets *no* parametric subdivision, however wiggly its basis B-spline is. (The same B-spline meshed directly gets `BRepMesh_NURBSRangeSplitter`, which subdivides by `NbUPoles()-1`.) The Delaunay insertion then starts from a near-empty grid and `BRepMesh_Delaun::createTrianglesOnNewVertices` blows up.
+
   **It cannot be bounded in-process**, and the reasons are worth knowing:
-  - **A timeout cannot work.** OCCT polls cancellation *between* faces (`BRepMesh_FaceDiscret`), and the Delaunay triangulation (`BRepMesh_Delaun`) takes no progress range and never polls. A hang inside **one** face is uninterruptible, so `meshWithProgress` does **not** help.
+  - **A timeout cannot work — verified, not assumed.** `createTrianglesOnNewVertices` *does* poll (`aPS.More()`) in its outer per-vertex loop, but the hang is inside a *single* iteration, so the poll is never reached. A 10 s cancel deadline via `meshWithProgress` was measured **not to fire at all** (killed at 120 s).
   - **A validity pre-check cannot catch it.** The measured offending solid reports `isValid == true`.
 
   Mitigations, best first:

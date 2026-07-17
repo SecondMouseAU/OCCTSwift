@@ -15,6 +15,33 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### v1.10.3 (July 2026) — docs: correct the #286 mechanism (root-caused to the mesher's splitter choice)
+
+Corrects v1.10.2, which named the wrong OCCT code. The conclusion there was right — `Shape.mesh` can
+hang unboundedly on offset surfaces, and no in-process timeout can bound it — but the stated mechanism
+was wrong, and it pointed anyone investigating at the wrong function.
+
+**v1.10.2 said:** the hang is in the range-less `BRepMesh_Delaun` constructor, so cancellation is never
+polled.
+
+**Actually** (from a stack sample of the hang, plus OCCT `V8_0_0_p1` source): the hang is in
+`BRepMesh_Delaun::createTrianglesOnNewVertices`, reached via `postProcessMesh → insertNodes →
+AddVertices`. That function *does* receive a progress range and *does* poll it (`aPS.More()`) in its
+outer per-vertex loop — but the hang is inside a *single* iteration, so the poll is never reached. The
+"no timeout is possible" conclusion is unchanged and is now **verified rather than inferred**: a 10 s
+cancel deadline via `meshWithProgress` was measured not to fire at all (killed at 120 s).
+
+**Root cause, now identified:** `BRepMesh_MeshAlgoFactory::GetAlgo` lumps `GeomAbs_OffsetSurface` in
+with `GeomAbs_OtherSurface` and hands it a `BRepMesh_UndefinedRangeSplitter`, whose
+`getUndefinedIntervalNb()` returns a constant `1`. An offset surface therefore gets **no parametric
+subdivision at all**, however wiggly its basis B-spline is, while the same B-spline meshed directly
+gets `BRepMesh_NURBSRangeSplitter` (subdividing by `NbUPoles()-1`). The Delaunay insertion starts from
+a near-empty grid and blows up. This also explains why the documented
+`withSurfacesAsBSpline(offset: true)` mitigation works: it converts the surface to a B-spline, which
+routes it to the correct splitter.
+
+An upstream OCCT fix is being attempted against this root cause; see #286.
+
 ### v1.10.2 (July 2026) — docs: `Shape.mesh` can hang unboundedly on offset surfaces (#286)
 
 Documentation only; no code change. `Shape.mesh(linearDeflection:angularDeflection:)` can put OCCT's
