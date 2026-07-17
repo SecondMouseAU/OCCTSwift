@@ -430,8 +430,8 @@ public func add(_ result: Shape,
 
 **The input and the result share one graph.** Build the graph from the operation's *input* shape, then
 hand it the result. History is NodeId-keyed, so the `NodeRef`s and `GraphUID`s you already hold stay
-valid — there is no generation boundary to cross, and no cross-graph UID lookup (which would be unsafe;
-see [#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
+valid — there is no second graph to look them up in, and a UID only ever means something in the graph
+that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 
 - **Parameters:**
   - `result` — the operation's result shape.

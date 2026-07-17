@@ -7,9 +7,9 @@ nav_order: 9
 # Topology Graph
 
 A `Shape` is a B-Rep — a graph of solids, shells, faces, wires, edges and vertices wired together by
-incidence. `TopologyGraph` exposes that graph for **queries** (counts, adjacency, shared edges) and
-gives every node a **durable identity** that survives modelling operations — useful for selection,
-analysis, and persisting references across sessions.
+incidence. `TopologyGraph` exposes that graph for **queries** (counts, adjacency, shared edges), gives
+every node an identity that survives mutation of that graph, and can absorb an operation's **history**
+so a selection survives the operation too — useful for selection and analysis.
 
 ## Build the graph
 
@@ -68,13 +68,58 @@ if let resolved = graph.node(forUID: uid) {
 }
 ```
 
-UIDs are scoped to a **generation** (`graph.generation`, bumped on rebuild) — validate the generation
-matches before reusing a UID across a rebuild. Parallel kinds exist for references (`GraphRefUID`) and
-domain-scoped items (`GraphItemUID`).
+A UID is scoped to the **one graph instance** that minted it. Counters restart at 1 in every graph, so
+a UID from another graph would name an unrelated node; each UID carries the minting graph's
+`instanceID` as `graphID`, and the resolvers return `nil` rather than a wrong node:
+
+```swift
+let other = TopologyGraph(shape: Shape.cylinder(radius: 3, height: 7)!)!
+other.node(forUID: uid)      // nil — uid belongs to `graph`, not to `other`
+other.contains(uid: uid)     // false
+```
+
+`copy()` and `translated()` copy the whole graph and **keep** that identity, so UIDs carry across and
+name the same nodes. `copyFace()` lifts a single face into a new graph and does not, so its UIDs are
+its own. Parallel kinds exist for references (`GraphRefUID`) and domain-scoped items (`GraphItemUID`),
+with the same scope.
+
+```swift
+let copy = graph.copy()!
+copy.node(forUID: uid)                  // resolves — same face, same identity
+
+let lifted = graph.copyFace(3)!         // one face, at index 0, new identity
+lifted.node(forUID: uid)                // nil
+lifted.uid(ofNodeKind: faceKind, index: 0)   // mint from the new graph instead
+```
+
+### UIDs and persistence
+
+A rebuild is a **new graph**, so a UID does not survive one — build the graph again from the same
+shape and the old UIDs are void. Storing a `GraphUID` in a file and resolving it after a rebuild does
+not work (and before v1.12.0 it appeared to work, silently returning a wrong node on any other model).
+
+To carry a selection across a save/load today, store the `(kind, index)` with the shape and re-mint
+after rebuilding:
+
+```swift
+// save:  the shape, plus the node address you care about
+let saved = (kind: faceKind, index: 3)
+// load:  rebuild, then re-mint
+let reloaded = TopologyGraph(shape: Shape.fromBREPString(brep)!)!
+let uid = reloaded.uid(ofNodeKind: saved.kind, index: saved.index)
+```
+
+This matches OCCT's own model: upstream's design treats a UID as a *persistence anchor into a
+persisted graph model* — you would persist the graph (its defs, refs and UID vectors) and the UID
+anchors into it. OCCT does not yet expose a serializer for the graph model, and OCCTSwift's
+`snapshot()` stores the source BREP and rebuilds, which is precisely the case upstream defines as a
+new identity (its `GraphGUID` is regenerated on every rebuild).
 
 > **NodeRef vs UID.** `NodeRef(kind:index:)` is an ephemeral, in-memory pointer (fine for a single
-> traversal); `GraphUID` is the durable handle to persist or carry across operations. Don't store
-> raw indices and expect them to mean the same node later.
+> traversal); `GraphUID` keeps naming the same node as *this* graph mutates. Don't store raw indices
+> and expect them to mean the same node later — and don't expect a UID to mean anything in a
+> different graph. To carry a selection across a modelling operation, absorb that operation's
+> history (next section).
 
 ## Tracking nodes through operations (history)
 

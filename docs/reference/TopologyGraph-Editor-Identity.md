@@ -516,7 +516,7 @@ The stored generation counter from when the cached face mesh was last committed.
 public func cachedFaceMeshStoredOwnGen(_ faceIndex: Int) -> UInt32
 ```
 
-Compare against `generation` to detect stale caches.
+This is the entry's own field (`FaceMeshEntry::MeshGeneration`), maintained by OCCT's mesh cache. It is **not** comparable to the graph's `generation` counter, and this page previously said to compare them — it never worked (#295).
 
 - **OCCT:** `OCCTBRepGraphCachedFaceMeshStoredOwnGen`.
 
@@ -730,20 +730,51 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
 
 ## Durable Identity (UID / RefUID / ItemUID)
 
-*(OCCT 8.0.0p1)* The UID system provides counter-based identifiers that remain stable across graph mutations (compaction, node removal) within one graph generation. Unlike `(kind, index)` pairs, counters never repeat within a kind and survive vector-index shifts. A counter of `0` is always the invalid sentinel.
+*(OCCT 8.0.0p1)* The UID system provides counter-based identifiers that remain stable across mutations of **the one graph instance that minted them** — compaction, node removal. Unlike `(kind, index)` pairs, counters never repeat within a kind and survive vector-index shifts. A counter of `0` is always the invalid sentinel.
+
+### Scope: one graph instance
+
+A UID is meaningful only inside the graph that minted it. Every graph allocates counters from 1 independently, so the same `(kind, counter)` names some unrelated node in every other graph. Each UID therefore carries a `graphID` — the `instanceID` of the graph that minted it — and the resolvers reject a UID from anywhere else:
+
+```swift
+let boxGraph = TopologyGraph(shape: box)!
+let cylGraph = TopologyGraph(shape: cylinder)!
+
+let faceUID = boxGraph.uid(ofNodeKind: 2, index: 2)!   // a face of the BOX
+boxGraph.node(forUID: faceUID)      // Optional((kind: 2, index: 2))
+cylGraph.node(forUID: faceUID)      // nil  — not this graph's UID
+cylGraph.contains(uid: faceUID)     // false
+```
+
+The scope is the graph *instance*, not the shape: two graphs built from the same shape are two instances, and a UID from one does not resolve in the other. A rebuild is likewise a new instance.
+
+Which operations carry identity across follows the kernel's own rule — whether it transplants the UID counter space into the target:
+
+| Operation | Identity | UIDs |
+|---|---|---|
+| `compact()`, node removal, `add(_:absorbing:…)` | same instance, mutated in place | keep resolving |
+| `copy()`, `translated()` | **inherited** — `BRepGraph_Copy`/`_Transform::Perform` transplant the counter space, Generation and GraphGUID | keep resolving, naming the same nodes |
+| `copyFace()` | **fresh** — `CopyNode` lifts one face without the counter space | source UIDs return `nil` |
+| a new graph over any shape (incl. a rebuild of the same one) | fresh | source UIDs return `nil` |
+
+To carry a selection across a *modelling operation* rather than across mutations of one graph, absorb the operation's history — see [`add(_:absorbing:inputRoots:operationName:)`](TopologyGraph-Detail-History.md#add_absorbinginputrootsoperationname). To carry one across a save/load, store `(kind, index)` with the shape and re-mint after rebuilding — see [Topology Graph § UIDs and persistence](../guides/cookbook/topology-graph.md#uids-and-persistence).
+
+> Before v1.12.0 UIDs carried no provenance, so a UID from an unrelated graph resolved to a plausible but wrong node instead of returning `nil`. `copyFace()` was affected the same way. ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295))
 
 ### `GraphUID`
 
-A durable node identifier: a `(kind, counter)` pair for a definition node.
+A durable node identifier: a `(kind, counter)` pair for a definition node, stamped with the graph that minted it.
 
 ```swift
 public struct GraphUID: Sendable, Hashable, Codable {
     public var kind: Int
     public var counter: UInt32
-    public init(kind: Int, counter: UInt32)
+    public let graphID: UInt64
     public var isValid: Bool { get }
 }
 ```
+
+`graphID` is the `instanceID` of the minting graph. `0` means unstamped — built by hand, or decoded from a payload written before v1.12.0 — and resolves in no graph. Mint UIDs with `uid(ofNodeKind:index:)` rather than constructing them.
 
 `kind` is the raw `BRepGraph_NodeId::Kind` ordinal:
 
@@ -767,13 +798,13 @@ public struct GraphUID: Sendable, Hashable, Codable {
 
 ### `GraphRefUID`
 
-A durable reference-entry identifier: a `(kind, counter)` pair for a reference (ref) node.
+A durable reference-entry identifier: a `(kind, counter)` pair for a reference (ref) node. Scoped to one graph instance and stamped with `graphID`, exactly as `GraphUID` is.
 
 ```swift
 public struct GraphRefUID: Sendable, Hashable, Codable {
     public var kind: Int
     public var counter: UInt32
-    public init(kind: Int, counter: UInt32)
+    public let graphID: UInt64
     public var isValid: Bool { get }
 }
 ```
@@ -794,14 +825,14 @@ public struct GraphRefUID: Sendable, Hashable, Codable {
 
 ### `GraphItemUID`
 
-A durable generic item identifier covering both definition nodes (`domain == 1`) and reference entries (`domain == 2`).
+A durable generic item identifier covering both definition nodes (`domain == 1`) and reference entries (`domain == 2`). Scoped to one graph instance and stamped with `graphID`, exactly as `GraphUID` is.
 
 ```swift
 public struct GraphItemUID: Sendable, Hashable, Codable {
     public var domain: Int
     public var kind: Int
     public var counter: UInt32
-    public init(domain: Int, kind: Int, counter: UInt32)
+    public let graphID: UInt64
     public var isValid: Bool { get }
 }
 ```
@@ -832,14 +863,14 @@ public func uid(ofNodeKind kind: Int, index: Int) -> GraphUID?
 
 ### `node(forUID:)`
 
-Resolve a `GraphUID` back to its `(kind, index)` in the current graph generation.
+Resolve a `GraphUID` back to its `(kind, index)` in this graph.
 
 ```swift
 public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)?
 ```
 
-- **Parameters:** `uid` — a `GraphUID` previously obtained from `uid(ofNodeKind:index:)`.
-- **Returns:** `(kind, index)` tuple if the UID resolves in the current generation, or `nil` if the node no longer exists.
+- **Parameters:** `uid` — a `GraphUID` previously obtained from this graph's `uid(ofNodeKind:index:)`.
+- **Returns:** `(kind, index)` tuple if the UID resolves, or `nil` if this graph did not mint it or the node no longer exists. A UID minted by another graph returns `nil` even when its counter is in range here — which it usually is, since counters restart per graph.
 - **OCCT:** `BRepGraph_NodeId` reverse lookup (via `OCCTBRepGraphNodeFromUID`).
 - **Example:**
   ```swift
@@ -854,7 +885,7 @@ public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)?
 
 ### `contains(uid:) — GraphUID`
 
-Return `true` if a `GraphUID` is valid and exists in this graph generation.
+Return `true` if this graph minted the `GraphUID` and the node it names still exists here.
 
 ```swift
 public func contains(uid: GraphUID) -> Bool
@@ -893,7 +924,7 @@ public func ref(forUID uid: GraphRefUID) -> (kind: Int, index: Int)?
 
 ### `contains(uid:) — GraphRefUID`
 
-Return `true` if a `GraphRefUID` is valid and exists in this graph generation.
+Return `true` if this graph minted the `GraphRefUID` and the reference it names still exists here.
 
 ```swift
 public func contains(uid: GraphRefUID) -> Bool
@@ -935,21 +966,43 @@ public func item(forUID uid: GraphItemUID) -> (domain: Int, kind: Int, index: In
 
 ---
 
-### `generation`
+### `instanceID`
 
-The current graph generation counter.
+Identifies this graph instance for as long as it lives.
 
 ```swift
+public var instanceID: UInt64 { get }
+```
+
+Unique among every graph this process builds, and — because the sequence starts at a random point — distinct from any other process's ids with overwhelming probability. Every UID this graph mints carries it as `graphID`, which is how `node(forUID:)` tells one of its own nodes from a node of some other graph.
+
+Identity here is the graph object, not the geometry: two graphs built from the same shape have different ids.
+
+- **OCCT:** none — assigned by the bridge per `OCCTBRepGraph` (via `OCCTBRepGraphInstanceID`).
+- **Example:**
+  ```swift
+  let graph = TopologyGraph(shape: box)!
+  let uid = graph.uid(ofNodeKind: 2, index: 0)!
+  print(uid.graphID == graph.instanceID)   // true — this graph minted it
+
+  let rebuilt = TopologyGraph(shape: box)!  // same shape, new instance
+  print(rebuilt.instanceID == graph.instanceID)   // false
+  print(rebuilt.node(forUID: uid))                // nil
+  ```
+
+---
+
+### `generation` *(deprecated)*
+
+**Always 0.** Deprecated in v1.12.0.
+
+```swift
+@available(*, deprecated)
 public var generation: UInt32 { get }
 ```
 
-Incremented each time the graph is cleared or rebuilt. Compare a cached `storedOwnGen` value against `generation` to detect whether a cached mesh is stale.
+OCCT advances this only from `BRepGraph::Clear()`, which nothing in OCCTSwift calls, so it never changes: it cannot tell two graphs apart, and it cannot detect a stale cache. Nothing replaces it — `node(forUID:)` rejects a UID from another graph on its own, and `instanceID` compares graph identity directly.
+
+Earlier revisions of this page suggested comparing a cached `storedOwnGen` against `generation` to detect a stale mesh. That recipe never worked and has been removed: `storedOwnGen` is a per-entity mesh field (`FaceMeshEntry::MeshGeneration`), not this counter, so the two were never comparable ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 
 - **OCCT:** `BRepGraph` generation field (via `OCCTBRepGraphGeneration`).
-- **Example:**
-  ```swift
-  let gen = graph.generation
-  // After rebuild:
-  let cachedGen = graph.cachedFaceMeshStoredOwnGen(0)
-  let isStale = cachedGen != gen
-  ```
