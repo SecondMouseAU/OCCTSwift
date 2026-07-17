@@ -1611,7 +1611,7 @@ Recommended for STEP files that may contain disconnected faces needing sewing, s
 Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and the repair (sewing, then healing) 0.5…1.0, matching their measured cost — repair is ~50% of the work on a solid. A wall-clock deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair throws rather than returning the partially-repaired shape.
 
 - **Parameters:** `url` — URL to the STEP file; `progress` — optional progress/cancellation channel.
-- **Returns:** Processed shape suitable for CAM operations.
+- **Returns:** Processed shape — a plain **solid** for a single-body file, a **compound of solids** when the file holds several bodies.
 - **Throws:** `ImportError.cancelled` if cancelled; `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTEPRobustProgress`).
 - **Example:**
@@ -1635,6 +1635,13 @@ Every phase is bounded by `progress`: the transfer spans `fraction` 0…0.5 and 
   }
   ```
 - **Limitation — parsing is not covered:** OCCT's `STEPControl_Reader::ReadFile` takes no `Message_ProgressRange`, so the file is parsed *before* the progress indicator exists. Reading a large STEP file reports nothing and cannot be cancelled; `fraction` and the deadline bound only the transfer and repair that follow.
+- **Multibody (v1.11.3):** every body is sewn and solidified. Don't assume `.solid` — check `shapeType` or iterate `subShapes(ofType: .solid)`:
+  ```swift
+  let shape = try Shape.loadRobust(from: stepURL)
+  let bodies = shape.shapeType == .solid ? [shape] : shape.subShapes(ofType: .solid)
+  print("\(bodies.count) bodies")
+  ```
+- **Fixed in v1.11.3:** every body after the first was silently discarded — a 10-body STEP returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
 - **New in v1.11.2:** `progress:`. The progress-capable bridge function existed but no Swift API reached it, so a robust STEP import could not be observed or cancelled at all ([#300](https://github.com/SecondMouseAU/OCCTSwift/issues/300)). Existing `loadRobust(from:)` call sites are unaffected — the parameter defaults to `nil`.
 
 ---
@@ -1666,7 +1673,7 @@ public static func loadWithDiagnostics(from url: URL) throws -> ImportResult
 Returns an `ImportResult` struct containing the shape and information about what processing (sewing, solid creation, healing) was applied.
 
 - **Parameters:** `url` — URL to the STEP file.
-- **Returns:** `ImportResult` with `shape`, `originalType`, `resultType`, `sewingApplied`, `solidCreated`, and `healingApplied`.
+- **Returns:** `ImportResult` with `shape`, `originalType`, `resultType`, `sewingApplied`, `solidCreated`, `solidsCreated`, and `healingApplied`.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `STEPControl_Reader` + `OCCTImportSTEPWithDiagnostics`.
 - **Example:**
@@ -1675,6 +1682,14 @@ Returns an `ImportResult` struct containing the shape and information about what
   print(result.summary)   // e.g. "Shell → Solid (processing: sewing, solid creation, healing)"
   let shape = result.shape
   ```
+- **Example — how many bodies did the file hold?**
+  ```swift
+  let result = try Shape.loadWithDiagnostics(from: stepFile)
+  if result.solidsCreated > 1 {
+      print("\(result.solidsCreated) bodies — result.shape is a compound of solids")
+  }
+  ```
+- **`solidsCreated` (new in v1.11.3):** how many shells became solids. `> 1` means a multibody file and `shape` is a compound of that many solids. Before v1.11.3 every body after the first was silently discarded, so this count is the fact that was quietly wrong — a truncated import still returned a valid solid ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
 
 ---
 
@@ -1947,7 +1962,7 @@ public static func loadSTLRobust(from url: URL, sewingTolerance: Double = 1e-6) 
 - **Parameters:**
   - `url` — URL to the STL file.
   - `sewingTolerance` — tolerance for sewing disconnected faces (default `1e-6`).
-- **Returns:** Processed shape suitable for solid operations.
+- **Returns:** Processed shape — a plain **solid** for a single-body file, a **compound of solids** when the mesh holds several disconnected bodies.
 - **Throws:** `ImportError.importFailed` on failure.
 - **OCCT:** `StlAPI_Reader` + `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTImportSTLRobust`).
 - **Example:**
@@ -1955,6 +1970,13 @@ public static func loadSTLRobust(from url: URL, sewingTolerance: Double = 1e-6) 
   let solid = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-5)
   print(solid.isValid)
   ```
+- **Multibody:** every disconnected body is sewn and solidified. Don't assume `.solid` — check `shapeType` or iterate `subShapes(ofType: .solid)`:
+  ```swift
+  let shape = try Shape.loadSTLRobust(from: stlURL)
+  let bodies = shape.shapeType == .solid ? [shape] : shape.subShapes(ofType: .solid)
+  print("\(bodies.count) bodies")
+  ```
+- **Fixed in v1.11.3:** every body after the first was silently discarded — a 10-body STL returned 1 body as a valid solid, with no error ([#302](https://github.com/SecondMouseAU/OCCTSwift/issues/302)).
 
 ---
 

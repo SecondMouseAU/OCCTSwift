@@ -96,7 +96,7 @@ let shape = mesh.toShape(weldTolerance: 1e-6)   // raise for large-coordinate me
 ```
 
 The result is a faceted shell, not necessarily a valid solid — run [healing](healing-and-validity.md)
-if you need one. (For an STL on disk, prefer `Shape.loadSTLRobust`, which sews + heals as it loads.)
+if you need one. (For an STL on disk, prefer `Shape.loadSTLRobust`, which sews + heals as it loads — a multibody mesh comes back as a compound of solids.)
 
 ## Hand it to a renderer
 

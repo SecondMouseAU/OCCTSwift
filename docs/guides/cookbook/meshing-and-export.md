@@ -93,7 +93,7 @@ Instance methods mirror the statics where handy: `box.writeSTL(to:deflection:)`,
 let step = try Shape.load(from: stepURL)            // STEP (also Shape.loadSTEP)
 let iges = try Shape.loadIGES(from: igesURL)        // loadIGESRobust heals tolerance issues
 let brep = try Shape.loadBREP(from: brepURL)        // exact + triangulation if exported with it
-let stl  = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-6)   // auto sew + heal
+let stl  = try Shape.loadSTLRobust(from: stlURL, sewingTolerance: 1e-6)   // auto sew + heal; compound if multibody
 ```
 
 For mesh formats prefer the **robust** loaders (`loadSTLRobust`) — they sew and heal the seams a raw
