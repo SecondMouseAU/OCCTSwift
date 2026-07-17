@@ -765,15 +765,22 @@ public final class Shape: @unchecked Sendable {
     ///   pathology, not a workload cost. See
     ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286).
     ///
+    ///   **Cause** (OCCT `V8_0_0_p1`): `BRepMesh_MeshAlgoFactory::GetAlgo` lumps
+    ///   `GeomAbs_OffsetSurface` in with `GeomAbs_OtherSurface`, handing it a
+    ///   `BRepMesh_UndefinedRangeSplitter` whose `getUndefinedIntervalNb()` returns a constant
+    ///   `1` — so an offset surface gets *no* parametric subdivision, however wiggly its basis
+    ///   B-spline is. (The same B-spline meshed directly gets `BRepMesh_NURBSRangeSplitter`,
+    ///   which subdivides by `NbUPoles()-1`.) The Delaunay insertion then starts from a
+    ///   near-empty grid and `BRepMesh_Delaun::createTrianglesOnNewVertices` blows up.
+    ///
     ///   There is **no in-process way to bound it**, and it is worth being precise about why:
-    ///   - **A timeout cannot work.** OCCT polls for cancellation *between* faces
-    ///     (`BRepMesh_FaceDiscret::FaceListFunctor::operator()` checks `myScope.More()` before
-    ///     calling `process()`), and the Delaunay triangulation itself
-    ///     (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → the `BRepMesh_Delaun` constructor)
-    ///     takes no progress range at all. A hang inside **one** face is therefore
-    ///     uninterruptible — ``meshWithProgress(linearDeflection:angularDeflection:progress:)``
-    ///     does not help here (it only buys per-face granularity, i.e. cancelling *between*
-    ///     faces of a multi-face shape).
+    ///   - **A timeout cannot work — verified empirically, not assumed.**
+    ///     `createTrianglesOnNewVertices` *does* poll (`aPS.More()`) in its outer per-vertex
+    ///     loop, but the hang is inside a *single* iteration of that loop, so the poll is never
+    ///     reached. A 10 s cancel deadline via
+    ///     ``meshWithProgress(linearDeflection:angularDeflection:progress:)`` was measured
+    ///     **not to fire at all** on the #286 solid (killed at 120 s). Do not rely on it as a
+    ///     timeout for untrusted geometry.
     ///   - **A validity pre-check cannot catch it.** The measured offending solid reports
     ///     `isValid == true`.
     ///
@@ -805,15 +812,13 @@ public final class Shape: @unchecked Sendable {
     /// cancel via `progress.shouldCancel()`. After meshing completes, the shape's faces
     /// have triangulations attached and `mesh()` (no progress) can extract them.
     ///
-    /// - Important: **Cancellation granularity is per-face, and only *between* faces.** OCCT
-    ///   checks the progress range before it starts each face
-    ///   (`BRepMesh_FaceDiscret::FaceListFunctor::operator()`), and the Delaunay triangulation
-    ///   itself (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → `BRepMesh_Delaun`) takes no
-    ///   range and never polls. So this cancels a long *many-face* mesh, but **cannot interrupt
-    ///   a single face that hangs** — see the warning on
-    ///   ``mesh(linearDeflection:angularDeflection:)`` and
-    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286). Do not rely on this as a
-    ///   timeout for untrusted geometry.
+    /// - Important: **This cancels a long mesh; it cannot interrupt a hung one.** OCCT polls the
+    ///   range at checkpoints — before each face (`BRepMesh_FaceDiscret`), and per vertex inside
+    ///   `BRepMesh_Delaun::createTrianglesOnNewVertices` — but a hang that occurs *between* two
+    ///   checkpoints is unreachable. Measured on the #286 solid: a 10 s cancel deadline **never
+    ///   fired** (killed at 120 s). Do not rely on this as a timeout for untrusted geometry —
+    ///   see the warning on ``mesh(linearDeflection:angularDeflection:)`` and
+    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286).
     ///
     /// - Throws: `ImportError.cancelled` if the meshing was cancelled cooperatively.
     /// - Returns: The same shape (with triangulations attached) on success, or nil on
