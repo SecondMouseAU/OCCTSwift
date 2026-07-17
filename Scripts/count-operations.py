@@ -98,16 +98,21 @@ def read_stated():
             int(a.group(1).replace(',', '')) if a else None)
 
 
-def category_row_sum():
-    apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
+def category_row_sum_text(s):
+    """(sum, count) of the category rows in API_REFERENCE text, excluding the Total row."""
     total = 0
     rows = 0
-    for line in open(apiref, encoding="utf-8"):
+    for line in s.splitlines():
         m = re.match(r'^\|\s*\*\*(.+?)\*\*\s*\|\s*\*?\*?(\d+)\*?\*?\s*\|', line)
         if m and m.group(1).lower() != "total":
             total += int(m.group(2))
             rows += 1
     return total, rows
+
+
+def category_row_sum():
+    apiref = os.path.join(ROOT, "docs/API_REFERENCE.md")
+    return category_row_sum_text(open(apiref, encoding="utf-8").read())
 
 
 def fix(derived):
@@ -124,8 +129,20 @@ def fix(derived):
                        rf'\g<1>{derived:,}\g<2>', s, count=1, flags=re.M)
     if n != 1:
         sys.exit("API_REFERENCE: could not find the Total row — refusing to guess")
+
+    # The prose figure for the row sum drifts by the same mechanism as the Total did:
+    # it is written by hand and nothing checks it. Derive it too, or #289 recurs here
+    # the moment someone adds a category row.
+    rowsum, _ = category_row_sum_text(new_s)
+    pct = round(100 * rowsum / derived)
+    new_s, n = re.subn(r'(covering \*\*)[\d,]+(\*\* of the entry points \(~)\d+(%)',
+                       rf'\g<1>{rowsum:,}\g<2>{pct}\g<3>', new_s, count=1)
+    if n != 1:
+        sys.exit("API_REFERENCE: could not find the 'covering **N** of the entry points (~P%)' "
+                 "note — refusing to guess")
     open(apiref, "w", encoding="utf-8").write(new_s)
     print(f"  rewrote README + API_REFERENCE Total -> {derived:,}")
+    print(f"  rewrote the categorisation note -> {rowsum:,} (~{pct}%)")
 
 
 def main():
