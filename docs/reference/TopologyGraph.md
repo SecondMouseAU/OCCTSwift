@@ -502,17 +502,30 @@ Returned by `rootNodes` to identify the top-level product or topology entries of
 
 ### `rootNodes`
 
-Root nodes of the graph.
+Root **product** nodes of the graph. Each element carries a `NodeKind` and its zero-based index.
 
 ```swift
 public var rootNodes: [RootNode] { get }
 ```
 
-For a shape built without assembly context (`CreateAutoProduct: false`), root nodes reflect the top-level topology of the original shape (solids, shells, or compounds). Each element carries both a `NodeKind` and its zero-based index.
+> **This is empty for a graph built from a `Shape`, and that is expected.** It enumerates
+> `BRepGraph::RootProductIds()` — assembly Products, not topology. `TopologyGraph(shape:)` builds with
+> `CreateAutoProduct: false` (no auto Product/Occurrence wrap), so such a graph has no products and
+> `rootNodes` returns `[]`. It is populated for graphs carrying assembly context.
+>
+> **For the topology root of a shape-built graph, use `findNode(for:)` on the shape itself:**
+>
+> ```swift
+> let graph = TopologyGraph(shape: base)!
+> let root = graph.findNode(for: base)     // e.g. (kind: .solid, index: 0)
+> ```
+>
+> That is also what `add(_:absorbing:inputRoots:operationName:)` wants for `inputRoots`.
 
 - **OCCT:** `BRepGraph::RootProductIds()`.
 - **Example:**
   ```swift
+  // Meaningful for assembly-context graphs; [] for TopologyGraph(shape:).
   for root in graph.rootNodes {
       print("\(root.kind) at index \(root.index)")
   }

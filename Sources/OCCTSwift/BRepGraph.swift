@@ -827,7 +827,11 @@ public final class TopologyGraph: @unchecked Sendable {
     /// // Cut a channel across a box's top face, then keep hold of the face.
     /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
     /// let graph = TopologyGraph(shape: base)!
-    /// let root = graph.rootNodes.first!
+    ///
+    /// // The topology root. Note this is findNode(for:), NOT rootNodes — that
+    /// // enumerates Products and is empty for a graph built from a Shape.
+    /// let rootNode = graph.findNode(for: base)!
+    /// let root = TopologyGraph.NodeRef(kind: rootNode.kind, index: rootNode.index)
     ///
     /// // Identify the top face and pin it BEFORE the cut.
     /// let faces = base.faces()
@@ -840,12 +844,13 @@ public final class TopologyGraph: @unchecked Sendable {
     /// // Cut, then hand the result and its history back to the same graph.
     /// let tool = Shape.box(origin: SIMD3(-1, 4, 8), width: 12, height: 2, depth: 4)!
     /// let (result, history) = base.subtractedWithFullHistory(tool)!
-    /// graph.add(result, absorbing: history,
-    ///           inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
-    ///           operationName: "channel-cut")
+    /// graph.add(result, absorbing: history, inputRoots: [root], operationName: "channel-cut")
     ///
     /// // The pinned face now resolves to the two strips it was split into.
-    /// let strips = graph.currentForms(of: pinned)   // 2 face nodes
+    /// // Filter by kind: currentForms also returns the section edges the cut
+    /// // generated on that face, since it unions modified and generated.
+    /// let strips = graph.currentForms(of: pinned).filter { $0.kind == .face }   // 2 faces
+    /// graph.resolve(.splitOf(original: .literal(pinned), occurrence: 0))        // .success(face)
     /// ```
     ///
     /// - Note: Only vertices, edges, faces and solids are tracked
