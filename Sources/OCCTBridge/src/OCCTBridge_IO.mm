@@ -65,6 +65,7 @@
 #include <TDocStd_Document.hxx>
 #include <XCAFApp_Application.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <IMeshTools_Parameters.hxx>
 #include <StlAPI_Writer.hxx>
 #include <StlAPI_Reader.hxx>
 #include <BinTools.hxx>
@@ -405,9 +406,17 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef shape,
     if (!shape) return nullptr;
     try {
         opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
-        Message_ProgressRange range = indicator->Start();
-        BRepMesh_IncrementalMesh mesher(shape->shape, linearDeflection, Standard_False, angularDeflection);
-        mesher.Perform(range);
+        // The (shape, linDefl, isRelative, angDefl) ctor calls Perform() internally with a null
+        // range, so it meshes uninterruptibly before any range we pass afterwards is ever polled
+        // (and a following Perform(range) then meshes a second time). Only the parameters ctor
+        // consumes a range. Leaving AngleInterior/MinSize/DeflectionInterior at their defaults
+        // matches what the other ctor did; Perform() resolves them identically (#286).
+        IMeshTools_Parameters params;
+        params.Deflection = linearDeflection;
+        params.Angle      = angularDeflection;
+        params.Relative   = Standard_False;
+        params.InParallel = Standard_False;
+        BRepMesh_IncrementalMesh mesher(shape->shape, params, indicator->Start());
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
         // Return a new OCCTShape wrapping the same (now-meshed) TopoDS_Shape so callers
         // can chain. The original handle is also valid.

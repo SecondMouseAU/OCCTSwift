@@ -758,45 +758,44 @@ public final class Shape: @unchecked Sendable {
 
     /// Generate a triangulated mesh for visualization
     ///
-    /// - Warning: **This call can hang unboundedly on offset surfaces** — the geometry
-    ///   `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`). Measured on a
-    ///   fitted-then-offset B-spline panel: a single face meshed for **>300 s without returning**
-    ///   at a *coarse* deflection (1/638 of the shape's bbox diagonal), so this is a kernel
-    ///   pathology, not a workload cost. See
-    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286).
+    /// - Warning: **This call can take minutes on a degenerate offset surface** — the geometry
+    ///   `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`). It is not a hang:
+    ///   measured on the fitted-then-offset B-spline panel from
+    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286), one face took **249 s** and
+    ///   emitted **1.4 M triangles** at a *coarse* deflection (1/638 of the shape's bbox diagonal).
+    ///   It terminates; earlier reports of an unbounded hang were timeouts set below that.
     ///
-    ///   **Cause** (OCCT `V8_0_0_p1`): `BRepMesh_MeshAlgoFactory::GetAlgo` lumps
-    ///   `GeomAbs_OffsetSurface` in with `GeomAbs_OtherSurface`, handing it a
-    ///   `BRepMesh_UndefinedRangeSplitter` whose `getUndefinedIntervalNb()` returns a constant
-    ///   `1` — so an offset surface gets *no* parametric subdivision, however wiggly its basis
-    ///   B-spline is. (The same B-spline meshed directly gets `BRepMesh_NURBSRangeSplitter`,
-    ///   which subdivides by `NbUPoles()-1`.) The Delaunay insertion then starts from a
-    ///   near-empty grid and `BRepMesh_Delaun::createTrianglesOnNewVertices` blows up.
-    ///
-    ///   There is **no in-process way to bound it**, and it is worth being precise about why:
-    ///   - **A timeout cannot work — verified empirically, not assumed.**
-    ///     `createTrianglesOnNewVertices` *does* poll (`aPS.More()`) in its outer per-vertex
-    ///     loop, but the hang is inside a *single* iteration of that loop, so the poll is never
-    ///     reached. A 10 s cancel deadline via
-    ///     ``meshWithProgress(linearDeflection:angularDeflection:progress:)`` was measured
-    ///     **not to fire at all** on the #286 solid (killed at 120 s). Do not rely on it as a
-    ///     timeout for untrusted geometry.
-    ///   - **A validity pre-check cannot catch it.** The measured offending solid reports
-    ///     `isValid == true`.
+    ///   **Cause** — the offset surface is *self-intersecting*, and the mesher's angular criterion
+    ///   cannot converge on it. Offsetting a surface by more than its local radius of curvature
+    ///   produces cusps. On the #286 panel the basis fit's minimum principal curvature radius is
+    ///   `2.6e-05` against an offset of `1.27`, so **23.8 %** of the domain is cusped and the
+    ///   surface normal swings by up to `π` across one. `BRepMesh` splits any triangle link whose
+    ///   end normals differ by more than `AngleInterior` (= `2 × angularDeflection`), but at a
+    ///   normal *discontinuity* splitting never helps — halving a link that straddles a cusp just
+    ///   moves the cusp into one half. So `BRepMesh_DelaunayDeflectionControlMeshAlgo::optimizeMesh`
+    ///   runs all 11 of its passes demanding ~80 k splits each, long after linear deflection is
+    ///   satisfied (it reached 1.82 against a 2.48 target by pass 6). `MinSize`
+    ///   (= `linearDeflection / 10`) is the only backstop. This is invalid input, not an OCCT
+    ///   defect: a well-formed offset surface meshes normally.
     ///
     ///   **Mitigations**, in order of preference:
     ///   1. **Don't mesh geometry you haven't sanity-checked.** `bounds` is a cheap `Bnd_Box`
     ///      query with no tessellation — comparing a thickened solid's bbox against its source's
     ///      is enough to reject the ballooned offsets that trigger this, and is what the
-    ///      downstream caller in #286 adopted.
-    ///   2. ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`` with `offset: true`
-    ///      converts the `Geom_OffsetSurface` to a plain B-spline first. Measured on the #286
-    ///      solid this turns the unbounded hang into a **bounded 125 s** (526 k vertices) — it
-    ///      terminates, but is not fast, so treat it as a rescue path rather than a default.
-    ///   3. Mesh in a separate process if you must tessellate untrusted offset geometry.
-    ///
-    ///   Well-formed offset solids mesh normally; this only bites on pathological
-    ///   (e.g. ballooned or near-degenerate) fitted-then-offset surfaces.
+    ///      downstream caller in #286 adopted. Note `isValid` will *not* catch it: the measured
+    ///      offending solid reports `isValid == true`, because a self-intersecting offset surface
+    ///      is still a topologically valid face.
+    ///   2. **Bound it with a deadline.** ``meshWithProgress(linearDeflection:angularDeflection:progress:)``
+    ///      interrupts this reliably — a 10 s deadline returns in 10.1 s on the #286 face. (Before
+    ///      v1.11.1 the bridge meshed inside a constructor that never polled the progress range, so
+    ///      cancellation appeared not to work; that was our bug, now fixed.)
+    ///   3. **Raise `angularDeflection`,** which raises the `AngleInterior` threshold that is doing
+    ///      all the splitting here, or raise `MinSize` via ``mesh(parameters:)`` to make the
+    ///      backstop bite sooner.
+    ///   4. ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`` with `offset: true`
+    ///      approximates the `Geom_OffsetSurface` with a plain B-spline, which smooths the cusps
+    ///      the angular check is choking on. Measured on the #286 solid: 125 s / 526 k vertices —
+    ///      faster, but it resamples the geometry, so treat it as a rescue path, not a default.
     public func mesh(
         linearDeflection: Double = 0.1,
         angularDeflection: Double = 0.5
@@ -812,13 +811,34 @@ public final class Shape: @unchecked Sendable {
     /// cancel via `progress.shouldCancel()`. After meshing completes, the shape's faces
     /// have triangulations attached and `mesh()` (no progress) can extract them.
     ///
-    /// - Important: **This cancels a long mesh; it cannot interrupt a hung one.** OCCT polls the
-    ///   range at checkpoints — before each face (`BRepMesh_FaceDiscret`), and per vertex inside
-    ///   `BRepMesh_Delaun::createTrianglesOnNewVertices` — but a hang that occurs *between* two
-    ///   checkpoints is unreachable. Measured on the #286 solid: a 10 s cancel deadline **never
-    ///   fired** (killed at 120 s). Do not rely on this as a timeout for untrusted geometry —
-    ///   see the warning on ``mesh(linearDeflection:angularDeflection:)`` and
-    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286).
+    /// This is the supported way to bound meshing of untrusted geometry: OCCT polls the range
+    /// densely (before each face in `BRepMesh_FaceDiscret`, at each deflection-control pass, and
+    /// per vertex in `BRepMesh_Delaun`), so a wall-clock deadline in `shouldCancel()` interrupts
+    /// even the pathological offset surfaces of
+    /// [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286). Measured on the #286 face,
+    /// which takes 249 s to mesh in full: a 10 s deadline throws ``ImportError/cancelled`` after
+    /// 10.1 s, having polled 154,898 times.
+    ///
+    /// ```swift
+    /// final class Deadline: ImportProgress, @unchecked Sendable {
+    ///     private let start = Date()
+    ///     func progress(fraction: Double, step: String) {}
+    ///     func shouldCancel() -> Bool { Date().timeIntervalSince(start) > 10 }
+    /// }
+    ///
+    /// do {
+    ///     _ = try shape.meshWithProgress(linearDeflection: 0.1, progress: Deadline())
+    /// } catch ImportError.cancelled {
+    ///     // Gave up after 10s — the geometry is probably degenerate; see `bounds` pre-checks.
+    /// }
+    /// ```
+    ///
+    /// - Note: Before v1.11.1 this could not cancel at all. The bridge used the
+    ///   `BRepMesh_IncrementalMesh(shape, linDefl, isRelative, angDefl)` constructor, which calls
+    ///   `Perform()` internally with a *null* progress range — the whole mesh was built
+    ///   uninterruptibly before the range was polled, and the shape was then meshed a second time.
+    ///   Cancellation still *threw*, because `UserBreak()` was checked afterwards, which is what
+    ///   made the defect look like an OCCT limitation in v1.10.2's docs.
     ///
     /// - Throws: `ImportError.cancelled` if the meshing was cancelled cooperatively.
     /// - Returns: The same shape (with triangulations attached) on success, or nil on
