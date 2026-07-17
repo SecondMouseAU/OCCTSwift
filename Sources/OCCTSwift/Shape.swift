@@ -757,6 +757,39 @@ public final class Shape: @unchecked Sendable {
     // MARK: - Meshing
 
     /// Generate a triangulated mesh for visualization
+    ///
+    /// - Warning: **This call can hang unboundedly on offset surfaces** — the geometry
+    ///   `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`). Measured on a
+    ///   fitted-then-offset B-spline panel: a single face meshed for **>300 s without returning**
+    ///   at a *coarse* deflection (1/638 of the shape's bbox diagonal), so this is a kernel
+    ///   pathology, not a workload cost. See
+    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286).
+    ///
+    ///   There is **no in-process way to bound it**, and it is worth being precise about why:
+    ///   - **A timeout cannot work.** OCCT polls for cancellation *between* faces
+    ///     (`BRepMesh_FaceDiscret::FaceListFunctor::operator()` checks `myScope.More()` before
+    ///     calling `process()`), and the Delaunay triangulation itself
+    ///     (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → the `BRepMesh_Delaun` constructor)
+    ///     takes no progress range at all. A hang inside **one** face is therefore
+    ///     uninterruptible — ``meshWithProgress(linearDeflection:angularDeflection:progress:)``
+    ///     does not help here (it only buys per-face granularity, i.e. cancelling *between*
+    ///     faces of a multi-face shape).
+    ///   - **A validity pre-check cannot catch it.** The measured offending solid reports
+    ///     `isValid == true`.
+    ///
+    ///   **Mitigations**, in order of preference:
+    ///   1. **Don't mesh geometry you haven't sanity-checked.** `bounds` is a cheap `Bnd_Box`
+    ///      query with no tessellation — comparing a thickened solid's bbox against its source's
+    ///      is enough to reject the ballooned offsets that trigger this, and is what the
+    ///      downstream caller in #286 adopted.
+    ///   2. ``withSurfacesAsBSpline(extrusion:revolution:offset:plane:)`` with `offset: true`
+    ///      converts the `Geom_OffsetSurface` to a plain B-spline first. Measured on the #286
+    ///      solid this turns the unbounded hang into a **bounded 125 s** (526 k vertices) — it
+    ///      terminates, but is not fast, so treat it as a rescue path rather than a default.
+    ///   3. Mesh in a separate process if you must tessellate untrusted offset geometry.
+    ///
+    ///   Well-formed offset solids mesh normally; this only bites on pathological
+    ///   (e.g. ballooned or near-degenerate) fitted-then-offset surfaces.
     public func mesh(
         linearDeflection: Double = 0.1,
         angularDeflection: Double = 0.5
@@ -771,6 +804,16 @@ public final class Shape: @unchecked Sendable {
     /// observe meshing progress on large or finely-tessellated assemblies and cooperatively
     /// cancel via `progress.shouldCancel()`. After meshing completes, the shape's faces
     /// have triangulations attached and `mesh()` (no progress) can extract them.
+    ///
+    /// - Important: **Cancellation granularity is per-face, and only *between* faces.** OCCT
+    ///   checks the progress range before it starts each face
+    ///   (`BRepMesh_FaceDiscret::FaceListFunctor::operator()`), and the Delaunay triangulation
+    ///   itself (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → `BRepMesh_Delaun`) takes no
+    ///   range and never polls. So this cancels a long *many-face* mesh, but **cannot interrupt
+    ///   a single face that hangs** — see the warning on
+    ///   ``mesh(linearDeflection:angularDeflection:)`` and
+    ///   [#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286). Do not rely on this as a
+    ///   timeout for untrusted geometry.
     ///
     /// - Throws: `ImportError.cancelled` if the meshing was cancelled cooperatively.
     /// - Returns: The same shape (with triangulations attached) on success, or nil on

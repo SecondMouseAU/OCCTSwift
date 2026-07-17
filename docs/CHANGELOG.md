@@ -15,6 +15,33 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### v1.10.2 (July 2026) — docs: `Shape.mesh` can hang unboundedly on offset surfaces (#286)
+
+Documentation only; no code change. `Shape.mesh(linearDeflection:angularDeflection:)` can put OCCT's
+mesher into an effectively non-terminating state on the `Geom_OffsetSurface` geometry that
+`shelled(thickness:)` / `offset(by:)` produce.
+
+Reproduced standalone from a real fitted-then-offset B-spline panel: a **single face meshed for
+>300 s without returning**, at a *coarse* deflection (2.48 against a 1583 bbox diagonal — 1/638). This
+is a kernel pathology, not a workload cost.
+
+Two things this is **not**, both worth recording because both were the obvious first guesses:
+
+- **Not fixable with a timeout.** OCCT polls cancellation only *between* faces
+  (`BRepMesh_FaceDiscret::FaceListFunctor::operator()` checks `myScope.More()` before `process()`),
+  and the Delaunay triangulation itself (`BRepMesh_DelaunayBaseMeshAlgo::generateMesh` → the
+  `BRepMesh_Delaun` constructor) takes no progress range and never polls. A hang inside **one** face
+  is uninterruptible, so `meshWithProgress` cannot rescue it — its docs now say so rather than
+  implying a cancellation guarantee it can't honour.
+- **Not catchable by a validity pre-check.** The offending solid reports `isValid == true`.
+
+Mitigations documented on `mesh`, best first: sanity-check with `bounds` (a cheap `Bnd_Box` query, no
+tessellation) before meshing untrusted offsets; `withSurfacesAsBSpline(offset: true)`, which converts
+the offset surface to a plain B-spline and turns the hang into a bounded 125 s / 526 k verts (a rescue
+path, not a default); or mesh out-of-process.
+
+Well-formed offset solids are unaffected.
+
 ### v1.10.1 (July 2026) — OCCT rebuild carrying the #280 kernel fix; consumer builds are warning-free (#281)
 
 **Rebuilt `OCCT.xcframework`** (all three slices) carrying a new carried patch,

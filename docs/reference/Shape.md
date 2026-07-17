@@ -1215,6 +1215,18 @@ public func mesh(
       // use mesh.triangles, mesh.normals, etc.
   }
   ```
+- **⚠️ Can hang unboundedly on offset surfaces.** The geometry `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`) can put OCCT's mesher into an effectively non-terminating state. Measured on a fitted-then-offset B-spline panel: one face meshed for **>300 s without returning** at a *coarse* deflection (1/638 of the bbox diagonal) — a kernel pathology, not a workload cost ([#286](https://github.com/SecondMouseAU/OCCTSwift/issues/286)).
+
+  **It cannot be bounded in-process**, and the reasons are worth knowing:
+  - **A timeout cannot work.** OCCT polls cancellation *between* faces (`BRepMesh_FaceDiscret`), and the Delaunay triangulation (`BRepMesh_Delaun`) takes no progress range and never polls. A hang inside **one** face is uninterruptible, so `meshWithProgress` does **not** help.
+  - **A validity pre-check cannot catch it.** The measured offending solid reports `isValid == true`.
+
+  Mitigations, best first:
+  1. **Sanity-check before meshing.** `bounds` is a cheap `Bnd_Box` query (no tessellation) — comparing a thickened solid's bbox against its source's rejects the ballooned offsets that trigger this.
+  2. `withSurfacesAsBSpline(offset: true)` converts the offset surface to a plain B-spline first. On the #286 solid this turns the hang into a **bounded 125 s** (526 k verts) — it terminates, but it is a rescue path, not a default.
+  3. Mesh in a separate process for untrusted offset geometry.
+
+  Well-formed offset solids mesh normally; this bites only on pathological (ballooned / near-degenerate) fitted-then-offset surfaces.
 
 ---
 
