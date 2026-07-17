@@ -5,8 +5,29 @@ nav_order: 4
 
 # API Map (Swift ↔ OCCT)
 
-Complete mapping of OCCTSwift operations to OCCT C++ classes. For the detailed per-type function
+Mapping of OCCTSwift operations to OCCT C++ classes. For the detailed per-type function
 reference (signatures, parameters, examples), see [API Reference](reference/).
+
+## How operations are counted
+
+> **One row per distinct public Swift entry point; overloads counted separately.**
+
+An operation is any `public func` / `static func`, `public init`, `public var` **with an accessor
+block** (a computed property), or `public subscript` in the `OCCTSwift` module. Overloads count
+separately — `cylinder(radius:height:)` and `cylinder(at:direction:radius:height:)` are two entry
+points a caller can reach, so they are two operations. Stored properties (`public let`, `public var x = …`)
+are data, not entry points, and are not counted; nor are types or enum cases, which are documented
+but not called.
+
+**The `Total` below is derived, not hand-maintained.** Run `Scripts/count-operations.py` (`--fix`
+rewrites both this Total and the README headline; exit 1 if they disagree). Hand-maintained totals in
+two files desynced by 882 across 11 releases before this rule existed — see
+[#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
+
+**The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
+categorisation covering **3,320** of the 4,234 entry points (~78%); the remainder are real, callable,
+and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
+a map of the major areas, and the `Total` as the count.
 
 ## Wrapped Operations Summary
 
@@ -482,7 +503,7 @@ reference (signatures, parameters, examples), see [API Reference](reference/).
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **3431** | |
+| **Total** | **4,234** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
