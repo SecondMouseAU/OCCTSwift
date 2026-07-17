@@ -20908,8 +20908,21 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef _Nonnull graph,
                               int32_t* _Nonnull outDomain, int32_t* _Nonnull outKind,
                               int32_t* _Nonnull outIndex);
 
-/// Return the current graph generation counter (incremented on each Clear()).
+/// Return the current graph generation counter.
+///
+/// NOTE: always 0 in practice. OCCT only advances it from BRepGraph::Clear(), which
+/// nothing in this bridge calls, so it cannot distinguish two graphs. Use
+/// OCCTBRepGraphInstanceID for that. See issue #295.
 uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef _Nonnull graph);
+
+/// Return this graph's instance id — unique among every graph this process creates, and
+/// distinct (with overwhelming probability) from ids minted by any other process.
+///
+/// A BRepGraph_UID is only meaningful inside the graph that minted it: counters restart
+/// at 1 per graph, so a UID from one graph lands in another's valid range and resolves to
+/// an unrelated node. Pairing a UID with this id is what lets the Swift layer reject a
+/// foreign UID instead of silently returning a wrong node (#295). Never returns 0.
+uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef _Nonnull graph);
 
 // MARK: - GeomFill_NetworkSurface / GeomFill_Gordon report — OCCT 8.0.0p1
 

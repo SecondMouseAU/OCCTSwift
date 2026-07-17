@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.11.3
+## Current: v1.12.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
 
@@ -15,6 +15,67 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### v1.12.0 (July 2026) — fix: a `GraphUID` no longer resolves against a graph that didn't mint it (#295)
+
+**`node(forUID:)` returned a wrong node instead of `nil` for a UID from an unrelated graph.**
+`GraphUID` carried no graph identity: it is a `(kind, counter)` pair, and every `TopologyGraph`
+allocates counters from 1 independently. A UID minted from a box therefore landed inside a cylinder
+graph's valid counter range and resolved cleanly — to an unrelated face. `contains(uid:)` returned
+`true`. No error, no `nil`, just a plausible wrong answer:
+
+```swift
+let boxUID = boxGraph.uid(ofNodeKind: 2, index: 2)!   // a face of the BOX
+cylGraph.node(forUID: boxUID)     // was: Optional((kind: 2, index: 2))  — now: nil
+cylGraph.contains(uid: boxUID)    // was: true                           — now: false
+```
+
+The documented safeguard could never have caught it. `generation` is a **constant 0**, and the
+staleness recipe the docs gave compared it against `storedOwnGen`, a per-entity mesh field that was
+never the same counter.
+
+**Fix.** Every graph carries an `instanceID`, and every UID it mints records it as `graphID`.
+`node(forUID:)` / `contains(uid:)` / `ref(forUID:)` / `item(forUID:)` reject a UID from any other
+graph. The id follows the same lifecycle rules as OCCT's own graph identity (`GraphGUID`), which
+OCCTSwift cannot read because the kernel only populates it in `BRepGraph::Clear()` — a call our build
+path skips (see #303).
+
+**Identity follows the kernel's rule** — whether an operation transplants the UID counter space:
+
+| Operation | Identity | UIDs |
+|---|---|---|
+| `compact()`, node removal, `add(_:absorbing:…)` | same instance | keep resolving |
+| `copy()`, `translated()` | inherited | keep resolving, naming the same nodes |
+| `copyFace()` | fresh | source UIDs now return `nil` (they returned a **wrong face** before) |
+| a new graph over any shape, incl. a rebuild | fresh | source UIDs now return `nil` |
+
+`copy()` and `translated()` are **unaffected**: `BRepGraph_Copy`/`_Transform::Perform` transplant the
+counter space, Generation and GraphGUID into the target, so a copy genuinely is the same identity and
+every source UID resolves to the same node. Only `copyFace()` — which lifts one face into an empty
+graph, restarting counters at 1 — aliased, and it is now rejected.
+
+- **New:** `TopologyGraph.instanceID`; `graphID` on `GraphUID`, `GraphRefUID`, `GraphItemUID`.
+- **Deprecated:** `TopologyGraph.generation` — always 0, guards nothing. Also the hand-built
+  `GraphUID(kind:counter:)` initializers: a UID with no provenance resolves in no graph, so mint them
+  with `uid(ofNodeKind:index:)`.
+- **Immutable fields:** `kind` / `counter` / `domain` are now `let`. A mutable counter beside an
+  immutable `graphID` let a caller forge provenance — mutate a minted UID's counter and it would
+  resolve to an arbitrary node, the exact bug this release closes. Mutating a UID was never coherent
+  and no code in the ecosystem did it, but this is technically source-breaking for anyone who did.
+- **Persistence:** a UID does not survive a rebuild, and never legitimately did — it only appeared to,
+  because rebuilding the same shape re-allocates counters identically, with nothing checking it was
+  the same shape. Store `(kind, index)` with the shape and re-mint after rebuilding. This matches
+  OCCT's model, where a UID is an anchor into a *persisted graph model*; OCCT does not yet expose a
+  graph serializer, and its `GraphGUID` is regenerated on every rebuild by design.
+- **Codable:** payloads written before this release have no `graphID` and decode as unstamped
+  (`graphID == 0`), which resolves nowhere rather than failing the load.
+- **Equality:** `graphID` participates in `Hashable`/`Equatable`, so UIDs from unrelated graphs no
+  longer compare equal or collapse together in a `Set`. Within one graph (and across a copy),
+  equality is unchanged.
+
+Unchanged: a UID still survives compaction and node removal within its own graph — that is what it is
+for, and it is now the property the tests actually check. The previous `foreignUIDDoesNotResolve` test
+only fabricated an *out-of-range* counter, which the reverse-index rejected anyway; a genuinely
+foreign UID is in-range. Surfaced while investigating #290.
 ### v1.11.3 (July 2026) — fix: robust importers silently dropped all but the first body (#302)
 
 **A multibody file lost every body after the first.** Ten boxes in, one box out — no error, no

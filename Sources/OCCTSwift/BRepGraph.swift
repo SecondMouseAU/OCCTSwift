@@ -812,9 +812,10 @@ public final class TopologyGraph: @unchecked Sendable {
     ///
     /// This is the supported way to carry a picked face (or edge, or vertex)
     /// across an operation that rebuilds the shape — a boolean, a fillet, a
-    /// chamfer. Because the input and the result live in the *same* graph, the
-    /// `NodeRef`s and `GraphUID`s you already hold stay valid: there is no
-    /// generation boundary to cross and no cross-graph UID lookup.
+    /// chamfer. Because the input and the result live in the *same* graph
+    /// instance, the `NodeRef`s and `GraphUID`s you already hold stay valid:
+    /// there is no second graph to look them up in, and a UID only ever means
+    /// something in the graph that minted it (#295).
     ///
     /// After this call, ``currentForms(of:)`` on an input node returns its
     /// successors, and the ``TopologyRef`` recipes (`.splitOf`, `.createdBy`)
@@ -2063,51 +2064,162 @@ public final class TopologyGraph: @unchecked Sendable {
 
     // MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1
 
-    /// A durable node identifier: a `(kind, counter)` pair that persists across graph
-    /// mutations (compaction, node removal) within one graph generation. Unlike a
-    /// `(kind, index)` `NodeRef`, the counter never repeats within a kind and is stable
-    /// even when vector indices shift. `counter == 0` is the invalid sentinel.
+    /// A durable node identifier: a `(kind, counter)` pair that persists across mutations of
+    /// **the one graph instance that minted it** — compaction, node removal — where a
+    /// `(kind, index)` ``NodeRef`` does not. The counter never repeats within a kind and is
+    /// stable when vector indices shift. `counter == 0` is the invalid sentinel.
+    ///
+    /// The scope is the graph *instance*, not the shape and not a "generation". Every graph
+    /// allocates counters from 1 independently, so the same `(kind, counter)` names some
+    /// unrelated node in every other graph — a box's face UID would otherwise resolve happily
+    /// against a cylinder. ``graphID`` records which instance minted the UID, and
+    /// ``TopologyGraph/node(forUID:)`` rejects one that came from anywhere else (#295).
+    ///
+    /// To carry a selection across a *modelling operation* rather than across mutations of one
+    /// graph, absorb the operation's history — see
+    /// ``TopologyGraph/add(_:absorbing:inputRoots:operationName:)``.
     ///
     /// `kind` is the raw `BRepGraph_NodeId::Kind` ordinal
     /// (0 Solid, 1 Shell, 2 Face, 3 Wire, 4 Edge, 5 Vertex, 6 Compound,
     /// 7 CompSolid, 8 CoEdge, 10 Product, 11 Occurrence).
+    ///
+    /// ```swift
+    /// let graph = TopologyGraph(shape: box)!
+    /// let uid = graph.uid(ofNodeKind: 2, index: 3)!    // a face, by kind + index
+    ///
+    /// // The UID still names that face after a mutation renumbers the indices:
+    /// graph.compact()
+    /// if let node = graph.node(forUID: uid) {
+    ///     print("that face is now index \(node.index)")
+    /// }
+    ///
+    /// // A UID from another graph resolves to nothing, rather than to a wrong node:
+    /// let other = TopologyGraph(shape: cylinder)!
+    /// print(other.node(forUID: uid))      // nil
+    /// print(other.contains(uid: uid))     // false
+    /// ```
     public struct GraphUID: Sendable, Hashable, Codable {
-        public var kind: Int
-        public var counter: UInt32
+        public let kind: Int
+        public let counter: UInt32
+
+        /// The instance that minted this UID — its ``TopologyGraph/instanceID``.
+        ///
+        /// `0` means unstamped: built by hand, or decoded from a payload written before
+        /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
+        public let graphID: UInt64
+
+        @available(*, deprecated, message: "A hand-built GraphUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.uid(ofNodeKind:index:).")
         public init(kind: Int, counter: UInt32) {
+            self.init(kind: kind, counter: counter, graphID: 0)
+        }
+
+        internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
+            self.graphID = graphID
         }
-        /// True if this UID has a non-zero counter (it may still fail to resolve in a graph).
+
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            kind = try c.decode(Int.self, forKey: .kind)
+            counter = try c.decode(UInt32.self, forKey: .counter)
+            // Payloads written before #295 have no graphID. Decode them as unstamped instead of
+            // failing the load: they resolve nowhere, which is the honest answer, since they never
+            // carried the provenance that says which graph they meant.
+            graphID = try c.decodeIfPresent(UInt64.self, forKey: .graphID) ?? 0
+        }
+
+        /// True if this UID has a non-zero counter. It may still fail to resolve — because it was
+        /// minted by a different graph, or because its node has since been removed.
         public var isValid: Bool { counter > 0 }
     }
 
     /// A durable reference-entry identifier `(kind, counter)`.
     ///
+    /// Scoped to one graph instance exactly as ``GraphUID`` is, and stamped with ``graphID`` for
+    /// the same reason: reference counters also restart at 1 per graph.
+    ///
     /// `kind` is the raw `BRepGraph_RefId::Kind` ordinal
     /// (0 Shell, 1 Face, 2 Wire, 3 Vertex, 4 Solid, 5 Child, 6 Occurrence).
+    ///
+    /// ```swift
+    /// let graph = TopologyGraph(shape: assembly)!
+    /// if let uid = graph.uid(ofRefKind: 1, index: 0),      // a face reference
+    ///    let ref = graph.ref(forUID: uid) {
+    ///     print("face ref at index \(ref.index)")
+    /// }
+    /// ```
     public struct GraphRefUID: Sendable, Hashable, Codable {
-        public var kind: Int
-        public var counter: UInt32
+        public let kind: Int
+        public let counter: UInt32
+
+        /// The instance that minted this UID — its ``TopologyGraph/instanceID``. `0` means
+        /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
+        public let graphID: UInt64
+
+        @available(*, deprecated, message: "A hand-built GraphRefUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.uid(ofRefKind:index:).")
         public init(kind: Int, counter: UInt32) {
+            self.init(kind: kind, counter: counter, graphID: 0)
+        }
+
+        internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
+            self.graphID = graphID
         }
+
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            kind = try c.decode(Int.self, forKey: .kind)
+            counter = try c.decode(UInt32.self, forKey: .counter)
+            graphID = try c.decodeIfPresent(UInt64.self, forKey: .graphID) ?? 0
+        }
+
         public var isValid: Bool { counter > 0 }
     }
 
     /// A durable generic item identifier covering both definition nodes and reference
     /// entries. `domain` is 1 for a node, 2 for a reference; `kind` is the raw kind
     /// ordinal in that domain's enum space.
+    ///
+    /// Scoped to one graph instance and stamped with ``graphID``, exactly as ``GraphUID`` is.
+    ///
+    /// ```swift
+    /// let graph = TopologyGraph(shape: box)!
+    /// if let uid = graph.itemUID(ofNodeKind: 2, index: 0),
+    ///    let item = graph.item(forUID: uid) {
+    ///     print("domain \(item.domain) kind \(item.kind) index \(item.index)")
+    /// }
+    /// ```
     public struct GraphItemUID: Sendable, Hashable, Codable {
-        public var domain: Int
-        public var kind: Int
-        public var counter: UInt32
+        public let domain: Int
+        public let kind: Int
+        public let counter: UInt32
+
+        /// The instance that minted this UID — its ``TopologyGraph/instanceID``. `0` means
+        /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
+        public let graphID: UInt64
+
+        @available(*, deprecated, message: "A hand-built GraphItemUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.itemUID(ofNodeKind:index:).")
         public init(domain: Int, kind: Int, counter: UInt32) {
+            self.init(domain: domain, kind: kind, counter: counter, graphID: 0)
+        }
+
+        internal init(domain: Int, kind: Int, counter: UInt32, graphID: UInt64) {
             self.domain = domain
             self.kind = kind
             self.counter = counter
+            self.graphID = graphID
         }
+
+        public init(from decoder: any Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            domain = try c.decode(Int.self, forKey: .domain)
+            kind = try c.decode(Int.self, forKey: .kind)
+            counter = try c.decode(UInt32.self, forKey: .counter)
+            graphID = try c.decodeIfPresent(UInt64.self, forKey: .graphID) ?? 0
+        }
+
         public var isValid: Bool { counter > 0 }
     }
 
@@ -2119,21 +2231,26 @@ public final class TopologyGraph: @unchecked Sendable {
         var uidKind: Int32 = 0
         var counter: UInt32 = 0
         guard OCCTBRepGraphNodeUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else { return nil }
-        return GraphUID(kind: Int(uidKind), counter: counter)
+        return GraphUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve a node UID back to its `(kind, index)`, or `nil` if it does not resolve
-    /// in the current graph generation.
+    /// Resolve a node UID back to its `(kind, index)`, or `nil` if this graph did not mint it
+    /// or its node no longer exists here.
+    ///
+    /// A UID minted by another graph returns `nil` even when its counter is in range for this
+    /// one — which it usually is, since counters restart per graph (#295).
     public func node(forUID uid: GraphUID) -> (kind: Int, index: Int)? {
+        guard uid.graphID == instanceID else { return nil }
         var nodeKind: Int32 = 0
         var nodeIndex: Int32 = 0
         guard OCCTBRepGraphNodeFromUID(handle, Int32(uid.kind), uid.counter, &nodeKind, &nodeIndex) else { return nil }
         return (Int(nodeKind), Int(nodeIndex))
     }
 
-    /// True if a node UID is valid and exists in this graph generation.
+    /// True if this graph minted the UID and the node it names still exists here.
     public func contains(uid: GraphUID) -> Bool {
-        OCCTBRepGraphHasNodeUID(handle, Int32(uid.kind), uid.counter)
+        guard uid.graphID == instanceID else { return false }
+        return OCCTBRepGraphHasNodeUID(handle, Int32(uid.kind), uid.counter)
     }
 
     /// Return the durable RefUID for a reference entry, or `nil` if invalid/removed.
@@ -2144,20 +2261,23 @@ public final class TopologyGraph: @unchecked Sendable {
         var uidKind: Int32 = 0
         var counter: UInt32 = 0
         guard OCCTBRepGraphRefUID(handle, Int32(kind), Int32(index), &uidKind, &counter) else { return nil }
-        return GraphRefUID(kind: Int(uidKind), counter: counter)
+        return GraphRefUID(kind: Int(uidKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve a RefUID back to its `(kind, index)`, or `nil` if it does not resolve.
+    /// Resolve a RefUID back to its `(kind, index)`, or `nil` if this graph did not mint it
+    /// or the reference no longer exists here.
     public func ref(forUID uid: GraphRefUID) -> (kind: Int, index: Int)? {
+        guard uid.graphID == instanceID else { return nil }
         var refKind: Int32 = 0
         var refIndex: Int32 = 0
         guard OCCTBRepGraphRefFromUID(handle, Int32(uid.kind), uid.counter, &refKind, &refIndex) else { return nil }
         return (Int(refKind), Int(refIndex))
     }
 
-    /// True if a RefUID is valid and exists in this graph generation.
+    /// True if this graph minted the RefUID and the reference it names still exists here.
     public func contains(uid: GraphRefUID) -> Bool {
-        OCCTBRepGraphHasRefUID(handle, Int32(uid.kind), uid.counter)
+        guard uid.graphID == instanceID else { return false }
+        return OCCTBRepGraphHasRefUID(handle, Int32(uid.kind), uid.counter)
     }
 
     /// Return the durable ItemUID for a node, or `nil` if invalid/removed.
@@ -2166,11 +2286,13 @@ public final class TopologyGraph: @unchecked Sendable {
         var itemKind: Int32 = 0
         var counter: UInt32 = 0
         guard OCCTBRepGraphItemUIDOfNode(handle, Int32(kind), Int32(index), &domain, &itemKind, &counter) else { return nil }
-        return GraphItemUID(domain: Int(domain), kind: Int(itemKind), counter: counter)
+        return GraphItemUID(domain: Int(domain), kind: Int(itemKind), counter: counter, graphID: instanceID)
     }
 
-    /// Resolve an ItemUID back to its `(domain, kind, index)`, or `nil` if it does not resolve.
+    /// Resolve an ItemUID back to its `(domain, kind, index)`, or `nil` if this graph did not
+    /// mint it or the item no longer exists here.
     public func item(forUID uid: GraphItemUID) -> (domain: Int, kind: Int, index: Int)? {
+        guard uid.graphID == instanceID else { return nil }
         var domain: Int32 = 0
         var itemKind: Int32 = 0
         var index: Int32 = 0
@@ -2178,7 +2300,45 @@ public final class TopologyGraph: @unchecked Sendable {
         return (Int(domain), Int(itemKind), Int(index))
     }
 
-    /// The current graph generation counter, incremented each time the graph is cleared/rebuilt.
+    /// Identifies this graph instance for as long as it lives.
+    ///
+    /// Unique among every graph this process builds, and — because the sequence starts at a random
+    /// point — distinct from any other process's ids with overwhelming probability. Every UID this
+    /// graph mints carries it, which is how ``node(forUID:)`` tells one of its own nodes from a node
+    /// of some other graph (#295).
+    ///
+    /// Identity here is the graph object, not the geometry: two graphs built from the same shape
+    /// have different ids, and so a UID from one does not resolve in the other. A rebuild is a new
+    /// graph by the same token.
+    ///
+    /// ``copy()`` and ``translated(dx:dy:dz:copyGeometry:)`` **inherit** this id, because the kernel
+    /// copies the graph wholesale — it transplants the UID counter space itself, so a copy genuinely
+    /// is the same identity and every UID keeps naming the same node. ``copyFace(_:copyGeometry:)``
+    /// does not: it lifts one face into a new graph, which gets its own id.
+    ///
+    /// ```swift
+    /// let graph = TopologyGraph(shape: box)!
+    /// let uid = graph.uid(ofNodeKind: 2, index: 0)!
+    /// print(uid.graphID == graph.instanceID)      // true — this graph minted it
+    ///
+    /// let copy = graph.copy()!
+    /// print(copy.instanceID == graph.instanceID)  // true — a copy is the same identity
+    /// print(copy.node(forUID: uid) != nil)        // true — and names the same face
+    ///
+    /// let rebuilt = TopologyGraph(shape: box)!    // same shape, new graph
+    /// print(rebuilt.node(forUID: uid))            // nil
+    /// ```
+    public var instanceID: UInt64 {
+        OCCTBRepGraphInstanceID(handle)
+    }
+
+    /// The graph generation counter — **always 0**.
+    ///
+    /// OCCT advances this only from `BRepGraph::Clear()`, which nothing in OCCTSwift calls, so it
+    /// never changes and cannot tell two graphs apart or detect a stale cache. Nothing replaces it:
+    /// ``node(forUID:)`` already rejects a UID from another graph, and ``instanceID`` compares graph
+    /// identity directly (#295).
+    @available(*, deprecated, message: "Always 0 — OCCTSwift never clears a graph, so this counter never advances and guards nothing. node(forUID:) rejects foreign UIDs on its own; use instanceID to compare graph identity.")
     public var generation: UInt32 {
         OCCTBRepGraphGeneration(handle)
     }

@@ -19,6 +19,8 @@
 // Area-specific OCCT headers — the foundation set + handle wrappers come from
 // OCCTBridge_Internal.h, this block is just the BRepGraph-block extras.
 
+#include <atomic>
+#include <random>
 #include <set>
 #include <vector>
 #include <TopAbs_Orientation.hxx>
@@ -120,8 +122,59 @@ static GeomAbs_Shape continuityFromInt(int val) {
 #include <Geom_Curve.hxx>
 #include <Geom2d_Curve.hxx>
 
+// Mints the per-instance id every OCCTBRepGraph carries (#295).
+//
+// The sequence starts at a random point rather than at 1. Within a process a plain
+// counter would do, but GraphUID is Codable: a UID persisted by one process could be
+// resolved by another, and two processes both counting from 1 would hand out the same
+// ids — re-introducing the very aliasing this id exists to prevent, across the
+// persistence boundary. Seeding randomly makes that collision ~2^-64 while keeping
+// in-process uniqueness exact (the counter only ever increments).
+//
+// This id mirrors OCCT's own graph identity, BRepGraph::UIDs().GraphGUID() — same concept,
+// same lifecycle rules (fresh per build; inherited by a full copy; preserved by compaction).
+// Upstream intends the GUID for exactly this job ("Generation + GraphGUID protect against
+// stale UID aliasing", BRepGraphInc_Storage.hxx:1597). We cannot read it, on three counts —
+// each measured against the pinned 8.0.0p1 kernel, not assumed:
+//   1. myGraphGUID is default-constructed and only ever populated by BRepGraph::Clear()
+//      (BRepGraph.cxx: SetGraphGUID(generateRandomGUID()) — still true on upstream master
+//      as of 2026-07). Our build path is ctor + Shapes().Add(), which skips Clear(), so
+//      every graph reports the all-zero GUID and no two graphs differ. Upstream's own
+//      GTests do `myGraph.Clear(); myGraph.Shapes().Add(box);` — Clear() is their intended
+//      rebuild boundary (PR #1237), and their GraphGUID_AfterBuild_IsValid test only
+//      passes because the fixture calls it. So this one is our gap, not upstream's — see
+//      issue #303 about adopting the Clear()-then-Add lifecycle. It does not change
+//      the analysis below, which is why that follow-up cannot replace this id.
+//   2. Even populated it would not fix this bug. BRepGraph_UID is (Kind, Counter) and
+//      carries no GUID, so UIDsView::NodeIdFrom cannot consult one — two Clear()ed
+//      graphs with distinct GUIDs still cross-resolve each other's UIDs. The check has
+//      to live where the UID does, which is above the kernel. For the same reason
+//      UIDsView::IsStale accepts a foreign VersionStamp: a stamp carries Generation
+//      (equal across graphs), not the GUID.
+//   3. BRepGraph_Copy::Perform overwrites the target's GUID with the source's, so a
+//      CopyFace graph — one face out of many — would inherit the source's identity and
+//      alias straight back to a wrong node.
+// None of GraphGUID/StampOf/IsStale/ToGUID is currently wrapped, so no Swift caller can
+// reach the broken behaviour; if we ever wrap them, note that ToGUID's documented
+// "globally unique across different graph instances" is false on the no-Clear() path —
+// it hashes in the all-zero GUID and returns identical GUIDs for different graphs.
+static uint64_t nextGraphInstanceID() {
+    static std::atomic<uint64_t> counter{[] {
+        std::random_device rd;
+        return ((uint64_t)rd() << 32) ^ (uint64_t)rd();
+    }()};
+    uint64_t id;
+    // 0 is the "unstamped" sentinel on the Swift side; skip it on the (2^-64) wrap.
+    do { id = counter.fetch_add(1, std::memory_order_relaxed); } while (id == 0);
+    return id;
+}
+
 struct OCCTBRepGraph {
     BRepGraph graph;
+    // Identifies this graph instance. Fresh by default; the copy/transform entry points
+    // overwrite it to inherit the source's, mirroring what the kernel does with its own
+    // identity — see nextGraphInstanceID() and OCCTBRepGraphCopy().
+    uint64_t instanceID = nextGraphInstanceID();
     // Parallel side-registries: index == the legacy "rep id".
     std::vector<occ::handle<Poly_Triangulation>>            triReps;
     std::vector<occ::handle<Poly_Polygon3D>>                poly3dReps;
@@ -1302,6 +1355,13 @@ OCCTBRepGraphRef OCCTBRepGraphCopy(OCCTBRepGraphRef g, bool copyGeom) {
         // OCCT 8.0.0p1: Perform now copies source INTO a target graph and returns bool.
         auto geomPolicy = copyGeom ? BRepGraph_Copy::GeomPolicy::Copy : BRepGraph_Copy::GeomPolicy::Share;
         if (!BRepGraph_Copy::Perform(g->graph, ref->graph, geomPolicy)) { delete ref; return nullptr; }
+        // A full copy INHERITS the source's identity — the kernel says so itself: Perform
+        // transplants every per-kind UID counter, the Generation, and the GraphGUID from source
+        // to target (BRepGraph_Copy.cxx). Nodes land 1:1, so every source UID resolves in the
+        // copy to the very same node; measured on a box, all 6 face UIDs map to the
+        // geometrically identical face. Minting a fresh id here would reject those lookups and
+        // silently break a working, kernel-sanctioned correspondence (#295).
+        ref->instanceID = g->instanceID;
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -1317,6 +1377,12 @@ OCCTBRepGraphRef OCCTBRepGraphCopyFace(OCCTBRepGraphRef g, int32_t faceIndex, bo
             BRepGraph_NodeId(BRepGraph_NodeId::Kind::Face, faceIndex),
             geomPolicy);
         if (!mapped.IsValid()) { delete ref; return nullptr; }
+        // Deliberately NOT inheriting the source's id, unlike Copy() above: CopyNode lifts one
+        // face into an empty graph and does not transplant the counter space, so the extracted
+        // face restarts at counter 1. That counter belongs to the source's face 0, so a source
+        // UID would resolve here to whichever face was extracted — a wrong node, which is
+        // exactly #295. Verified: on a box, face 0's UID resolved inside copyFace(3) and
+        // returned face 3. A fresh id makes those lookups return nil instead.
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -1332,6 +1398,10 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
         // OCCT 8.0.0p1: Perform now transforms source INTO a target graph and returns bool.
         auto geomPolicy = copyGeom ? BRepGraph_Copy::GeomPolicy::Copy : BRepGraph_Copy::GeomPolicy::Share;
         if (!BRepGraph_Transform::Perform(g->graph, ref->graph, trsf, geomPolicy)) { delete ref; return nullptr; }
+        // Same reasoning as OCCTBRepGraphCopy: Transform::Perform copies the graph wholesale
+        // and transplants identity, so a source UID names the same node in the placed graph
+        // (measured: all 6 box face UIDs map to the same face, merely translated).
+        ref->instanceID = g->instanceID;
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -3335,4 +3405,9 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef graph,
 uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef graph) {
     if (!graph) return 0;
     try { return graph->graph.UIDs().Generation(); } catch (...) { return 0; }
+}
+
+uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef graph) {
+    if (!graph) return 0;
+    return graph->instanceID;
 }
