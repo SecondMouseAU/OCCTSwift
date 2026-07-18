@@ -39,6 +39,7 @@ public enum ExportError: Error, LocalizedError {
     case invalidPath
     case invalidShape
     case cancelled
+    public var errorDescription: String? { get }
 }
 ```
 

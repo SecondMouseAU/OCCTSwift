@@ -759,6 +759,7 @@ Errors that can occur when working with XDE documents.
 public enum DocumentError: Error, LocalizedError {
     case loadFailed(url: URL)
     case writeFailed(url: URL)
+    public var errorDescription: String? { get }
 }
 ```
 

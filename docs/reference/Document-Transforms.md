@@ -1174,6 +1174,70 @@ public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB?
 
 ---
 
+### `Shape.OrientedBoundingBox`
+
+An oriented (rotated) bounding box that fits tightly around a shape. Unlike the flat
+`DetailedOBB`, this value bundles the half-sizes as a single `SIMD3<Double>` and adds two
+computed conveniences (`volume`, `dimensions`); it is the return type of
+`orientedBoundingBox(optimal:)`.
+
+```swift
+public struct OrientedBoundingBox: Sendable {
+    public var center: SIMD3<Double>        // box centre in world space
+    public var xDirection: SIMD3<Double>    // unit axis directions of the box frame
+    public var yDirection: SIMD3<Double>
+    public var zDirection: SIMD3<Double>
+    public var halfSizes: SIMD3<Double>     // half-extents along x/y/z axes
+    public var volume: Double { get }       // 8 · hx · hy · hz
+    public var dimensions: SIMD3<Double> { get }  // 2 · halfSizes (full edge lengths)
+}
+```
+
+- **OCCT:** populated from `Bnd_OBB` (via `BRepBndLib::AddOBB`).
+
+---
+
+### `Shape.orientedBoundingBox(optimal:)`
+
+Compute the oriented (tight-fit, rotated) bounding box of the shape as an
+`OrientedBoundingBox` value. Where the axis-aligned `boundingBox` is cheap but loose for
+rotated geometry, the OBB rotates to hug the shape, so its `volume` is a far better proxy for
+how much space the part actually occupies.
+
+```swift
+public func orientedBoundingBox(optimal: Bool = false) -> OrientedBoundingBox?
+```
+
+- **Parameters:** `optimal` — when `true`, compute a tighter box from precise geometry (slower);
+  when `false` (default), use the triangulation/vertex-based fit.
+- **Returns:** The `OrientedBoundingBox`, or `nil` if the shape is void.
+- **OCCT:** `BRepBndLib::AddOBB` → `Bnd_OBB` (via `OCCTShapeOrientedBoundingBox`).
+- **Example:**
+  ```swift
+  if let obb = shape.orientedBoundingBox() {
+      print(obb.dimensions)  // full edge lengths of the tight box
+      print(obb.volume)      // occupied volume, rotation-independent
+  }
+  ```
+
+---
+
+### `Shape.orientedBoundingBoxCorners(optimal:)`
+
+Return the 8 corner points of the shape's oriented bounding box, ready for drawing a wireframe
+box or feeding a collision/packing check.
+
+```swift
+public func orientedBoundingBoxCorners(optimal: Bool = false) -> [SIMD3<Double>]?
+```
+
+- **Parameters:** `optimal` — same tight-vs-fast trade-off as `orientedBoundingBox(optimal:)`.
+- **Returns:** An array of exactly 8 corner points in world space, or `nil` if the shape is void.
+- **OCCT:** `Bnd_OBB::GetVertex` over the box built by `BRepBndLib::AddOBB` (via
+  `OCCTOrientedBoundingBoxCorners`).
+
+---
+
 ## ShapeAnalysis_ShapeTolerance Extensions
 
 Extensions on `Shape` for querying sub-shape tolerances.

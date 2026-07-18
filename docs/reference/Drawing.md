@@ -754,6 +754,7 @@ Error type for 2D drawing operations.
 ```swift
 public enum DrawingError: Error, LocalizedError {
     case projectionFailed
+    public var errorDescription: String? { get }
 }
 ```
 
