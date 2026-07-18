@@ -2927,14 +2927,16 @@ OCCTShapeRef OCCTShapeDrillHole(OCCTShapeRef shape,
             actualDepth = diagonal * 2;  // Make sure it goes through
         }
 
-        // Calculate the bottom of the hole (endpoint of drill)
-        double bottomX = posX + direction.X() * actualDepth;
-        double bottomY = posY + direction.Y() * actualDepth;
-        double bottomZ = posZ + direction.Z() * actualDepth;
-
-        // Create cylinder using OCCTShapeCreateCylinderAt pattern
-        // The cylinder's base is at the "bottom" of the hole, extending upward
-        OCCTShapeRef cylRef = OCCTShapeCreateCylinderAt(bottomX, bottomY, bottomZ, radius, actualDepth);
+        // Build the cutting cylinder ALONG the requested (normalized) drill
+        // direction, with its base at the drill entry point and extending into
+        // the shape for actualDepth. Using the oriented constructor keeps the
+        // cylinder's axis aligned with `direction`; the previous code built the
+        // cylinder hardcoded along +Z (via OCCTShapeCreateCylinderAt), so any
+        // non-Z direction drilled the wrong axis (issue #272).
+        OCCTShapeRef cylRef = OCCTShapeCreateCylinderOriented(
+            posX, posY, posZ,
+            direction.X(), direction.Y(), direction.Z(),
+            radius, actualDepth);
         if (!cylRef) return nullptr;
 
         // Subtract using the existing working function
