@@ -7,13 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.3
+## Current: v1.12.4
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.4 (July 2026) — fix: `drilled` honours its direction; `face(outer:holes:)` respects hole winding; docs audit made type-aware
+
+Two behaviour bugfixes and a documentation-coverage pass. No public API change (derived operation count unchanged at 4,241).
+
+**`drilled(at:direction:radius:depth:)` now bores along `direction` (#272).** The bridge built the drill cutter via a +Z-hardcoded cylinder (`OCCTShapeCreateCylinderAt`), so drilling along any non-Z axis silently bored straight up Z — often removing nothing when the repositioned base fell outside the shape. It now uses `OCCTShapeCreateCylinderOriented`, whose `gp_Ax2(entryPoint, direction)` orients the bore along the requested (normalized) axis; a zero-length direction returns `nil`.
+
+**`face(outer:holes:)` no longer double-flips an already-opposite hole (#274).** Every hole wire was reversed unconditionally before `BRepBuilderAPI_MakeFace.Add` — but `Add` does not normalise hole orientation, so a hole passed already wound opposite the outer (the correct winding) was flipped back to *wrong*, yielding an invalid face or an added-instead-of-subtracted hole. Reversal is now conditional: the outer's plane is found, an arc-aware signed area decides each wire's winding, and a hole is reversed only when it winds the *same* way as the outer. Per-hole, so mixed-winding hole sets work too; falls back to the legacy reverse when no plane can be determined.
+
+**`Scripts/count-operations.py --audit` is now type-aware (#294).** The old matcher compared a counted entry point's bare name against doc headings with no notion of the owning type, so it over-reported generic names (`get`, `cols`, `z`, …) that *were* documented, and missed multi-symbol headings (`` ### `isCylinder`, `isCone`, `isSphere` ``) entirely — capturing only the first name. Of the 37 it flagged, **26 were false positives**; the matcher now carries a `Type.name` identity on both sides and parses multi-span headings. The **11 genuine gaps** (oriented bounding box, `OSD_Environment` accessors, and `LocalizedError.errorDescription` on seven error enums) are now documented — `--audit` reports **0**.
 
 ### v1.12.3 (July 2026) — fix: concurrent fillet/chamfer fixed in the kernel; serialization lock removed (#298)
 
