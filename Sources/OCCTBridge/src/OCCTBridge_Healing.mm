@@ -436,7 +436,6 @@ OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
         TopoDS_Edge edge = TopoDS::Edge(edgeMap(edgeIndex + 1));  // OCCT uses 1-based indexing
 
         // Create fillet maker
-        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         // Add edge with variable radius
@@ -668,7 +667,6 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
         TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
         // Create fillet maker
-        std::lock_guard<std::recursive_mutex> _filletLock(occtFilletMutex());  // #298
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
         // Add each edge with its radius

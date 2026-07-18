@@ -7,13 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.2
+## Current: v1.12.3
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263 ShapeFix kernel patch)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.3 (July 2026) — fix: concurrent fillet/chamfer fixed in the kernel; serialization lock removed (#298)
+
+**The real fix for #298 lands in the pinned OCCT, and the interim bridge lock is gone — concurrent fillet/chamfer run in parallel again.** v1.12.1 stopped the corruption by serialising every 3D fillet/chamfer build behind a bridge mutex (`occtFilletMutex`); that was correct but cost the parallelism. This release fixes the root cause in the kernel and drops the lock.
+
+**Root cause (found with ThreadSanitizer).** `BRepFilletAPI_MakeFillet` reconstructs its result solid through OCCT's legacy `TopOpeBRepBuild` boolean engine (`ChFi3d_Builder::Compute` → `TopOpeBRepBuild_HBuilder::MergeSolid` → `TopOpeBRepBuild_Builder::SplitSolid`), which passed state between methods through a file-scope `static`, `STATIC_SOLIDINDEX`: `SplitSolid` sets it to 1/2 to tell `FillSolid` which operand it is splitting, and `FillSolid` reads it back to pick the operand shape. Two fillet builds on independent shapes on separate threads clobbered each other's flag, so `FillSolid` mis-classified faces and returned a wrong-but-plausible solid (one solid, positive volume, fails `BRepCheck`). This is *not* the `BlendFunc` scratch the v1.12.1 notes first suspected — those statics do race, but benignly; `STATIC_SOLIDINDEX` alone accounts for the corruption.
+
+**Fix.** `Scripts/patches/0003-TopOpeBRep-non-reentrant-globals-fillet-298.patch` converts the fillet-path statics to `thread_local` (each thread keeps its own copy; single-thread behaviour is unchanged): `STATIC_SOLIDINDEX` and `STATIC_lastVPind` (functional), plus the `BlendFunc_ConstRad`/`EvolRad` and `ChFi3d_Builder` `checkcurve` scratch (benign, converted so the path is TSan-clean). The xcframework was rebuilt with the patch, so the kernel is reentrant and the `occtFilletMutex` guard (16 bridge call sites) was removed. Upstreamed as [Open-Cascade-SAS/OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374); the carried patch is retired once it ships in the pinned kernel.
+
+**Verification.** Pure-C++ 8-thread stress: 0/1600 concurrent fillet builds invalid with a single correct volume (was ~15–20% corrupt), and ThreadSanitizer reports the fillet path clean. `Issue298FilletThreadSafetyTests` now passes with the lock removed. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum; remote SPM consumers get the rebuilt binary.
 
 ### v1.12.2 (July 2026) — fix: graph construction now runs OCCT's `Clear()` rebuild boundary (#303)
 

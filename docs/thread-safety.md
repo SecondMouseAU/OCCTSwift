@@ -21,13 +21,13 @@ OCCT has several thread-unsafe patterns:
 
 4. **Shared geometry after booleans** — Boolean operations can produce result shapes that share edge/face geometry with input shapes via the same `TopoDS_TShape` handles. Subsequent operations on both the original and result can race on shared adaptors.
 
-5. **Non-reentrant statics in the 3D fillet/chamfer solver (issue #298)** — `BRepFilletAPI_MakeFillet`'s constant- and evolutive-radius blend functions (`BlendFunc_ConstRad`, `BlendFunc_EvolRad`) and the shared `ChFi3d_Builder` curve checker keep their geometric work variables in function-local `static`s ("to avoid systematic reallocation"). This is **process-global** state, not per-object: two threads running *any two* fillet/chamfer builds at once — even on completely independent shapes — interleave writes to the same statics. The solver then converges on a corrupted surface and returns a **wrong-but-plausible solid** (one solid, positive volume) that fails `BRepCheck` — silent bad geometry, not a crash and not a thrown error. This is distinct from items 1–4: no geometry is shared at the Swift level, yet the operation still races. Reproduced in pure OCCT with no wrapper involved. The bridge now serialises these builds internally (see below), so consumers are protected transparently.
+5. **Non-reentrant statics in the fillet solid-reconstruction (issue #298) — fixed in v1.12.3.** `BRepFilletAPI_MakeFillet` reconstructs its result solid through OCCT's legacy `TopOpeBRepBuild` boolean engine (`ChFi3d_Builder::Compute` → `TopOpeBRepBuild_HBuilder::MergeSolid` → `TopOpeBRepBuild_Builder::SplitSolid`), which passed state between methods through file-scope `static` variables. The functional culprit is `STATIC_SOLIDINDEX`: `SplitSolid` sets it to 1/2 to tell `FillSolid` which operand it is splitting, and `FillSolid` reads it back to pick the operand shape. That made the whole fillet/chamfer path **non-reentrant**: two builds on *independent* shapes on separate threads clobbered each other's flag, so `FillSolid` mis-classified faces and returned a **wrong-but-plausible solid** (one solid, positive volume, but fails `BRepCheck`) — silent bad geometry, not a crash. Distinct from items 1–4: no geometry is shared at the Swift level, yet the operation raced on a process-global. ThreadSanitizer on a concurrent fuse+fillet stress pinpointed it (the blend solver's scratch caches — `BlendFunc_ConstRad`/`EvolRad`, `ChFi3d_Builder` `checkcurve` — also raced, but benignly: `STATIC_SOLIDINDEX` alone accounts for the corruption). **Fixed** by converting the fillet-path statics to `thread_local` (carried as `Scripts/patches/0003`, upstreamed as [Open-Cascade-SAS/OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374)); the pinned xcframework now includes the fix, so fillet/chamfer are genuinely reentrant and the interim `occtFilletMutex` serialization shipped in v1.12.1 has been **removed** — concurrent fillet/chamfer builds run in parallel again.
 
 ## What IS Thread-Safe
 
 - **Handle reference counting** (`occ::handle<T>`) — atomic `std::atomic_int` refcount
 - **Reading shape topology** — immutable once built
-- **Completely independent shapes** — shapes with no shared TShapes or geometry handles — **with one exception:** 3D fillet and chamfer builds are not safe to run concurrently even on independent shapes, because of the process-global statics in item 5. The bridge serialises them for you (see [3D fillet/chamfer serialization](#3d-filletchamfer-serialization-issue-298)); you get correct geometry, just no parallel speedup on those specific ops.
+- **Completely independent shapes** — shapes with no shared TShapes or geometry handles. This now includes 3D fillet and chamfer: the process-global statics that made them unsafe (item 5) were fixed in v1.12.3, so concurrent fillet/chamfer builds on independent shapes are safe again — and parallel (no longer serialised).
 - **OCCT's internal parallel algorithms** — `BOPAlgo_*` with `SetRunParallel(true)`, `BRepCheck_Analyzer` with `SetParallel(true)`, `BRepMesh_IncrementalMesh`
 
 ## The Solution
@@ -66,8 +66,8 @@ let original = Shape.box(width: 10, height: 10, depth: 10)!
 let copies = (0..<4).map { _ in original.deepCopy()! }
 
 // Process each copy on a different thread. Independence protects against the
-// shared-geometry races (items 1–4); the `filleted` call is *additionally* safe
-// because the bridge serialises fillet builds internally (item 5, issue #298).
+// shared-geometry races (items 1–4); the `filleted` call is safe because the
+// fillet path is reentrant as of v1.12.3 (item 5, issue #298).
 DispatchQueue.concurrentPerform(iterations: 4) { i in
     let result = copies[i].filleted(radius: Double(i + 1))
     // Use result...
@@ -85,31 +85,28 @@ defer { OCCTSerial.unlock() }
 // Multiple OCCT operations that must be atomic
 ```
 
-### 3D fillet/chamfer serialization (issue #298)
+### 3D fillet/chamfer thread safety (issue #298)
 
-The problem in item 5 above cannot be solved by `deepCopy()` or by the caller
-holding `OCCTSerial` — the racing state lives in OCCT's own function-local
-statics, not in any shape the caller can see or copy. So the bridge serialises it
-at the source: **every 3D fillet and chamfer build runs under a dedicated
-recursive mutex** (`occtFilletMutex` in the C bridge), separate from `OCCTSerial`.
+Fillet and chamfer are **safe to call concurrently on independent shapes**, with no
+lock on your side and no `deepCopy()` required — `Shape.filleted`, `Shape.chamfered`,
+the fillet/chamfer builders, and `SheetMetal.Builder.build` (which fillets internally)
+are all reentrant.
 
-What this means for you:
+This required a kernel fix, not just caller discipline: the racing state (item 5)
+lived in OCCT's own file-scope statics, not in any shape the caller could copy. The
+history:
 
-- **Fillet/chamfer are always safe to call concurrently**, with no lock on your
-  side and no `deepCopy()` required. `Shape.filleted`, `Shape.chamfered`, the
-  fillet/chamfer builders, and `SheetMetal.Builder.build` (which fillets internally)
-  all go through the guarded path.
-- **Only fillet/chamfer builds serialise against each other.** Booleans, meshing,
-  extrudes, sweeps, and everything else stay fully parallel. Filleting on thread A
-  does not block a boolean on thread B.
-- **2D fillets/chamfers (`BRepFilletAPI_MakeFillet2d`) are not affected** — they use
-  the separate analytic `ChFi2d` toolkit, which has no such statics, and are not
-  serialised.
+- **v1.12.1** shipped an interim mitigation — a dedicated bridge mutex
+  (`occtFilletMutex`) serialised every 3D fillet/chamfer build. Correct, but it meant
+  fillet/chamfer could not run in parallel.
+- **v1.12.3** ships the real fix in the pinned kernel (`Scripts/patches/0003`,
+  upstreamed as [OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374)):
+  the fillet-path statics are `thread_local`, so the operation is genuinely reentrant.
+  The `occtFilletMutex` serialization was **removed** — concurrent fillet/chamfer
+  builds now run fully in parallel, like every other operation.
 
-This is a mitigation for an upstream OCCT defect. The permanent fix de-statics the
-work variables in `BlendFunc_ConstRad`/`BlendFunc_EvolRad` (carried as an `occt-src`
-patch); once that ships in the pinned kernel the bridge lock can be dropped and
-fillet/chamfer become genuinely parallel.
+2D fillets/chamfers (`BRepFilletAPI_MakeFillet2d`) were never affected — they use the
+separate analytic `ChFi2d` toolkit with no such statics.
 
 ## Performance
 
