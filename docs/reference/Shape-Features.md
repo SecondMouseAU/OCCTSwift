@@ -43,9 +43,10 @@ Creates a face with one or more through-holes.
 public static func face(outer: Wire, holes: [Wire]) -> Shape?
 ```
 
-- **Parameters:** `outer` — the outer boundary wire (closed); `holes` — array of inner boundary wires, each defining a hole.
+- **Parameters:** `outer` — the outer boundary wire (closed); `holes` — array of inner boundary wires, each defining a hole. **Any hole winding is accepted** (see below).
 - **Returns:** A face with holes, or `nil` on failure.
-- **OCCT:** `BRepBuilderAPI_MakeFace(outer, planar)` + `BRepBuilderAPI_MakeFace::Add` for each inner wire.
+- **Winding contract:** For a valid planar face, each hole must wind **opposite** to the outer boundary (measured in the face plane). You do not have to pre-orient your holes: the function measures each hole's signed area against the outer's and reverses a hole **only when its winding currently matches the outer's**. A hole passed already wound opposite (the geometrically correct sense) is kept as-is; a hole wound the same way as the outer is reversed for you. Either input yields the same valid face with the hole correctly subtracted. (Before [#274](https://github.com/SecondMouseAU/OCCTSwift/issues/274) every hole was reversed unconditionally, which broke callers that already passed the correct opposite winding.)
+- **OCCT:** `BRepBuilderAPI_MakeFace(outer, planar)` + `BRepBuilderAPI_MakeFace::Add` for each inner wire, with the wire's relative winding decided by `BRepBuilderAPI_FindPlane` + a signed-area projection onto the face plane.
 - **Example:**
   ```swift
   let outer = Wire.rectangle(width: 20, height: 20)!

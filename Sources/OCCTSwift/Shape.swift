@@ -1478,9 +1478,19 @@ public final class Shape: @unchecked Sendable {
 
     /// Create a face with holes from outer and inner wires
     ///
+    /// ## Winding contract
+    ///
+    /// Each hole wire ends up wound **opposite** to the outer boundary (measured in the
+    /// face plane), as OCCT requires for the hole to subtract area. The winding you pass
+    /// does **not** matter: the function measures each hole's signed area against the outer
+    /// and reverses a hole only when its winding currently matches the outer's. A hole you
+    /// pass already wound opposite (the geometrically correct sense) is left untouched, and
+    /// a hole wound the same way as the outer is reversed for you. Either input yields the
+    /// same valid face with the hole correctly subtracted.
+    ///
     /// - Parameters:
     ///   - outer: The outer boundary wire (closed)
-    ///   - holes: Array of inner boundary wires defining holes
+    ///   - holes: Array of inner boundary wires defining holes; any winding is accepted
     ///
     /// - Returns: A face with holes, or nil if creation fails
     ///

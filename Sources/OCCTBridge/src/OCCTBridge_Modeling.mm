@@ -97,6 +97,9 @@
 #include <BRepFill_OffsetAncestors.hxx>
 #include <BRepAlgo_AsDes.hxx>
 #include <BRepCheck_Analyzer.hxx>
+#include <BRepBuilderAPI_FindPlane.hxx>
+#include <BRepTools_WireExplorer.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <HLRAppli_ReflectLines.hxx>
 #include <HLRBRep_TypeOfResultingEdge.hxx>
@@ -2666,6 +2669,60 @@ OCCTShapeRef OCCTShapeCreateFaceFromWire(OCCTWireRef wire, bool planar) {
     }
 }
 
+// Signed area of a (nominally planar) wire measured in the plane spanned by pln's
+// X/Y directions. Arc-aware: each edge is sampled along its parametric range in
+// wire-traversal order and the shoelace sum is accumulated over the sampled polyline,
+// so curved edges contribute their true bulge to the sign. The magnitude is only an
+// approximation, but the SIGN — all we use it for — is robust for simple loops.
+// A positive result means the wire winds counter-clockwise about pln's normal.
+static double occtSignedWireAreaInPlane(const TopoDS_Wire& wire, const gp_Pln& pln) {
+    const gp_Pnt origin = pln.Location();
+    const gp_Dir xDir = pln.Position().XDirection();
+    const gp_Dir yDir = pln.Position().YDirection();
+
+    auto projectUV = [&](const gp_Pnt& p, double& u, double& v) {
+        const gp_Vec d(origin, p);
+        u = d.Dot(gp_Vec(xDir));
+        v = d.Dot(gp_Vec(yDir));
+    };
+
+    double area = 0.0;
+    bool hasPrev = false;
+    double u0 = 0.0, v0 = 0.0;      // first sampled point (to close the loop)
+    double uPrev = 0.0, vPrev = 0.0; // previous sampled point
+    const int samplesPerEdge = 24;
+
+    BRepTools_WireExplorer explorer(wire);
+    for (; explorer.More(); explorer.Next()) {
+        const TopoDS_Edge& edge = explorer.Current();
+        BRepAdaptor_Curve curve(edge);
+        const double f = curve.FirstParameter();
+        const double l = curve.LastParameter();
+        // Walk the curve in the edge's traversal direction within the wire.
+        const bool reversed = (edge.Orientation() == TopAbs_REVERSED);
+        for (int s = 0; s <= samplesPerEdge; s++) {
+            const double t = (double)s / (double)samplesPerEdge;
+            const double param = reversed ? (l + (f - l) * t) : (f + (l - f) * t);
+            const gp_Pnt p = curve.Value(param);
+            double u, v;
+            projectUV(p, u, v);
+            if (!hasPrev) {
+                u0 = uPrev = u;
+                v0 = vPrev = v;
+                hasPrev = true;
+            } else {
+                area += (uPrev * v - u * vPrev);
+                uPrev = u;
+                vPrev = v;
+            }
+        }
+    }
+    if (hasPrev) {
+        area += (uPrev * v0 - u0 * vPrev); // close the loop
+    }
+    return 0.5 * area;
+}
+
 OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* holes, int32_t holeCount) {
     if (!outer) return nullptr;
 
@@ -2676,13 +2733,42 @@ OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* 
             return nullptr;
         }
 
+        // For a valid planar face with holes, each hole wire must wind OPPOSITE to
+        // the outer boundary (measured in the face plane). Callers may hand in a hole
+        // wound either way, so we CONDITIONALLY reverse: only flip a hole whose winding
+        // currently MATCHES the outer's. A hole already wound opposite is left as-is.
+        // (The previous implementation reversed every hole unconditionally, which broke
+        // callers that already passed the geometrically-correct opposite winding — #274.)
+        //
+        // Winding is decided by the sign of each wire's signed area projected onto the
+        // outer face plane. If the plane can't be determined we fall back to the old
+        // unconditional-reverse behaviour, which is correct for same-sense inputs.
+        BRepBuilderAPI_FindPlane finder(outer->wire);
+        const bool havePlane = finder.Found();
+        gp_Pln plane;
+        double outerSign = 0.0;
+        if (havePlane) {
+            plane = finder.Plane()->Pln();
+            outerSign = occtSignedWireAreaInPlane(outer->wire, plane);
+        }
+
         // Add holes (inner wires)
         for (int32_t i = 0; i < holeCount; i++) {
-            if (holes[i]) {
-                // Inner wires must be reversed to represent holes
-                TopoDS_Wire reversed = TopoDS::Wire(holes[i]->wire.Reversed());
-                makeFace.Add(reversed);
+            if (!holes[i]) continue;
+            const TopoDS_Wire& holeWire = holes[i]->wire;
+
+            bool reverse;
+            if (havePlane && outerSign != 0.0) {
+                const double holeSign = occtSignedWireAreaInPlane(holeWire, plane);
+                // Reverse only when the hole winds the SAME way as the outer.
+                // If holeSign is ~0 (degenerate), fall back to reversing.
+                reverse = (holeSign == 0.0) || (holeSign * outerSign > 0.0);
+            } else {
+                reverse = true; // no reliable plane: preserve legacy same-sense behaviour
             }
+
+            TopoDS_Wire toAdd = reverse ? TopoDS::Wire(holeWire.Reversed()) : holeWire;
+            makeFace.Add(toAdd);
         }
 
         if (!makeFace.IsDone()) {
