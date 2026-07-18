@@ -1633,19 +1633,27 @@ public final class Shape: @unchecked Sendable {
 
     /// Drill a cylindrical hole into the shape
     ///
+    /// The bore is cut **along `direction`** — any axis, not just Z. The direction is
+    /// normalized internally; a zero-length direction returns `nil`.
+    ///
     /// - Parameters:
-    ///   - position: Position of hole center on surface
-    ///   - direction: Drill direction (into the shape)
+    ///   - position: Position of hole center on the entry surface
+    ///   - direction: Drill direction (into the shape); any non-zero axis
     ///   - radius: Hole radius
     ///   - depth: Hole depth (0 for through-hole)
     ///
-    /// - Returns: Shape with drilled hole, or nil on failure
+    /// - Returns: Shape with drilled hole, or nil on failure (including a zero-length direction)
     ///
     /// ## Example
     ///
     /// ```swift
     /// let plate = Shape.box(width: 50, height: 50, depth: 10)
+    /// // Through-hole down the Z axis:
     /// let drilled = plate.drilled(at: SIMD3(25, 25, 10), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
+    ///
+    /// // A hole bored across the width (+X) — e.g. a bolt hole through a bar:
+    /// let bar = Shape.box(width: 200, height: 60, depth: 16)
+    /// let cross = bar?.drilled(at: SIMD3(-101, 0, 0), direction: SIMD3(1, 0, 0), radius: 6.5, depth: 0)
     /// ```
     public func drilled(at position: SIMD3<Double>, direction: SIMD3<Double>, radius: Double, depth: Double = 0) -> Shape? {
         guard let handle = OCCTShapeDrillHole(self.handle,

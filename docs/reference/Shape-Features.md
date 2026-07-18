@@ -192,16 +192,23 @@ public func drilled(at position: SIMD3<Double>, direction: SIMD3<Double>,
 
 `depth: 0` creates a through-hole (the cylinder is made large enough to penetrate the shape entirely).
 
-- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape); `radius` — hole radius; `depth` — hole depth, or `0` for through-hole.
-- **Returns:** Shape with drilled hole, or `nil` on failure.
-- **OCCT:** `BRepBuilderAPI_MakeFace` + `BRepAlgoAPI_Cut` (internal cylinder cutter).
+The bore is cut **along `direction`** — any axis, not just Z. `direction` is normalized internally; a zero/degenerate direction returns `nil`.
+
+- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius; `depth` — hole depth, or `0` for through-hole.
+- **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction`).
+- **OCCT:** `BRepPrimAPI_MakeCylinder` (oriented via `gp_Ax2(position, direction)`) + `BRepAlgoAPI_Cut` (internal cylinder cutter).
 - **Example:**
   ```swift
   let plate = Shape.box(width: 50, height: 50, depth: 10)
   if let drilled = plate.drilled(at: SIMD3(25, 25, 10), direction: SIMD3(0, 0, -1),
                                    radius: 5, depth: 0) {
-      // through-hole centred at (25, 25)
+      // through-hole down the Z axis, centred at (25, 25)
   }
+
+  // A hole bored across the width (+X), e.g. a bolt hole through a bar:
+  let bar = Shape.box(width: 200, height: 60, depth: 16)
+  let cross = bar?.drilled(at: SIMD3(-101, 0, 0), direction: SIMD3(1, 0, 0),
+                           radius: 6.5, depth: 0)   // bore runs along +X, not Z
   ```
 
 ---
