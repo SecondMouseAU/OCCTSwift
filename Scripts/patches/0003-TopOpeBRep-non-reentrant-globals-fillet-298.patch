@@ -1,0 +1,144 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling - make BRepFilletAPI_MakeFillet reentrant across threads
+
+Two independent BRepFilletAPI_MakeFillet builds, on independent shapes, running on
+separate threads corrupt each other and produce a wrong-but-plausible solid that
+fails BRepCheck -- silent bad geometry, no crash and no thrown error. This violates
+OCCT's documented concurrency model ("algorithms on different threads in different
+contexts"). The cause is file-scope / function-local `static` state on the fillet
+path. ThreadSanitizer on an 8-thread fuse+fillet stress (V8_0_0_p1) pinpoints them.
+
+FUNCTIONAL (causes the geometry corruption):
+  * TopOpeBRepBuild_Builder.cxx  STATIC_SOLIDINDEX -- SplitSolid sets it to 1/2 to
+    tell FillSolid which operand it is splitting; FillSolid reads it back to pick the
+    operand shape. Concurrent solid reconstructions (ChFi3d_Builder::Compute ->
+    TopOpeBRepBuild_HBuilder::MergeSolid) interleave the writes and FillSolid
+    mis-classifies faces, dropping material. Fixing this one variable makes a stress
+    of 1600 concurrent fillet builds return correct geometry every time (was ~15-20%
+    corrupt).
+  * TopOpeBRep_kpart.cxx  STATIC_lastVPind -- same cross-call-cache pattern
+    ("the vp on which was computed the last CPI"), read back to index the VPoint
+    list; converted for the same reason.
+
+BENIGN DATA RACES on the same path (no geometry corruption observed, but still UB;
+converted so concurrent fillet is TSan-clean) -- the constant/evolutive-radius blend
+solvers' per-parameter scratch cache and the ChFi3d curve checker's reused adaptor:
+  * BlendFunc_ConstRad.cxx, BlendFunc_EvolRad.cxx  (ComputeValues scratch)
+  * ChFi3d_Builder_6.cxx  (checkcurve)
+
+All are converted to `static thread_local`, which preserves the exact single-thread
+behaviour (each thread keeps its own copy of the cross-call state) while making
+independent instances on separate threads reentrant. This is the same class of fix,
+in the same engine, as Open-Cascade-SAS/OCCT#1180 (19 TKBool globals -> thread_local
+across 8 files); STATIC_SOLIDINDEX and these were not covered by it.
+
+Reported downstream as OCCTSwift #298.
+
+diff --git a/src/ModelingAlgorithms/TKBool/TopOpeBRep/TopOpeBRep_kpart.cxx b/src/ModelingAlgorithms/TKBool/TopOpeBRep/TopOpeBRep_kpart.cxx
+index 94b16fba..fbe26283 100644
+--- a/src/ModelingAlgorithms/TKBool/TopOpeBRep/TopOpeBRep_kpart.cxx
++++ b/src/ModelingAlgorithms/TKBool/TopOpeBRep/TopOpeBRep_kpart.cxx
+@@ -38,7 +38,13 @@ extern bool TopOpeBRep_GetcontextNEWKP();
+ 
+ // VP<STATIC_lastVPind> is the vp on which was computed the last CPI.
+ // if no CPI is computed yet, <STATIC_lastVPind> = 0.
+-static int STATIC_lastVPind;
++// #298: `thread_local` (was plain `static`). This carries the "last VPoint index"
++// across calls and is read back to index the VPoint list — per-thread cross-call
++// state. Plain `static` shared it across threads, so concurrent intersections
++// (reachable from concurrent fillets via the TopOpeBRep engine) could read another
++// thread's index. Same functional non-reentrant-global class as STATIC_SOLIDINDEX;
++// fixed defensively (the audit found it, though the #298 repro exercised SOLIDINDEX).
++static thread_local int STATIC_lastVPind;
+ 
+ #define M_FORWARD(st) (st == TopAbs_FORWARD)
+ #define M_REVERSED(st) (st == TopAbs_REVERSED)
+diff --git a/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Builder.cxx b/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Builder.cxx
+index d866d860..55a7b5b6 100644
+--- a/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Builder.cxx
++++ b/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Builder.cxx
+@@ -70,7 +70,15 @@ Standard_EXPORT void debspf(const int i)
+ }
+ #endif
+ 
+-static int STATIC_SOLIDINDEX = 0;
++// #298: `thread_local` (was plain `static`). SplitSolid sets this to 1/2 to tell
++// FillSolid which of the two operands it is currently splitting, and FillSolid
++// reads it back. Plain `static` shared that mode flag across threads, so two
++// concurrent solid reconstructions (e.g. two independent fillets, whose
++// ChFi3d_Builder::Compute reconstructs via TopOpeBRepBuild::MergeSolid) clobbered
++// each other's index and mis-classified faces — silent wrong geometry, no crash.
++// Per-thread storage keeps the single-thread flow identical. Matches the TKBool
++// thread_local conversions already landed for this engine.
++static thread_local int STATIC_SOLIDINDEX = 0;
+ 
+ //=================================================================================================
+ 
+diff --git a/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_ConstRad.cxx b/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_ConstRad.cxx
+index 9b099dbc..5bff8677 100644
+--- a/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_ConstRad.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_ConstRad.cxx
+@@ -138,12 +138,15 @@ bool BlendFunc_ConstRad::ComputeValues(const math_Vector& X,
+                                        const bool         byParam,
+                                        const double       Param)
+ {
+-  // static declaration to avoid systematic reallocation
+-
+-  static gp_Vec d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
+-  static gp_Vec d1gui, d2gui, d3gui;
+-  static gp_Pnt ptgui;
+-  static double invnormtg, dinvnormtg;
++  // These persist across calls as a per-parameter cache (the t_OK / myX_OK guards
++  // below skip recomputation when T / X are unchanged and read them back), so they
++  // cannot be made function-local. Plain `static` shared that cache across threads,
++  // so concurrent fillet builds raced on it. `thread_local` keeps the caching while
++  // giving each thread its own copy. (#298 — matches the TKBool thread_local work.)
++  static thread_local gp_Vec d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
++  static thread_local gp_Vec d1gui, d2gui, d3gui;
++  static thread_local gp_Pnt ptgui;
++  static thread_local double invnormtg, dinvnormtg;
+   double        T = Param, aux;
+ 
+   // Case of implicite parameter
+diff --git a/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_EvolRad.cxx b/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_EvolRad.cxx
+index faf25679..312350ab 100644
+--- a/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_EvolRad.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_EvolRad.cxx
+@@ -196,12 +196,15 @@ bool BlendFunc_EvolRad::ComputeValues(const math_Vector& X,
+                                       const bool         byParam,
+                                       const double       Param)
+ {
+-  // static declaration to avoid systematic realloc
+-
+-  static gp_Vec d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
+-  static gp_Vec d1gui, d2gui, d3gui;
+-  static gp_Pnt ptgui;
+-  static double invnormtg, dinvnormtg;
++  // These persist across calls as a per-parameter cache (the t_OK / myX_OK guards
++  // below skip recomputation when T / X are unchanged and read them back), so they
++  // cannot be made function-local. Plain `static` shared that cache across threads,
++  // so concurrent fillet builds raced on it. `thread_local` keeps the caching while
++  // giving each thread its own copy. (#298 — matches the TKBool thread_local work.)
++  static thread_local gp_Vec d3u1, d3v1, d3uuv1, d3uvv1, d3u2, d3v2, d3uuv2, d3uvv2;
++  static thread_local gp_Vec d1gui, d2gui, d3gui;
++  static thread_local gp_Pnt ptgui;
++  static thread_local double invnormtg, dinvnormtg;
+   double        T = Param, aux;
+ 
+   // Case of implicit parameter
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_6.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_6.cxx
+index b4d23e9a..106ff49d 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_6.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_6.cxx
+@@ -641,7 +641,10 @@ bool ChFi3d_Builder::StoreData(occ::handle<ChFiDS_SurfData>&         Data,
+                                const bool                            Reversed)
+ {
+   // Small control tools.
+-  static occ::handle<GeomAdaptor_Curve> checkcurve;
++  // #298: `thread_local` (was plain `static`) — reused scratch adaptor shared across
++  // calls; plain `static` shared it across threads, racing concurrent fillet builds.
++  // Per-thread lazy allocation keeps the reuse while making it reentrant.
++  static thread_local occ::handle<GeomAdaptor_Curve> checkcurve;
+   if (checkcurve.IsNull())
+   {
+     checkcurve = new GeomAdaptor_Curve();
