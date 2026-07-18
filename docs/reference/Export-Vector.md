@@ -27,6 +27,7 @@ Error type thrown by `PDFWriter.write(to:)` and `Exporter.writePDF` variants.
 public enum PDFError: Error, LocalizedError {
     case writeFailed(String)
     case drawingEmpty
+    public var errorDescription: String? { get }
 }
 ```
 
@@ -375,6 +376,7 @@ Error type thrown by `SVGWriter.write(to:)` and `Exporter.writeSVG` variants.
 ```swift
 public enum SVGError: Error, LocalizedError {
     case writeFailed(String)
+    public var errorDescription: String? { get }
 }
 ```
 
@@ -672,6 +674,7 @@ Error type thrown by `DXFWriter.write(to:)` and `Exporter.writeDXF` variants.
 public enum DXFError: Error, LocalizedError {
     case writeFailed(String)
     case drawingEmpty
+    public var errorDescription: String? { get }
 }
 ```
 

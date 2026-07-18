@@ -1159,6 +1159,62 @@ public func transpose()
 
 ---
 
+## OSD_Environment
+
+Namespace wrapping `OSD_Environment` — read, set, and remove process environment variables
+through OCCT's platform-neutral OSD layer (rather than POSIX `getenv`/`setenv` directly). Useful
+for toggling OCCT's own environment switches (e.g. `CSF_*` resource paths) from Swift.
+
+### `Environment.get(_:)`
+
+Get the value of an environment variable.
+
+```swift
+public static func get(_ name: String) -> String?
+```
+
+- **Parameters:** `name` — the variable name.
+- **Returns:** The value, or `nil` if the variable is unset.
+- **OCCT:** `OSD_Environment(name).Value()` (via `OCCTEnvironmentGet`).
+- **Example:**
+  ```swift
+  let paths = Environment.get("CSF_PluginDefaults")
+  ```
+
+---
+
+### `Environment.set(_:value:)`
+
+Set (create or overwrite) an environment variable in the current process.
+
+```swift
+@discardableResult
+public static func set(_ name: String, value: String) -> Bool
+```
+
+- **Parameters:** `name` — the variable name; `value` — the value to store.
+- **Returns:** `true` on success. The result is discardable.
+- **OCCT:** `OSD_Environment(name, value).Build()` (via `OCCTEnvironmentSet`).
+- **Example:**
+  ```swift
+  Environment.set("CSF_MDTVFontDirectory", value: "/usr/share/fonts")
+  ```
+
+---
+
+### `Environment.remove(_:)`
+
+Remove an environment variable from the current process.
+
+```swift
+public static func remove(_ name: String)
+```
+
+- **Parameters:** `name` — the variable name to unset.
+- **OCCT:** `OSD_Environment(name).Remove()` (via `OCCTEnvironmentRemove`).
+
+---
+
 ## math_Gauss
 
 Namespace wrapping `math_Gauss` — direct Gaussian elimination for square linear systems.

@@ -48,44 +48,119 @@ SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
 # reference docs use both ### and #### for entry points
 DOC_HEADING = re.compile(r'^#{3,4} `([^`]+)`')
 
+# A type/extension declaration whose body encloses the entry points below it. Captures the
+# type name so a counted op carries a `Type.name` identity, not just `name` (issue #294).
+TYPE_DECL = re.compile(
+    r'^\s*(?:(?:public|internal|private|fileprivate|final|open|package)\s+)*'
+    r'(?:struct|class|enum|actor|extension|protocol)\s+([A-Za-z_][A-Za-z0-9_.]*)')
+# A public member as it appears inside a ```swift code block in the reference docs.
+DOC_MEMBER = re.compile(
+    r'^\s*(?:@\w+\s+)*public\s+(?:static\s+|class\s+|convenience\s+|final\s+)*'
+    r'(?:func\s+([A-Za-z_]\w*)|var\s+([A-Za-z_]\w*))')
+# A backtick span that names a type (possibly nested, `Outer.Inner`) rather than a member call.
+TYPEISH = re.compile(r'^[A-Z][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*$')
+
+
+def _enclosing_type(stack):
+    """Innermost type name on the brace stack, or None at file scope."""
+    return stack[-1][0].split('.')[-1] if stack else None
+
 
 def count_entry_points():
-    """Returns (total, breakdown, {name: (file, line)})."""
+    """Returns (total, breakdown, ops) where ops maps (type, name) -> (file, line).
+
+    `type` is the innermost enclosing struct/class/enum/actor/extension name (last
+    component of a nested/qualified name), or None at file scope. Overloads and same-named
+    members on different types collapse to one row per (type, name), which is all the audit
+    needs — the derived Total still comes from `breakdown`, which counts every declaration.
+    """
     breakdown = {"func": 0, "init": 0, "computed var": 0, "subscript": 0}
-    names = {}
+    ops = {}
     for f in sorted(glob.glob(os.path.join(ROOT, "Sources/OCCTSwift/*.swift"))):
         rel = os.path.relpath(f, ROOT)
+        stack = []      # [(type_name, brace_depth_at_open)]
+        depth = 0
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
+            code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
+            enc = _enclosing_type(stack)
             m = FUNC.match(line)
             if m:
                 breakdown["func"] += 1
-                names.setdefault(m.group(1), (rel, i))
-                continue
-            if INIT.match(line):
+                ops.setdefault((enc, m.group(1)), (rel, i))
+            elif INIT.match(line):
                 breakdown["init"] += 1
-                continue
-            m = CVAR.match(line)
-            if m:
-                breakdown["computed var"] += 1
-                names.setdefault(m.group(1), (rel, i))
-                continue
-            if SUBS.match(line):
-                breakdown["subscript"] += 1
-    return sum(breakdown.values()), breakdown, names
+            else:
+                m = CVAR.match(line)
+                if m:
+                    breakdown["computed var"] += 1
+                    ops.setdefault((enc, m.group(1)), (rel, i))
+                elif SUBS.match(line):
+                    breakdown["subscript"] += 1
+
+            # maintain the enclosing-type stack
+            td = TYPE_DECL.match(line)
+            opens, closes = code.count('{'), code.count('}')
+            depth += opens - closes
+            if td is not None and opens > closes:
+                # body opens and stays open below this line; a one-liner like
+                # `enum Toggle { case a, b }` (opens == closes) encloses nothing.
+                stack.append((td.group(1), depth))
+            else:
+                while stack and depth < stack[-1][1]:
+                    stack.pop()
+    return sum(breakdown.values()), breakdown, ops
 
 
-def documented_names():
-    doc = set()
+def documented_index():
+    """Scan docs/reference/*.md and return (typed, bare).
+
+    `typed` is a set of (type, name) pairs the docs associate with an owning type — parsed
+    from `### `Type.name(...)`` headings AND from the public members listed inside a ```swift
+    code block that sits under a `### `Type`` heading. `bare` is the set of names documented
+    by a heading that carries NO type qualifier (e.g. `### `analyze(tolerance:)`` or a
+    multi-span `### `x`, `y`, `z``), which match any owning type by name alone.
+    """
+    typed = set()
+    bare = set()
     for f in glob.glob(os.path.join(ROOT, "docs/reference/*.md")):
+        cur_type = None       # owning type for the current section's code blocks
+        in_code = False
         for line in open(f, encoding="utf-8", errors="replace"):
-            m = DOC_HEADING.match(line)
-            if not m:
+            if line.lstrip().startswith("```"):
+                in_code = not in_code
                 continue
-            # `Type.name(labels:)` -> `name`
-            h = m.group(1).split('(')[0].split('.')[-1].strip()
-            if h:
-                doc.add(h)
-    return doc
+            if in_code:
+                m = DOC_MEMBER.match(line)
+                if m and cur_type:
+                    typed.add((cur_type, m.group(1) or m.group(2)))
+                continue
+            if not line.lstrip().startswith("#"):
+                continue
+            spans = re.findall(r'`([^`]+)`', line)
+            # A heading governs the ```swift block beneath it; derive that block's owning
+            # (innermost) type so its members register under the same type the source side
+            # sees. Read the type from the first backtick span, or — for a plain heading like
+            # `## DXFError` with no backticks — from the heading text itself. Distinguish by
+            # the last dotted component:
+            #   `ImportResult` / `Outer.Inner`  (last is a Type)   -> owner = innermost type
+            #   `Shape.faceLPropTangentU/V(...)` (last is a member) -> owner = its qualifier
+            #   `analyze(tolerance:)`            (bare member)      -> owner unchanged
+            ctx_src = spans[0] if spans else line.lstrip().lstrip('#').strip()
+            parts = ctx_src.split('(')[0].strip().split('.')
+            if TYPEISH.match(parts[-1]):
+                cur_type = parts[-1]
+            elif len(parts) >= 2 and spans:
+                cur_type = parts[-2]
+            for span in spans:
+                s = span.split('(')[0].strip()
+                if not s:
+                    continue
+                if '.' in s:
+                    t, n = s.rsplit('.', 1)
+                    typed.add((t.split('.')[-1], n))
+                else:
+                    bare.add(s)
+    return typed, bare
 
 
 def read_stated():
@@ -146,16 +221,24 @@ def fix(derived):
 
 
 def main():
-    derived, breakdown, names = count_entry_points()
+    derived, breakdown, ops = count_entry_points()
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
 
     if mode == "--audit":
-        doc = documented_names()
-        undoc = sorted(set(names) - doc)
+        typed_doc, bare_doc = documented_index()
+        # Type-aware match: a counted (type, name) is documented if the docs associate that
+        # exact (type, name) — via a `Type.name` heading or a member listed in the type's
+        # code block — OR if `name` appears in a type-less heading (matches any owner). This
+        # eliminates the bare-name false positives the old matcher over-reported (#294).
+        undoc = sorted(
+            (t, n, ops[(t, n)])
+            for (t, n) in ops
+            if (t, n) not in typed_doc and n not in bare_doc
+        )
         print(f"counted entry points with NO reference doc: {len(undoc)}\n")
-        for n in undoc:
-            f, i = names[n]
-            print(f"  {n:<34} {f}:{i}")
+        for t, n, (f, i) in undoc:
+            qual = f"{t}.{n}" if t else n
+            print(f"  {qual:<42} {f}:{i}")
         return 1 if undoc else 0
 
     print("Canonical rule (#289): one row per distinct public Swift entry point; overloads counted separately.\n")

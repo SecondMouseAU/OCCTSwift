@@ -469,6 +469,7 @@ Error type for failed STEP/IGES/BREP imports.
 public enum ImportError: Error, LocalizedError {
     case importFailed(String)
     case cancelled
+    public var errorDescription: String? { get }
 }
 ```
 
