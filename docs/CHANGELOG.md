@@ -7,13 +7,60 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.4
+## Current: v1.12.5
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.5 (July 2026) — docs: correct #310's crash diagnosis + `isSelfIntersecting(timeout:)` cooperative-bound wording (#310, #293)
+
+**PATCH — docs only, no code change.** #310 reported `Shape.sew`/`.healed()`/`.fixed(tolerance:)`
+SIGSEGV-ing on a loose analytic-face compound, reproducing in a full pipeline but not via a standalone
+BREP replay. Investigation found the original diagnosis was off on two points, and root-caused the
+real defect:
+
+- **Not `Shape.sew`/`.healed()`/`.fixed()`.** The crash is one call later: `Shape.freeBoundsClosedWires`/
+  `freeBoundsClosedCount` (`ShapeAnalysis_FreeBounds`), called by the reporting pipeline immediately
+  after a successful `sew` to print the free-boundary loop count. It only *looked* like the next `sew`
+  call because that's the next thing that runs.
+- **Not process-state-dependent.** The standalone probe that failed to reproduce it never called
+  `freeBoundsClosedWires`/`freeBoundsClosedCount` — it only replayed `sew`/`healed`/`fixed`, so it never
+  exercised the crashing function. Confirmed in pure C++ (no OCCTSwift) against the exact committed
+  fixture, and reduced further to two disjoint planar faces in one compound with no shared geometry at
+  all — not data-volume-dependent either (a shape with 150+ free-boundary loops can be fine while a
+  2-loop shape crashes).
+- **Root cause** (via a `-O0` single-TU override-link of `ShapeAnalysis_FreeBounds.cxx`, same technique
+  as #263): the uncatchable SIGSEGV is inside `NCollection_HSequence<TopoDS_Shape>::Append`, called
+  from `SplitWires`'s per-wire result accumulation, with a valid (non-null) target handle — consistent
+  with heap corruption originating earlier in the same function rather than a null-handle deref at the
+  `Append` site. Not covered by the #298 fillet patch (checked: neither the sew/heal/fix path nor
+  `ShapeAnalysis_FreeBounds` reference `TopOpeBRepBuild`/`BlendFunc`), and not a concurrency bug (the
+  reporting ladder is single-threaded).
+
+**Fix.** No wrapper-side guard is possible yet — there's no reliable predicate distinguishing safe
+input from crashing input, so a defensive check would either miss the real trigger or reject valid
+shapes. Documented the crash risk on `freeBoundsClosedWires`/`freeBoundsClosedCount`/`freeBoundsOpenWires`
+(doc comments + `docs/reference/Document-Analysis-Builders.md` + `CLAUDE.md`'s Known OCCT Bugs list).
+Filed upstream as [Open-Cascade-SAS/OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376)
+with both a minimal 2-face repro and the real-fixture repro; possibly related to the still-open
+[OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330) (a different function in the same
+file, same "re-chaining free-boundary components" symptom family).
+
+**Also in this release (#293) — `isSelfIntersecting(timeout:)`'s bound is cooperative, not a hard
+deadline.** `Shape.isSelfIntersecting(timeout:)` documented its `timeout` as a wall-clock bound, but
+the mechanism (`OCCTBoolTimeoutBreaker`, a `Message_ProgressIndicator` whose `UserBreak()` trips past
+the deadline) can only fire when the running OCCT algorithm *polls* — `BOPAlgo_ArgumentAnalyzer`'s
+self-interference phase has at least one long checkpoint-free stretch (observed 20+ minutes past a
+30s bound on a pathological B-spline solid), during which the calling thread is blocked inside the
+call with no way to return early. The boolean ops' own timeout (#206) is unaffected — their polled
+path is verified to interrupt correctly; this is specific to the self-interference check. Corrected
+the doc comment (`Shape.swift`), `docs/reference/Shape-Features.md`, and
+`docs/guides/cookbook/healing-and-validity.md` to state the bound is cooperative and can overrun
+arbitrarily in an un-polled phase, with process-level isolation as the only true hard bound. No API
+or behavior change.
 
 ### v1.12.4 (July 2026) — fix: `drilled` honours its direction; `face(outer:holes:)` respects hole winding; docs audit made type-aware
 

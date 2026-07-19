@@ -21,8 +21,9 @@ box.isValidSolid     // Bool — a closed, properly-oriented solid? (topology on
 ```
 
 `isValidSolid` is a **topology** check — it doesn't catch self-intersections. For that, run the
-geometry-level check (it's bounded by a wall-clock timeout and returns `nil` if it can't decide in
-time — don't treat `nil` as "clean"):
+geometry-level check. `timeout` is a *cooperative* bound, not a hard deadline — OCCT only checks it
+at its own internal checkpoints, and one phase can run well past `timeout` before the next
+checkpoint (#293). It returns `nil` if it can't decide in time — don't treat `nil` as "clean":
 
 ```swift
 switch box.isSelfIntersecting(timeout: 30) {

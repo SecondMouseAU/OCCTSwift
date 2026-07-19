@@ -448,9 +448,10 @@ Checks whether the shape has overlapping or interfering sub-faces.
 public func isSelfIntersecting(timeout: Double = 30) -> Bool?
 ```
 
-Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (seconds on B-spline solids), so wall-clock bounded by `timeout`.
+Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (seconds on B-spline solids).
 
-- **Parameters:** `timeout` — seconds before the check gives up (default 30). `0` or negative = unbounded.
+- **Important:** `timeout` is **cooperative, not a hard deadline** (#293) — it's checked only when OCCT polls its progress indicator, and the self-interference phase has at least one long checkpoint-free stretch that can overrun `timeout` arbitrarily (observed 20+ minutes past a 30s bound on pathological B-spline solids). The calling thread blocks inside the call the whole time. For a true wall-clock guarantee, run it in a subprocess/worker you can kill yourself.
+- **Parameters:** `timeout` — seconds before the check *asks* OCCT to give up (default 30); the actual return can be later. `0` or negative = unbounded.
 - **Returns:** `true` = self-interference found; `false` = shape is clean; `nil` = indeterminate (timed out / errored — treat as "unknown", not "clean").
 - **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`).
 - **Example:**
