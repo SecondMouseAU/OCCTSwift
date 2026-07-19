@@ -16,6 +16,10 @@ ahead of an official OCCT release. Each patch is **temporary**: retire it once t
 bundled OCCT version includes the fix. Full rationale + validation per patch lives in
 `Scripts/patches/README.md` — this note is the ecosystem-level pointer.
 
+Each patch is also meant to be **offered upstream** as an OCCT PR. When you do, follow
+[Upstream OCCT PRs follow OCCT's house style](../policies/upstream-occt-style.md): clang-format with
+OCCT's own `.clang-format`, and OCCT's terse comment style — not OCCTSwift's.
+
 | Patch | Fixes | Upstream | Retire when |
 |-------|-------|----------|-------------|
 | `0001-ShapeFix_Face-…-263` | ShapeFix_Face compound-context crash ([#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)) | [OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322) | bundled OCCT includes the guard |
