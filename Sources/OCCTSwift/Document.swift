@@ -6673,6 +6673,16 @@ public final class StepHeader: @unchecked Sendable {
 extension Shape {
 
     /// Count the number of closed free-boundary wires.
+    ///
+    /// - Warning: **Can crash the process with an uncatchable SIGSEGV** on certain shapes with
+    ///   multiple free-boundary components (#310, filed upstream as
+    ///   [Open-Cascade-SAS/OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376)) —
+    ///   confirmed on `ShapeAnalysis_FreeBounds`'s internal `SplitWires`/sequence-accumulation step
+    ///   (upstream kernel bug, not yet fixed; `OCC_CATCH_SIGNALS` is inert in this build so it
+    ///   cannot be caught). Not data-volume-related — a shape with many free-boundary loops can be
+    ///   fine while a smaller one crashes, and vice versa — so there's no reliable guard to screen
+    ///   for it yet. Isolate calls on untrusted/large analytic-face compounds in a subprocess if a
+    ///   crash there must not take down your process.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Number of closed free-boundary wires.
     public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int {
@@ -6680,6 +6690,9 @@ extension Shape {
     }
 
     /// Get the compound of closed free-boundary wires.
+    ///
+    /// - Warning: Shares the same uncatchable-crash risk as ``freeBoundsClosedCount(tolerance:)`` —
+    ///   see its doc for details (#310).
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of closed wires, or nil if none.
     public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape? {
@@ -6688,6 +6701,9 @@ extension Shape {
     }
 
     /// Get the compound of open free-boundary wires.
+    ///
+    /// - Warning: Shares the same uncatchable-crash risk as ``freeBoundsClosedCount(tolerance:)`` —
+    ///   see its doc for details (#310).
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of open wires, or nil if none.
     public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape? {

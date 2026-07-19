@@ -1937,10 +1937,20 @@ public final class Shape: @unchecked Sendable {
     /// hang or return garbage (#206/#208).
     ///
     /// Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test, which is authoritative
-    /// but **expensive** (seconds on B-spline solids) and can otherwise run unbounded, so it
-    /// is wall-clock bounded by `timeout`.
+    /// but **expensive** (seconds on B-spline solids) and can otherwise run unbounded.
     ///
-    /// - Parameter timeout: Seconds before the check gives up (default 30). `0`/negative = unbounded.
+    /// - Important: `timeout` is **cooperative, not a hard deadline** (#293). It is implemented
+    ///   as a `Message_ProgressIndicator` that OCCT polls at its own internal checkpoints — the
+    ///   calling thread is blocked inside this call and can only return once the next checkpoint
+    ///   after `timeout` is reached, not at `timeout` itself. The self-interference phase has at
+    ///   least one long checkpoint-free stretch (inside `Intf_Interference::Insert`); on
+    ///   pathological B-spline solids that phase alone has been observed running 20+ minutes past
+    ///   a 30s `timeout`. There is no preemptive or background bound here — the only hard bound
+    ///   is process-level isolation (run this in a subprocess/worker you can kill on your own
+    ///   deadline if a true wall-clock guarantee matters).
+    ///
+    /// - Parameter timeout: Seconds before the check *asks* OCCT to give up (default 30) — the
+    ///   actual return can be much later if an un-polled phase is reached. `0`/negative = unbounded.
     /// - Returns: `true` if a self-interference was found, `false` if the shape is clean, or
     ///   `nil` if the check could not complete within `timeout` (**indeterminate** — treat as
     ///   "unknown", not "clean").
