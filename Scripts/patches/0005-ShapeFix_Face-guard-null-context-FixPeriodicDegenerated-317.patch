@@ -1,0 +1,89 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Shape Healing - guard the null Context() in
+ ShapeFix_Face::FixPeriodicDegenerated
+
+ShapeFix_Face::Perform crashes (uncatchable SIGSEGV) fixing a face whose sole
+boundary wire is a single closed edge that belts the full 2*PI period of a
+Geom_ConicalSurface (a rivet/boss-rim seam mesh-fit as one periodic curve is a
+common source of exactly this shape), positioned so the cone's apex sits
+outside the wire's V range -- the case FixPeriodicDegenerated exists to patch
+in a degenerate apex edge for.
+
+Root cause: FixPeriodicDegenerated builds the apex edge/wire, assembles a new
+face from the original wire plus the apex wire, and finalizes:
+
+    myResult = aNewFace;
+    Context()->Replace(myFace, myResult);
+
+Every OTHER Context()->Replace call site in this same file (eleven of them)
+guards against a null Context() first -- e.g. this file's own ComposeShell
+path a few hundred lines up:
+
+    if (Context().IsNull())
+    {
+      SetContext(new ShapeBuild_ReShape);
+    }
+    ...
+    Context()->Replace(myFace, myResult);
+
+or the plain guard used everywhere else:
+
+    if (!Context().IsNull())
+    {
+      Context()->Replace(...);
+    }
+
+FixPeriodicDegenerated's own function header even checks Context().IsNull()
+at its TOP before calling Context()->Apply() -- but the check is missing at
+the BOTTOM, where Context()->Replace() is called unconditionally. Context()
+returns the ShapeFix_Root::myContext handle, which the base constructor
+leaves null; it is only ever set by an explicit SetContext() call, which is
+optional and NOT made by a bare "ShapeFix_Face fixer(face); fixer.Perform();"
+-- the ordinary, most common way to use this class (and the way this file's
+own class documentation examples use it). So any caller that fixes a lone
+periodic-conical wire without first calling SetContext() null-derefs.
+
+The fix restores the same guard used at every other call site in the file:
+only replace in the context if there is a context to replace in. When there
+is none, myFace already local-only equals its own fixed state via myResult,
+matching the intent (and behavior) of every guarded sibling call site.
+
+Validation (fast path, no full rebuild -- see Scripts/patches/README.md's
+#0001 entry for the override-link technique): a synthetic single closed edge
+(GeomAPI_Interpolate, closed=true, 10 real mesh-derived points from a rivet
+rim) trimmed to a Geom_ConicalSurface via BRepBuilderAPI_MakeFace(surf, wire,
+true), then healed with a bare "ShapeFix_Face fixer(face); fixer.Perform();"
+SIGSEGVs 100% of the time on stock V8_0_0_p1 (backtrace_symbols_fd, since
+lldb/core-dumps were unavailable in the diagnosing environment, pinpoints the
+crash to ShapeFix_Face::FixPeriodicDegenerated's Context()->Replace call, one
+statement past the last successful trace line before the fix); after this
+patch the same input returns IsDone()==true and BRepCheck_Analyzer(fixed)
+.IsValid()==true. Statement-level tracing (-O0 single-TU override-link)
+confirms every prior line in the function returns/completes normally and the
+crash is specifically the unguarded Context()->Replace call.
+
+Reported downstream and isolated at SecondMouseAU/OCCTSwift#317.
+---
+ src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+index 48ae1347..1110fe56 100644
+--- a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
++++ b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
+@@ -3268,7 +3268,14 @@ bool ShapeFix_Face::FixPeriodicDegenerated()
+
+   // Adjust the resulting state of the healing tool
+   myResult = aNewFace;
+-  Context()->Replace(myFace, myResult);
++  // #317: every other Context()->Replace call site in this file guards against a null Context()
++  // (a ShapeFix_Face used without an explicit SetContext(), the common case); this one didn't,
++  // so it null-derefs whenever a lone wire on a conical surface belts the full period. Nothing to
++  // record if there is no context to record it in.
++  if (!Context().IsNull())
++  {
++    Context()->Replace(myFace, myResult);
++  }
+
+   return true;
+ }

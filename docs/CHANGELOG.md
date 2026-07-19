@@ -7,13 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.6
+## Current: v1.12.7
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.7 (July 2026) — fix: `Shape.face(from:boundary:)` no longer crashes on a single closed wire belting a cone (#317)
+
+**Root cause.** `ShapeFix_Face::FixPeriodicDegenerated()` — invoked whenever a face's sole boundary wire is a single closed edge belting a `Geom_ConicalSurface`'s full 2π period, apex outside the wire's V range (a rivet/boss-rim seam fit as one periodic curve is the common source) — builds a degenerate apex edge and finalizes with an unconditional `Context()->Replace(myFace, myResult)`. Every *other* `Context()->Replace` call site in that OCCT source file — eleven of them — guards a null `Context()` first; this one didn't. `Context()` is left null by `ShapeFix_Root`'s base constructor and set only by an explicit `SetContext()` call, which the ordinary `ShapeFix_Face fixer(face); fixer.Perform();` (including ours, before this release) never makes — so any caller healing this exact wire shape null-derefs. Diagnosed with a custom `backtrace_symbols_fd` `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox) pinpointing the crash to `FixPeriodicDegenerated`; `-O0` single-TU override-link tracing confirmed every prior statement in the function completes and the fault is specifically that call. A standalone `wireFromEdges`-only repro is negative — the crash needs the wire trimmed to a periodic surface via `face(from:boundary:)`, which the original title's suspicion of `Wire.wireFromEdges` itself never exercised.
+
+**Fix — both layers.** Bridge (`OCCTShapeCreateFaceFromSurfaceWire[WithHoles]`, `OCCTFaceFixerCreate`) now calls `fixer.SetContext(new ShapeBuild_ReShape)` before `Perform()` — closes the crash immediately, on any xcframework. Kernel patch also carried (`Scripts/patches/0005-ShapeFix_Face-guard-null-context-FixPeriodicDegenerated-317.patch`, xcframework rebuilt): restores the same `if (!Context().IsNull())` guard used at every other call site in the file.
+
+**Verification.** A synthetic 8-point closed periodic curve edge trimmed to a cone, healed with a bare `ShapeFix_Face`, SIGSEGVs 100% of the time on stock p1 and survives (valid healed face) after the patch; a 10-point curve fit through real mesh-derived rivet-rim points (the fixture this was originally surfaced from, `railsim_581_lead.stl`) behaves identically. New regression test `Issue317PeriodicConicalSingleWireTests` (`OCCTSurfaceTests`). Upstreamed as [Open-Cascade-SAS/OCCT#1378](https://github.com/Open-Cascade-SAS/OCCT/issues/1378) (repro) / [OCCT#1380](https://github.com/Open-Cascade-SAS/OCCT/pull/1380) (fix, with a GTest); the carried patch retires once it ships in the pinned kernel. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum; remote SPM consumers get the rebuilt binary.
+
+- **Docs:** `CLAUDE.md`'s Known OCCT Bugs entry added for #317; `Scripts/patches/README.md` documents patch `0005`.
 
 ### v1.12.6 (July 2026) — fix: `ShapeAnalysis_FreeBounds` no longer crashes on disjoint free-boundary components (#310)
 

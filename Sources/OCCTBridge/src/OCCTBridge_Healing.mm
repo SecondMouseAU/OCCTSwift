@@ -3907,6 +3907,10 @@ OCCTFaceFixerRef OCCTFaceFixerCreate(OCCTShapeRef face, double precision) {
     try {
         auto ref = new OCCTFaceFixer();
         ref->fixer = new ShapeFix_Face(TopoDS::Face(face->shape));
+        // #317: a null Context() makes ShapeFix_Face::FixPeriodicDegenerated() (invoked from
+        // Perform() on a periodic conical single-wire boundary) SIGSEGV on an unguarded
+        // Context()->Replace(...) at its last line. Give it a context up front.
+        ref->fixer->SetContext(new ShapeBuild_ReShape);
         ref->fixer->SetPrecision(precision);
         return ref;
     } catch (...) { return nullptr; }

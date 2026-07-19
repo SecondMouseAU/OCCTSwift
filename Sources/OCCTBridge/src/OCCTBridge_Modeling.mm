@@ -173,6 +173,7 @@
 #include <GCE2d_MakeSegment.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
 #include <ShapeFix_Face.hxx>
+#include <ShapeBuild_ReShape.hxx>
 #include <BRepPrimAPI_MakeRevol.hxx>
 #include <Geom_Circle.hxx>
 #include <Geom_TrimmedCurve.hxx>
@@ -2198,7 +2199,12 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTWire
         if (!faceMaker.IsDone()) return nullptr;
         TopoDS_Face face = faceMaker.Face();
         // The 3D wire's edges likely have no pcurves on this surface — project to add them.
+        // #317: ShapeFix_Face::FixPeriodicDegenerated() (hit when the wire is a full periodic
+        // loop on a conical surface) unconditionally dereferences Context() at its last line
+        // with no IsNull() guard (every other Context()->Replace call site in that OCCT source
+        // file guards it) — SIGSEGVs unless a context is set first. Give it one.
         ShapeFix_Face fixer(face);
+        fixer.SetContext(new ShapeBuild_ReShape);
         fixer.Perform();
         TopoDS_Face fixed = fixer.Face();
         BRepLib::BuildCurves3d(fixed);
@@ -2235,7 +2241,10 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef surface,
             if (!ok) continue;
             TopoDS_Face face = faceMaker.Face();
             // The 3D wires likely have no pcurves on this surface — project them.
+            // #317: see OCCTShapeCreateFaceFromSurfaceWire — ShapeFix_Face needs a context or
+            // FixPeriodicDegenerated() SIGSEGVs on a periodic conical single-wire boundary.
             ShapeFix_Face fixer(face);
+            fixer.SetContext(new ShapeBuild_ReShape);
             fixer.Perform();
             TopoDS_Face fixed = fixer.Face();
             BRepLib::BuildCurves3d(fixed);
