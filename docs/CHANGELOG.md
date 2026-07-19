@@ -7,13 +7,31 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.8
+## Current: v1.12.9
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.9 (July 2026) — carry three more upstream OCCT crash/hang fixes (#323)
+
+**Not a bug we hit — a proactive audit.** Unlike #310/#317/#318, these three weren't discovered via
+an OCCTSwift crash: #323 audited every OCCT PR merged or opened since our `V8_0_0_p1` baseline and
+identified crash/hang fixes in code paths OCCTSwift exercises, per the `upstream-fixes-first` policy.
+A fourth candidate from the same audit, OCCT#1380 (`ShapeFix_Face::FixPeriodicDegenerated`), turned
+out to already be covered — it's our own patch `0005`, shipped for #317.
+
+**`Scripts/patches/0007`** backports open (third-party) [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331), fixing [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330): `ShapeAnalysis_FreeBounds::connectWiresToWiresImpl` (the same helper `0004` patches for #310) left a stale `lwire` index when a skipped-loop candidate wire turned out to have zero edges — e.g. a wire wrapping a single internal-orientation edge — so the outer loop's `lwire == -1` termination check never fired and it read invalid memory. Validated by translating the upstream TCL test to C++: a closed triangle wire plus one internal-orientation edge SIGSEGVs 100% of the time on stock p1 + patches `0001`–`0006`, returns a valid wire after the patch.
+
+**`Scripts/patches/0008`** backports merged [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329), fixing [OCCT#1288](https://github.com/Open-Cascade-SAS/OCCT/issues/1288) ("Boolean operation 'section' hangs-up for a pair of cylindrical shapes"): `Geom_BSplineCurve::PeriodicNormalization` used an O(N) `while`-loop to bring an out-of-range parameter into a periodic curve's range — a genuine infinite loop once the parameter's magnitude vastly exceeds the period (`Parameter -= Period` becomes a floating-point no-op). Rewritten to O(1). Validated: `PeriodicNormalization(1e17)` on a normal periodic curve (period ≈ 6.12) hangs indefinitely on stock p1 (wall-clock timeout) and returns instantly after the patch; a 9-case sanity sweep of in-range/near-boundary/several-periods-off values is byte-identical before and after.
+
+**`Scripts/patches/0009`** backports open (maintainer) [OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318): `StepData_StepWriter::AddString` looped forever writing a single unbroken raw string longer than the 72-character line buffer — no amount of flushing ever made room for text that can't fit in a full, empty line either. Fixed by splitting the token across as many lines as needed. Validated: a 200-character unbroken name via the public `StartEntity`/`SendString` path hangs indefinitely on stock p1 and returns instantly after the patch, correctly split across continuation lines with the text intact; normal-length fields are byte-identical before and after. New regression test `STEPWriterOversizedNameTests` (`OCCTIOTests`), reachable directly from `Shape.writeSTEP(to:name:)` with a >72-char name.
+
+All three (and the existing `0001`–`0006`) verified via the fast override-link technique (patched `.o` linked ahead of `libOCCT-macos.a`, no full rebuild needed for validation) before committing to the xcframework rebuild. Two of the three are open, third-party or maintainer PRs — pinned to a specific commit SHA in each patch's header; re-verify if the PR changes in review before the next repin. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum.
+
+- **Docs:** `CLAUDE.md`'s Known OCCT Bugs entry added for `0007`–`0009`; `Scripts/patches/README.md` and `okf/references/carried-occt-patches.md` document all three.
 
 ### v1.12.8 (July 2026) — fix: `Shape.analyze(tolerance:)` no longer crashes on a degenerate curve-on-surface edge (#318)
 

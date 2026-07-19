@@ -151,3 +151,53 @@ Reported and isolated at SecondMouseAU/OCCTSwift#317; filed upstream as [Open-Ca
 Reported and isolated at SecondMouseAU/OCCTSwift#318; filed upstream as [Open-Cascade-SAS/OCCT#1381](https://github.com/Open-Cascade-SAS/OCCT/issues/1381), fix as [OCCT#1382](https://github.com/Open-Cascade-SAS/OCCT/pull/1382).
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0007-ShapeAnalysis_FreeBounds-reset-lwire-skipped-loop-323.patch
+
+**Backports** [Open-Cascade-SAS/OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (open, third-party author, pinned to commit `7557161a3dbe7e1ba18a3e63e1e104830d8c24c5`), fixing [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330). Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) alongside `0008`/`0009`; unlike `0001`–`0006`, this batch wasn't discovered via an OCCTSwift crash report — it's a proactive audit of upstream OCCT PRs filed since our `V8_0_0_p1` baseline that fix crashes/hangs in code paths we exercise.
+
+`ShapeAnalysis_FreeBounds::connectWiresToWiresImpl` — the same static helper patch `0004` already touches for a different bug (#310) — has a "find the next unconsumed wire" loop that sets `lwire = i` **before** checking whether the candidate wire it just loaded actually has any edges:
+
+```cpp
+lwire = i;
+sewd->Add(TopoDS::Wire(arrwires->Value(lwire)));
+aSel.LoadList(lwire);
+if (sewd->NbEdges() > 0) { break; }
+sewd->Clear();
+```
+
+If the wire is skipped (zero edges — e.g. a "wire" wrapping a single **internal-orientation** edge, which contributes no real boundary edges), `lwire` is left stale instead of reset. If every remaining candidate is likewise skipped, the loop exits with `lwire` still holding that stale index rather than `-1`, so the caller's `if (lwire == -1) { done = true; }` never fires — the outer loop's next iteration reads invalid memory through the stale `sewd`.
+
+**Fix:** only assign `lwire = i` once the wire is actually accepted (`sewd->NbEdges() > 0`), matching upstream's exact reordering.
+
+**Validation** (fast path, no full rebuild — see the `#0001` entry above for the override-link technique): the upstream TCL test (`tests/bugs/heal/bug1330`) translated to C++ — a valid closed triangle wire plus a single internal-orientation edge, fed to `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` — SIGSEGVs 100% of the time on stock p1 + patches `0001`–`0006` (`ShapeExtend_WireData::Edge` reading invalid data) and returns a valid 1-wire result after this patch.
+
+Reported upstream as [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330) / [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (third party, open — pin to the SHA above and re-verify if it changes in review).
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0008-Geom_BSplineCurve-O1-PeriodicNormalization-323.patch
+
+**Backports** [Open-Cascade-SAS/OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329) (merged 2026-07-05, upstream commit `37c9279f446894c5d123cb1fdda0ac848959361f`), fixing [OCCT#1288](https://github.com/Open-Cascade-SAS/OCCT/issues/1288) ("Boolean operation 'section' hangs-up for a pair of cylindrical shapes"). Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323).
+
+`Geom_BSplineCurve::PeriodicNormalization` brought an out-of-range parameter back into a periodic curve's valid range by repeatedly adding/subtracting one period at a time in a `while` loop — O(N) in the distance from the valid range, and a genuine infinite loop once the parameter's magnitude is many orders larger than the period: `Parameter -= Period` becomes a floating-point no-op at that magnitude, so the loop never terminates. `BRepAlgoAPI_Section` hung indefinitely reaching this path on cylindrical shapes with self-intersecting geometry.
+
+**Fix:** rewritten to O(1) — one division (`std::floor`) computes the whole number of periods to shift, applied in a single step, with at most one single-period correction for floating-point residual overshoot (using `std::nextafter` to guarantee forward progress if the correction is itself a no-op). An early return when the parameter is already in range skips even that division in the common case.
+
+**Validation** (fast path, no full rebuild): a normal closed periodic curve (`GeomAPI_Interpolate`, 8 points on a unit circle, period ≈ 6.12) with `PeriodicNormalization(1e17)` hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly with a valid in-range parameter (`1.0364`) after the patch. A sanity sweep of nine in-range/near-boundary/several-periods-off parameters produces **byte-identical** output before and after — no behavior change for values this function is normally called with.
+
+Filed upstream by OCCT as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329) (merged, stable).
+
+**Retire** once the bundled OCCT moves past commit `37c9279f446894c5d123cb1fdda0ac848959361f`.
+
+## 0009-StepData_StepWriter-split-oversized-string-323.patch
+
+**Backports** [Open-Cascade-SAS/OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318) (open, by an OCCT maintainer, pinned to commit `72bc2368372d93d6f84717f2327131d4c000d7c1`). No linked upstream issue. Audited and queued in [#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323). Same subsystem as `0002`.
+
+`StepData_StepWriter::AddString` writes a raw token into the writer's current-line buffer (fixed at 72 characters, `StepLong`), flushing and resetting the line whenever the pending text won't fit — assuming the token itself is never longer than one full line. When a single unbroken string value (e.g. a long name/label field with no natural break point) is longer than 72 characters, the flush-check can never become true no matter how many times the line is reset: the loop runs forever.
+
+**Fix:** when the token fits within `StepLong`, behavior is unchanged. When it doesn't, the new code splits the token across as many lines as needed, filling each with as much as fits before flushing and continuing with the remainder — continuation lines also drop their indentation when the indented prefix would leave no room for the pending text.
+
+**Validation** (fast path, no full rebuild): `StepData_StepWriter::StartEntity` + `SendString` (the public entry point — `AddString` itself is private) with a 200-character unbroken string hangs indefinitely on stock p1 (confirmed by wall-clock timeout) and returns instantly after the patch, correctly split across three continuation lines with the original text intact end-to-end. A sanity check with only normal-length fields produces **byte-identical** `Print()` output before and after. New OCCTSwift-level regression test `STEPWriterOversizedNameTests` (`OCCTIOTests`) exercises the same path through `Shape.writeSTEP(to:name:)`.
+
+**Retire** once the bundled OCCT includes this fix (open PR — pin to the SHA above and re-verify if it changes in review).
