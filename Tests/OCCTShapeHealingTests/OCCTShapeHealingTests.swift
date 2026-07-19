@@ -461,6 +461,25 @@ struct FreeBoundsTests {
         // Should return something even if nothing was fixed
         _ = result
     }
+
+    // #310 regression: ShapeAnalysis_FreeBounds crashed (uncatchable SIGSEGV) analyzing a compound
+    // of two or more DISJOINT closed faces — not adjacent/touching ones like
+    // compoundFacesHasFreeBounds above, which forms a single combined loop and never hit the bug.
+    // Each disjoint face's boundary is entirely consumed by its own closed-loop detection with
+    // nothing left over, which is exactly what tripped the kernel's uninitialized-handle bug (fixed
+    // upstream via Scripts/patches/0004). No #expect needed for the crash itself — a regression
+    // would abort the whole test process; reaching the assertions below is the real assertion.
+    @Test("Disjoint faces in a compound don't crash free-bounds analysis")
+    func issue310DisjointFacesFreeBounds() {
+        let face1 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!
+        let face2 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!.translated(by: SIMD3(5, 5, 0))!
+        let compound = Shape.compound([face1, face2])!
+
+        let closedWires = compound.freeBoundsClosedWires(tolerance: 0.01)
+        #expect(compound.freeBoundsClosedCount(tolerance: 0.01) == 2)
+        #expect(closedWires?.subShapeCount(ofType: .wire) == 2)
+        #expect(compound.freeBoundsOpenWires(tolerance: 0.01) == nil)
+    }
 }
 
 // MARK: - v0.41.0: Geometry Conversion

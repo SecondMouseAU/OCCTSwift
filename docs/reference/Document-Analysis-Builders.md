@@ -524,14 +524,6 @@ Count the number of closed free-boundary wires.
 public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int
 ```
 
-- **Warning:** Can crash the process with an uncatchable SIGSEGV on certain shapes with multiple
-  free-boundary components (#310, filed upstream as
-  [Open-Cascade-SAS/OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376)) — a kernel bug
-  in `ShapeAnalysis_FreeBounds`'s internal `SplitWires` sequence-accumulation step, not yet fixed and
-  not catchable (`OCC_CATCH_SIGNALS` is inert in this build). It isn't a simple "too many loops"
-  threshold — a shape with many free-boundary loops can be fine while a smaller one crashes — so
-  there's no reliable guard yet. Isolate calls on untrusted/large analytic-face compounds in a
-  subprocess if a crash here must not take down your process.
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Number of closed free-boundary wires.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosedCount`.
@@ -546,7 +538,6 @@ Get the compound of closed free-boundary wires.
 public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Warning:** Shares the same uncatchable-crash risk as `freeBoundsClosedCount(tolerance:)` above (#310).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of closed wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosed`.
@@ -561,7 +552,6 @@ Get the compound of open free-boundary wires.
 public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
-- **Warning:** Shares the same uncatchable-crash risk as `freeBoundsClosedCount(tolerance:)` above (#310).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of open wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsOpen`.

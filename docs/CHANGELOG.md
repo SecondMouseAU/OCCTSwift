@@ -7,13 +7,25 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.5
+## Current: v1.12.6
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.6 (July 2026) — fix: `ShapeAnalysis_FreeBounds` no longer crashes on disjoint free-boundary components (#310)
+
+**The real fix lands in the kernel.** v1.12.5 documented the crash risk in `freeBoundsClosedWires`/`freeBoundsClosedCount`/`freeBoundsOpenWires` (and, it turns out, `freeBounds` too — same underlying constructor) because no reliable guard existed at the wrapper level. This release removes the risk entirely.
+
+**Root cause (found with AddressSanitizer).** `ShapeAnalysis_FreeBounds::SplitWire` finds each wire's closed sub-loops, then hands whatever edges weren't consumed to `ConnectEdgesToWires` to chain into the "open" result. When a wire's edges are **entirely** consumed by closed-loop detection, that hand-off is an empty (but non-null) sequence. The call chain `ConnectEdgesToWires` → `ConnectWiresToWires` → `connectWiresToWiresImpl` starts with `if (iwires.IsNull() || !iwires->Length()) { return; }` — for empty input this returns **without ever assigning its `owires` out-parameter**. Every caller in the file starts from a freshly-defaulted (null) handle, so the null propagates back through `SplitWire`'s `open` parameter into `ShapeAnalysis_FreeBounds::SplitWires`'s `open->Append(tmpopen)`, dereferencing a null handle — an uncatchable SIGSEGV. Not a data-volume threshold: it depends only on whether *any* single free-boundary component happens to close with nothing left over, so a shape with 150+ loops can be fine while a 2-loop shape crashes (and vice versa) — which is exactly why the #310 report's own minimization (150-face fixture, sew ladder) came up empty while the real trigger, one call later in the pipeline, was easy to hit.
+
+**Fix.** `Scripts/patches/0004-ShapeAnalysis_FreeBounds-init-owires-empty-input-310.patch`: the one-line contract restoration `connectWiresToWiresImpl`'s own non-empty path already follows a few lines down (`owires = new NCollection_HSequence<TopoDS_Shape>;` before populating it) — "nothing to connect" now produces a valid **empty** result instead of an untouched out-parameter. The xcframework was rebuilt with the patch.
+
+**Verification.** AddressSanitizer (macOS arm64, `ModelingAlgorithms`+`ModelingData`+`FoundationClasses`, `RelWithDebInfo`, `MMGT_OPT=0`): two disjoint planar faces in one compound crashed 100% of the time on stock p1 — same function, same `NCollection_Sequence::Append` call, same `0xfffffffffffffff8` fault address at both `-O2` and `-O0` — and now returns the correct `2 closed, 0 open`. On the real #310 fixture (150-face analytic compound): `tol=0.05` gives `152 closed/0 open` byte-identical before and after (no behavior change on the working path); `tol=0.10` crashed on stock p1 and now returns `144 closed/0 open`. New regression test `issue310DisjointFacesFreeBounds` (`OCCTShapeHealingTests`). Upstreamed as a PR superseding the repro-only [Open-Cascade-SAS/OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376); the carried patch is retired once it ships in the pinned kernel. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum; remote SPM consumers get the rebuilt binary.
+
+- **Docs:** removed the now-obsolete "can crash" warnings from `freeBoundsClosedWires`/`freeBoundsClosedCount`/`freeBoundsOpenWires` (doc comments + `docs/reference/Document-Analysis-Builders.md`); `CLAUDE.md`'s Known OCCT Bugs entry updated to record the fix.
 
 ### v1.12.5 (July 2026) — docs: correct #310's crash diagnosis + `isSelfIntersecting(timeout:)` cooperative-bound wording (#310, #293)
 
