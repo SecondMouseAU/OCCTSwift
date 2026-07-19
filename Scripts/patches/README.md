@@ -9,7 +9,8 @@ until a rebuild + release.
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 
 **Fixes the upstream OCCT crash behind [#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)**
-(reported upstream as [Open-Cascade-SAS/OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322)).
+(reported upstream as [Open-Cascade-SAS/OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322); fix
+offered as [Open-Cascade-SAS/OCCT#1323](https://github.com/Open-Cascade-SAS/OCCT/pull/1323), CI green, ready for review).
 
 `ShapeFix_Face::Perform` casts `Context()->Apply(myFace)` with `TopoDS::Face(S.EmptyCopied())` in
 three places, none of which check the type. When an earlier fix sharing the same `ShapeBuild_ReShape`
@@ -21,7 +22,7 @@ SIGSEGV/SIGBUS at varying addresses).
 
 The compound replacement already exists on entry to `Perform` (it was recorded by a prior face's
 fix), so the patch adds a single guard at the top of `Perform`: if `Context()->Apply(myFace)` is not
-a face, record it as the result and return — the replacement is already in the context, so there is
+a face, record it as the result and return, since the replacement is already in the context and there is
 nothing to fix here. This one guard covers all three cast sites.
 
 **Validation** (fast path, no full rebuild): compile the single patched TU and link it *before*
