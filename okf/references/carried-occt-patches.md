@@ -22,9 +22,10 @@ OCCT's own `.clang-format`, and OCCT's terse comment style — not OCCTSwift's.
 
 | Patch | Fixes | Upstream | Retire when |
 |-------|-------|----------|-------------|
-| `0001-ShapeFix_Face-…-263` | ShapeFix_Face compound-context crash ([#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)) | [OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322) | bundled OCCT includes the guard |
-| `0002-STEPControl_Writer-…-1334` | XDE STEP read corrupts later STEP writes ([#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280)) | [OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334) (merged upstream) | bundled OCCT moves past that commit |
-| `0003-TopOpeBRep-non-reentrant-globals-fillet-298` | Concurrent fillet/chamfer corrupts geometry — non-reentrant `STATIC_SOLIDINDEX` in the TopOpeBRepBuild solid reconstruction ([#298](https://github.com/SecondMouseAU/OCCTSwift/issues/298)) | **[OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374)** — filed, not yet released | **an upstream OCCT release includes the `thread_local` conversion** |
+| `0001-ShapeFix_Face-…-263` | ShapeFix_Face compound-context crash ([#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)) | [OCCT#1322](https://github.com/Open-Cascade-SAS/OCCT/issues/1322) — **issue only, no fix PR submitted yet** | bundled OCCT includes the guard |
+| `0002-STEPControl_Writer-…-1334` | XDE STEP read corrupts later STEP writes ([#280](https://github.com/SecondMouseAU/OCCTSwift/issues/280)) | [OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334) (their fix, merged upstream — we backport) | bundled OCCT moves past that commit |
+| `0003-TopOpeBRep-non-reentrant-globals-fillet-298` | Concurrent fillet/chamfer corrupts geometry — non-reentrant `STATIC_SOLIDINDEX` in the TopOpeBRepBuild solid reconstruction ([#298](https://github.com/SecondMouseAU/OCCTSwift/issues/298)) | **[OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374)** (our PR, open — not yet released) | **an upstream OCCT release includes the `thread_local` conversion** |
+| `0004-ShapeAnalysis_FreeBounds-…-310` | `ShapeAnalysis_FreeBounds` SIGSEGV on a compound of 2+ disjoint free-boundary components ([#310](https://github.com/SecondMouseAU/OCCTSwift/issues/310)) | [OCCT#1376](https://github.com/Open-Cascade-SAS/OCCT/issues/1376) (repro) → **[OCCT#1377](https://github.com/Open-Cascade-SAS/OCCT/pull/1377)** (our fix PR, open) | bundled OCCT includes the fix |
 
 **#298 status:** we ship the fix now via patch `0003` (xcframework rebuilt in v1.12.3);
 we keep carrying it — and building our own xcframework — **until an upstream OCCT
