@@ -64,22 +64,19 @@ crash is specifically the unguarded Context()->Replace call.
 
 Reported downstream and isolated at SecondMouseAU/OCCTSwift#317.
 ---
- src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+ src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
-index 48ae1347..1110fe56 100644
+index 48ae1347..8db05eee 100644
 --- a/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
 +++ b/src/ModelingAlgorithms/TKShHealing/ShapeFix/ShapeFix_Face.cxx
-@@ -3268,7 +3268,14 @@ bool ShapeFix_Face::FixPeriodicDegenerated()
+@@ -3268,7 +3268,11 @@ bool ShapeFix_Face::FixPeriodicDegenerated()
 
    // Adjust the resulting state of the healing tool
    myResult = aNewFace;
 -  Context()->Replace(myFace, myResult);
-+  // #317: every other Context()->Replace call site in this file guards against a null Context()
-+  // (a ShapeFix_Face used without an explicit SetContext(), the common case); this one didn't,
-+  // so it null-derefs whenever a lone wire on a conical surface belts the full period. Nothing to
-+  // record if there is no context to record it in.
++  // #317: guard null Context(), as every other Replace() call site in this file does
 +  if (!Context().IsNull())
 +  {
 +    Context()->Replace(myFace, myResult);
