@@ -1,0 +1,90 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - use the adaptor's NbPoles() in
+ BRepGProp_EdgeTool::IntegrationOrder
+
+BRepGProp::LinearProperties (and anything built on BRepGProp_Cinert, e.g.
+BRepGProp::SurfaceProperties' edge-length paths) crashes (uncatchable SIGSEGV)
+computing the integration order for a Bezier- or BSpline-type edge that has
+NO 3D curve, only a curve-on-surface (pcurve) representation with that curve
+type -- the common case for a degenerate edge produced by BRepBuilderAPI_Sewing
+when it merges near-coincident vertices between two faces that don't share an
+edge outright, but also reachable on any hand-built degenerate edge whose sole
+geometry is a Bezier/BSpline pcurve.
+
+Root cause: IntegrationOrder branches on BAC.GetType() (a BRepAdaptor_Curve),
+which correctly reports the curve-on-surface pcurve's type via
+GeomAdaptor_TransformedCurve::GetType()'s override:
+
+    return myConSurf.IsNull() ? myCurve.GetType() : myConSurf->GetType();
+
+but then reads the pole count via a completely different, non-virtual path:
+
+    const GeomAdaptor_Curve&       GAC = BAC.Curve();
+    const occ::handle<Geom_Curve>& GC  = GAC.Curve();
+    occ::handle<Geom_BSplineCurve> GBSC(occ::down_cast<Geom_BSplineCurve>(GC));
+    int                            n = 2 * (GBSC->NbPoles()) - 1;
+
+BAC.Curve() returns the base GeomAdaptor_Curve sub-object (myCurve), which
+holds the 3D-curve representation only -- it is never Load()ed when the edge
+has no 3D curve, so GAC.Curve() is a null Geom_Curve handle, the down_cast
+returns null, and ->NbPoles() dereferences it.
+
+GeomAdaptor_TransformedCurve already has a correctly-dispatching NbPoles()
+override one property below GetType() in the same header:
+
+    int NbPoles() const override
+    { return myConSurf.IsNull() ? myCurve.NbPoles() : myConSurf->NbPoles(); }
+
+Calling BAC.NbPoles() instead of manually re-deriving the pole count from
+BAC.Curve() fixes the crash and matches the accessor GetType() one line above
+it already uses -- no cast, no null check needed, and no behaviour change for
+an edge that does have a 3D curve (myConSurf.IsNull() there, so NbPoles()
+resolves to the same myCurve.NbPoles() the removed code reached by hand).
+
+Validation (fast path, no full rebuild -- see the #0001 entry in
+Scripts/patches/README.md for the override-link technique): sewing two real
+mesh-derived planar candidate faces from OCCTReconstruct's plane-select spike
+(SecondMouseAU/OCCTSwift#318) with BRepBuilderAPI_Sewing produces a compound
+containing a degenerate edge whose only representation is a BSpline-type
+pcurve; running BRepGProp::LinearProperties(edge, props) on it (the same call
+Shape.analyze(tolerance:) makes per edge) SIGSEGVs 100% of the time on stock
+V8_0_0_p1 -- a custom SIGSEGV handler (backtrace_symbols_fd; lldb/core dumps
+unavailable in the diagnosing sandbox) backtraces the crash to
+BRepGProp_EdgeTool::IntegrationOrder, one frame below
+BRepGProp_Cinert::Perform. After this patch the same input completes and
+returns a sane (zero) length for the degenerate edge.
+
+Reported downstream and isolated at SecondMouseAU/OCCTSwift#318; filed upstream as
+Open-Cascade-SAS/OCCT#1381 (repro) / OCCT#1382 (fix, with a GTest).
+---
+ src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_EdgeTool.cxx | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_EdgeTool.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_EdgeTool.cxx
+index b75902b1..c20d1f7f 100644
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_EdgeTool.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_EdgeTool.cxx
+@@ -42,19 +42,11 @@ int BRepGProp_EdgeTool::IntegrationOrder(const BRepAdaptor_Curve& BAC)
+     case GeomAbs_Parabola:
+       return 5;
+
+-    case GeomAbs_BezierCurve: {
+-      const GeomAdaptor_Curve&       GAC = BAC.Curve();
+-      const occ::handle<Geom_Curve>& GC  = GAC.Curve();
+-      occ::handle<Geom_BezierCurve>  GBZC(occ::down_cast<Geom_BezierCurve>(GC));
+-      int                            n = 2 * (GBZC->NbPoles()) - 1;
+-      return n;
+-    }
+-    break;
++    case GeomAbs_BezierCurve:
+     case GeomAbs_BSplineCurve: {
+-      const GeomAdaptor_Curve&       GAC = BAC.Curve();
+-      const occ::handle<Geom_Curve>& GC  = GAC.Curve();
+-      occ::handle<Geom_BSplineCurve> GBSC(occ::down_cast<Geom_BSplineCurve>(GC));
+-      int                            n = 2 * (GBSC->NbPoles()) - 1;
++      // Use the adaptor's own NbPoles(), which handles the curve-on-surface case;
++      // Curve() is null there and down-casting it segfaults.
++      int n = 2 * BAC.NbPoles() - 1;
+       return n;
+     }
+     break;

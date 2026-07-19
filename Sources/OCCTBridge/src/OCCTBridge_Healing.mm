@@ -179,6 +179,15 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         for (TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
             TopoDS_Edge edge = TopoDS::Edge(edgeExp.Current());
 
+            // #318: a degenerate edge has zero extent by construction (it isn't a "small
+            // edge" defect to flag) and BRepGProp::LinearProperties can crash on one whose
+            // sole representation is a Bezier/BSpline curve-on-surface pcurve (kernel patch
+            // 0006 fixes the underlying BRepGProp_EdgeTool::IntegrationOrder bug, but this
+            // bridge also skips degenerate edges outright — no xcframework rebuild needed).
+            if (BRep_Tool::Degenerated(edge)) {
+                continue;
+            }
+
             // Get edge length
             GProp_GProps props;
             BRepGProp::LinearProperties(edge, props);

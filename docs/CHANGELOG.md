@@ -7,13 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.7
+## Current: v1.12.8
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.8 (July 2026) — fix: `Shape.analyze(tolerance:)` no longer crashes on a degenerate curve-on-surface edge (#318)
+
+**Root cause.** `BRepGProp_EdgeTool::IntegrationOrder` — invoked from `BRepGProp::LinearProperties`, which backs `Shape.analyze(tolerance:)`'s small-edge scan — reads an edge's pole count to pick a numeric-integration order. For a Bezier/BSpline-type curve, it correctly identifies the type via `BAC.GetType()` (a `BRepAdaptor_Curve`, whose `GeomAdaptor_TransformedCurve::GetType()` override correctly handles the curve-on-surface case), but then re-derives the pole count by hand via a completely different, non-virtual path: `BAC.Curve().Curve()`, down-cast to `Geom_BezierCurve`/`Geom_BSplineCurve`. `BAC.Curve()` returns the base `GeomAdaptor_Curve` sub-object, which holds the 3D-curve representation only — never `Load()`ed when the edge has no 3D curve (only a curve-on-surface pcurve), so the handle is null, the down-cast returns null, and `->NbPoles()` dereferences it. This is exactly the shape of a degenerate edge `BRepBuilderAPI_Sewing` produces reconciling near-coincident vertices between two faces that don't share an edge outright — surfaced sewing two real mesh-derived planar candidate faces (`kof_ii_engine_cover.stl`, regions 10 + 64) via a diagnostic dump added to OCCTReconstruct's plane-select spike, then isolated with a custom `SIGSEGV` handler (`lldb`/core dumps unavailable in the diagnosing sandbox) that pinned the crash to `IntegrationOrder`. A from-scratch synthetic degenerate edge (`BRep_Builder` + a hand-built `Geom2d_BSplineCurve` pcurve on a plane, no 3D curve) reproduces the identical crash trace — the mechanism doesn't depend on the specific fixture.
+
+**Fix — both layers.** Bridge (`OCCTShapeAnalyze`'s small-edge scan) now skips degenerate edges outright — closes the crash immediately, on any xcframework, and is also a correctness fix: a degenerate edge's zero 3D extent isn't a "small edge" defect to flag. Kernel patch also carried (`Scripts/patches/0006-BRepGProp_EdgeTool-use-adaptor-NbPoles-curve-on-surface-318.patch`, xcframework rebuilt): `IntegrationOrder` now calls the adaptor's own, correctly-dispatching `BAC.NbPoles()` (`GeomAdaptor_TransformedCurve` already has this override right next to `GetType()`) instead of manually re-deriving the pole count — no behaviour change for edges that do have a 3D curve.
+
+**Verification.** The real sewn fixture and the synthetic degenerate edge both SIGSEGV 100% of the time on stock p1 and complete cleanly after the patch. New regression test `Issue318DegenerateCurveOnSurfaceEdgeTests` (`OCCTShapeHealingTests`), embedding the real sewn shape as a BREP fixture. Upstreamed as [Open-Cascade-SAS/OCCT#1381](https://github.com/Open-Cascade-SAS/OCCT/issues/1381) (repro) / [OCCT#1382](https://github.com/Open-Cascade-SAS/OCCT/pull/1382) (fix, with a GTest); the carried patch retires once it ships in the pinned kernel. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum; remote SPM consumers get the rebuilt binary.
+
+- **Docs:** `CLAUDE.md`'s Known OCCT Bugs entry added for #318; `Scripts/patches/README.md` documents patch `0006`.
 
 ### v1.12.7 (July 2026) — fix: `Shape.face(from:boundary:)` no longer crashes on a single closed wire belting a cone (#317)
 

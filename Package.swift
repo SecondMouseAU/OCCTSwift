@@ -33,16 +33,16 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.12.7 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
+    // v1.12.8 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
     // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
-    // 0004 (ShapeAnalysis_FreeBounds owires init, #310), and 0005 (ShapeFix_Face null-Context
-    // guard in FixPeriodicDegenerated, #317).
+    // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
+    // in FixPeriodicDegenerated, #317), and 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318).
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.12.7/OCCT.xcframework.zip",
-        checksum: "f8a92207443102b29190924c29bd76c2a32e87140c7e67015ba10e160e253d52"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.12.8/OCCT.xcframework.zip",
+        checksum: "93a73f51bb0668361505dd8e37403dc72e78e0789ad5d46063ae6c53a3ced1e5"
     )
 
 let package = Package(
