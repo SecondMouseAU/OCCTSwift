@@ -478,7 +478,9 @@ struct FreeBoundsTests {
         let closedWires = compound.freeBoundsClosedWires(tolerance: 0.01)
         #expect(compound.freeBoundsClosedCount(tolerance: 0.01) == 2)
         #expect(closedWires?.subShapeCount(ofType: .wire) == 2)
-        #expect(compound.freeBoundsOpenWires(tolerance: 0.01) == nil)
+        // A valid, empty compound (0 wires) is the correct result here, not nil — both faces
+        // are entirely closed, so there's nothing to report as an open free boundary.
+        #expect((compound.freeBoundsOpenWires(tolerance: 0.01)?.subShapeCount(ofType: .wire) ?? 0) == 0)
     }
 }
 
