@@ -221,11 +221,11 @@ Resolves each axis via `BRepGraph.resolve(_:)` to obtain its `direction` vector,
 - **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
   ```swift
-  let graph = shape.brepGraph()
-  let axes = graph.constructionAxes()
-  if axes.count >= 2,
-     let a = axes[0].angle(to: axes[1], in: graph) {
-      print(a * 180 / .pi)
+  let graph = BRepGraph(shape: shape)!
+  let axisA = ConstructionAxis.absolute(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
+  let axisB = ConstructionAxis.absolute(origin: SIMD3(0, 0, 0), direction: SIMD3(0, 1, 0))
+  if let a = axisA.angle(to: axisB, in: graph) {
+      print(a * 180 / .pi)  // 90
   }
   ```
 
@@ -254,11 +254,11 @@ Resolves each plane via `BRepGraph.resolve(_:)` to obtain its `zAxis` vector, th
 - **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
   ```swift
-  let graph = shape.brepGraph()
-  let planes = graph.constructionPlanes()
-  if planes.count >= 2,
-     let a = planes[0].angle(to: planes[1], in: graph) {
-      print(a * 180 / .pi)
+  let graph = BRepGraph(shape: shape)!
+  let planeA = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let planeB = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0))
+  if let a = planeA.angle(to: planeB, in: graph) {
+      print(a * 180 / .pi)  // 90
   }
   ```
 
