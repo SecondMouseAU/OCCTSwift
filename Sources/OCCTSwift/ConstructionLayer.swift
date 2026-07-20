@@ -74,7 +74,7 @@ extension ConstructionContext {
     /// Returns a breakdown of what got materialised and what failed to resolve.
     @discardableResult
     public func materialize(in document: Document,
-                            graph: TopologyGraph,
+                            graph: BRepGraph,
                             options: MaterializeOptions = MaterializeOptions()) -> MaterializationResult {
         var planeShapes: [(id: PlaneID, labelId: Int64)] = []
         var axisShapes: [(id: AxisID, labelId: Int64)] = []

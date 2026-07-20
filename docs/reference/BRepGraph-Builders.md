@@ -1,13 +1,13 @@
 ---
-title: TopologyGraph — Builders & Editor Mutation
+title: BRepGraph — Builders & Editor Mutation
 parent: API Reference
 ---
 
-# TopologyGraph — Builders & Editor Mutation
+# BRepGraph — Builders & Editor Mutation
 
-This page covers the **mutation surface** of `TopologyGraph` — every query and builder method from
+This page covers the **mutation surface** of `BRepGraph` — every query and builder method from
 the `// MARK: Edge/Face/Shell/Solid Additional Queries`, `CompSolid Count`, `Builder:` and
-`EditorView` sections (source lines 1093–1621). See the main **TopologyGraph** page for
+`EditorView` sections (source lines 1093–1621). See the main **BRepGraph** page for
 construction, traversal, and the core query API.
 
 ## Topics
@@ -31,7 +31,7 @@ public func edgeWires(_ edgeIndex: Int) -> [Int]
 - **OCCT:** `BRepGraph_EditorView` (graph topo layer — wire-membership reverse lookup).
 - **Example:**
   ```swift
-  let graph = TopologyGraph(shape: solid)
+  let graph = BRepGraph(shape: solid)
   let wires = graph.edgeWires(0)
   print("edge 0 belongs to \(wires.count) wire(s)")
   ```

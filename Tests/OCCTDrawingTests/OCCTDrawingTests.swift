@@ -1209,7 +1209,7 @@ struct EditorViewV164Tests {
     func cachedFaceMeshInspectionOnFreshGraph() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0 {
                 #expect(graph.cachedFaceMeshIsPresent(0) == false)
                 #expect(graph.cachedFaceMeshTriRepCount(0) == 0)
@@ -1227,7 +1227,7 @@ struct EditorViewV164Tests {
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0,
                let triRepId = graph.createTriangulationRep(tri) {
                 graph.appendCachedTriangulation(faceIndex: 0, triRepId: triRepId)
@@ -1244,7 +1244,7 @@ struct EditorViewV164Tests {
     func cachedEdgeCoEdgeAbsent() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.cachedEdgeMeshIsPresent(0) == false)
                 #expect(graph.cachedEdgeMeshPolygon3DRepId(0) == nil)
@@ -1262,7 +1262,7 @@ struct EditorViewProductOpsTests {
     func createAndLinkProducts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Empty product: an assembly node, no direct topology.
                 guard let parentProduct = graph.createEmptyProduct() else {
@@ -1274,7 +1274,7 @@ struct EditorViewProductOpsTests {
                 guard let childProduct = graph.linkProductToTopology(
                     shapeRootKind: 0,        // Solid
                     shapeRootIndex: 0,
-                    placement: TopologyGraph.identityLocationMatrix) else {
+                    placement: BRepGraph.identityLocationMatrix) else {
                     Issue.record("linkProductToTopology nil"); return
                 }
                 #expect(childProduct >= 0)
@@ -1284,7 +1284,7 @@ struct EditorViewProductOpsTests {
                 if let linked = graph.linkProducts(
                     parentProductIndex: parentProduct,
                     referencedProductIndex: childProduct,
-                    placement: TopologyGraph.identityLocationMatrix) {
+                    placement: BRepGraph.identityLocationMatrix) {
                     #expect(linked.occurrenceIndex >= 0)
                     #expect(linked.occurrenceRefIndex >= 0)
                 }
@@ -1296,7 +1296,7 @@ struct EditorViewProductOpsTests {
     func removeOpsSafe() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.productRemoveOccurrence(99999, occurrenceRefIndex: 99999) == false)
                 #expect(graph.productRemoveShapeRoot(99999) == false)
@@ -1311,7 +1311,7 @@ struct EditorViewAddRemoveTests {
     func addOpsSafe() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // These return nil on invalid topology (a closed box already wires its own
                 // structure), but the bridge must not crash.
@@ -1329,7 +1329,7 @@ struct EditorViewAddRemoveTests {
     func removeOpsSafe() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.edgeRemoveVertex(0, vertexRefIndex: 99999) == false)
                 #expect(graph.edgeReplaceVertex(0, oldVertexRefIndex: 99999, newVertexIndex: 0) == nil)
@@ -1352,7 +1352,7 @@ struct EditorViewAddRemoveTests {
         // Box has 12 edges, 8 vertices, 6 faces, 6 wires, 1 shell, 1 solid; ids 0..N-1 are valid.
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.edgeCount > 0, graph.faceCount > 0, graph.shellCount > 0, graph.solidCount > 0 {
                 graph.setEdgeCurve3DRepId(0, curve3DRepId: 0)
                 graph.setEdgePolygon3DRepId(0, polygon3DRepId: 0)
@@ -1376,7 +1376,7 @@ struct EditorViewSettersTests {
     func vertexFieldSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.vertexCount > 0 {
                 graph.setVertexPoint(0, x: 1.5, y: 2.5, z: 3.5)
                 let p = graph.vertexPoint(0)
@@ -1394,7 +1394,7 @@ struct EditorViewSettersTests {
     func edgeFieldSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.edgeCount > 0 {
                 graph.setEdgeTolerance(0, tolerance: 0.001)
                 #expect(abs(graph.edgeTolerance(0) - 0.001) < 1e-12)
@@ -1427,7 +1427,7 @@ struct EditorViewSettersTests {
     func faceFieldSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0 {
                 graph.setFaceTolerance(0, tolerance: 0.005)
                 #expect(abs(graph.faceTolerance(0) - 0.005) < 1e-12)
@@ -1442,7 +1442,7 @@ struct EditorViewSettersTests {
     func auxiliarySetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // The box has wires/shells; coedges are derived per-face. Setters are no-ops on
                 // invalid ids (try/catch in bridge) so the calls below are always safe.

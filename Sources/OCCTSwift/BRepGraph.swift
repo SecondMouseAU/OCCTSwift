@@ -10,24 +10,24 @@ import OCCTBridge
 
 /// A graph-based representation of B-Rep topology.
 ///
-/// `TopologyGraph` provides cache-friendly traversal, O(1) upward navigation,
+/// `BRepGraph` provides cache-friendly traversal, O(1) upward navigation,
 /// and parallel geometry extraction over a shape's topology. Built from a
 /// `Shape`, it indexes all faces, edges, vertices, wires, shells, and solids
 /// as flat entity vectors with integer cross-references.
 ///
 /// ```swift
 /// let box = Shape.box(width: 10, height: 10, depth: 10)
-/// let graph = TopologyGraph(shape: box)!
+/// let graph = BRepGraph(shape: box)!
 /// print(graph.stats)  // faces: 6, edges: 12, vertices: 8
 ///
 /// // Fast adjacency queries
 /// let neighbors = graph.adjacentFaces(of: 0)  // [1, 2, 3, 4]
 /// let shared = graph.sharedEdges(between: 0, and: 1)  // [3]
 /// ```
-public final class TopologyGraph: @unchecked Sendable {
+public final class BRepGraph: @unchecked Sendable {
     internal let handle: OCCTBRepGraphRef
 
-    /// Per-node attribute store (see `TopologyGraph+Attributes.swift`).
+    /// Per-node attribute store (see `BRepGraph+Attributes.swift`).
     ///
     /// Holds arbitrary typed metadata keyed by ``NodeRef`` — fit residuals, provenance,
     /// mesh-region sets, etc. Pure Swift sidecar; never touches the underlying C++ graph.
@@ -313,7 +313,7 @@ public final class TopologyGraph: @unchecked Sendable {
         public let curves2D: Int
 
         public var description: String {
-            "TopologyGraph.Stats(solids: \(solids), shells: \(shells), faces: \(faces), " +
+            "BRepGraph.Stats(solids: \(solids), shells: \(shells), faces: \(faces), " +
             "wires: \(wires), edges: \(edges), vertices: \(vertices), coedges: \(coedges), " +
             "nodes: \(totalNodes), surfaces: \(surfaces), curves3D: \(curves3D), curves2D: \(curves2D))"
         }
@@ -542,7 +542,7 @@ public final class TopologyGraph: @unchecked Sendable {
 
     // MARK: - History Record Readback (v0.141, #72 Phase 0)
 
-    /// A (kind, index) pair identifying a node in a `TopologyGraph`.
+    /// A (kind, index) pair identifying a node in a `BRepGraph`.
     ///
     /// This is the Swift mirror of OCCT's `BRepGraph_NodeId`. Two pairs with the
     /// same kind+index refer to the same node **within a given graph instance**;
@@ -827,12 +827,12 @@ public final class TopologyGraph: @unchecked Sendable {
     /// ```swift
     /// // Cut a channel across a box's top face, then keep hold of the face.
     /// let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
-    /// let graph = TopologyGraph(shape: base)!
+    /// let graph = BRepGraph(shape: base)!
     ///
     /// // The topology root. Note this is findNode(for:), NOT rootNodes — that
     /// // enumerates Products and is empty for a graph built from a Shape.
     /// let rootNode = graph.findNode(for: base)!
-    /// let root = TopologyGraph.NodeRef(kind: rootNode.kind, index: rootNode.index)
+    /// let root = BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index)
     ///
     /// // Identify the top face and pin it BEFORE the cut.
     /// let faces = base.faces()
@@ -840,7 +840,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// let topIndex = centroids.enumerated().max { $0.element.z < $1.element.z }!.offset
     /// let topFace = Shape.fromFace(faces[topIndex])!
     /// let topNode = graph.findNode(for: topFace)!
-    /// let pinned = TopologyGraph.NodeRef(kind: topNode.kind, index: topNode.index)
+    /// let pinned = BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index)
     ///
     /// // Cut, then hand the result and its history back to the same graph.
     /// let tool = Shape.box(origin: SIMD3(-1, 4, 8), width: 12, height: 2, depth: 4)!
@@ -1023,25 +1023,25 @@ public final class TopologyGraph: @unchecked Sendable {
     // MARK: - Copy and Transform (v0.133.0)
 
     /// Deep copy of the graph.
-    public func copy(copyGeometry: Bool = true) -> TopologyGraph? {
+    public func copy(copyGeometry: Bool = true) -> BRepGraph? {
         guard let ref = OCCTBRepGraphCopy(handle, copyGeometry) else { return nil }
-        return TopologyGraph(borrowedHandle: ref)
+        return BRepGraph(borrowedHandle: ref)
     }
 
     /// Copy a single face sub-graph.
-    public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> TopologyGraph? {
+    public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> BRepGraph? {
         guard let ref = OCCTBRepGraphCopyFace(handle, Int32(faceIndex), copyGeometry) else {
             return nil
         }
-        return TopologyGraph(borrowedHandle: ref)
+        return BRepGraph(borrowedHandle: ref)
     }
 
     /// Transform the graph by a translation.
-    public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true) -> TopologyGraph? {
+    public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true) -> BRepGraph? {
         guard let ref = OCCTBRepGraphTransformTranslation(handle, dx, dy, dz, copyGeometry) else {
             return nil
         }
-        return TopologyGraph(borrowedHandle: ref)
+        return BRepGraph(borrowedHandle: ref)
     }
 
     /// Internal initializer from an already-created handle (takes ownership).
@@ -2073,18 +2073,18 @@ public final class TopologyGraph: @unchecked Sendable {
     /// allocates counters from 1 independently, so the same `(kind, counter)` names some
     /// unrelated node in every other graph — a box's face UID would otherwise resolve happily
     /// against a cylinder. ``graphID`` records which instance minted the UID, and
-    /// ``TopologyGraph/node(forUID:)`` rejects one that came from anywhere else (#295).
+    /// ``BRepGraph/node(forUID:)`` rejects one that came from anywhere else (#295).
     ///
     /// To carry a selection across a *modelling operation* rather than across mutations of one
     /// graph, absorb the operation's history — see
-    /// ``TopologyGraph/add(_:absorbing:inputRoots:operationName:)``.
+    /// ``BRepGraph/add(_:absorbing:inputRoots:operationName:)``.
     ///
     /// `kind` is the raw `BRepGraph_NodeId::Kind` ordinal
     /// (0 Solid, 1 Shell, 2 Face, 3 Wire, 4 Edge, 5 Vertex, 6 Compound,
     /// 7 CompSolid, 8 CoEdge, 10 Product, 11 Occurrence).
     ///
     /// ```swift
-    /// let graph = TopologyGraph(shape: box)!
+    /// let graph = BRepGraph(shape: box)!
     /// let uid = graph.uid(ofNodeKind: 2, index: 3)!    // a face, by kind + index
     ///
     /// // The UID still names that face after a mutation renumbers the indices:
@@ -2094,7 +2094,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// }
     ///
     /// // A UID from another graph resolves to nothing, rather than to a wrong node:
-    /// let other = TopologyGraph(shape: cylinder)!
+    /// let other = BRepGraph(shape: cylinder)!
     /// print(other.node(forUID: uid))      // nil
     /// print(other.contains(uid: uid))     // false
     /// ```
@@ -2102,13 +2102,13 @@ public final class TopologyGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``TopologyGraph/instanceID``.
+        /// The instance that minted this UID — its ``BRepGraph/instanceID``.
         ///
         /// `0` means unstamped: built by hand, or decoded from a payload written before
         /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.uid(ofNodeKind:index:).")
+        @available(*, deprecated, message: "A hand-built GraphUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofNodeKind:index:).")
         public init(kind: Int, counter: UInt32) {
             self.init(kind: kind, counter: counter, graphID: 0)
         }
@@ -2143,7 +2143,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// (0 Shell, 1 Face, 2 Wire, 3 Vertex, 4 Solid, 5 Child, 6 Occurrence).
     ///
     /// ```swift
-    /// let graph = TopologyGraph(shape: assembly)!
+    /// let graph = BRepGraph(shape: assembly)!
     /// if let uid = graph.uid(ofRefKind: 1, index: 0),      // a face reference
     ///    let ref = graph.ref(forUID: uid) {
     ///     print("face ref at index \(ref.index)")
@@ -2153,11 +2153,11 @@ public final class TopologyGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``TopologyGraph/instanceID``. `0` means
+        /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphRefUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.uid(ofRefKind:index:).")
+        @available(*, deprecated, message: "A hand-built GraphRefUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofRefKind:index:).")
         public init(kind: Int, counter: UInt32) {
             self.init(kind: kind, counter: counter, graphID: 0)
         }
@@ -2185,7 +2185,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// Scoped to one graph instance and stamped with ``graphID``, exactly as ``GraphUID`` is.
     ///
     /// ```swift
-    /// let graph = TopologyGraph(shape: box)!
+    /// let graph = BRepGraph(shape: box)!
     /// if let uid = graph.itemUID(ofNodeKind: 2, index: 0),
     ///    let item = graph.item(forUID: uid) {
     ///     print("domain \(item.domain) kind \(item.kind) index \(item.index)")
@@ -2196,11 +2196,11 @@ public final class TopologyGraph: @unchecked Sendable {
         public let kind: Int
         public let counter: UInt32
 
-        /// The instance that minted this UID — its ``TopologyGraph/instanceID``. `0` means
+        /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphItemUID has no provenance (graphID 0) and resolves in no graph. Mint one with TopologyGraph.itemUID(ofNodeKind:index:).")
+        @available(*, deprecated, message: "A hand-built GraphItemUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.itemUID(ofNodeKind:index:).")
         public init(domain: Int, kind: Int, counter: UInt32) {
             self.init(domain: domain, kind: kind, counter: counter, graphID: 0)
         }
@@ -2317,7 +2317,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// does not: it lifts one face into a new graph, which gets its own id.
     ///
     /// ```swift
-    /// let graph = TopologyGraph(shape: box)!
+    /// let graph = BRepGraph(shape: box)!
     /// let uid = graph.uid(ofNodeKind: 2, index: 0)!
     /// print(uid.graphID == graph.instanceID)      // true — this graph minted it
     ///
@@ -2325,7 +2325,7 @@ public final class TopologyGraph: @unchecked Sendable {
     /// print(copy.instanceID == graph.instanceID)  // true — a copy is the same identity
     /// print(copy.node(forUID: uid) != nil)        // true — and names the same face
     ///
-    /// let rebuilt = TopologyGraph(shape: box)!    // same shape, new graph
+    /// let rebuilt = BRepGraph(shape: box)!    // same shape, new graph
     /// print(rebuilt.node(forUID: uid))            // nil
     /// ```
     public var instanceID: UInt64 {
@@ -2344,3 +2344,8 @@ public final class TopologyGraph: @unchecked Sendable {
         OCCTBRepGraphGeneration(handle)
     }
 }
+
+/// `BRepGraph`'s prior name (#333). `TopologyGraph` read as too close to the `TopoDS_*` family on a
+/// skim without signaling that this type specifically wraps the BRepGraph durable-identity engine.
+@available(*, deprecated, renamed: "BRepGraph")
+public typealias TopologyGraph = BRepGraph

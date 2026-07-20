@@ -54,7 +54,7 @@ OCCTSwift is the kernel of a layered family of packages, all SemVer-stable from 
 
 | Package | Role |
 |---------|------|
-| **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, TopologyGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
+| **OCCTSwift** (this repo) | Core Swift wrapper — shapes, curves, surfaces, OCAF, BRepGraph, drawing/projection, ML samplers. Bundles the OCCT 8.0.0p1 xcframework. |
 | [OCCTSwiftIO](https://github.com/SecondMouseAU/OCCTSwiftIO) | Headless CAD file I/O — STEP / IGES / STL / OBJ / BREP loaders + glTF / GLB / OBJ / PLY / STEP / BREP exporters. No Viewport dep. |
 | [OCCTSwiftMesh](https://github.com/SecondMouseAU/OCCTSwiftMesh) | Mesh-domain algorithms — decimation, smoothing, repair (vendors `meshoptimizer`). |
 | [OCCTSwiftViewport](https://github.com/SecondMouseAU/OCCTSwiftViewport) | Metal-based 3D viewport component (UIKit / AppKit / SwiftUI). |

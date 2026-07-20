@@ -5,11 +5,11 @@ parent: API Reference
 
 # Construction & Sketching
 
-The construction & sketching types implement Fusion 360-style parametric reference geometry and 2D profile creation. `ConstructionEntity` types carry _recipes_ (plane, axis, point definitions keyed on `TopologyRef`s) that are resolved against a live `TopologyGraph`; `ConstructionContext` is the document-level registry for those entities; `ConstructionLayer` bridges them to the XCAF document layer system for STEP persistence; `Sketch` hosts 2D curve elements on a plane and builds a 3D profile wire; and `Section2D` extends `Shape` to produce 2D contour drawings from planar section cuts.
+The construction & sketching types implement Fusion 360-style parametric reference geometry and 2D profile creation. `ConstructionEntity` types carry _recipes_ (plane, axis, point definitions keyed on `TopologyRef`s) that are resolved against a live `BRepGraph`; `ConstructionContext` is the document-level registry for those entities; `ConstructionLayer` bridges them to the XCAF document layer system for STEP persistence; `Sketch` hosts 2D curve elements on a plane and builds a 3D profile wire; and `Section2D` extends `Shape` to produce 2D contour drawings from planar section cuts.
 
 ## Topics
 
-- [Placement](#placement) · [ConstructionPlane](#constructionplane) · [ConstructionAxis](#constructionaxis) · [ConstructionPoint](#constructionpoint) · [ConstructionResolutionError](#constructionresolutionerror) · [TopologyGraph resolve extensions](#topologygraph-resolve-extensions) · [TopologyGraph.childIndices](#topologygraphchildindices) · [ConstructionContext](#constructioncontext) · [Document.constructionContext](#documentconstructioncontext) · [ConstructionLayer — Document extension](#constructionlayer--document-extension) · [ConstructionContext.materialize](#constructioncontextmaterialize) · [SketchElement](#sketchelement) · [Sketch](#sketch) · [Shape.section2D](#shapesection2d) · [Shape.SectionView](#shapesectionview)
+- [Placement](#placement) · [ConstructionPlane](#constructionplane) · [ConstructionAxis](#constructionaxis) · [ConstructionPoint](#constructionpoint) · [ConstructionResolutionError](#constructionresolutionerror) · [BRepGraph resolve extensions](#brepgraph-resolve-extensions) · [BRepGraph.childIndices](#brepgraphchildindices) · [ConstructionContext](#constructioncontext) · [Document.constructionContext](#documentconstructioncontext) · [ConstructionLayer — Document extension](#constructionlayer--document-extension) · [ConstructionContext.materialize](#constructioncontextmaterialize) · [SketchElement](#sketchelement) · [Sketch](#sketch) · [Shape.section2D](#shapesection2d) · [Shape.SectionView](#shapesectionview)
 
 ---
 
@@ -67,7 +67,7 @@ Picks a stable X axis using `worldUp × normal`; falls back to `worldY × normal
 
 ## ConstructionPlane
 
-A recipe for a construction plane. Each case carries its defining inputs as `TopologyRef`s (or absolute geometry) that are resolved against a `TopologyGraph` at use time, so the plane tracks model edits automatically.
+A recipe for a construction plane. Each case carries its defining inputs as `TopologyRef`s (or absolute geometry) that are resolved against a `BRepGraph` at use time, so the plane tracks model edits automatically.
 
 ### `ConstructionPlane.absolute(origin:normal:)`
 
@@ -170,7 +170,7 @@ case normalToEdge(edge: TopologyRef, t: Double)
 
 ## ConstructionAxis
 
-A recipe for a construction axis. Resolved to `(origin: SIMD3<Double>, direction: SIMD3<Double>)` against a `TopologyGraph`.
+A recipe for a construction axis. Resolved to `(origin: SIMD3<Double>, direction: SIMD3<Double>)` against a `BRepGraph`.
 
 ### `ConstructionAxis.absolute(origin:direction:)`
 
@@ -230,7 +230,7 @@ Fails with `.degenerate("planes are parallel")` when the cross product is near-z
 
 ## ConstructionPoint
 
-A recipe for a construction point. Resolved to `SIMD3<Double>` against a `TopologyGraph`.
+A recipe for a construction point. Resolved to `SIMD3<Double>` against a `BRepGraph`.
 
 ### `ConstructionPoint.absolute(_:)`
 
@@ -307,7 +307,7 @@ public enum ConstructionResolutionError: Error, Sendable {
     case topology(TopologyResolutionError)
     case notApplicable(String)
     case degenerate(String)
-    case missingGeometry(TopologyGraph.NodeRef)
+    case missingGeometry(BRepGraph.NodeRef)
 }
 ```
 
@@ -318,11 +318,11 @@ public enum ConstructionResolutionError: Error, Sendable {
 
 ---
 
-## TopologyGraph resolve extensions
+## BRepGraph resolve extensions
 
-`TopologyGraph` is extended in `ConstructionEntity.swift` to resolve the three construction entity types. These are the primary resolution entry points.
+`BRepGraph` is extended in `ConstructionEntity.swift` to resolve the three construction entity types. These are the primary resolution entry points.
 
-### `TopologyGraph.resolve(_:) for ConstructionPlane`
+### `BRepGraph.resolve(_:) for ConstructionPlane`
 
 Resolves a `ConstructionPlane` recipe against the current graph state.
 
@@ -342,7 +342,7 @@ public func resolve(_ plane: ConstructionPlane) -> Result<Placement, Constructio
 
 ---
 
-### `TopologyGraph.resolve(_:) for ConstructionAxis`
+### `BRepGraph.resolve(_:) for ConstructionAxis`
 
 Resolves a `ConstructionAxis` recipe against the current graph state.
 
@@ -361,7 +361,7 @@ public func resolve(_ axis: ConstructionAxis) -> Result<(origin: SIMD3<Double>, 
 
 ---
 
-### `TopologyGraph.resolve(_:) for ConstructionPoint`
+### `BRepGraph.resolve(_:) for ConstructionPoint`
 
 Resolves a `ConstructionPoint` recipe against the current graph state.
 
@@ -380,9 +380,9 @@ public func resolve(_ point: ConstructionPoint) -> Result<SIMD3<Double>, Constru
 
 ---
 
-## TopologyGraph.childIndices
+## BRepGraph.childIndices
 
-### `TopologyGraph.childIndices(rootKind:rootIndex:targetKind:)`
+### `BRepGraph.childIndices(rootKind:rootIndex:targetKind:)`
 
 Returns the indices of all descendant nodes of `targetKind` under a root node.
 
@@ -407,7 +407,7 @@ Complements `childCount(rootKind:rootIndex:targetKind:)` by giving the actual in
 
 ## ConstructionContext
 
-A document-level, thread-safe registry of named construction entities. Entities are stored by value under opaque typed IDs; they are resolved on demand against a `TopologyGraph`. Insertion order is preserved. Thread-safe via an internal `NSLock`.
+A document-level, thread-safe registry of named construction entities. Entities are stored by value under opaque typed IDs; they are resolved on demand against a `BRepGraph`. Insertion order is preserved. Thread-safe via an internal `NSLock`.
 
 > **Persistence note:** Construction entity _recipes_ live in Swift value storage only — they are not serialised into the XCAF/XDE shape tree. STEP round-trip preserves layer tags (see `ConstructionLayer`) but loses recipe structure. Serialise the `ConstructionContext` separately (e.g. as JSON via `Codable`) if recipe round-trip is required.
 
@@ -665,10 +665,10 @@ public func removeAll()
 Resolves a registered plane against a topology graph, returning a `Placement`.
 
 ```swift
-public func resolve(_ id: PlaneID, in graph: TopologyGraph) -> Result<Placement, ConstructionResolutionError>
+public func resolve(_ id: PlaneID, in graph: BRepGraph) -> Result<Placement, ConstructionResolutionError>
 ```
 
-Delegates to `TopologyGraph.resolve(_:)`. Returns `.failure(.notApplicable(...))` if `id` is not registered.
+Delegates to `BRepGraph.resolve(_:)`. Returns `.failure(.notApplicable(...))` if `id` is not registered.
 
 - **Parameters:**
   - `id` — the `PlaneID` to resolve.
@@ -690,7 +690,7 @@ Delegates to `TopologyGraph.resolve(_:)`. Returns `.failure(.notApplicable(...))
 Resolves a registered axis against a topology graph.
 
 ```swift
-public func resolve(_ id: AxisID, in graph: TopologyGraph) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError>
+public func resolve(_ id: AxisID, in graph: BRepGraph) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError>
 ```
 
 ---
@@ -700,7 +700,7 @@ public func resolve(_ id: AxisID, in graph: TopologyGraph) -> Result<(origin: SI
 Resolves a registered point against a topology graph.
 
 ```swift
-public func resolve(_ id: PointID, in graph: TopologyGraph) -> Result<SIMD3<Double>, ConstructionResolutionError>
+public func resolve(_ id: PointID, in graph: BRepGraph) -> Result<SIMD3<Double>, ConstructionResolutionError>
 ```
 
 ---
@@ -729,7 +729,7 @@ public struct BrokenEntities: Sendable {
 Inspects every registered entity against `graph` and returns those that fail resolution.
 
 ```swift
-public func allBroken(in graph: TopologyGraph) -> BrokenEntities
+public func allBroken(in graph: BRepGraph) -> BrokenEntities
 ```
 
 Useful in agent workflows after model edits to detect stale construction references before attempting a sketch build or section.
@@ -903,7 +903,7 @@ Materialises all registered construction entities as `TopoDS_Shape`s on the docu
 ```swift
 @discardableResult
 public func materialize(in document: Document,
-                        graph: TopologyGraph,
+                        graph: BRepGraph,
                         options: MaterializeOptions = MaterializeOptions()) -> MaterializationResult
 ```
 
@@ -1119,14 +1119,14 @@ Builds a 3D closed profile wire from the sketch's non-construction elements, pla
 
 ```swift
 public func buildProfile(in context: ConstructionContext,
-                         graph: TopologyGraph) -> Wire?
+                         graph: BRepGraph) -> Wire?
 ```
 
 Construction elements are filtered at this single site — upstream views (solver, editor) see the full element set. Each 2D point is lifted into 3D via `placement.origin + pt.x * placement.xAxis + pt.y * placement.yAxis`. The resulting polyline is closed automatically if the first and last 3D points are within 1e-9 of each other.
 
 - **Parameters:**
   - `context` — the `ConstructionContext` that registered `hostPlane`.
-  - `graph` — a `TopologyGraph` to resolve the host plane's recipe.
+  - `graph` — a `BRepGraph` to resolve the host plane's recipe.
 - **Returns:** A closed `Wire` on the resolved plane, or `nil` if the host plane fails to resolve, no profile elements exist, or fewer than 2 distinct 3D points result.
 - **OCCT:** Delegates to `Wire.polygon3D(_:closed:)` — `BRepBuilderAPI_MakePolygon`.
 - **Example:**

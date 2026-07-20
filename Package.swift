@@ -131,7 +131,7 @@ let package = Package(
         .testTarget(name: "OCCTStressTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTStressTests"),
         .testTarget(name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests"),
         .testTarget(name: "OCCTThreadTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTThreadTests"),
-        .testTarget(name: "OCCTTopologyGraphTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTTopologyGraphTests"),
+        .testTarget(name: "OCCTBRepGraphTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTBRepGraphTests"),
         .testTarget(name: "OCCTTopologyTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTTopologyTests"),
         .testTarget(name: "OCCTXCAFTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTXCAFTests"),
 

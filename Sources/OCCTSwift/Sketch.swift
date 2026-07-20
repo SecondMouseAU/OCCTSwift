@@ -99,11 +99,11 @@ extension Sketch {
     ///
     /// - Parameters:
     ///   - context: The construction context that registered `hostPlane`.
-    ///   - graph: A TopologyGraph against which to resolve the host plane's recipe.
+    ///   - graph: A BRepGraph against which to resolve the host plane's recipe.
     /// - Returns: A closed Wire on the resolved plane, or nil if the host plane
     ///   fails to resolve or no profile elements exist.
     public func buildProfile(in context: ConstructionContext,
-                             graph: TopologyGraph) -> Wire? {
+                             graph: BRepGraph) -> Wire? {
         let profileElements = elements.filter { !$0.isConstruction }
         guard !profileElements.isEmpty else { return nil }
 

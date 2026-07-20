@@ -1105,7 +1105,7 @@ public func copy() -> Polygon2D?
 
 ## Triangulation
 
-`Triangulation` wraps `Poly_Triangulation` — a 3D mesh defined by node positions and triangle vertex indices. Used as input to `TopologyGraph.createTriangulationRep(_:)` for populating the cached mesh tier of a graph. Triangle indices are 0-based on the Swift boundary; the bridge converts to OCCT's 1-based representation internally.
+`Triangulation` wraps `Poly_Triangulation` — a 3D mesh defined by node positions and triangle vertex indices. Used as input to `BRepGraph.createTriangulationRep(_:)` for populating the cached mesh tier of a graph. Triangle indices are 0-based on the Swift boundary; the bridge converts to OCCT's 1-based representation internally.
 
 ### `Triangulation.create(nodes:triangles:)`
 

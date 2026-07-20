@@ -4964,7 +4964,7 @@ public struct ShapeHistoryRecord: Sendable {
 /// selection IDs across boolean / split mutations (e.g. OCCTMCP's
 /// `remap_selection`, parametric editors that want feature replay).
 public final class ShapeHistoryRef: @unchecked Sendable {
-    // internal, not fileprivate: TopologyGraph.add(_:absorbing:inputRoots:operationName:)
+    // internal, not fileprivate: BRepGraph.add(_:absorbing:inputRoots:operationName:)
     // in BRepGraph.swift needs it to synthesize a BRepTools_History (issue #290).
     let handle: OCCTBooleanHistoryRef
 
@@ -12305,7 +12305,7 @@ public final class Polygon2D: @unchecked Sendable {
 
 /// A `Poly_Triangulation` — a 3D mesh defined by node positions and triangle vertex indices.
 ///
-/// Used as input to `TopologyGraph.createTriangulationRep(_:)` when populating the cached
+/// Used as input to `BRepGraph.createTriangulationRep(_:)` when populating the cached
 /// mesh tier of a graph (`BRepGraph_MeshCache`). Triangle indices are 0-based on the Swift
 /// boundary; the bridge handles the OCCT 1-based conversion internally.
 public final class Triangulation: @unchecked Sendable {

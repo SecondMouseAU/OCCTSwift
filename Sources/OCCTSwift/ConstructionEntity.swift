@@ -100,10 +100,10 @@ public enum ConstructionResolutionError: Error, Sendable {
     case topology(TopologyResolutionError)
     case notApplicable(String)               // e.g. "face is not planar"
     case degenerate(String)                  // e.g. "parallel planes"
-    case missingGeometry(TopologyGraph.NodeRef)
+    case missingGeometry(BRepGraph.NodeRef)
 }
 
-extension TopologyGraph {
+extension BRepGraph {
     public func resolve(_ plane: ConstructionPlane) -> Result<Placement, ConstructionResolutionError> {
         switch plane {
         case .absolute(let origin, let normal):
@@ -336,7 +336,7 @@ extension TopologyGraph {
 
 // MARK: - childIndices (shared helper, used by .containedIn in TopologyRef and by Phase 2 resolvers)
 
-extension TopologyGraph {
+extension BRepGraph {
     /// Indices of descendant nodes of a given kind from a root node.
     /// Complements the existing `childCount(rootKind:rootIndex:targetKind:)`.
     public func childIndices(rootKind: NodeKind, rootIndex: Int, targetKind: NodeKind) -> [Int] {

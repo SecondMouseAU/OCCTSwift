@@ -78,7 +78,7 @@ struct ConstructionContextTests {
     @Test("Resolve entities against a graph")
     func resolveAgainstGraph() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let ctx = ConstructionContext()
@@ -93,7 +93,7 @@ struct ConstructionContextTests {
     @Test("allBroken detects unregistered references")
     func allBrokenDetection() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let ctx = ConstructionContext()
@@ -136,7 +136,7 @@ struct SketchBuildProfileTests {
     @Test("Profile excludes construction elements")
     func excludesConstruction() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let ctx = ConstructionContext()
@@ -158,7 +158,7 @@ struct SketchBuildProfileTests {
     @Test("buildProfile returns nil if no profile elements present")
     func emptyProfileNil() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let ctx = ConstructionContext()
@@ -172,7 +172,7 @@ struct SketchBuildProfileTests {
     @Test("buildProfile returns nil when host plane is unresolvable")
     func brokenHostPlane() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let ctx = ConstructionContext()
@@ -244,7 +244,7 @@ struct AngleHelperTests {
     @Test("ConstructionAxis angle between resolved axes")
     func constructionAxisAngle() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let xAxis = ConstructionAxis.absolute(origin: .zero, direction: SIMD3(1, 0, 0))
@@ -257,7 +257,7 @@ struct AngleHelperTests {
     @Test("ConstructionPlane angle between normals")
     func constructionPlaneAngle() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let xy = ConstructionPlane.absolute(origin: .zero, normal: SIMD3(0, 0, 1))
@@ -275,16 +275,16 @@ struct MultiLeafCreatedByTests {
     @Test("leafOccurrence picks among split descendants")
     func leafOccurrencePicksNth() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
         // Create → op1, then split into two leaves via op2.
-        let seed = TopologyGraph.NodeRef(kind: .face, index: 1)
-        let leaf1 = TopologyGraph.NodeRef(kind: .face, index: 11)
-        let leaf2 = TopologyGraph.NodeRef(kind: .face, index: 22)
+        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+        let leaf1 = BRepGraph.NodeRef(kind: .face, index: 11)
+        let leaf2 = BRepGraph.NodeRef(kind: .face, index: 22)
         graph.recordHistory(operationName: "Op1", original: .sentinel, replacements: [seed])
         graph.recordHistory(operationName: "Op2", original: seed, replacements: [leaf1, leaf2])
 
@@ -303,14 +303,14 @@ struct MultiLeafCreatedByTests {
     @Test("currentForms returns both leaves of a split")
     func currentFormsReturnsAll() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
-        let seed = TopologyGraph.NodeRef(kind: .edge, index: 3)
-        let a = TopologyGraph.NodeRef(kind: .edge, index: 30)
-        let b = TopologyGraph.NodeRef(kind: .edge, index: 31)
+        let seed = BRepGraph.NodeRef(kind: .edge, index: 3)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 30)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 31)
         graph.recordHistory(operationName: "Split", original: seed, replacements: [a, b])
         let leaves = Set(graph.currentForms(of: seed))
         #expect(leaves.isSuperset(of: [a, b]))
@@ -319,13 +319,13 @@ struct MultiLeafCreatedByTests {
     @Test("leafOccurrence: nil returns seed without forward-walk")
     func leafOccurrenceNil() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
-        let seed = TopologyGraph.NodeRef(kind: .face, index: 1)
-        let leaf = TopologyGraph.NodeRef(kind: .face, index: 11)
+        let seed = BRepGraph.NodeRef(kind: .face, index: 1)
+        let leaf = BRepGraph.NodeRef(kind: .face, index: 11)
         graph.recordHistory(operationName: "Op", original: .sentinel, replacements: [seed])
         graph.recordHistory(operationName: "Mod", original: seed, replacements: [leaf])
         let result = graph.resolve(.createdBy(operationName: "Op", kind: .face, leafOccurrence: nil))
@@ -356,7 +356,7 @@ struct ConstructionLayerTests {
     func materializeAll() {
         guard let doc = Document.create(),
               let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("setup nil"); return
         }
         let ctx = doc.constructionContext
