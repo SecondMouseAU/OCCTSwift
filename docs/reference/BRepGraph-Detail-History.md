@@ -476,6 +476,34 @@ that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 > faces, because `FindDerived` unions Modified and Generated descendants transitively. When you want
 > the faces a face became, filter on `.kind == .face`.
 
+#### Chaining multiple operations
+
+`inputRoots` is not limited to the graph's own top-level root — pass any `NodeRef` already in the
+graph, including one you just got back from a prior `add(_:absorbing:...)` call, to chain a second
+`*WithFullHistory` op onto the first op's live output ([#336](https://github.com/SecondMouseAU/OCCTSwift/issues/336)):
+
+```swift
+let (out1, hist1) = base.subtractedWithFullHistory(tool1)!
+graph.add(out1, absorbing: hist1, inputRoots: [root], operationName: "hop1")
+
+// Drill down to a trackable (solid) root for the next hop — a boolean result
+// is always a Compound wrapping its solid(s).
+let out1Solid = out1.subShapes(ofType: .solid).first!
+let root1Raw = graph.findNode(for: out1Solid)!
+let root1 = NodeRef(kind: root1Raw.kind, index: root1Raw.index)
+
+let (out2, hist2) = out1.subtractedWithFullHistory(tool2)!
+graph.add(out2, absorbing: hist2, inputRoots: [root1], operationName: "hop2")
+```
+
+> **Zero absorbed records means the tool didn't touch anything — check the geometry, not the API.**
+> `add(_:absorbing:...)` absorbs whatever the operation's own `BRepTools_History` reports; if a tool's
+> bounding box doesn't overlap the shape it's cutting, that history is legitimately empty. This is the
+> whole story behind #336: `Shape.box(width:height:depth:)` is centered at the origin (see its doc
+> comment), not corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)` — a tool built from it and
+> translated as if the box's corner were at the origin can end up nowhere near the shape you meant to
+> cut. Compare `out1.volume` / `out2.volume` (or bounding boxes) before suspecting the absorb path.
+
 ### `historyIsDeleted(_:)`
 
 True if a recorded operation consumed `node`, leaving it no image in the result.

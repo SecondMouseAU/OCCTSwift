@@ -7,13 +7,40 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.1
+## Current: v1.15.2
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.2 (July 2026): docs + tests — chaining `*WithFullHistory` ops across a `BRepGraph`, retract the #336 "absorbs zero records" report (#336)
+
+**Not a bug — investigated and retracted.** #336 reported that a second `*WithFullHistory` boolean op
+chained onto a prior op's live output absorbed zero history records into `add(_:absorbing:inputRoots:
+operationName:)`. Verified two independent ways: probing the raw `ShapeHistoryRef` directly against the
+first op's output faces (bypassing the graph and `CollectHistoryInputs`/`Absorb` entirely) showed the
+same zero records, and `out1.volume == out2.volume` confirmed the second cut changed nothing
+geometrically. **Root cause: the reporter's tool placement, not the absorb path.**
+`Shape.box(width:height:depth:)` is centered at the origin (documented on the API itself), not
+corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)`. The repro's first "corner" tool landed
+fully *inside* the box (an interior-cavity cut) and its second "opposite corner" tool landed entirely
+*outside* the box's actual bounds — the two shapes' bounding boxes don't even overlap — so the second
+cut was a genuine geometric no-op. Zero absorbed records was the correct answer.
+
+**Real gap found and closed: test coverage.** No existing test chained two `*WithFullHistory` ops
+end-to-end (second op fed from the first op's live, `Compound`-wrapped output) or passed a non-root
+`NodeRef` as `inputRoots` — every `GraphHistoryAbsorbTests` case only did a single hop rooted at the
+graph's own top-level node. New `Issue336ChainedHistoryTests` (`OCCTBRepGraphTests`) covers both: a
+genuine two-hop chain (opposite real corners) absorbing records at each hop, and a permanent regression
+guard for the reporter's exact non-intersecting geometry asserting the zero-record result stays correct.
+
+- **Docs:** `docs/reference/BRepGraph-Detail-History.md` gains a "Chaining multiple operations" section
+  with a runnable multi-hop snippet and the box-centering gotcha, right where `add(_:absorbing:...)` is
+  documented.
+- Docs only, no code or binary change — reuses the v1.15.1 xcframework (the binaryTarget URL is
+  unchanged).
 
 ### v1.15.1 (July 2026) — fix: `isSelfIntersecting(hardTimeout:)` can now actually interrupt a stuck self-interference search (#319)
 
