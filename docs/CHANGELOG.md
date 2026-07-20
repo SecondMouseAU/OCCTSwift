@@ -7,13 +7,26 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.0
+## Current: v1.15.1
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.1 (July 2026) — fix: `isSelfIntersecting(hardTimeout:)` can now actually interrupt a stuck self-interference search (#319)
+
+**Root cause — two compounding defects** in `BOPAlgo_ArgumentAnalyzer`'s self-interference phase (`BOPAlgo_CheckerSI::CheckFaceSelfIntersection` → `IntTools_FaceFace::Perform` → `Intf_Interference::Insert`), found while independently verifying a reproducer contributed against [OCCTReconstruct#295](https://github.com/SecondMouseAU/OCCTReconstruct/issues/295): a pathological artifact ran 619s+ of CPU against a 30s `hardTimeout:` deadline and never returned.
+
+1. `Intf_Interference::Insert` compares points between the new tangent zone and every existing zone via `Intf_TangentZone::GetPoint(Index)`, called inside a doubly-nested loop. `GetPoint` indexes the zone's backing `NCollection_Sequence` — a linked list with no O(1) random access — so each call walks from the nearest end. Profiling (independently reproduced) attributed ~80% of leaf samples to `NCollection_BaseSequence::Find`. The artifact produces an unboundedly growing *number* of distinct tangent zones, not one giant merging zone, so this alone doesn't bound wall-clock time — it just makes the per-comparison cost O(1) instead of O(n).
+2. The self-interference phase never polled its cooperative progress indicator anywhere *inside* a single face's check — only between whole-face checks, which is not where the artifact gets stuck.
+
+**Fix — both layers.** `Intf_TangentZone::Points()` builds and caches a true `NCollection_Array1` per zone in one linear pass on first use (invalidated by any mutation); `Insert()` indexes through it instead of calling `GetPoint` in the nested loop. `Intf_Interference::SetBreaker` (thread-local, RAII-scoped via `Intf_InterferenceBreakerScope`) lets `Insert()` poll a `Message_ProgressScope` every 256 calls and abort by throwing `Standard_Failure`, unwinding the `IntTools_FaceFace`/`Intf_Interference` call stack safely; `BOPAlgo_CheckerSI`'s self-intersect functor wires this up around `IntTools_FaceFace::Perform`, gated on `!myRunParallel` — an exception from an `OSD_Parallel::For` worker thread would risk `std::terminate()`, so the checkpoint is only active single-threaded. Kernel patch carried as `Scripts/patches/0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319.patch`, xcframework rebuilt.
+
+**Verification.** On the linked artifact, a 0.5s deadline now returns in 0.547s and a 30s deadline in 30.1s (vs. 619s+ CPU / never returning on stock p1), correct `HasFaulty()` results at every deadline tested (0.5s/1s/2s/3s/5s/30s), clean across a 10x repeated-run stress test. Zero regression on clean, overlapping, and grid self-intersection sanity cases (byte-identical output). An empty-zone edge case in `Points()` is guarded explicitly (`NCollection_Array1::Resize(1, 0, false)` throws `Standard_RangeError` for an empty range) — caught by a dedicated GTest before it could reach a real caller. New upstream GTests `Intf_TangentZone_Test.cxx`/`Intf_Interference_Test.cxx` pass on Linux/Windows/macOS in OCCT's own CI. Reproducer committed at [`Scripts/repro/319-selfintersection`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/319-selfintersection). Upstreamed as [Open-Cascade-SAS/OCCT#1385](https://github.com/Open-Cascade-SAS/OCCT/issues/1385) (repro) / [OCCT#1386](https://github.com/Open-Cascade-SAS/OCCT/pull/1386) (fix — full CI green on the first submission across clang-format, ASCII check, all 3 platform builds, and GTest); the carried patch retires once it ships in the pinned kernel. **Binary release** — the xcframework changed, so `Package.swift` picks up the new URL + checksum; remote SPM consumers get the rebuilt binary.
+
+- **Docs:** `CLAUDE.md`'s Known OCCT Bugs entry added for #319; `Scripts/patches/README.md` and `okf/references/carried-occt-patches.md` document patch `0010`.
 
 ### v1.15.0 (July 2026) — `TopologyGraph` renamed to `BRepGraph` (closes #333)
 
