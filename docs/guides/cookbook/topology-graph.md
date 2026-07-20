@@ -55,6 +55,10 @@ graph.sameDomainFaces(of: 0)
 
 ## Durable identity (UIDs)
 
+This section is the short tour. For the full model (the three UID flavours, the one-graph-instance
+scope rule and provenance, what preserves identity versus mints a new one, and persistence) see
+[BREP Graph: Durable Identity & UIDs](topology-graph-uids.md).
+
 A node **index** is not stable — it shifts when topology is added or removed. For a reference that
 survives mutation, use a `GraphUID` (`kind` + a never-reused `counter`):
 
@@ -142,6 +146,7 @@ remapping a selection, since an empty `findDerived` is ambiguous on its own.
 
 ## See also
 
+- [BREP Graph: Durable Identity & UIDs](topology-graph-uids.md): the deep dive on `GraphUID` / `GraphRefUID` / `GraphItemUID`, the one-graph-instance scope rule, and persistence.
 - [XCAF Assemblies](xcaf-assemblies.md) — structure *across* shapes (the product tree), vs. structure *within* one shape here.
 - [Healing & Validity](healing-and-validity.md) — `sameDomainFaces` pairs with `unified()` after booleans.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)
