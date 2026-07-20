@@ -4,7 +4,7 @@ title: Carried OCCT source patches
 resource: https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/patches
 tags: [occt, patches, upstream, thread-safety, kernel]
 description: Upstream-bound OCCT fixes OCCTSwift carries in its xcframework build until they ship in an OCCT release.
-timestamp: 2026-07-18
+timestamp: 2026-07-20
 ---
 
 # Carried OCCT source patches
@@ -31,6 +31,7 @@ OCCT's own `.clang-format`, and OCCT's terse comment style — not OCCTSwift's.
 | `0007-ShapeAnalysis_FreeBounds-…-323` | `connectWiresToWiresImpl` invalid-memory read: stale `lwire` when a skipped-loop candidate wire has zero edges ([#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) audit) | [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues/1330) (repro) → [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) (third-party fix PR, open — pinned to a commit) | bundled OCCT includes the fix |
 | `0008-Geom_BSplineCurve-…-323` | `PeriodicNormalization` infinite loop / O(N) hang on far-out-of-range parameters ([#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) audit) | [OCCT#1288](https://github.com/Open-Cascade-SAS/OCCT/issues/1288) (repro) → [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329) (merged, stable) | bundled OCCT moves past that commit |
 | `0009-StepData_StepWriter-…-323` | `AddString` infinite loop writing a single unbroken raw string longer than the 72-char line buffer ([#323](https://github.com/SecondMouseAU/OCCTSwift/issues/323) audit) | [OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318) (open, by an OCCT maintainer — pinned to a commit) | bundled OCCT includes the fix |
+| `0010-Intf_Interference-…-319` | `isSelfIntersecting(hardTimeout:)` couldn't interrupt an unbounded self-interference search — O(n)-per-call tangent-zone point access plus no checkpoint below `CheckFaceSelfIntersection` ([#319](https://github.com/SecondMouseAU/OCCTSwift/issues/319)) | [OCCT#1385](https://github.com/Open-Cascade-SAS/OCCT/issues/1385) (repro) → **[OCCT#1386](https://github.com/Open-Cascade-SAS/OCCT/pull/1386)** (our fix PR, CI green, ready for review) | bundled OCCT includes the fix |
 
 **#298 status:** we ship the fix now via patch `0003` (xcframework rebuilt in v1.12.3);
 we keep carrying it — and building our own xcframework — **until an upstream OCCT
