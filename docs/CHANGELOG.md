@@ -7,13 +7,106 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.10
+## Current: v1.13.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.13.1 (July 2026) — feat: hard-bounded `isSelfIntersecting`, TSan-verified (#319)
+
+Follow-up to #293 (closed, doc-only fix): `isSelfIntersecting(timeout:)` is cooperative — it can only
+return once OCCT polls, and `BOPAlgo_ArgumentAnalyzer`'s self-interference phase has at least one long
+checkpoint-free stretch (`Intf_Interference::Insert`). #319 tracked two tracks; only Track 1 ships here.
+
+**New: `Shape.isSelfIntersecting(hardTimeout:)`** — a genuinely hard wall-clock bound. Runs the check
+on a detached background thread against a `deepCopy()` (independent geometry, the standard pattern for
+concurrent OCCT work), and waits on the calling thread with a real `DispatchSemaphore` deadline. If the
+deadline passes first, returns `nil` immediately and the background computation is **abandoned, not
+cancelled** — it keeps running orphaned until it eventually completes (burned CPU traded for a
+caller-side guarantee, the same trade the #286 mesher-hang caller made). Additive: `timeout:` is
+unchanged, and the two overload labels (`timeout:` / `hardTimeout:`) disambiguate cleanly.
+
+**Prerequisite work, not skipped:** the reason this wasn't done alongside the v1.12.5 doc fix was an
+open question — is `BOPAlgo_ArgumentAnalyzer` safe to run on a worker thread concurrently with
+unrelated OCCT calls on other threads? That shape of concurrency (not OCCT's own internal
+`SetRunParallel`, and not this project's usual "independent shapes on independent threads" pattern
+either, since the *caller* keeps running) had no precedent in this codebase. Investigated with the same
+method that found #298's fillet race: a minimal OCCT build (`FoundationClasses` + `ModelingData` +
+`ModelingAlgorithms` only) with `-fsanitize=thread`, then a stress harness — 60 bursts × 8 threads, half
+running self-intersection checks on independent self-intersecting compounds (36 overlapping boxes,
+genuine interference so `Intf_Interference::Insert` does real work), half running unrelated
+fuse+mesh work concurrently on independent shapes. 480 operations, zero TSan race reports, zero
+wrong-but-plausible results. That's a positive signal on one stress shape and one access pattern, not
+an exhaustive audit — the doc comment says so explicitly, and `isSelfIntersecting(timeout:)` stays the
+default recommendation unless a caller genuinely needs the hard guarantee.
+
+**Track 2 (upstream OCCT report: missing checkpoints + the `Intf_Interference::Insert` quadratic)
+remains blocked** — still needs the minimal, un-thrashed reproducer from a quiet-host OCCTReconstruct
+#208 re-run, which has not happened. No action taken on Track 2 in this release.
+
+New suite `Issue319HardBoundedSelfIntersection` (`OCCTModelingTests`), 3 tests. No kernel change, no
+xcframework rebuild — reuses the v1.12.9 binary.
+
+### v1.13.0 (July 2026) — feat: `*WithFullHistory` for sewing, quilting, and healing (#327)
+
+`add(_:absorbing:inputRoots:operationName:)` (#290) solved "an operation rebuilt the shape, keep my
+selection" for booleans and Tier 2 modification ops — but only when the operation hands back a
+`ShapeHistoryRef`, and the operations at the heart of a mesh-to-B-Rep pipeline (sew → heal → solid)
+returned a bare `Shape?` with nothing to absorb.
+
+**New, all returning `(result: Shape, history: ShapeHistoryRef)`:**
+
+- `Shape.sewWithFullHistory(shapes:tolerance:)`, `.sewnWithFullHistory(with:tolerance:)`,
+  `.sewnWithFullHistory(tolerance:)` (self-sew)
+- `Shape.quiltWithFullHistory(_:)`
+- `Shape.healedWithFullHistory()`
+- `Shape.solidWithFullHistory(from:)`
+
+```swift
+let (shell, history) = Shape.sewWithFullHistory(shapes: faces, tolerance: 1e-6)!
+let record = history.record(of: someInputFace)   // .modified / .generated / .isDeleted
+graph.add(shell, absorbing: history, inputRoots: [root], operationName: "sew")
+```
+
+**Implementation:** none of these algorithms derive from `BRepBuilderAPI_MakeShape`, so the existing
+`OCCTBooleanHistoryAsBRepToolsHistory` template-synthesis path (built for booleans/fillet/chamfer/
+thick-solid) doesn't apply directly. `OCCTBooleanHistory` (the opaque handle behind `ShapeHistoryRef`)
+now optionally carries an already-built `Handle(BRepTools_History)` instead of a retained builder:
+
+- **Sewing** (`sew`/`sewn` both directions) — `BRepBuilderAPI_Sewing` always allocates its own
+  `BRepTools_ReShape` context (confirmed in `occt-src`) and records every vertex/edge merge and
+  small-face removal into it via `Replace()`/`Remove()` during `Perform()`, so
+  `GetContext()->History()` is complete and native — no manual walk needed.
+- **Healing** (`healed`) — `ShapeFix_Shape::Init` auto-creates its `ShapeBuild_ReShape` context, so
+  `Context()->History()` is likewise safe and complete without an explicit `SetContext()` call.
+- **Solid from shell** (`solid(from:)`) — the one case that's the mirror image: `BRepBuilderAPI_MakeSolid`
+  genuinely fits the template-synthesis path, but wrapping an already-closed shell into a solid doesn't
+  modify any sub-shape, so that path would report nothing. The real history source is the
+  `ShapeFix_Solid` orientation-fix pass — and unlike `ShapeFix_Shape`, `ShapeFix_Solid::Init` does
+  **not** auto-create a context (verified in `occt-src`), so the bridge now calls
+  `SetContext(new ShapeBuild_ReShape)` explicitly before `Perform()`.
+- **Quilting** — `BRepTools_Quilt` has no `ReShape` context and no `Modified`/`Generated`/`IsDeleted`,
+  only single-shape `IsCopied()`/`Copy()`, so this is the one manual per-subshape walk in the group.
+
+**Faithfulness question answered:** the issue asked whether sewing's many-to-one merges (two coincident
+input edges becoming one output edge — the *normal* case for sewing, not an edge case) are represented
+cleanly. Confirmed by reading `BRepBuilderAPI_Sewing`'s vertex-merge code directly, and by a regression
+test: **both merged inputs are recorded as Modified into the same output edge** — neither side is
+silently dropped or marked Removed. `Shape.isSame(as:)` verifies the two records' outputs are the
+identical edge.
+
+**Not implemented: `Mesh.toShapeWithFullHistory`.** The issue's own open question floated this as a
+possible answer, and it's the right one: `Mesh.toShape` builds every face from scratch out of raw
+vertex/index arrays — there is no input `TopoDS_Shape` for `ShapeHistoryRef.record(of:)` to be called
+with in the first place, so a `*WithFullHistory` variant would be a hollow stub that always returns
+empty records. Identity for a mesh-to-B-Rep pipeline has to be established *after* the mesh-to-shape
+step, not carried through it.
+
+New suite `SewQuiltHealFullHistoryTests` (`OCCTModelingTests`), 9 tests. No kernel change, no
+xcframework rebuild — reuses the v1.12.9 binary.
 
 ### v1.12.10 (July 2026): docs, BREP graph durable identity and UIDs cookbook
 

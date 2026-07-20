@@ -4783,6 +4783,46 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromDefeature(OCCTShapeRef _Nonn
                                                                 OCCTShapeRef _Nullable * _Nullable outResult);
 
 
+// MARK: - Sewing / quilting / healing with full history (issue #327)
+//
+// Same OCCTBooleanHistoryRef handle as booleans/Tier 2 above, so the Swift
+// ShapeHistoryRef/record(of:)/OCCTBRepGraphAddWithHistory surface is shared
+// unchanged. These algorithms don't derive from BRepBuilderAPI_MakeShape, so
+// the history isn't synthesized from a retained builder — each function below
+// builds a BRepTools_History directly (via BRepTools_ReShape::History() for
+// sewing/healing, or a manual per-subshape walk for quilting) and wraps it.
+
+/// Sew multiple shapes into a connected shell/solid, with full per-input-subshape
+/// history (vertex/edge merges, small-face removal).
+// Note: `shapes` intentionally has no nullability annotation on the pointer
+// itself (matches OCCTShapeSew) — Swift's UnsafeMutableBufferPointer.baseAddress
+// is always Optional, and an unannotated C pointer imports leniently enough to
+// accept it directly without unwrapping at the call site.
+OCCTBooleanHistoryRef _Nullable OCCTShapeSewWithHistory(const OCCTShapeRef* shapes,
+                                                          int32_t count, double tolerance,
+                                                          OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Self-sew (merge disconnected faces within one shape), with full history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeSewSingleWithHistory(OCCTShapeRef _Nonnull shape,
+                                                                 double tolerance,
+                                                                 OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Quilt multiple shapes (faces/shells) into a single shell, with full history.
+/// See OCCTShapeSewWithHistory above for why `shapes` is unannotated.
+OCCTBooleanHistoryRef _Nullable OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes,
+                                                             int32_t count,
+                                                             OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Heal/repair a shape (ShapeFix_Shape), with full history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHealWithHistory(OCCTShapeRef _Nonnull shape,
+                                                            OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Create a solid from a closed shell (BRepBuilderAPI_MakeSolid + ShapeFix_Solid
+/// orientation fix), with full history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef _Nonnull shell,
+                                                                           OCCTShapeRef _Nullable * _Nullable outResult);
+
+
 // MARK: - Thick Solid / Hollowing (v0.37.0)
 
 /// Create a hollowed (thick) solid by removing faces and offsetting inward.

@@ -1968,6 +1968,62 @@ public final class Shape: @unchecked Sendable {
         }
     }
 
+    /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319) —
+    /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
+    /// reaches a checkpoint to poll.
+    ///
+    /// Runs the check on a detached background thread against a `deepCopy()` of this shape
+    /// (independent geometry — the standard pattern for concurrent OCCT work; see
+    /// `docs/thread-safety.md`) and waits on the calling thread with a real deadline. If the
+    /// deadline passes first, this returns `nil` immediately and the background computation is
+    /// **abandoned, not cancelled** — it keeps running orphaned on its own thread until it
+    /// eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock
+    /// guarantee), the same one the #286 mesher-hang caller accepted.
+    ///
+    /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
+    ///   concurrently with unrelated OCCT calls on other threads was verified with a
+    ///   ThreadSanitizer stress test (60 bursts × 8 threads — half running self-intersection
+    ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
+    ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
+    ///   covers one stress shape and one access pattern, not an exhaustive audit of every
+    ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path — prefer
+    ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
+    ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
+    ///
+    /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
+    /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
+    ///   first (indeterminate — the background check may still be running).
+    ///
+    /// ```swift
+    /// // Bound total wall-clock time even on a pathological B-spline solid with no
+    /// // OCCT checkpoints in its self-interference phase.
+    /// switch solid.isSelfIntersecting(hardTimeout: 5) {
+    /// case .some(true):  print("self-intersects")
+    /// case .some(false): print("clean")
+    /// case .none:        print("deadline hit — treat as unknown, not clean")
+    /// }
+    /// ```
+    public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
+        final class SelfIntersectResultBox: @unchecked Sendable {
+            var rawResult: Int32 = -1
+        }
+        let probe = deepCopy() ?? self
+        let box = SelfIntersectResultBox()
+        let semaphore = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.rawResult = OCCTShapeSelfIntersectsBounded(probe.handle, 0)
+            semaphore.signal()
+        }
+        guard semaphore.wait(timeout: .now() + hardTimeout) == .success else {
+            return nil
+        }
+        switch box.rawResult {
+        case 1:  return true
+        case 0:  return false
+        default: return nil
+        }
+    }
+
     // MARK: - Sub-Shape Extraction
 
     /// Get the number of sub-shapes of a given topological type.
@@ -5077,6 +5133,95 @@ extension Shape {
                                             &resultRef)
         }
         guard let h, let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+}
+
+// MARK: - Sewing / quilting / healing with full history (issue #327)
+
+extension Shape {
+    /// Sew multiple shapes into a connected shell or solid, with full
+    /// per-input-subshape history (vertex/edge merges, small-face removal).
+    ///
+    /// Where two coincident inputs merge into one shared output (the common
+    /// case for sewing), both inputs show up as `modified` into that same
+    /// output sub-shape — there is no ambiguity between which side "won".
+    ///
+    /// - Returns: `(result, history)` on success; nil on failure.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let faces = [topFace, bottomFace, frontFace, backFace, leftFace, rightFace]
+    /// guard let (solid, history) = Shape.sewWithFullHistory(shapes: faces, tolerance: 1e-6) else { return }
+    /// let record = history.record(of: topFace)
+    /// print(record.modified, record.isDeleted)
+    /// ```
+    public static func sewWithFullHistory(shapes: [Shape], tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard !shapes.isEmpty else { return nil }
+        var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        var resultRef: OCCTShapeRef?
+        let h = shapeHandles.withUnsafeMutableBufferPointer { buffer in
+            OCCTShapeSewWithHistory(buffer.baseAddress, Int32(shapes.count), tolerance, &resultRef)
+        }
+        guard let h, let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Sew this shape with another, with full per-input-subshape history.
+    public func sewnWithFullHistory(with other: Shape, tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        Shape.sewWithFullHistory(shapes: [self, other], tolerance: tolerance)
+    }
+
+    /// Sew disconnected faces within this shape together, with full history.
+    public func sewnWithFullHistory(tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeSewSingleWithHistory(handle, tolerance, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Quilt multiple shapes (faces/shells) into a single shell, with full
+    /// per-input-subshape history.
+    public static func quiltWithFullHistory(_ shapes: [Shape])
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard !shapes.isEmpty else { return nil }
+        var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Attempt to repair/heal the shape, with full per-input-subshape history.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// guard let (healed, history) = brokenShape.healedWithFullHistory() else { return }
+    /// let record = history.record(of: someFace)
+    /// ```
+    public func healedWithFullHistory() -> (result: Shape, history: ShapeHistoryRef)? {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHealWithHistory(handle, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Create a solid from a closed shell, with full per-input-subshape
+    /// history. History only reflects the orientation-fix pass — wrapping an
+    /// already-closed shell into a solid does not itself modify any sub-shape.
+    public static func solidWithFullHistory(from shell: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeCreateSolidFromShellWithHistory(shell.handle, &resultRef),
+              let resultRef else { return nil }
         return (Shape(handle: resultRef), ShapeHistoryRef(h))
     }
 }

@@ -37,3 +37,39 @@ struct Issue208SelfIntersection {
         #expect(r == nil || r == true)
     }
 }
+
+// #319: a genuinely hard-bounded variant, following up on #293 (which documented that
+// isSelfIntersecting(timeout:) is cooperative-only). Runs the check on a detached worker
+// thread against a deepCopy(), with the calling thread enforcing the real deadline.
+@Suite("Issue #319 — hard-bounded self-intersection check")
+struct Issue319HardBoundedSelfIntersection {
+
+    @Test("a clean solid reports not self-intersecting")
+    func cleanSolidIsClean() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { #expect(Bool(false)); return }
+        #expect(box.isSelfIntersecting(hardTimeout: 30) == false)
+    }
+
+    @Test("two overlapping solids in one compound are detected as self-intersecting")
+    func overlappingCompoundIsSelfIntersecting() {
+        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+        #expect(compound.isSelfIntersecting(hardTimeout: 30) == true)
+    }
+
+    @Test("a near-zero deadline returns near that deadline, not after the full check — the property timeout: cannot offer")
+    func deadlineIsActuallyHard() {
+        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10),
+              let compound = Shape.compound([a, b]) else { #expect(Bool(false)); return }
+        let start = Date()
+        let r = compound.isSelfIntersecting(hardTimeout: 0.001)
+        let elapsed = Date().timeIntervalSince(start)
+        // Either it found a fault before the deadline (true) or the deadline won (nil) —
+        // both are acceptable outcomes. What matters is the CALLER'S wall-clock time, which
+        // must track the deadline rather than the check's full (potentially unbounded) duration.
+        #expect(r == nil || r == true)
+        #expect(elapsed < 2.0, "hard deadline should bound the caller's wall-clock time, got \(elapsed)s")
+    }
+}
