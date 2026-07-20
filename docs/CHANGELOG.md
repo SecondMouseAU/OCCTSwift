@@ -7,13 +7,23 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.12.9
+## Current: v1.12.10
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.12.10 (July 2026): docs, BREP graph durable identity and UIDs cookbook
+
+Docs only, no code change. Reuses the v1.12.9 binary (the binaryTarget URL is unchanged). Adds a new
+cookbook, `docs/guides/cookbook/topology-graph-uids.md`, covering how UIDs are managed in the BREP
+graph: the three durable-ID flavours (`GraphUID` / `GraphRefUID` / `GraphItemUID`), minting and
+resolving, the one-graph-instance scope rule and `instanceID` / `graphID` provenance (#295), what
+preserves identity (`copy` / `translated` / `compact`) versus mints a new one (`copyFace` / rebuild),
+the deprecated always-1 `generation` counter, persistence, and how UIDs relate to history absorb
+(#290). Cross-linked with the existing Topology Graph cookbook.
 
 ### v1.12.9 (July 2026) — carry three more upstream OCCT crash/hang fixes (#323)
 
