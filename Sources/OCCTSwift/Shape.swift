@@ -5226,6 +5226,111 @@ extension Shape {
     }
 }
 
+// MARK: - Transforms / patterns with full history (issue #331)
+
+extension Shape {
+    /// Translate the shape, with full per-input-subshape history.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// guard let (moved, history) = body.translatedWithFullHistory(by: SIMD3(10, 0, 0)) else { return }
+    /// let record = history.record(of: someFace)
+    /// ```
+    public func translatedWithFullHistory(by offset: SIMD3<Double>)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromTranslate(handle, offset.x, offset.y, offset.z, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Rotate around an axis through the origin, with full per-input-subshape history.
+    public func rotatedWithFullHistory(axis: SIMD3<Double>, angle: Double)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromRotate(handle, axis.x, axis.y, axis.z, angle, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Scale uniformly from the origin, with full per-input-subshape history.
+    public func scaledWithFullHistory(by factor: Double)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromScale(handle, factor, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Mirror across a plane, with full per-input-subshape history.
+    public func mirroredWithFullHistory(planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .zero)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromMirror(
+            handle,
+            planeOrigin.x, planeOrigin.y, planeOrigin.z,
+            planeNormal.x, planeNormal.y, planeNormal.z,
+            &resultRef
+        ), let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Create a linear pattern of the shape, with full history.
+    ///
+    /// The pattern is N:1 (deterministic): each instance's sub-shapes
+    /// correspond to the source's by construction, so a source sub-shape's
+    /// `history.record(of:).modified` reports all `count` corresponding
+    /// instance sub-shapes — one per copy, including the original at index 0.
+    ///
+    /// - Returns: `(result, history)` where `result` is a compound of all
+    ///   copies, same as ``linearPattern(direction:spacing:count:)``.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let hole = Shape.cylinder(radius: 3, height: 10)
+    /// guard let (row, history) = hole.linearPatternWithFullHistory(
+    ///     direction: SIMD3(20, 0, 0), spacing: 20, count: 5
+    /// ) else { return }
+    /// let copies = history.record(of: someHoleFace).modified // 5 corresponding faces
+    /// ```
+    public func linearPatternWithFullHistory(direction: SIMD3<Double>, spacing: Double, count: Int)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromLinearPattern(
+            handle, direction.x, direction.y, direction.z, spacing, Int32(count), &resultRef
+        ), let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Create a circular pattern of the shape, with full history.
+    ///
+    /// Same N:1 semantics as ``linearPatternWithFullHistory(direction:spacing:count:)``
+    /// — see ``circularPattern(axisPoint:axisDirection:count:angle:)`` for what
+    /// "duplicates the whole body" means for feature-cut use cases.
+    ///
+    /// - Returns: `(result, history)` where `result` is a compound of all copies.
+    public func circularPatternWithFullHistory(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                                                count: Int, angle: Double = 0)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHistoryFromCircularPattern(
+            handle,
+            axisPoint.x, axisPoint.y, axisPoint.z,
+            axisDirection.x, axisDirection.y, axisDirection.z,
+            Int32(count), angle, &resultRef
+        ), let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+}
+
 // MARK: - Thick Solid / Hollowing (v0.37.0)
 
 extension Shape {

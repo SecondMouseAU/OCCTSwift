@@ -7,13 +7,63 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.13.1
+## Current: v1.14.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.14.0 (July 2026) — feat: `*WithFullHistory` parity for translate/rotate/scale/mirror/patterns (#331)
+
+Extends the #290 `ShapeHistoryRef`/`add(_:absorbing:)` pattern — already shipped for booleans, fillet/
+chamfer/shell/defeature (#165), and sew/quilt/heal (#327, v1.13.0) — to the last gap: transforms and
+patterns. Consumers doing incremental persistent-identity tracking (OCCTMCP #91/#93) previously had to
+fall back to a generation reset after any of these ops, losing continuity for `GraphUID`s minted before
+the transform.
+
+**New, all returning `(result: Shape, history: ShapeHistoryRef)`:**
+
+- `Shape.translatedWithFullHistory(by:)`
+- `Shape.rotatedWithFullHistory(axis:angle:)`
+- `Shape.scaledWithFullHistory(by:)`
+- `Shape.mirroredWithFullHistory(planeNormal:planeOrigin:)`
+- `Shape.linearPatternWithFullHistory(direction:spacing:count:)`
+- `Shape.circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)`
+
+```swift
+let hole = Shape.cylinder(radius: 3, height: 10)!
+let (row, history) = hole.linearPatternWithFullHistory(direction: SIMD3(20, 0, 0), spacing: 20, count: 5)!
+let copies = history.record(of: someHoleFace).modified   // 5 corresponding instance faces
+graph.add(row, absorbing: history, inputRoots: [root], operationName: "linearPattern")
+```
+
+**Implementation — two different shapes, unlike the #327 batch:**
+
+- **translate/rotate/scale/mirror** all bottom out in `BRepBuilderAPI_Transform`, which (unlike
+  sewing/healing) genuinely derives from `BRepBuilderAPI_MakeShape` — so these reuse the existing
+  `OCCTBooleanHistoryAsBRepToolsHistory` retained-builder/args synthesis path unchanged, the same one
+  fillet/chamfer/defeature use. The plain (non-history) transform functions already construct
+  `BRepBuilderAPI_Transform` with `theCopyGeom = true`, which forces
+  `BRepBuilderAPI_Transform::Perform` down its `myUseModif = true` branch unconditionally (confirmed in
+  `BRepBuilderAPI_Transform.cxx`) — so `Modified()`/`Generated()` always come from the real
+  `BRepTools_Modifier`, never the "same TShape, just relocated" short-circuit that would otherwise
+  report nothing.
+- **Patterns are N:1**, not 1:1, so the single-builder synthesis path doesn't apply: each pattern
+  instance is an independent `BRepBuilderAPI_Transform` run against the same source shape. History is
+  built manually — one shared `BRepTools_History`, with every instance's `Modified`/`Generated` results
+  for each *original* source sub-shape folded in via `AddModified`/`AddGenerated` (confirmed these
+  append rather than replace, in `BRepTools_History.hxx`) — so a source sub-shape's history record
+  reports all `count` corresponding instance sub-shapes, one per copy including the identity-transformed
+  original at index 0.
+
+New suite `TransformPatternFullHistoryTests` (`OCCTModelingTests`), 10 tests, including two graph-absorb
+integration tests (one 1:1 transform, one N:1 pattern) proving both history shapes flow through
+`OCCTBRepGraphAddWithHistory` correctly, and two zero-length-direction regression tests for the
+exception-safety fix caught in review (`gp_Vec::Normalize`/`gp_Dir`'s constructor throw on a zero
+vector; the pattern wrappers now guard that inside their own try/catch instead of leaving it to the
+caller). No kernel change, no xcframework rebuild — reuses the v1.12.9 binary.
 
 ### v1.13.1 (July 2026) — feat: hard-bounded `isSelfIntersecting`, TSan-verified (#319)
 
