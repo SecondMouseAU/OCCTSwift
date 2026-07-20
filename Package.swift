@@ -44,8 +44,8 @@ let occtTarget: Target = useLocalBinary
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.12.9/OCCT.xcframework.zip",
-        checksum: "52282c923321fbef5d6ff09ad2a3f4e664da2a37a236b0d1c4de48cbc73f00bb"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.1/OCCT.xcframework.zip",
+        checksum: "b1c967f90ea45a74ba97893ce78297d8c2dee516024f9c79f80b16b388ece2c1"
     )
 
 let package = Package(
