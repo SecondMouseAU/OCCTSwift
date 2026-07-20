@@ -1688,6 +1688,7 @@ int32_t OCCTShapeFuseWithHistory(OCCTShapeRef shape1, OCCTShapeRef shape2,
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <BRepBuilderAPI_MakeShape.hxx>
 #include <TopoDS_Iterator.hxx>
+#include <functional>
 #include <memory>
 
 struct OCCTBooleanHistory {
@@ -3085,6 +3086,179 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shel
         if (hist.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
         return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+// MARK: - Transform / pattern with full history (issue #331)
+//
+// translate/rotate/scale/mirror use BRepBuilderAPI_Transform, which (unlike
+// sewing/healing above) genuinely derives from BRepBuilderAPI_MakeShape — same
+// op/args synthesis path as fillet/chamfer/defeature. theCopyGeom=true (the
+// existing plain OCCTShapeTranslate/Rotate/Scale/Mirror already pass this) makes
+// BRepBuilderAPI_Transform::Perform take the myUseModif=true branch unconditionally
+// (BRepBuilderAPI_Transform.cxx), so Modified()/Generated() always come from the
+// real BRepTools_Modifier rather than the "just relocated, nothing modified"
+// short-circuit used when reusing the same TShape with a new Location.
+//
+// Patterns (linear/circular) are N:1: each instance is an independent
+// BRepBuilderAPI_Transform run on the same source shape, so history there can't
+// use the single-op synthesis path. Instead each instance's Modified/Generated
+// results are added onto one shared BRepTools_History keyed by the ORIGINAL
+// source sub-shape (AddModified/AddGenerated append per call, they don't
+// replace — confirmed in BRepTools_History.hxx), so a source sub-shape maps to
+// all N corresponding pattern-instance sub-shapes.
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromTranslate(OCCTShapeRef shape, double dx, double dy, double dz,
+                                                     OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        gp_Trsf transform;
+        transform.SetTranslation(gp_Vec(dx, dy, dz));
+        std::unique_ptr<BRepBuilderAPI_Transform> op(
+            new BRepBuilderAPI_Transform(shape->shape, transform, Standard_True));
+        if (!op->IsDone()) return nullptr;
+        TopoDS_Shape result = op->Shape();
+        if (result.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
+    } catch (...) { return nullptr; }
+}
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromRotate(OCCTShapeRef shape, double axisX, double axisY, double axisZ,
+                                                  double angle, OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        gp_Ax1 axis(gp_Pnt(0, 0, 0), gp_Dir(axisX, axisY, axisZ));
+        gp_Trsf transform;
+        transform.SetRotation(axis, angle);
+        std::unique_ptr<BRepBuilderAPI_Transform> op(
+            new BRepBuilderAPI_Transform(shape->shape, transform, Standard_True));
+        if (!op->IsDone()) return nullptr;
+        TopoDS_Shape result = op->Shape();
+        if (result.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
+    } catch (...) { return nullptr; }
+}
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromScale(OCCTShapeRef shape, double factor, OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        gp_Trsf transform;
+        transform.SetScale(gp_Pnt(0, 0, 0), factor);
+        std::unique_ptr<BRepBuilderAPI_Transform> op(
+            new BRepBuilderAPI_Transform(shape->shape, transform, Standard_True));
+        if (!op->IsDone()) return nullptr;
+        TopoDS_Shape result = op->Shape();
+        if (result.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
+    } catch (...) { return nullptr; }
+}
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromMirror(OCCTShapeRef shape,
+                                                  double originX, double originY, double originZ,
+                                                  double normalX, double normalY, double normalZ,
+                                                  OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        gp_Ax2 mirrorPlane(gp_Pnt(originX, originY, originZ), gp_Dir(normalX, normalY, normalZ));
+        gp_Trsf transform;
+        transform.SetMirror(mirrorPlane);
+        std::unique_ptr<BRepBuilderAPI_Transform> op(
+            new BRepBuilderAPI_Transform(shape->shape, transform, Standard_True));
+        if (!op->IsDone()) return nullptr;
+        TopoDS_Shape result = op->Shape();
+        if (result.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
+    } catch (...) { return nullptr; }
+}
+
+// Shared by both pattern history functions: apply `count` transforms (the i-th
+// given by `trsfForIndex`) to `shape`, add each instance to a compound, and fold
+// each instance's Modified/Generated for the original sub-shapes into one
+// BRepTools_History. Returns the compound in `outResult` and the history handle,
+// or nullptr if no instance succeeded.
+static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef shape, int32_t count,
+                                                 const std::function<gp_Trsf(int32_t)>& trsfForIndex,
+                                                 OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape || count < 1) return nullptr;
+    try {
+        BRep_Builder builder;
+        TopoDS_Compound compound;
+        builder.MakeCompound(compound);
+
+        TopTools_IndexedMapOfShape subMap;
+        TopExp::MapShapes(shape->shape, subMap);
+
+        Handle(BRepTools_History) hist = new BRepTools_History();
+        bool anyDone = false;
+        for (int32_t i = 0; i < count; i++) {
+            BRepBuilderAPI_Transform xform(shape->shape, trsfForIndex(i), Standard_True);
+            if (!xform.IsDone()) continue;
+            anyDone = true;
+            builder.Add(compound, xform.Shape());
+
+            for (int32_t j = 1; j <= subMap.Extent(); j++) {
+                const TopoDS_Shape& sub = subMap(j);
+                if (!BRepTools_History::IsSupportedType(sub)) continue;
+                for (TopTools_ListIteratorOfListOfShape it(xform.Modified(sub)); it.More(); it.Next()) {
+                    hist->AddModified(sub, it.Value());
+                }
+                for (TopTools_ListIteratorOfListOfShape it(xform.Generated(sub)); it.More(); it.Next()) {
+                    hist->AddGenerated(sub, it.Value());
+                }
+            }
+        }
+        if (!anyDone) return nullptr;
+
+        if (outResult) *outResult = new OCCTShape(compound);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromLinearPattern(OCCTShapeRef shape,
+                                                         double dirX, double dirY, double dirZ,
+                                                         double spacing, int32_t count,
+                                                         OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    try {
+        // gp_Vec::Normalize throws on a zero-length vector — guard it here (the
+        // plain OCCTShapeLinearPattern does the same inside its own try/catch);
+        // occtPatternHistory's try/catch only covers what happens after this call.
+        gp_Vec direction(dirX, dirY, dirZ);
+        direction.Normalize();
+        return occtPatternHistory(shape, count, [&](int32_t i) {
+            gp_Trsf transform;
+            transform.SetTranslation(direction * (spacing * i));
+            return transform;
+        }, outResult);
+    } catch (...) { return nullptr; }
+}
+
+OCCTBooleanHistoryRef OCCTShapeHistoryFromCircularPattern(OCCTShapeRef shape,
+                                                           double axisX, double axisY, double axisZ,
+                                                           double axisDirX, double axisDirY, double axisDirZ,
+                                                           int32_t count, double angle,
+                                                           OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    try {
+        // gp_Dir's constructor throws on a zero-length vector — same guarding
+        // rationale as OCCTShapeHistoryFromLinearPattern above.
+        gp_Ax1 axis(gp_Pnt(axisX, axisY, axisZ), gp_Dir(axisDirX, axisDirY, axisDirZ));
+        double totalAngle = (angle == 0) ? (2.0 * M_PI) : angle;
+        double stepAngle = (count > 0) ? (totalAngle / count) : 0.0;
+        return occtPatternHistory(shape, count, [&](int32_t i) {
+            gp_Trsf transform;
+            transform.SetRotation(axis, stepAngle * i);
+            return transform;
+        }, outResult);
     } catch (...) { return nullptr; }
 }
 

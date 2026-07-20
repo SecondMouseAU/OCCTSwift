@@ -2141,3 +2141,145 @@ History reports each removed face as deleted and surrounding faces as modified.
   ```swift
   if let (defeatured, history) = cad.defeaturedWithFullHistory(faces: [12, 13]) { }
   ```
+
+---
+
+### `translatedWithFullHistory(by:)`
+
+Translate the shape with full per-input-subshape history.
+
+```swift
+public func translatedWithFullHistory(by offset: SIMD3<Double>)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Parameters:** `offset` — translation vector.
+- **Returns:** Result shape and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromTranslate`).
+- **Example:**
+  ```swift
+  if let (moved, history) = box.translatedWithFullHistory(by: SIMD3(5, 0, 0)) {
+      let record = history.record(of: someFace)   // exactly one modified face
+  }
+  ```
+
+---
+
+### `rotatedWithFullHistory(axis:angle:)`
+
+Rotate around an axis through the origin with full per-input-subshape history.
+
+```swift
+public func rotatedWithFullHistory(axis: SIMD3<Double>, angle: Double)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Parameters:**
+  - `axis` — rotation axis direction (through the origin).
+  - `angle` — rotation angle in radians.
+- **Returns:** Result shape and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromRotate`).
+- **Example:**
+  ```swift
+  if let (tilted, history) = box.rotatedWithFullHistory(axis: SIMD3(0, 0, 1), angle: .pi / 4) { }
+  ```
+
+---
+
+### `scaledWithFullHistory(by:)`
+
+Scale uniformly from the origin with full per-input-subshape history.
+
+```swift
+public func scaledWithFullHistory(by factor: Double)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Parameters:** `factor` — uniform scale factor.
+- **Returns:** Result shape and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromScale`).
+- **Example:**
+  ```swift
+  if let (big, history) = box.scaledWithFullHistory(by: 2.0) { }
+  ```
+
+---
+
+### `mirroredWithFullHistory(planeNormal:planeOrigin:)`
+
+Mirror across a plane with full per-input-subshape history.
+
+```swift
+public func mirroredWithFullHistory(planeNormal: SIMD3<Double>, planeOrigin: SIMD3<Double> = .zero)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+- **Parameters:**
+  - `planeNormal` — normal of the mirror plane.
+  - `planeOrigin` — a point on the mirror plane (default origin).
+- **Returns:** Result shape and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` (via `OCCTShapeHistoryFromMirror`).
+- **Example:**
+  ```swift
+  if let (reflected, history) = part.mirroredWithFullHistory(planeNormal: SIMD3(0, 1, 0)) { }
+  ```
+
+---
+
+### `linearPatternWithFullHistory(direction:spacing:count:)`
+
+Create a linear pattern of the shape with full history.
+
+```swift
+public func linearPatternWithFullHistory(direction: SIMD3<Double>, spacing: Double, count: Int)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+The pattern is N:1 (deterministic): each instance's sub-shapes correspond to the source's by
+construction. `history.record(of:)` on a source sub-shape reports all `count` corresponding instance
+sub-shapes as `modified` — one per copy, including the identity-transformed original at index 0.
+
+- **Parameters:**
+  - `direction` — pattern direction (normalized internally).
+  - `spacing` — distance between copies.
+  - `count` — number of copies, including the original.
+- **Returns:** Compound of all copies and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` × `count`, folded into one `BRepTools_History` (via
+  `OCCTShapeHistoryFromLinearPattern`).
+- **Example:**
+  ```swift
+  let hole = Shape.cylinder(radius: 3, height: 10)!
+  if let (row, history) = hole.linearPatternWithFullHistory(direction: SIMD3(20, 0, 0), spacing: 20, count: 5) {
+      let copies = history.record(of: someHoleFace).modified   // 5 corresponding faces
+  }
+  ```
+
+---
+
+### `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)`
+
+Create a circular pattern of the shape with full history.
+
+```swift
+public func circularPatternWithFullHistory(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                                            count: Int, angle: Double = 0)
+    -> (result: Shape, history: ShapeHistoryRef)?
+```
+
+Same N:1 semantics as `linearPatternWithFullHistory(direction:spacing:count:)` — see
+`circularPattern(axisPoint:axisDirection:count:angle:)` for what "duplicates the whole body" means for
+feature-cut use cases (drill one hole, pattern the tool, subtract).
+
+- **Parameters:**
+  - `axisPoint` — point on the rotation axis.
+  - `axisDirection` — direction of the rotation axis.
+  - `count` — number of copies, including the original.
+  - `angle` — total angle to span in radians (0 = full circle).
+- **Returns:** Compound of all copies and history, or nil on failure.
+- **OCCT:** `BRepBuilderAPI_Transform` × `count`, folded into one `BRepTools_History` (via
+  `OCCTShapeHistoryFromCircularPattern`).
+- **Example:**
+  ```swift
+  let hole = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(20, 0, 0))!
+  if let (tools, history) = hole.circularPatternWithFullHistory(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 6) { }
+  ```

@@ -4823,6 +4823,51 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeCreateSolidFromShellWithHistory(OCCTSha
                                                                            OCCTShapeRef _Nullable * _Nullable outResult);
 
 
+// MARK: - Transform / pattern with full history (issue #331)
+//
+// Same OCCTBooleanHistoryRef handle as above. translate/rotate/scale/mirror
+// derive their history from a retained BRepBuilderAPI_Transform (same op/args
+// synthesis path as fillet/chamfer/defeature). Patterns (linear/circular) are
+// N:1 — history maps each source sub-shape to all N pattern-instance sub-shapes.
+
+/// Translate by (dx, dy, dz), with retained history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromTranslate(OCCTShapeRef _Nonnull shape,
+                                                                 double dx, double dy, double dz,
+                                                                 OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Rotate around an axis through the origin, with retained history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromRotate(OCCTShapeRef _Nonnull shape,
+                                                              double axisX, double axisY, double axisZ,
+                                                              double angle,
+                                                              OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Scale uniformly from the origin, with retained history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromScale(OCCTShapeRef _Nonnull shape,
+                                                             double factor,
+                                                             OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Mirror across a plane, with retained history.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromMirror(OCCTShapeRef _Nonnull shape,
+                                                              double originX, double originY, double originZ,
+                                                              double normalX, double normalY, double normalZ,
+                                                              OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Linear pattern (N copies along direction), with history mapping each source
+/// sub-shape to all N corresponding pattern-instance sub-shapes.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromLinearPattern(OCCTShapeRef _Nonnull shape,
+                                                                     double dirX, double dirY, double dirZ,
+                                                                     double spacing, int32_t count,
+                                                                     OCCTShapeRef _Nullable * _Nullable outResult);
+
+/// Circular pattern (N copies around an axis), with history mapping each source
+/// sub-shape to all N corresponding pattern-instance sub-shapes.
+OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromCircularPattern(OCCTShapeRef _Nonnull shape,
+                                                                       double axisX, double axisY, double axisZ,
+                                                                       double axisDirX, double axisDirY, double axisDirZ,
+                                                                       int32_t count, double angle,
+                                                                       OCCTShapeRef _Nullable * _Nullable outResult);
+
+
 // MARK: - Thick Solid / Hollowing (v0.37.0)
 
 /// Create a hollowed (thick) solid by removing faces and offsetting inward.
