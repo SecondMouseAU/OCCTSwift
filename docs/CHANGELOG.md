@@ -7,13 +7,48 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.13.0
+## Current: v1.13.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.13.1 (July 2026) — feat: hard-bounded `isSelfIntersecting`, TSan-verified (#319)
+
+Follow-up to #293 (closed, doc-only fix): `isSelfIntersecting(timeout:)` is cooperative — it can only
+return once OCCT polls, and `BOPAlgo_ArgumentAnalyzer`'s self-interference phase has at least one long
+checkpoint-free stretch (`Intf_Interference::Insert`). #319 tracked two tracks; only Track 1 ships here.
+
+**New: `Shape.isSelfIntersecting(hardTimeout:)`** — a genuinely hard wall-clock bound. Runs the check
+on a detached background thread against a `deepCopy()` (independent geometry, the standard pattern for
+concurrent OCCT work), and waits on the calling thread with a real `DispatchSemaphore` deadline. If the
+deadline passes first, returns `nil` immediately and the background computation is **abandoned, not
+cancelled** — it keeps running orphaned until it eventually completes (burned CPU traded for a
+caller-side guarantee, the same trade the #286 mesher-hang caller made). Additive: `timeout:` is
+unchanged, and the two overload labels (`timeout:` / `hardTimeout:`) disambiguate cleanly.
+
+**Prerequisite work, not skipped:** the reason this wasn't done alongside the v1.12.5 doc fix was an
+open question — is `BOPAlgo_ArgumentAnalyzer` safe to run on a worker thread concurrently with
+unrelated OCCT calls on other threads? That shape of concurrency (not OCCT's own internal
+`SetRunParallel`, and not this project's usual "independent shapes on independent threads" pattern
+either, since the *caller* keeps running) had no precedent in this codebase. Investigated with the same
+method that found #298's fillet race: a minimal OCCT build (`FoundationClasses` + `ModelingData` +
+`ModelingAlgorithms` only) with `-fsanitize=thread`, then a stress harness — 60 bursts × 8 threads, half
+running self-intersection checks on independent self-intersecting compounds (36 overlapping boxes,
+genuine interference so `Intf_Interference::Insert` does real work), half running unrelated
+fuse+mesh work concurrently on independent shapes. 480 operations, zero TSan race reports, zero
+wrong-but-plausible results. That's a positive signal on one stress shape and one access pattern, not
+an exhaustive audit — the doc comment says so explicitly, and `isSelfIntersecting(timeout:)` stays the
+default recommendation unless a caller genuinely needs the hard guarantee.
+
+**Track 2 (upstream OCCT report: missing checkpoints + the `Intf_Interference::Insert` quadratic)
+remains blocked** — still needs the minimal, un-thrashed reproducer from a quiet-host OCCTReconstruct
+#208 re-run, which has not happened. No action taken on Track 2 in this release.
+
+New suite `Issue319HardBoundedSelfIntersection` (`OCCTModelingTests`), 3 tests. No kernel change, no
+xcframework rebuild — reuses the v1.12.9 binary.
 
 ### v1.13.0 (July 2026) — feat: `*WithFullHistory` for sewing, quilting, and healing (#327)
 
