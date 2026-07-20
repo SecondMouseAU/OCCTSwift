@@ -44,8 +44,11 @@ an exhaustive audit — the doc comment says so explicitly, and `isSelfIntersect
 default recommendation unless a caller genuinely needs the hard guarantee.
 
 **Track 2 (upstream OCCT report: missing checkpoints + the `Intf_Interference::Insert` quadratic)
-remains blocked** — still needs the minimal, un-thrashed reproducer from a quiet-host OCCTReconstruct
-#208 re-run, which has not happened. No action taken on Track 2 in this release.
+remains blocked** — still needs the minimal, un-thrashed reproducer this issue originally hoped would
+fall out of a quiet-host OCCTReconstruct #208 re-run. That hasn't happened: #208 itself is closed
+(2026-07-18, no linked commit — superseded by a re-scoped successor line, not resolved), and neither
+it nor its successors (#252, #254, the currently-open #292) touch self-intersection or timeouts at
+all. No reproducer exists anywhere in that repo as of this release. No action taken on Track 2.
 
 New suite `Issue319HardBoundedSelfIntersection` (`OCCTModelingTests`), 3 tests. No kernel change, no
 xcframework rebuild — reuses the v1.12.9 binary.
