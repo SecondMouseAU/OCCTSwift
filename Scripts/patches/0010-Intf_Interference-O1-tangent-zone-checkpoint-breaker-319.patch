@@ -1,0 +1,359 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - fix unbounded self-interference: O(1)
+ tangent-zone point access + a checkpointed breaker
+
+Fixes two defects in BOPAlgo_ArgumentAnalyzer's self-interference phase
+(SecondMouseAU/OCCTSwift#319, reproducer at
+https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/319-selfintersection):
+
+1. Intf_Interference::Insert calls Intf_TangentZone::GetPoint(Index) inside
+   a nested comparison loop. GetPoint is O(n) per call (the backing
+   NCollection_Sequence has no O(1) indexed access), so every comparison
+   paid that cost again -- measured ~80% of runtime in
+   NCollection_BaseSequence::Find on a degenerate self-intersecting
+   surface. Intf_TangentZone::Points() caches a true random-access array
+   per zone (invalidated on any mutation): same comparisons, same result,
+   O(1) lookup.
+
+2. The self-interference phase never polled its cooperative progress
+   indicator below BOPAlgo_CheckerSI::CheckFaceSelfIntersection, so a
+   caller's timeout could only fire between whole-face checks, not within
+   one -- on the artifact above, 619s CPU against a 30s deadline, never
+   returning. Intf_Interference::SetBreaker (RAII-scoped via
+   Intf_InterferenceBreakerScope) lets Insert() poll every 256 calls and
+   abort by throwing Standard_Failure. Wired up in
+   BOPAlgo_CheckerSI's self-intersect functor, only when execution is
+   guaranteed single-threaded (an exception from a worker thread of
+   OSD_Parallel::For's parallel path would be unsafe).
+
+Verified on the linked artifact: with both fixes, a 0.5s deadline returns
+in 0.547s and a 30s deadline returns in 30.1s (vs. 619s+/never on stock),
+with correct HasFaulty() results throughout. Zero regression on clean,
+overlapping, and grid self-intersection sanity cases.
+
+New GTests: Intf_TangentZone_Test.cxx (Points() correctness and cache
+invalidation), Intf_Interference_Test.cxx (breaker aborts Insert()
+promptly; a non-tripping or absent breaker leaves behavior unchanged).
+---
+ .../TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx        | 22 ++++++-
+ .../TKGeomAlgo/Intf/Intf_Interference.cxx     | 60 ++++++++++++++++---
+ .../TKGeomAlgo/Intf/Intf_Interference.hxx     | 27 +++++++++
+ .../TKGeomAlgo/Intf/Intf_TangentZone.cxx      | 25 ++++++++
+ .../TKGeomAlgo/Intf/Intf_TangentZone.hxx      | 11 ++++
+ 5 files changed, 137 insertions(+), 8 deletions(-)
+
+diff --git a/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx b/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
+index 10aaf74e..f193b185 100644
+--- a/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
++++ b/src/ModelingAlgorithms/TKBO/BOPAlgo/BOPAlgo_CheckerSI.cxx
+@@ -30,6 +30,7 @@
+ #include <BOPTools_AlgoTools.hxx>
+ #include <BOPTools_Parallel.hxx>
+ #include <BRepBuilderAPI_Copy.hxx>
++#include <Intf_Interference.hxx>
+ #include <IntTools_Context.hxx>
+ #include <IntTools_FaceFace.hxx>
+ #include <Standard_ErrorHandler.hxx>
+@@ -81,7 +82,26 @@ public:
+     {
+       return;
+     }
+-    IntTools_FaceFace::Perform(myF, myF, myRunParallel);
++    // Let aPS's deadline interrupt the self-interference search itself, not
++    // just gate entry to it. Only when single-threaded: an exception from a
++    // worker thread of OSD_Parallel::For's parallel path would be unsafe.
++    if (!myRunParallel)
++    {
++      Intf_InterferenceBreakerScope aBreakerScope(&aPS);
++      try
++      {
++        IntTools_FaceFace::Perform(myF, myF, myRunParallel);
++      }
++      catch (Standard_Failure const&)
++      {
++        // Aborted by the breaker: leave IsDone() false, same as any other
++        // reason IntTools_FaceFace::Perform does not finish.
++      }
++    }
++    else
++    {
++      IntTools_FaceFace::Perform(myF, myF, myRunParallel);
++    }
+   }
+ 
+   //
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
+index 5a065e58..332d9335 100644
+--- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.cxx
+@@ -18,6 +18,8 @@
+ #include <Intf_SectionLine.hxx>
+ #include <Intf_SectionPoint.hxx>
+ #include <Intf_TangentZone.hxx>
++#include <Message_ProgressScope.hxx>
++#include <Standard_Failure.hxx>
+ 
+ //=======================================================================
+ // function : Intf_Interference
+@@ -29,6 +31,20 @@ Intf_Interference::Intf_Interference(const bool Self)
+ {
+ }
+ 
++//=================================================================================================
++
++namespace
++{
++// thread_local: safe by construction even if a future caller runs this on
++// a worker thread of its own.
++thread_local const Message_ProgressScope* t_intfBreaker = nullptr;
++} // namespace
++
++void Intf_Interference::SetBreaker(const Message_ProgressScope* theScope)
++{
++  t_intfBreaker = theScope;
++}
++
+ //=======================================================================
+ // function : SelfInterference
+ // purpose  : Reset interference before perform with a new...
+@@ -49,6 +65,14 @@ void Intf_Interference::SelfInterference(const bool Self)
+ 
+ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+ {
++  // Poll every 256 calls: this function can run tens of thousands of times
++  // on a degenerate surface, so polling every call would add its own tax.
++  static thread_local int t_pollCounter = 0;
++  if (t_intfBreaker != nullptr && (++t_pollCounter & 0xFF) == 0 && t_intfBreaker->UserBreak())
++  {
++    throw Standard_Failure("Intf_Interference::Insert: aborted by breaker");
++  }
++
+   if (myTZones.Length() <= 0)
+   {
+     return false;
+@@ -63,13 +87,20 @@ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+   int  npcz     = -1;                      // Number of points in the current zone
+   int  nplz     = LaZone.NumberOfPoints(); // in the new zone
+ 
++  // GetPoint(Index) is O(n) per call (NCollection_Sequence has no O(1)
++  // indexed access), so calling it inside the nested loop below made every
++  // comparison pay that cost again. Points() caches a random-access array
++  // per zone instead: same comparisons, same result, O(1) lookup.
++  const NCollection_Array1<Intf_SectionPoint>& laZonePts = LaZone.Points();
++
+   // Loop on TangentZone :
+   for (int Iz = 1; Iz <= myTZones.Length(); Iz++)
+   {
+ 
+     // Loop on edges of the TangentZone :
+-    npcz = myTZones(Iz).NumberOfPoints();
+-    int Ipz0, Ipz1, Ipz2;
++    npcz                                                    = myTZones(Iz).NumberOfPoints();
++    const NCollection_Array1<Intf_SectionPoint>& curZonePts = myTZones(Iz).Points();
++    int                                          Ipz0, Ipz1, Ipz2;
+     for (Ipz1 = 1; Ipz1 <= npcz; Ipz1++)
+     {
+       Ipz0 = Ipz1 - 1;
+@@ -86,9 +117,9 @@ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+       {
+         Ilz2 = (Ilz1 % nplz) + 1;
+ 
+-        if ((myTZones(Iz).GetPoint(Ipz1)).IsEqual(LaZone.GetPoint(Ilz1)))
++        if (curZonePts(Ipz1).IsEqual(laZonePts(Ilz1)))
+         {
+-          if ((myTZones(Iz).GetPoint(Ipz0)).IsEqual(LaZone.GetPoint(Ilz2)))
++          if (curZonePts(Ipz0).IsEqual(laZonePts(Ilz2)))
+           {
+             lzin = Iz;
+             lunp = Ipz0;
+@@ -98,7 +129,7 @@ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+             same = false;
+             break;
+           }
+-          else if ((myTZones(Iz).GetPoint(Ipz2)).IsEqual(LaZone.GetPoint(Ilz2)))
++          else if (curZonePts(Ipz2).IsEqual(laZonePts(Ilz2)))
+           {
+             lzin = Iz;
+             lunp = Ipz1;
+@@ -132,7 +163,7 @@ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+   {
+     for (Ilc = lotl + 1; (((Ilc - 1) % nplz) + 1) != lunl; Ilc++)
+     {
+-      myTZones(lzin).InsertBefore(lotp, LaZone.GetPoint(((Ilc - 1) % nplz) + 1));
++      myTZones(lzin).InsertBefore(lotp, laZonePts(((Ilc - 1) % nplz) + 1));
+       if (!same)
+       {
+         lotp++;
+@@ -145,7 +176,7 @@ bool Intf_Interference::Insert(const Intf_TangentZone& LaZone)
+     bool loop = false;
+     for (Ilc = lunl;; Ilc++)
+     {
+-      myTZones(lzin).InsertBefore(lunp, LaZone.GetPoint((((Ilc - 1) % nplz) + 1)));
++      myTZones(lzin).InsertBefore(lunp, laZonePts((((Ilc - 1) % nplz) + 1)));
+       lunp++;
+       if (loop && (((Ilc - 1) % nplz) + 1) == lunl)
+       {
+@@ -325,3 +356,18 @@ void Intf_Interference::Dump() const
+     myTZones(t).Dump(2);
+   }
+ }
++
++//=================================================================================================
++
++Intf_InterferenceBreakerScope::Intf_InterferenceBreakerScope(const Message_ProgressScope* theScope)
++{
++  myPrev = t_intfBreaker;
++  Intf_Interference::SetBreaker(theScope);
++}
++
++//=================================================================================================
++
++Intf_InterferenceBreakerScope::~Intf_InterferenceBreakerScope()
++{
++  Intf_Interference::SetBreaker(myPrev);
++}
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
+index d000c090..78acabe1 100644
+--- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_Interference.hxx
+@@ -29,6 +29,7 @@
+ class Intf_SectionPoint;
+ class Intf_SectionLine;
+ class Intf_TangentZone;
++class Message_ProgressScope;
+ 
+ //! Describes the Interference computation result
+ //! between polygon2d or polygon3d or polyhedron
+@@ -72,8 +73,18 @@ public:
+   //! Inserts a new zone of tangence in the current list of
+   //! tangent zones of the interference and returns True
+   //! when done.
++  //!
++  //! Periodically polls the breaker set by SetBreaker, if any, and throws
++  //! Standard_Failure to abort early if it signals UserBreak. No breaker
++  //! set (the default) is zero-overhead.
+   Standard_EXPORT bool Insert(const Intf_TangentZone& TheZone);
+ 
++  //! Sets (or clears, with nullptr) the thread-local breaker Insert()
++  //! polls. theScope must outlive the Insert() calls it is set for; use
++  //! Intf_InterferenceBreakerScope for exception-safe scoping. Only safe
++  //! for callers that guarantee single-threaded execution.
++  Standard_EXPORT static void SetBreaker(const Message_ProgressScope* theScope);
++
+   //! Insert a new segment of intersection in the current list of
+   //! polylines of intersection of the interference.
+   Standard_EXPORT void Insert(const Intf_SectionPoint& pdeb, const Intf_SectionPoint& pfin);
+@@ -99,4 +110,20 @@ protected:
+ 
+ #include <Intf_Interference.lxx>
+ 
++//! RAII scope for Intf_Interference::SetBreaker: restores the previous
++//! breaker (typically null) on destruction, including when unwound by the
++//! abort exception it enabled.
++class Intf_InterferenceBreakerScope
++{
++public:
++  Standard_EXPORT Intf_InterferenceBreakerScope(const Message_ProgressScope* theScope);
++  Standard_EXPORT ~Intf_InterferenceBreakerScope();
++
++private:
++  Intf_InterferenceBreakerScope(const Intf_InterferenceBreakerScope&)            = delete;
++  Intf_InterferenceBreakerScope& operator=(const Intf_InterferenceBreakerScope&) = delete;
++
++  const Message_ProgressScope* myPrev;
++};
++
+ #endif // _Intf_Interference_HeaderFile
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
+index ff603e3c..fb492abc 100644
+--- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.cxx
+@@ -36,6 +36,7 @@ Intf_TangentZone::Intf_TangentZone()
+ 
+ void Intf_TangentZone::Append(const Intf_SectionPoint& Pi)
+ {
++  myPtsCacheValid = false;
+   Result.Append(Pi);
+   if (ParamOnFirstMin > Pi.ParamOnFirst())
+   {
+@@ -174,6 +175,7 @@ void Intf_TangentZone::PolygonInsert(const Intf_SectionPoint& Pi)
+ 
+ void Intf_TangentZone::InsertAfter(const int Index, const Intf_SectionPoint& Pi)
+ {
++  myPtsCacheValid = false;
+   Result.InsertAfter(Index, Pi);
+   if (ParamOnFirstMin > Pi.ParamOnFirst())
+   {
+@@ -198,6 +200,7 @@ void Intf_TangentZone::InsertAfter(const int Index, const Intf_SectionPoint& Pi)
+ 
+ void Intf_TangentZone::InsertBefore(const int Index, const Intf_SectionPoint& Pi)
+ {
++  myPtsCacheValid = false;
+   Result.InsertBefore(Index, Pi);
+   if (ParamOnFirstMin > Pi.ParamOnFirst())
+   {
+@@ -230,6 +233,28 @@ const Intf_SectionPoint& Intf_TangentZone::GetPoint(const int Index) const
+ 
+ //=================================================================================================
+ 
++const NCollection_Array1<Intf_SectionPoint>& Intf_TangentZone::Points() const
++{
++  if (!myPtsCacheValid)
++  {
++    const int aNb = Result.Length();
++    if (aNb > 0)
++    {
++      myPtsCache.Resize(1, aNb, false);
++      int i = 1;
++      for (NCollection_Sequence<Intf_SectionPoint>::Iterator anIt(Result); anIt.More();
++           anIt.Next(), ++i)
++      {
++        myPtsCache.SetValue(i, anIt.Value());
++      }
++    }
++    myPtsCacheValid = true;
++  }
++  return myPtsCache;
++}
++
++//=================================================================================================
++
+ bool Intf_TangentZone::IsEqual(const Intf_TangentZone& Other) const
+ {
+   if (Result.Length() != Other.Result.Length())
+diff --git a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
+index 09a54e90..6b63de82 100644
+--- a/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
++++ b/src/ModelingAlgorithms/TKGeomAlgo/Intf/Intf_TangentZone.hxx
+@@ -22,6 +22,7 @@
+ #include <Standard_Handle.hxx>
+ 
+ #include <Intf_SectionPoint.hxx>
++#include <NCollection_Array1.hxx>
+ #include <NCollection_Sequence.hxx>
+ #include <Standard_Boolean.hxx>
+ class Intf_SectionPoint;
+@@ -40,6 +41,12 @@ public:
+   //! TangentZone.
+   Standard_EXPORT const Intf_SectionPoint& GetPoint(const int Index) const;
+ 
++  //! All points (1-based), for callers that touch every point of a large
++  //! TangentZone. Builds and caches a true random-access array in one
++  //! linear pass; the cache is invalidated by any mutation. Faster than
++  //! looping GetPoint(Index), which is O(n) per call.
++  Standard_EXPORT const NCollection_Array1<Intf_SectionPoint>& Points() const;
++
+   //! Compares two TangentZones.
+   Standard_EXPORT bool IsEqual(const Intf_TangentZone& Other) const;
+ 
+@@ -101,6 +108,10 @@ private:
+   double                                  ParamOnFirstMax;
+   double                                  ParamOnSecondMin;
+   double                                  ParamOnSecondMax;
++
++  // Points() cache, invalidated by any mutation.
++  mutable NCollection_Array1<Intf_SectionPoint> myPtsCache;
++  mutable bool                                  myPtsCacheValid = false;
+ };
+ 
+ #include <Intf_TangentZone.lxx>
