@@ -3700,7 +3700,7 @@ struct EditorViewV162Tests {
     func coedgeGeometricSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.coedgeCount > 0, graph.edgeCount > 0, graph.faceCount > 1 {
                 graph.setCoEdgeUVBox(0, u1: 0, v1: 0, u2: 1, v2: 1)
                 // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
@@ -3716,9 +3716,9 @@ struct EditorViewV162Tests {
     func identityLocationSetters() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
-                let m = TopologyGraph.identityLocationMatrix
+                let m = BRepGraph.identityLocationMatrix
                 #expect(m.count == 12)
                 if graph.faceRefCount > 0 { graph.setFaceRefLocalLocation(0, matrix: m) }
                 if graph.shellRefCount > 0 { graph.setShellRefLocalLocation(0, matrix: m) }
@@ -3739,7 +3739,7 @@ struct EditorViewV162Tests {
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph, graph.faceCount > 0 {
                 guard let triRepId = graph.createTriangulationRep(tri) else {
                     Issue.record("createTriangulationRep nil"); return
@@ -3867,7 +3867,7 @@ struct SketchArcCircleTests {
     @Test("buildProfile with arc yields a wire")
     func buildProfileWithArc() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else { Issue.record("graph nil"); return }
+              let graph = BRepGraph(shape: box) else { Issue.record("graph nil"); return }
         let ctx = ConstructionContext()
         let planeID = ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
         var sketch = Sketch(hostPlane: planeID)

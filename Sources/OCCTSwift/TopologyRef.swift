@@ -19,7 +19,7 @@ import Foundation
 public indirect enum TopologyRef: Sendable, Hashable {
     /// Direct reference by current `(kind, index)`. Escape hatch — use sparingly;
     /// it bypasses recipe resolution and breaks on any graph mutation.
-    case literal(TopologyGraph.NodeRef)
+    case literal(BRepGraph.NodeRef)
 
     /// The Nth node of `kind` that appears as a replacement in a history record
     /// tagged with `operationName`. Deterministic order: (sequenceNumber,
@@ -31,7 +31,7 @@ public indirect enum TopologyRef: Sendable, Hashable {
     /// disable forward-walk entirely and get the node as originally created —
     /// rarely what you want, but useful for history inspection.
     case createdBy(operationName: String,
-                   kind: TopologyGraph.NodeKind,
+                   kind: BRepGraph.NodeKind,
                    occurrence: Int = 0,
                    leafOccurrence: Int? = 0)
 
@@ -42,7 +42,7 @@ public indirect enum TopologyRef: Sendable, Hashable {
     /// unmodified parents; for mutated parents the order is whatever the graph
     /// reports post-mutation.
     case containedIn(parent: TopologyRef,
-                     kind: TopologyGraph.NodeKind,
+                     kind: BRepGraph.NodeKind,
                      occurrence: Int = 0)
 
     /// The Nth replacement produced by the operation that split `original` into
@@ -52,20 +52,20 @@ public indirect enum TopologyRef: Sendable, Hashable {
 
 public enum TopologyResolutionError: Error, Sendable, Hashable {
     case ancestorMissing(TopologyRef)
-    case kindMismatch(expected: TopologyGraph.NodeKind, found: TopologyGraph.NodeKind)
+    case kindMismatch(expected: BRepGraph.NodeKind, found: BRepGraph.NodeKind)
     case occurrenceOutOfRange(TopologyRef, available: Int, requested: Int)
     case operationNotFound(String)
     case noCurrentDescendant(TopologyRef)
     case invalid(TopologyRef)
 }
 
-extension TopologyGraph.NodeRef {
+extension BRepGraph.NodeRef {
     /// Sentinel for recording pure creations (no meaningful ancestor).
     /// Matches OCCT's default-constructed `BRepGraph_NodeId` — kind .solid, index -1.
-    public static let sentinel = TopologyGraph.NodeRef(kind: .solid, index: -1)
+    public static let sentinel = BRepGraph.NodeRef(kind: .solid, index: -1)
 }
 
-extension TopologyGraph {
+extension BRepGraph {
     /// Resolve a `TopologyRef` recipe against the graph's current state.
     ///
     /// Recipes are evaluated lazily — `resolve` performs the lookup every call,

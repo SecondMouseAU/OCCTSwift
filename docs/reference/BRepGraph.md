@@ -1,13 +1,13 @@
 ---
-title: TopologyGraph
+title: BRepGraph
 parent: API Reference
 ---
 
-# TopologyGraph
+# BRepGraph
 
-`TopologyGraph` is OCCTSwift's graph-based view of B-Rep topology, wrapping OCCT's `BRepGraph` package. It indexes all faces, edges, vertices, wires, shells, solids, coedges, and compounds of a `Shape` as flat integer-indexed entity vectors with O(1) cross-references, enabling cache-friendly traversal, fast adjacency queries, and parallel geometry extraction. Obtain one via `TopologyGraph(shape:)`.
+`BRepGraph` is OCCTSwift's graph-based view of B-Rep topology, wrapping OCCT's `BRepGraph` package. It indexes all faces, edges, vertices, wires, shells, solids, coedges, and compounds of a `Shape` as flat integer-indexed entity vectors with O(1) cross-references, enabling cache-friendly traversal, fast adjacency queries, and parallel geometry extraction. Obtain one via `BRepGraph(shape:)`.
 
-> **TopologyGraph is large — documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **TopologyGraph — …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.
+> **BRepGraph is large — documented across several pages.** This is the core (construction, counts, topology queries, explorers, validate/compact/deduplicate, statistics, geometry readback); see the other **BRepGraph — …** pages for topology detail/history/mesh, builders & editor mutation, editor geometry/sampling/durable-identity, and attributes/snapshots/references.
 
 ## Topics
 
@@ -40,12 +40,12 @@ public init?(shape: Shape, parallel: Bool = false)
 Ingests the shape's full B-Rep topology into an indexed graph. Pass `parallel: true` to build using multi-threaded traversal (faster for large shapes; not safe to call concurrently with other graph ops).
 
 - **Parameters:** `shape` — the shape to analyze; `parallel` — whether to use parallel construction (default: `false`).
-- **Returns:** A fully built `TopologyGraph`, or `nil` if ingestion fails.
+- **Returns:** A fully built `BRepGraph`, or `nil` if ingestion fails.
 - **OCCT:** `BRepGraph::ShapesView::Add(shape, opts)` with `opts.Parallel` set accordingly.
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
-     let graph = TopologyGraph(shape: box) {
+     let graph = BRepGraph(shape: box) {
       print(graph.faceCount)   // 6
       print(graph.edgeCount)   // 12
       print(graph.vertexCount) // 8
@@ -272,7 +272,7 @@ public func adjacentFaces(of faceIndex: Int) -> [Int]
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
-     let graph = TopologyGraph(shape: box) {
+     let graph = BRepGraph(shape: box) {
       let neighbors = graph.adjacentFaces(of: 0)
       // neighbors has 4 entries for a box face
   }
@@ -509,14 +509,14 @@ public var rootNodes: [RootNode] { get }
 ```
 
 > **This is empty for a graph built from a `Shape`, and that is expected.** It enumerates
-> `BRepGraph::RootProductIds()` — assembly Products, not topology. `TopologyGraph(shape:)` builds with
+> `BRepGraph::RootProductIds()` — assembly Products, not topology. `BRepGraph(shape:)` builds with
 > `CreateAutoProduct: false` (no auto Product/Occurrence wrap), so such a graph has no products and
 > `rootNodes` returns `[]`. It is populated for graphs carrying assembly context.
 >
 > **For the topology root of a shape-built graph, use `findNode(for:)` on the shape itself:**
 >
 > ```swift
-> let graph = TopologyGraph(shape: base)!
+> let graph = BRepGraph(shape: base)!
 > let root = graph.findNode(for: base)     // e.g. (kind: .solid, index: 0)
 > ```
 >
@@ -525,7 +525,7 @@ public var rootNodes: [RootNode] { get }
 - **OCCT:** `BRepGraph::RootProductIds()`.
 - **Example:**
   ```swift
-  // Meaningful for assembly-context graphs; [] for TopologyGraph(shape:).
+  // Meaningful for assembly-context graphs; [] for BRepGraph(shape:).
   for root in graph.rootNodes {
       print("\(root.kind) at index \(root.index)")
   }
@@ -714,9 +714,9 @@ Reads all topology and geometry counts in a single call.
 - **Example:**
   ```swift
   if let box = Shape.box(width: 10, height: 10, depth: 10),
-     let graph = TopologyGraph(shape: box) {
+     let graph = BRepGraph(shape: box) {
       print(graph.stats)
-      // TopologyGraph.Stats(solids: 1, shells: 1, faces: 6, wires: 6, edges: 12, vertices: 8, ...)
+      // BRepGraph.Stats(solids: 1, shells: 1, faces: 6, wires: 6, edges: 12, vertices: 8, ...)
   }
   ```
 

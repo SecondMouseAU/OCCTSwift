@@ -32,7 +32,7 @@ figure (interactive 3D where it helps). The **[Cookbook index](guides/cookbook/)
 [Healing & Validity](guides/cookbook/healing-and-validity.md) ·
 [Meshing & Export](guides/cookbook/meshing-and-export.md) ·
 [XCAF Assemblies](guides/cookbook/xcaf-assemblies.md) ·
-[Topology Graph](guides/cookbook/topology-graph.md) ·
+[BRep Graph](guides/cookbook/brep-graph.md) ·
 [Gordon Surfaces](guides/cookbook/gordon-surfaces.md) ·
 [Surfaces from Points](guides/cookbook/surfaces-from-points.md) ·
 [Working with Meshes](guides/cookbook/working-with-meshes.md)

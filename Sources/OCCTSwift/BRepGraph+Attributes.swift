@@ -1,8 +1,8 @@
-// TopologyGraph+Attributes.swift
+// BRepGraph+Attributes.swift
 //
-// Per-node attribute store + Codable graph snapshot for `TopologyGraph` (OCCTSwift #168).
+// Per-node attribute store + Codable graph snapshot for `BRepGraph` (OCCTSwift #168).
 //
-// `TopologyGraph` nodes are bare `(kind, index)` pairs with no payload, and the type wraps an
+// `BRepGraph` nodes are bare `(kind, index)` pairs with no payload, and the type wraps an
 // opaque C++ handle with no serialization. This file adds a pure Swift-side sidecar that lets
 // callers attach arbitrary typed metadata to any `NodeRef` and round-trip it (export → edit →
 // import) via `GraphSnapshot`. No C++ bridge change — the store never touches the C++ graph.
@@ -15,7 +15,7 @@ import OCCTBridge
 
 // MARK: - AttrValue
 
-extension TopologyGraph {
+extension BRepGraph {
     /// A typed, Codable attribute value. Closed set keeps the snapshot round-trip lossless.
     public enum AttrValue: Codable, Hashable, Sendable {
         case bool(Bool)
@@ -37,20 +37,20 @@ extension TopologyGraph {
 
 // MARK: - NodeAttributeStore
 
-/// Per-node attribute bag keyed by ``TopologyGraph/NodeRef``.
+/// Per-node attribute bag keyed by ``BRepGraph/NodeRef``.
 ///
 /// Keys are caller-namespaced strings (e.g. `"reconstruct.residualRMS"`). Encodes as a
 /// deterministically-ordered array of `{node, attrs}` entries — JSON object keys must be
 /// strings, and the sorted order keeps snapshots diffable and round-trips stable.
 public struct NodeAttributeStore: Codable, Sendable, Equatable {
-    public private(set) var storage: [TopologyGraph.NodeRef: [String: TopologyGraph.AttrValue]]
+    public private(set) var storage: [BRepGraph.NodeRef: [String: BRepGraph.AttrValue]]
 
-    public init(storage: [TopologyGraph.NodeRef: [String: TopologyGraph.AttrValue]] = [:]) {
+    public init(storage: [BRepGraph.NodeRef: [String: BRepGraph.AttrValue]] = [:]) {
         self.storage = storage
     }
 
     /// All attributes on a node (empty dictionary if none).
-    public subscript(node: TopologyGraph.NodeRef) -> [String: TopologyGraph.AttrValue] {
+    public subscript(node: BRepGraph.NodeRef) -> [String: BRepGraph.AttrValue] {
         get { storage[node] ?? [:] }
         set {
             if newValue.isEmpty { storage[node] = nil } else { storage[node] = newValue }
@@ -58,24 +58,24 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     }
 
     /// Read one attribute, or nil if unset.
-    public func value(_ key: String, for node: TopologyGraph.NodeRef) -> TopologyGraph.AttrValue? {
+    public func value(_ key: String, for node: BRepGraph.NodeRef) -> BRepGraph.AttrValue? {
         storage[node]?[key]
     }
 
     /// Set one attribute.
-    public mutating func set(_ key: String, _ value: TopologyGraph.AttrValue, for node: TopologyGraph.NodeRef) {
+    public mutating func set(_ key: String, _ value: BRepGraph.AttrValue, for node: BRepGraph.NodeRef) {
         storage[node, default: [:]][key] = value
     }
 
     /// Remove one attribute. Drops the node entry entirely once its last attribute is cleared.
-    public mutating func clear(_ key: String, for node: TopologyGraph.NodeRef) {
+    public mutating func clear(_ key: String, for node: BRepGraph.NodeRef) {
         guard var attrs = storage[node] else { return }
         attrs[key] = nil
         storage[node] = attrs.isEmpty ? nil : attrs
     }
 
     /// Remove every attribute on a node.
-    public mutating func removeAll(for node: TopologyGraph.NodeRef) {
+    public mutating func removeAll(for node: BRepGraph.NodeRef) {
         storage[node] = nil
     }
 
@@ -90,18 +90,18 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
     /// `[String: AttrValue]` dictionary) avoids JSON's non-deterministic dictionary key order.
     private struct KeyValue: Codable {
         let key: String
-        let value: TopologyGraph.AttrValue
+        let value: BRepGraph.AttrValue
     }
 
     private struct Entry: Codable {
-        let node: TopologyGraph.NodeRef
+        let node: BRepGraph.NodeRef
         let attrs: [KeyValue]
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let entries = try container.decode([Entry].self)
-        var dict: [TopologyGraph.NodeRef: [String: TopologyGraph.AttrValue]] = [:]
+        var dict: [BRepGraph.NodeRef: [String: BRepGraph.AttrValue]] = [:]
         for e in entries where !e.attrs.isEmpty {
             dict[e.node] = Dictionary(uniqueKeysWithValues: e.attrs.map { ($0.key, $0.value) })
         }
@@ -131,7 +131,7 @@ public struct NodeAttributeStore: Codable, Sendable, Equatable {
 /// A persistable, round-trippable snapshot of a graph's attributes plus its source shape.
 ///
 /// The graph *structure* is not serialized — it is re-derived deterministically by rebuilding
-/// `TopologyGraph` from `brep`. Only the source shape (as a BREP string) and the attribute
+/// `BRepGraph` from `brep`. Only the source shape (as a BREP string) and the attribute
 /// store travel in the snapshot.
 public struct GraphSnapshot: Codable, Sendable, Equatable {
     /// Current on-disk format version. Bump on any breaking schema change.
@@ -162,7 +162,7 @@ public struct GraphSnapshot: Codable, Sendable, Equatable {
     }
 }
 
-/// Errors raised while snapshotting or rebuilding a `TopologyGraph`.
+/// Errors raised while snapshotting or rebuilding a `BRepGraph`.
 public enum GraphSnapshotError: Error, Equatable, Sendable {
     /// The graph has no captured source shape to serialize (e.g. built from a handle directly).
     case noSourceShape
@@ -176,7 +176,7 @@ public enum GraphSnapshotError: Error, Equatable, Sendable {
 
 // MARK: - snapshot / restore
 
-extension TopologyGraph {
+extension BRepGraph {
     /// Read one attribute on a node, or nil if unset.
     public func attribute(_ key: String, for node: NodeRef) -> AttrValue? {
         attributes.value(key, for: node)
@@ -199,7 +199,7 @@ extension TopologyGraph {
     /// for deterministic node indexing), and reattach the attributes.
     ///
     /// - Important: Attributes are keyed by `NodeRef` (`kind` + `index`). This relies on
-    ///   `TopologyGraph(shape:)` producing identical node indexing for the same BREP — which is
+    ///   `BRepGraph(shape:)` producing identical node indexing for the same BREP — which is
     ///   why the rebuild pins `parallel: false`. See the round-trip determinism test.
     public convenience init(snapshot: GraphSnapshot) throws {
         guard snapshot.formatVersion <= GraphSnapshot.currentFormatVersion else {

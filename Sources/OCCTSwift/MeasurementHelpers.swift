@@ -97,7 +97,7 @@ extension Face {
 extension ConstructionAxis {
     /// Angle between two construction axes, resolved against the given graph.
     /// Returns radians in [0, π].
-    public func angle(to other: ConstructionAxis, in graph: TopologyGraph) -> Double? {
+    public func angle(to other: ConstructionAxis, in graph: BRepGraph) -> Double? {
         guard case .success(let a) = graph.resolve(self),
               case .success(let b) = graph.resolve(other) else { return nil }
         return unsignedAngle(between: a.direction, and: b.direction)
@@ -107,7 +107,7 @@ extension ConstructionAxis {
 extension ConstructionPlane {
     /// Angle between two construction planes (angle between their normals).
     /// Returns radians in [0, π].
-    public func angle(to other: ConstructionPlane, in graph: TopologyGraph) -> Double? {
+    public func angle(to other: ConstructionPlane, in graph: BRepGraph) -> Double? {
         guard case .success(let a) = graph.resolve(self),
               case .success(let b) = graph.resolve(other) else { return nil }
         return unsignedAngle(between: a.zAxis, and: b.zAxis)
