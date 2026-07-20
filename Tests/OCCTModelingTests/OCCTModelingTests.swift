@@ -6429,11 +6429,11 @@ struct SewQuiltHealFullHistoryTests {
         #expect(r1.isDeleted == r2.isDeleted)
     }
 
-    @Test("A sew's history can be absorbed into a TopologyGraph (issue #290 integration)")
+    @Test("A sew's history can be absorbed into a BRepGraph (issue #290 integration)")
     func sewHistoryAbsorbsIntoGraph() {
         let (face1, face2) = Self.touchingFaces()
         guard let compound = Shape.compound([face1, face2]),
-              let graph = TopologyGraph(shape: compound),
+              let graph = BRepGraph(shape: compound),
               let root = graph.findNode(for: compound) else {
             Issue.record("graph setup failed")
             return
@@ -6444,7 +6444,7 @@ struct SewQuiltHealFullHistoryTests {
         }
         #expect(graph.historyRecordCount == 0)
         let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
                               operationName: "sew")
         #expect(added != nil, "add(absorbing:) should succeed for a sew's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")
@@ -6551,10 +6551,10 @@ struct TransformPatternFullHistoryTests {
         }
     }
 
-    @Test("A translate's history can be absorbed into a TopologyGraph (issue #290 integration)")
+    @Test("A translate's history can be absorbed into a BRepGraph (issue #290 integration)")
     func translateHistoryAbsorbsIntoGraph() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
-        guard let graph = TopologyGraph(shape: box),
+        guard let graph = BRepGraph(shape: box),
               let root = graph.findNode(for: box) else {
             Issue.record("graph setup failed")
             return
@@ -6565,7 +6565,7 @@ struct TransformPatternFullHistoryTests {
         }
         #expect(graph.historyRecordCount == 0)
         let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
                               operationName: "translate")
         #expect(added != nil, "add(absorbing:) should succeed for a translate's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")
@@ -6585,10 +6585,10 @@ struct TransformPatternFullHistoryTests {
         #expect(r == nil)
     }
 
-    @Test("A linear pattern's history can be absorbed into a TopologyGraph (issue #290 integration)")
+    @Test("A linear pattern's history can be absorbed into a BRepGraph (issue #290 integration)")
     func linearPatternHistoryAbsorbsIntoGraph() {
         let hole = Shape.cylinder(radius: 3, height: 10)!
-        guard let graph = TopologyGraph(shape: hole),
+        guard let graph = BRepGraph(shape: hole),
               let root = graph.findNode(for: hole) else {
             Issue.record("graph setup failed")
             return
@@ -6599,7 +6599,7 @@ struct TransformPatternFullHistoryTests {
         }
         #expect(graph.historyRecordCount == 0)
         let added = graph.add(r.result, absorbing: r.history,
-                              inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+                              inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
                               operationName: "linearPattern")
         #expect(added != nil, "add(absorbing:) should succeed for a pattern's synthesized history")
         #expect(graph.historyRecordCount > 0, "absorb should have written history records")

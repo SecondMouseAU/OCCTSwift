@@ -16,12 +16,12 @@ extension SIMD3 where Scalar == Double {
 
 // MARK: - BRepGraph Tests (v0.129.0)
 
-@Suite("TopologyGraph Build")
-struct TopologyGraphBuildTests {
+@Suite("BRepGraph Build")
+struct BRepGraphBuildTests {
     @Test func buildFromBox() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             #expect(graph != nil)
             if let graph {
                 #expect(graph.faceCount == 6)
@@ -39,7 +39,7 @@ struct TopologyGraphBuildTests {
     @Test func buildParallel() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box, parallel: true)
+            let graph = BRepGraph(shape: box, parallel: true)
             #expect(graph != nil)
             if let graph {
                 #expect(graph.faceCount == 6)
@@ -50,7 +50,7 @@ struct TopologyGraphBuildTests {
     @Test func buildFromSphere() {
         let sphere = Shape.sphere(radius: 5)
         if let sphere {
-            let graph = TopologyGraph(shape: sphere)
+            let graph = BRepGraph(shape: sphere)
             if let graph {
                 #expect(graph.faceCount > 0)
                 #expect(graph.edgeCount >= 0)
@@ -65,7 +65,7 @@ struct TopologyGraphBuildTests {
         if let box, let cyl {
             let fused = box + cyl
             if let fused {
-                let graph = TopologyGraph(shape: fused)
+                let graph = BRepGraph(shape: fused)
                 if let graph {
                     #expect(graph.faceCount > 6)
                     #expect(graph.isValid)
@@ -75,12 +75,12 @@ struct TopologyGraphBuildTests {
     }
 }
 
-@Suite("TopologyGraph Counts")
-struct TopologyGraphCountTests {
+@Suite("BRepGraph Counts")
+struct BRepGraphCountTests {
     @Test func activeCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.activeFaceCount == 6)
                 #expect(graph.activeEdgeCount == 12)
@@ -92,7 +92,7 @@ struct TopologyGraphCountTests {
     @Test func geometryCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.surfaceCount == 6)
                 #expect(graph.curve3DCount == 12)
@@ -104,7 +104,7 @@ struct TopologyGraphCountTests {
     @Test func coedgeCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.coedgeCount == 24)
             }
@@ -112,12 +112,12 @@ struct TopologyGraphCountTests {
     }
 }
 
-@Suite("TopologyGraph Face Queries")
-struct TopologyGraphFaceQueryTests {
+@Suite("BRepGraph Face Queries")
+struct BRepGraphFaceQueryTests {
     @Test func faceAdjacency() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let adj = graph.adjacentFaces(of: 0)
                 #expect(adj.count == 4)
@@ -128,7 +128,7 @@ struct TopologyGraphFaceQueryTests {
     @Test func sharedEdges() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let adj = graph.adjacentFaces(of: 0)
                 if adj.count > 0 {
@@ -142,7 +142,7 @@ struct TopologyGraphFaceQueryTests {
     @Test func outerWire() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let wire = graph.outerWire(of: 0)
                 #expect(wire >= 0)
@@ -151,12 +151,12 @@ struct TopologyGraphFaceQueryTests {
     }
 }
 
-@Suite("TopologyGraph Edge Queries")
-struct TopologyGraphEdgeQueryTests {
+@Suite("BRepGraph Edge Queries")
+struct BRepGraphEdgeQueryTests {
     @Test func edgeFaceCount() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let nbFaces = graph.faceCount(of: 0)
                 #expect(nbFaces == 2)
@@ -167,7 +167,7 @@ struct TopologyGraphEdgeQueryTests {
     @Test func edgeFaces() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let faces = graph.faces(of: 0)
                 #expect(faces.count == 2)
@@ -178,7 +178,7 @@ struct TopologyGraphEdgeQueryTests {
     @Test func noBoundaryEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(!graph.isBoundaryEdge(i))
@@ -190,7 +190,7 @@ struct TopologyGraphEdgeQueryTests {
     @Test func allManifoldEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(graph.isManifoldEdge(i))
@@ -202,7 +202,7 @@ struct TopologyGraphEdgeQueryTests {
     @Test func edgeAdjacency() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let adj = graph.adjacentEdges(of: 0)
                 #expect(adj.count > 0)
@@ -211,12 +211,12 @@ struct TopologyGraphEdgeQueryTests {
     }
 }
 
-@Suite("TopologyGraph Vertex Queries")
-struct TopologyGraphVertexQueryTests {
+@Suite("BRepGraph Vertex Queries")
+struct BRepGraphVertexQueryTests {
     @Test func vertexEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let edges = graph.edges(of: 0)
                 #expect(edges.count == 3)
@@ -225,12 +225,12 @@ struct TopologyGraphVertexQueryTests {
     }
 }
 
-@Suite("TopologyGraph Explorers")
-struct TopologyGraphExplorerTests {
+@Suite("BRepGraph Explorers")
+struct BRepGraphExplorerTests {
     @Test func childExplorer() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // OCCT 8.0 reshaped root iteration to Products only — wrap the
                 // box's solid root in a Product to expose it as a graph root.
@@ -248,7 +248,7 @@ struct TopologyGraphExplorerTests {
     @Test func parentExplorer() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let parents = graph.parentCount(nodeKind: .face, nodeIndex: 0)
                 #expect(parents > 0)
@@ -257,12 +257,12 @@ struct TopologyGraphExplorerTests {
     }
 }
 
-@Suite("TopologyGraph Validate")
-struct TopologyGraphValidateTests {
+@Suite("BRepGraph Validate")
+struct BRepGraphValidateTests {
     @Test func boxIsValid() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.isValid)
                 let result = graph.validate()
@@ -273,12 +273,12 @@ struct TopologyGraphValidateTests {
     }
 }
 
-@Suite("TopologyGraph Compact")
-struct TopologyGraphCompactTests {
+@Suite("BRepGraph Compact")
+struct BRepGraphCompactTests {
     @Test func compactBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let result = graph.compact()
                 #expect(result.nodesAfter > 0)
@@ -287,12 +287,12 @@ struct TopologyGraphCompactTests {
     }
 }
 
-@Suite("TopologyGraph Deduplicate")
-struct TopologyGraphDeduplicateTests {
+@Suite("BRepGraph Deduplicate")
+struct BRepGraphDeduplicateTests {
     @Test func deduplicateBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let result = graph.deduplicate()
                 #expect(result.canonicalSurfaces == 6)
@@ -302,12 +302,12 @@ struct TopologyGraphDeduplicateTests {
     }
 }
 
-@Suite("TopologyGraph Stats")
-struct TopologyGraphStatsTests {
+@Suite("BRepGraph Stats")
+struct BRepGraphStatsTests {
     @Test func boxStats() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let s = graph.stats
                 #expect(s.faces == 6)
@@ -325,12 +325,12 @@ struct TopologyGraphStatsTests {
     }
 }
 
-@Suite("TopologyGraph Node Status")
-struct TopologyGraphNodeStatusTests {
+@Suite("BRepGraph Node Status")
+struct BRepGraphNodeStatusTests {
     @Test func noRemovedNodes() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.faceCount {
                     #expect(!graph.isRemoved(nodeKind: .face, nodeIndex: i))
@@ -340,12 +340,12 @@ struct TopologyGraphNodeStatusTests {
     }
 }
 
-@Suite("TopologyGraph Root Nodes")
-struct TopologyGraphRootNodeTests {
+@Suite("BRepGraph Root Nodes")
+struct BRepGraphRootNodeTests {
     @Test func hasRoots() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // OCCT 8.0 reshaped root iteration to Products only — wrap the
                 // box's solid root in a Product to expose it as a graph root.
@@ -358,14 +358,14 @@ struct TopologyGraphRootNodeTests {
     }
 }
 
-// MARK: - TopologyGraph Extended Tests (v0.133.0)
+// MARK: - BRepGraph Extended Tests (v0.133.0)
 
-@Suite("TopologyGraph Shape Reconstruction")
-struct TopologyGraphShapeReconstructionTests {
+@Suite("BRepGraph Shape Reconstruction")
+struct BRepGraphShapeReconstructionTests {
     @Test func reconstructFace() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let face = graph.shape(nodeKind: .face, nodeIndex: 0)
                 #expect(face != nil)
@@ -376,7 +376,7 @@ struct TopologyGraphShapeReconstructionTests {
     @Test func reconstructSolid() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let solid = graph.shape(nodeKind: .solid, nodeIndex: 0)
                 #expect(solid != nil)
@@ -387,7 +387,7 @@ struct TopologyGraphShapeReconstructionTests {
     @Test func findNode() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let found = graph.hasNode(for: box)
                 #expect(found)
@@ -401,7 +401,7 @@ struct TopologyGraphShapeReconstructionTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         let sphere = Shape.sphere(radius: 5)
         if let box, let sphere {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(!graph.hasNode(for: sphere))
             }
@@ -409,12 +409,12 @@ struct TopologyGraphShapeReconstructionTests {
     }
 }
 
-@Suite("TopologyGraph Vertex Geometry")
-struct TopologyGraphVertexGeometryTests {
+@Suite("BRepGraph Vertex Geometry")
+struct BRepGraphVertexGeometryTests {
     @Test func vertexPoint() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let pt = graph.vertexPoint(0)
                 // Vertex should be a finite point
@@ -428,7 +428,7 @@ struct TopologyGraphVertexGeometryTests {
     @Test func vertexTolerance() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let tol = graph.vertexTolerance(0)
                 #expect(tol > 0)
@@ -438,12 +438,12 @@ struct TopologyGraphVertexGeometryTests {
     }
 }
 
-@Suite("TopologyGraph Edge Geometry")
-struct TopologyGraphEdgeGeometryTests {
+@Suite("BRepGraph Edge Geometry")
+struct BRepGraphEdgeGeometryTests {
     @Test func edgeTolerance() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let tol = graph.edgeTolerance(0)
                 #expect(tol > 0)
@@ -454,7 +454,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeNotDegenerated() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(!graph.isEdgeDegenerated(i))
@@ -466,7 +466,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeSameParameter() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(graph.isEdgeSameParameter(i))
@@ -478,7 +478,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeSameRange() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(graph.isEdgeSameRange(i))
@@ -490,7 +490,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeRange() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let range = graph.edgeRange(0)
                 #expect(range.first < range.last)
@@ -501,7 +501,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeHasCurve() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     #expect(graph.edgeHasCurve(i))
@@ -513,7 +513,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeMaxContinuity() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let cont = graph.edgeMaxContinuity(0)
                 #expect(cont >= 0)
@@ -524,7 +524,7 @@ struct TopologyGraphEdgeGeometryTests {
     @Test func edgeNotClosedOnFace() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box edges are not seam edges
                 let faces = graph.faces(of: 0)
@@ -536,12 +536,12 @@ struct TopologyGraphEdgeGeometryTests {
     }
 }
 
-@Suite("TopologyGraph Face Geometry")
-struct TopologyGraphFaceGeometryTests {
+@Suite("BRepGraph Face Geometry")
+struct BRepGraphFaceGeometryTests {
     @Test func faceTolerance() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let tol = graph.faceTolerance(0)
                 #expect(tol > 0)
@@ -552,7 +552,7 @@ struct TopologyGraphFaceGeometryTests {
     @Test func faceHasSurface() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.faceCount {
                     #expect(graph.faceHasSurface(i))
@@ -564,7 +564,7 @@ struct TopologyGraphFaceGeometryTests {
     @Test func faceNaturalRestriction() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Just check it returns a bool without crashing
                 let _ = graph.isFaceNaturalRestriction(0)
@@ -575,7 +575,7 @@ struct TopologyGraphFaceGeometryTests {
     @Test func faceHasTriangulation() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box may or may not have triangulation depending on meshing
                 let _ = graph.faceHasTriangulation(0)
@@ -584,12 +584,12 @@ struct TopologyGraphFaceGeometryTests {
     }
 }
 
-@Suite("TopologyGraph Wire Extended")
-struct TopologyGraphWireExtendedTests {
+@Suite("BRepGraph Wire Extended")
+struct BRepGraphWireExtendedTests {
     @Test func wireIsClosed() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.wireCount {
                     #expect(graph.isWireClosed(i))
@@ -601,7 +601,7 @@ struct TopologyGraphWireExtendedTests {
     @Test func wireCoEdgeCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let count = graph.wireCoEdgeCount(0)
                 #expect(count == 4) // box face has 4 edges
@@ -612,7 +612,7 @@ struct TopologyGraphWireExtendedTests {
     @Test func wireFaces() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let faceCount = graph.wireFaceCount(0)
                 #expect(faceCount == 1)
@@ -623,12 +623,12 @@ struct TopologyGraphWireExtendedTests {
     }
 }
 
-@Suite("TopologyGraph CoEdge Queries")
-struct TopologyGraphCoEdgeQueryTests {
+@Suite("BRepGraph CoEdge Queries")
+struct BRepGraphCoEdgeQueryTests {
     @Test func coedgeEdge() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let edgeIdx = graph.coedgeEdge(0)
                 #expect(edgeIdx >= 0)
@@ -640,7 +640,7 @@ struct TopologyGraphCoEdgeQueryTests {
     @Test func coedgeFace() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let faceIdx = graph.coedgeFace(0)
                 #expect(faceIdx >= 0)
@@ -652,7 +652,7 @@ struct TopologyGraphCoEdgeQueryTests {
     @Test func coedgeSeamPairNilForBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box edges are not seam edges, so no seam pairs
                 let pair = graph.coedgeSeamPair(0)
@@ -664,7 +664,7 @@ struct TopologyGraphCoEdgeQueryTests {
     @Test func coedgeSeamPairForSphere() {
         let sphere = Shape.sphere(radius: 5)
         if let sphere {
-            let graph = TopologyGraph(shape: sphere)
+            let graph = BRepGraph(shape: sphere)
             if let graph {
                 // Sphere has seam edges; find a coedge with a seam pair
                 var foundSeam = false
@@ -683,7 +683,7 @@ struct TopologyGraphCoEdgeQueryTests {
     @Test func coedgeHasPCurve() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box coedges should have PCurves
                 var hasPCurve = false
@@ -701,7 +701,7 @@ struct TopologyGraphCoEdgeQueryTests {
     @Test func coedgeRange() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 if graph.coedgeHasPCurve(0) {
                     let range = graph.coedgeRange(0)
@@ -712,12 +712,12 @@ struct TopologyGraphCoEdgeQueryTests {
     }
 }
 
-@Suite("TopologyGraph Shell Queries")
-struct TopologyGraphShellQueryTests {
+@Suite("BRepGraph Shell Queries")
+struct BRepGraphShellQueryTests {
     @Test func shellSolids() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let count = graph.shellSolidCount(0)
                 #expect(count == 1)
@@ -729,12 +729,12 @@ struct TopologyGraphShellQueryTests {
     }
 }
 
-@Suite("TopologyGraph Solid Queries")
-struct TopologyGraphSolidQueryTests {
+@Suite("BRepGraph Solid Queries")
+struct BRepGraphSolidQueryTests {
     @Test func solidCompSolidCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let count = graph.solidCompSolidCount(0)
                 #expect(count == 0) // standalone solid, not in comp-solid
@@ -743,12 +743,12 @@ struct TopologyGraphSolidQueryTests {
     }
 }
 
-@Suite("TopologyGraph History")
-struct TopologyGraphHistoryTests {
+@Suite("BRepGraph History")
+struct BRepGraphHistoryTests {
     @Test func historyDefaults() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.isHistoryEnabled)
                 #expect(graph.historyRecordCount == 0)
@@ -759,7 +759,7 @@ struct TopologyGraphHistoryTests {
     @Test func historyToggle() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 graph.isHistoryEnabled = false
                 #expect(!graph.isHistoryEnabled)
@@ -772,7 +772,7 @@ struct TopologyGraphHistoryTests {
     @Test func historyClear() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 graph.clearHistory()
                 #expect(graph.historyRecordCount == 0)
@@ -781,12 +781,12 @@ struct TopologyGraphHistoryTests {
     }
 }
 
-@Suite("TopologyGraph Poly Counts")
-struct TopologyGraphPolyCountTests {
+@Suite("BRepGraph Poly Counts")
+struct BRepGraphPolyCountTests {
     @Test func polyCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Poly counts are >= 0 (may be 0 if not meshed)
                 #expect(graph.triangulationCount >= 0)
@@ -796,12 +796,12 @@ struct TopologyGraphPolyCountTests {
     }
 }
 
-@Suite("TopologyGraph Active Geometry")
-struct TopologyGraphActiveGeometryTests {
+@Suite("BRepGraph Active Geometry")
+struct BRepGraphActiveGeometryTests {
     @Test func activeGeometryCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.activeSurfaceCount == 6)
                 #expect(graph.activeCurve3DCount == 12)
@@ -811,12 +811,12 @@ struct TopologyGraphActiveGeometryTests {
     }
 }
 
-@Suite("TopologyGraph SameDomain")
-struct TopologyGraphSameDomainTests {
+@Suite("BRepGraph SameDomain")
+struct BRepGraphSameDomainTests {
     @Test func boxNoSameDomain() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box faces are all distinct, no same-domain
                 let sd = graph.sameDomainFaces(of: 0)
@@ -826,12 +826,12 @@ struct TopologyGraphSameDomainTests {
     }
 }
 
-@Suite("TopologyGraph Copy")
-struct TopologyGraphCopyTests {
+@Suite("BRepGraph Copy")
+struct BRepGraphCopyTests {
     @Test func deepCopy() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let copy = graph.copy()
                 #expect(copy != nil)
@@ -847,7 +847,7 @@ struct TopologyGraphCopyTests {
     @Test func lightCopy() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let copy = graph.copy(copyGeometry: false)
                 #expect(copy != nil)
@@ -861,7 +861,7 @@ struct TopologyGraphCopyTests {
     @Test func copyFace() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let faceCopy = graph.copyFace(0)
                 #expect(faceCopy != nil)
@@ -873,12 +873,12 @@ struct TopologyGraphCopyTests {
     }
 }
 
-@Suite("TopologyGraph Transform")
-struct TopologyGraphTransformTests {
+@Suite("BRepGraph Transform")
+struct BRepGraphTransformTests {
     @Test func translateGraph() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let translated = graph.translated(dx: 100, dy: 200, dz: 300)
                 #expect(translated != nil)
@@ -900,7 +900,7 @@ struct TopologyGraphTransformTests {
     @Test func translateLightCopy() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 let translated = graph.translated(dx: 10, dy: 0, dz: 0, copyGeometry: false)
                 #expect(translated != nil)
@@ -914,12 +914,12 @@ struct TopologyGraphTransformTests {
 
 // MARK: - BRepGraph Assembly & Refs (v0.134.0)
 
-@Suite("TopologyGraph Products")
-struct TopologyGraphProductTests {
+@Suite("BRepGraph Products")
+struct BRepGraphProductTests {
     @Test func productCountForPrimitive() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Simple shapes have 1 product (the shape itself as a part)
                 #expect(graph.productCount >= 0)
@@ -940,7 +940,7 @@ struct TopologyGraphProductTests {
     @Test func productQueriesOnSphere() {
         let sphere = Shape.sphere(radius: 5)
         if let sphere {
-            let graph = TopologyGraph(shape: sphere)
+            let graph = BRepGraph(shape: sphere)
             if let graph {
                 #expect(graph.productCount >= 0)
                 #expect(graph.occurrenceCount == 0)
@@ -953,12 +953,12 @@ struct TopologyGraphProductTests {
     }
 }
 
-@Suite("TopologyGraph Occurrences")
-struct TopologyGraphOccurrenceTests {
+@Suite("BRepGraph Occurrences")
+struct BRepGraphOccurrenceTests {
     @Test func occurrenceCountForPrimitive() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.occurrenceCount == 0)
             }
@@ -966,12 +966,12 @@ struct TopologyGraphOccurrenceTests {
     }
 }
 
-@Suite("TopologyGraph Ref Counts")
-struct TopologyGraphRefCountTests {
+@Suite("BRepGraph Ref Counts")
+struct BRepGraphRefCountTests {
     @Test func refCountsForBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box has shells, faces, wires, coedges, vertices refs
                 #expect(graph.shellRefCount >= 1)
@@ -989,7 +989,7 @@ struct TopologyGraphRefCountTests {
     @Test func refCountsConsistency() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Face ref count should be >= face definition count
                 #expect(graph.faceRefCount >= graph.faceCount)
@@ -1000,12 +1000,12 @@ struct TopologyGraphRefCountTests {
     }
 }
 
-@Suite("TopologyGraph Ref Entry Queries")
-struct TopologyGraphRefEntryTests {
+@Suite("BRepGraph Ref Entry Queries")
+struct BRepGraphRefEntryTests {
     @Test func refChildNode() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Check face ref 0 child node
                 if graph.faceRefCount > 0 {
@@ -1024,7 +1024,7 @@ struct TopologyGraphRefEntryTests {
     @Test func refNotRemoved() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 if graph.faceRefCount > 0 {
                     #expect(!graph.isRefRemoved(.face, refIndex: 0))
@@ -1039,7 +1039,7 @@ struct TopologyGraphRefEntryTests {
     @Test func refOrientation() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 if graph.faceRefCount > 0 {
                     let ori = graph.refOrientation(.face, refIndex: 0)
@@ -1051,12 +1051,12 @@ struct TopologyGraphRefEntryTests {
     }
 }
 
-@Suite("TopologyGraph Face Def Details")
-struct TopologyGraphFaceDefTests {
+@Suite("BRepGraph Face Def Details")
+struct BRepGraphFaceDefTests {
     @Test func faceWireCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Each face of a box has exactly 1 wire (the outer wire)
                 for i in 0..<graph.faceCount {
@@ -1069,7 +1069,7 @@ struct TopologyGraphFaceDefTests {
     @Test func faceVertexRefCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box faces normally have no isolated vertices
                 for i in 0..<graph.faceCount {
@@ -1080,12 +1080,12 @@ struct TopologyGraphFaceDefTests {
     }
 }
 
-@Suite("TopologyGraph Edge Def Details")
-struct TopologyGraphEdgeDefTests {
+@Suite("BRepGraph Edge Def Details")
+struct BRepGraphEdgeDefTests {
     @Test func edgeStartEndVertex() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     let start = graph.edgeStartVertex(i)
@@ -1106,7 +1106,7 @@ struct TopologyGraphEdgeDefTests {
     @Test func edgeIsClosedOnBox() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box edges are NOT closed (they are line segments)
                 for i in 0..<graph.edgeCount {
@@ -1119,7 +1119,7 @@ struct TopologyGraphEdgeDefTests {
     @Test func edgeClosedConsistency() {
         let sphere = Shape.sphere(radius: 5)
         if let sphere {
-            let graph = TopologyGraph(shape: sphere)
+            let graph = BRepGraph(shape: sphere)
             if let graph {
                 // For any closed edge, start == end vertex
                 for i in 0..<graph.edgeCount {
@@ -1138,12 +1138,12 @@ struct TopologyGraphEdgeDefTests {
     }
 }
 
-@Suite("TopologyGraph Edge Wires CoEdges")
-struct TopologyGraphEdgeWiresCoEdgesTests {
+@Suite("BRepGraph Edge Wires CoEdges")
+struct BRepGraphEdgeWiresCoEdgesTests {
     @Test func edgeWires() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     let wires = graph.edgeWires(i)
@@ -1160,7 +1160,7 @@ struct TopologyGraphEdgeWiresCoEdgesTests {
     @Test func edgeCoEdges() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.edgeCount {
                     let coedges = graph.edgeCoEdges(i)
@@ -1177,7 +1177,7 @@ struct TopologyGraphEdgeWiresCoEdgesTests {
     @Test func edgeFindCoEdge() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // For each edge, find a coedge on one of its faces
                 for i in 0..<graph.edgeCount {
@@ -1195,12 +1195,12 @@ struct TopologyGraphEdgeWiresCoEdgesTests {
     }
 }
 
-@Suite("TopologyGraph Face Shells")
-struct TopologyGraphFaceShellTests {
+@Suite("BRepGraph Face Shells")
+struct BRepGraphFaceShellTests {
     @Test func faceShells() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.faceCount {
                     let count = graph.faceShellCount(i)
@@ -1218,7 +1218,7 @@ struct TopologyGraphFaceShellTests {
     @Test func faceCompoundCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box faces are not in compounds
                 for i in 0..<graph.faceCount {
@@ -1229,12 +1229,12 @@ struct TopologyGraphFaceShellTests {
     }
 }
 
-@Suite("TopologyGraph Shell Extended")
-struct TopologyGraphShellExtendedTests {
+@Suite("BRepGraph Shell Extended")
+struct BRepGraphShellExtendedTests {
     @Test func shellCompoundCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.shellCount {
                     #expect(graph.shellCompoundCount(i) == 0)
@@ -1246,7 +1246,7 @@ struct TopologyGraphShellExtendedTests {
     @Test func shellIsClosed() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // Box shell should be closed
                 #expect(graph.shellCount >= 1)
@@ -1258,12 +1258,12 @@ struct TopologyGraphShellExtendedTests {
     }
 }
 
-@Suite("TopologyGraph Solid Extended")
-struct TopologyGraphSolidExtendedTests {
+@Suite("BRepGraph Solid Extended")
+struct BRepGraphSolidExtendedTests {
     @Test func solidCompoundCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 for i in 0..<graph.solidCount {
                     #expect(graph.solidCompoundCount(i) == 0)
@@ -1273,12 +1273,12 @@ struct TopologyGraphSolidExtendedTests {
     }
 }
 
-@Suite("TopologyGraph CompSolid Count")
-struct TopologyGraphCompSolidCountTests {
+@Suite("BRepGraph CompSolid Count")
+struct BRepGraphCompSolidCountTests {
     @Test func compSolidCount() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 #expect(graph.compSolidCount == 0)
             }
@@ -1286,8 +1286,8 @@ struct TopologyGraphCompSolidCountTests {
     }
 }
 
-@Suite("TopologyGraph Compound Queries")
-struct TopologyGraphCompoundTests {
+@Suite("BRepGraph Compound Queries")
+struct BRepGraphCompoundTests {
     @Test func compoundQueriesOnCompound() {
         // Create a compound shape by fusing two boxes
         let box1 = Shape.box(width: 10, height: 10, depth: 10)
@@ -1295,7 +1295,7 @@ struct TopologyGraphCompoundTests {
         if let box1, let box2 {
             let compound = Shape.compound([box1, box2])
             if let compound {
-                let graph = TopologyGraph(shape: compound)
+                let graph = BRepGraph(shape: compound)
                 if let graph {
                     #expect(graph.compoundCount >= 1)
                     if graph.compoundCount > 0 {
@@ -1313,11 +1313,11 @@ struct TopologyGraphCompoundTests {
 
 // MARK: - BRepGraph Builder (v0.135.0)
 
-@Suite("TopologyGraph Builder AddVertex")
-struct TopologyGraphBuilderAddVertexTests {
+@Suite("BRepGraph Builder AddVertex")
+struct BRepGraphBuilderAddVertexTests {
     @Test func addVertexToGraph() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origVertexCount = graph.vertexCount
                 if let vidx = graph.addVertex(x: 5.0, y: 5.0, z: 5.0, tolerance: 1e-7) {
                     #expect(vidx >= 0)
@@ -1334,7 +1334,7 @@ struct TopologyGraphBuilderAddVertexTests {
 
     @Test func addMultipleVertices() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let orig = graph.vertexCount
                 let v1 = graph.addVertex(x: 0, y: 0, z: 0, tolerance: 0.01)
                 let v2 = graph.addVertex(x: 1, y: 2, z: 3, tolerance: 0.02)
@@ -1346,11 +1346,11 @@ struct TopologyGraphBuilderAddVertexTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddShell")
-struct TopologyGraphBuilderAddShellTests {
+@Suite("BRepGraph Builder AddShell")
+struct BRepGraphBuilderAddShellTests {
     @Test func addEmptyShell() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origShellCount = graph.shellCount
                 if let sidx = graph.addShell() {
                     #expect(sidx >= 0)
@@ -1361,11 +1361,11 @@ struct TopologyGraphBuilderAddShellTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddSolid")
-struct TopologyGraphBuilderAddSolidTests {
+@Suite("BRepGraph Builder AddSolid")
+struct BRepGraphBuilderAddSolidTests {
     @Test func addEmptySolid() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origSolidCount = graph.solidCount
                 if let sidx = graph.addSolid() {
                     #expect(sidx >= 0)
@@ -1376,11 +1376,11 @@ struct TopologyGraphBuilderAddSolidTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddFaceToShell")
-struct TopologyGraphBuilderAddFaceToShellTests {
+@Suite("BRepGraph Builder AddFaceToShell")
+struct BRepGraphBuilderAddFaceToShellTests {
     @Test func linkFaceToShell() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 // Add a new shell, then link existing face 0 to it
                 if let shellIdx = graph.addShell() {
                     let refIdx = graph.addFaceToShell(shellIndex: shellIdx, faceIndex: 0, orientation: 0)
@@ -1391,11 +1391,11 @@ struct TopologyGraphBuilderAddFaceToShellTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddShellToSolid")
-struct TopologyGraphBuilderAddShellToSolidTests {
+@Suite("BRepGraph Builder AddShellToSolid")
+struct BRepGraphBuilderAddShellToSolidTests {
     @Test func linkShellToSolid() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if let solidIdx = graph.addSolid(), let shellIdx = graph.addShell() {
                     let refIdx = graph.addShellToSolid(solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0)
                     #expect(refIdx != nil)
@@ -1405,14 +1405,14 @@ struct TopologyGraphBuilderAddShellToSolidTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddCompound")
-struct TopologyGraphBuilderAddCompoundTests {
+@Suite("BRepGraph Builder AddCompound")
+struct BRepGraphBuilderAddCompoundTests {
     @Test func addCompoundFromSolids() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origCompoundCount = graph.compoundCount
                 if graph.solidCount > 0 {
-                    let children: [(kind: TopologyGraph.NodeKind, index: Int)] = [
+                    let children: [(kind: BRepGraph.NodeKind, index: Int)] = [
                         (.solid, 0)
                     ]
                     if let cidx = graph.addCompound(children: children) {
@@ -1425,11 +1425,11 @@ struct TopologyGraphBuilderAddCompoundTests {
     }
 }
 
-@Suite("TopologyGraph Builder AddCompSolid")
-struct TopologyGraphBuilderAddCompSolidTests {
+@Suite("BRepGraph Builder AddCompSolid")
+struct BRepGraphBuilderAddCompSolidTests {
     @Test func addCompSolidFromSolids() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origCS = graph.compSolidCount
                 if graph.solidCount > 0 {
                     if let csIdx = graph.addCompSolid(solidIndices: [0]) {
@@ -1442,11 +1442,11 @@ struct TopologyGraphBuilderAddCompSolidTests {
     }
 }
 
-@Suite("TopologyGraph Builder RemoveNode")
-struct TopologyGraphBuilderRemoveNodeTests {
+@Suite("BRepGraph Builder RemoveNode")
+struct BRepGraphBuilderRemoveNodeTests {
     @Test func removeVertex() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if graph.vertexCount > 0 {
                     let vIdx = graph.vertexCount - 1
                     #expect(!graph.isRemoved(nodeKind: .vertex, nodeIndex: vIdx))
@@ -1459,7 +1459,7 @@ struct TopologyGraphBuilderRemoveNodeTests {
 
     @Test func removeSubgraph() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if graph.faceCount > 0 {
                     let fIdx = graph.faceCount - 1
                     graph.removeSubgraph(nodeKind: .face, nodeIndex: fIdx)
@@ -1470,11 +1470,11 @@ struct TopologyGraphBuilderRemoveNodeTests {
     }
 }
 
-@Suite("TopologyGraph Builder AppendShape")
-struct TopologyGraphBuilderAppendShapeTests {
+@Suite("BRepGraph Builder AppendShape")
+struct BRepGraphBuilderAppendShapeTests {
     @Test func appendFlattenedShape() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origFaces = graph.faceCount
                 if let sphere = Shape.sphere(radius: 5) {
                     graph.appendFlattenedShape(sphere)
@@ -1486,7 +1486,7 @@ struct TopologyGraphBuilderAppendShapeTests {
 
     @Test func appendFullShape() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let origFaces = graph.faceCount
                 if let cylinder = Shape.cylinder(radius: 3, height: 8) {
                     graph.appendFullShape(cylinder)
@@ -1497,11 +1497,11 @@ struct TopologyGraphBuilderAppendShapeTests {
     }
 }
 
-@Suite("TopologyGraph Builder Deferred")
-struct TopologyGraphBuilderDeferredTests {
+@Suite("BRepGraph Builder Deferred")
+struct BRepGraphBuilderDeferredTests {
     @Test func deferredModeToggle() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 #expect(!graph.isDeferredMode)
                 graph.beginDeferredInvalidation()
                 #expect(graph.isDeferredMode)
@@ -1513,7 +1513,7 @@ struct TopologyGraphBuilderDeferredTests {
 
     @Test func deferredModeWithMutations() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 graph.beginDeferredInvalidation()
                 _ = graph.addVertex(x: 1, y: 2, z: 3, tolerance: 0.001)
                 _ = graph.addVertex(x: 4, y: 5, z: 6, tolerance: 0.001)
@@ -1525,11 +1525,11 @@ struct TopologyGraphBuilderDeferredTests {
     }
 }
 
-@Suite("TopologyGraph Builder CommitMutation")
-struct TopologyGraphBuilderCommitMutationTests {
+@Suite("BRepGraph Builder CommitMutation")
+struct BRepGraphBuilderCommitMutationTests {
     @Test func commitAfterAdd() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 _ = graph.addVertex(x: 0, y: 0, z: 0, tolerance: 0.01)
                 graph.commitMutation()
                 // Should not crash
@@ -1539,11 +1539,11 @@ struct TopologyGraphBuilderCommitMutationTests {
     }
 }
 
-@Suite("TopologyGraph Builder RemoveRef")
-struct TopologyGraphBuilderRemoveRefTests {
+@Suite("BRepGraph Builder RemoveRef")
+struct BRepGraphBuilderRemoveRefTests {
     @Test func removeShellRef() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if graph.shellRefCount > 0 {
                     let removed = graph.removeRef(refKind: .shell, refIndex: 0)
                     // Should succeed or gracefully fail
@@ -1554,13 +1554,13 @@ struct TopologyGraphBuilderRemoveRefTests {
     }
 }
 
-@Suite("TopologyGraph Builder ClearMesh")
-struct TopologyGraphBuilderClearMeshTests {
+@Suite("BRepGraph Builder ClearMesh")
+struct BRepGraphBuilderClearMeshTests {
     @Test func clearFaceMesh() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             // Mesh the shape first
             let _ = box.mesh(linearDeflection: 0.1)
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if graph.faceCount > 0 {
                     // Should not crash
                     graph.clearFaceMesh(faceIndex: 0)
@@ -1572,7 +1572,7 @@ struct TopologyGraphBuilderClearMeshTests {
     @Test func clearEdgePolygon3D() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let _ = box.mesh(linearDeflection: 0.1)
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 if graph.edgeCount > 0 {
                     // Should not crash
                     graph.clearEdgePolygon3D(edgeIndex: 0)
@@ -1582,11 +1582,11 @@ struct TopologyGraphBuilderClearMeshTests {
     }
 }
 
-@Suite("TopologyGraph Builder ValidateMutation")
-struct TopologyGraphBuilderValidateMutationTests {
+@Suite("BRepGraph Builder ValidateMutation")
+struct BRepGraphBuilderValidateMutationTests {
     @Test func validateCleanGraph() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 // A freshly built graph should have valid mutation boundary
                 let valid = graph.validateMutation()
                 #expect(valid)
@@ -1596,7 +1596,7 @@ struct TopologyGraphBuilderValidateMutationTests {
 
     @Test func validateAfterAddVertex() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 _ = graph.addVertex(x: 0, y: 0, z: 0, tolerance: 0.01)
                 graph.commitMutation()
                 let valid = graph.validateMutation()
@@ -1606,13 +1606,13 @@ struct TopologyGraphBuilderValidateMutationTests {
     }
 }
 
-// MARK: - TopologyGraph UV Grid Sampling (v0.136.0)
+// MARK: - BRepGraph UV Grid Sampling (v0.136.0)
 
-@Suite("TopologyGraph UV Grid")
-struct TopologyGraphUVGridTests {
+@Suite("BRepGraph UV Grid")
+struct BRepGraphUVGridTests {
     @Test func sampleBoxFace() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 5, vSamples: 5)
                 #expect(sample != nil)
                 if let sample {
@@ -1638,7 +1638,7 @@ struct TopologyGraphUVGridTests {
 
     @Test func sampleSphereFace() {
         if let sphere = Shape.sphere(radius: 5) {
-            if let graph = TopologyGraph(shape: sphere) {
+            if let graph = BRepGraph(shape: sphere) {
                 if graph.faceCount > 0 {
                     let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 4, vSamples: 4)
                     if let sample {
@@ -1657,7 +1657,7 @@ struct TopologyGraphUVGridTests {
 
     @Test func sampleSinglePoint() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 1, vSamples: 1)
                 #expect(sample != nil)
                 if let sample {
@@ -1669,7 +1669,7 @@ struct TopologyGraphUVGridTests {
 
     @Test func sampleInvalidFace() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let sample = graph.sampleFaceUVGrid(faceIndex: 999, uSamples: 5, vSamples: 5)
                 #expect(sample == nil)
             }
@@ -1678,7 +1678,7 @@ struct TopologyGraphUVGridTests {
 
     @Test func sampleZeroCounts() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 5)
                 #expect(sample == nil)
             }
@@ -1686,11 +1686,11 @@ struct TopologyGraphUVGridTests {
     }
 }
 
-@Suite("TopologyGraph Edge Sampling")
-struct TopologyGraphEdgeSamplingTests {
+@Suite("BRepGraph Edge Sampling")
+struct BRepGraphEdgeSamplingTests {
     @Test func sampleBoxEdge() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 // Find an edge with a curve
                 var sampledEdge = -1
                 for i in 0..<graph.edgeCount {
@@ -1718,7 +1718,7 @@ struct TopologyGraphEdgeSamplingTests {
 
     @Test func sampleSinglePoint() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 for i in 0..<graph.edgeCount {
                     if graph.edgeHasCurve(i) {
                         let points = graph.sampleEdgeCurve(edgeIndex: i, count: 1)
@@ -1732,7 +1732,7 @@ struct TopologyGraphEdgeSamplingTests {
 
     @Test func sampleEdgeWithoutCurve() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 // Test with invalid index
                 let points = graph.sampleEdgeCurve(edgeIndex: 999, count: 10)
                 #expect(points.isEmpty)
@@ -1742,7 +1742,7 @@ struct TopologyGraphEdgeSamplingTests {
 
     @Test func sampleZeroCount() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = TopologyGraph(shape: box) {
+            if let graph = BRepGraph(shape: box) {
                 let points = graph.sampleEdgeCurve(edgeIndex: 0, count: 0)
                 #expect(points.isEmpty)
             }
@@ -1751,7 +1751,7 @@ struct TopologyGraphEdgeSamplingTests {
 
     @Test func sampleSphereEdge() {
         if let sphere = Shape.sphere(radius: 5) {
-            if let graph = TopologyGraph(shape: sphere) {
+            if let graph = BRepGraph(shape: sphere) {
                 for i in 0..<graph.edgeCount {
                     if graph.edgeHasCurve(i) {
                         let points = graph.sampleEdgeCurve(edgeIndex: i, count: 20)
@@ -1776,14 +1776,14 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Recorded 1-to-1 modification survives roundtrip through the API")
     func oneToOneReadback() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let orig = TopologyGraph.NodeRef(kind: .face, index: 0)
-        let repl = TopologyGraph.NodeRef(kind: .face, index: 42)
+        let orig = BRepGraph.NodeRef(kind: .face, index: 0)
+        let repl = BRepGraph.NodeRef(kind: .face, index: 42)
         graph.recordHistory(operationName: "TestFillet", original: orig, replacements: [repl])
 
         #expect(graph.historyRecordCount == 1)
@@ -1798,16 +1798,16 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Split (1-to-N) mapping round-trips")
     func splitMapping() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let orig = TopologyGraph.NodeRef(kind: .edge, index: 3)
-        let a = TopologyGraph.NodeRef(kind: .edge, index: 100)
-        let b = TopologyGraph.NodeRef(kind: .edge, index: 101)
-        let c = TopologyGraph.NodeRef(kind: .edge, index: 102)
+        let orig = BRepGraph.NodeRef(kind: .edge, index: 3)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 100)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 101)
+        let c = BRepGraph.NodeRef(kind: .edge, index: 102)
         graph.recordHistory(operationName: "SplitEdge", original: orig, replacements: [a, b, c])
 
         let rec = graph.historyRecord(at: 0)
@@ -1817,13 +1817,13 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Deletion (1-to-0) round-trips")
     func deletionMapping() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let orig = TopologyGraph.NodeRef(kind: .face, index: 5)
+        let orig = BRepGraph.NodeRef(kind: .face, index: 5)
         graph.recordHistory(operationName: "RemoveFace", original: orig, replacements: [])
 
         let rec = graph.historyRecord(at: 0)
@@ -1833,17 +1833,17 @@ struct BRepGraphHistoryReadbackTests {
     @Test("FindDerived walks forward through chained records")
     func findDerivedWalksForward() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
         // orig → [a] → [b, c]
-        let orig = TopologyGraph.NodeRef(kind: .edge, index: 1)
-        let a = TopologyGraph.NodeRef(kind: .edge, index: 10)
-        let b = TopologyGraph.NodeRef(kind: .edge, index: 20)
-        let c = TopologyGraph.NodeRef(kind: .edge, index: 21)
+        let orig = BRepGraph.NodeRef(kind: .edge, index: 1)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 10)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 20)
+        let c = BRepGraph.NodeRef(kind: .edge, index: 21)
         graph.recordHistory(operationName: "Op1", original: orig, replacements: [a])
         graph.recordHistory(operationName: "Op2", original: a, replacements: [b, c])
 
@@ -1858,16 +1858,16 @@ struct BRepGraphHistoryReadbackTests {
     @Test("hasHistoryRecord: true for nodes named in any record's mapping; false otherwise")
     func hasHistoryRecordDistinguishesNamedFromUntouched() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let modified = TopologyGraph.NodeRef(kind: .face, index: 0)
-        let replaced = TopologyGraph.NodeRef(kind: .face, index: 100)
-        let deleted = TopologyGraph.NodeRef(kind: .face, index: 1)
-        let untouched = TopologyGraph.NodeRef(kind: .face, index: 2)
+        let modified = BRepGraph.NodeRef(kind: .face, index: 0)
+        let replaced = BRepGraph.NodeRef(kind: .face, index: 100)
+        let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
+        let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
 
         graph.recordHistory(operationName: "ModifyFace", original: modified, replacements: [replaced])
         graph.recordHistory(operationName: "DeleteFace", original: deleted, replacements: [])
@@ -1880,16 +1880,16 @@ struct BRepGraphHistoryReadbackTests {
     @Test("findDerivedOrSelf: returns derivatives, [] for deleted, [original] for untouched")
     func findDerivedOrSelfDisambiguates() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let modified = TopologyGraph.NodeRef(kind: .face, index: 0)
-        let replaced = TopologyGraph.NodeRef(kind: .face, index: 100)
-        let deleted = TopologyGraph.NodeRef(kind: .face, index: 1)
-        let untouched = TopologyGraph.NodeRef(kind: .face, index: 2)
+        let modified = BRepGraph.NodeRef(kind: .face, index: 0)
+        let replaced = BRepGraph.NodeRef(kind: .face, index: 100)
+        let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
+        let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
 
         graph.recordHistory(operationName: "ModifyFace", original: modified, replacements: [replaced])
         graph.recordHistory(operationName: "DeleteFace", original: deleted, replacements: [])
@@ -1912,17 +1912,17 @@ struct BRepGraphHistoryReadbackTests {
     @Test("findDerivedOrSelf preserves findDerived semantics for chained records")
     func findDerivedOrSelfMatchesFindDerivedWhenNonEmpty() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
         // orig → [a] → [b, c]
-        let orig = TopologyGraph.NodeRef(kind: .edge, index: 1)
-        let a = TopologyGraph.NodeRef(kind: .edge, index: 10)
-        let b = TopologyGraph.NodeRef(kind: .edge, index: 20)
-        let c = TopologyGraph.NodeRef(kind: .edge, index: 21)
+        let orig = BRepGraph.NodeRef(kind: .edge, index: 1)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 10)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 20)
+        let c = BRepGraph.NodeRef(kind: .edge, index: 21)
         graph.recordHistory(operationName: "Op1", original: orig, replacements: [a])
         graph.recordHistory(operationName: "Op2", original: a, replacements: [b, c])
 
@@ -1936,15 +1936,15 @@ struct BRepGraphHistoryReadbackTests {
     @Test("FindOriginal walks backwards")
     func findOriginalWalksBackward() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let orig = TopologyGraph.NodeRef(kind: .face, index: 7)
-        let mid = TopologyGraph.NodeRef(kind: .face, index: 70)
-        let leaf = TopologyGraph.NodeRef(kind: .face, index: 700)
+        let orig = BRepGraph.NodeRef(kind: .face, index: 7)
+        let mid = BRepGraph.NodeRef(kind: .face, index: 70)
+        let leaf = BRepGraph.NodeRef(kind: .face, index: 700)
         graph.recordHistory(operationName: "A", original: orig, replacements: [mid])
         graph.recordHistory(operationName: "B", original: mid, replacements: [leaf])
 
@@ -1954,13 +1954,13 @@ struct BRepGraphHistoryReadbackTests {
     @Test("Unrecorded node findOriginal returns itself")
     func findOriginalPassthrough() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
 
-        let node = TopologyGraph.NodeRef(kind: .face, index: 3)
+        let node = BRepGraph.NodeRef(kind: .face, index: 3)
         #expect(graph.findOriginal(of: node) == node)
     }
 }
@@ -1972,10 +1972,10 @@ struct TopologyRefResolverTests {
     @Test("Literal reference to a valid node resolves to itself")
     func literalValid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
-        let node = TopologyGraph.NodeRef(kind: .face, index: 2)
+        let node = BRepGraph.NodeRef(kind: .face, index: 2)
         let result = graph.resolve(.literal(node))
         switch result {
         case .success(let r): #expect(r == node)
@@ -1986,7 +1986,7 @@ struct TopologyRefResolverTests {
     @Test("Literal reference to an invalid node fails")
     func literalInvalid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let result = graph.resolve(.literal(.sentinel))
@@ -1998,12 +1998,12 @@ struct TopologyRefResolverTests {
     @Test("createdBy resolves to the recorded replacement")
     func createdByBasic() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
-        let newFace = TopologyGraph.NodeRef(kind: .face, index: 100)
+        let newFace = BRepGraph.NodeRef(kind: .face, index: 100)
         graph.recordHistory(operationName: "Extrude_1",
                              original: .sentinel,
                              replacements: [newFace])
@@ -2017,7 +2017,7 @@ struct TopologyRefResolverTests {
     @Test("createdBy with unknown operation fails with operationNotFound")
     func createdByMissingOp() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
@@ -2033,12 +2033,12 @@ struct TopologyRefResolverTests {
     @Test("createdBy with occurrence out of range fails cleanly")
     func createdByOutOfRange() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
-        let only = TopologyGraph.NodeRef(kind: .face, index: 100)
+        let only = BRepGraph.NodeRef(kind: .face, index: 100)
         graph.recordHistory(operationName: "Op", original: .sentinel, replacements: [only])
         let result = graph.resolve(.createdBy(operationName: "Op", kind: .face, occurrence: 5))
         if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = result {
@@ -2052,14 +2052,14 @@ struct TopologyRefResolverTests {
     @Test("createdBy walks forward through subsequent history to currentForm")
     func createdByForwardWalk() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
         // op1 creates face 10; op2 modifies face 10 → face 11.
-        let created = TopologyGraph.NodeRef(kind: .face, index: 10)
-        let current = TopologyGraph.NodeRef(kind: .face, index: 11)
+        let created = BRepGraph.NodeRef(kind: .face, index: 10)
+        let current = BRepGraph.NodeRef(kind: .face, index: 11)
         graph.recordHistory(operationName: "Create", original: .sentinel, replacements: [created])
         graph.recordHistory(operationName: "Modify", original: created, replacements: [current])
         // Asking for "face created by Create" should give the CURRENT form (face 11),
@@ -2074,14 +2074,14 @@ struct TopologyRefResolverTests {
     @Test("splitOf picks the Nth replacement of a split original")
     func splitOf() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
         graph.clearHistory()
-        let orig = TopologyGraph.NodeRef(kind: .edge, index: 3)
-        let a = TopologyGraph.NodeRef(kind: .edge, index: 30)
-        let b = TopologyGraph.NodeRef(kind: .edge, index: 31)
+        let orig = BRepGraph.NodeRef(kind: .edge, index: 3)
+        let a = BRepGraph.NodeRef(kind: .edge, index: 30)
+        let b = BRepGraph.NodeRef(kind: .edge, index: 31)
         graph.recordHistory(operationName: "SplitEdge", original: orig, replacements: [a, b])
         let result = graph.resolve(.splitOf(original: .literal(orig), occurrence: 1))
         switch result {
@@ -2093,7 +2093,7 @@ struct TopologyRefResolverTests {
     @Test("Ancestor resolution failure propagates")
     func ancestorMissing() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         graph.isHistoryEnabled = true
@@ -2115,7 +2115,7 @@ struct ConstructionPlaneTests {
     @Test("Absolute plane resolves to specified origin+normal")
     func absolutePlane() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1))
@@ -2130,7 +2130,7 @@ struct ConstructionPlaneTests {
     @Test("offsetFromFace produces a parallel plane at the offset")
     func offsetFromFace() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         // Pick any face; the exact normal is produced from the UV midpoint.
@@ -2149,7 +2149,7 @@ struct ConstructionPlaneTests {
     @Test("byThreePoints returns a valid plane through three vertices")
     func byThreePoints() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let v0 = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -2166,7 +2166,7 @@ struct ConstructionPlaneTests {
     @Test("byThreePoints on collinear points fails with degenerate")
     func collinearPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -2180,7 +2180,7 @@ struct ConstructionPlaneTests {
     @Test("normalToEdge produces plane perpendicular to edge tangent")
     func normalToEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let edgeRef = TopologyRef.literal(.init(kind: .edge, index: 0))
@@ -2199,7 +2199,7 @@ struct ConstructionAxisTests {
     @Test("alongEdge produces edge start + unit direction")
     func alongEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let edge = TopologyRef.literal(.init(kind: .edge, index: 0))
@@ -2213,7 +2213,7 @@ struct ConstructionAxisTests {
     @Test("throughPoints on coincident vertices fails with degenerate")
     func coincidentPointsDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -2225,7 +2225,7 @@ struct ConstructionAxisTests {
     @Test("intersectionOfPlanes on parallel planes fails with degenerate")
     func parallelIntersectionDegenerate() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
@@ -2241,7 +2241,7 @@ struct ConstructionPointTests {
     @Test("atVertex returns the vertex's 3D point")
     func atVertex() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let v = TopologyRef.literal(.init(kind: .vertex, index: 0))
@@ -2256,7 +2256,7 @@ struct ConstructionPointTests {
     @Test("midpointOfEdge lies between endpoints")
     func midpointOfEdge() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let edge = TopologyRef.literal(.init(kind: .edge, index: 0))
@@ -2270,7 +2270,7 @@ struct ConstructionPointTests {
     @Test("intersectionOfAxisAndPlane for axis parallel to plane fails")
     func parallelIntersectionFails() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
@@ -2283,7 +2283,7 @@ struct ConstructionPointTests {
     @Test("intersectionOfAxisAndPlane computes correct intersection")
     func intersectionCorrect() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let plane = ConstructionPlane.absolute(origin: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1))
@@ -2303,7 +2303,7 @@ struct ContainedInTests {
     @Test("Face contained in a box solid resolves")
     func faceInSolid() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let solid = TopologyRef.literal(.init(kind: .solid, index: 0))
@@ -2318,7 +2318,7 @@ struct ContainedInTests {
     @Test("Occurrence out of range in containedIn")
     func faceInSolidOOB() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else {
+              let graph = BRepGraph(shape: box) else {
             Issue.record("graph nil"); return
         }
         let solid = TopologyRef.literal(.init(kind: .solid, index: 0))
@@ -2331,14 +2331,14 @@ struct ContainedInTests {
 
 // MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1
 
-@Suite("TopologyGraph Durable UID")
-struct TopologyGraphDurableUIDTests {
+@Suite("BRepGraph Durable UID")
+struct BRepGraphDurableUIDTests {
     // Face kind ordinal in BRepGraph_NodeId::Kind is 2.
     private let faceKind = 2
 
     @Test func nodeUIDRoundTrip() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = TopologyGraph(shape: box) else { return }
+        guard let graph = BRepGraph(shape: box) else { return }
         #expect(graph.faceCount == 6)
 
         // Every face should yield a valid UID that round-trips back to the same node.
@@ -2364,8 +2364,8 @@ struct TopologyGraphDurableUIDTests {
     @Test func uidFromAnotherGraphDoesNotResolve() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let cyl = Shape.cylinder(radius: 3, height: 7),
-              let boxGraph = TopologyGraph(shape: box),
-              let cylGraph = TopologyGraph(shape: cyl) else { return }
+              let boxGraph = BRepGraph(shape: box),
+              let cylGraph = BRepGraph(shape: cyl) else { return }
 
         guard let boxFaceUID = boxGraph.uid(ofNodeKind: faceKind, index: 2) else {
             Issue.record("box face 2 had no UID"); return
@@ -2384,8 +2384,8 @@ struct TopologyGraphDurableUIDTests {
     /// geometry. This is the case a consumer is most likely to assume works.
     @Test func uidDoesNotCrossIdenticallyBuiltGraphs() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let a = TopologyGraph(shape: box),
-              let b = TopologyGraph(shape: box) else { return }
+              let a = BRepGraph(shape: box),
+              let b = BRepGraph(shape: box) else { return }
         #expect(a.instanceID != b.instanceID)
         guard let uid = a.uid(ofNodeKind: faceKind, index: 1) else { return }
         #expect(b.node(forUID: uid) == nil)
@@ -2394,7 +2394,7 @@ struct TopologyGraphDurableUIDTests {
 
     /// Mean sampled position + normal — a signature that actually distinguishes a box's faces.
     /// (A single grid corner does not: adjacent faces share corners.)
-    private func faceSignature(_ g: TopologyGraph, _ i: Int,
+    private func faceSignature(_ g: BRepGraph, _ i: Int,
                                shift: SIMD3<Double> = .zero) -> String? {
         guard let s = g.sampleFaceUVGrid(faceIndex: i, uSamples: 3, vSamples: 3),
               !s.positions.isEmpty, !s.normals.isEmpty else { return nil }
@@ -2413,7 +2413,7 @@ struct TopologyGraphDurableUIDTests {
     /// the GraphGUID into the target. Guards the #295 provenance check against over-rejecting.
     @Test func uidSurvivesAFullCopyAndNamesTheSameFace() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = TopologyGraph(shape: box),
+              let graph = BRepGraph(shape: box),
               let copy = graph.copy() else { return }
         #expect(copy.instanceID == graph.instanceID)   // a copy is the same identity
         #expect(copy.faceCount == graph.faceCount)
@@ -2436,7 +2436,7 @@ struct TopologyGraphDurableUIDTests {
     @Test func uidSurvivesATranslationAndNamesTheSameFace() {
         let d = SIMD3<Double>(100, 200, 300)
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = TopologyGraph(shape: box),
+              let graph = BRepGraph(shape: box),
               let moved = graph.translated(dx: d.x, dy: d.y, dz: d.z) else { return }
         #expect(moved.instanceID == graph.instanceID)
         for i in 0..<graph.faceCount {
@@ -2454,7 +2454,7 @@ struct TopologyGraphDurableUIDTests {
     /// face. The extracted graph gets a fresh identity, so it now returns nil.
     @Test func uidDoesNotCrossACopiedOutFace() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
-              let graph = TopologyGraph(shape: box),
+              let graph = BRepGraph(shape: box),
               let lifted = graph.copyFace(3) else { return }
         #expect(lifted.instanceID != graph.instanceID)
         #expect(lifted.faceCount == 1)
@@ -2472,14 +2472,14 @@ struct TopologyGraphDurableUIDTests {
     /// tests the counter path rather than being rejected on provenance first.
     @Test func outOfRangeCounterDoesNotResolve() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = TopologyGraph(shape: box) else { return }
+        guard let graph = BRepGraph(shape: box) else { return }
 
-        let bogus = TopologyGraph.GraphUID(kind: faceKind, counter: 999_999, graphID: graph.instanceID)
+        let bogus = BRepGraph.GraphUID(kind: faceKind, counter: 999_999, graphID: graph.instanceID)
         #expect(!graph.contains(uid: bogus))
         #expect(graph.node(forUID: bogus) == nil)
 
         // The invalid sentinel (counter 0) is never valid.
-        let invalid = TopologyGraph.GraphUID(kind: faceKind, counter: 0, graphID: graph.instanceID)
+        let invalid = BRepGraph.GraphUID(kind: faceKind, counter: 0, graphID: graph.instanceID)
         #expect(!invalid.isValid)
         #expect(!graph.contains(uid: invalid))
     }
@@ -2488,10 +2488,10 @@ struct TopologyGraphDurableUIDTests {
     /// even when its counter names a real node in the graph asked.
     @Test func unstampedUIDResolvesNowhere() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = TopologyGraph(shape: box) else { return }
+        guard let graph = BRepGraph(shape: box) else { return }
         guard let real = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
 
-        let unstamped = TopologyGraph.GraphUID(kind: real.kind, counter: real.counter, graphID: 0)
+        let unstamped = BRepGraph.GraphUID(kind: real.kind, counter: real.counter, graphID: 0)
         #expect(unstamped.isValid)              // the counter is a real one...
         #expect(graph.node(forUID: unstamped) == nil)   // ...but it names no graph
         #expect(!graph.contains(uid: unstamped))
@@ -2501,7 +2501,7 @@ struct TopologyGraphDurableUIDTests {
     /// graph that minted it. Guards against the #295 provenance check over-rejecting.
     @Test func uidSurvivesCompactionOfItsOwnGraph() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box),
+              let graph = BRepGraph(shape: box),
               let uid = graph.uid(ofNodeKind: faceKind, index: 3) else { return }
         let idBefore = graph.instanceID
         graph.compact()
@@ -2514,17 +2514,17 @@ struct TopologyGraphDurableUIDTests {
     /// as an unstamped UID rather than a decode failure.
     @Test func uidCodableCarriesProvenance() throws {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box),
+              let graph = BRepGraph(shape: box),
               let uid = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
 
-        let round = try JSONDecoder().decode(TopologyGraph.GraphUID.self,
+        let round = try JSONDecoder().decode(BRepGraph.GraphUID.self,
                                              from: try JSONEncoder().encode(uid))
         #expect(round == uid)
         #expect(round.graphID == graph.instanceID)
         #expect(graph.node(forUID: round) != nil)
 
         let legacy = Data(#"{"kind":2,"counter":1}"#.utf8)
-        let decoded = try JSONDecoder().decode(TopologyGraph.GraphUID.self, from: legacy)
+        let decoded = try JSONDecoder().decode(BRepGraph.GraphUID.self, from: legacy)
         #expect(decoded.graphID == 0)
         #expect(graph.node(forUID: decoded) == nil)
     }
@@ -2534,8 +2534,8 @@ struct TopologyGraphDurableUIDTests {
     @Test func refAndItemUIDsDoNotCrossGraphs() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let cyl = Shape.cylinder(radius: 3, height: 7),
-              let boxGraph = TopologyGraph(shape: box),
-              let cylGraph = TopologyGraph(shape: cyl) else { return }
+              let boxGraph = BRepGraph(shape: box),
+              let cylGraph = BRepGraph(shape: cyl) else { return }
 
         // Ref kind 1 == Face reference entry.
         if let refUID = boxGraph.uid(ofRefKind: 1, index: 0) {
@@ -2559,11 +2559,11 @@ struct TopologyGraphDurableUIDTests {
     @available(*, deprecated, message: "Exercises the deprecated `generation` on purpose.")
     @Test func generationIsAlwaysOne() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: box) else { return }
+              let graph = BRepGraph(shape: box) else { return }
         #expect(graph.generation == 1)          // Clear()-at-build stamps generation 1 (#303)
         graph.compact()
         #expect(graph.generation == 1)          // compaction preserves identity
-        if let other = TopologyGraph(shape: box) {
+        if let other = BRepGraph(shape: box) {
             #expect(other.generation == 1)      // a second graph: same 1, hence useless as identity
             #expect(other.instanceID != graph.instanceID)
         }
@@ -2575,7 +2575,7 @@ struct TopologyGraphDurableUIDTests {
 
     @Test func itemUIDOfNode() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let graph = TopologyGraph(shape: box) else { return }
+        guard let graph = BRepGraph(shape: box) else { return }
         guard graph.faceCount > 0 else { return }
 
         if let item = graph.itemUID(ofNodeKind: faceKind, index: 0) {
@@ -2598,12 +2598,12 @@ struct TopologyGraphDurableUIDTests {
 // (BRepGraph_LayerTopoSupplement): a freshly built (clean) box graph has none until one is
 // attached via faceAddVertex / edgeAddInternalVertex. The returned value is a layer-local
 // attachment uid (not a core ref index); removal is by that uid.
-@Suite("TopologyGraph Supplement Vertices")
-struct TopologyGraphSupplementVertexTests {
+@Suite("BRepGraph Supplement Vertices")
+struct BRepGraphSupplementVertexTests {
     @Test func faceDirectVertexAttachCountRemove() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         guard let box else { Issue.record("box build failed"); return }
-        let graph = TopologyGraph(shape: box)
+        let graph = BRepGraph(shape: box)
         guard let graph else { Issue.record("graph build failed"); return }
 
         // Clean box: no face-direct vertices until we add one.
@@ -2628,7 +2628,7 @@ struct TopologyGraphSupplementVertexTests {
     @Test func edgeInternalVertexAttach() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         guard let box else { Issue.record("box build failed"); return }
-        let graph = TopologyGraph(shape: box)
+        let graph = BRepGraph(shape: box)
         guard let graph else { Issue.record("graph build failed"); return }
 
         // Attaching an edge-internal vertex returns a non-nil layer-local uid.
@@ -2642,7 +2642,7 @@ struct TopologyGraphSupplementVertexTests {
     @Test func boxFacesNotNaturalRestriction() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         guard let box else { Issue.record("box build failed"); return }
-        let graph = TopologyGraph(shape: box)
+        let graph = BRepGraph(shape: box)
         guard let graph else { Issue.record("graph build failed"); return }
         for i in 0..<graph.faceCount {
             #expect(graph.isFaceNaturalRestriction(i) == false)

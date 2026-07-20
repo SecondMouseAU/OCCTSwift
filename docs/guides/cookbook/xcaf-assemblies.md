@@ -108,5 +108,5 @@ plain [Exporter](meshing-and-export.md).
 ## See also
 
 - [Meshing & Export](meshing-and-export.md) — single-shape export and the file formats.
-- [Topology Graph](topology-graph.md) — structure *within* one shape (faces/edges), vs. the assembly tree across shapes.
+- [BRep Graph](brep-graph.md) — structure *within* one shape (faces/edges), vs. the assembly tree across shapes.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

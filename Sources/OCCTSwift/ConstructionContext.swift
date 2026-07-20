@@ -5,7 +5,7 @@ import simd
 //
 // Document-level collection of named construction entities. Each entity gets a
 // typed opaque ID on insertion; the context resolves entities on demand against
-// any given TopologyGraph. Entities are stored by value — storage is lightweight
+// any given BRepGraph. Entities are stored by value — storage is lightweight
 // and thread-safe via an internal lock.
 //
 // Persistence: the XCAF `CONSTRUCTION` layer hosts any shapes tagged as
@@ -152,21 +152,21 @@ public final class ConstructionContext: @unchecked Sendable {
 
     // MARK: - Resolution
 
-    public func resolve(_ id: PlaneID, in graph: TopologyGraph) -> Result<Placement, ConstructionResolutionError> {
+    public func resolve(_ id: PlaneID, in graph: BRepGraph) -> Result<Placement, ConstructionResolutionError> {
         guard let plane = self.plane(id) else {
             return .failure(.notApplicable("plane id \(id.raw) not registered"))
         }
         return graph.resolve(plane)
     }
 
-    public func resolve(_ id: AxisID, in graph: TopologyGraph) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> {
+    public func resolve(_ id: AxisID, in graph: BRepGraph) -> Result<(origin: SIMD3<Double>, direction: SIMD3<Double>), ConstructionResolutionError> {
         guard let axis = self.axis(id) else {
             return .failure(.notApplicable("axis id \(id.raw) not registered"))
         }
         return graph.resolve(axis)
     }
 
-    public func resolve(_ id: PointID, in graph: TopologyGraph) -> Result<SIMD3<Double>, ConstructionResolutionError> {
+    public func resolve(_ id: PointID, in graph: BRepGraph) -> Result<SIMD3<Double>, ConstructionResolutionError> {
         guard let point = self.point(id) else {
             return .failure(.notApplicable("point id \(id.raw) not registered"))
         }
@@ -187,7 +187,7 @@ public final class ConstructionContext: @unchecked Sendable {
     /// Inspect every registered entity against the given graph, return those that
     /// fail resolution. Useful for agent workflows to detect broken references
     /// after a model edit.
-    public func allBroken(in graph: TopologyGraph) -> BrokenEntities {
+    public func allBroken(in graph: BRepGraph) -> BrokenEntities {
         var brokenPlanes: [(id: PlaneID, error: ConstructionResolutionError)] = []
         var brokenAxes: [(id: AxisID, error: ConstructionResolutionError)] = []
         var brokenPoints: [(id: PointID, error: ConstructionResolutionError)] = []

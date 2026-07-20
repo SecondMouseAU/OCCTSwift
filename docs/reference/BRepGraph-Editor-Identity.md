@@ -1,11 +1,11 @@
 ---
-title: TopologyGraph — Editor Geometry, Sampling & Durable Identity
+title: BRepGraph — Editor Geometry, Sampling & Durable Identity
 parent: API Reference
 ---
 
-# TopologyGraph — Editor Geometry, Sampling & Durable Identity
+# BRepGraph — Editor Geometry, Sampling & Durable Identity
 
-This page covers the final sections of `TopologyGraph` (source lines 1622–2055): geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **TopologyGraph — …** pages for the core read API, write helpers, and I/O.
+This page covers the final sections of `BRepGraph` (source lines 1622–2055): geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **BRepGraph — …** pages for the core read API, write helpers, and I/O.
 
 ## Topics
 
@@ -140,7 +140,7 @@ Set the local `TopLoc_Location` of a vertex reference entry.
 public func setVertexRefLocalLocation(_ vertexRefIndex: Int, matrix: [Double])
 ```
 
-`matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention — rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `TopologyGraph.identityLocationMatrix` for a no-op placement.
+`matrix` is a row-major 3×4 array (12 doubles) following the `gp_Trsf::SetValues` convention — rows are `[r00 r01 r02 tx | r10 r11 r12 ty | r20 r21 r22 tz]`. Use `BRepGraph.identityLocationMatrix` for a no-op placement.
 
 - **Parameters:** `vertexRefIndex` — per-kind vertex-ref index; `matrix` — 12-element row-major 3×4 transform.
 - **OCCT:** `TopLoc_Location` via `gp_Trsf::SetValues` (via `OCCTBRepGraphSetVertexRefLocalLocation`).
@@ -245,7 +245,7 @@ Returns `[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]` — a row-major identity with zer
 
 - **Example:**
   ```swift
-  graph.setFaceRefLocalLocation(0, matrix: TopologyGraph.identityLocationMatrix)
+  graph.setFaceRefLocalLocation(0, matrix: BRepGraph.identityLocationMatrix)
   ```
 
 ---
@@ -318,7 +318,7 @@ public func linkProducts(parentProductIndex: Int, referencedProductIndex: Int,
 - **Note:** Precondition: `placement.count == 12`.
 - **Example:**
   ```swift
-  let matrix = TopologyGraph.identityLocationMatrix
+  let matrix = BRepGraph.identityLocationMatrix
   if let result = graph.linkProducts(parentProductIndex: 0,
                                       referencedProductIndex: 1,
                                       placement: matrix) {
@@ -737,8 +737,8 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
 A UID is meaningful only inside the graph that minted it. Every graph allocates counters from 1 independently, so the same `(kind, counter)` names some unrelated node in every other graph. Each UID therefore carries a `graphID` — the `instanceID` of the graph that minted it — and the resolvers reject a UID from anywhere else:
 
 ```swift
-let boxGraph = TopologyGraph(shape: box)!
-let cylGraph = TopologyGraph(shape: cylinder)!
+let boxGraph = BRepGraph(shape: box)!
+let cylGraph = BRepGraph(shape: cylinder)!
 
 let faceUID = boxGraph.uid(ofNodeKind: 2, index: 2)!   // a face of the BOX
 boxGraph.node(forUID: faceUID)      // Optional((kind: 2, index: 2))
@@ -757,7 +757,7 @@ Which operations carry identity across follows the kernel's own rule — whether
 | `copyFace()` | **fresh** — `CopyNode` lifts one face without the counter space | source UIDs return `nil` |
 | a new graph over any shape (incl. a rebuild of the same one) | fresh | source UIDs return `nil` |
 
-To carry a selection across a *modelling operation* rather than across mutations of one graph, absorb the operation's history — see [`add(_:absorbing:inputRoots:operationName:)`](TopologyGraph-Detail-History.md#add_absorbinginputrootsoperationname). To carry one across a save/load, store `(kind, index)` with the shape and re-mint after rebuilding — see [Topology Graph § UIDs and persistence](../guides/cookbook/topology-graph.md#uids-and-persistence).
+To carry a selection across a *modelling operation* rather than across mutations of one graph, absorb the operation's history — see [`add(_:absorbing:inputRoots:operationName:)`](BRepGraph-Detail-History.md#add_absorbinginputrootsoperationname). To carry one across a save/load, store `(kind, index)` with the shape and re-mint after rebuilding — see [BRep Graph § UIDs and persistence](../guides/cookbook/brep-graph.md#uids-and-persistence).
 
 > Before v1.12.0 UIDs carried no provenance, so a UID from an unrelated graph resolved to a plausible but wrong node instead of returning `nil`. `copyFace()` was affected the same way. ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295))
 
@@ -981,11 +981,11 @@ Identity here is the graph object, not the geometry: two graphs built from the s
 - **OCCT:** none — assigned by the bridge per `OCCTBRepGraph` (via `OCCTBRepGraphInstanceID`).
 - **Example:**
   ```swift
-  let graph = TopologyGraph(shape: box)!
+  let graph = BRepGraph(shape: box)!
   let uid = graph.uid(ofNodeKind: 2, index: 0)!
   print(uid.graphID == graph.instanceID)   // true — this graph minted it
 
-  let rebuilt = TopologyGraph(shape: box)!  // same shape, new instance
+  let rebuilt = BRepGraph(shape: box)!  // same shape, new instance
   print(rebuilt.instanceID == graph.instanceID)   // false
   print(rebuilt.node(forUID: uid))                // nil
   ```

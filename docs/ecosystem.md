@@ -57,7 +57,7 @@ This page exists so you don't have to guess which dep to add.
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │ OCCTSwift                                                       │   │
 │  │ Swift wrapper for OCCT — shapes, curves, surfaces, OCAF,        │   │
-│  │ TopologyGraph, drawing/projection, ML-friendly samplers.        │   │
+│  │ BRepGraph, drawing/projection, ML-friendly samplers.            │   │
 │  │ Bundles a pre-built OCCT 8.0.0 GA xcframework (arm64,           │   │
 │  │ macOS / iOS / visionOS / tvOS).                                 │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
@@ -91,7 +91,7 @@ You want the full visualization stack:
 You want **OCCTSwiftScripts**. It ships:
 
 - `occtkit` — a CLI binary with verbs like `compose`, `reconstruct`, `drawing-export`, `metrics`, `simplify-mesh`, `render-preview`, `xcaf`. Ready to drive from a Makefile or a server-side parametric pipeline.
-- `ScriptHarness` library — JSON-driven manifest format you can embed in your own tools, with topology-graph descriptors for downstream watchers.
+- `ScriptHarness` library — JSON-driven manifest format you can embed in your own tools, with brep-graph descriptors for downstream watchers.
 
 Scripts depends on the full ecosystem (kernel + IO + Mesh + Tools + AIS + Viewport for `render-preview`). If your use case is purely batch and you don't need preview rendering, depend on the lower-tier packages directly instead.
 
@@ -105,7 +105,7 @@ If you can't depend on Swift (e.g. you're writing a C plugin for a host applicat
 
 ### Engineering-drawing ML pipelines
 
-`OCCTSwift` itself ships `TopologyGraph` for graph-based topology representation, plus UV-grid samplers and curve samplers for ML feature extraction. Combined with `OCCTSwiftIO.exportForML()` (extension on `TopologyGraph` lifted from the kernel in v0.171.0), you can produce flat / COO-format adjacency tensors for GNN / UV-Net / BRepNet pipelines.
+`OCCTSwift` itself ships `BRepGraph` for graph-based topology representation, plus UV-grid samplers and curve samplers for ML feature extraction. Combined with `OCCTSwiftIO.exportForML()` (extension on `BRepGraph` lifted from the kernel in v0.171.0), you can produce flat / COO-format adjacency tensors for GNN / UV-Net / BRepNet pipelines.
 
 For trained model artifacts and CoreML wrappers:
 
@@ -130,7 +130,7 @@ All public packages graduated to **SemVer-stable v1.0.0** alongside OCCTSwift v1
 
 ## Notable v1.0.x patches
 
-- **OCCTSwift v1.0.1** — `TopologyGraph.NodeKind` extended to cover `Product` / `Occurrence` raw values; without this, `rootNodes` silently returned `[]` for any graph with assembly roots.
+- **OCCTSwift v1.0.1** — `BRepGraph.NodeKind` extended to cover `Product` / `Occurrence` raw values; without this, `rootNodes` silently returned `[]` for any graph with assembly roots.
 - **OCCTSwift v1.0.2** — per-input boolean history surface (`unionWithFullHistory` / `subtractedWithFullHistory` / `intersectionWithFullHistory` / `splitWithFullHistory`), used by selection-remapping consumers (e.g. OCCTMCP's `remap_selection`) to walk selection IDs across boolean / split mutations exactly instead of falling back to a centroid-distance heuristic.
 - **OCCTSwift v1.0.3** — extends per-input history to modification ops (`filletedWithFullHistory` / `chamferedWithFullHistory` / `shelledWithFullHistory` / `defeaturedWithFullHistory`) and threads it through `FeatureReconstructor.BuildResult.histories[featureID]`. Closes the long-running #165 selection-survival epic.
 - **OCCTSwift v1.0.4** — wires `applyFillet` / `applyChamfer` through the Tier 2 history variants and implements chamfer's `.nearPoint` / `.onFeature` selectors that were stubbed before. After this, every `FeatureSpec` kind (boolean / hole / additive / fillet / chamfer) populates `BuildResult.histories[id]` for specs with non-nil ids — closes #166.
@@ -138,8 +138,8 @@ All public packages graduated to **SemVer-stable v1.0.0** alongside OCCTSwift v1
 - **OCCTSwiftViewport v1.0.3** — fixes an **uncatchable** crash (`fatalError`, not a thrown error) on body load: `NormalSmoothing.quantize(_:)` overflowed `Int32` for any mesh vertex beyond ±21,474.8 model units (or `NaN`/`±inf`). Now clamps non-finite/out-of-range coords before the trapping conversion. Closes Viewport [#30](https://github.com/gsdali/OCCTSwiftViewport/issues/30).
 - **OCCTSwiftViewport v1.0.4** — packaging fix: the demo target's dependency on `OCCTSwiftTools` (which depends back on Viewport) formed a package cycle that broke standalone `swift build`. The demo moved to `Examples/MetalDemo`; **the published Viewport package now has zero external dependencies** (its library never used the kernel or Tools). No library API change — fully compatible with v1.0.3. Closes Viewport [#32](https://github.com/gsdali/OCCTSwiftViewport/pull/32).
 - **OCCTSwiftTools v1.1.0** — first MINOR bump under the [cohort SemVer policy](SEMVER.md). `PointConverter.pointsToBody` now wires `pointRadius` and `perPointColors` through to the new `ViewportBody` fields and stamps `primitiveKind = .point`. Companion follow-up to Viewport v1.0.2.
-- **OCCTSwift v1.1.0** — `TopologyGraph.findDerivedOrSelf(of:)` and `hasHistoryRecord(for:)` disambiguate untouched-vs-deleted nodes that both returned `[]` from `findDerived` (closes #167). Direct unblocker for OCCTMCP `remap_selection`'s history path.
-- **OCCTSwift v1.2.0** — `TopologyGraph` per-node attribute store (`attributes` / `AttrValue` / `NodeAttributeStore`) + Codable `GraphSnapshot` round-trip (closes #168). Pure Swift sidecar, no bridge change; nodes can now carry arbitrary typed metadata (fit residual, provenance, mesh-region sets) and a session serializes deterministically. Foundation for the OCCTReconstruct mesh-to-solid pipeline and OCCTMCP's planned `reconstruct_*` graph read/write tools ([OCCTMCP #33](https://github.com/gsdali/OCCTMCP/issues/33)).
+- **OCCTSwift v1.1.0** — `BRepGraph.findDerivedOrSelf(of:)` and `hasHistoryRecord(for:)` disambiguate untouched-vs-deleted nodes that both returned `[]` from `findDerived` (closes #167). Direct unblocker for OCCTMCP `remap_selection`'s history path.
+- **OCCTSwift v1.2.0** — `BRepGraph` per-node attribute store (`attributes` / `AttrValue` / `NodeAttributeStore`) + Codable `GraphSnapshot` round-trip (closes #168). Pure Swift sidecar, no bridge change; nodes can now carry arbitrary typed metadata (fit residual, provenance, mesh-region sets) and a session serializes deterministically. Foundation for the OCCTReconstruct mesh-to-solid pipeline and OCCTMCP's planned `reconstruct_*` graph read/write tools ([OCCTMCP #33](https://github.com/gsdali/OCCTMCP/issues/33)).
 - **OCCTSwiftTools v1.0.1** — `PointConverter.pointsToBody(_:)` for rendering point clouds without sphere-compound triangulation. Renderer-side support for drawing the points as visible primitives is tracked at [OCCTSwiftViewport#28](https://github.com/gsdali/OCCTSwiftViewport/issues/28).
 - **OCCTMCP v1.2.0** — full `apply_feature` history surface (consumes OCCTSwift v1.0.4's per-input histories) plus visible point clouds end-to-end (Viewport v1.0.2 + Tools v1.1.0).
 - **OCCTMCP v1.3.0** — `find_correspondences` tool (closes OCCTMCP #24) for matching topology across model variants, with a history-path fix.

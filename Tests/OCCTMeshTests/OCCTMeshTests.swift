@@ -871,7 +871,7 @@ struct MeshCacheWriteTests {
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 guard let repId = graph.createTriangulationRep(tri) else {
                     Issue.record("createTriangulationRep nil"); return
@@ -895,7 +895,7 @@ struct MeshCacheWriteTests {
         }
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 guard let repId = graph.createPolygon3DRep(poly) else {
                     Issue.record("createPolygon3DRep nil"); return
@@ -915,7 +915,7 @@ struct MeshViewCountsTests {
     func meshCountsZeroOnFreshGraph() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // No mesh has been computed yet; all counts should be 0 (or at least non-negative).
                 #expect(graph.polygon2DCount >= 0)
@@ -937,7 +937,7 @@ struct MeshViewCountsTests {
     func meshRepIdsAbsentBeforeMeshing() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let box {
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // No incremental mesh has run; cache and persistent tiers are empty.
                 #expect(graph.meshFaceActiveTriangulationRepId(0) == nil)
@@ -953,7 +953,7 @@ struct MeshViewCountsTests {
         if let box {
             // Generate triangulation via incremental mesher.
             _ = box.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
-            let graph = TopologyGraph(shape: box)
+            let graph = BRepGraph(shape: box)
             if let graph {
                 // After meshing, persistent triangulation tier should report nonzero.
                 #expect(graph.triangulationCount + graph.polygon3DCount >= 0)

@@ -209,23 +209,23 @@ Extension on `ConstructionAxis` (defined in `MeasurementHelpers.swift`).
 Angle between two construction axes, resolved against the given topology graph.
 
 ```swift
-public func angle(to other: ConstructionAxis, in graph: TopologyGraph) -> Double?
+public func angle(to other: ConstructionAxis, in graph: BRepGraph) -> Double?
 ```
 
-Resolves each axis via `TopologyGraph.resolve(_:)` to obtain its `direction` vector, then computes the unsigned angle between the directions.
+Resolves each axis via `BRepGraph.resolve(_:)` to obtain its `direction` vector, then computes the unsigned angle between the directions.
 
 - **Parameters:**
   - `other` — the axis to compare.
-  - `graph` — the `TopologyGraph` used to resolve both axis handles.
+  - `graph` — the `BRepGraph` used to resolve both axis handles.
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either axis fails to resolve.
-- **OCCT:** Pure-Swift over `TopologyGraph.resolve` + `unsignedAngle(between:and:)`.
+- **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
   ```swift
-  let graph = shape.topologyGraph()
-  let axes = graph.constructionAxes()
-  if axes.count >= 2,
-     let a = axes[0].angle(to: axes[1], in: graph) {
-      print(a * 180 / .pi)
+  let graph = BRepGraph(shape: shape)!
+  let axisA = ConstructionAxis.absolute(origin: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
+  let axisB = ConstructionAxis.absolute(origin: SIMD3(0, 0, 0), direction: SIMD3(0, 1, 0))
+  if let a = axisA.angle(to: axisB, in: graph) {
+      print(a * 180 / .pi)  // 90
   }
   ```
 
@@ -242,23 +242,23 @@ Extension on `ConstructionPlane` (defined in `MeasurementHelpers.swift`).
 Angle between two construction planes (angle between their Z-axis normals).
 
 ```swift
-public func angle(to other: ConstructionPlane, in graph: TopologyGraph) -> Double?
+public func angle(to other: ConstructionPlane, in graph: BRepGraph) -> Double?
 ```
 
-Resolves each plane via `TopologyGraph.resolve(_:)` to obtain its `zAxis` vector, then computes the unsigned angle between them.
+Resolves each plane via `BRepGraph.resolve(_:)` to obtain its `zAxis` vector, then computes the unsigned angle between them.
 
 - **Parameters:**
   - `other` — the plane to compare.
-  - `graph` — the `TopologyGraph` used to resolve both plane handles.
+  - `graph` — the `BRepGraph` used to resolve both plane handles.
 - **Returns:** Angle in radians in `[0, π]`, or `nil` if either plane fails to resolve.
-- **OCCT:** Pure-Swift over `TopologyGraph.resolve` + `unsignedAngle(between:and:)`.
+- **OCCT:** Pure-Swift over `BRepGraph.resolve` + `unsignedAngle(between:and:)`.
 - **Example:**
   ```swift
-  let graph = shape.topologyGraph()
-  let planes = graph.constructionPlanes()
-  if planes.count >= 2,
-     let a = planes[0].angle(to: planes[1], in: graph) {
-      print(a * 180 / .pi)
+  let graph = BRepGraph(shape: shape)!
+  let planeA = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let planeB = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0))
+  if let a = planeA.angle(to: planeB, in: graph) {
+      print(a * 180 / .pi)  // 90
   }
   ```
 

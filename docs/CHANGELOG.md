@@ -7,13 +7,33 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.14.0
+## Current: v1.15.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.0 (July 2026) — `TopologyGraph` renamed to `BRepGraph` (closes #333)
+
+**MINOR — additive; old name still works.** `TopologyGraph` read as too close to OCCT's own `TopoDS_*`
+family (`TopoDS_Shape`, `TopoDS_Face`, ...) on a skim, without signaling that it specifically wraps the
+BRepGraph durable-identity engine. Renamed to `BRepGraph`, matching both the C++ package it wraps and
+this file's own name (`BRepGraph.swift`).
+
+```swift
+@available(*, deprecated, renamed: "BRepGraph")
+public typealias TopologyGraph = BRepGraph
+```
+
+Existing code compiles unchanged (with a deprecation warning) under the old name. New code should use
+`BRepGraph`. The typealias stays until a later release drops it per the usual deprecation policy — no
+removal date set yet.
+
+Docs move alongside the rename: `docs/reference/TopologyGraph*.md` → `BRepGraph*.md`,
+`docs/guides/cookbook/topology-graph*.md` → `brep-graph*.md`. The `Tests/OCCTTopologyGraphTests` target
+is renamed to `Tests/OCCTBRepGraphTests` (internal only, no consumer-visible effect).
 
 ### v1.14.0 (July 2026) — feat: `*WithFullHistory` parity for translate/rotate/scale/mirror/patterns (#331)
 

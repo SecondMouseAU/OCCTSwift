@@ -17,7 +17,7 @@ import simd
 // survives subsequent mutations, rather than an index-based heuristic.
 //
 // This is the v1 implementation. It:
-//   - Does not yet use TopologyGraph history recording during dispatch (the
+//   - Does not yet use BRepGraph history recording during dispatch (the
 //     shapes produced are built from primitives; each FeatureSpec gets tagged
 //     with its own opName so downstream callers can use TopologyRef.createdBy
 //     against the final graph).
@@ -607,7 +607,7 @@ public struct FeatureReconstructor: Sendable {
     /// Edge indices of `target` that were "contributed by" `source` — heuristic:
     /// edges of target whose midpoint lies within a small tolerance of any edge
     /// midpoint of source. Useful for "fillet the edges the extrude created"
-    /// without needing full TopologyGraph history.
+    /// without needing full BRepGraph history.
     private static func edgeIndicesContributedBy(target: Shape,
                                                   source: Shape,
                                                   tolerance: Double = 1e-4) -> [Int]? {

@@ -1,14 +1,14 @@
 ---
-title: Topology Graph
+title: BRep Graph
 parent: Cookbook
 nav_order: 9
 has_children: true
 ---
 
-# Topology Graph
+# BRep Graph
 
 A `Shape` is a B-Rep — a graph of solids, shells, faces, wires, edges and vertices wired together by
-incidence. `TopologyGraph` exposes that graph for **queries** (counts, adjacency, shared edges), gives
+incidence. `BRepGraph` exposes that graph for **queries** (counts, adjacency, shared edges), gives
 every node an identity that survives mutation of that graph, and can absorb an operation's **history**
 so a selection survives the operation too — useful for selection and analysis.
 
@@ -16,7 +16,7 @@ so a selection survives the operation too — useful for selection and analysis.
 
 ```swift
 let box = Shape.box(width: 10, height: 10, depth: 10)!
-guard let graph = TopologyGraph(shape: box) else { return }   // parallel: false by default
+guard let graph = BRepGraph(shape: box) else { return }   // parallel: false by default
 ```
 
 ## Count nodes by kind
@@ -58,13 +58,13 @@ graph.sameDomainFaces(of: 0)
 
 This section is the short tour. For the full model (the three UID flavours, the one-graph-instance
 scope rule and provenance, what preserves identity versus mints a new one, and persistence) see
-[BREP Graph: Durable Identity & UIDs](topology-graph-uids.md).
+[BREP Graph: Durable Identity & UIDs](brep-graph-uids.md).
 
 A node **index** is not stable — it shifts when topology is added or removed. For a reference that
 survives mutation, use a `GraphUID` (`kind` + a never-reused `counter`):
 
 ```swift
-let faceKind = Int(TopologyGraph.NodeKind.face.rawValue)
+let faceKind = Int(BRepGraph.NodeKind.face.rawValue)
 guard let uid = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
 uid.isValid                       // counter > 0
 graph.contains(uid: uid)          // still present?
@@ -78,7 +78,7 @@ a UID from another graph would name an unrelated node; each UID carries the mint
 `instanceID` as `graphID`, and the resolvers return `nil` rather than a wrong node:
 
 ```swift
-let other = TopologyGraph(shape: Shape.cylinder(radius: 3, height: 7)!)!
+let other = BRepGraph(shape: Shape.cylinder(radius: 3, height: 7)!)!
 other.node(forUID: uid)      // nil — uid belongs to `graph`, not to `other`
 other.contains(uid: uid)     // false
 ```
@@ -110,7 +110,7 @@ after rebuilding:
 // save:  the shape, plus the node address you care about
 let saved = (kind: faceKind, index: 3)
 // load:  rebuild, then re-mint
-let reloaded = TopologyGraph(shape: Shape.fromBREPString(brep)!)!
+let reloaded = BRepGraph(shape: Shape.fromBREPString(brep)!)!
 let uid = reloaded.uid(ofNodeKind: saved.kind, index: saved.index)
 ```
 
@@ -132,8 +132,8 @@ The graph can record how nodes map through an operation (e.g. a fillet replacing
 selection can be re-resolved afterward:
 
 ```swift
-let orig = TopologyGraph.NodeRef(kind: .face, index: 0)
-let repl = TopologyGraph.NodeRef(kind: .face, index: 42)
+let orig = BRepGraph.NodeRef(kind: .face, index: 0)
+let repl = BRepGraph.NodeRef(kind: .face, index: 42)
 graph.recordHistory(operationName: "Fillet", original: orig, replacements: [repl])
 
 graph.findDerived(of: orig)          // [repl]    — what it became
@@ -147,7 +147,7 @@ remapping a selection, since an empty `findDerived` is ambiguous on its own.
 
 ## See also
 
-- [BREP Graph: Durable Identity & UIDs](topology-graph-uids.md): the deep dive on `GraphUID` / `GraphRefUID` / `GraphItemUID`, the one-graph-instance scope rule, and persistence.
+- [BREP Graph: Durable Identity & UIDs](brep-graph-uids.md): the deep dive on `GraphUID` / `GraphRefUID` / `GraphItemUID`, the one-graph-instance scope rule, and persistence.
 - [XCAF Assemblies](xcaf-assemblies.md) — structure *across* shapes (the product tree), vs. structure *within* one shape here.
 - [Healing & Validity](healing-and-validity.md) — `sameDomainFaces` pairs with `unified()` after booleans.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md)

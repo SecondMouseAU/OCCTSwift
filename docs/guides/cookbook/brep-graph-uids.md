@@ -1,20 +1,20 @@
 ---
 title: "BREP Graph: Durable Identity & UIDs"
-parent: Topology Graph
+parent: BRep Graph
 grand_parent: Cookbook
 nav_order: 1
 ---
 
 # BREP Graph: Durable Identity & UIDs
 
-A `TopologyGraph` gives every node (solid, shell, face, wire, edge, vertex, and the reference and
+A `BRepGraph` gives every node (solid, shell, face, wire, edge, vertex, and the reference and
 product entries around them) an identity that survives mutation of that graph. This page is about how
 that identity works: the three UID flavours, how they are minted and resolved, and the one rule that
 trips people up most, which is that a **UID belongs to the exact graph instance that minted it** and
 resolves nowhere else.
 
 For general graph queries (counts, adjacency, shared edges) and a lighter tour of identity, start with
-[Topology Graph](topology-graph.md). This page goes deep on the identity model.
+[BRep Graph](brep-graph.md). This page goes deep on the identity model.
 
 ## Why indices are not enough
 
@@ -24,9 +24,9 @@ different face tomorrow.
 
 ```swift
 let box = Shape.box(width: 10, height: 10, depth: 10)!
-let graph = TopologyGraph(shape: box)!
+let graph = BRepGraph(shape: box)!
 
-let faceKind = Int(TopologyGraph.NodeKind.face.rawValue)   // 2
+let faceKind = Int(BRepGraph.NodeKind.face.rawValue)   // 2
 let uid = graph.uid(ofNodeKind: faceKind, index: 3)!       // pin face 3 by identity
 
 graph.compact()                                            // vectors renumber
@@ -63,7 +63,7 @@ guard let uid = graph.uid(ofNodeKind: faceKind, index: 0) else { return }
 
 // Resolve: durable UID  ->  (kind, index) as of now
 if let node = graph.node(forUID: uid) {
-    let ref = TopologyGraph.NodeRef(kind: TopologyGraph.NodeKind(rawValue: Int32(node.kind))!,
+    let ref = BRepGraph.NodeRef(kind: BRepGraph.NodeKind(rawValue: Int32(node.kind))!,
                                     index: node.index)
     // ... query with ref ...
 }
@@ -91,11 +91,11 @@ minting graph's `instanceID` in its `graphID` field, and the resolvers reject a 
 anywhere else.
 
 ```swift
-let boxGraph = TopologyGraph(shape: box)!
+let boxGraph = BRepGraph(shape: box)!
 let faceUID  = boxGraph.uid(ofNodeKind: faceKind, index: 0)!
 print(faceUID.graphID == boxGraph.instanceID)   // true: this graph minted it
 
-let cyl = TopologyGraph(shape: Shape.cylinder(radius: 3, height: 7)!)!
+let cyl = BRepGraph(shape: Shape.cylinder(radius: 3, height: 7)!)!
 print(cyl.node(forUID: faceUID))                // nil, not a wrong face
 print(cyl.contains(uid: faceUID))               // false
 ```
@@ -129,7 +129,7 @@ survive.
 | `copy(copyGeometry:)` | **inherited** | carry over; name the same nodes |
 | `translated(dx:dy:dz:copyGeometry:)` | **inherited** | carry over |
 | `copyFace(_:copyGeometry:)` | **new instance** | old UIDs resolve nowhere; mint fresh ones |
-| rebuild `TopologyGraph(shape:)` | **new instance** | old UIDs void |
+| rebuild `BRepGraph(shape:)` | **new instance** | old UIDs void |
 
 `copy()` and `translated()` inherit the identity because the kernel copies the graph wholesale: it
 transplants the UID counter space itself, so a copy genuinely *is* the same identity and every UID
@@ -171,7 +171,7 @@ let saved = (kind: faceKind, index: 3)
 let brep  = box.toBREPString()!
 
 // Load: rebuild the graph from the shape, then re-mint the UID.
-let reloaded = TopologyGraph(shape: Shape.fromBREPString(brep)!)!
+let reloaded = BRepGraph(shape: Shape.fromBREPString(brep)!)!
 let freshUID = reloaded.uid(ofNodeKind: saved.kind, index: saved.index)
 ```
 
@@ -196,13 +196,13 @@ The graph can absorb an operation's history so a selection re-resolves through i
 the operation's input, hand it the result and its history, then resolve the pinned node forward:
 
 ```swift
-let graph  = TopologyGraph(shape: base)!
+let graph  = BRepGraph(shape: base)!
 let root   = graph.findNode(for: base)!
 let pinned = /* the node you picked, as a NodeRef */
 
 let (result, history) = base.subtractedWithFullHistory(tool)!
 graph.add(result, absorbing: history,
-          inputRoots: [TopologyGraph.NodeRef(kind: root.kind, index: root.index)],
+          inputRoots: [BRepGraph.NodeRef(kind: root.kind, index: root.index)],
           operationName: "cut")
 
 graph.currentForms(of: pinned)      // what the pinned node became after the cut
@@ -210,7 +210,7 @@ graph.currentForms(of: pinned)      // what the pinned node became after the cut
 
 Because that path keeps everything inside one graph instance, the `NodeRef`s and UIDs you already hold
 stay valid: there is no second graph to look them up in. See
-[Topology Graph](topology-graph.md#tracking-nodes-through-operations-history) for the history API
+[BRep Graph](brep-graph.md#tracking-nodes-through-operations-history) for the history API
 (`add(_:absorbing:inputRoots:operationName:)`, `currentForms(of:)`, `recordHistory`,
 `findDerivedOrSelf`, `historyIsDeleted`), and issue
 [#290](https://github.com/SecondMouseAU/OCCTSwift/issues/290) for the design.
@@ -230,7 +230,7 @@ do not expect a UID to mean anything in a different graph.
 
 ## See also
 
-- [Topology Graph](topology-graph.md) for graph construction, queries, adjacency, and the history API.
+- [BRep Graph](brep-graph.md) for graph construction, queries, adjacency, and the history API.
 - [XCAF Assemblies](xcaf-assemblies.md) for identity *across* shapes (the product tree) rather than
   within one shape.
 - API mapping: [`../../API_REFERENCE.md`](../../API_REFERENCE.md).

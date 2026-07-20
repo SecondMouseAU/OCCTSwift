@@ -1,11 +1,11 @@
 ---
-title: TopologyGraph — Topology Detail, History & Mesh
+title: BRepGraph — Topology Detail, History & Mesh
 parent: API Reference
 ---
 
-# TopologyGraph — Topology Detail, History & Mesh
+# BRepGraph — Topology Detail, History & Mesh
 
-This page covers the detail-query, history, mesh-storage, assembly, and structural reference members of `TopologyGraph`. For the core construction, counts, adjacency, geometry, and serialization API see [TopologyGraph](TopologyGraph.md).
+This page covers the detail-query, history, mesh-storage, assembly, and structural reference members of `BRepGraph`. For the core construction, counts, adjacency, geometry, and serialization API see [BRepGraph](BRepGraph.md).
 
 ## Topics
 
@@ -218,7 +218,7 @@ public func clearHistory()
 
 ### `NodeRef`
 
-A `(kind, index)` pair identifying a node within a `TopologyGraph`.
+A `(kind, index)` pair identifying a node within a `BRepGraph`.
 
 ```swift
 public struct NodeRef: Sendable, Hashable, Codable {
@@ -450,7 +450,7 @@ that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 - **Example:** cut a channel across a box's top face and keep hold of the face.
   ```swift
   let base = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
-  let graph = TopologyGraph(shape: base)!
+  let graph = BRepGraph(shape: base)!
   let rootNode = graph.findNode(for: base)!
   let root = NodeRef(kind: rootNode.kind, index: rootNode.index)
 
@@ -882,11 +882,11 @@ public func sameDomainFaces(of faceIndex: Int) -> [Int]
 Creates a deep copy of the graph.
 
 ```swift
-public func copy(copyGeometry: Bool = true) -> TopologyGraph?
+public func copy(copyGeometry: Bool = true) -> BRepGraph?
 ```
 
 - **Parameters:** `copyGeometry` — when `true` (default), geometry handles are also copied; when `false`, the new graph shares geometry with the original.
-- **Returns:** New `TopologyGraph`, or `nil` on failure.
+- **Returns:** New `BRepGraph`, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphCopy`.
 - **Example:**
   ```swift
@@ -902,13 +902,13 @@ public func copy(copyGeometry: Bool = true) -> TopologyGraph?
 Creates a new graph containing only the sub-graph of a single face.
 
 ```swift
-public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> TopologyGraph?
+public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> BRepGraph?
 ```
 
 - **Parameters:**
   - `faceIndex` — 0-based index of the face to extract.
   - `copyGeometry` — whether to copy geometry handles (default: `true`).
-- **Returns:** New `TopologyGraph` for the face sub-graph, or `nil` on failure.
+- **Returns:** New `BRepGraph` for the face sub-graph, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphCopyFace`.
 - **Example:**
   ```swift
@@ -924,13 +924,13 @@ public func copyFace(_ faceIndex: Int, copyGeometry: Bool = true) -> TopologyGra
 Returns a new graph translated by `(dx, dy, dz)`.
 
 ```swift
-public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true) -> TopologyGraph?
+public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true) -> BRepGraph?
 ```
 
 - **Parameters:**
   - `dx`, `dy`, `dz` — translation components in model units.
   - `copyGeometry` — whether to copy geometry handles (default: `true`).
-- **Returns:** Translated `TopologyGraph`, or `nil` on failure.
+- **Returns:** Translated `BRepGraph`, or `nil` on failure.
 - **OCCT:** `OCCTBRepGraphTransformTranslation`.
 - **Example:**
   ```swift
@@ -1091,7 +1091,7 @@ public var rootProductIndices: [Int] { get }
 
 ## Reference Counts
 
-`TopologyGraph` stores topology as definition nodes (face, edge, …) and typed reference entries that link parent nodes to child nodes with orientation. The counts below reflect the size of each reference table.
+`BRepGraph` stores topology as definition nodes (face, edge, …) and typed reference entries that link parent nodes to child nodes with orientation. The counts below reflect the size of each reference table.
 
 ### `RefKind`
 

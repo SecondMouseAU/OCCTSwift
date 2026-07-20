@@ -14,10 +14,10 @@ struct GraphHistoryAbsorbTests {
     /// The reporter's scenario, assembled once.
     struct Cut {
         let base: Shape
-        let graph: TopologyGraph
-        let root: TopologyGraph.NodeRef
+        let graph: BRepGraph
+        let root: BRepGraph.NodeRef
         /// The top face's node, pinned before the cut.
-        let pinnedTop: TopologyGraph.NodeRef
+        let pinnedTop: BRepGraph.NodeRef
         let result: Shape
         let history: ShapeHistoryRef
     }
@@ -25,7 +25,7 @@ struct GraphHistoryAbsorbTests {
     static func makeCut() -> Cut? {
         guard let base = Shape.box(origin: SIMD3<Double>(0, 0, 0),
                                    width: 10, height: 10, depth: 10),
-              let graph = TopologyGraph(shape: base),
+              let graph = BRepGraph(shape: base),
               let rootNode = graph.findNode(for: base) else { return nil }
 
         let faces = base.faces()
@@ -41,14 +41,14 @@ struct GraphHistoryAbsorbTests {
 
         return Cut(base: base,
                    graph: graph,
-                   root: TopologyGraph.NodeRef(kind: rootNode.kind, index: rootNode.index),
-                   pinnedTop: TopologyGraph.NodeRef(kind: topNode.kind, index: topNode.index),
+                   root: BRepGraph.NodeRef(kind: rootNode.kind, index: rootNode.index),
+                   pinnedTop: BRepGraph.NodeRef(kind: topNode.kind, index: topNode.index),
                    result: result,
                    history: history)
     }
 
     /// Area of the face a node reconstructs to.
-    static func faceArea(_ graph: TopologyGraph, _ node: TopologyGraph.NodeRef) -> Double? {
+    static func faceArea(_ graph: BRepGraph, _ node: BRepGraph.NodeRef) -> Double? {
         guard let shape = graph.shape(nodeKind: node.kind, nodeIndex: node.index) else { return nil }
         let areas = shape.measure().faceAreas
         guard !areas.isEmpty else { return nil }
@@ -163,7 +163,7 @@ struct GraphHistoryAbsorbTests {
               let bottomNode = c.graph.findNode(for: bottomFace) else {
             Issue.record("bottom face lookup failed"); return
         }
-        let bottom = TopologyGraph.NodeRef(kind: bottomNode.kind, index: bottomNode.index)
+        let bottom = BRepGraph.NodeRef(kind: bottomNode.kind, index: bottomNode.index)
 
         #expect(!c.graph.historyIsDeleted(bottom),
                 "an untouched face must not be reported as deleted")

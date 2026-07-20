@@ -82,7 +82,7 @@ one domain never recompiles the rest. The old 50k-line `ShapeTests.swift` monoli
 suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.swift`):
 
 `Analysis`, `Curve`, `Drawing`, `Foundation`, `Geom2d`, `IO`, `Integration`, `Math`, `Mesh`,
-`Misc`, `Modeling`, `ShapeHealing`, `Stress`, `Surface`, `Thread`, `TopologyGraph`, `Topology`, `XCAF`.
+`Misc`, `Modeling`, `ShapeHealing`, `Stress`, `Surface`, `Thread`, `BRepGraph`, `Topology`, `XCAF`.
 
 - **Add a new suite** to the domain target that best matches it (e.g. a fillet suite → `OCCTModelingTests`,
   a `Curve2D` suite → `OCCTGeom2dTests`). If nothing fits, use `OCCTMiscTests`. Each target is a separate
