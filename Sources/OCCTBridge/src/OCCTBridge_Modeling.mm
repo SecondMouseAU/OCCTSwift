@@ -1169,6 +1169,10 @@ OCCTShapeRef OCCTShapeQuilt(OCCTShapeRef* shapes, int32_t count) {
     }
 }
 
+// OCCTShapeQuiltWithHistory lives further down (MARK: - Sewing / quilting /
+// healing with full history, issue #327) — it constructs OCCTBooleanHistory,
+// whose definition comes later in this file.
+
 // MARK: - Revolution from Curve (v0.31.0)
 
 #include <BRepPrimAPI_MakeRevolution.hxx>
@@ -1690,17 +1694,28 @@ struct OCCTBooleanHistory {
     // Builder kept alive for the lifetime of the handle. unique_ptr because
     // BRepBuilderAPI_MakeShape carries large internal state and is not
     // safely copyable. Upcast from concrete Fuse / Cut / Common / Splitter.
+    // Null when `prebuilt` is used instead (sewing / quilting / healing,
+    // issue #327 — those algorithms don't derive from BRepBuilderAPI_MakeShape).
     std::unique_ptr<BRepBuilderAPI_MakeShape> op;
 
     // The shapes the builder ran on. Retained because BRepTools_History's
     // template constructor needs the argument list to know which subshapes to
     // walk, and a type-erased BRepBuilderAPI_MakeShape cannot report its own
-    // inputs. See OCCTBooleanHistoryAsBRepToolsHistory.
+    // inputs. See OCCTBooleanHistoryAsBRepToolsHistory. Unused when `prebuilt`
+    // is set.
     TopTools_ListOfShape args;
+
+    // Already-complete history for algorithms that expose one natively
+    // (BRepTools_ReShape::History(), used by sewing and healing) or that need
+    // hand-built history (quilting). Set instead of `op`/`args`.
+    Handle(BRepTools_History) prebuilt;
 
     OCCTBooleanHistory(std::unique_ptr<BRepBuilderAPI_MakeShape> theOp,
                        const TopTools_ListOfShape& theArgs)
         : op(std::move(theOp)), args(theArgs) {}
+
+    explicit OCCTBooleanHistory(const Handle(BRepTools_History)& thePrebuilt)
+        : prebuilt(thePrebuilt) {}
 };
 
 // Convenience for the common 1- and 2-argument builders.
@@ -1779,7 +1794,9 @@ int32_t OCCTBooleanHistoryModified(OCCTBooleanHistoryRef h, OCCTShapeRef inputSu
                                      OCCTShapeRef* outRefs, int32_t maxCount) {
     if (!h || !inputSubShape) return -1;
     try {
-        const TopTools_ListOfShape& list = h->op->Modified(inputSubShape->shape);
+        const TopTools_ListOfShape& list = h->op
+            ? h->op->Modified(inputSubShape->shape)
+            : h->prebuilt->Modified(inputSubShape->shape);
         int32_t count = 0;
         for (TopTools_ListIteratorOfListOfShape it(list); it.More(); it.Next()) {
             if (outRefs && count < maxCount) {
@@ -1796,7 +1813,12 @@ int32_t OCCTBooleanHistoryGenerated(OCCTBooleanHistoryRef h, OCCTShapeRef inputS
                                       OCCTShapeRef* outRefs, int32_t maxCount) {
     if (!h || !inputSubShape) return -1;
     try {
-        const TopTools_ListOfShape& list = h->op->Generated(inputSubShape->shape);
+        // Sewing/quilting/healing (prebuilt) never populate Generated — they
+        // only replace or remove, never create lower/higher-dimension topology
+        // — but BRepTools_History::Generated still returns a valid empty list.
+        const TopTools_ListOfShape& list = h->op
+            ? h->op->Generated(inputSubShape->shape)
+            : h->prebuilt->Generated(inputSubShape->shape);
         int32_t count = 0;
         for (TopTools_ListIteratorOfListOfShape it(list); it.More(); it.Next()) {
             if (outRefs && count < maxCount) {
@@ -1811,11 +1833,13 @@ int32_t OCCTBooleanHistoryGenerated(OCCTBooleanHistoryRef h, OCCTShapeRef inputS
 bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef h, OCCTShapeRef inputSubShape) {
     if (!h || !inputSubShape) return false;
     try {
-        return h->op->IsDeleted(inputSubShape->shape);
+        return h->op ? h->op->IsDeleted(inputSubShape->shape)
+                      : h->prebuilt->IsRemoved(inputSubShape->shape);
     } catch (...) { return false; }
 }
 
-// Synthesize a standalone BRepTools_History from the retained builder.
+// Synthesize a standalone BRepTools_History from the retained builder, or hand
+// back the already-complete one for sewing/quilting/healing (issue #327).
 //
 // BRepTools_History's template constructor walks the argument list and copies
 // Modified / Generated / IsDeleted for each supported subshape, so it works off
@@ -1827,10 +1851,20 @@ bool OCCTBooleanHistoryIsDeleted(OCCTBooleanHistoryRef h, OCCTShapeRef inputSubS
 // (BRepTools_History::IsSupportedType) — wires, shells and compounds are not
 // carried, so absorbing this into a graph records nothing for those kinds.
 OCCTHistoryRef OCCTBooleanHistoryAsBRepToolsHistory(OCCTBooleanHistoryRef h) {
-    if (!h || !h->op) return nullptr;
+    if (!h) return nullptr;
     try {
         auto* ref = new OCCTHistoryStorage();
-        ref->history = new BRepTools_History(h->args, *h->op);
+        if (h->op) {
+            ref->history = new BRepTools_History(h->args, *h->op);
+        } else if (!h->prebuilt.IsNull()) {
+            // Shared Handle (ref-counted) — cheap, and keeps `h` independently
+            // queryable via OCCTBooleanHistoryModified/Generated/IsDeleted after
+            // this call, same as the synthesized-from-op case.
+            ref->history = h->prebuilt;
+        } else {
+            delete ref;
+            return nullptr;
+        }
         return ref;
     } catch (...) { return nullptr; }
 }
@@ -2872,6 +2906,186 @@ OCCTShapeRef OCCTShapeSewTwo(OCCTShapeRef shape1, OCCTShapeRef shape2, double to
 
     OCCTShapeRef shapes[2] = { shape1, shape2 };
     return OCCTShapeSew(shapes, 2, tolerance);
+}
+
+// MARK: - Sewing with full history (issue #327)
+//
+// BRepBuilderAPI_Sewing isn't a BRepBuilderAPI_MakeShape (no Modified/Generated/
+// IsDeleted), but its constructor always allocates its own BRepTools_ReShape
+// context (confirmed in occt-src BRepBuilderAPI_Sewing.cxx) and records every
+// vertex/edge merge and small-face removal into it via Replace()/Remove() during
+// Perform(). So GetContext()->History() gives a complete, native BRepTools_History
+// — no manual per-subshape walk needed. When two inputs merge into one shared
+// output (the common case for sewing), BOTH inputs are recorded as Modified into
+// that output (BRepTools_ReShape::Replace is called for each), not one Modified +
+// one Removed — verified by reading the vertex-merge code path directly.
+
+OCCTBooleanHistoryRef OCCTShapeSewWithHistory(const OCCTShapeRef* shapes, int32_t count,
+                                                double tolerance, OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shapes || count < 1) return nullptr;
+    try {
+        BRepBuilderAPI_Sewing sewing(tolerance);
+        for (int32_t i = 0; i < count; i++) {
+            if (shapes[i]) sewing.Add(shapes[i]->shape);
+        }
+        sewing.Perform();
+        TopoDS_Shape sewn = sewing.SewedShape();
+        if (sewn.IsNull()) return nullptr;
+
+        if (sewn.ShapeType() == TopAbs_SHELL) {
+            TopoDS_Shell shell = TopoDS::Shell(sewn);
+            if (shell.Closed()) {
+                BRepBuilderAPI_MakeSolid makeSolid(shell);
+                if (makeSolid.IsDone()) sewn = makeSolid.Solid();
+            }
+        }
+
+        Handle(BRepTools_History) hist = sewing.GetContext()->History();
+        if (hist.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(sewn);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+// Self-sew (mirrors OCCTShapeSewSingle in OCCTBridge_Healing.mm) with full
+// history. Lives here, not next to its plain counterpart, because
+// OCCTBooleanHistory is private to this translation unit — every function that
+// constructs one has to live in this file (same constraint the Tier 2
+// fillet/chamfer/shell/defeature *WithHistory functions above are already under).
+OCCTBooleanHistoryRef OCCTShapeSewSingleWithHistory(OCCTShapeRef shape, double tolerance,
+                                                      OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        BRepBuilderAPI_Sewing sewing(tolerance);
+        sewing.Add(shape->shape);
+        sewing.Perform();
+        TopoDS_Shape sewn = sewing.SewedShape();
+        if (sewn.IsNull()) return nullptr;
+
+        if (sewn.ShapeType() == TopAbs_SHELL) {
+            TopoDS_Shell shell = TopoDS::Shell(sewn);
+            if (shell.Closed()) {
+                BRepBuilderAPI_MakeSolid makeSolid(shell);
+                if (makeSolid.IsDone()) sewn = makeSolid.Solid();
+            }
+        }
+
+        Handle(BRepTools_History) hist = sewing.GetContext()->History();
+        if (hist.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(sewn);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+// Quilt with full history. BRepTools_Quilt has no ReShape context and no
+// Modified/Generated/IsDeleted — only single-shape IsCopied()/Copy() — so
+// unlike sewing/healing this needs a manual per-subshape walk to build the
+// BRepTools_History by hand.
+OCCTBooleanHistoryRef OCCTShapeQuiltWithHistory(OCCTShapeRef* shapes, int32_t count,
+                                                  OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shapes || count <= 0) return nullptr;
+    try {
+        BRepTools_Quilt quilt;
+        for (int32_t i = 0; i < count; i++) {
+            if (!shapes[i]) return nullptr;
+            quilt.Add(shapes[i]->shape);
+        }
+        TopoDS_Shape result = quilt.Shells();
+        if (result.IsNull()) return nullptr;
+
+        Handle(BRepTools_History) hist = new BRepTools_History();
+        TopTools_IndexedMapOfShape subMap;
+        for (int32_t i = 0; i < count; i++) {
+            subMap.Clear();
+            TopExp::MapShapes(shapes[i]->shape, subMap);
+            for (int32_t j = 1; j <= subMap.Extent(); j++) {
+                const TopoDS_Shape& sub = subMap(j);
+                if (!BRepTools_History::IsSupportedType(sub)) continue;
+                if (quilt.IsCopied(sub)) {
+                    hist->AddModified(sub, quilt.Copy(sub));
+                }
+            }
+        }
+
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+// MARK: - Healing with full history (issue #327)
+//
+// ShapeFix_Shape isn't a BRepBuilderAPI_MakeShape either, but ShapeFix_Shape::
+// Init auto-creates a ShapeBuild_ReShape context when none is set (confirmed in
+// occt-src) and every internal sub-fixer (Solid/Shell/Face/Wire/Edge) shares it,
+// so Context()->History() after Perform() is complete and safe without an
+// explicit SetContext() call. (ShapeFix_Solid, used below for solid(from:), does
+// NOT auto-create one — see OCCTShapeCreateSolidFromShellWithHistory.)
+
+#include <ShapeFix_Shape.hxx>
+
+OCCTBooleanHistoryRef OCCTShapeHealWithHistory(OCCTShapeRef shape, OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shape) return nullptr;
+    try {
+        if (occtHasSelfIntersectingWire(shape->shape)) return nullptr;
+        Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(shape->shape);
+        fixer->Perform();
+        TopoDS_Shape result = fixer->Shape();
+        if (result.IsNull()) return nullptr;
+
+        Handle(BRepTools_History) hist = fixer->Context()->History();
+        if (hist.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
+}
+
+// MARK: - Solid from shell with full history (issue #327)
+//
+// Unlike sewing/healing, BRepBuilderAPI_MakeSolid genuinely derives from
+// BRepBuilderAPI_MakeShape (fits the existing template-synthesis path), but a
+// solid built from an already-closed shell doesn't modify/generate any of the
+// shell's sub-shapes — it only wraps it — so the templated ctor would report
+// nothing. The one stage that can actually touch sub-shape identity is the
+// ShapeFix_Solid orientation-fix pass, so that's the history source here.
+// ShapeFix_Solid::Init does NOT auto-create a context (verified in occt-src,
+// unlike ShapeFix_Shape above) — SetContext() must be called explicitly before
+// Perform(), or Context()->History() below would dereference a null Handle.
+OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shell,
+                                                                  OCCTShapeRef* outResult) {
+    if (outResult) *outResult = nullptr;
+    if (!shell) return nullptr;
+    try {
+        TopoDS_Shell topoShell;
+        if (shell->shape.ShapeType() == TopAbs_SHELL) {
+            topoShell = TopoDS::Shell(shell->shape);
+        } else {
+            TopExp_Explorer exp(shell->shape, TopAbs_SHELL);
+            if (!exp.More()) return nullptr;
+            topoShell = TopoDS::Shell(exp.Current());
+        }
+
+        BRepBuilderAPI_MakeSolid makeSolid(topoShell);
+        if (!makeSolid.IsDone()) return nullptr;
+        TopoDS_Solid solid = makeSolid.Solid();
+        if (solid.IsNull()) return nullptr;
+
+        ShapeFix_Solid fixer(solid);
+        fixer.SetContext(new ShapeBuild_ReShape);
+        fixer.Perform();
+        TopoDS_Shape result = fixer.Solid();
+        if (result.IsNull() || result.ShapeType() != TopAbs_SOLID) {
+            result = solid;  // Fall back to the unfixed solid, same as OCCTShapeCreateSolidFromShell.
+        }
+
+        Handle(BRepTools_History) hist = fixer.Context()->History();
+        if (hist.IsNull()) return nullptr;
+        if (outResult) *outResult = new OCCTShape(result);
+        return new OCCTBooleanHistory(hist);
+    } catch (...) { return nullptr; }
 }
 
 OCCTWireRef OCCTWireInterpolate(const double* points, int32_t count, bool closed, double tolerance) {

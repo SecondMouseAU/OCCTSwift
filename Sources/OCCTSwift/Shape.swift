@@ -5081,6 +5081,95 @@ extension Shape {
     }
 }
 
+// MARK: - Sewing / quilting / healing with full history (issue #327)
+
+extension Shape {
+    /// Sew multiple shapes into a connected shell or solid, with full
+    /// per-input-subshape history (vertex/edge merges, small-face removal).
+    ///
+    /// Where two coincident inputs merge into one shared output (the common
+    /// case for sewing), both inputs show up as `modified` into that same
+    /// output sub-shape — there is no ambiguity between which side "won".
+    ///
+    /// - Returns: `(result, history)` on success; nil on failure.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// let faces = [topFace, bottomFace, frontFace, backFace, leftFace, rightFace]
+    /// guard let (solid, history) = Shape.sewWithFullHistory(shapes: faces, tolerance: 1e-6) else { return }
+    /// let record = history.record(of: topFace)
+    /// print(record.modified, record.isDeleted)
+    /// ```
+    public static func sewWithFullHistory(shapes: [Shape], tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard !shapes.isEmpty else { return nil }
+        var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        var resultRef: OCCTShapeRef?
+        let h = shapeHandles.withUnsafeMutableBufferPointer { buffer in
+            OCCTShapeSewWithHistory(buffer.baseAddress, Int32(shapes.count), tolerance, &resultRef)
+        }
+        guard let h, let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Sew this shape with another, with full per-input-subshape history.
+    public func sewnWithFullHistory(with other: Shape, tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        Shape.sewWithFullHistory(shapes: [self, other], tolerance: tolerance)
+    }
+
+    /// Sew disconnected faces within this shape together, with full history.
+    public func sewnWithFullHistory(tolerance: Double = 1e-6)
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeSewSingleWithHistory(handle, tolerance, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Quilt multiple shapes (faces/shells) into a single shell, with full
+    /// per-input-subshape history.
+    public static func quiltWithFullHistory(_ shapes: [Shape])
+        -> (result: Shape, history: ShapeHistoryRef)?
+    {
+        guard !shapes.isEmpty else { return nil }
+        var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Attempt to repair/heal the shape, with full per-input-subshape history.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// guard let (healed, history) = brokenShape.healedWithFullHistory() else { return }
+    /// let record = history.record(of: someFace)
+    /// ```
+    public func healedWithFullHistory() -> (result: Shape, history: ShapeHistoryRef)? {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeHealWithHistory(handle, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+
+    /// Create a solid from a closed shell, with full per-input-subshape
+    /// history. History only reflects the orientation-fix pass — wrapping an
+    /// already-closed shell into a solid does not itself modify any sub-shape.
+    public static func solidWithFullHistory(from shell: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
+        var resultRef: OCCTShapeRef?
+        guard let h = OCCTShapeCreateSolidFromShellWithHistory(shell.handle, &resultRef),
+              let resultRef else { return nil }
+        return (Shape(handle: resultRef), ShapeHistoryRef(h))
+    }
+}
+
 // MARK: - Thick Solid / Hollowing (v0.37.0)
 
 extension Shape {
