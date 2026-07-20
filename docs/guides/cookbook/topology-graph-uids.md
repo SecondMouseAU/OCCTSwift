@@ -1,7 +1,8 @@
 ---
 title: "BREP Graph: Durable Identity & UIDs"
-parent: Cookbook
-nav_order: 13
+parent: Topology Graph
+grand_parent: Cookbook
+nav_order: 1
 ---
 
 # BREP Graph: Durable Identity & UIDs

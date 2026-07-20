@@ -56,7 +56,7 @@ using the static PNG as the loading poster. Code → figure → 3D model all com
 - [Meshing & Export](meshing-and-export.md) — `mesh` (deflection), the `Mesh` type, `mesh.toShape`, and STL / OBJ / STEP / IGES / BREP / glTF export + import.
 - [XCAF Assemblies](xcaf-assemblies.md) — `Document` trees, components & instancing, names / colors / materials, and structured STEP / GLB round-trip.
 - [Topology Graph](topology-graph.md) — `TopologyGraph` node counts, adjacency & shared edges, per-graph UIDs, and history tracking through operations.
-- [BREP Graph: Durable Identity & UIDs](topology-graph-uids.md): the deep dive on identity. The three UID flavours, minting and resolving, the one-graph-instance scope rule (#295), what preserves identity versus mints a new one, and persistence.
+  - [BREP Graph: Durable Identity & UIDs](topology-graph-uids.md): the deep dive on identity. The three UID flavours, minting and resolving, the one-graph-instance scope rule (#295), what preserves identity versus mints a new one, and persistence.
 - [Gordon Surfaces](gordon-surfaces.md) — skin a surface through a network of profile + guide curves (`Surface.gordon` / `gordonReport`), with build diagnostics.
 - [Surfaces from Points](surfaces-from-points.md) — fit a B-spline through a grid (`fromPointGrid`) or a scattered cloud (`plateThrough`), and deform-to-targets (`nlPlateDeformed`).
 - [Working with Meshes](working-with-meshes.md) — the `Mesh` type: build from arrays, inspect, mesh-level booleans, triangle↔face picking, `toShape`, and SceneKit / RealityKit / Metal interop.

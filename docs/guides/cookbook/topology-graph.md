@@ -2,6 +2,7 @@
 title: Topology Graph
 parent: Cookbook
 nav_order: 9
+has_children: true
 ---
 
 # Topology Graph
