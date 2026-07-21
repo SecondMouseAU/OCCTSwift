@@ -55,13 +55,18 @@ race needs sanitizer instrumentation or a much larger operation count to surface
 `OCCTBridge` from source (the default) get the fix by pulling this tag; consumers on
 `OCCTSWIFT_BRIDGE_PREBUILT=1` need the new release asset.
 
-**Still open.** Two hard crashes (SIGSEGV/SIGABRT, garbage-looking fault addresses) were observed
-empirically in ~2 of 20 full-suite parallel `swift test` runs during this investigation — one
-alongside a `BinTools`/`TopTools` "File was not written with this version of the topology" message.
-Neither matches the AutoNaming mechanism above. Working theory: unrelated fixed-temp-file-path
-collisions between concurrently-running tests (several `.brep`/`.stp` fixtures share literal names
-across `Tests/`), not a kernel memory-safety bug — not yet confirmed or fixed. Flagged for a follow-up
-test-isolation audit. #342 (bridge-level thread-handling contract: per-call safety classification,
+**Still open, filed separately.** Two hard crashes (SIGSEGV/SIGABRT, garbage-looking fault addresses)
+were observed empirically in ~2 of 20 full-suite parallel `swift test` runs during this
+investigation. Filed as #344 (SIGSEGV, right after two concurrent OBJ imports — possibly the same
+`theAutoNaming` race in a rarer timing window that produces heap corruption instead of just wrong
+naming, unconfirmed) and #345 (SIGABRT, essentially no localizing evidence). **Correction**: this
+entry originally attributed the SIGABRT to a `BinTools`/`TopTools` "File was not written with this
+version of the topology" message seen nearby in the log, and floated fixed-temp-file-path collisions
+as a working theory. Both were wrong — that message is routine, expected output from two intentional
+negative tests (`Tests/OCCTIOTests/OCCTIOTests.swift`'s `BREPStringSerializationTests`, exercising
+`Shape.fromBREPString` on malformed input) and appears in every run including clean ones; it has no
+connection to either crash, and the fixed-temp-file-path theory was speculation based on that false
+premise. #342 (bridge-level thread-handling contract: per-call safety classification,
 scoped/controllable internal parallelism) remains open and gets a concrete first classified entry
 from this investigation — OBJ/glTF/PLY CAF operations are `exclusive` (need `meshCafMutex()`).
 
