@@ -7,13 +7,42 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.2
+## Current: v1.15.3
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.3 (July 2026) — chore: opt-in prebuilt `OCCTBridge.xcframework`, skip compiling the 62K-line Obj-C++ bridge per consumer rebuild (#339)
+
+**Problem, from an OCCTReconstruct build-time audit (OCCTReconstruct#309):** `OCCTBridge` is 16
+Objective-C++ files / ~62K lines, each including a large slice of OCCT's ~1,700 headers. SwiftPM
+recompiles all 16 from source on every consumer of OCCTSwift — measured at 51.6s wall / 186.5s CPU
+per rebuild in one path-dependency consumer worktree, on top of the ecosystem's [shared-xcframework
+setup](../docs/guides/sharing-the-xcframework.md). A cold artifact re-extraction compounds this by
+re-stamping header mtimes and invalidating every consumer's clang module cache.
+
+**Fix.** `Scripts/build-occtbridge.sh` compiles the bridge once per platform slice (same core slices
+as `OCCT.xcframework`: macOS, iOS device, iOS simulator) and packages it as `OCCTBridge.xcframework`
+— compiled objects + public header, no OCCT source involved. Set **`OCCTSWIFT_BRIDGE_PREBUILT=1`**
+to have `Package.swift` link this prebuilt binary (local copy if present, else the matching release
+asset) instead of compiling `Sources/OCCTBridge/src/*.mm` from source.
+
+**Default is unchanged (source build).** Every release edits the bridge source directly and tests
+against those edits (see `CLAUDE.md`'s Release Process); a prebuilt binary that silently doesn't
+reflect fresh edits would be a correctness trap. The prebuilt path is strictly opt-in — full details,
+including the local escape hatch for bridge iteration and visionOS/tvOS (not covered by the core
+prebuilt slices), in [docs/guides/prebuilt-bridge.md](../docs/guides/prebuilt-bridge.md).
+
+**Verification.** Both paths built clean and the full test suite passed against each: the default
+source build (regression check, unchanged behavior) and `OCCTSWIFT_BRIDGE_PREBUILT=1` (55/55 tests
+in `OCCTThreadTests` exercising real boolean/fillet/mesh operations through the prebuilt binary,
+confirming it's not just a link-success check).
+
+**Binary release** — `OCCTBridge.xcframework.zip` ships as a new release asset alongside the
+existing `OCCT.xcframework.zip`; `Package.swift`'s `occtBridgeTarget` URL + checksum point at it.
 
 ### v1.15.2 (July 2026): docs + tests — chaining `*WithFullHistory` ops across a `BRepGraph`, retract the #336 "absorbs zero records" report (#336)
 

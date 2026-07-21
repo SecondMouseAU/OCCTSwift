@@ -202,9 +202,11 @@ OCCTSwift/
 │       └── src/
 │           └── OCCTBridge.mm   # OCCT C++ implementations
 ├── Libraries/
-│   └── OCCT.xcframework/       # Pre-built OCCT 8.0.0-rc5
+│   ├── OCCT.xcframework/       # Pre-built OCCT 8.0.0-rc5
+│   └── OCCTBridge.xcframework/ # Pre-built bridge (opt-in, see OCCTSWIFT_BRIDGE_PREBUILT)
 ├── Scripts/
-│   └── build-occt.sh           # Build OCCT from source
+│   ├── build-occt.sh           # Build OCCT from source
+│   └── build-occtbridge.sh     # Build the prebuilt OCCTBridge.xcframework
 ├── Tests/
 │   └── OCCT<Domain>Tests/      # Per-domain Swift Testing targets (Analysis, Modeling, Surface, …)
 └── docs/                       # Documentation
