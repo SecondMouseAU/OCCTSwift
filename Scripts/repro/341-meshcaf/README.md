@@ -78,13 +78,28 @@ MMGT_OPT=0 TSAN_OPTIONS="halt_on_error=0" \
 
 ## Fix
 
-Immediate mitigation (this repo, no kernel patch needed): the bridge now serializes every
-OBJ/glTF/PLY CAF-reader/writer bridge function on a dedicated `meshCafMutex()`
-(`OCCTBridge_IO.mm`) — matches the #298 PR1 pattern (bridge-side lock first, upstream kernel fix as
-a follow-up). Not yet filed upstream; the correct kernel-level fix is a mutex around
-`RWMesh_CafReader::fillDocument()`'s save/modify/restore window (not `thread_local`, since
-`SetAutoNaming`/`AutoNaming` are public API meant to express one process-wide setting — thread-local
-storage would silently change that semantic for direct callers).
+**Staged, matching the #298 PR1→PR2 pattern.** v1.15.4 shipped an immediate bridge-side mitigation
+(a dedicated `meshCafMutex()` serializing every OBJ/glTF/PLY CAF-reader/writer bridge function,
+`OCCTBridge_IO.mm`). v1.15.5 replaced it with the real kernel fix,
+`Scripts/patches/0011-XCAFDoc_ShapeTool-AutoNamingScope-341.patch`:
+
+1. `XCAFDoc_ShapeTool::AutoNamingScope` — a new RAII helper backed by a `std::recursive_mutex` held
+   for its entire lifetime (not just around the individual get/set calls), so overlapping
+   save/modify/restore sequences from any of the three internal call sites
+   (`RWMesh_CafReader::fillDocument()`, `RWGltf_CafReader::fillDocument()` — a separate near-duplicate
+   override, and `XCAFDoc_Editor::Expand()` — which recurses into itself) serialize correctly instead
+   of interleaving. Not `thread_local`: `SetAutoNaming`/`AutoNaming` are public API meant to express
+   one process-wide setting, and thread-local storage would silently change that semantic for direct
+   callers.
+2. `theAutoNaming` itself is now `std::atomic<bool>` instead of a plain `bool` — closes the residual
+   gap the mutex alone doesn't reach: an *unscoped* `AddShape` call (outside all three save/restore
+   sites) still reads the flag with no relationship to any lock, so it needs the underlying storage
+   itself to be race-free.
+
+Verified via the same TSan stress: **0** `theAutoNaming` races across 4 runs post-patch (was 9-17/run
+pre-patch), zero regression on the `create_fillet_boolean`/`mesh_independent` scenarios. Filed
+upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387) (repro)
+/ [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) (fix, draft).
 
 ## Corrected doctrine
 
