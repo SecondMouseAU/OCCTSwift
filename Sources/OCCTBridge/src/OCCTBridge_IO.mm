@@ -863,21 +863,10 @@ OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
 #include <XCAFDoc_DocumentTool.hxx>
 #include <Message_ProgressRange.hxx>
 
-// #341: XCAFDoc_ShapeTool::theAutoNaming is a process-global static that
-// RWMesh_CafReader::fillDocument() saves/sets(false)/restores with no locking,
-// while XCAFDoc_ShapeTool::AddShape reads it — confirmed by ThreadSanitizer.
-// Every OBJ/glTF/PLY bridge function below (both CAF-reader imports and
-// AddShape-based exports) serializes on this lock until fixed upstream.
-std::mutex& meshCafMutex() {
-    static std::mutex mutex;
-    return mutex;
-}
-
 OCCTShapeRef OCCTImportOBJ(const char* path) {
     if (!path) return nullptr;
 
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         // Use RWObj_CafReader for OBJ import
         RWObj_CafReader objReader;
 
@@ -908,7 +897,6 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection) {
     if (!shape || !path) return false;
 
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         // Tessellate the shape first
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
         mesher.Perform();
@@ -1263,7 +1251,6 @@ bool OCCTExportIGESMultiShape(const OCCTShapeRef* shapes, int32_t count, const c
 OCCTDocumentRef OCCTDocumentLoadOBJ(const char* path) {
     if (!path) return nullptr;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         OCCTDocument* document = new OCCTDocument();
         document->app->NewDocument("MDTV-XCAF", document->doc);
         if (document->doc.IsNull()) { delete document; return nullptr; }
@@ -1287,7 +1274,6 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
     bool singlePrecision, double systemLengthUnit) {
     if (!path) return nullptr;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         OCCTDocument* document = new OCCTDocument();
         document->app->NewDocument("MDTV-XCAF", document->doc);
         if (document->doc.IsNull()) { delete document; return nullptr; }
@@ -1315,7 +1301,6 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithOptions(const char* path,
 bool OCCTDocumentWriteOBJ(OCCTDocumentRef doc, const char* path, double deflection) {
     if (!doc || !path || doc->doc.IsNull() || doc->shapeTool.IsNull()) return false;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         // Re-mesh if deflection > 0
         if (deflection > 0) {
             TDF_LabelSequence freeShapes;
@@ -1341,7 +1326,6 @@ bool OCCTDocumentWritePLY(OCCTDocumentRef doc, const char* path, double deflecti
     bool normals, bool colors, bool texCoords) {
     if (!doc || !path || doc->doc.IsNull() || doc->shapeTool.IsNull()) return false;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         // Re-mesh if deflection > 0
         if (deflection > 0) {
             TDF_LabelSequence freeShapes;
@@ -1368,7 +1352,6 @@ bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double defle
     bool normals, bool colors, bool texCoords) {
     if (!shape || !path) return false;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
         mesher.Perform();
 
@@ -1402,7 +1385,6 @@ OCCTDocumentRef OCCTDocumentLoadOBJWithCS(const char* path,
     int32_t inputCS, int32_t outputCS, double inputLengthUnit, double outputLengthUnit) {
     if (!path) return nullptr;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         OCCTDocument* document = new OCCTDocument();
         document->app->NewDocument("MDTV-XCAF", document->doc);
         if (document->doc.IsNull()) { delete document; return nullptr; }
@@ -2833,7 +2815,6 @@ OCCTShapeRef OCCTShapeFromBREPString(const char* brepString) {
 OCCTShapeRef _Nullable OCCTImportGLTF(const char* _Nonnull path) {
     if (!path) return nullptr;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         RWGltf_CafReader reader;
         Handle(TDocStd_Document) doc;
         Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
@@ -2854,7 +2835,6 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
                       bool isBinary, double deflection) {
     if (!shape || !path) return false;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
         Handle(TDocStd_Document) doc;
         Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
@@ -2871,7 +2851,6 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
 OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path) {
     if (!path) return nullptr;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         auto* docRef = new OCCTDocument;
         Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
         app->NewDocument("MDTV-XCAF", docRef->doc);
@@ -2889,7 +2868,6 @@ OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path) {
 bool OCCTDocumentWriteGLTF(OCCTDocumentRef _Nonnull doc, const char* _Nonnull path, bool isBinary) {
     if (!doc || !path) return false;
     try {
-        std::lock_guard<std::mutex> meshLock(meshCafMutex());
         TCollection_AsciiString filePath(path);
         RWGltf_CafWriter writer(filePath, isBinary);
         NCollection_IndexedDataMap<TCollection_AsciiString, TCollection_AsciiString> fileInfo;

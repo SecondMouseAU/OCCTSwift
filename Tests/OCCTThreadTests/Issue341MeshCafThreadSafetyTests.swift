@@ -16,17 +16,21 @@ import Foundation
 // wrong-but-plausible auto-naming or an occasional import failure, not a
 // deterministic crash.
 //
-// The bridge now serializes every OBJ/glTF/PLY CAF-reader/writer call on
-// meshCafMutex() (OCCTBridge_IO.mm). This suite exercises concurrent OBJ
-// round-trips through the Swift API as a basic regression exerciser -- but,
-// like the race itself, it does NOT reliably fail without the lock at this
-// scale (verified: 15 runs of 8x15 concurrent round-trips all passed even with
-// meshCafMutex() reverted -- the race needs either sanitizer instrumentation or
-// the much higher operation count of a full `swift test` parallel run to
-// surface as an observable failure). The authoritative reproducer is the
-// ThreadSanitizer harness at Scripts/repro/341-meshcaf/, matching the #319
-// precedent of using a sanitizer-backed C++ repro rather than a Swift test as
-// the primary verification tool for a race this narrow.
+// Originally mitigated at the bridge layer (v1.15.4, a dedicated meshCafMutex() in
+// OCCTBridge_IO.mm); fixed properly in the kernel as of v1.15.5
+// (Scripts/patches/0011-XCAFDoc_ShapeTool-AutoNamingScope-341.patch --
+// XCAFDoc_ShapeTool::AutoNamingScope, a recursive_mutex-backed RAII guard, plus
+// making theAutoNaming itself std::atomic<bool>), at which point the bridge-side
+// lock was removed as redundant. This suite exercises concurrent OBJ round-trips
+// through the Swift API as a basic regression exerciser -- but, like the race
+// itself, it does NOT reliably fail without the fix at this scale (verified: 15
+// runs of 8x15 concurrent round-trips all passed even with meshCafMutex()
+// reverted, before the kernel fix existed -- the race needs either sanitizer
+// instrumentation or the much higher operation count of a full `swift test`
+// parallel run to surface as an observable failure). The authoritative
+// reproducer is the ThreadSanitizer harness at Scripts/repro/341-meshcaf/,
+// matching the #319 precedent of using a sanitizer-backed C++ repro rather than
+// a Swift test as the primary verification tool for a race this narrow.
 @Suite("Issue #341 — concurrent OBJ import/export is thread-safe (meshCafMutex)")
 struct Issue341MeshCafThreadSafetyTests {
 

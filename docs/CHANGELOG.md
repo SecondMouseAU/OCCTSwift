@@ -7,13 +7,61 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.4
+## Current: v1.15.5
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.5 (July 2026) — fix (kernel): XCAFDoc_ShapeTool::theAutoNaming race, replacing v1.15.4's bridge mitigation (#341)
+
+**Follow-up to v1.15.4.** That release shipped an immediate bridge-side mitigation (`meshCafMutex()`)
+for the `XCAFDoc_ShapeTool::theAutoNaming` race characterized in #341. This release carries the real
+kernel fix and removes the bridge lock as redundant — the #298 PR1→PR2 pattern.
+
+**The full hazard, on closer inspection, was bigger than v1.15.4's writeup captured.** Auditing every
+internal caller of `theAutoNaming` turned up two more independent save/modify/restore sites beyond
+`RWMesh_CafReader::fillDocument()`: a *separate*, near-duplicate override in
+`RWGltf_CafReader::fillDocument()` (not a call into the base class's version — glTF import has its
+own copy of the same unsynchronized dance), and `XCAFDoc_Editor::Expand()`, which additionally
+recurses into itself while the dance is in flight. Verifying the bridge mutex fix under TSan (with
+the mutex removed, to test the kernel in isolation) also surfaced a second, narrower problem the
+v1.15.4 characterization missed: even with the three save/restore sites serialized against each
+other, an *unscoped* `XCAFDoc_ShapeTool::AddShape` call (e.g. any export building a document from an
+existing shape, outside all three sites) still reads the raw `bool` with no synchronization at all —
+a genuine data race independent of the "logical" interleaving bug.
+
+**Fix, both layers**, in `Scripts/patches/0011-XCAFDoc_ShapeTool-AutoNamingScope-341.patch`:
+
+1. `XCAFDoc_ShapeTool::AutoNamingScope` — a new RAII helper backed by a `std::recursive_mutex` held
+   for its entire lifetime (not just around the individual get/set calls), so overlapping
+   save/modify/restore sequences from any of the three sites serialize correctly instead of
+   interleaving (recursive because `Expand()` reenters it on the same thread). All three sites now
+   use it; `Expand()`'s two duplicate manual-restore-before-return call sites collapse into one
+   destructor-driven restore that fires on every exit path.
+2. `theAutoNaming` itself is now `std::atomic<bool>` instead of a plain `bool`, so every access
+   anywhere in the file — including `AddShape`'s internal read — is well-defined, closing the
+   residual gap the mutex alone doesn't reach. Not a semantic change: `SetAutoNaming`/`AutoNaming`
+   remain a single global setting, exactly as documented; an unscoped reader still sees "whatever
+   mode is currently active," it just now gets a real, non-torn value instead of undefined behavior.
+
+**Verification.** The same TSan stress (10 threads × 200 concurrent OBJ round-trips, each its own
+file) reports **zero** `theAutoNaming` races across 4 separate runs, down from 9-17/run before the
+fix — verified with the bridge-side `meshCafMutex()` mitigation removed, testing the kernel fix in
+isolation. Zero regression on the `create_fillet_boolean` (#298) and independent-meshing scenarios.
+`RWGltf_CafReader`'s copy of the fix compiles cleanly and is mechanically identical to the
+`RWMesh_CafReader` path that was exercised, but wasn't run under TSan directly — this repo's
+minimal-module TSan build excludes `TKDEGLTF` (needs RapidJSON, disabled for build speed).
+
+**Binary release** — both `OCCT.xcframework` (kernel patch, all 3 core slices rebuilt) and
+`OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339; `meshCafMutex()` removed) changed, so
+`Package.swift` picks up new URLs + checksums for both.
+
+Filed upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387)
+(repro, filed alongside v1.15.4) / [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388)
+(fix, draft PR, CLA-covered fork).
 
 ### v1.15.4 (July 2026) — fix: concurrent OBJ/glTF/PLY import races on an unsynchronized OCCT global; the long-claimed "NCollection race" doesn't hold up (#341)
 
