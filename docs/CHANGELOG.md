@@ -7,13 +7,85 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.5
+## Current: v1.15.6
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.6 (July 2026) — fix (kernel): XCAFApp_Application::GetApplication/CDF_Directory races — the SIGSEGV #341 didn't explain (#344)
+
+**The uncatchable SIGSEGV that survived the #341 fix.** #341 (v1.15.5) fixed a real
+`XCAFDoc_ShapeTool::theAutoNaming` race, but flagged a separate empirical SIGSEGV (garbage fault
+address, right after two concurrent OBJ imports) as unconfirmed — filed as #344. Re-running the
+parallel `swift test` stress loop 12× against v1.15.5 hit it again once: confirmed genuinely
+independent of #341's fix.
+
+**Root cause: two races in code the #341 TSan stress never reached.** That harness builds
+`TDocStd_Document` directly (`new TDocStd_Document("BinXCAF")`), bypassing
+`XCAFApp_Application`/`CDF_Application` entirely — but every real bridge call
+(`OCCTDocumentLoadOBJ` and every other document-producing function) goes through
+`XCAFApp_Application::GetApplication()->NewDocument(...)`.
+
+1. `XCAFApp_Application::GetApplication()`'s lazy singleton init is a textbook
+   double-checked-locking-without-locking bug — two threads' first concurrent call can both
+   construct a new instance and race to assign the shared handle. TSan shows this is the dominant
+   defect: it produces multiple concurrently-constructed `XCAFApp_Application` instances, cascading
+   into races across dozens of unrelated destructors as the "losing" instances are torn down
+   mid-flight.
+2. `CDF_Directory::Add`/`Remove`/`Contains` mutate/read `myDocuments` (a plain `NCollection_List`)
+   with zero synchronization — every `CDF_Application` is normally one process-wide instance shared
+   by every caller, so its one `CDF_Directory` races on `NCollection_BaseList::PAppend` from every
+   document-creating call on every thread.
+
+**Fix**, `Scripts/patches/0012-CDF_Directory-XCAFApp_Application-thread-safety-344.patch`:
+`GetApplication()` folds construction into the static local's initializer (C++11 magic statics,
+thread-safe exactly once, replacing the separate `IsNull()`-guarded assignment); `CDF_Directory`
+gets a private `std::mutex` guarding `Add`/`Remove`/`Contains`/`Length`/`IsEmpty`/`Last`.
+
+**Validation:** a debug (`-O0 -g`) build with a temporary `SIGSEGV`/`SIGBUS` signal handler
+(`backtrace_symbols_fd`) crashes ~50% of runs at 10 threads × 3000 barrier-synchronized rounds on
+stock p1, both captured backtraces resolving to `TDocStd_Application::NewDocument ->
+CDF_Application::Open`. TSan (same minimal-module protocol as #298/#319/#341) goes from 234 race
+reports to 9 — all directly in `CDF_Directory::Add`/`PAppend` and all showing the *same* mutex held
+on both sides of the reported conflict, consistent with a TSan/allocator-recycling artifact rather
+than a genuine unaddressed race (a control program with a trivially-correct mutex pattern shows no
+such warning under identical flags). The entire `GetApplication()`-driven destructor cascade —
+dozens of unique signatures pre-fix — is gone entirely. New regression test
+`parallelDocumentCreate` (`OCCTStressTests`, `StressConcurrentDocumentCreationTests`) exercises
+`Document.create()` from 40 concurrent tasks.
+
+**Found during validation of the fix above**: correctly making `GetApplication()` a true singleton
+means every caller now genuinely shares ONE `TDocStd_Application` instance — surfacing more races
+on that instance's *other* unsynchronized state, previously masked by threads sometimes getting
+different (uncontended) instances. Repeated `swift test` runs hit a SIGTRAP in
+`Resource_Manager::SetResource` (via `TDocStd_Application::DefineFormat`, called by the common
+`Document.defineAllFormats()` test-setup path) and a SIGSEGV in `TDocStd_Application::
+ReadingFormats` iterating `CDF_Application::myReaders` concurrently with a writer.
+`TDocStd_Application::Resources()` has the identical lazy-init bug as `GetApplication()`;
+`Resource_Manager`'s maps and `CDF_Application::myReaders`/`myWriters` have zero synchronization.
+Also fixed in the same patch: a mutex for `Resources()`'s lazy-init, a `std::recursive_mutex` for
+`Resource_Manager`'s accessors (with an explicit copy constructor — the new mutex broke
+`ShapeProcess_Context.cxx`'s existing `new Resource_Manager(*sRC)` thread-safety workaround, whose
+own comment already acknowledged this exact defect), and a mutex for `myReaders`/`myWriters`. 0/12
+further `swift test` runs of `OCCTXCAFTests` reproduce either crash after the fix.
+
+A third, architecturally different crash surfaced in the same validation
+(`BinLDrivers_DocumentStorageDriver::Write` corrupting a shared, cached, non-reentrant
+storage-driver instance under concurrent `Save`/`SaveAs` of the same format) — a shared worker
+object, not a container needing a lock, so the kernel fix needs its own dedicated investigation;
+filed separately as #349. It was severe enough alone (~60% crash rate in `OCCTXCAFTests` once the
+two races above stopped masking it) that this release also ships an **interim bridge-side
+mitigation**: `ocafStoreMutex()` (`OCCTBridge_Document.mm`) serializes
+`OCCTDocumentSaveOCAF`/`OCCTDocumentSaveOCAFInPlace`/`OCCTDocumentLoadOCAF` — the same #298/#341
+bridge-mutex-now/kernel-fix-later pattern. 0/12 further `swift test` runs of `OCCTXCAFTests` crash
+after this mitigation.
+
+Reproducer at [`Scripts/repro/344-cdf-directory/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/344-cdf-directory); filed upstream as
+[Open-Cascade-SAS/OCCT#1389](https://github.com/Open-Cascade-SAS/OCCT/issues/1389) (repro) /
+[OCCT#1390](https://github.com/Open-Cascade-SAS/OCCT/pull/1390) (fix, two commits). #344.
 
 ### v1.15.5 (July 2026) — fix (kernel): XCAFDoc_ShapeTool::theAutoNaming race, replacing v1.15.4's bridge mitigation (#341)
 
