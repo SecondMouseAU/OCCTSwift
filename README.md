@@ -179,6 +179,12 @@ The pre-built xcframework is included. To rebuild from source:
 
 See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 
+### Prebuilt OCCTBridge (opt-in)
+
+The Objective-C++ bridge (16 files, ~62K lines) compiles from source by default. Consumers who
+don't need to edit it can opt into a prebuilt binary instead — set `OCCTSWIFT_BRIDGE_PREBUILT=1`.
+See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
+
 ## Documentation
 
 | Document | Description |
@@ -189,6 +195,7 @@ See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 | [Adding Features](docs/guides/adding-features.md) | How to wrap new OCCT operations |
 | [OCCT Concepts](docs/guides/occt-concepts.md) | B-Rep topology, handles, shapes primer |
 | [Sharing the xcframework](docs/guides/sharing-the-xcframework.md) | Share one local copy across ecosystem repos + the `Package.resolved` pin footgun (#260) |
+| [Prebuilt OCCTBridge](docs/guides/prebuilt-bridge.md) | Opt-in prebuilt bridge binary (`OCCTSWIFT_BRIDGE_PREBUILT=1`) — skip compiling 62K lines of Obj-C++ per consumer rebuild (#339) |
 | [API Reference (mapping)](docs/API_REFERENCE.md) | Full operation-by-operation mapping to OCCT classes |
 | [API Reference (detailed)](docs/reference/) | Per-type function reference — signatures, OCCT mapping, examples (built progressively) |
 | [Thread Safety](docs/thread-safety.md) | OCCTSerial mutex, parallel execution notes |

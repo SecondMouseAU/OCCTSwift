@@ -48,6 +48,71 @@ let occtTarget: Target = useLocalBinary
         checksum: "b1c967f90ea45a74ba97893ce78297d8c2dee516024f9c79f80b16b388ece2c1"
     )
 
+// OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
+// it from source on every consumer of OCCTSwift (#339 measured 51.6s wall / 186.5s CPU per rebuild in
+// one path-dependency consumer worktree, on top of the ecosystem's shared-xcframework setup — see
+// Scripts/build-occtbridge.sh). Default stays SOURCE (unchanged behaviour, and the correct choice for
+// this repo's own dev loop — every release edits Sources/OCCTBridge/src/*.mm directly, and a stale
+// prebuilt binary would silently mask those edits). Set OCCTSWIFT_BRIDGE_PREBUILT=1 to opt into the
+// prebuilt binaryTarget instead: local Libraries/OCCTBridge.xcframework (built via
+// Scripts/build-occtbridge.sh) if present, else the matching release asset. Prebuilt only covers the
+// same core slices as OCCT.xcframework (macOS, iOS device, iOS simulator, see Scripts/build-occt.sh);
+// visionOS/tvOS consumers must leave the env var unset (source build) or rebuild the prebuilt locally
+// with BUILD_ALL_PLATFORMS=1.
+let useBridgePrebuilt = ProcessInfo.processInfo.environment["OCCTSWIFT_BRIDGE_PREBUILT"] == "1"
+let useBridgeLocalBinary = useBridgePrebuilt
+    && FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCTBridge.xcframework/Info.plist")
+
+let occtBridgeTarget: Target = useBridgeLocalBinary
+    ? .binaryTarget(
+        name: "OCCTBridge",
+        path: "Libraries/OCCTBridge.xcframework"
+    )
+    : useBridgePrebuilt
+    // Bump BOTH url and checksum whenever Scripts/build-occtbridge.sh output changes, matching
+    // the OCCT.xcframework convention above.
+    ? .binaryTarget(
+        name: "OCCTBridge",
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.3/OCCTBridge.xcframework.zip",
+        checksum: "ed5147e9efa954a27ed1f87563d9332ac80f7c88614064022ec5248f0f6ffb82"
+    )
+    : .target(
+        name: "OCCTBridge",
+        dependencies: ["OCCT"],
+        path: "Sources/OCCTBridge",
+        sources: ["src"],
+        publicHeadersPath: "include",
+        cxxSettings: [
+            // Platform-specific header search paths for XCFramework
+            .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
+            .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
+            .define("OCCT_AVAILABLE", to: "1"),
+            // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
+            // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
+            // and explicit NCollection_* templates. This bridge still uses the legacy names, so
+            // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files —
+            // drowning out real warnings downstream (issue #281).
+            //
+            // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
+            // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
+            // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
+            // is rejected by SwiftPM for any package consumed as a dependency, which would break
+            // every downstream consumer.
+            //
+            // This buys quiet, not absolution — the legacy spellings are still deprecated and
+            // will eventually be removed upstream. Migrating the call sites is tracked in #281.
+            .define("OCCT_NO_DEPRECATED")
+        ],
+        linkerSettings: [
+            .linkedLibrary("c++")
+        ]
+    )
+
 let package = Package(
     name: "OCCTSwift",
     platforms: [
@@ -64,52 +129,21 @@ let package = Package(
     ],
     targets: [
         // Swift API layer - public interface
+        //
+        // Depends on OCCT directly (not just transitively via OCCTBridge) because a binaryTarget
+        // (the OCCTSWIFT_BRIDGE_PREBUILT path above) has no "dependencies" of its own to propagate —
+        // without this, the final link would silently drop libOCCT-*.a whenever OCCTBridge is prebuilt.
         .target(
             name: "OCCTSwift",
-            dependencies: ["OCCTBridge"],
+            dependencies: ["OCCTBridge", "OCCT"],
             path: "Sources/OCCTSwift",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
         ),
 
-        // Objective-C++ bridge to OCCT
-        .target(
-            name: "OCCTBridge",
-            dependencies: ["OCCT"],
-            path: "Sources/OCCTBridge",
-            sources: ["src"],
-            publicHeadersPath: "include",
-            cxxSettings: [
-                // Platform-specific header search paths for XCFramework
-                .headerSearchPath("../../Libraries/OCCT.xcframework/macos-arm64/Headers", .when(platforms: [.macOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64/Headers", .when(platforms: [.iOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/ios-arm64-simulator/Headers", .when(platforms: [.iOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64/Headers", .when(platforms: [.visionOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/xros-arm64-simulator/Headers", .when(platforms: [.visionOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64/Headers", .when(platforms: [.tvOS])),
-                .headerSearchPath("../../Libraries/OCCT.xcframework/tvos-arm64-simulator/Headers", .when(platforms: [.tvOS])),
-                .define("OCCT_AVAILABLE", to: "1"),
-                // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
-                // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
-                // and explicit NCollection_* templates. This bridge still uses the legacy names, so
-                // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files —
-                // drowning out real warnings downstream (issue #281).
-                //
-                // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
-                // exactly OCCT's deprecation attributes and nothing else. It is scoped to this
-                // target, and it is a `.define` rather than `.unsafeFlags` deliberately: unsafeFlags
-                // is rejected by SwiftPM for any package consumed as a dependency, which would break
-                // every downstream consumer.
-                //
-                // This buys quiet, not absolution — the legacy spellings are still deprecated and
-                // will eventually be removed upstream. Migrating the call sites is tracked in #281.
-                .define("OCCT_NO_DEPRECATED")
-            ],
-            linkerSettings: [
-                .linkedLibrary("c++")
-            ]
-        ),
+        // Objective-C++ bridge to OCCT — source or prebuilt, see OCCTSWIFT_BRIDGE_PREBUILT above.
+        occtBridgeTarget,
 
         // OCCT binary framework - auto-selects local or remote
         occtTarget,
