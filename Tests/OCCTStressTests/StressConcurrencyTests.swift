@@ -1,5 +1,13 @@
 // StressConcurrencyTests.swift
 // Category 7: Concurrent safety audit — parallel reads, eval, determinism, Sendable.
+//
+// The three "Stress: Concurrent ..." suites below were `.disabled()` for a long time (some since
+// ~v0.51.0) citing an "OCCT NCollection race condition" / "OCCT is not thread-safe" that was never
+// characterized, reproduced, or filed. Investigated for #341 (2026-07-21) via the #298 TSan
+// protocol: no NCollection race reproduces at any tested scale, and these specific scenarios
+// (independent shape creation, shared-instance read-only queries, concurrent curve/surface eval) ran
+// clean across 25 repeated iterations once re-enabled. Re-enabled permanently. See CLAUDE.md's Known
+// OCCT Bugs entry for what the real (different, now-mitigated) race turned out to be.
 
 import Foundation
 import Testing
@@ -7,8 +15,7 @@ import OCCTSwift
 
 // MARK: - Concurrent Read-Only Queries
 
-@Suite("Stress: Concurrent Read-Only Queries",
-       .disabled("OCCT is not thread-safe even for read-only queries — crashes under Swift Testing parallel execution"))
+@Suite("Stress: Concurrent Read-Only Queries")
 struct StressConcurrentReadTests {
 
     @Test func parallelVolumeQuery() async {
@@ -83,8 +90,7 @@ struct StressConcurrentReadTests {
 
 // MARK: - Concurrent Curve/Surface Evaluation
 
-@Suite("Stress: Concurrent Curve Evaluation",
-       .disabled("OCCT is not thread-safe — crashes under parallel curve evaluation"))
+@Suite("Stress: Concurrent Curve Evaluation")
 struct StressConcurrentEvalTests {
 
     @Test func parallelCurve3DEval() async {
@@ -137,8 +143,7 @@ struct StressConcurrentEvalTests {
 
 // MARK: - Concurrent Shape Creation (Known OCCT limitation)
 
-@Suite("Stress: Concurrent Shape Creation",
-       .disabled("OCCT NCollection race condition — SEGV under parallel creation on arm64"))
+@Suite("Stress: Concurrent Shape Creation")
 struct StressConcurrentCreationTests {
 
     @Test func parallelBoxCreation() async {

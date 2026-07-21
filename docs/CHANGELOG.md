@@ -7,13 +7,63 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.3
+## Current: v1.15.4
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.4 (July 2026) — fix: concurrent OBJ/glTF/PLY import races on an unsynchronized OCCT global; the long-claimed "NCollection race" doesn't hold up (#341)
+
+**Background.** `CLAUDE.md`'s Known OCCT Bugs and this changelog have carried a "pre-existing
+non-deterministic NCollection arm64 race under parallel execution" claim since ~v0.51.0, backing a
+`swift test --no-parallel` recommendation and three permanently-`.disabled()` suites in
+`Tests/OCCTStressTests/StressConcurrencyTests.swift`. The claim was never reproduced, root-caused, or
+filed anywhere — it had been riding purely on observed flakes. Filed and investigated as #341
+(companion #342), from an OCCTReconstruct test-contention audit that found the same doctrine costing
+real CI time downstream (OCCTReconstruct#175/#309).
+
+**Investigation.** Applied the #298 TSan protocol: a minimal-module ThreadSanitizer build of
+V8_0_0_p1 (+ all 10 carried patches) covering `FoundationClasses`+`ModelingData`+
+`ModelingAlgorithms`+`DataExchange`. Concurrent create/fuse/fillet and independent meshing scenarios
+are clean except the already-known, benign `BOPAlgo_InitMessages` lazy-init race (see the #298 entry
+below). **No NCollection race reproduced at any tested scale.** Re-enabled the three long-disabled
+stress suites — 25/25 clean runs across repeated iterations — and removed their unevidenced
+`.disabled()` claims permanently.
+
+**What was actually found.** A concurrent OBJ round-trip scenario (each thread its own uniquely-named
+file, so not a file-path collision) reported 9-17 ThreadSanitizer races per run, all resolving to one
+root cause: `RWMesh_CafReader::fillDocument()` (the shared base of `RWObj_CafReader` and
+`RWGltf_CafReader` — reachable via OBJ **and** glTF import, and PLY export via `AddShape`)
+saves/mutates/restores `XCAFDoc_ShapeTool::theAutoNaming` — a process-global `static bool` — with
+zero synchronization; `XCAFDoc_ShapeTool::AddShape` reads the same flag. Same failure class as #298
+(an unsynchronized save/modify/restore dance on shared global state), but cosmetic (wrong
+auto-naming) rather than geometric. Minimal C++ reproducer, methodology, and full writeup:
+[`Scripts/repro/341-meshcaf/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/341-meshcaf).
+
+**Fix.** Bridge-only mitigation (matches the #298 PR1 pattern — no kernel patch or `OCCT.xcframework`
+rebuild needed for this release): every OBJ/glTF/PLY CAF-reader/writer bridge function now serializes
+on a dedicated `meshCafMutex()` (`OCCTBridge_IO.mm`). Not yet filed upstream. New regression suite
+`Issue341MeshCafThreadSafetyTests` (`OCCTThreadTests`) exercises concurrent OBJ round-trips through
+the Swift API — documented honestly as a basic exerciser, not a reliable reproducer at this scale (the
+race needs sanitizer instrumentation or a much larger operation count to surface without one).
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed, so
+`Package.swift` picks up the new URL + checksum; `OCCT.xcframework` is unchanged. Consumers building
+`OCCTBridge` from source (the default) get the fix by pulling this tag; consumers on
+`OCCTSWIFT_BRIDGE_PREBUILT=1` need the new release asset.
+
+**Still open.** Two hard crashes (SIGSEGV/SIGABRT, garbage-looking fault addresses) were observed
+empirically in ~2 of 20 full-suite parallel `swift test` runs during this investigation — one
+alongside a `BinTools`/`TopTools` "File was not written with this version of the topology" message.
+Neither matches the AutoNaming mechanism above. Working theory: unrelated fixed-temp-file-path
+collisions between concurrently-running tests (several `.brep`/`.stp` fixtures share literal names
+across `Tests/`), not a kernel memory-safety bug — not yet confirmed or fixed. Flagged for a follow-up
+test-isolation audit. #342 (bridge-level thread-handling contract: per-call safety classification,
+scoped/controllable internal parallelism) remains open and gets a concrete first classified entry
+from this investigation — OBJ/glTF/PLY CAF operations are `exclusive` (need `meshCafMutex()`).
 
 ### v1.15.3 (July 2026) — chore: opt-in prebuilt `OCCTBridge.xcframework`, skip compiling the 62K-line Obj-C++ bridge per consumer rebuild (#339)
 

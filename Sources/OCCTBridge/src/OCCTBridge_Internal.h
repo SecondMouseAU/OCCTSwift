@@ -190,6 +190,13 @@ std::mutex& igesMutex();
 // v1.12.3 — the underlying OCCT non-reentrancy (STATIC_SOLIDINDEX and the blend
 // scratch) is now fixed in the pinned kernel via Scripts/patches/0003, so 3D
 // fillet/chamfer builds are reentrant and no longer need serialising.
+std::mutex& meshCafMutex();
+// #341: RWMesh_CafReader::fillDocument() (the shared base of RWObj_CafReader and
+// RWGltf_CafReader) saves/mutates/restores XCAFDoc_ShapeTool's process-global
+// theAutoNaming flag with no synchronization, and XCAFDoc_ShapeTool::AddShape
+// reads the same flag — confirmed via ThreadSanitizer against V8_0_0_p1. Any
+// concurrent OBJ/glTF/PLY import or export can race on it. Serialize all of
+// them on one lock until the upstream fix lands.
 
 // === OCCT signal handling ===
 //
