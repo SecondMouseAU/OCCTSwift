@@ -33,20 +33,22 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.5 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
+    // v1.15.6 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
     // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
     // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
     // in FixPeriodicDegenerated, #317), 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318), 0007
     // (ShapeAnalysis_FreeBounds lwire reset, #323), 0008 (Geom_BSplineCurve O(1)
     // PeriodicNormalization, #323), 0009 (StepData_StepWriter split oversized string, #323), 0010
-    // (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319), and 0011
-    // (XCAFDoc_ShapeTool::AutoNamingScope, #341).
+    // (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319), 0011
+    // (XCAFDoc_ShapeTool::AutoNamingScope, #341), and 0012 (XCAFApp_Application::GetApplication/
+    // TDocStd_Application::Resources lazy-init races + CDF_Directory/Resource_Manager/
+    // CDF_Application reader-writer map synchronization, #344).
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.5/OCCT.xcframework.zip",
-        checksum: "292c79cfde971751533873b0594b739edf9c80faae7c90c848282b43a685736b"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.6/OCCT.xcframework.zip",
+        checksum: "2744457ea311cd56d94c41621fb8977daa7141ec9a4f0e4bdc0aff26b0925b61"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
@@ -74,8 +76,8 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
     // the OCCT.xcframework convention above.
     ? .binaryTarget(
         name: "OCCTBridge",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.5/OCCTBridge.xcframework.zip",
-        checksum: "5564c99c570a4da5eb5bef25d3f4cf3e30e2701185b8b53fd118a2e5548fe7eb"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.6/OCCTBridge.xcframework.zip",
+        checksum: "dbbbae1fc580d983fd5fd19e707319f2cd01b5c8f2461aa268708778428b3ff9"
     )
     : .target(
         name: "OCCTBridge",

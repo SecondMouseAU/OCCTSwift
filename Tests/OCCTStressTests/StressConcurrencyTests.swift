@@ -172,6 +172,29 @@ struct StressConcurrentCreationTests {
     }
 }
 
+// MARK: - Concurrent Document Creation (#344)
+
+// Document.create()/loadOBJ/etc. all funnel through the process-wide
+// XCAFApp_Application::GetApplication() singleton and its one CDF_Directory. #344 was an
+// uncatchable SIGSEGV surfacing right after two concurrent OBJ imports, surviving the #341
+// theAutoNaming fix — root-caused to two independent, unsynchronized races in GetApplication()'s
+// lazy singleton init and CDF_Directory::Add, fixed in the v1.15.6 kernel patch (0012). This
+// regression test exercises the same singleton from many concurrent tasks.
+@Suite("Stress: Concurrent Document Creation (#344)")
+struct StressConcurrentDocumentCreationTests {
+
+    @Test func parallelDocumentCreate() async {
+        await withTaskGroup(of: Document?.self) { group in
+            for _ in 0..<40 {
+                group.addTask { Document.create() }
+            }
+            var documents: [Document] = []
+            for await d in group { if let d { documents.append(d) } }
+            #expect(documents.count == 40)
+        }
+    }
+}
+
 // MARK: - Sequential Determinism
 
 @Suite("Stress: Sequential Determinism")

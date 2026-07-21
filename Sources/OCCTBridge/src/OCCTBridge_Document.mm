@@ -2474,9 +2474,16 @@ void OCCTDocumentDefineFormatXmlXCAF(OCCTDocumentRef doc) {
     try { XmlXCAFDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
+// #349: interim serialization for OCAF Save/Load — see OCCTBridge_Internal.h.
+std::mutex& ocafStoreMutex() {
+    static std::mutex mutex;
+    return mutex;
+}
+
 int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path) {
     if (!doc || doc->doc.IsNull() || !path) return -1;
     try {
+        std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
         TCollection_ExtendedString ePath(path, true);
         PCDM_StoreStatus status = doc->app->SaveAs(doc->doc, ePath);
         return static_cast<int32_t>(status);
@@ -2486,6 +2493,7 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path) {
 OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus) {
     if (!path) { if (outStatus) *outStatus = -1; return nullptr; }
     try {
+        std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
         Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
 
         // Register all format drivers
@@ -2535,6 +2543,7 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus) {
 int32_t OCCTDocumentSaveOCAFInPlace(OCCTDocumentRef doc) {
     if (!doc || doc->doc.IsNull()) return -1;
     try {
+        std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
         if (!doc->doc->IsSaved()) return -1;
         PCDM_StoreStatus status = doc->app->Save(doc->doc);
         return static_cast<int32_t>(status);

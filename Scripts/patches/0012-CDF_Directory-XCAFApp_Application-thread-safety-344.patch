@@ -1,0 +1,366 @@
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+index 3496b7ec..d999f545 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+@@ -472,6 +472,7 @@ void CDF_Application::Read(Standard_IStream&                     theIStream,
+ occ::handle<PCDM_Reader> CDF_Application::ReaderFromFormat(
+   const TCollection_ExtendedString& theFormat)
+ {
++  std::lock_guard<std::mutex> aLock(myReadersWritersMutex);
+   // check map of readers
+   occ::handle<PCDM_RetrievalDriver> aReader;
+   if (myReaders.FindFromKey(theFormat, aReader))
+@@ -531,6 +532,7 @@ occ::handle<PCDM_Reader> CDF_Application::ReaderFromFormat(
+ occ::handle<PCDM_StorageDriver> CDF_Application::WriterFromFormat(
+   const TCollection_ExtendedString& theFormat)
+ {
++  std::lock_guard<std::mutex> aLock(myReadersWritersMutex);
+   // check map of writers
+   occ::handle<PCDM_StorageDriver> aDriver;
+   if (myWriters.FindFromKey(theFormat, aDriver))
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.hxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.hxx
+index d7adffe4..c0e4b950 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.hxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.hxx
+@@ -25,6 +25,7 @@
+ #include <CDM_CanCloseStatus.hxx>
+ #include <Standard_IStream.hxx>
+ #include <NCollection_IndexedDataMap.hxx>
++#include <mutex>
+ 
+ class Standard_GUID;
+ class CDM_Document;
+@@ -233,6 +234,7 @@ protected:
+   NCollection_IndexedDataMap<TCollection_ExtendedString, occ::handle<PCDM_RetrievalDriver>>
+                                                                                           myReaders;
+   NCollection_IndexedDataMap<TCollection_ExtendedString, occ::handle<PCDM_StorageDriver>> myWriters;
++  mutable std::mutex myReadersWritersMutex;
+ 
+ private:
+   TCollection_ExtendedString myDefaultFolder;
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.cxx
+index 24276d23..c6726b61 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.cxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.cxx
+@@ -25,16 +25,23 @@ IMPLEMENT_STANDARD_RTTIEXT(CDF_Directory, Standard_Transient)
+ 
+ CDF_Directory::CDF_Directory() = default;
+ 
++// myMutex-guarded; inlined instead of calling Contains() to avoid a recursive lock.
+ void CDF_Directory::Add(const occ::handle<CDM_Document>& aDocument)
+ {
+-  if (!Contains(aDocument))
++  std::lock_guard<std::mutex> aLock(myMutex);
++  for (NCollection_List<occ::handle<CDM_Document>>::Iterator it(myDocuments); it.More(); it.Next())
+   {
+-    myDocuments.Append(aDocument);
++    if (aDocument == it.Value())
++    {
++      return;
++    }
+   }
++  myDocuments.Append(aDocument);
+ }
+ 
+ void CDF_Directory::Remove(const occ::handle<CDM_Document>& aDocument)
+ {
++  std::lock_guard<std::mutex> aLock(myMutex);
+   for (NCollection_List<occ::handle<CDM_Document>>::Iterator it(myDocuments); it.More(); it.Next())
+   {
+     if (aDocument == it.Value())
+@@ -47,6 +54,7 @@ void CDF_Directory::Remove(const occ::handle<CDM_Document>& aDocument)
+ 
+ bool CDF_Directory::Contains(const occ::handle<CDM_Document>& aDocument) const
+ {
++  std::lock_guard<std::mutex> aLock(myMutex);
+   for (NCollection_List<occ::handle<CDM_Document>>::Iterator it(myDocuments); it.More(); it.Next())
+   {
+     if (aDocument == it.Value())
+@@ -59,6 +67,7 @@ bool CDF_Directory::Contains(const occ::handle<CDM_Document>& aDocument) const
+ 
+ int CDF_Directory::Length() const
+ {
++  std::lock_guard<std::mutex> aLock(myMutex);
+   return myDocuments.Extent();
+ }
+ 
+@@ -70,13 +79,15 @@ const NCollection_List<occ::handle<CDM_Document>>& CDF_Directory::List() const
+ 
+ bool CDF_Directory::IsEmpty() const
+ {
++  std::lock_guard<std::mutex> aLock(myMutex);
+   return myDocuments.IsEmpty();
+ }
+ 
+ occ::handle<CDM_Document> CDF_Directory::Last()
+ {
++  std::lock_guard<std::mutex> aLock(myMutex);
+   Standard_NoSuchObject_Raise_if(
+-    IsEmpty(),
++    myDocuments.IsEmpty(),
+     "CDF_Directory::Last: the directory does not contain any document");
+   return myDocuments.Last();
+ }
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.hxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.hxx
+index 57944e6e..031df4f5 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.hxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Directory.hxx
+@@ -23,6 +23,7 @@
+ #include <NCollection_List.hxx>
+ #include <Standard_Transient.hxx>
+ #include <Standard_Integer.hxx>
++#include <mutex>
+ class CDM_Document;
+ 
+ //! A directory is a collection of documents. There is only one instance
+@@ -62,6 +63,7 @@ private:
+   Standard_EXPORT const NCollection_List<occ::handle<CDM_Document>>& List() const;
+ 
+   NCollection_List<occ::handle<CDM_Document>> myDocuments;
++  mutable std::mutex                          myMutex;
+ };
+ 
+ #endif // _CDF_Directory_HeaderFile
+diff --git a/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.cxx b/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.cxx
+index 176ddba3..41abc071 100644
+--- a/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.cxx
++++ b/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.cxx
+@@ -59,6 +59,7 @@ bool TDocStd_Application::IsDriverLoaded() const
+ 
+ occ::handle<Resource_Manager> TDocStd_Application::Resources()
+ {
++  std::lock_guard<std::mutex> aLock(myResourcesMutex);
+   if (myResources.IsNull())
+   {
+     myResources = new Resource_Manager(ResourcesName());
+@@ -99,6 +100,7 @@ void TDocStd_Application::DefineFormat(const TCollection_AsciiString&
+   }
+ 
+   // register drivers
++  std::lock_guard<std::mutex> aLock(myReadersWritersMutex);
+   myReaders.Add(theFormat, theReader);
+   myWriters.Add(theFormat, theWriter);
+ }
+@@ -109,6 +111,7 @@ void TDocStd_Application::ReadingFormats(NCollection_Sequence<TCollection_AsciiS
+ {
+   theFormats.Clear();
+ 
++  std::lock_guard<std::mutex> aLock(myReadersWritersMutex);
+   NCollection_IndexedDataMap<TCollection_ExtendedString,
+                              occ::handle<PCDM_RetrievalDriver>>::Iterator anIter(myReaders);
+   for (; anIter.More(); anIter.Next())
+@@ -127,6 +130,7 @@ void TDocStd_Application::WritingFormats(NCollection_Sequence<TCollection_AsciiS
+ {
+   theFormats.Clear();
+ 
++  std::lock_guard<std::mutex> aLock(myReadersWritersMutex);
+   NCollection_IndexedDataMap<TCollection_ExtendedString, occ::handle<PCDM_StorageDriver>>::Iterator
+     anIter(myWriters);
+   for (; anIter.More(); anIter.Next())
+diff --git a/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.hxx b/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.hxx
+index ab272d41..aec4ab36 100644
+--- a/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.hxx
++++ b/src/ApplicationFramework/TKLCAF/TDocStd/TDocStd_Application.hxx
+@@ -28,6 +28,7 @@
+ #include <PCDM_ReaderStatus.hxx>
+ #include <PCDM_StoreStatus.hxx>
+ #include <TDocStd_Document.hxx>
++#include <mutex>
+ 
+ class Resource_Manager;
+ class CDM_Document;
+@@ -325,6 +326,7 @@ public:
+ protected:
+   occ::handle<Resource_Manager> myResources;
+   bool                          myIsDriverLoaded;
++  mutable std::mutex            myResourcesMutex;
+ };
+ 
+ #endif // _TDocStd_Application_HeaderFile
+diff --git a/src/DataExchange/TKXCAF/XCAFApp/XCAFApp_Application.cxx b/src/DataExchange/TKXCAF/XCAFApp/XCAFApp_Application.cxx
+index 7155913c..9af39c7b 100644
+--- a/src/DataExchange/TKXCAF/XCAFApp/XCAFApp_Application.cxx
++++ b/src/DataExchange/TKXCAF/XCAFApp/XCAFApp_Application.cxx
+@@ -27,11 +27,9 @@ IMPLEMENT_STANDARD_RTTIEXT(XCAFApp_Application, TDocStd_Application)
+ 
+ occ::handle<XCAFApp_Application> XCAFApp_Application::GetApplication()
+ {
+-  static occ::handle<XCAFApp_Application> locApp;
+-  if (locApp.IsNull())
+-  {
+-    locApp = new XCAFApp_Application;
+-  }
++  // Construct in the initializer: thread-safe exactly once (C++11 magic statics),
++  // unlike the previous separate IsNull()-guarded assignment.
++  static occ::handle<XCAFApp_Application> locApp = new XCAFApp_Application;
+   return locApp;
+ }
+ 
+diff --git a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+index 06ee6c0a..e29e6751 100644
+--- a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
++++ b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+@@ -152,6 +152,20 @@ Resource_Manager::Resource_Manager()
+ 
+ //=================================================================================================
+ 
++Resource_Manager::Resource_Manager(const Resource_Manager& theOther)
++    : Standard_Transient()
++{
++  std::lock_guard<std::recursive_mutex> aLock(theOther.myMutex);
++  myName        = theOther.myName;
++  myRefMap      = theOther.myRefMap;
++  myUserMap     = theOther.myUserMap;
++  myExtStrMap   = theOther.myExtStrMap;
++  myVerbose     = theOther.myVerbose;
++  myInitialized = theOther.myInitialized;
++}
++
++//=================================================================================================
++
+ void Resource_Manager::Load(
+   const TCollection_AsciiString&                                         thePath,
+   NCollection_DataMap<TCollection_AsciiString, TCollection_AsciiString>& aMap)
+@@ -322,7 +336,8 @@ static int GetLine(OSD_File& aFile, TCollection_AsciiString& aLine)
+ //=======================================================================
+ bool Resource_Manager::Save() const
+ {
+-  TCollection_AsciiString anEnvVar("CSF_");
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               anEnvVar("CSF_");
+   anEnvVar += myName;
+   anEnvVar += "UserDefaults";
+ 
+@@ -455,7 +470,8 @@ bool Resource_Manager::Save() const
+ 
+ int Resource_Manager::Integer(const char* const aResourceName) const
+ {
+-  TCollection_AsciiString Result = Value(aResourceName);
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Result = Value(aResourceName);
+   if (!Result.IsIntegerValue())
+   {
+     TCollection_AsciiString n("Value of resource `");
+@@ -473,7 +489,8 @@ int Resource_Manager::Integer(const char* const aResourceName) const
+ 
+ double Resource_Manager::Real(const char* const aResourceName) const
+ {
+-  TCollection_AsciiString Result = Value(aResourceName);
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Result = Value(aResourceName);
+   if (!Result.IsRealValue())
+   {
+     TCollection_AsciiString n("Value of resource `");
+@@ -491,7 +508,8 @@ double Resource_Manager::Real(const char* const aResourceName) const
+ 
+ const char* Resource_Manager::Value(const char* const aResource) const
+ {
+-  TCollection_AsciiString Resource(aResource);
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Resource(aResource);
+   if (myUserMap.IsBound(Resource))
+   {
+     return myUserMap(Resource).ToCString();
+@@ -510,7 +528,8 @@ const char* Resource_Manager::Value(const char* const aResource) const
+ 
+ const char16_t* Resource_Manager::ExtValue(const char* const aResource)
+ {
+-  TCollection_AsciiString Resource(aResource);
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Resource(aResource);
+   if (myExtStrMap.IsBound(Resource))
+   {
+     return myExtStrMap(Resource).ToExtString();
+@@ -532,6 +551,7 @@ const char16_t* Resource_Manager::ExtValue(const char* const aResource)
+ //=======================================================================
+ void Resource_Manager::SetResource(const char* const aResourceName, const int aValue)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
+   SetResource(aResourceName, TCollection_AsciiString(aValue).ToCString());
+ }
+ 
+@@ -542,6 +562,7 @@ void Resource_Manager::SetResource(const char* const aResourceName, const int aV
+ //=======================================================================
+ void Resource_Manager::SetResource(const char* const aResourceName, const double aValue)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
+   SetResource(aResourceName, TCollection_AsciiString(aValue).ToCString());
+ }
+ 
+@@ -552,10 +573,11 @@ void Resource_Manager::SetResource(const char* const aResourceName, const double
+ //=======================================================================
+ void Resource_Manager::SetResource(const char* const aResource, const char16_t* const aValue)
+ {
+-  Standard_PCharacter        pStr;
+-  TCollection_AsciiString    Resource = aResource;
+-  TCollection_ExtendedString ExtValue = aValue;
+-  TCollection_AsciiString    FormatStr(ExtValue.Length() * 3 + 10, ' ');
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  Standard_PCharacter                   pStr;
++  TCollection_AsciiString               Resource = aResource;
++  TCollection_ExtendedString            ExtValue = aValue;
++  TCollection_AsciiString               FormatStr(ExtValue.Length() * 3 + 10, ' ');
+ 
+   if (!myExtStrMap.Bind(Resource, ExtValue))
+   {
+@@ -577,8 +599,9 @@ void Resource_Manager::SetResource(const char* const aResource, const char16_t*
+ //=======================================================================
+ void Resource_Manager::SetResource(const char* const aResource, const char* const aValue)
+ {
+-  TCollection_AsciiString Resource = aResource;
+-  TCollection_AsciiString Value    = aValue;
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Resource = aResource;
++  TCollection_AsciiString               Value    = aValue;
+   if (!myUserMap.Bind(Resource, Value))
+   {
+     myUserMap(Resource) = Value;
+@@ -589,7 +612,8 @@ void Resource_Manager::SetResource(const char* const aResource, const char* cons
+ 
+ bool Resource_Manager::Find(const char* const aResource) const
+ {
+-  TCollection_AsciiString Resource(aResource);
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
++  TCollection_AsciiString               Resource(aResource);
+   return myUserMap.IsBound(Resource) || myRefMap.IsBound(Resource);
+ }
+ 
+@@ -598,6 +622,7 @@ bool Resource_Manager::Find(const char* const aResource) const
+ bool Resource_Manager::Find(const TCollection_AsciiString& theResource,
+                             TCollection_AsciiString&       theValue) const
+ {
++  std::lock_guard<std::recursive_mutex> aLock(myMutex);
+   return myUserMap.Find(theResource, theValue) || myRefMap.Find(theResource, theValue);
+ }
+ 
+diff --git a/src/FoundationClasses/TKernel/Resource/Resource_Manager.hxx b/src/FoundationClasses/TKernel/Resource/Resource_Manager.hxx
+index 08fe9f24..37947c55 100644
+--- a/src/FoundationClasses/TKernel/Resource/Resource_Manager.hxx
++++ b/src/FoundationClasses/TKernel/Resource/Resource_Manager.hxx
+@@ -28,6 +28,7 @@
+ #include <Standard_CString.hxx>
+ #include <Standard_Integer.hxx>
+ #include <Standard_Real.hxx>
++#include <mutex>
+ 
+ //! Defines a resource structure and its management methods.
+ class Resource_Manager : public Standard_Transient
+@@ -61,6 +62,10 @@ public:
+                                    const TCollection_AsciiString& theUserDefaultsDirectory,
+                                    const bool                     theIsVerbose = false);
+ 
++  //! Copies the maps under theOther's lock; myMutex is not itself copyable and is
++  //! default-constructed.
++  Standard_EXPORT Resource_Manager(const Resource_Manager& theOther);
++
+   //! Save the user resource structure in the specified file.
+   //! Creates the file if it does not exist.
+   Standard_EXPORT bool Save() const;
+@@ -132,6 +137,7 @@ private:
+   NCollection_DataMap<TCollection_AsciiString, TCollection_ExtendedString> myExtStrMap;
+   bool                                                                     myVerbose;
+   bool                                                                     myInitialized;
++  mutable std::recursive_mutex                                             myMutex;
+ };
+ 
+ #endif // _Resource_Manager_HeaderFile

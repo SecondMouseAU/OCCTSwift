@@ -195,6 +195,15 @@ std::mutex& igesMutex();
 // kernel via Scripts/patches/0011 (XCAFDoc_ShapeTool::AutoNamingScope). The
 // interim meshCafMutex() bridge-side lock this comment used to describe was
 // removed once the xcframework carried the patch.
+// #349: CDF_Application::WriterFromFormat/ReaderFromFormat cache one storage/
+// retrieval driver instance per format and reuse it for every Save/Load — the
+// driver's own Write()/Read() isn't reentrant (e.g. BinLDrivers_
+// DocumentStorageDriver's instance-level myRelocTable/myTypesMap scratch state),
+// so two threads saving/loading the same format concurrently corrupt it
+// (SIGSEGV in BinLDrivers_DocumentStorageDriver::Write/WriteSubTree, observed via
+// OCCTDocumentSaveOCAF/OCCTDocumentSaveOCAFInPlace). Interim mitigation until a
+// kernel fix lands — matches the #298/#341 PR1→PR2 pattern.
+std::mutex& ocafStoreMutex();
 
 // === OCCT signal handling ===
 //

@@ -108,6 +108,49 @@ history:
 2D fillets/chamfers (`BRepFilletAPI_MakeFillet2d`) were never affected — they use the
 separate analytic `ChFi2d` toolkit with no such statics.
 
+### Document creation thread safety (issues #341, #344)
+
+`Document.create()`, `Document.loadOBJ`/`loadSTEP`/`loadGLTF`/etc., and every other
+document-producing API are **safe to call concurrently** as of v1.15.6 — no lock
+needed on your side.
+
+Every one of these calls goes through a single process-wide `XCAFApp_Application`
+singleton (`XCAFApp_Application::GetApplication()`), so two kernel fixes were needed,
+both in OCCT itself, not the bridge:
+
+- **v1.15.5** (`Scripts/patches/0011`, issue #341): `XCAFDoc_ShapeTool::theAutoNaming`,
+  a process-global flag mutated by every document-tree build, raced across concurrent
+  OBJ/glTF import. Fixed via `XCAFDoc_ShapeTool::AutoNamingScope` (a mutex-backed RAII
+  scope) plus making the flag itself `std::atomic<bool>`.
+- **v1.15.6** (`Scripts/patches/0012`, issue #344): an uncatchable SIGSEGV survived the
+  v1.15.5 fix — a genuinely different pair of races, in `GetApplication()`'s lazy
+  singleton init (two threads could each construct their own instance) and
+  `CDF_Directory::Add` (the singleton's document registry, mutated with no locking at
+  all). Fixed via a thread-safe static initializer and a private mutex on
+  `CDF_Directory`. Fixing the singleton init meant every caller genuinely shares one
+  `TDocStd_Application` instance for the first time (as intended), which surfaced more
+  races on that instance's format-registration state — `TDocStd_Application::Resources()`
+  (same lazy-init bug as `GetApplication()`), `Resource_Manager`'s internal maps, and
+  `CDF_Application::myReaders`/`myWriters` — all fixed in the same patch.
+
+An interim bridge-side mutex (`meshCafMutex()`, serializing every OBJ/glTF/PLY bridge
+call) shipped in v1.15.4 between these two kernel fixes and was removed once v1.15.5
+made the underlying OCCT calls safe on their own — the same "bridge mitigation, then
+kernel fix" pattern as #298 above.
+
+Concurrent `Document.saveOCAF`/`saveOCAFInPlace`/`loadOCAF` of the **same target format**
+is a separate issue (#349): `CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache
+one storage/retrieval driver instance per format and reuse it for every call, but the
+driver's own `Write()`/`Read()` isn't reentrant — its instance-level scratch state (e.g.
+`BinLDrivers_DocumentStorageDriver`'s `myRelocTable`) corrupts under two concurrent
+callers. **v1.15.6 ships an interim bridge-side mitigation** (`ocafStoreMutex()` in
+`OCCTBridge_Document.mm`, serializing all three OCAF save/load bridge calls) — the same
+"bridge mitigation, then kernel fix" pattern as #298/#341 above. The underlying OCCT
+non-reentrancy is **not yet fixed in the kernel**; that needs its own dedicated TSan
+investigation, tracked separately in #349. Plain shape-format I/O (STEP/IGES/BREP/OBJ/
+glTF) is unaffected — this only covers the three OCAF (`.bcaf`/`.xcaf`-style binary/XML
+document) persistence entry points.
+
 ## Performance
 
 The mutex overhead is ~1µs per lock/unlock. Typical OCCT operations take 0.1ms-10s. The serialization cost is negligible for all practical workflows.
