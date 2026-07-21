@@ -237,7 +237,8 @@ complex part → measure (volume, area, CoM, edges, faces)
 8 concurrent tasks: each creates box → fillet → drill → measure
 ```
 
-**Checks:** All 8 results identical, no crashes (monitors known NCollection SEGV)
+**Checks:** All 8 results identical, no crashes (the "NCollection SEGV" this used to cite was never
+characterized and didn't hold up under TSan — see CLAUDE.md's Known OCCT Bugs, #341)
 
 ## 5. Regression Tests
 
