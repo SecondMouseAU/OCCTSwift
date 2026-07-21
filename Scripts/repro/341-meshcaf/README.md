@@ -42,12 +42,12 @@ The remaining races are `Message_PrinterOStream`/`std::cout` — OCCT's default 
 writes progress text from multiple threads with no locking. Real per TSan, but cosmetic (interleaved
 console output), not memory-corrupting; not fixed here.
 
-This also is not obviously the mechanism behind the empirical SIGSEGV/SIGABRT seen in ~2/20 full
-`swift test` parallel runs during this investigation (garbage-looking fault addresses, one
-"File was not written with this version of the topology" BinTools message) — those remain
-uncharacterized; the working theory is unrelated fixed-temp-file-path collisions between concurrently
-running tests (several `.brep`/`.stp` fixtures across `Tests/` share literal names), not a kernel
-memory-safety bug. Not pursued further here; flagged for a follow-up test-isolation audit.
+This also is not obviously (but is not ruled out either) the mechanism behind the empirical
+SIGSEGV/SIGABRT seen in ~2/20 full `swift test` parallel runs during this investigation
+(garbage-looking fault addresses) — filed separately as #344 (SIGSEGV, immediately after two
+concurrent OBJ imports — possibly this same race in a rarer timing window that corrupts memory
+instead of just producing wrong auto-naming) and #345 (SIGABRT, essentially no localizing evidence).
+Not pursued further here.
 
 ## Repro
 
