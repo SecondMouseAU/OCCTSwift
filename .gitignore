@@ -14,12 +14,8 @@ Package.resolved
 # OCCT build artifacts and large binaries
 # Users must run Scripts/build-occt.sh to generate these
 Libraries/occt-src/
-Libraries/occt-build-ios/
-Libraries/occt-build-sim/
-Libraries/occt-build-macos/
-Libraries/occt-install-ios/
-Libraries/occt-install-sim/
-Libraries/occt-install-macos/
+Libraries/occt-build-*/
+Libraries/occt-install-*/
 Libraries/OCCT.xcframework/
 Libraries/*.a
 

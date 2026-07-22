@@ -151,6 +151,61 @@ investigation, tracked separately in #349. Plain shape-format I/O (STEP/IGES/BRE
 glTF) is unaffected — this only covers the three OCAF (`.bcaf`/`.xcaf`-style binary/XML
 document) persistence entry points.
 
+## ThreadSanitizer gate for concurrency-touching changes
+
+Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349)
+was pinned down by the same protocol: a minimal-module ThreadSanitizer build of the pinned
+OCCT with all carried patches applied, plus a small standalone C++ stress harness for the
+suspect usage pattern. `Scripts/tsan-stress.sh` formalizes that protocol as a routine gate,
+because upstream OCCT runs no sanitizers in its CI at all: races we do not catch here are
+caught by nobody.
+
+### When running it is required
+
+Run `Scripts/tsan-stress.sh run` (plus `swift`) before merging any change that:
+
+1. adds or widens a concurrent path through the bridge (a new operation callable in
+   parallel, a new async/worker entry point);
+2. wraps a new OCCT subsystem that callers are expected to use from multiple threads;
+3. removes or relaxes a serialization mutex (`OCCTSerial`, `meshCafMutex`,
+   `ocafStoreMutex`, or any successor); or
+4. adds or updates a carried kernel patch that touches shared state.
+
+If the change introduces a genuinely new concurrent usage pattern, also add a gate
+scenario: either a new mode in an existing harness under `Scripts/repro/` or a new
+standalone harness, and register it in the `SCENARIOS` matrix at the top of
+`Scripts/tsan-stress.sh`. The existing harnesses (`341-meshcaf`, `344-cdf-directory`,
+`349-ocaf-driver-reentrancy`) are the templates.
+
+### Commands
+
+```bash
+Scripts/tsan-stress.sh build   # one-time: TSan-instrumented OCCT into Libraries/occt-install-tsan
+Scripts/tsan-stress.sh run     # compile + run every gate scenario; fails on unsuppressed races
+Scripts/tsan-stress.sh swift   # swift test --sanitize=thread on the concurrency-focused suites
+Scripts/tsan-stress.sh all     # build if needed, then run + swift
+```
+
+### Coverage model
+
+- `run` is the kernel gate: the harnesses link the instrumented OCCT directly, so races
+  wholly inside kernel code are visible. This is the mode that found `STATIC_SOLIDINDEX`
+  (#298), `theAutoNaming` (#341), the CDF singleton family (#344) and the storage-driver
+  scratch state (#349).
+- `swift` instruments the Swift and OCCTBridge sources only; the prebuilt
+  `OCCT.xcframework` is not instrumented, so kernel-internal races are invisible there.
+  It exists to catch wrapper-level races (bridge caches, Swift concurrency misuse), not
+  kernel ones.
+
+### Suppressions
+
+`Scripts/tsan.supp` may contain only (a) confirmed-benign races reviewed and documented,
+or (b) already-filed open kernel findings, each with an issue link and a removal
+condition (current example: the `CDM_Application` metadata-map race, #353, suppressed
+until its patch is carried so the gate stays green for new code). An unsuppressed race is
+a gate failure: fix it or file it first. When a suppressed finding's fix lands, remove
+the suppression; the gate then verifies the fix.
+
 ## Performance
 
 The mutex overhead is ~1µs per lock/unlock. Typical OCCT operations take 0.1ms-10s. The serialization cost is negligible for all practical workflows.
