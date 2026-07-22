@@ -7,13 +7,36 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.9
+## Current: v1.15.10
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.10 (July 2026): ThreadSanitizer gate for concurrency-touching changes (docs/tooling)
+
+Docs-and-tooling release; no API, bridge, or kernel changes, and no new binary assets (the
+`OCCT.xcframework.zip` binary target continues to resolve from the v1.15.9 release).
+
+Formalizes the TSan protocol that found and validated #298/#341/#344/#349 as a routine gate
+(#355, plus the #356 sysroot fix):
+
+- `Scripts/tsan-stress.sh`: `build` produces a minimal-module ThreadSanitizer OCCT (all carried
+  patches applied) into `Libraries/occt-install-tsan`; `run` compiles the `Scripts/repro/` stress
+  harnesses and executes a 7-scenario gate matrix that must be race-clean; `swift` runs
+  `swift test --sanitize=thread` on the concurrency-focused suites (wrapper-only coverage).
+- `Scripts/tsan.supp`: curated suppressions; only confirmed-benign races or filed-and-open kernel
+  findings (currently #353), each with an issue link and a removal condition.
+- `docs/thread-safety.md`: new "ThreadSanitizer gate" section defining when the gate is required
+  (new concurrent bridge paths, newly parallel-wrapped subsystems, mutex removals, new
+  thread-safety kernel patches) and the rule that new concurrent usage patterns add a scenario.
+- Verified end-to-end: gate green (7/7 scenarios, zero unsuppressed races) against the patched
+  `V8_0_0_p1` kernel.
+
+Context: upstream OCCT CI runs no sanitizers, so races this gate does not catch are caught by
+nobody. See the ecosystem report `docs/occt-kernel-bug-deep-dive-2026-07.md` (SecondMouseAU/ecosystem#23).
 
 ### v1.15.9 (July 2026) — fix (kernel): PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy SIGSEGV under concurrent Save/SaveAs of the same format (#349)
 
