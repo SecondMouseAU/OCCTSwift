@@ -7476,18 +7476,24 @@ void OCCTMakeMirrorPoint(double px, double py, double pz, double* matrix) {
 }
 
 void OCCTMakeMirrorAxis(double px, double py, double pz, double dx, double dy, double dz, double* matrix) {
-    gce_MakeMirror mm(gp_Ax1(gp_Pnt(px,py,pz), gp_Dir(dx,dy,dz)));
-    _storeTrsf(mm.Value(), matrix);
+    try {
+        gce_MakeMirror mm(gp_Ax1(gp_Pnt(px,py,pz), gp_Dir(dx,dy,dz)));
+        _storeTrsf(mm.Value(), matrix);
+    } catch (...) {}
 }
 
 void OCCTMakeMirrorPlane(double px, double py, double pz, double nx, double ny, double nz, double* matrix) {
-    gce_MakeMirror mm(gp_Pln(gp_Pnt(px,py,pz), gp_Dir(nx,ny,nz)));
-    _storeTrsf(mm.Value(), matrix);
+    try {
+        gce_MakeMirror mm(gp_Pln(gp_Pnt(px,py,pz), gp_Dir(nx,ny,nz)));
+        _storeTrsf(mm.Value(), matrix);
+    } catch (...) {}
 }
 
 void OCCTMakeRotation(double px, double py, double pz, double dx, double dy, double dz, double angle, double* matrix) {
-    gce_MakeRotation mr(gp_Ax1(gp_Pnt(px,py,pz), gp_Dir(dx,dy,dz)), angle);
-    _storeTrsf(mr.Value(), matrix);
+    try {
+        gce_MakeRotation mr(gp_Ax1(gp_Pnt(px,py,pz), gp_Dir(dx,dy,dz)), angle);
+        _storeTrsf(mr.Value(), matrix);
+    } catch (...) {}
 }
 
 void OCCTMakeScaleTransform(double px, double py, double pz, double factor, double* matrix) {

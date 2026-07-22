@@ -267,6 +267,26 @@ struct StressInvalidParameterTests {
         let result = b1.union(with: b2)
         if let r = result { #expect(r.isValid) }
     }
+
+    // #345: a zero-length direction/normal vector reaching gp_Dir's constructor throws
+    // Standard_ConstructionError with no OCCT-side catch — an uncaught C++ exception
+    // crossing the bridge boundary is a guaranteed std::terminate()/abort() (SIGABRT).
+    // These exercise bridge entry points that used to construct gp_Dir directly from
+    // caller doubles with no try/catch.
+    @Test func mirrorAxisZeroDirection() {
+        let m = TransformFactory3D.mirrorAxis(point: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 0))
+        _ = m
+    }
+
+    @Test func mirrorPlaneZeroNormal() {
+        let m = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 0))
+        _ = m
+    }
+
+    @Test func geomDirectionZeroVector() {
+        let d = GeomDirection(x: 0, y: 0, z: 0)
+        _ = d
+    }
 }
 
 // MARK: - Post-Operation State

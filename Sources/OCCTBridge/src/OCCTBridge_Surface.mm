@@ -224,9 +224,11 @@ double OCCTSurfaceGetVPeriod(OCCTSurfaceRef s) {
 void OCCTSurfaceGetPoint(OCCTSurfaceRef s, double u, double v,
                           double* x, double* y, double* z) {
     if (!s || s->surface.IsNull() || !x || !y || !z) return;
-    gp_Pnt p;
-    s->surface->D0(u, v, p);
-    *x = p.X(); *y = p.Y(); *z = p.Z();
+    try {
+        gp_Pnt p;
+        s->surface->D0(u, v, p);
+        *x = p.X(); *y = p.Y(); *z = p.Z();
+    } catch (...) {}
 }
 
 void OCCTSurfaceD1(OCCTSurfaceRef s, double u, double v,
@@ -235,12 +237,14 @@ void OCCTSurfaceD1(OCCTSurfaceRef s, double u, double v,
                     double* dvx, double* dvy, double* dvz) {
     if (!s || s->surface.IsNull() ||
         !px || !py || !pz || !dux || !duy || !duz || !dvx || !dvy || !dvz) return;
-    gp_Pnt p;
-    gp_Vec du, dv;
-    s->surface->D1(u, v, p, du, dv);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
-    *dux = du.X(); *duy = du.Y(); *duz = du.Z();
-    *dvx = dv.X(); *dvy = dv.Y(); *dvz = dv.Z();
+    try {
+        gp_Pnt p;
+        gp_Vec du, dv;
+        s->surface->D1(u, v, p, du, dv);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+        *dux = du.X(); *duy = du.Y(); *duz = du.Z();
+        *dvx = dv.X(); *dvy = dv.Y(); *dvz = dv.Z();
+    } catch (...) {}
 }
 
 void OCCTSurfaceD2(OCCTSurfaceRef s, double u, double v,
@@ -255,15 +259,17 @@ void OCCTSurfaceD2(OCCTSurfaceRef s, double u, double v,
         !d1ux || !d1uy || !d1uz || !d1vx || !d1vy || !d1vz ||
         !d2ux || !d2uy || !d2uz || !d2vx || !d2vy || !d2vz ||
         !d2uvx || !d2uvy || !d2uvz) return;
-    gp_Pnt p;
-    gp_Vec d1u, d1v, d2u, d2v, d2uv;
-    s->surface->D2(u, v, p, d1u, d1v, d2u, d2v, d2uv);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
-    *d1ux = d1u.X(); *d1uy = d1u.Y(); *d1uz = d1u.Z();
-    *d1vx = d1v.X(); *d1vy = d1v.Y(); *d1vz = d1v.Z();
-    *d2ux = d2u.X(); *d2uy = d2u.Y(); *d2uz = d2u.Z();
-    *d2vx = d2v.X(); *d2vy = d2v.Y(); *d2vz = d2v.Z();
-    *d2uvx = d2uv.X(); *d2uvy = d2uv.Y(); *d2uvz = d2uv.Z();
+    try {
+        gp_Pnt p;
+        gp_Vec d1u, d1v, d2u, d2v, d2uv;
+        s->surface->D2(u, v, p, d1u, d1v, d2u, d2v, d2uv);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+        *d1ux = d1u.X(); *d1uy = d1u.Y(); *d1uz = d1u.Z();
+        *d1vx = d1v.X(); *d1vy = d1v.Y(); *d1vz = d1v.Z();
+        *d2ux = d2u.X(); *d2uy = d2u.Y(); *d2uz = d2u.Z();
+        *d2vx = d2v.X(); *d2vy = d2v.Y(); *d2vz = d2v.Z();
+        *d2uvx = d2uv.X(); *d2uvy = d2uv.Y(); *d2uvz = d2uv.Z();
+    } catch (...) {}
 }
 
 bool OCCTSurfaceGetNormal(OCCTSurfaceRef s, double u, double v,
@@ -3304,16 +3310,20 @@ void OCCTElSLibValueOnPlane(double u, double v,
                              double ox, double oy, double oz,
                              double nx, double ny, double nz,
                              double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElSLib::Value(u, v, gp_Pln(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElSLib::Value(u, v, gp_Pln(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElSLibValueOnCylinder(double u, double v,
                                 double ox, double oy, double oz,
                                 double nx, double ny, double nz, double radius,
                                 double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElSLib::Value(u, v, gp_Cylinder(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElSLib::Value(u, v, gp_Cylinder(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElSLibValueOnCone(double u, double v,
@@ -3321,16 +3331,20 @@ void OCCTElSLibValueOnCone(double u, double v,
                             double nx, double ny, double nz,
                             double refRadius, double semiAngle,
                             double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElSLib::Value(u, v, gp_Cone(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), semiAngle, refRadius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElSLib::Value(u, v, gp_Cone(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), semiAngle, refRadius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElSLibValueOnSphere(double u, double v,
                               double ox, double oy, double oz,
                               double nx, double ny, double nz, double radius,
                               double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElSLib::Value(u, v, gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElSLib::Value(u, v, gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElSLibValueOnTorus(double u, double v,
@@ -3338,17 +3352,21 @@ void OCCTElSLibValueOnTorus(double u, double v,
                              double nx, double ny, double nz,
                              double majorRadius, double minorRadius,
                              double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElSLib::Value(u, v, gp_Torus(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), majorRadius, minorRadius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElSLib::Value(u, v, gp_Torus(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), majorRadius, minorRadius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElSLibParametersOnSphere(double ox, double oy, double oz,
                                    double nx, double ny, double nz, double radius,
                                    double px, double py, double pz,
                                    double* outU, double* outV) {
-    double u, v;
-    ElSLib::Parameters(gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius), gp_Pnt(px,py,pz), u, v);
-    *outU = u; *outV = v;
+    try {
+        double u, v;
+        ElSLib::Parameters(gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius), gp_Pnt(px,py,pz), u, v);
+        *outU = u; *outV = v;
+    } catch (...) {}
 }
 
 void OCCTElSLibD1OnSphere(double u, double v,
@@ -3357,11 +3375,13 @@ void OCCTElSLibD1OnSphere(double u, double v,
                            double* outPX, double* outPY, double* outPZ,
                            double* outVuX, double* outVuY, double* outVuZ,
                            double* outVvX, double* outVvY, double* outVvZ) {
-    gp_Pnt p; gp_Vec vu, vv;
-    ElSLib::D1(u, v, gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius), p, vu, vv);
-    *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
-    *outVuX = vu.X(); *outVuY = vu.Y(); *outVuZ = vu.Z();
-    *outVvX = vv.X(); *outVvY = vv.Y(); *outVvZ = vv.Z();
+    try {
+        gp_Pnt p; gp_Vec vu, vv;
+        ElSLib::D1(u, v, gp_Sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius), p, vu, vv);
+        *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
+        *outVuX = vu.X(); *outVuY = vu.Y(); *outVuZ = vu.Z();
+        *outVvX = vv.X(); *outVvY = vv.Y(); *outVvZ = vv.Z();
+    } catch (...) {}
 }
 
 // MARK: - v0.94: Convert_SphereToBSplineSurface
@@ -6227,10 +6247,12 @@ bool OCCTSurfaceBezierSetWeightRow(OCCTSurfaceRef surface, int32_t uIndex,
 
 void OCCTGeomEvalEllipsoidD0(double a, double b, double c, double u, double v,
                               double* px, double* py, double* pz) {
-    gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_EllipsoidSurface ell(ax, a, b, c);
-    gp_Pnt p = ell.EvalD0(u, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_EllipsoidSurface ell(ax, a, b, c);
+        gp_Pnt p = ell.EvalD0(u, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 OCCTSurfaceRef OCCTGeomEvalEllipsoidCreate(double a, double b, double c) {
@@ -6246,12 +6268,14 @@ OCCTSurfaceRef OCCTGeomEvalEllipsoidCreate(double a, double b, double c) {
 
 void OCCTGeomEvalHyperboloidD0(double r1, double r2, int32_t mode, double u, double v,
                                 double* px, double* py, double* pz) {
-    gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    auto sm = mode == 0 ? GeomEval_HyperboloidSurface::SheetMode::OneSheet
-                        : GeomEval_HyperboloidSurface::SheetMode::TwoSheets;
-    GeomEval_HyperboloidSurface hyp(ax, r1, r2, sm);
-    gp_Pnt p = hyp.EvalD0(u, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        auto sm = mode == 0 ? GeomEval_HyperboloidSurface::SheetMode::OneSheet
+                            : GeomEval_HyperboloidSurface::SheetMode::TwoSheets;
+        GeomEval_HyperboloidSurface hyp(ax, r1, r2, sm);
+        gp_Pnt p = hyp.EvalD0(u, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 OCCTSurfaceRef OCCTGeomEvalHyperboloidCreate(double r1, double r2, int32_t mode) {
@@ -6269,10 +6293,12 @@ OCCTSurfaceRef OCCTGeomEvalHyperboloidCreate(double r1, double r2, int32_t mode)
 
 void OCCTGeomEvalParaboloidD0(double focal, double u, double v,
                                double* px, double* py, double* pz) {
-    gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_ParaboloidSurface par(ax, focal);
-    gp_Pnt p = par.EvalD0(u, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_ParaboloidSurface par(ax, focal);
+        gp_Pnt p = par.EvalD0(u, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 OCCTSurfaceRef OCCTGeomEvalParaboloidCreate(double focal) {
@@ -6288,10 +6314,12 @@ OCCTSurfaceRef OCCTGeomEvalParaboloidCreate(double focal) {
 
 void OCCTGeomEvalCircularHelicoidD0(double pitch, double u, double v,
                                      double* px, double* py, double* pz) {
-    gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_CircularHelicoidSurface hel(ax, pitch);
-    gp_Pnt p = hel.EvalD0(u, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_CircularHelicoidSurface hel(ax, pitch);
+        gp_Pnt p = hel.EvalD0(u, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 OCCTSurfaceRef OCCTGeomEvalCircularHelicoidCreate(double pitch) {
@@ -6307,10 +6335,12 @@ OCCTSurfaceRef OCCTGeomEvalCircularHelicoidCreate(double pitch) {
 
 void OCCTGeomEvalHypParaboloidD0(double a, double b, double u, double v,
                                   double* px, double* py, double* pz) {
-    gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_HypParaboloidSurface hp(ax, a, b);
-    gp_Pnt p = hp.EvalD0(u, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax3 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_HypParaboloidSurface hp(ax, a, b);
+        gp_Pnt p = hp.EvalD0(u, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 OCCTSurfaceRef OCCTGeomEvalHypParaboloidCreate(double a, double b) {

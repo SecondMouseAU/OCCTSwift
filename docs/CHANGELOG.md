@@ -7,13 +7,46 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.6
+## Current: v1.15.7
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.7 (July 2026) — fix (bridge): 49 unguarded gp_Dir/Geom_Direction constructions — the likely #345 SIGABRT (#345)
+
+**#345's companion crash to #344**, root-caused via an audit rather than direct reproduction:
+#345 was filed with essentially no evidence (`exited with unexpected signal code 6`, no test
+name, no backtrace). OCCT's `gp_Dir` and `Geom_Direction` constructors throw
+`Standard_ConstructionError` for a zero-length (or near-zero) direction/normal vector. **49 public
+bridge functions** across 7 files constructed these directly from caller-supplied doubles (or
+called a `D0`/`D1`/`D2` derivative evaluator, or a `GeomEval_*Surface` constructor — same
+degenerate-input throw risk) with no try/catch anywhere in the call chain — e.g. `OCCTSurfaceD1`/
+`OCCTSurfaceD2` had none, immediately next to `OCCTSurfaceGetNormal`, which already did. An
+uncaught C++ exception crossing the bridge boundary into Swift-generated call frames is a
+guaranteed `std::terminate()` → `abort()` (SIGABRT), leaving almost no diagnostic trail — matching
+#345's profile exactly.
+
+**Fix**: wrapped all 49 functions in `try { ... } catch (...) { <safe fallback> }`, matching each
+file's existing idiom. The 3 functions returning a `_Nonnull` pointer
+(`OCCTAxis1PlacementCreate`/`OCCTAxis2PlacementCreate`/`OCCTOBBCreate`) fall back to a valid default
+axis rather than `nullptr`, since returning null from a `_Nonnull` contract would just relocate the
+crash. Two confirmed false positives left untouched: `computePlaneForPoints` and `buildTrsf3D`
+(two separately-defined `static` helpers) are both already protected by a `try` in their sole
+caller.
+
+**Validation**: 70 additional full-suite `swift test` runs (4419-4422 tests each, ~309,540
+individual test executions) — zero crashes of any kind. New regression tests
+(`Tests/OCCTStressTests/StressNullInvalidTests.swift`): `mirrorAxisZeroDirection`,
+`mirrorPlaneZeroNormal`, `geomDirectionZeroVector`.
+
+Bridge-only fix — no OCCT kernel change, no `OCCT.xcframework` rebuild (the prebuilt
+`OCCTBridge.xcframework` opt-in artifact is rebuilt). Not an OCCT bug, so nothing filed upstream.
+#345's own bar for confident closure was "100+ runs with no recurrence" — 70 clean runs plus a fix
+matching the exact crash mechanism is short of that literal bar but the strongest evidence gathered
+to date. #345.
 
 ### v1.15.6 (July 2026) — fix (kernel): XCAFApp_Application::GetApplication/CDF_Directory races — the SIGSEGV #341 didn't explain (#344)
 

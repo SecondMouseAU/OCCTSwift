@@ -1728,11 +1728,17 @@ OCCTOBBRef OCCTOBBCreate(double cx, double cy, double cz,
                            double zDirX, double zDirY, double zDirZ,
                            double hx, double hy, double hz) {
     auto* ref = new OCCTOBB();
-    ref->obb = Bnd_OBB(gp_Pnt(cx,cy,cz),
-                        gp_Dir(xDirX,xDirY,xDirZ),
-                        gp_Dir(yDirX,yDirY,yDirZ),
-                        gp_Dir(zDirX,zDirY,zDirZ),
-                        hx, hy, hz);
+    try {
+        ref->obb = Bnd_OBB(gp_Pnt(cx,cy,cz),
+                            gp_Dir(xDirX,xDirY,xDirZ),
+                            gp_Dir(yDirX,yDirY,yDirZ),
+                            gp_Dir(zDirX,zDirY,zDirZ),
+                            hx, hy, hz);
+    } catch (...) {
+        ref->obb = Bnd_OBB(gp_Pnt(cx,cy,cz),
+                            gp_Dir(1,0,0), gp_Dir(0,1,0), gp_Dir(0,0,1),
+                            hx, hy, hz);
+    }
     return ref;
 }
 
