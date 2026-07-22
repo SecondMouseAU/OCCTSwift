@@ -433,3 +433,25 @@ struct StressUnusualInputTests {
         if let r = result { _ = r.isValid }
     }
 }
+
+// MARK: - UnifySameDomainBuilder Null PCurve
+
+@Suite("Stress: UnifySameDomainBuilder Null PCurve")
+struct StressUnifySameDomainNullPCurveTests {
+
+    // #348: ShapeUpgrade_UnifySameDomain::IntUnifyFaces (and its SplitWire helper) called
+    // BRep_Tool::CurveOnSurface(...)->D1()/->Value() to disambiguate between multiple
+    // candidate next-edges without checking whether the returned pcurve handle was null —
+    // an edge with no pcurve on the current reference face (the common case for a raw
+    // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel (patch 0013).
+    @Test func unifySameDomainOnMeshSewnSolidWithMissingPCurve() throws {
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/unify-crash-mmd-kiha10-body5.brep")
+        let shape = try Shape.loadBREP(from: fixtureURL)
+        let unifier = UnifySameDomainBuilder(shape: shape, unifyEdges: true, unifyFaces: true)
+        unifier.setAngularTolerance(1.0 * .pi / 180)
+        unifier.build()
+        _ = unifier.shape
+    }
+}

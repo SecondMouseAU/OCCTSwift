@@ -269,3 +269,19 @@ A third, separate crash surfaced during this same validation (`BinLDrivers_Docum
 See [`Scripts/repro/344-cdf-directory/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/344-cdf-directory) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1389](https://github.com/Open-Cascade-SAS/OCCT/issues/1389) (repro) / [OCCT#1390](https://github.com/Open-Cascade-SAS/OCCT/pull/1390) (fix, two commits).
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0013-ShapeUpgrade_UnifySameDomain-guard-null-pcurve-348.patch
+
+**Fixes the upstream OCCT crash behind [#348](https://github.com/SecondMouseAU/OCCTSwift/issues/348)** — an uncatchable SIGSEGV in `UnifySameDomainBuilder.build()` on a real mesh-sewn solid, minimized to a standalone OCCTSwift-only reproducer (no mesh handling, no OCCTReconstruct code involved).
+
+`ShapeUpgrade_UnifySameDomain::IntUnifyFaces` (and its file-local `SplitWire` helper) disambiguate between multiple candidate next-edges at a branching vertex by comparing each candidate's pcurve tangent direction on the current reference face. Three call sites in `IntUnifyFaces` (`ShapeUpgrade_UnifySameDomain.cxx:3989`, `:4003`, `:4027`) and a structurally identical pair in `SplitWire` (`:4643`, `:4659`) fetch that pcurve via `BRep_Tool::CurveOnSurface(edge, refFace, first, last)` and dereference it immediately (`->D1(...)`/`->Value(...)`) with no `IsNull()` check — unlike every other `CurveOnSurface` call site in the same file (e.g. `:426`, `:1838`), which do check. `CurveOnSurface` legitimately returns a null handle when an edge has no pcurve on the given face — routine for a raw per-triangle mesh-sewn solid (`BRepBuilderAPI_Sewing` output from an STL/mesh import) at a vertex shared by more than two edges. The dereference is a null-pointer virtual call: Address 0, uncatchable in-process (same signature as the #263/#310/#317/#318 crash family).
+
+Confirmed via a debug (`-g -O0`) single-TU override-link (compile the patched `.cxx` standalone and link it *before* `libOCCT-macos.a`, so the linker never pulls the stock archive member for these symbols) + `lldb bt`: the crash resolves precisely to `ShapeUpgrade_UnifySameDomain.cxx:4003` (`aPCurve->D1(...)`), reached via `IntUnifyFaces` → `UnifyFaces` → `Build`.
+
+**Fix:** guard all five call sites with `IsNull()` checks, following the file's own established pattern. A missing pcurve on a *candidate* edge means "skip it, not a rankable direction" (`continue`); a missing pcurve on the *current* edge (nothing to compare candidates against) falls back to treating all candidates as equally likely — the same fallback the surrounding code already takes for the "only one candidate" case (`TmpElist.Extent() <= 1`/`aElist.Extent() == 1`).
+
+**Validation:** the attached fixture SIGSEGVs 3/3 on stock p1 + patches 0001-0012 (v1.15.7) and survives repeated runs (3+) with the patch applied.
+
+See [`Scripts/repro/348-unify-null-pcurve/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/348-unify-null-pcurve) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1391](https://github.com/Open-Cascade-SAS/OCCT/issues/1391) (repro) / [OCCT#1392](https://github.com/Open-Cascade-SAS/OCCT/pull/1392) (fix).
+
+**Retire** once the bundled OCCT includes this fix.
