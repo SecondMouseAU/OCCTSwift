@@ -226,10 +226,12 @@ void OCCTCurve3DD1(OCCTCurve3DRef c, double u,
                    double* px, double* py, double* pz,
                    double* vx, double* vy, double* vz) {
     if (!c || c->curve.IsNull() || !px || !py || !pz || !vx || !vy || !vz) return;
-    gp_Pnt p; gp_Vec v;
-    c->curve->D1(u, p, v);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
-    *vx = v.X(); *vy = v.Y(); *vz = v.Z();
+    try {
+        gp_Pnt p; gp_Vec v;
+        c->curve->D1(u, p, v);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+        *vx = v.X(); *vy = v.Y(); *vz = v.Z();
+    } catch (...) {}
 }
 
 void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
@@ -238,11 +240,13 @@ void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
                    double* v2x, double* v2y, double* v2z) {
     if (!c || c->curve.IsNull() || !px || !py || !pz ||
         !v1x || !v1y || !v1z || !v2x || !v2y || !v2z) return;
-    gp_Pnt p; gp_Vec v1, v2;
-    c->curve->D2(u, p, v1, v2);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
-    *v1x = v1.X(); *v1y = v1.Y(); *v1z = v1.Z();
-    *v2x = v2.X(); *v2y = v2.Y(); *v2z = v2.Z();
+    try {
+        gp_Pnt p; gp_Vec v1, v2;
+        c->curve->D2(u, p, v1, v2);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+        *v1x = v1.X(); *v1y = v1.Y(); *v1z = v1.Z();
+        *v2x = v2.X(); *v2y = v2.Y(); *v2z = v2.Z();
+    } catch (...) {}
 }
 
 // Primitive Curves
@@ -1802,7 +1806,11 @@ struct OCCTGeomDirection {
 
 OCCTGeomDirectionRef _Nonnull OCCTGeomDirectionCreate(double x, double y, double z) {
     auto* ref = new OCCTGeomDirection();
-    ref->direction = new Geom_Direction(x, y, z);
+    try {
+        ref->direction = new Geom_Direction(x, y, z);
+    } catch (...) {
+        ref->direction = new Geom_Direction(0, 0, 1);
+    }
     return ref;
 }
 
@@ -1907,7 +1915,11 @@ struct OCCTAxis1Placement {
 OCCTAxis1PlacementRef _Nonnull OCCTAxis1PlacementCreate(double px, double py, double pz,
                                                          double dx, double dy, double dz) {
     auto* ref = new OCCTAxis1Placement();
-    ref->axis = new Geom_Axis1Placement(gp_Pnt(px, py, pz), gp_Dir(dx, dy, dz));
+    try {
+        ref->axis = new Geom_Axis1Placement(gp_Pnt(px, py, pz), gp_Dir(dx, dy, dz));
+    } catch (...) {
+        ref->axis = new Geom_Axis1Placement(gp_Pnt(px, py, pz), gp_Dir(0, 0, 1));
+    }
     return ref;
 }
 
@@ -1936,7 +1948,7 @@ OCCTAxis1PlacementRef _Nonnull OCCTAxis1PlacementReversed(OCCTAxis1PlacementRef 
 }
 
 void OCCTAxis1PlacementSetDirection(OCCTAxis1PlacementRef _Nonnull ref, double dx, double dy, double dz) {
-    ref->axis->SetDirection(gp_Dir(dx, dy, dz));
+    try { ref->axis->SetDirection(gp_Dir(dx, dy, dz)); } catch (...) {}
 }
 
 void OCCTAxis1PlacementSetLocation(OCCTAxis1PlacementRef _Nonnull ref, double px, double py, double pz) {
@@ -1953,7 +1965,11 @@ OCCTAxis2PlacementRef _Nonnull OCCTAxis2PlacementCreate(double px, double py, do
                                                          double nx, double ny, double nz,
                                                          double vx, double vy, double vz) {
     auto* ref = new OCCTAxis2Placement();
-    ref->axis = new Geom_Axis2Placement(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(vx, vy, vz));
+    try {
+        ref->axis = new Geom_Axis2Placement(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(vx, vy, vz));
+    } catch (...) {
+        ref->axis = new Geom_Axis2Placement(gp_Pnt(px, py, pz), gp_Dir(0, 0, 1), gp_Dir(1, 0, 0));
+    }
     return ref;
 }
 
@@ -1982,11 +1998,11 @@ void OCCTAxis2PlacementYDirection(OCCTAxis2PlacementRef _Nonnull ref, double* x,
 }
 
 void OCCTAxis2PlacementSetDirection(OCCTAxis2PlacementRef _Nonnull ref, double nx, double ny, double nz) {
-    ref->axis->SetDirection(gp_Dir(nx, ny, nz));
+    try { ref->axis->SetDirection(gp_Dir(nx, ny, nz)); } catch (...) {}
 }
 
 void OCCTAxis2PlacementSetXDirection(OCCTAxis2PlacementRef _Nonnull ref, double vx, double vy, double vz) {
-    ref->axis->SetXDirection(gp_Dir(vx, vy, vz));
+    try { ref->axis->SetXDirection(gp_Dir(vx, vy, vz)); } catch (...) {}
 }
 
 // MARK: - ShapeConstruct Curve3D Convert + Adjust (v0.76)
@@ -2547,55 +2563,69 @@ bool OCCTCurve3DOffsetDirection(OCCTCurve3DRef curve,
 void OCCTElCLibValueOnLine(double u, double ox, double oy, double oz,
                             double dx, double dy, double dz,
                             double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElCLib::Value(u, gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElCLib::Value(u, gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElCLibValueOnCircle(double u, double cx, double cy, double cz,
                               double nx, double ny, double nz, double radius,
                               double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElCLib::Value(u, gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElCLib::Value(u, gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElCLibValueOnEllipse(double u, double cx, double cy, double cz,
                                double nx, double ny, double nz,
                                double majorRadius, double minorRadius,
                                double* outX, double* outY, double* outZ) {
-    gp_Pnt p = ElCLib::Value(u, gp_Elips(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), majorRadius, minorRadius));
-    *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    try {
+        gp_Pnt p = ElCLib::Value(u, gp_Elips(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), majorRadius, minorRadius));
+        *outX = p.X(); *outY = p.Y(); *outZ = p.Z();
+    } catch (...) {}
 }
 
 void OCCTElCLibD1OnLine(double u, double ox, double oy, double oz,
                          double dx, double dy, double dz,
                          double* outPX, double* outPY, double* outPZ,
                          double* outVX, double* outVY, double* outVZ) {
-    gp_Pnt p; gp_Vec v;
-    ElCLib::D1(u, gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)), p, v);
-    *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
-    *outVX = v.X(); *outVY = v.Y(); *outVZ = v.Z();
+    try {
+        gp_Pnt p; gp_Vec v;
+        ElCLib::D1(u, gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)), p, v);
+        *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
+        *outVX = v.X(); *outVY = v.Y(); *outVZ = v.Z();
+    } catch (...) {}
 }
 
 void OCCTElCLibD1OnCircle(double u, double cx, double cy, double cz,
                            double nx, double ny, double nz, double radius,
                            double* outPX, double* outPY, double* outPZ,
                            double* outVX, double* outVY, double* outVZ) {
-    gp_Pnt p; gp_Vec v;
-    ElCLib::D1(u, gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius), p, v);
-    *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
-    *outVX = v.X(); *outVY = v.Y(); *outVZ = v.Z();
+    try {
+        gp_Pnt p; gp_Vec v;
+        ElCLib::D1(u, gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius), p, v);
+        *outPX = p.X(); *outPY = p.Y(); *outPZ = p.Z();
+        *outVX = v.X(); *outVY = v.Y(); *outVZ = v.Z();
+    } catch (...) {}
 }
 
 double OCCTElCLibParameterOnLine(double ox, double oy, double oz,
                                   double dx, double dy, double dz,
                                   double px, double py, double pz) {
-    return ElCLib::Parameter(gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)), gp_Pnt(px,py,pz));
+    try {
+        return ElCLib::Parameter(gp_Lin(gp_Pnt(ox,oy,oz), gp_Dir(dx,dy,dz)), gp_Pnt(px,py,pz));
+    } catch (...) { return 0.0; }
 }
 
 double OCCTElCLibParameterOnCircle(double cx, double cy, double cz,
                                     double nx, double ny, double nz, double radius,
                                     double px, double py, double pz) {
-    return ElCLib::Parameter(gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius), gp_Pnt(px,py,pz));
+    try {
+        return ElCLib::Parameter(gp_Circ(gp_Ax2(gp_Pnt(cx,cy,cz), gp_Dir(nx,ny,nz)), radius), gp_Pnt(px,py,pz));
+    } catch (...) { return 0.0; }
 }
 
 double OCCTElCLibInPeriod(double u, double uFirst, double uLast) {
@@ -5285,32 +5315,38 @@ void OCCTCurve3DBSplineLocalDN(OCCTCurve3DRef curve, double u,
 
 void OCCTGeomEvalCircularHelixD0(double radius, double pitch, double u,
                                   double* px, double* py, double* pz) {
-    gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_CircularHelixCurve helix(ax, radius, pitch);
-    gp_Pnt p = helix.EvalD0(u);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_CircularHelixCurve helix(ax, radius, pitch);
+        gp_Pnt p = helix.EvalD0(u);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 void OCCTGeomEvalCircularHelixD1(double radius, double pitch, double u,
                                   double* px, double* py, double* pz,
                                   double* vx, double* vy, double* vz) {
-    gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_CircularHelixCurve helix(ax, radius, pitch);
-    auto res = helix.EvalD1(u);
-    *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
-    *vx = res.D1.X(); *vy = res.D1.Y(); *vz = res.D1.Z();
+    try {
+        gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_CircularHelixCurve helix(ax, radius, pitch);
+        auto res = helix.EvalD1(u);
+        *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
+        *vx = res.D1.X(); *vy = res.D1.Y(); *vz = res.D1.Z();
+    } catch (...) {}
 }
 
 void OCCTGeomEvalCircularHelixD2(double radius, double pitch, double u,
                                   double* px, double* py, double* pz,
                                   double* d1x, double* d1y, double* d1z,
                                   double* d2x, double* d2y, double* d2z) {
-    gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_CircularHelixCurve helix(ax, radius, pitch);
-    auto res = helix.EvalD2(u);
-    *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
-    *d1x = res.D1.X(); *d1y = res.D1.Y(); *d1z = res.D1.Z();
-    *d2x = res.D2.X(); *d2y = res.D2.Y(); *d2z = res.D2.Z();
+    try {
+        gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_CircularHelixCurve helix(ax, radius, pitch);
+        auto res = helix.EvalD2(u);
+        *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
+        *d1x = res.D1.X(); *d1y = res.D1.Y(); *d1z = res.D1.Z();
+        *d2x = res.D2.X(); *d2y = res.D2.Y(); *d2z = res.D2.Z();
+    } catch (...) {}
 }
 
 OCCTCurve3DRef OCCTGeomEvalCircularHelixCurveCreate(double radius, double pitch) {
@@ -5328,20 +5364,24 @@ OCCTCurve3DRef OCCTGeomEvalCircularHelixCurveCreate(double radius, double pitch)
 
 void OCCTGeomEvalSineWaveD0(double amplitude, double omega, double phase, double u,
                              double* px, double* py, double* pz) {
-    gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
-    gp_Pnt p = sw.EvalD0(u);
-    *px = p.X(); *py = p.Y(); *pz = p.Z();
+    try {
+        gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
+        gp_Pnt p = sw.EvalD0(u);
+        *px = p.X(); *py = p.Y(); *pz = p.Z();
+    } catch (...) {}
 }
 
 void OCCTGeomEvalSineWaveD1(double amplitude, double omega, double phase, double u,
                              double* px, double* py, double* pz,
                              double* vx, double* vy, double* vz) {
-    gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
-    GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
-    auto res = sw.EvalD1(u);
-    *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
-    *vx = res.D1.X(); *vy = res.D1.Y(); *vz = res.D1.Z();
+    try {
+        gp_Ax2 ax(gp_Pnt(0,0,0), gp_Dir(0,0,1));
+        GeomEval_SineWaveCurve sw(ax, amplitude, omega, phase);
+        auto res = sw.EvalD1(u);
+        *px = res.Point.X(); *py = res.Point.Y(); *pz = res.Point.Z();
+        *vx = res.D1.X(); *vy = res.D1.Y(); *vz = res.D1.Z();
+    } catch (...) {}
 }
 
 OCCTCurve3DRef OCCTGeomEvalSineWaveCurveCreate(double amplitude, double omega, double phase) {

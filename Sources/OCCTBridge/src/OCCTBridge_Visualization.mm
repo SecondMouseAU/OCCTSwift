@@ -133,7 +133,7 @@ void OCCTCameraGetCenter(OCCTCameraRef cam, double* x, double* y, double* z) {
 
 void OCCTCameraSetUp(OCCTCameraRef cam, double x, double y, double z) {
     if (!cam) return;
-    cam->camera->SetUp(gp_Dir(x, y, z));
+    try { cam->camera->SetUp(gp_Dir(x, y, z)); } catch (...) {}
 }
 
 void OCCTCameraGetUp(OCCTCameraRef cam, double* x, double* y, double* z) {

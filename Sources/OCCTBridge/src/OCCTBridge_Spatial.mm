@@ -1635,12 +1635,14 @@ void OCCTAx3Create(double px, double py, double pz,
                      bool* _Nonnull isDirect,
                      double* _Nonnull xDx, double* _Nonnull xDy, double* _Nonnull xDz,
                      double* _Nonnull yDx, double* _Nonnull yDy, double* _Nonnull yDz) {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDirX, xDirY, xDirZ));
-    *isDirect = ax3.Direct();
-    const gp_Dir& xd = ax3.XDirection();
-    *xDx = xd.X(); *xDy = xd.Y(); *xDz = xd.Z();
-    const gp_Dir& yd = ax3.YDirection();
-    *yDx = yd.X(); *yDy = yd.Y(); *yDz = yd.Z();
+    try {
+        gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDirX, xDirY, xDirZ));
+        *isDirect = ax3.Direct();
+        const gp_Dir& xd = ax3.XDirection();
+        *xDx = xd.X(); *xDy = xd.Y(); *xDz = xd.Z();
+        const gp_Dir& yd = ax3.YDirection();
+        *yDx = yd.X(); *yDy = yd.Y(); *yDz = yd.Z();
+    } catch (...) {}
 }
 
 void OCCTAx3CreateFromNormal(double px, double py, double pz,
@@ -1648,27 +1650,33 @@ void OCCTAx3CreateFromNormal(double px, double py, double pz,
                                bool* _Nonnull isDirect,
                                double* _Nonnull xDx, double* _Nonnull xDy, double* _Nonnull xDz,
                                double* _Nonnull yDx, double* _Nonnull yDy, double* _Nonnull yDz) {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz));
-    *isDirect = ax3.Direct();
-    const gp_Dir& xd = ax3.XDirection();
-    *xDx = xd.X(); *xDy = xd.Y(); *xDz = xd.Z();
-    const gp_Dir& yd = ax3.YDirection();
-    *yDx = yd.X(); *yDy = yd.Y(); *yDz = yd.Z();
+    try {
+        gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz));
+        *isDirect = ax3.Direct();
+        const gp_Dir& xd = ax3.XDirection();
+        *xDx = xd.X(); *xDy = xd.Y(); *xDz = xd.Z();
+        const gp_Dir& yd = ax3.YDirection();
+        *yDx = yd.X(); *yDy = yd.Y(); *yDz = yd.Z();
+    } catch (...) {}
 }
 
 double OCCTAx3Angle(double p1x, double p1y, double p1z, double n1x, double n1y, double n1z, double x1x, double x1y, double x1z,
                       double p2x, double p2y, double p2z, double n2x, double n2y, double n2z, double x2x, double x2y, double x2z) {
-    gp_Ax3 a1(gp_Pnt(p1x, p1y, p1z), gp_Dir(n1x, n1y, n1z), gp_Dir(x1x, x1y, x1z));
-    gp_Ax3 a2(gp_Pnt(p2x, p2y, p2z), gp_Dir(n2x, n2y, n2z), gp_Dir(x2x, x2y, x2z));
-    return a1.Angle(a2);
+    try {
+        gp_Ax3 a1(gp_Pnt(p1x, p1y, p1z), gp_Dir(n1x, n1y, n1z), gp_Dir(x1x, x1y, x1z));
+        gp_Ax3 a2(gp_Pnt(p2x, p2y, p2z), gp_Dir(n2x, n2y, n2z), gp_Dir(x2x, x2y, x2z));
+        return a1.Angle(a2);
+    } catch (...) { return 0.0; }
 }
 
 bool OCCTAx3IsCoplanar(double p1x, double p1y, double p1z, double n1x, double n1y, double n1z, double x1x, double x1y, double x1z,
                          double p2x, double p2y, double p2z, double n2x, double n2y, double n2z, double x2x, double x2y, double x2z,
                          double linearTol, double angularTol) {
-    gp_Ax3 a1(gp_Pnt(p1x, p1y, p1z), gp_Dir(n1x, n1y, n1z), gp_Dir(x1x, x1y, x1z));
-    gp_Ax3 a2(gp_Pnt(p2x, p2y, p2z), gp_Dir(n2x, n2y, n2z), gp_Dir(x2x, x2y, x2z));
-    return a1.IsCoplanar(a2, linearTol, angularTol);
+    try {
+        gp_Ax3 a1(gp_Pnt(p1x, p1y, p1z), gp_Dir(n1x, n1y, n1z), gp_Dir(x1x, x1y, x1z));
+        gp_Ax3 a2(gp_Pnt(p2x, p2y, p2z), gp_Dir(n2x, n2y, n2z), gp_Dir(x2x, x2y, x2z));
+        return a1.IsCoplanar(a2, linearTol, angularTol);
+    } catch (...) { return false; }
 }
 
 void OCCTAx3MirrorPoint(double px, double py, double pz, double nx, double ny, double nz, double xDx, double xDy, double xDz,
@@ -1676,11 +1684,13 @@ void OCCTAx3MirrorPoint(double px, double py, double pz, double nx, double ny, d
                           double* _Nonnull rpx, double* _Nonnull rpy, double* _Nonnull rpz,
                           double* _Nonnull rnx, double* _Nonnull rny, double* _Nonnull rnz,
                           double* _Nonnull rxDx, double* _Nonnull rxDy, double* _Nonnull rxDz) {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Mirrored(gp_Pnt(mx, my, mz));
-    *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
-    *rnx = r.Direction().X(); *rny = r.Direction().Y(); *rnz = r.Direction().Z();
-    *rxDx = r.XDirection().X(); *rxDy = r.XDirection().Y(); *rxDz = r.XDirection().Z();
+    try {
+        gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
+        gp_Ax3 r = ax3.Mirrored(gp_Pnt(mx, my, mz));
+        *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
+        *rnx = r.Direction().X(); *rny = r.Direction().Y(); *rnz = r.Direction().Z();
+        *rxDx = r.XDirection().X(); *rxDy = r.XDirection().Y(); *rxDz = r.XDirection().Z();
+    } catch (...) {}
 }
 
 void OCCTAx3Rotate(double px, double py, double pz, double nx, double ny, double nz, double xDx, double xDy, double xDz,
@@ -1688,19 +1698,23 @@ void OCCTAx3Rotate(double px, double py, double pz, double nx, double ny, double
                      double* _Nonnull rpx, double* _Nonnull rpy, double* _Nonnull rpz,
                      double* _Nonnull rnx, double* _Nonnull rny, double* _Nonnull rnz,
                      double* _Nonnull rxDx, double* _Nonnull rxDy, double* _Nonnull rxDz) {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Rotated(gp_Ax1(gp_Pnt(axPx, axPy, axPz), gp_Dir(axDx, axDy, axDz)), angle);
-    *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
-    *rnx = r.Direction().X(); *rny = r.Direction().Y(); *rnz = r.Direction().Z();
-    *rxDx = r.XDirection().X(); *rxDy = r.XDirection().Y(); *rxDz = r.XDirection().Z();
+    try {
+        gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
+        gp_Ax3 r = ax3.Rotated(gp_Ax1(gp_Pnt(axPx, axPy, axPz), gp_Dir(axDx, axDy, axDz)), angle);
+        *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
+        *rnx = r.Direction().X(); *rny = r.Direction().Y(); *rnz = r.Direction().Z();
+        *rxDx = r.XDirection().X(); *rxDy = r.XDirection().Y(); *rxDz = r.XDirection().Z();
+    } catch (...) {}
 }
 
 void OCCTAx3Translate(double px, double py, double pz, double nx, double ny, double nz, double xDx, double xDy, double xDz,
                         double vx, double vy, double vz,
                         double* _Nonnull rpx, double* _Nonnull rpy, double* _Nonnull rpz) {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Translated(gp_Vec(vx, vy, vz));
-    *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
+    try {
+        gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
+        gp_Ax3 r = ax3.Translated(gp_Vec(vx, vy, vz));
+        *rpx = r.Location().X(); *rpy = r.Location().Y(); *rpz = r.Location().Z();
+    } catch (...) {}
 }
 
 // gp_GTrsf2d

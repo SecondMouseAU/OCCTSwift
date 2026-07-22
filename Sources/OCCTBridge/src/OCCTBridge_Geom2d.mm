@@ -4973,23 +4973,27 @@ void OCCTCurve2DGetPoint(OCCTCurve2DRef c, double u, double* x, double* y) {
 void OCCTCurve2DD1(OCCTCurve2DRef c, double u,
                    double* px, double* py, double* vx, double* vy) {
     if (!c || c->curve.IsNull() || !px || !py || !vx || !vy) return;
-    gp_Pnt2d p;
-    gp_Vec2d v;
-    c->curve->D1(u, p, v);
-    *px = p.X(); *py = p.Y();
-    *vx = v.X(); *vy = v.Y();
+    try {
+        gp_Pnt2d p;
+        gp_Vec2d v;
+        c->curve->D1(u, p, v);
+        *px = p.X(); *py = p.Y();
+        *vx = v.X(); *vy = v.Y();
+    } catch (...) {}
 }
 
 void OCCTCurve2DD2(OCCTCurve2DRef c, double u,
                    double* px, double* py,
                    double* v1x, double* v1y, double* v2x, double* v2y) {
     if (!c || c->curve.IsNull() || !px || !py || !v1x || !v1y || !v2x || !v2y) return;
-    gp_Pnt2d p;
-    gp_Vec2d v1, v2;
-    c->curve->D2(u, p, v1, v2);
-    *px = p.X(); *py = p.Y();
-    *v1x = v1.X(); *v1y = v1.Y();
-    *v2x = v2.X(); *v2y = v2.Y();
+    try {
+        gp_Pnt2d p;
+        gp_Vec2d v1, v2;
+        c->curve->D2(u, p, v1, v2);
+        *px = p.X(); *py = p.Y();
+        *v1x = v1.X(); *v1y = v1.Y();
+        *v2x = v2.X(); *v2y = v2.Y();
+    } catch (...) {}
 }
 
 // Primitives
