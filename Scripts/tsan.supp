@@ -1,0 +1,31 @@
+# ThreadSanitizer suppressions for the TSan gate (Scripts/tsan-stress.sh).
+#
+# POLICY: every entry needs (a) a reason, (b) an issue link, and (c) a removal
+# condition. Two kinds of entry are allowed:
+#   1. Confirmed-benign races we have reviewed and chosen not to fix.
+#   2. Known OPEN kernel findings already filed and tracked, suppressed so the
+#      gate stays green for NEW code while the fix is in flight. These MUST be
+#      removed when the fix lands (the gate itself then verifies the fix).
+# Anything else is a gate failure: fix it or file it first.
+
+# --- 1. Confirmed benign ----------------------------------------------------
+
+# Lazy one-time init of the BOPAlgo message table. Racy per TSan, harmless in
+# effect; known since the #298 investigation (patches/README.md, patch 0003).
+# Remove if upstream ever guards it.
+race:BOPAlgo_InitMessages
+
+# OCCT's default console messenger writes progress text from multiple threads
+# with no locking. Interleaved console output only; documented in
+# Scripts/repro/341-meshcaf/README.md. Remove if upstream ever locks it.
+race:Message_PrinterOStream
+
+# --- 2. Open kernel findings, filed and tracked -----------------------------
+
+# CDM_Application::myMetaDataLookUpTable is an unsynchronized NCollection map
+# shared by every thread using one TDocStd_Application; surfaced by the #349
+# fix (same fix-one-race-exposes-the-next pattern as #344). Filed as
+# SecondMouseAU/OCCTSwift#353. REMOVE when the #353 kernel patch is carried.
+race:CDM_MetaData
+race:CDM_Application
+race:CDF_FWOSDriver::CreateMetaData

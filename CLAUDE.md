@@ -14,6 +14,7 @@ swift build --target OCCTThreadTests # Focused compile: just one domain's tests 
 swift test                           # Run all tests (~3900 tests across per-domain targets)
 swift test --filter "Issue187"       # Run suites whose struct name matches (matches the type, not @Suite title)
 swift run OCCTTest                   # Run test executable
+Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concurrency-touching changes (see docs/thread-safety.md)
 ```
 
 ### Compile a Ground Truth C++ Test
