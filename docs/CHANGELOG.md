@@ -7,13 +7,41 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.8
+## Current: v1.15.9
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.9 (July 2026) — fix (kernel): PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy SIGSEGV under concurrent Save/SaveAs of the same format (#349)
+
+`CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache one storage/retrieval driver instance
+per document format and hand the same cached instance back to every subsequent `Store()`/
+`Retrieve()` call for that format — including from different threads, different documents,
+concurrently. Found while validating the #344 fix. `PCDM_StorageDriver`/`PCDM_Reader` subclasses
+(`BinLDrivers_DocumentStorageDriver` et al.) are not reentrant: `Write()`/`Read()` mutate
+instance-level scratch state (`myRelocTable`, `myTypesMap`, and others) with no synchronization,
+so two threads calling `Write()` on the same cached instance corrupt it — a reliably reproducible
+SIGSEGV (`BinMDF_ADriverTable::AssignIds` on a torn `myTypesMap`), confirmed by TSan (136 race
+warnings + crash on stock kernel). Structural, not BinLDrivers-specific — `XmlLDrivers`,
+`BinXCAFDrivers`/`XmlXCAFDrivers`, and `TObj` drivers all share the same base classes and pattern.
+
+**Fix:** `PCDM_StorageDriver`/`PCDM_Reader` each get a `mutable std::mutex` guarding their own
+`Write()`/`Read()`, held at the three call sites (`CDF_StoreList::Store`,
+`CDF_Application::Retrieve`, `CDF_Application::Read`) that invoke a cached, possibly-shared driver
+— every format driver subclass inherits the guard for free. TSan: 136 races + SIGSEGV → 0 races,
+clean exit. The interim bridge-side mitigation (`ocafStoreMutex()`, shipped v1.15.6) stays in
+place, same PR1→PR2 pattern as #298/#341/#344. See
+[`Scripts/repro/349-ocaf-driver-reentrancy/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/349-ocaf-driver-reentrancy)
+for the reproducer and full writeup. Filed upstream as
+[Open-Cascade-SAS/OCCT#1393](https://github.com/Open-Cascade-SAS/OCCT/issues/1393) (repro) /
+[OCCT#1394](https://github.com/Open-Cascade-SAS/OCCT/pull/1394) (fix, CI green on all platforms).
+
+A separate, previously-masked race surfaced during validation of this fix
+(`CDM_Application::myMetaDataLookUpTable`, unsynchronized) — out of scope for #349, filed as
+[#353](https://github.com/SecondMouseAU/OCCTSwift/issues/353).
 
 ### v1.15.8 (July 2026) — fix (kernel): ShapeUpgrade_UnifySameDomain unguarded null-pcurve dereference SIGSEGV on mesh-sewn solids (#348)
 

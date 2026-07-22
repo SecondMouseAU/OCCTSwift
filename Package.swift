@@ -33,7 +33,7 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.8 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
+    // v1.15.9 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
     // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
     // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
     // in FixPeriodicDegenerated, #317), 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318), 0007
@@ -42,14 +42,15 @@ let occtTarget: Target = useLocalBinary
     // (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319), 0011
     // (XCAFDoc_ShapeTool::AutoNamingScope, #341), 0012 (XCAFApp_Application::GetApplication/
     // TDocStd_Application::Resources lazy-init races + CDF_Directory/Resource_Manager/
-    // CDF_Application reader-writer map synchronization, #344), and 0013
-    // (ShapeUpgrade_UnifySameDomain null-pcurve dereference guards, #348).
+    // CDF_Application reader-writer map synchronization, #344), 0013
+    // (ShapeUpgrade_UnifySameDomain null-pcurve dereference guards, #348), and 0014
+    // (PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex, #349).
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.8/OCCT.xcframework.zip",
-        checksum: "b1e72863654a2e979f0218b720459d48608ab5f25b52c641899ee7c1618b2b92"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.9/OCCT.xcframework.zip",
+        checksum: "61937268c17b19a8628d7494cb05151d17f0c2908160b8e0b999d9588aa74e33"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
