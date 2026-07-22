@@ -7,13 +7,39 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.7
+## Current: v1.15.8
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.8 (July 2026) — fix (kernel): ShapeUpgrade_UnifySameDomain unguarded null-pcurve dereference SIGSEGV on mesh-sewn solids (#348)
+
+`UnifySameDomainBuilder.build()` SIGSEGV'd (Address 0, uncatchable in-process) on a real
+mesh-sewn solid — found via OCCTReconstruct#194, minimized to a standalone, deterministic
+OCCTSwift-only reproducer (just load a BREP, run the builder). Root cause:
+`ShapeUpgrade_UnifySameDomain::IntUnifyFaces` (and its file-local `SplitWire` helper)
+disambiguate between multiple candidate next-edges at a branching vertex by comparing each
+candidate's pcurve tangent direction on the current reference face; three call sites in
+`IntUnifyFaces` and a structurally identical pair in `SplitWire` fetch that pcurve via
+`BRep_Tool::CurveOnSurface(...)` and dereference it immediately (`->D1(...)`/`->Value(...)`)
+with no `IsNull()` check — unlike every other `CurveOnSurface` call site in the same file, which
+do check. `CurveOnSurface` legitimately returns a null handle when an edge has no pcurve on the
+given face, routine for a raw mesh-sewn solid (`BRepBuilderAPI_Sewing` from an STL/mesh import)
+at a vertex shared by more than two edges. Confirmed via a debug (`-g -O0`) single-TU
+override-link + `lldb bt`: resolves precisely to `ShapeUpgrade_UnifySameDomain.cxx:4003`
+(`aPCurve->D1(...)`), reached via `IntUnifyFaces` → `UnifyFaces` → `Build`. **Fixed** (kernel
+patch `Scripts/patches/0013-*`, xcframework rebuilt): all five sites guard with `IsNull()`,
+following the file's own established pattern — a missing pcurve on a candidate edge means "skip
+it, not a rankable direction"; a missing pcurve on the current edge falls back to treating all
+candidates as equally likely, same as the existing single-candidate shortcut. New regression test
+`Tests/OCCTStressTests/StressNullInvalidTests.swift`'s
+`unifySameDomainOnMeshSewnSolidWithMissingPCurve`. Reproducer at
+[`Scripts/repro/348-unify-null-pcurve`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/348-unify-null-pcurve);
+filed upstream as [OCCT#1391](https://github.com/Open-Cascade-SAS/OCCT/issues/1391) (repro) /
+[OCCT#1392](https://github.com/Open-Cascade-SAS/OCCT/pull/1392) (fix). #348.
 
 ### v1.15.7 (July 2026) — fix (bridge): 49 unguarded gp_Dir/Geom_Direction constructions — the likely #345 SIGABRT (#345)
 
