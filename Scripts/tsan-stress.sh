@@ -143,6 +143,7 @@ do_run() {
         if [ ! -x "$bin" ]; then
             echo ">>> Compiling $src"
             "$CXX" -std=c++17 -fsanitize=thread -g -O1 -w \
+                -isysroot "$MACOS_SDK" \
                 -I"$inc" -L"$INSTALL_DIR/lib" \
                 "$src_path" -o "$bin" \
                 $libs -lz -lc++ -framework Foundation
