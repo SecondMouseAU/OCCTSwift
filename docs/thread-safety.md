@@ -210,6 +210,32 @@ contrasting:
   `initDatabase()` could reassign the cache at any time, racing an in-progress read. Fixed via
   `fontListMutex()` in `OCCTBridge_Visualization.mm`, held for every access (population and read).
 
+### `Shape.fuseAll(_:)` internal parallelism (issue #367)
+
+`Shape.fuseAll(_:)` is **safe to call concurrently** as of v1.15.16. It previously set
+`builder.SetRunParallel(true)` on its `BRepAlgoAPI_BuilderAlgo` — internal OCCT parallelism for a
+single call, not multiple independent calls. Under concurrent load this was actively unsafe: two
+threads' top-level `Build()` calls, each requesting internal parallelism, submit work to the same
+process-wide `OSD_ThreadPool::DefaultPool()`, and worker threads from one caller's dispatch can end
+up processing another caller's data. Confirmed via TSan stress
+(`Scripts/repro/342-boolean-ops/`, `fuse_multi_parallel` scenario): **100% of concurrent runs
+produced wrong results** (27 faces instead of the correct 13), plus 237 race reports across
+foundational topology code (`TopoDS_Builder::Add`, `TopExp_Explorer`, `BRep_Tool::Range`,
+`BOPTools_AlgoTools::MakeSplitEdge`) — not a rare interleaving, a reliably reproducible one.
+
+**Fixed** by dropping `SetRunParallel(true)` entirely — `Shape.fuseAll(_:)` now runs on OCCT's safe
+serial default, same as `Shape.union(with:)`/`.subtracting(_:)`/`.intersecting(_:)` (which never
+set it and were already confirmed clean under the same stress: 2000 concurrent mixed operations,
+zero errors, zero wrong results, zero races). This is the only bridge call site that ever set
+`SetRunParallel(true)` — grepped exhaustively across `Sources/OCCTBridge/src/*.mm`.
+
+This is a distinct, more severe finding than a missing lock on bridge-owned state (#359/#361/#363):
+it points at `OSD_ThreadPool`/`BOPTools_Parallel` — OCCT's own shared-pool parallel-dispatch
+infrastructure — potentially not being safe for concurrent independent top-level callers at all,
+not just this one call site. Root-causing that properly is tracked as a follow-up investigation in
+#367, out of scope for this release; removing the trigger was the correct immediate fix regardless
+of what the eventual root cause turns out to be.
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
 Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349)

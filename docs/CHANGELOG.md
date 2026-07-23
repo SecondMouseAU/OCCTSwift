@@ -7,13 +7,46 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.15
+## Current: v1.15.16
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.16 (July 2026) — fix (bridge): Shape.fuseAll(_:) internal parallelism caused data corruption under concurrent calls (#367)
+
+Found continuing #342's classification pass. `OCCTShapeFuseMulti` (backs `Shape.fuseAll(_:)`) was
+the only bridge call site that set `builder.SetRunParallel(true)` — internal OCCT parallelism for
+a single call. Under concurrent load this was actively unsafe, not just an oversubscription
+concern as #342 originally framed it: two threads' top-level `Build()` calls, each requesting
+internal parallelism, submit work to the same process-wide `OSD_ThreadPool::DefaultPool()`, and
+worker threads from one caller's dispatch can end up processing another caller's data.
+
+**Evidence** (`Scripts/repro/342-boolean-ops/occt_342_boolean_stress.cpp`,
+`fuse_multi_parallel` scenario): 8 threads × 50 iterations, **400/400 concurrent operations
+produced wrong results** — 27 faces instead of the correct 13 (volume matched almost exactly,
+consistent with duplicated/torn geometry rather than floating-point imprecision) — plus 237
+ThreadSanitizer race reports across foundational topology code (`TopoDS_Builder::Add`,
+`TopExp_Explorer`, `BRep_Tool::Range`, `BOPTools_AlgoTools::MakeSplitEdge`). By contrast, the
+plain (non-parallel) boolean ops — `Shape.union(with:)`/`.subtracting(_:)`/`.intersecting(_:)`,
+none of which ever set `SetRunParallel` — are clean: 2000 concurrent mixed operations, 0 errors,
+0 wrong results, 0 races.
+
+**Fix:** dropped `SetRunParallel(true)` entirely — `Shape.fuseAll(_:)` now runs on OCCT's safe
+serial default. Removes the trigger rather than locking around a known-corrupting path. New
+regression suite `Issue367FuseMultiThreadSafetyTests`. Full `swift test` (4428 tests) clean.
+
+**Not fixed here:** the underlying mechanism looks like a genuine `OSD_ThreadPool`/
+`BOPTools_Parallel` concurrency bug in OCCT's own shared-pool dispatch — more foundational than
+anything else found in this project's TSan series (#298/#341/#344/#349/#353/#361 were all
+specific static/global variables in narrower classes). Root-causing it properly is tracked as a
+follow-up investigation in #367, out of scope for this release.
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed, so
+`Package.swift`'s URL/checksum are bumped to this release. `OCCT.xcframework` is unchanged (still
+v1.15.15) — this is a bridge-only fix, no kernel patch.
 
 ### v1.15.15 (July 2026) — fix (kernel): #341's AutoNamingScope revised to a per-instance override after upstream review (#363)
 
