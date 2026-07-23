@@ -21,11 +21,7 @@ race:BOPAlgo_InitMessages
 race:Message_PrinterOStream
 
 # --- 2. Open kernel findings, filed and tracked -----------------------------
-
-# CDM_Application::myMetaDataLookUpTable is an unsynchronized NCollection map
-# shared by every thread using one TDocStd_Application; surfaced by the #349
-# fix (same fix-one-race-exposes-the-next pattern as #344). Filed as
-# SecondMouseAU/OCCTSwift#353. REMOVE when the #353 kernel patch is carried.
-race:CDM_MetaData
-race:CDM_Application
-race:CDF_FWOSDriver::CreateMetaData
+#
+# (none currently — #353's CDM_Application::myMetaDataLookUpTable suppression
+# was removed in v1.15.11 once Scripts/patches/0015 carried the kernel fix;
+# see Scripts/repro/353-cdm-metadata-lookup-table/README.md.)

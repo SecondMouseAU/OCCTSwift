@@ -7,18 +7,43 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.10
+## Current: v1.15.11
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
 
+### v1.15.11 (July 2026) — fix (kernel): CDM_Application::myMetaDataLookUpTable + CDM_MetaData field races under concurrent document save/close (#353)
+
+Surfaced while validating the #349 fix: post-#349 TSan runs consistently produced one different,
+previously-masked race — the "fixing one race exposes the next" pattern from #341→#344→#349
+continuing. `CDM_Application::myMetaDataLookUpTable` is shared process-wide (one `CDM_Application`
+singleton, since #344) with zero synchronization: `CDM_MetaData::LookUp()`'s map mutation,
+`CDM_Document::SetMetaData()`'s whole-table iteration on every save, and each `CDM_MetaData`'s own
+`myIsRetrieved`/`myDocument` fields all race independently. TSan confirmed the exact trace from the
+issue: `SetMetaData()` reading `IsRetrieved()` racing a *different* document's destructor tearing
+down its own metadata entry on another thread — 1 confirmed race + SIGABRT (exit 134) on stock
+#349-fixed kernel.
+
+**Fix:** `CDM_Application` gets a `mutable std::mutex` guarding the lookup table, threaded through
+`CDM_MetaData::LookUp()` and `CDM_Document::SetMetaData()`'s iteration; `CDM_MetaData` gets its own
+private mutex guarding `myIsRetrieved`/`myDocument`, independent of the table lock. TSan: 1 race +
+SIGABRT → 0 races, clean exit, across 5 runs. `swift test --filter OCAFSaveLoadBinaryTests`/
+`OCCTXCAFTests` and 3× full `swift test` (4423 tests) all clean. `CDM_MetaData::myDocumentVersion`
+has the identical unguarded-field shape but on the reference-resolution path, not TSan-observed —
+flagged as a plausible sibling, not fixed here. See
+[`Scripts/repro/353-cdm-metadata-lookup-table/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/353-cdm-metadata-lookup-table)
+for the reproducer and full writeup. Filed upstream as
+[Open-Cascade-SAS/OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396) (repro) /
+[OCCT#1397](https://github.com/Open-Cascade-SAS/OCCT/pull/1397) (fix, CI green on all platforms).
+
 ### v1.15.10 (July 2026): ThreadSanitizer gate for concurrency-touching changes (docs/tooling)
 
 Docs-and-tooling release; no API, bridge, or kernel changes, and no new binary assets (the
-`OCCT.xcframework.zip` binary target continues to resolve from the v1.15.9 release).
+`OCCT.xcframework.zip` binary target continued to resolve from the v1.15.9 release until v1.15.11
+above).
 
 Formalizes the TSan protocol that found and validated #298/#341/#344/#349 as a routine gate
 (#355, plus the #356 sysroot fix):
@@ -28,7 +53,8 @@ Formalizes the TSan protocol that found and validated #298/#341/#344/#349 as a r
   harnesses and executes a 7-scenario gate matrix that must be race-clean; `swift` runs
   `swift test --sanitize=thread` on the concurrency-focused suites (wrapper-only coverage).
 - `Scripts/tsan.supp`: curated suppressions; only confirmed-benign races or filed-and-open kernel
-  findings (currently #353), each with an issue link and a removal condition.
+  findings, each with an issue link and a removal condition. The #353 entry was removed in
+  v1.15.11 once that kernel patch landed.
 - `docs/thread-safety.md`: new "ThreadSanitizer gate" section defining when the gate is required
   (new concurrent bridge paths, newly parallel-wrapped subsystems, mutex removals, new
   thread-safety kernel patches) and the rule that new concurrent usage patterns add a scenario.
