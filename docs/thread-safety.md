@@ -232,9 +232,16 @@ zero errors, zero wrong results, zero races). This is the only bridge call site 
 This is a distinct, more severe finding than a missing lock on bridge-owned state (#359/#361/#363):
 it points at `OSD_ThreadPool`/`BOPTools_Parallel` — OCCT's own shared-pool parallel-dispatch
 infrastructure — potentially not being safe for concurrent independent top-level callers at all,
-not just this one call site. Root-causing that properly is tracked as a follow-up investigation in
-#367, out of scope for this release; removing the trigger was the correct immediate fix regardless
-of what the eventual root cause turns out to be.
+not just this one call site. Root-causing that properly is tracked as a dedicated follow-up
+investigation in **#369**, out of scope for this release; removing the trigger was the correct
+immediate fix regardless of what the eventual root cause turns out to be.
+
+**#369 status**: `OSD_ThreadPool` itself is exonerated — a synthetic stress test using
+`OSD_ThreadPool::Launcher` directly (no BOPAlgo, no OCCT geometry) ran 3000 concurrent operations
+clean, and reading `OSD_ThreadPool.cxx`'s `Lock`/`Free`/`WakeUp`/`WaitIdle` protocol found no flaw.
+The bug is narrowed to `BOPTools_Parallel`/`BOPAlgo_PaveFiller`'s specific use of the pool, not yet
+root-caused. Full investigation trail, ruled-out hypotheses, and concrete next steps:
+[`Scripts/repro/342-boolean-ops/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/342-boolean-ops).
 
 ## ThreadSanitizer gate for concurrency-touching changes
 
