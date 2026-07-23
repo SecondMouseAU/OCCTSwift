@@ -7,13 +7,41 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.12
+## Current: v1.15.13
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.13 (July 2026) — fix (bridge): two more unsynchronized process-global singletons — TNaming_Scope shared instance, Font_FontMgr font-list cache (#361)
+
+Found continuing the #342 (bridge-level thread-handling contract) scoping pass that produced #359 —
+an earlier survey flagged two `needs-investigation` spots as high-confidence pattern matches for the
+#341/#344/#353 shape; verified both directly this release before fixing.
+
+- **`getDocNamingScope()`** (`OCCTBridge_Document.mm`) returns one process-wide `TNaming_Scope`
+  instance shared across every `OCCTDocument`. Construction is safe (C++11 magic statics), but
+  `TNaming_Scope`'s own `NCollection_Map<TDF_Label> myValid` has no internal synchronization —
+  two threads calling `namingScopeValid`/`IsValid`/`ValidChildren`/`Unvalid`/`ClearValid`/
+  `ValidCount` on two *unrelated* documents race on that shared map.
+- **`Font_FontMgr`'s font-list cache** (`OCCTBridge_Visualization.mm`): `g_fontList`/
+  `g_fontListPopulated` is a classic unsynchronized check-then-act lazy-init, and the public
+  `OCCTFontMgrInitDatabase()` can reassign both at any time from any thread, racing an
+  in-progress iteration in any of the read-side functions.
+
+**Fix:** bridge-only, matching the established #341/#344/#353 pattern — a dedicated
+`std::mutex` per shared resource (`docNamingScopeMutex()`, `fontListMutex()`), held for the
+duration of every access. No OCCT kernel change needed since both races are in bridge-owned
+static state, not inside OCCT's own classes. New regression suite
+`Issue361SharedSingletonThreadSafetyTests` (`Tests/OCCTThreadTests/`) — a basic exerciser, not the
+authoritative verification, same honesty caveat as #341/#359's equivalent suites. Full `swift test`
+(4426 tests) clean, both source and `OCCTSWIFT_BRIDGE_PREBUILT=1` build paths.
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed again,
+so `Package.swift`'s URL/checksum are bumped to this release. `OCCT.xcframework` is unchanged
+(still v1.15.11, no kernel patch this release).
 
 ### v1.15.12 (July 2026) — fix (bridge): STEP import + 3 later-added STEP writers missing the DE mutex — #181-B's fix didn't fully hold (#359)
 

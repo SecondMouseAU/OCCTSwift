@@ -1787,7 +1787,16 @@ bool OCCTDateIsLeap(int year) {
 static NCollection_List<Handle(Font_SystemFont)> g_fontList;
 static bool g_fontListPopulated = false;
 
-static void ensureFontList() {
+// #361: g_fontList/g_fontListPopulated are shared process-wide with no internal
+// synchronization, and OCCTFontMgrInitDatabase() can reassign both at any time —
+// every access below (population and read) is serialized on fontListMutex().
+std::mutex& fontListMutex() {
+    static std::mutex mutex;
+    return mutex;
+}
+
+// Caller must hold fontListMutex().
+static void ensureFontListLocked() {
     if (!g_fontListPopulated) {
         Handle(Font_FontMgr) mgr = Font_FontMgr::GetInstance();
         mgr->InitFontDataBase();
@@ -1798,6 +1807,7 @@ static void ensureFontList() {
 
 void OCCTFontMgrInitDatabase(void) {
     try {
+        std::lock_guard<std::mutex> fontLock(fontListMutex());
         Handle(Font_FontMgr) mgr = Font_FontMgr::GetInstance();
         mgr->InitFontDataBase();
         g_fontList = mgr->GetAvailableFonts();
@@ -1807,14 +1817,16 @@ void OCCTFontMgrInitDatabase(void) {
 
 int OCCTFontMgrFontCount(void) {
     try {
-        ensureFontList();
+        std::lock_guard<std::mutex> fontLock(fontListMutex());
+        ensureFontListLocked();
         return static_cast<int>(g_fontList.Size());
     } catch (...) { return 0; }
 }
 
 const char *_Nullable OCCTFontMgrFontName(int index) {
     try {
-        ensureFontList();
+        std::lock_guard<std::mutex> fontLock(fontListMutex());
+        ensureFontListLocked();
         int i = 0;
         for (auto it = g_fontList.cbegin(); it != g_fontList.cend(); ++it, ++i) {
             if (i == index) {
@@ -1831,7 +1843,8 @@ const char *_Nullable OCCTFontMgrFontName(int index) {
 
 const char *_Nullable OCCTFontMgrFontPath(int index, int aspect) {
     try {
-        ensureFontList();
+        std::lock_guard<std::mutex> fontLock(fontListMutex());
+        ensureFontListLocked();
         if (aspect < 0 || aspect > 3) return nullptr;
         Font_FontAspect fa = (Font_FontAspect)aspect;
         int i = 0;
@@ -1851,7 +1864,8 @@ const char *_Nullable OCCTFontMgrFontPath(int index, int aspect) {
 
 bool OCCTFontMgrFontHasAspect(int index, int aspect) {
     try {
-        ensureFontList();
+        std::lock_guard<std::mutex> fontLock(fontListMutex());
+        ensureFontListLocked();
         if (aspect < 0 || aspect > 3) return false;
         Font_FontAspect fa = (Font_FontAspect)aspect;
         int i = 0;

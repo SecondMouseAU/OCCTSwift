@@ -204,6 +204,16 @@ std::mutex& igesMutex();
 // OCCTDocumentSaveOCAF/OCCTDocumentSaveOCAFInPlace). Interim mitigation until a
 // kernel fix lands — matches the #298/#341 PR1→PR2 pattern.
 std::mutex& ocafStoreMutex();
+// #361: getDocNamingScope() shares one process-wide TNaming_Scope instance across
+// every OCCTDocument; its NCollection_Map<TDF_Label> myValid has no internal
+// synchronization, so two threads touching unrelated documents' naming scope race
+// on the shared map. Bridge-only (no OCCT source involved).
+std::mutex& docNamingScopeMutex();
+// #361: g_fontList/g_fontListPopulated (OCCTBridge_Visualization.mm) are plain
+// globals with an unsynchronized check-then-act lazy-init, plus
+// OCCTFontMgrInitDatabase() can reassign both at any time from any thread.
+// Bridge-only (no OCCT source involved).
+std::mutex& fontListMutex();
 
 // === OCCT signal handling ===
 //
