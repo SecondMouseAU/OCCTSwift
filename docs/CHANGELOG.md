@@ -7,13 +7,45 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.11
+## Current: v1.15.12
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.12 (July 2026) — fix (bridge): STEP import + 3 later-added STEP writers missing the DE mutex — #181-B's fix didn't fully hold (#359)
+
+Found while scoping #342 (bridge-level thread-handling contract). #181-B (fixed by PR #184) found
+that `STEPControl`/`STEPCAFControl`/`IGESControl` readers and writers share OCCT's process-global
+`Interface_Static` parameter table, and serialized every STEP/IGES *writer* entry point on a shared
+`igesMutex()` — the closing comment claimed this "serializes *all* of them." Auditing every function
+in `OCCTBridge_IO.mm`/`OCCTBridge_Document.mm` that constructs a `STEPControl_Reader`/`Writer` or
+`STEPCAFControl_Reader`/`Writer`, or calls `Interface_Static::Set*` directly, found that claim didn't
+hold: **18 functions were missing `igesMutex()`** — every STEP import function (all added after PR
+#184, across the "v0.58.0 STEP Full Coverage" and "v0.168.0 Progress" batches; the original #181-B
+report was specifically about concurrent writes, so import was never in scope), plus 3 STEP export
+functions added after PR #184 shipped (`OCCTExportSTEPWithName`, `OCCTExportSTEPWithModeProgress`,
+`OCCTDocumentWriteSTEPWithModes`).
+
+**Fix:** added `igesMutex()` to all 18 sites, matching the existing `#181-B` convention. Bridge-only,
+no kernel change, no `OCCT.xcframework` rebuild. New regression suite
+`Issue359STEPThreadSafetyTests` (`Tests/OCCTThreadTests/`) exercises concurrent STEP import/export
+through the Swift API — like #341's equivalent suite, this is a basic exerciser (confirms no deadlock
+and no round-trip regression), not the authoritative verification; a missing-lock bug on a
+non-recursive `std::mutex` doesn't reliably manifest as an observable Swift-level failure at modest
+concurrency. Full `swift test` (4424 tests) clean, both source and `OCCTSWIFT_BRIDGE_PREBUILT=1`
+build paths.
+
+Not the same issue as #280 (constructing a `STEPCAFControl_Reader` poisons subsequent STEP writes) —
+confirmed during triage that #280 is a different, already-fixed mechanism (not `Interface_Static`-
+related, resolved via a kernel patch in v1.10.1).
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed, so
+`Package.swift`'s URL/checksum are bumped to this release; consumers building with
+`OCCTSWIFT_BRIDGE_PREBUILT=1` need the new release asset. `OCCT.xcframework` is unchanged (still
+v1.15.11, no kernel patch this release).
 
 ### v1.15.11 (July 2026) — fix (kernel): CDM_Application::myMetaDataLookUpTable + CDM_MetaData field races under concurrent document save/close (#353)
 

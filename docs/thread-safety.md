@@ -151,6 +151,29 @@ investigation, tracked separately in #349. Plain shape-format I/O (STEP/IGES/BRE
 glTF) is unaffected — this only covers the three OCAF (`.bcaf`/`.xcaf`-style binary/XML
 document) persistence entry points.
 
+### STEP/IGES data-exchange thread safety (issues #181, #359)
+
+Every STEP and IGES import/export call is **safe to call concurrently** as of v1.15.12 — no
+lock needed on your side. `STEPControl`/`STEPCAFControl`/`IGESControl` readers and writers all
+read and write OCCT's process-global `Interface_Static` parameter table
+([Open-Cascade-SAS/OCCT#1179](https://github.com/Open-Cascade-SAS/OCCT/issues/1179)), so the
+bridge serializes every data-exchange (DE) call on a single shared mutex (`igesMutex()` in
+`OCCTBridge_IO.mm`). This is a wrapper-level fix, not an OCCT kernel patch — OCCT's own DE
+readers/writers aren't thread-safe by design, same as issue #298's original framing.
+
+- **#181-B** (fixed via PR #184) found this for concurrent `writeSTEP`: two STEP writes on
+  different threads SIGSEGV'd inside `STEPCAFControl_Writer`/`STEPControl_Writer` at once. The
+  fix serialized the STEP/IGES *writer* entry points that existed at the time.
+- **#359** found the same lock never covered STEP *import* at all (the #181-B report was
+  specifically about writes), and 3 writer entry points added after PR #184 shipped
+  (`OCCTExportSTEPWithName`, `OCCTExportSTEPWithModeProgress`, `OCCTDocumentWriteSTEPWithModes`)
+  never picked up the lock either — 18 functions total. Fixed by extending `igesMutex()`
+  coverage to all 18, matching the existing convention.
+
+Distinct from issue #280 (constructing a `STEPCAFControl_Reader` poisons subsequent STEP
+writes) — that's a different, already-fixed mechanism confirmed *not* `Interface_Static`-related,
+resolved via an upstream kernel patch in v1.10.1.
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
 Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349)
