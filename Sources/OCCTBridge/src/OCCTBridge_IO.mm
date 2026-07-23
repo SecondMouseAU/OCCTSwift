@@ -139,6 +139,8 @@ bool OCCTExportSTEP(OCCTShapeRef shape, const char* path) {
 bool OCCTExportSTEPWithName(OCCTShapeRef shape, const char* path, const char* name) {
     if (!shape || !path) return false;
 
+    // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> deLock(igesMutex());
     try {
         // Use a scoped block to ensure all OCCT objects are destroyed before return
         bool success = false;
@@ -260,6 +262,8 @@ OCCTShapeRef OCCTImportSTEPProgress(const char* path,
                                       bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
@@ -281,6 +285,8 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
                                             bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         Interface_Static::SetIVal("read.precision.mode", 0);
@@ -346,6 +352,8 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char* path, double unitInMeter
                                               bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         reader.SetSystemLengthUnit(unitInMeters);
@@ -427,6 +435,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char* path,
                                                bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
     try {
         document = new OCCTDocument();
@@ -507,6 +517,8 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef shape, const char* path, int32_
                                       const OCCTImportProgress* ctx, bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!shape || !path) return false;
+    // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> deLock(igesMutex());
     try {
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
@@ -571,6 +583,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
                                                         bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
     try {
         document = new OCCTDocument();
@@ -606,6 +620,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
 OCCTShapeRef OCCTImportSTEP(const char* path) {
     if (!path) return nullptr;
 
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
@@ -647,6 +663,8 @@ bool OCCTShapeIsValidSolid(OCCTShapeRef shape) {
 OCCTShapeRef OCCTImportSTEPRobust(const char* path) {
     if (!path) return nullptr;
 
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
 
@@ -715,6 +733,8 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path) {
     OCCTSTEPImportResult result = {nullptr, -1, -1, false, false, false, 0};
     if (!path) return result;
 
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
 
@@ -781,6 +801,8 @@ OCCTSTEPImportResult OCCTImportSTEPWithDiagnostics(const char* path) {
 
 bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath) {
     if (!inputPath || !outputPath) return false;
+    // Serialize all DE reads/writes: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> deLock(igesMutex());
     try {
         STEPControl_Reader reader;
         if (reader.ReadFile(inputPath) != IFSelect_RetDone) return false;
@@ -1022,6 +1044,8 @@ bool OCCTExportSTEPCleanDuplicates(OCCTShapeRef shape, const char* path, int32_t
 
 int32_t OCCTSTEPReaderNbRoots(const char* path) {
     if (!path) return 0;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
@@ -1032,6 +1056,8 @@ int32_t OCCTSTEPReaderNbRoots(const char* path) {
 
 OCCTShapeRef OCCTImportSTEPRoot(const char* path, int32_t rootIndex) {
     if (!path || rootIndex < 1) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
@@ -1047,6 +1073,8 @@ OCCTShapeRef OCCTImportSTEPRoot(const char* path, int32_t rootIndex) {
 
 OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters) {
     if (!path) return nullptr;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         reader.SetSystemLengthUnit(unitInMeters);
@@ -1061,6 +1089,8 @@ OCCTShapeRef OCCTImportSTEPWithUnit(const char* path, double unitInMeters) {
 
 int32_t OCCTSTEPReaderNbShapes(const char* path) {
     if (!path) return 0;
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
@@ -1077,6 +1107,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModes(const char* path,
     bool propsMode, bool gdtMode, bool matMode) {
     if (!path) return nullptr;
 
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
     try {
         document = new OCCTDocument();
@@ -1121,6 +1153,8 @@ bool OCCTDocumentWriteSTEPWithModes(OCCTDocumentRef doc, const char* path,
     bool dimTolMode, bool materialMode) {
     if (!doc || !path || doc->doc.IsNull()) return false;
 
+    // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> deLock(igesMutex());
     try {
         STEPCAFControl_Writer writer;
         writer.SetColorMode(colorMode);

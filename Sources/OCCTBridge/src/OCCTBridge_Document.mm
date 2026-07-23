@@ -87,6 +87,8 @@ OCCTDocumentRef OCCTDocumentCreate(void) {
 OCCTDocumentRef OCCTDocumentLoadSTEP(const char* path) {
     if (!path) return nullptr;
 
+    // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
+    std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
     try {
         document = new OCCTDocument();
