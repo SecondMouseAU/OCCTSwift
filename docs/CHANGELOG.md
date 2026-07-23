@@ -7,13 +7,49 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.14
+## Current: v1.15.15
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.15 (July 2026) — fix (kernel): #341's AutoNamingScope revised to a per-instance override after upstream review (#363)
+
+Follow-up to #341 (v1.15.5) and its Swift-side analogue #363/#365 (v1.15.14, `TNaming_Scope` moved
+to a per-`Document` field). Upstream reviewer [gkv311](https://github.com/Open-Cascade-SAS/OCCT/pull/1388)
+caught something our own v1.15.5 writeup got wrong: `XCAFDoc_ShapeTool::AutoNamingScope`'s
+`recursive_mutex` serialized the three known override call sites (`RWMesh_CafReader::fillDocument()`,
+`RWGltf_CafReader::fillDocument()`, `XCAFDoc_Editor::Expand()`) against each other, but every *other*
+read of `theAutoNaming` in `XCAFDoc_ShapeTool.cxx` (`AddShape`, `MakeReference`, `SetSHUO`) stayed
+outside any scope — an unrelated, unscoped caller on another thread could still observe another
+thread's temporary override. Making the flag `std::atomic<bool>` closed the memory-safety gap, not
+the logical one; our own "the flag is deliberately global" framing at the time was the mistake.
+
+**Fix:** `theAutoNaming` was never meant to express per-document intent — the three overriding call
+sites each want to suppress naming for their own document's build, and `XCAFDoc_ShapeTool` is
+already one instance per document, so the override belongs there. `XCAFDoc_ShapeTool::OwnAutoNamingScope`
+replaces `AutoNamingScope`: a per-instance `myOwnAutonaming` field (-1 inherits the process-wide
+default, 0/1 is a local override), with `OwnAutoNaming()`/`SetOwnAutoNaming()`/`UnsetOwnAutoNaming()`
+accessors. No locking needed at all — independent documents never touch each other's state.
+`XCAFDoc_Editor::Expand()`'s self-recursion (the reason the old fix needed a *recursive* mutex) still
+composes correctly: `OwnAutoNamingScope` saves and restores whatever override state the instance had
+on entry, not an unconditional reset, so nesting on the same instance works the same way the old
+recursive lock did — just without a lock. `theAutoNaming` itself stays `std::atomic<bool>`;
+`SetAutoNaming()`/`AutoNaming()` remain callable concurrently from any thread at any time.
+
+**Verified:** same TSan stress as the original fix (10 threads × 200 iterations,
+`obj_roundtrip_unique`) — zero races, matching the prior result. New `isolation` scenario
+(`Scripts/repro/363-own-autonaming/occt_363_isolation.cpp`) directly checks the property the mutex
+fix couldn't guarantee: half the threads locally override via `OwnAutoNamingScope` on their own
+document while the other half do plain unscoped `AddShape()` on independent documents relying on the
+process-wide default, concurrently — 3000 operations, zero leaks. Patch `0011` updated in place
+(same fix, corrected design, not a new patch number). Full production `OCCT.xcframework` rebuild
+(macOS, iOS device, iOS simulator); full `swift test` clean.
+
+Upstream: [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) updated to the new design
+and re-reviewed — CI green across all 3 platforms, every build/GTest/regression/test job.
 
 ### v1.15.14 (July 2026) — fix (bridge): naming scope moved to a per-Document field instead of a shared instance + mutex (#363)
 

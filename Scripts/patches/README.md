@@ -232,7 +232,46 @@ ThreadSanitizer on an 8-10 thread concurrent-OBJ-round-trip stress (each thread 
 
 Superseded the interim bridge-side mitigation (`meshCafMutex()` in `OCCTBridge_IO.mm`, shipped v1.15.4) — removed once this kernel patch made the underlying OCCT calls safe on their own.
 
-Reported and isolated at SecondMouseAU/OCCTSwift#341; filed upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387) (repro), fix as [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) (draft).
+Reported and isolated at SecondMouseAU/OCCTSwift#341; filed upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387) (repro), fix as [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388).
+
+**Revised (SecondMouseAU/OCCTSwift#363), patch content above updated in place — not a new patch
+number.** Upstream reviewer gkv311 caught something this writeup's own "closing the residual gap"
+framing above got wrong: the mutex only serialized the three known override call sites against each
+other, not the many *other* reads of `theAutoNaming` scattered through `XCAFDoc_ShapeTool.cxx`
+(`AddShape`, `MakeReference`, `SetSHUO`) — those stayed outside any scope, so an unrelated unscoped
+caller on another thread could still observe another thread's temporary override. The atomic
+conversion made that access memory-safe; it did not make the override *behavior* correct for callers
+outside the three scoped sites. The "the flag is deliberately global" framing above was itself the
+mistake: `theAutoNaming` was never meant to express per-document intent — the three overriding call
+sites each want to suppress naming for their own document's build, not change a process-wide
+setting, and `XCAFDoc_ShapeTool` is already one instance per document. The override belongs there.
+
+**Fixed properly this time.** `XCAFDoc_ShapeTool::OwnAutoNamingScope` replaces `AutoNamingScope`,
+saving/restoring a per-instance `myOwnAutonaming` field (`-1` inherits the process-wide default,
+`0`/`1` is a local override) instead of the shared flag. No locking needed at all — two threads
+working on two different documents (two different `ShapeTool` instances) never touch each other's
+state. `AddShape`/`MakeReference`/`SetSHUO` now read a new `OwnAutoNaming()` accessor instead of
+`theAutoNaming` directly; `MakeReference` is no longer `static`, since it now reads instance state.
+One subtlety a naive port of gkv311's one-line sketch would have missed: `XCAFDoc_Editor::Expand()`
+recurses into itself on the same document, so a bare `SetOwnAutoNaming()`/`UnsetOwnAutoNaming()`
+pair at entry/exit would clobber an outer call's still-active override mid-recursion (the inner
+call's unconditional "reset to inherit global" would win). `OwnAutoNamingScope` does a proper
+save/restore of whatever override state the instance had on entry, so nested scopes on the same
+instance compose correctly — same reentrancy guarantee the old `recursive_mutex` gave, achieved here
+by symmetric save/restore instead of a lock. `theAutoNaming` itself stays `std::atomic<bool>` —
+`SetAutoNaming()`/`AutoNaming()` remain callable concurrently from any thread at any time,
+independent of any instance's own override.
+
+**Re-validated:** the same TSan stress (10 threads × 200 iterations, `obj_roundtrip_unique`) reports
+zero `theAutoNaming` races, matching the prior result. New scenario
+(`Scripts/repro/363-own-autonaming/occt_363_isolation.cpp`, `isolation` mode) directly checks the
+property the mutex fix couldn't guarantee: half the threads locally override via
+`OwnAutoNamingScope` on their own document while the other half do plain unscoped `AddShape()` on
+independent documents relying on the process-wide default, concurrently — 3000 operations, zero
+instances of the unscoped threads observing another thread's override.
+
+Upstream PR #1388 updated to the new design; CI green on all 3 platforms (build/GTest/regression/
+test), all originally-green checks stayed green.
 
 **Retire** once the bundled OCCT includes this fix.
 

@@ -121,7 +121,16 @@ both in OCCT itself, not the bridge:
 - **v1.15.5** (`Scripts/patches/0011`, issue #341): `XCAFDoc_ShapeTool::theAutoNaming`,
   a process-global flag mutated by every document-tree build, raced across concurrent
   OBJ/glTF import. Fixed via `XCAFDoc_ShapeTool::AutoNamingScope` (a mutex-backed RAII
-  scope) plus making the flag itself `std::atomic<bool>`.
+  scope) plus making the flag itself `std::atomic<bool>`. **Revised in v1.15.15**
+  (issue #363) after upstream review: the mutex only serialized the three known
+  override call sites against each other, not every other read of the flag elsewhere
+  in the file, so an unrelated unscoped caller could still observe another thread's
+  temporary override. `OwnAutoNamingScope` replaces it, saving/restoring a per-instance
+  override on `XCAFDoc_ShapeTool` (already one instance per document) instead of a
+  shared flag — no locking needed at all, since independent documents never touch
+  anything shared. See the `#341` entry in `CLAUDE.md`'s Known OCCT Bugs for the full
+  writeup, including why the naive "set on entry, unset on exit" version of this fix
+  would have broken `XCAFDoc_Editor::Expand()`'s self-recursion.
 - **v1.15.6** (`Scripts/patches/0012`, issue #344): an uncatchable SIGSEGV survived the
   v1.15.5 fix — a genuinely different pair of races, in `GetApplication()`'s lazy
   singleton init (two threads could each construct their own instance) and

@@ -99,7 +99,24 @@ MMGT_OPT=0 TSAN_OPTIONS="halt_on_error=0" \
 Verified via the same TSan stress: **0** `theAutoNaming` races across 4 runs post-patch (was 9-17/run
 pre-patch), zero regression on the `create_fillet_boolean`/`mesh_independent` scenarios. Filed
 upstream as [Open-Cascade-SAS/OCCT#1387](https://github.com/Open-Cascade-SAS/OCCT/issues/1387) (repro)
-/ [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) (fix, draft).
+/ [OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) (fix).
+
+**Revised (#363), after upstream review on OCCT#1388.** Maintainer gkv311 pointed out the mutex
+above only serialized the three known call sites against each other — every *other* read of
+`theAutoNaming` in `XCAFDoc_ShapeTool.cxx` (`AddShape`, `MakeReference`, `SetSHUO`) stayed outside
+any scope, so an unrelated unscoped caller on another thread could still observe another thread's
+temporary override; the atomic made that memory-safe, not logically correct. The deeper issue: the
+three overriding call sites each want to suppress naming for *their own* document build, not change
+a process-wide setting, and `XCAFDoc_ShapeTool` is already one instance per document — the override
+belongs there, not on a shared global. `XCAFDoc_ShapeTool::OwnAutoNamingScope` replaces
+`AutoNamingScope`, saving/restoring a per-instance `myOwnAutonaming` field instead of the shared
+flag — no locking needed at all, and `Expand()`'s self-recursion still composes correctly since each
+nested scope restores exactly the override state it observed on entry (a naive "set on entry, unset
+on exit" port of the idea would have clobbered an outer call's override mid-recursion). Re-verified
+with the same TSan stress (0 races, matching the prior result) plus a new `isolation` scenario
+(`Scripts/repro/363-own-autonaming/occt_363_isolation.cpp`) checking the exact property the mutex
+fix couldn't guarantee: 3000 operations mixing local-override and unscoped-default threads
+concurrently, zero leaks. Patch `0011` updated in place; OCCT#1388 updated to match, CI green.
 
 ## Corrected doctrine
 

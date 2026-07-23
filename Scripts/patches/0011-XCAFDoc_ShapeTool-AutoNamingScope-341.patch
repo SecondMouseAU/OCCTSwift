@@ -1,8 +1,8 @@
 diff --git a/src/DataExchange/TKDEGLTF/RWGltf/RWGltf_CafReader.cxx b/src/DataExchange/TKDEGLTF/RWGltf/RWGltf_CafReader.cxx
-index cd5a5dea..22bc2298 100644
+index cd5a5dea..a0c07095 100644
 --- a/src/DataExchange/TKDEGLTF/RWGltf/RWGltf_CafReader.cxx
 +++ b/src/DataExchange/TKDEGLTF/RWGltf/RWGltf_CafReader.cxx
-@@ -449,10 +449,9 @@ void RWGltf_CafReader::fillDocument()
+@@ -449,20 +449,18 @@ void RWGltf_CafReader::fillDocument()
      Message::SendWarning("Warning: Length unit of document not equal to the system length unit");
    }
  
@@ -10,13 +10,15 @@ index cd5a5dea..22bc2298 100644
 -  XCAFDoc_ShapeTool::SetAutoNaming(false);
 -  const TCollection_AsciiString aRootName; // = generateRootName (theFile);
 -  CafDocumentTools              aTools;
-+  XCAFDoc_ShapeTool::AutoNamingScope anAutoNamingScope(false);
 +  const TCollection_AsciiString      aRootName; // = generateRootName (theFile);
 +  CafDocumentTools                   aTools;
    aTools.ShapeTool       = XCAFDoc_DocumentTool::ShapeTool(myXdeDoc->Main());
    aTools.ColorTool       = XCAFDoc_DocumentTool::ColorTool(myXdeDoc->Main());
    aTools.VisMaterialTool = XCAFDoc_DocumentTool::VisMaterialTool(myXdeDoc->Main());
-@@ -462,7 +461,6 @@ void RWGltf_CafReader::fillDocument()
++  XCAFDoc_ShapeTool::OwnAutoNamingScope anAutoNamingScope(aTools.ShapeTool, false);
+   for (NCollection_Sequence<TopoDS_Shape>::Iterator aRootIter(myRootShapes); aRootIter.More();
+        aRootIter.Next())
+   {
      addShapeIntoDoc(aTools, aRootIter.Value(), TDF_Label(), aRootName);
    }
    XCAFDoc_DocumentTool::ShapeTool(myXdeDoc->Main())->UpdateAssemblies();
@@ -25,10 +27,10 @@ index cd5a5dea..22bc2298 100644
  
  //=================================================================================================
 diff --git a/src/DataExchange/TKRWMesh/RWMesh/RWMesh_CafReader.cxx b/src/DataExchange/TKRWMesh/RWMesh/RWMesh_CafReader.cxx
-index e2fe99b4..2a109684 100644
+index e2fe99b4..74229c45 100644
 --- a/src/DataExchange/TKRWMesh/RWMesh/RWMesh_CafReader.cxx
 +++ b/src/DataExchange/TKRWMesh/RWMesh/RWMesh_CafReader.cxx
-@@ -178,10 +178,9 @@ void RWMesh_CafReader::fillDocument()
+@@ -178,20 +178,18 @@ void RWMesh_CafReader::fillDocument()
      Message::SendWarning("Warning: Length unit of document not equal to the system length unit");
    }
  
@@ -36,13 +38,15 @@ index e2fe99b4..2a109684 100644
 -  XCAFDoc_ShapeTool::SetAutoNaming(false);
 -  const TCollection_AsciiString aRootName; // = generateRootName (theFile);
 -  CafDocumentTools              aTools;
-+  XCAFDoc_ShapeTool::AutoNamingScope anAutoNamingScope(false);
 +  const TCollection_AsciiString      aRootName; // = generateRootName (theFile);
 +  CafDocumentTools                   aTools;
    aTools.ShapeTool       = XCAFDoc_DocumentTool::ShapeTool(myXdeDoc->Main());
    aTools.ColorTool       = XCAFDoc_DocumentTool::ColorTool(myXdeDoc->Main());
    aTools.VisMaterialTool = XCAFDoc_DocumentTool::VisMaterialTool(myXdeDoc->Main());
-@@ -191,7 +190,6 @@ void RWMesh_CafReader::fillDocument()
++  XCAFDoc_ShapeTool::OwnAutoNamingScope anAutoNamingScope(aTools.ShapeTool, false);
+   for (NCollection_Sequence<TopoDS_Shape>::Iterator aRootIter(myRootShapes); aRootIter.More();
+        aRootIter.Next())
+   {
      addShapeIntoDoc(aTools, aRootIter.Value(), TDF_Label(), aRootName);
    }
    XCAFDoc_DocumentTool::ShapeTool(myXdeDoc->Main())->UpdateAssemblies();
@@ -51,7 +55,7 @@ index e2fe99b4..2a109684 100644
  
  //=================================================================================================
 diff --git a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Editor.cxx b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Editor.cxx
-index 0b06e0b2..9d096d10 100644
+index 0b06e0b2..9acce946 100644
 --- a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Editor.cxx
 +++ b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_Editor.cxx
 @@ -66,9 +66,8 @@ bool XCAFDoc_Editor::Expand(const TDF_Label& theDoc,
@@ -61,8 +65,8 @@ index 0b06e0b2..9d096d10 100644
 -  occ::handle<XCAFDoc_ShapeTool> aShapeTool   = XCAFDoc_DocumentTool::ShapeTool(theDoc);
 -  bool                           isAutoNaming = aShapeTool->AutoNaming();
 -  aShapeTool->SetAutoNaming(false);
-+  occ::handle<XCAFDoc_ShapeTool>     aShapeTool = XCAFDoc_DocumentTool::ShapeTool(theDoc);
-+  XCAFDoc_ShapeTool::AutoNamingScope anAutoNamingScope(false);
++  occ::handle<XCAFDoc_ShapeTool>        aShapeTool = XCAFDoc_DocumentTool::ShapeTool(theDoc);
++  XCAFDoc_ShapeTool::OwnAutoNamingScope anAutoNamingScope(aShapeTool, false);
  
    TDF_Label aCompoundPartL = theShape;
    if (aShapeTool->IsReference(theShape))
@@ -78,20 +82,19 @@ index 0b06e0b2..9d096d10 100644
  }
  
 diff --git a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.cxx b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.cxx
-index 65d8b94c..721ef792 100644
+index 65d8b94c..fda67655 100644
 --- a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.cxx
 +++ b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.cxx
-@@ -15,6 +15,9 @@
+@@ -15,6 +15,8 @@
  
  #include <XCAFDoc_ShapeTool.hxx>
  
 +#include <atomic>
-+#include <mutex>
 +
  #include <BRep_Builder.hxx>
  #include <gp_Pnt.hxx>
  #include <gp_Trsf.hxx>
-@@ -50,7 +53,7 @@
+@@ -50,7 +52,7 @@
  
  IMPLEMENT_DERIVED_ATTRIBUTE_WITH_TYPE(XCAFDoc_ShapeTool, TDataStd_GenericEmpty, "xcaf", "ShapeTool")
  
@@ -100,30 +103,75 @@ index 65d8b94c..721ef792 100644
  
  // attribute methods //////////////////////////////////////////////////
  
-@@ -702,6 +705,30 @@ bool XCAFDoc_ShapeTool::AutoNaming()
+@@ -81,6 +83,7 @@ occ::handle<XCAFDoc_ShapeTool> XCAFDoc_ShapeTool::Set(const TDF_Label& L)
+ XCAFDoc_ShapeTool::XCAFDoc_ShapeTool()
+ {
+   hasSimpleShapes = false;
++  myOwnAutonaming = -1;
+ }
+ 
+ //=================================================================================================
+@@ -453,7 +456,7 @@ void XCAFDoc_ShapeTool::MakeReference(const TDF_Label&       L,
+   refNode->Remove(); // abv: fix against bug in TreeNode::Append()
+   mainNode->Append(refNode);
+ 
+-  if (theAutoNaming)
++  if (OwnAutoNaming())
+   {
+     SetLabelNameByLink(L);
+   }
+@@ -529,7 +532,7 @@ TDF_Label XCAFDoc_ShapeTool::addShape(const TopoDS_Shape& S, const bool makeAsse
+   //  }
+   A->SetShape(S);
+ 
+-  if (theAutoNaming)
++  if (OwnAutoNaming())
+   {
+     SetLabelNameByShape(ShapeLabel);
+   }
+@@ -540,7 +543,7 @@ TDF_Label XCAFDoc_ShapeTool::addShape(const TopoDS_Shape& S, const bool makeAsse
+     // mark assembly by assigning UAttribute
+     occ::handle<TDataStd_UAttribute> Uattr;
+     Uattr = TDataStd_UAttribute::Set(ShapeLabel, XCAFDoc::AssemblyGUID());
+-    if (theAutoNaming)
++    if (OwnAutoNaming())
+     {
+       TDataStd_Name::Set(ShapeLabel, TCollection_ExtendedString("ASSEMBLY"));
+     }
+@@ -702,6 +705,40 @@ bool XCAFDoc_ShapeTool::AutoNaming()
  
  //=================================================================================================
  
-+namespace
++// #363/OCCT#1388: OwnAutoNamingScope replaces the old global AutoNamingScope (a
++// recursive_mutex-guarded save/restore of the single process-wide theAutoNaming flag).
++// That fixed concurrent access to theAutoNaming itself, but every OTHER read of
++// theAutoNaming in this file (AddShape, MakeReference, SetSHUO) stayed outside any scope,
++// so an unrelated, unscoped caller on another thread could still observe a temporary
++// override meant only for the scoped caller's own document. Saving/restoring on the
++// ShapeTool INSTANCE instead removes the sharing at its root: no lock is needed, since two
++// threads working on two different documents (two different ShapeTool instances) never
++// touch each other's myOwnAutonaming, and nesting on the SAME instance (e.g.
++// XCAFDoc_Editor::Expand's self-recursion) composes correctly because construction and
++// destruction save/restore the exact prior override state rather than unconditionally
++// resetting to "inherit global".
++XCAFDoc_ShapeTool::OwnAutoNamingScope::OwnAutoNamingScope(
++  const occ::handle<XCAFDoc_ShapeTool>& theTool,
++  const bool                            theTemporaryValue)
++    : myTool(theTool),
++      myWasOwnAutoNaming(theTool.IsNull() ? -1 : theTool->myOwnAutonaming)
 +{
-+std::recursive_mutex& AutoNamingScopeMutex()
-+{
-+  static std::recursive_mutex aMutex;
-+  return aMutex;
++  if (!myTool.IsNull())
++  {
++    myTool->myOwnAutonaming = theTemporaryValue ? 1 : 0;
++  }
 +}
-+} // namespace
 +
-+XCAFDoc_ShapeTool::AutoNamingScope::AutoNamingScope(const bool theTemporaryValue)
++XCAFDoc_ShapeTool::OwnAutoNamingScope::~OwnAutoNamingScope()
 +{
-+  AutoNamingScopeMutex().lock();
-+  myWasAutoNaming = theAutoNaming;
-+  theAutoNaming   = theTemporaryValue;
-+}
-+
-+XCAFDoc_ShapeTool::AutoNamingScope::~AutoNamingScope()
-+{
-+  theAutoNaming = myWasAutoNaming;
-+  AutoNamingScopeMutex().unlock();
++  if (!myTool.IsNull())
++  {
++    myTool->myOwnAutonaming = myWasOwnAutoNaming;
++  }
 +}
 +
 +//=================================================================================================
@@ -131,30 +179,99 @@ index 65d8b94c..721ef792 100644
  void XCAFDoc_ShapeTool::ComputeShapes(const TDF_Label& L)
  {
    TDF_ChildIterator it(L);
+@@ -1542,7 +1579,7 @@ bool XCAFDoc_ShapeTool::SetSHUO(const NCollection_Sequence<TDF_Label>& labels,
+ 
+   TDF_TagSource aTag;
+   TDF_Label     UpperSubL = TDF_TagSource::NewChild(labels(1));
+-  if (theAutoNaming)
++  if (OwnAutoNaming())
+   {
+     TCollection_ExtendedString Entry("SHUO");
+     TDataStd_Name::Set(UpperSubL, TCollection_ExtendedString(Entry));
+@@ -1555,7 +1592,7 @@ bool XCAFDoc_ShapeTool::SetSHUO(const NCollection_Sequence<TDF_Label>& labels,
+   for (i = 2; i <= labels.Length(); i++)
+   {
+     TDF_Label NextSubL = TDF_TagSource::NewChild(labels(i));
+-    if (theAutoNaming)
++    if (OwnAutoNaming())
+     {
+       TCollection_ExtendedString EntrySub("SHUO-");
+       EntrySub += i;
 diff --git a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.hxx b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.hxx
-index 84c43dd8..ba88a48f 100644
+index 84c43dd8..c3e7a94a 100644
 --- a/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.hxx
 +++ b/src/DataExchange/TKXCAF/XCAFDoc/XCAFDoc_ShapeTool.hxx
-@@ -255,6 +255,22 @@ public:
+@@ -255,6 +255,47 @@ public:
    //! description.
    Standard_EXPORT static bool AutoNaming();
  
-+  //! RAII scope: sets AutoNaming to theTemporaryValue, restores the previous
-+  //! value on destruction. Thread-safe and reentrant; use instead of a bare
-+  //! AutoNaming()/SetAutoNaming() pair when temporarily overriding the mode.
-+  class AutoNamingScope
++  //! Returns the auto-naming mode as seen by THIS ShapeTool instance: its own local
++  //! override if SetOwnAutoNaming() was called, otherwise the process-wide default
++  //! (AutoNaming()). Every internal auto-naming check (AddShape, MakeReference, SetSHUO)
++  //! reads this instead of the global flag directly.
++  bool OwnAutoNaming() const
++  {
++    return myOwnAutonaming == -1 ? XCAFDoc_ShapeTool::AutoNaming() : myOwnAutonaming == 1;
++  }
++
++  //! Locally overrides the auto-naming mode for this instance only -- does not touch the
++  //! process-wide default (SetAutoNaming()) or any other document's ShapeTool. Prefer
++  //! OwnAutoNamingScope over a bare Set/Unset pair so a local override can't leak past an
++  //! exception or an early return.
++  void SetOwnAutoNaming(const bool theOwnFlag) { myOwnAutonaming = theOwnFlag ? 1 : 0; }
++
++  //! Resets this instance to inherit the process-wide default (AutoNaming()) again.
++  void UnsetOwnAutoNaming() { myOwnAutonaming = -1; }
++
++  //! RAII scope: locally overrides auto-naming on ONE ShapeTool instance (one document),
++  //! restoring whatever local-override state that instance had on entry -- not just "off"
++  //! -- when the scope ends. Because the override lives on the instance rather than a
++  //! process-wide flag, two threads working on two different documents never touch
++  //! anything shared and need no lock; and because construction/destruction save/restore
++  //! symmetrically (not unconditionally reset to "inherit global"), nested scopes on the
++  //! SAME instance compose correctly -- e.g. XCAFDoc_Editor::Expand() recursing into
++  //! itself on the same document.
++  class OwnAutoNamingScope
 +  {
 +  public:
-+    Standard_EXPORT AutoNamingScope(const bool theTemporaryValue);
-+    Standard_EXPORT ~AutoNamingScope();
++    Standard_EXPORT OwnAutoNamingScope(const occ::handle<XCAFDoc_ShapeTool>& theTool,
++                                        const bool                           theTemporaryValue);
++    Standard_EXPORT ~OwnAutoNamingScope();
 +
-+    AutoNamingScope(const AutoNamingScope&)            = delete;
-+    AutoNamingScope& operator=(const AutoNamingScope&) = delete;
++    OwnAutoNamingScope(const OwnAutoNamingScope&)            = delete;
++    OwnAutoNamingScope& operator=(const OwnAutoNamingScope&) = delete;
 +
 +  private:
-+    bool myWasAutoNaming;
++    occ::handle<XCAFDoc_ShapeTool> myTool;
++    int                            myWasOwnAutoNaming;
 +  };
 +
    //! recursive
    Standard_EXPORT void ComputeShapes(const TDF_Label& L);
  
+@@ -500,9 +541,11 @@ private:
+ 
+   //! Makes a shape on label L to be a reference to shape refL
+   //! with location loc
+-  Standard_EXPORT static void MakeReference(const TDF_Label&       L,
+-                                            const TDF_Label&       refL,
+-                                            const TopLoc_Location& loc);
++  //! No longer static (#363/OCCT#1388) -- reads this instance's OwnAutoNaming(), not a
++  //! process-wide flag.
++  Standard_EXPORT void MakeReference(const TDF_Label&       L,
++                                     const TDF_Label&       refL,
++                                     const TopLoc_Location& loc);
+ 
+   //! Auxiliary method for Expand
+   //! Add declared under expanded theMainShapeL subshapes to new part label thePart
+@@ -517,6 +560,10 @@ private:
+   NCollection_DataMap<TopoDS_Shape, TDF_Label, TopTools_ShapeMapHasher> mySubShapes;
+   NCollection_DataMap<TopoDS_Shape, TDF_Label, TopTools_ShapeMapHasher> mySimpleShapes;
+   bool                                                                  hasSimpleShapes;
++  //! -1 = inherit the process-wide AutoNaming() default; 0/1 = local override set via
++  //! SetOwnAutoNaming()/OwnAutoNamingScope. Per-instance so independent documents never
++  //! share this state (#363/OCCT#1388).
++  int myOwnAutonaming;
+ };
+ 
+ #endif // _XCAFDoc_ShapeTool_HeaderFile
