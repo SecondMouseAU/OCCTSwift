@@ -7,13 +7,51 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.13
+## Current: v1.15.14
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.14 (July 2026) — fix (bridge): naming scope moved to a per-Document field instead of a shared instance + mutex (#363)
+
+Follow-up to #361, prompted by upstream reviewer feedback on #341's analogous fix
+([OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) review comment: "a mutex is not
+the right tool here... usage remains unprotected"). v1.15.13's `docNamingScopeMutex()` made
+concurrent access to the shared `TNaming_Scope` instance memory-safe, but left the underlying
+design bug in place: every `Document` still shared the *same* `TNaming_Scope`, so one document's
+valid-label set could leak into another's regardless of locking — a correctness bug, not just a
+race, that predates #361's fix.
+
+**Fix:** `TNaming_Scope` moved from a shared process-wide static to a field on `OCCTDocument`
+itself (`doc->namingScope`, `OCCTBridge_Internal.h`). No lock needed at all — two threads working
+on two different `Document` instances no longer touch anything shared. `docNamingScopeMutex()` was
+removed entirely; the six `OCCTDocumentNamingScope*` bridge functions now read/write
+`doc->namingScope` directly (two of the six, `OCCTDocumentNamingScopeClear`/`ValidCount`, gained a
+null-check on `doc` they'd never had — a symptom of the same bug, since the old implementation
+ignored the `doc` parameter entirely and touched the shared global instead).
+
+New test `namingScopesAreIsolatedAcrossDocuments` in `Issue361SharedSingletonThreadSafetyTests`
+directly verifies the correctness property (two documents' valid-label sets and counts stay
+independent) — a deterministic, single-threaded assertion, not a race-dependent exerciser. Full
+`swift test` (4427 tests) clean, both source and `OCCTSWIFT_BRIDGE_PREBUILT=1` build paths.
+
+`Font_FontMgr`'s font-list cache (`fontListMutex()`, also from #361) is unaffected — that mutex
+stays, since the system font registry is genuinely one process-wide resource by OCCT's own design,
+unlike `TNaming_Scope`. See `docs/thread-safety.md`'s updated section for the general lesson this
+draws: a mutex is the right tool only when state is *meant* to be shared; when it was wrongly made
+global in the first place, the fix is relocating ownership, not locking access to the wrong owner.
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed again,
+so `Package.swift`'s URL/checksum are bumped to this release. `OCCT.xcframework` is unchanged
+(still v1.15.11).
+
+Filed as a companion to [#363](https://github.com/SecondMouseAU/OCCTSwift/issues/363), which also
+tracks applying the same per-instance-override redesign to #341's upstream `AutoNamingScope` PR —
+that part is deliberately deferred: prototype + test locally first, then respond to the OCCT#1388
+review and update that PR, not the other way around.
 
 ### v1.15.13 (July 2026) — fix (bridge): two more unsynchronized process-global singletons — TNaming_Scope shared instance, Font_FontMgr font-list cache (#361)
 

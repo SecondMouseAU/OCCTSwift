@@ -6053,29 +6053,23 @@ void OCCTFunctionDriverTableClear() {
 }
 
 // MARK: - TNaming_Scope (v0.90.0)
-
-#include <TNaming_Scope.hxx>
-
-static TNaming_Scope& getDocNamingScope() {
-    static TNaming_Scope scope(true);
-    return scope;
-}
-
-// #361: getDocNamingScope() is one process-wide instance shared across every
-// OCCTDocument; its NCollection_Map<TDF_Label> myValid has no internal
-// synchronization, so every access below is serialized on docNamingScopeMutex().
-std::mutex& docNamingScopeMutex() {
-    static std::mutex mutex;
-    return mutex;
-}
+//
+// #363: naming scope lives on doc->namingScope (a per-OCCTDocument field, see
+// OCCTBridge_Internal.h) rather than one shared process-wide instance. #361's
+// docNamingScopeMutex() fix made concurrent access memory-safe but left the
+// underlying design bug intact: every document shared the same TNaming_Scope, so
+// one document's valid-label set could leak into another's regardless of locking.
+// A per-document field removes the sharing (and the need for a lock) instead of
+// just synchronizing access to it -- same principle as gkv311's upstream review of
+// #341's AutoNamingScope fix (OCCT#1388): state that was wrongly made global/shared
+// should be relocated to its actual owner, not locked in place.
 
 bool OCCTDocumentNamingScopeValid(OCCTDocumentRef doc, int64_t labelId) {
     if (!doc || doc->doc.IsNull()) return false;
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        getDocNamingScope().Valid(label);
+        doc->namingScope.Valid(label);
         return true;
     } catch (...) { return false; }
 }
@@ -6085,8 +6079,7 @@ bool OCCTDocumentNamingScopeValidChildren(OCCTDocumentRef doc, int64_t labelId, 
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        getDocNamingScope().ValidChildren(label, withRoot);
+        doc->namingScope.ValidChildren(label, withRoot);
         return true;
     } catch (...) { return false; }
 }
@@ -6096,8 +6089,7 @@ bool OCCTDocumentNamingScopeIsValid(OCCTDocumentRef doc, int64_t labelId) {
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        return getDocNamingScope().IsValid(label);
+        return doc->namingScope.IsValid(label);
     } catch (...) { return false; }
 }
 
@@ -6106,23 +6098,22 @@ bool OCCTDocumentNamingScopeUnvalid(OCCTDocumentRef doc, int64_t labelId) {
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        getDocNamingScope().Unvalid(label);
+        doc->namingScope.Unvalid(label);
         return true;
     } catch (...) { return false; }
 }
 
 void OCCTDocumentNamingScopeClear(OCCTDocumentRef doc) {
+    if (!doc || doc->doc.IsNull()) return;
     try {
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        getDocNamingScope().ClearValid();
+        doc->namingScope.ClearValid();
     } catch (...) {}
 }
 
 int32_t OCCTDocumentNamingScopeValidCount(OCCTDocumentRef doc) {
+    if (!doc || doc->doc.IsNull()) return 0;
     try {
-        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
-        return getDocNamingScope().GetValid().Extent();
+        return doc->namingScope.GetValid().Extent();
     } catch (...) { return 0; }
 }
 // MARK: - TNaming_Translator (v0.90.0)
