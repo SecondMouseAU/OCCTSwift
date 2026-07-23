@@ -174,18 +174,28 @@ Distinct from issue #280 (constructing a `STEPCAFControl_Reader` poisons subsequ
 writes) — that's a different, already-fixed mechanism confirmed *not* `Interface_Static`-related,
 resolved via an upstream kernel patch in v1.10.1.
 
-### Naming-scope validation and font enumeration thread safety (issue #361)
+### Naming-scope validation and font enumeration thread safety (issues #361, #363)
 
-Two more process-global bridge singletons, found scoping #342, both **safe to call concurrently**
-as of v1.15.13 — bridge-only fixes, no OCCT kernel change needed since the shared state lives in
-bridge-owned globals, not inside OCCT's own classes.
+Two more process-global bridge singletons, found scoping #342. Both are **safe to call
+concurrently** — bridge-only fixes, no OCCT kernel change needed since the shared state lives in
+bridge-owned globals, not inside OCCT's own classes — but they took different fixes, worth
+contrasting:
 
 - **`Document.namingScopeValid`/`namingScopeIsValid`/`namingScopeValidChildren`/`namingScopeUnvalid`/
-  `namingScopeClear`/`namingScopeValidCount`** all go through one process-wide `TNaming_Scope`
-  instance shared across every `Document`. `TNaming_Scope`'s own `NCollection_Map<TDF_Label>
-  myValid` has no internal synchronization, so two threads calling any of these on two *unrelated*
-  documents raced on that shared map. Fixed via `docNamingScopeMutex()` in
-  `OCCTBridge_Document.mm`, held for every access.
+  `namingScopeClear`/`namingScopeValidCount`** originally went through one process-wide
+  `TNaming_Scope` instance shared across every `Document`. v1.15.13 (#361) added a mutex
+  (`docNamingScopeMutex()`) around every access, which fixed the underlying race —
+  `TNaming_Scope`'s own `NCollection_Map<TDF_Label> myValid` has no internal synchronization — but
+  left a design bug in place: every `Document` still shared the *same* map, so one document's
+  valid-label set could leak into another's regardless of locking. Upstream reviewer feedback on
+  #341's analogous `AutoNamingScope` fix ([OCCT#1388](https://github.com/Open-Cascade-SAS/OCCT/pull/1388) —
+  "a mutex is not the right tool here... usage remains unprotected") prompted a second look:
+  **v1.15.14 (#363) moves naming scope onto a `TNaming_Scope` field on `OCCTDocument` itself** — no
+  lock needed at all, since two threads working on two different `Document` instances no longer
+  touch anything shared. `docNamingScopeMutex()` was removed. The general lesson: a mutex is the
+  right tool only when the state is *genuinely* meant to be one shared resource; when it was
+  wrongly made global/shared in the first place, the fix is relocating ownership to whatever object
+  actually owns the data, not locking access to the wrong owner.
 - **`FontManager`** (`fontCount`, `fontName`, `fontPath`, `fontHasAspect`, `initDatabase`) shares
   a process-global font-list cache with an unsynchronized check-then-act lazy-init, plus
   `initDatabase()` could reassign the cache at any time, racing an in-progress read. Fixed via

@@ -2,27 +2,63 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
-// Issue #361: two more process-global bridge singletons found scoping #342, both matching
-// the #341/#344/#353 shape (unsynchronized shared state, mutated by callers who have no
-// reason to expect they're touching anything shared).
+// Issue #361 (fixed further in #363): two more process-global bridge singletons found
+// scoping #342, both originally matching the #341/#344/#353 shape (unsynchronized shared
+// state, mutated by callers who have no reason to expect they're touching anything shared).
 //
-// A. getDocNamingScope() (OCCTBridge_Document.mm) returns one TNaming_Scope instance shared
-//    across every OCCTDocument. TNaming_Scope's own NCollection_Map<TDF_Label> myValid has no
-//    internal synchronization -- two threads calling namingScopeValid/IsValid/etc. on two
-//    unrelated documents race on that shared map. Fixed with docNamingScopeMutex(), held for
-//    the duration of every access.
+// A. getDocNamingScope() (OCCTBridge_Document.mm) originally returned one TNaming_Scope
+//    instance shared across every OCCTDocument. v1.15.13 (#361) made concurrent access to it
+//    memory-safe with docNamingScopeMutex() -- but that left the underlying design bug
+//    intact: every document shared the same TNaming_Scope, so document A's valid-label set
+//    could leak into document B's regardless of locking. Upstream reviewer gkv311's pushback
+//    on #341's analogous AutoNamingScope fix (OCCT#1388) prompted a second look: relocate the
+//    state to its actual owner instead of locking it in place. #363 moves naming scope onto a
+//    per-OCCTDocument field (doc->namingScope) -- no lock needed at all, since two threads
+//    working on two different Document instances no longer touch anything shared.
 //
 // B. Font_FontMgr's font-list cache (OCCTBridge_Visualization.mm): g_fontList/
 //    g_fontListPopulated is an unsynchronized check-then-act lazy-init, and
 //    FontManager.initDatabase() can reassign both at any time from any thread, racing an
 //    in-progress read in fontName(at:)/fontPath(at:)/fontHasAspect(at:). Fixed with
-//    fontListMutex(), held for the duration of every access (population and read).
+//    fontListMutex(), held for the duration of every access (population and read) -- this one
+//    stayed a mutex fix, since Font_FontMgr's system font registry is genuinely one
+//    process-wide resource by OCCT's own design, unlike TNaming_Scope above.
 //
-// Like #341/#359's equivalent suites, this is a basic exerciser through the Swift API --
-// confirms no deadlock and no functional regression -- not the authoritative verification for
-// a lock-coverage bug on a plain (non-recursive) std::mutex.
-@Suite("Issue #361 — shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe")
+// Like #341/#359's equivalent suites, the concurrent tests below are basic exercisers through
+// the Swift API -- confirms no deadlock and no functional regression -- not the authoritative
+// verification for a lock-coverage bug. The isolation test IS authoritative for its specific
+// claim (two documents' naming scopes don't share state), since that's a deterministic,
+// single-threaded correctness property, not a race.
+@Suite("Issue #361/#363 — shared singletons (TNaming_Scope, Font_FontMgr) are thread-safe")
 struct Issue361SharedSingletonThreadSafetyTests {
+
+    @Test("Two documents' naming scopes are isolated (#363 — not just race-free, but not shared)")
+    func namingScopesAreIsolatedAcrossDocuments() throws {
+        let docA = try #require(Document.create())
+        let docB = try #require(Document.create())
+
+        let boxA = Shape.box(width: 5, height: 5, depth: 5)!
+        let boxB = Shape.box(width: 7, height: 7, depth: 7)!
+        let labelA = docA.addShape(boxA, makeAssembly: false)
+        let labelB = docB.addShape(boxB, makeAssembly: false)
+
+        docA.namingScopeValid(labelId: labelA)
+        docA.namingScopeValid(labelId: labelA)  // repeat marks are idempotent, not cumulative
+
+        #expect(docA.namingScopeValidCount == 1)
+        #expect(docB.namingScopeValidCount == 0,
+                "document B's valid count must not reflect document A's marks")
+        #expect(docA.namingScopeIsValid(labelId: labelA))
+        #expect(!docB.namingScopeIsValid(labelId: labelB))
+
+        docB.namingScopeValid(labelId: labelB)
+        #expect(docB.namingScopeValidCount == 1)
+
+        docA.namingScopeClear()
+        #expect(docA.namingScopeValidCount == 0)
+        #expect(docB.namingScopeValidCount == 1,
+                "clearing document A must not clear document B's scope")
+    }
 
     @Test("Concurrent naming-scope access across independent documents doesn't crash or deadlock")
     func concurrentNamingScopeAccessSucceeds() async throws {

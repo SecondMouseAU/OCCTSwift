@@ -47,6 +47,7 @@
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TDF_Label.hxx>
+#include <TNaming_Scope.hxx>
 
 // === Foundation struct definitions ===
 
@@ -94,6 +95,13 @@ struct OCCTDocument {
     Handle(XCAFDoc_ColorTool) colorTool;
     Handle(XCAFDoc_VisMaterialTool) materialTool;
     std::vector<TDF_Label> labels;  // Label registry (index = labelId)
+    // #363: per-document, not a shared process-wide static (see docNamingScopeMutex's
+    // old comment / issue #361) -- TNaming_Scope's own NCollection_Map<TDF_Label>
+    // myValid has no internal synchronization, and (independent of the race) sharing
+    // one instance across every document meant one document's valid-label set could
+    // leak into another's. Each OCCTDocument owns its own scope instead; the WithValid
+    // ctor arg matches the shared instance's prior behavior (map-defined scope).
+    TNaming_Scope namingScope{true};
 
     OCCTDocument() {
         app = XCAFApp_Application::GetApplication();
@@ -204,11 +212,10 @@ std::mutex& igesMutex();
 // OCCTDocumentSaveOCAF/OCCTDocumentSaveOCAFInPlace). Interim mitigation until a
 // kernel fix lands — matches the #298/#341 PR1→PR2 pattern.
 std::mutex& ocafStoreMutex();
-// #361: getDocNamingScope() shares one process-wide TNaming_Scope instance across
-// every OCCTDocument; its NCollection_Map<TDF_Label> myValid has no internal
-// synchronization, so two threads touching unrelated documents' naming scope race
-// on the shared map. Bridge-only (no OCCT source involved).
-std::mutex& docNamingScopeMutex();
+// #361/#363: naming-scope state moved to a per-OCCTDocument TNaming_Scope field
+// instead of one shared process-wide instance -- no lock needed, see OCCTDocument's
+// namingScope member above. (docNamingScopeMutex() existed briefly in v1.15.13 and
+// was removed once the shared-instance design itself was replaced.)
 // #361: g_fontList/g_fontListPopulated (OCCTBridge_Visualization.mm) are plain
 // globals with an unsynchronized check-then-act lazy-init, plus
 // OCCTFontMgrInitDatabase() can reassign both at any time from any thread.
