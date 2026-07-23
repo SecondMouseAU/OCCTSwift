@@ -174,6 +174,23 @@ Distinct from issue #280 (constructing a `STEPCAFControl_Reader` poisons subsequ
 writes) — that's a different, already-fixed mechanism confirmed *not* `Interface_Static`-related,
 resolved via an upstream kernel patch in v1.10.1.
 
+### Naming-scope validation and font enumeration thread safety (issue #361)
+
+Two more process-global bridge singletons, found scoping #342, both **safe to call concurrently**
+as of v1.15.13 — bridge-only fixes, no OCCT kernel change needed since the shared state lives in
+bridge-owned globals, not inside OCCT's own classes.
+
+- **`Document.namingScopeValid`/`namingScopeIsValid`/`namingScopeValidChildren`/`namingScopeUnvalid`/
+  `namingScopeClear`/`namingScopeValidCount`** all go through one process-wide `TNaming_Scope`
+  instance shared across every `Document`. `TNaming_Scope`'s own `NCollection_Map<TDF_Label>
+  myValid` has no internal synchronization, so two threads calling any of these on two *unrelated*
+  documents raced on that shared map. Fixed via `docNamingScopeMutex()` in
+  `OCCTBridge_Document.mm`, held for every access.
+- **`FontManager`** (`fontCount`, `fontName`, `fontPath`, `fontHasAspect`, `initDatabase`) shares
+  a process-global font-list cache with an unsynchronized check-then-act lazy-init, plus
+  `initDatabase()` could reassign the cache at any time, racing an in-progress read. Fixed via
+  `fontListMutex()` in `OCCTBridge_Visualization.mm`, held for every access (population and read).
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
 Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349)

@@ -6061,11 +6061,20 @@ static TNaming_Scope& getDocNamingScope() {
     return scope;
 }
 
+// #361: getDocNamingScope() is one process-wide instance shared across every
+// OCCTDocument; its NCollection_Map<TDF_Label> myValid has no internal
+// synchronization, so every access below is serialized on docNamingScopeMutex().
+std::mutex& docNamingScopeMutex() {
+    static std::mutex mutex;
+    return mutex;
+}
+
 bool OCCTDocumentNamingScopeValid(OCCTDocumentRef doc, int64_t labelId) {
     if (!doc || doc->doc.IsNull()) return false;
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         getDocNamingScope().Valid(label);
         return true;
     } catch (...) { return false; }
@@ -6076,6 +6085,7 @@ bool OCCTDocumentNamingScopeValidChildren(OCCTDocumentRef doc, int64_t labelId, 
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         getDocNamingScope().ValidChildren(label, withRoot);
         return true;
     } catch (...) { return false; }
@@ -6086,6 +6096,7 @@ bool OCCTDocumentNamingScopeIsValid(OCCTDocumentRef doc, int64_t labelId) {
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         return getDocNamingScope().IsValid(label);
     } catch (...) { return false; }
 }
@@ -6095,6 +6106,7 @@ bool OCCTDocumentNamingScopeUnvalid(OCCTDocumentRef doc, int64_t labelId) {
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         getDocNamingScope().Unvalid(label);
         return true;
     } catch (...) { return false; }
@@ -6102,12 +6114,14 @@ bool OCCTDocumentNamingScopeUnvalid(OCCTDocumentRef doc, int64_t labelId) {
 
 void OCCTDocumentNamingScopeClear(OCCTDocumentRef doc) {
     try {
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         getDocNamingScope().ClearValid();
     } catch (...) {}
 }
 
 int32_t OCCTDocumentNamingScopeValidCount(OCCTDocumentRef doc) {
     try {
+        std::lock_guard<std::mutex> scopeLock(docNamingScopeMutex());
         return getDocNamingScope().GetValid().Extent();
     } catch (...) { return 0; }
 }

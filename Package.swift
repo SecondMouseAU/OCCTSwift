@@ -79,8 +79,8 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
     // the OCCT.xcframework convention above.
     ? .binaryTarget(
         name: "OCCTBridge",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.12/OCCTBridge.xcframework.zip",
-        checksum: "6a53ec32f781916edf0c6ef6b68090bc1804d63dcc90d767953aebfcc165fa8d"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.13/OCCTBridge.xcframework.zip",
+        checksum: "67490e717cc9778e626a669b3044920a826dac7eb4272797ea7f0f21be16071f"
     )
     : .target(
         name: "OCCTBridge",
