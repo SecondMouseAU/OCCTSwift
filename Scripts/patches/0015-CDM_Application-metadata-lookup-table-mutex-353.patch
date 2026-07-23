@@ -1,0 +1,307 @@
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
+index 1d992174..c832f5b2 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.cxx
+@@ -43,8 +43,10 @@ static void PutSlash(TCollection_ExtendedString& anXSTRING)
+ //=================================================================================================
+ 
+ CDF_FWOSDriver::CDF_FWOSDriver(
+-  NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable)
+-    : myLookUpTable(&theLookUpTable)
++  NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++  std::mutex&                                                                 theMutex)
++    : myLookUpTable(&theLookUpTable),
++      myMutex(&theMutex)
+ {
+ }
+ 
+@@ -102,7 +104,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::MetaData(const TCollection_ExtendedStr
+                                                    const TCollection_ExtendedString& /*aVersion*/)
+ {
+   TCollection_ExtendedString p = Concatenate(aFolder, aName);
+-  return CDM_MetaData::LookUp(*myLookUpTable, aFolder, aName, p, p, UTL::IsReadOnly(p));
++  return CDM_MetaData::LookUp(*myLookUpTable, *myMutex, aFolder, aName, p, p, UTL::IsReadOnly(p));
+ }
+ 
+ //=================================================================================================
+@@ -112,6 +114,7 @@ occ::handle<CDM_MetaData> CDF_FWOSDriver::CreateMetaData(
+   const TCollection_ExtendedString& aFileName)
+ {
+   return CDM_MetaData::LookUp(*myLookUpTable,
++                              *myMutex,
+                               aDocument->RequestedFolder(),
+                               aDocument->RequestedName(),
+                               Concatenate(aDocument->RequestedFolder(), aDocument->RequestedName()),
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
+index 13eabf23..d10da401 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_FWOSDriver.hxx
+@@ -22,6 +22,7 @@
+ #include <CDF_MetaDataDriver.hxx>
+ #include <TCollection_ExtendedString.hxx>
+ #include <NCollection_DataMap.hxx>
++#include <mutex>
+ 
+ class TCollection_ExtendedString;
+ class CDM_MetaData;
+@@ -33,9 +34,11 @@ class CDF_FWOSDriver : public CDF_MetaDataDriver
+ public:
+   //! Initializes the MetaDatadriver connected to specified look-up table.
+   //! Note that the created driver will keep reference to the table,
+-  //! thus it must have life time longer than this object.
++  //! thus it must have life time longer than this object. theMutex must
++  //! guard theLookUpTable (CDM_Application::MetaDataLookUpTableMutex()).
+   Standard_EXPORT CDF_FWOSDriver(
+-    NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable);
++    NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++    std::mutex&                                                                 theMutex);
+ 
+   //! indicate whether a file exists corresponding to the folder and the name
+   Standard_EXPORT bool Find(const TCollection_ExtendedString& aFolder,
+@@ -75,6 +78,7 @@ private:
+ 
+ private:
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>* myLookUpTable;
++  std::mutex*                                                                 myMutex;
+ };
+ 
+ #endif // _CDF_FWOSDriver_HeaderFile
+diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx b/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
+index de8fe871..7b48ae43 100644
+--- a/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
++++ b/src/ApplicationFramework/TKCDF/CDM/CDM_Application.hxx
+@@ -24,6 +24,7 @@
+ #include <TCollection_ExtendedString.hxx>
+ #include <NCollection_DataMap.hxx>
+ #include <Message_ProgressRange.hxx>
++#include <mutex>
+ 
+ class CDM_MetaData;
+ class CDM_Document;
+@@ -66,6 +67,9 @@ public:
+                                               occ::handle<CDM_MetaData>>&
+     MetaDataLookUpTable();
+ 
++  //! Guards MetaDataLookUpTable(), shared across threads/calls.
++  std::mutex& MetaDataLookUpTableMutex() const { return myMetaDataLookUpTableMutex; }
++
+   //! Dumps the content of me into the stream
+   Standard_EXPORT void DumpJson(Standard_OStream& theOStream, int theDepth = -1) const;
+ 
+@@ -95,6 +99,7 @@ private:
+ 
+   occ::handle<Message_Messenger>                                             myMessenger;
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>> myMetaDataLookUpTable;
++  mutable std::mutex myMetaDataLookUpTableMutex;
+ };
+ 
+ #endif // _CDM_Application_HeaderFile
+diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx b/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
+index 5da83030..d1e8b05f 100644
+--- a/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
++++ b/src/ApplicationFramework/TKCDF/CDM/CDM_Document.cxx
+@@ -28,6 +28,7 @@
+ #include <Standard_DomainError.hxx>
+ #include <Standard_Dump.hxx>
+ #include <Standard_Failure.hxx>
++#include <mutex>
+ #include <Standard_NoSuchObject.hxx>
+ #include <Standard_NullObject.hxx>
+ #include <Standard_Type.hxx>
+@@ -479,6 +480,8 @@ void CDM_Document::SetMetaData(const occ::handle<CDM_MetaData>& aMetaData)
+     aMetaData->SetDocument(this);
+ 
+     // Update the document referencing this MetaData:
++    // MetaDataLookUpTable() is shared across threads/calls; guard the iteration.
++    std::lock_guard<std::mutex> aLookUpTableLock(Application()->MetaDataLookUpTableMutex());
+     NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>::Iterator it(
+       Application()->MetaDataLookUpTable());
+     for (; it.More(); it.Next())
+diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
+index 5986056c..d9f022d3 100644
+--- a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
++++ b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.cxx
+@@ -66,27 +66,32 @@ CDM_MetaData::CDM_MetaData(const TCollection_ExtendedString& aFolder,
+ 
+ bool CDM_MetaData::IsRetrieved() const
+ {
++  std::lock_guard<std::mutex> aLock(myDocumentMutex);
+   return myIsRetrieved;
+ }
+ 
+ occ::handle<CDM_Document> CDM_MetaData::Document() const
+ {
++  std::lock_guard<std::mutex> aLock(myDocumentMutex);
+   return myDocument;
+ }
+ 
+ void CDM_MetaData::SetDocument(const occ::handle<CDM_Document>& aDocument)
+ {
++  std::lock_guard<std::mutex> aLock(myDocumentMutex);
+   myIsRetrieved = true;
+   myDocument    = aDocument.operator->();
+ }
+ 
+ void CDM_MetaData::UnsetDocument()
+ {
++  std::lock_guard<std::mutex> aLock(myDocumentMutex);
+   myIsRetrieved = false;
+ }
+ 
+ occ::handle<CDM_MetaData> CDM_MetaData::LookUp(
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++  std::mutex&                                                                 theMutex,
+   const TCollection_ExtendedString&                                           aFolder,
+   const TCollection_ExtendedString&                                           aName,
+   const TCollection_ExtendedString&                                           aPath,
+@@ -96,6 +101,8 @@ occ::handle<CDM_MetaData> CDM_MetaData::LookUp(
+   occ::handle<CDM_MetaData>  theMetaData;
+   TCollection_ExtendedString aConventionalPath = aPath;
+   aConventionalPath.ChangeAll('\\', '/');
++
++  std::lock_guard<std::mutex> aLock(theMutex);
+   if (!theLookUpTable.IsBound(aConventionalPath))
+   {
+     theMetaData = new CDM_MetaData(aFolder, aName, aPath, aFileName, ReadOnly);
+@@ -111,6 +118,7 @@ occ::handle<CDM_MetaData> CDM_MetaData::LookUp(
+ 
+ occ::handle<CDM_MetaData> CDM_MetaData::LookUp(
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++  std::mutex&                                                                 theMutex,
+   const TCollection_ExtendedString&                                           aFolder,
+   const TCollection_ExtendedString&                                           aName,
+   const TCollection_ExtendedString&                                           aPath,
+@@ -121,6 +129,8 @@ occ::handle<CDM_MetaData> CDM_MetaData::LookUp(
+   occ::handle<CDM_MetaData>  theMetaData;
+   TCollection_ExtendedString aConventionalPath = aPath;
+   aConventionalPath.ChangeAll('\\', '/');
++
++  std::lock_guard<std::mutex> aLock(theMutex);
+   if (!theLookUpTable.IsBound(aConventionalPath))
+   {
+     theMetaData = new CDM_MetaData(aFolder, aName, aPath, aVersion, aFileName, ReadOnly);
+diff --git a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
+index 28fcdba8..e590234b 100644
+--- a/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
++++ b/src/ApplicationFramework/TKCDF/CDM/CDM_MetaData.hxx
+@@ -28,22 +28,27 @@
+ #include <CDM_Application.hxx>
+ #include <Standard_OStream.hxx>
+ #include <NCollection_DataMap.hxx>
++#include <mutex>
+ class CDM_MetaData;
+ 
+ class CDM_MetaData : public Standard_Transient
+ {
+ 
+ public:
++  //! theMutex must guard theLookUpTable (CDM_Application::MetaDataLookUpTableMutex()).
+   Standard_EXPORT static occ::handle<CDM_MetaData> LookUp(
+     NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++    std::mutex&                                                                 theMutex,
+     const TCollection_ExtendedString&                                           aFolder,
+     const TCollection_ExtendedString&                                           aName,
+     const TCollection_ExtendedString&                                           aPath,
+     const TCollection_ExtendedString&                                           aFileName,
+     const bool                                                                  ReadOnly);
+ 
++  //! theMutex must guard theLookUpTable (CDM_Application::MetaDataLookUpTableMutex()).
+   Standard_EXPORT static occ::handle<CDM_MetaData> LookUp(
+     NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++    std::mutex&                                                                 theMutex,
+     const TCollection_ExtendedString&                                           aFolder,
+     const TCollection_ExtendedString&                                           aName,
+     const TCollection_ExtendedString&                                           aPath,
+@@ -131,6 +136,7 @@ private:
+   TCollection_ExtendedString myPath;
+   int                        myDocumentVersion;
+   bool                       myIsReadOnly;
++  mutable std::mutex         myDocumentMutex; //!< guards myIsRetrieved/myDocument
+ };
+ 
+ #endif // _CDM_MetaData_HeaderFile
+diff --git a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
+index 76572aec..8be8c8b1 100644
+--- a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
++++ b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.cxx
+@@ -45,12 +45,13 @@ void PCDM_ReferenceIterator::LoadReferences(const occ::handle<CDM_Document>&
+ {
+   for (Init(aMetaData); More(); Next())
+   {
+-    aDocument->CreateReference(
+-      MetaData(anApplication->MetaDataLookUpTable(), UseStorageConfiguration),
+-      ReferenceIdentifier(),
+-      anApplication,
+-      DocumentVersion(),
+-      UseStorageConfiguration);
++    aDocument->CreateReference(MetaData(anApplication->MetaDataLookUpTable(),
++                                        anApplication->MetaDataLookUpTableMutex(),
++                                        UseStorageConfiguration),
++                               ReferenceIdentifier(),
++                               anApplication,
++                               DocumentVersion(),
++                               UseStorageConfiguration);
+   }
+ }
+ 
+@@ -83,6 +84,7 @@ void PCDM_ReferenceIterator::Next()
+ 
+ occ::handle<CDM_MetaData> PCDM_ReferenceIterator::MetaData(
+   NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++  std::mutex&                                                                 theMutex,
+   const bool) const
+ {
+ 
+@@ -131,6 +133,7 @@ occ::handle<CDM_MetaData> PCDM_ReferenceIterator::MetaData(
+ #endif // _WIN32
+ 
+   return CDM_MetaData::LookUp(theLookUpTable,
++                              theMutex,
+                               theFolder,
+                               theName,
+                               theFile,
+diff --git a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
+index f462dd8a..1a443c69 100644
+--- a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
++++ b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReferenceIterator.hxx
+@@ -24,6 +24,7 @@
+ #include <NCollection_Sequence.hxx>
+ #include <TCollection_ExtendedString.hxx>
+ #include <NCollection_DataMap.hxx>
++#include <mutex>
+ 
+ class Message_Messenger;
+ class CDM_Document;
+@@ -53,6 +54,7 @@ private:
+ 
+   Standard_EXPORT virtual occ::handle<CDM_MetaData> MetaData(
+     NCollection_DataMap<TCollection_ExtendedString, occ::handle<CDM_MetaData>>& theLookUpTable,
++    std::mutex&                                                                 theMutex,
+     const bool UseStorageConfiguration) const;
+ 
+   Standard_EXPORT virtual int ReferenceIdentifier() const;
+diff --git a/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx b/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
+index 37753a50..c71a65b9 100644
+--- a/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
++++ b/src/ApplicationFramework/TKXmlL/XmlLDrivers/XmlLDrivers_DocumentRetrievalDriver.cxx
+@@ -443,6 +443,7 @@ void XmlLDrivers_DocumentRetrievalDriver::ReadFromDomDocument(
+ 
+               occ::handle<CDM_MetaData> aMetaData =
+                 CDM_MetaData::LookUp(theApplication->MetaDataLookUpTable(),
++                                     theApplication->MetaDataLookUpTableMutex(),
+                                      theFolder,
+                                      theName,
+                                      aPath,
+diff --git a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+index e612ec9c..2dbb92da 100644
+--- a/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
++++ b/src/ApplicationFramework/TKCDF/CDF/CDF_Application.cxx
+@@ -41,7 +41,7 @@ CDF_Application::CDF_Application()
+     : myRetrievableStatus(PCDM_RS_OK)
+ {
+   myDirectory      = new CDF_Directory();
+-  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable());
++  myMetaDataDriver = new CDF_FWOSDriver(MetaDataLookUpTable(), MetaDataLookUpTableMutex());
+ }
+ 
+ //=================================================================================================
