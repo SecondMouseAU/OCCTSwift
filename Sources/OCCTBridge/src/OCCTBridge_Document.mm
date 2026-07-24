@@ -2446,37 +2446,51 @@ bool OCCTDocumentFunctionSetFailure(OCCTDocumentRef doc, int64_t labelId, int32_
 #include <PCDM_ReaderStatus.hxx>
 #include <NCollection_Sequence.hxx>
 
+// #371: DefineFormat -> TDocStd_Application::Resources() -> Resource_Manager's constructor
+// writes an unsynchronized process-wide global (Resource_Manager.cxx's file-scope `Debug`) on
+// every call. Harmless when every document shared one XCAFApp_Application::GetApplication()
+// instance (Resources() only ever ran once, protected by its own per-instance lazy-init lock) --
+// live now that each OCCTDocument owns a private TDocStd_Application, since concurrent
+// DefineFormat calls across independent documents construct independent Resource_Managers
+// concurrently. ocafStoreMutex() below covers this too (see its own comment).
+
 void OCCTDocumentDefineFormatBin(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { BinDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
 void OCCTDocumentDefineFormatBinL(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { BinLDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
 void OCCTDocumentDefineFormatXml(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { XmlDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
 void OCCTDocumentDefineFormatXmlL(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { XmlLDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
 void OCCTDocumentDefineFormatBinXCAF(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { BinXCAFDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
 void OCCTDocumentDefineFormatXmlXCAF(OCCTDocumentRef doc) {
     if (!doc || doc->app.IsNull()) return;
+    std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
     try { XmlXCAFDrivers::DefineFormat(doc->app); } catch (...) {}
 }
 
-// #349: interim serialization for OCAF Save/Load — see OCCTBridge_Internal.h.
+// #349/#371: interim serialization for OCAF Save/Load/DefineFormat — see OCCTBridge_Internal.h.
 std::mutex& ocafStoreMutex() {
     static std::mutex mutex;
     return mutex;
@@ -2494,42 +2508,32 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path) {
 
 OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus) {
     if (!path) { if (outStatus) *outStatus = -1; return nullptr; }
+    OCCTDocument* document = nullptr;
     try {
         std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        // #371: document->app (not a separate local app) must be the one that opens the file --
+        // Save/SaveOCAFInPlace/Close later all go through document->app, and a document opened by
+        // one TDocStd_Application instance isn't a session member of a different one.
+        document = new OCCTDocument();
 
         // Register all format drivers
-        BinDrivers::DefineFormat(app);
-        XmlDrivers::DefineFormat(app);
-        BinXCAFDrivers::DefineFormat(app);
-        XmlXCAFDrivers::DefineFormat(app);
+        BinDrivers::DefineFormat(document->app);
+        XmlDrivers::DefineFormat(document->app);
+        BinXCAFDrivers::DefineFormat(document->app);
+        XmlXCAFDrivers::DefineFormat(document->app);
 
+        // #371: no PCDM_RS_AlreadyRetrieved handling needed -- that status meant this path was
+        // already open in the app's session directory, which could only happen when every load
+        // shared one process-wide app/directory. document->app is fresh per call, so its
+        // directory is always empty at this point; the status can't occur.
         Handle(TDocStd_Document) loadedDoc;
         TCollection_ExtendedString ePath(path, true);
-        PCDM_ReaderStatus status = app->Open(ePath, loadedDoc);
-
-        // If already retrieved, find and close existing doc, then re-open
-        if (status == PCDM_RS_AlreadyRetrieved || status == PCDM_RS_AlreadyRetrievedAndModified) {
-            // Find the existing document in the application session
-            int nbDocs = app->NbDocuments();
-            for (int i = 1; i <= nbDocs; i++) {
-                Handle(TDocStd_Document) existingDoc;
-                app->GetDocument(i, existingDoc);
-                if (!existingDoc.IsNull() && existingDoc->IsSaved()) {
-                    // Close it
-                    try { app->Close(existingDoc); } catch (...) {}
-                    break;
-                }
-            }
-            loadedDoc.Nullify();
-            status = app->Open(ePath, loadedDoc);
-        }
+        PCDM_ReaderStatus status = document->app->Open(ePath, loadedDoc);
 
         if (outStatus) *outStatus = static_cast<int32_t>(status);
 
-        if (status != PCDM_RS_OK || loadedDoc.IsNull()) return nullptr;
+        if (status != PCDM_RS_OK || loadedDoc.IsNull()) { delete document; return nullptr; }
 
-        OCCTDocument* document = new OCCTDocument();
         document->doc = loadedDoc;
         document->shapeTool = XCAFDoc_DocumentTool::ShapeTool(loadedDoc->Main());
         document->colorTool = XCAFDoc_DocumentTool::ColorTool(loadedDoc->Main());
@@ -2537,6 +2541,7 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus) {
 
         return document;
     } catch (...) {
+        delete document;
         if (outStatus) *outStatus = -1;
         return nullptr;
     }
@@ -2606,11 +2611,13 @@ int32_t OCCTDocumentWritingFormats(OCCTDocumentRef doc, const char** outFormats,
 
 OCCTDocumentRef OCCTDocumentCreateWithFormat(const char* format) {
     if (!format) return nullptr;
+    OCCTDocument* document = nullptr;
     try {
-        OCCTDocument* document = new OCCTDocument();
+        document = new OCCTDocument();
         TCollection_ExtendedString eFormat(format, true);
 
-        // Register all format drivers
+        // Register all format drivers (#371: ocafStoreMutex() covers DefineFormat too)
+        std::lock_guard<std::mutex> storeLock(ocafStoreMutex());
         BinDrivers::DefineFormat(document->app);
         XmlDrivers::DefineFormat(document->app);
         BinXCAFDrivers::DefineFormat(document->app);
@@ -2631,7 +2638,7 @@ OCCTDocumentRef OCCTDocumentCreateWithFormat(const char* format) {
         }
 
         return document;
-    } catch (...) { return nullptr; }
+    } catch (...) { delete document; return nullptr; }
 }
 
 OCCTShapeRef OCCTShapeDeepCopy(OCCTShapeRef shape) {

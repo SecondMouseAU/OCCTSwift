@@ -148,17 +148,19 @@ made the underlying OCCT calls safe on their own — the same "bridge mitigation
 kernel fix" pattern as #298 above.
 
 Concurrent `Document.saveOCAF`/`saveOCAFInPlace`/`loadOCAF` of the **same target format**
-is a separate issue (#349): `CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache
+was a separate issue (#349): `CDF_Application::WriterFromFormat`/`ReaderFromFormat` cache
 one storage/retrieval driver instance per format and reuse it for every call, but the
 driver's own `Write()`/`Read()` isn't reentrant — its instance-level scratch state (e.g.
 `BinLDrivers_DocumentStorageDriver`'s `myRelocTable`) corrupts under two concurrent
-callers. **v1.15.6 ships an interim bridge-side mitigation** (`ocafStoreMutex()` in
-`OCCTBridge_Document.mm`, serializing all three OCAF save/load bridge calls) — the same
-"bridge mitigation, then kernel fix" pattern as #298/#341 above. The underlying OCCT
-non-reentrancy is **not yet fixed in the kernel**; that needs its own dedicated TSan
-investigation, tracked separately in #349. Plain shape-format I/O (STEP/IGES/BREP/OBJ/
-glTF) is unaffected — this only covers the three OCAF (`.bcaf`/`.xcaf`-style binary/XML
-document) persistence entry points.
+callers. **v1.15.6 shipped an interim bridge-side mitigation** (`ocafStoreMutex()` in
+`OCCTBridge_Document.mm`) — the same "bridge mitigation, then kernel fix" pattern as
+#298/#341 above — and **v1.15.9 (`Scripts/patches/0014`) fixed the underlying kernel
+non-reentrancy**: a mutex on `PCDM_StorageDriver`/`PCDM_Reader` held at the call sites that
+invoke a cached, possibly-shared driver. `ocafStoreMutex()` stayed in place afterward as
+defense-in-depth (same pattern again), and turned out to still be load-bearing for a
+different reason once v1.15.17 (#371) moved documents off the shared singleton — see below.
+Plain shape-format I/O (STEP/IGES/BREP/OBJ/glTF) is unaffected — this only ever covered the
+OCAF (`.bcaf`/`.xcaf`-style binary/XML document) persistence entry points.
 
 ### STEP/IGES data-exchange thread safety (issues #181, #359)
 
@@ -243,10 +245,57 @@ The bug is narrowed to `BOPTools_Parallel`/`BOPAlgo_PaveFiller`'s specific use o
 root-caused. Full investigation trail, ruled-out hypotheses, and concrete next steps:
 [`Scripts/repro/342-boolean-ops/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/342-boolean-ops).
 
+### Private `TDocStd_Application` per document, not a shared singleton (issue #371)
+
+v1.15.17 stops routing every `OCCTDocument` through the shared
+`XCAFApp_Application::GetApplication()` singleton described in the #341/#344 section above.
+Per upstream maintainer feedback on [OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396)
+(our #353 repro issue) — `GetApplication()` "exists solely for compatibility reasons"; OCCT's own
+guidance since 7.1 is a private `TDocStd_Application` per caller — `OCCTDocument`'s constructor
+now does `app = new TDocStd_Application()` instead. Ground-truth C++ testing confirmed this
+behaves identically to the singleton for our usage (create, attach XCAF tools, add shape, set
+color, retarget storage format, save, reload with a separate private instance), and header
+inspection confirmed the state #344/#349/#353 fixed (`CDF_Directory::myDocuments`,
+`CDF_Application::myReaders`/`myWriters`, `CDM_Application::myMetaDataLookUpTable`) is per-instance,
+not static — a private app per document makes that state exclusive to one document by
+construction, so our own bridge can no longer trip over those specific mechanisms.
+
+**This does not eliminate the need for `ocafStoreMutex()`.** A dedicated confirmation harness
+(`Scripts/repro/371-getapplication-singleton-elimination/occt_371_private_app.cpp`) — private app
+per thread/round, zero shared state, no serialization — found two previously-uncharacterized races
+when run unguarded against the real TSan-instrumented kernel: `Resource_Manager::
+Resource_Manager()` writes an unsynchronized file-scope global (`Debug`) on every construction, and
+`Storage_Schema::ICurrentData()` is a process-wide mutable `Handle` every `Storage_Schema`
+constructor nullifies and every (de)serialization call reads, also unsynchronized. Neither had ever
+been caught by this project's prior TSan gates, because every prior investigation (and all of
+production, until this change) shared one application instance — `Resources()`'s own per-instance
+lazy-init mutex (from the #344 fix) accidentally serialized `Resource_Manager`/`Storage_Schema`
+usage down to "runs once, ever, for the whole process." Moving to a private instance per caller is
+what first makes them concurrent. Filed upstream as
+[OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398); not yet fixed in the kernel.
+
+**`ocafStoreMutex()`'s coverage was expanded**, not removed: it now also wraps the six
+`OCCTDocumentDefineFormatBin/BinL/Xml/XmlL/BinXCAF/XmlXCAF` functions and
+`OCCTDocumentCreateWithFormat` (previously outside the lock — safe only because every document
+shared one app instance, so `Resources()`'s per-instance guard covered them for free). Confirmed by
+adding an equivalent mutex to a copy of the confirmation harness: 8×50 threads/rounds, zero TSan
+warnings, matching the real bridge's coverage. Plain shape-format I/O (STEP/IGES/BREP/OBJ/glTF/PLY)
+is unaffected — none of those paths touch `Resources()`/`Storage_Schema`.
+
+The upstream kernel PRs for #344/#349/#353 ([OCCT#1390](https://github.com/Open-Cascade-SAS/OCCT/pull/1390),
+[#1394](https://github.com/Open-Cascade-SAS/OCCT/pull/1394),
+[#1397](https://github.com/Open-Cascade-SAS/OCCT/pull/1397)) remain open and are **not** withdrawn
+by this change — they fix real bugs in the singleton pattern OCCT's own header still documents as
+"the only valid method" to get an `XCAFApp_Application`, which every *other* OCCT consumer still
+following that guidance is exposed to. Moving our own bridge off the singleton sidesteps our
+exposure to those specific mechanisms; it doesn't make the bugs stop existing for anyone still
+using the pattern.
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
-Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349)
-was pinned down by the same protocol: a minimal-module ThreadSanitizer build of the pinned
+Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349, #353)
+— plus #371's still-open upstream finding — was pinned down by the same protocol: a
+minimal-module ThreadSanitizer build of the pinned
 OCCT with all carried patches applied, plus a small standalone C++ stress harness for the
 suspect usage pattern. `Scripts/tsan-stress.sh` formalizes that protocol as a routine gate,
 because upstream OCCT runs no sanitizers in its CI at all: races we do not catch here are
@@ -267,7 +316,8 @@ If the change introduces a genuinely new concurrent usage pattern, also add a ga
 scenario: either a new mode in an existing harness under `Scripts/repro/` or a new
 standalone harness, and register it in the `SCENARIOS` matrix at the top of
 `Scripts/tsan-stress.sh`. The existing harnesses (`341-meshcaf`, `344-cdf-directory`,
-`349-ocaf-driver-reentrancy`) are the templates.
+`349-ocaf-driver-reentrancy`, `353-cdm-metadata-lookup-table`,
+`371-getapplication-singleton-elimination`) are the templates.
 
 ### Commands
 
