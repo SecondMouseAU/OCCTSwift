@@ -1,0 +1,34 @@
+---
+type: policy
+title: Writing style — no em-dashes, banned words
+description: No em-dashes anywhere; specific hedge/filler words (starting with honest/honestly) banned outright, in code, docs, commit messages, PR bodies, and third-party messages.
+tags: [policy, style, writing, agents]
+timestamp: 2026-07-24
+---
+
+# Writing style (all prose and comments)
+
+**No em-dashes.** The em-dash (`—`), and `--` used as a sentence dash, are banned in every code
+comment, doc comment, markdown doc, changelog, commit message, and PR body across the ecosystem.
+Use ordinary punctuation instead: a comma, colon, semicolon, parentheses, or two separate sentences.
+This is a total ban going forward. A dedicated pass to strip existing ones is not required, but
+clear them from any file you are already editing.
+
+Why: em-dash-heavy prose reads as machine-generated. The ecosystem's house voice uses plain,
+correct punctuation.
+
+**Banned words.** The following words are banned outright, in the same scope as the em-dash rule
+(code comments, doc comments, markdown docs, changelogs, commit messages, PR bodies, and any
+message sent to a third party such as an upstream issue or PR comment):
+
+- `honest` / `honestly` (as in "the honest answer is..." or "to be honest")
+
+This list is a standing personal preference, not exhaustive, and grows as more words are flagged.
+Ask before assuming a word is safe if it reads like a hedge or a tell ("to be fair", "I think",
+"in fact") rather than a plain statement of the thing itself.
+
+Why: these words are filler that a plain, direct statement doesn't need. Cut the word and the
+sentence usually reads better on its own.
+
+Ecosystem standard — see
+[OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).

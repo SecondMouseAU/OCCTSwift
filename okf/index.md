@@ -45,4 +45,5 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 
 - [Query `context` first for OCCT / OCCTSwift docs](policies/context-first.md)
 - [Documentation updates are mandatory](policies/docs-current.md)
+- [No em-dashes, banned words in prose](policies/writing-style.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
