@@ -272,7 +272,8 @@ production, until this change) shared one application instance — `Resources()`
 lazy-init mutex (from the #344 fix) accidentally serialized `Resource_Manager`/`Storage_Schema`
 usage down to "runs once, ever, for the whole process." Moving to a private instance per caller is
 what first makes them concurrent. Filed upstream as
-[OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398); not yet fixed in the kernel.
+[OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398); **fixed in the kernel in v1.15.18,
+see the #374 section below.**
 
 **`ocafStoreMutex()`'s coverage was expanded**, not removed: it now also wraps the six
 `OCCTDocumentDefineFormatBin/BinL/Xml/XmlL/BinXCAF/XmlXCAF` functions and
@@ -291,10 +292,30 @@ following that guidance is exposed to. Moving our own bridge off the singleton s
 exposure to those specific mechanisms; it doesn't make the bugs stop existing for anyone still
 using the pattern.
 
+### `Resource_Manager::Debug` / `Storage_Schema::ICurrentData()` races, fixed (issue #374)
+
+The two races #371's confirmation harness found (previous section) are fixed in v1.15.18, filed
+upstream as [OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398). `Resource_Manager::
+Debug` (a file-scope `static bool` written on every construction) becomes `std::atomic<bool>` — a
+plain process-wide flag, not per-instance intent, so atomic is sufficient (unlike #341's
+`theAutoNaming`, which needed a deeper per-instance redesign). `Storage_Schema::ICurrentData()` (a
+function-local static `Handle` every constructor's `Clear()` nulls and `Write()`/`BindType()`/
+`TypeBinding()`/`AddPersistent()`/`PersistentToAdd()`/`HasTypeBinding()` read or write) gets a new
+`ICurrentDataMutex()` — a `std::recursive_mutex` (recursive because `Write()`'s own critical section
+re-enters `BindType()`/`AddPersistent()`/`PersistentToAdd()` on the same thread via per-type
+`Storage_CallBack::Write()` callbacks) guarding every one of those touch points, held for `Write()`'s
+entire body rather than per-access, since one `Write()` call is a single atomic "session" against
+that global. No public API changes; only the pinned `OCCT.xcframework` kernel binary changed
+(`Scripts/patches/0016`) — `OCCTBridge.xcframework` was not rebuilt. Confirmed via a dedicated TSan
+reproducer (`Scripts/repro/374-resource-manager-storage-schema-race/occt_374_stress.cpp`, the
+"unguarded" variant of #371's own confirmation harness): 13 races + SIGABRT before the fix, 0/4
+clean runs after (8×30, 8×50, 10×60, 8×40).
+
 ## ThreadSanitizer gate for concurrency-touching changes
 
-Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349, #353)
-— plus #371's still-open upstream finding — was pinned down by the same protocol: a
+Every thread-safety kernel bug this project has found and fixed (#298, #341, #344, #349, #353,
+#374) — a chain where #371's move to a private `TDocStd_Application` per document first surfaced
+#374's pair of races — was pinned down by the same protocol: a
 minimal-module ThreadSanitizer build of the pinned
 OCCT with all carried patches applied, plus a small standalone C++ stress harness for the
 suspect usage pattern. `Scripts/tsan-stress.sh` formalizes that protocol as a routine gate,
@@ -317,7 +338,8 @@ scenario: either a new mode in an existing harness under `Scripts/repro/` or a n
 standalone harness, and register it in the `SCENARIOS` matrix at the top of
 `Scripts/tsan-stress.sh`. The existing harnesses (`341-meshcaf`, `344-cdf-directory`,
 `349-ocaf-driver-reentrancy`, `353-cdm-metadata-lookup-table`,
-`371-getapplication-singleton-elimination`) are the templates.
+`371-getapplication-singleton-elimination`, `374-resource-manager-storage-schema-race`) are the
+templates.
 
 ### Commands
 
@@ -332,8 +354,9 @@ Scripts/tsan-stress.sh all     # build if needed, then run + swift
 
 - `run` is the kernel gate: the harnesses link the instrumented OCCT directly, so races
   wholly inside kernel code are visible. This is the mode that found `STATIC_SOLIDINDEX`
-  (#298), `theAutoNaming` (#341), the CDF singleton family (#344) and the storage-driver
-  scratch state (#349).
+  (#298), `theAutoNaming` (#341), the CDF singleton family (#344), the storage-driver
+  scratch state (#349), and `Resource_Manager`/`Storage_Schema`'s construction-time races
+  (#374).
 - `swift` instruments the Swift and OCCTBridge sources only; the prebuilt
   `OCCT.xcframework` is not instrumented, so kernel-internal races are invisible there.
   It exists to catch wrapper-level races (bridge caches, Swift concurrency misuse), not

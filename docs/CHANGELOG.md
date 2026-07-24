@@ -7,13 +7,44 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.17
+## Current: v1.15.18
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.18 (July 2026) — fix (kernel): Resource_Manager::Debug / Storage_Schema::ICurrentData() races (#374)
+
+The two upstream OCCT foundation-layer races [#371](https://github.com/SecondMouseAU/OCCTSwift/issues/371)'s
+confirmation harness turned up, filed as [OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398).
+Moving every document to a private `TDocStd_Application` (#371) made application/schema
+*construction* itself concurrent for the first time — something the old shared singleton never
+allowed — and that surfaced two previously-uncaught races.
+
+1. `Resource_Manager::Resource_Manager(const char*, bool)` writes a file-scope `static bool Debug`
+   on every construction with zero synchronization; every fresh app's first `DefineFormat()` call
+   lazily constructs its own `Resource_Manager`, racing another thread's concurrent first
+   construction.
+2. `Storage_Schema::ICurrentData()` is a function-local static `Handle` mutated with no lock:
+   `Write()` sets it for one store's duration, and *any* `Storage_Schema` construction — including
+   the throwaway one `PCDM_ReadWriter_1` builds on **every** `Open()` — nulls it out from under a
+   concurrent in-flight save or load.
+
+**Fix:** `Resource_Manager::Debug` → `std::atomic<bool>`. `Storage_Schema` gets a new
+`ICurrentDataMutex()` (recursive, since `Write()` re-enters `BindType()`/`AddPersistent()`/
+`PersistentToAdd()` on the same thread via driver callbacks) guarding every touch point:
+constructor, `Write()`'s whole body, `BindType()`, `TypeBinding()`, `AddPersistent()`,
+`PersistentToAdd()`, `HasTypeBinding()`, `ISetCurrentData()`. No public API changes; bridge
+untouched — only the pinned `OCCT.xcframework` kernel binary changed (`Scripts/patches/0016`).
+
+Confirmed via a dedicated TSan reproducer (the "unguarded" variant of #371's own confirmation
+harness): 13 races + SIGABRT before the fix, 0/4 clean runs after (8×30, 8×50, 10×60, 8×40). Full
+`Scripts/tsan-stress.sh run` gate (10 scenarios) clean, 0 regressions on any prior scenario. Full
+`swift test` clean. Filed upstream as [OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398)
+(repro, filed during #371); this fix is proposed as the corresponding kernel PR. See
+`Scripts/repro/374-resource-manager-storage-schema-race/` for the full writeup.
 
 ### v1.15.17 (July 2026) — fix (bridge): stop using the XCAFApp_Application::GetApplication() singleton (#371)
 

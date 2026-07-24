@@ -33,7 +33,7 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.15 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
+    // v1.15.18 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
     // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
     // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
     // in FixPeriodicDegenerated, #317), 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318), 0007
@@ -45,14 +45,15 @@ let occtTarget: Target = useLocalBinary
     // (XCAFApp_Application::GetApplication/TDocStd_Application::Resources lazy-init races +
     // CDF_Directory/Resource_Manager/CDF_Application reader-writer map synchronization, #344),
     // 0013 (ShapeUpgrade_UnifySameDomain null-pcurve dereference guards, #348), 0014
-    // (PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex, #349), and 0015
-    // (CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes, #353).
+    // (PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex, #349), 0015
+    // (CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes, #353), and 0016
+    // (Resource_Manager::Debug atomic + Storage_Schema::ICurrentData recursive mutex, #374).
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.15/OCCT.xcframework.zip",
-        checksum: "cded494e6bbf1730b7bca55f49e3f7c92eabcb64643a91ad092df2fadd980a39"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.18/OCCT.xcframework.zip",
+        checksum: "dc7902a558786c113e80c0a79051415af8a5bac976208c58c1ab0dc4db74726c"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

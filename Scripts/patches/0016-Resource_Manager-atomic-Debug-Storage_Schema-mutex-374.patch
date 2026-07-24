@@ -1,0 +1,138 @@
+diff --git a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+index e29e6751..19fdfabf 100644
+--- a/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
++++ b/src/FoundationClasses/TKernel/Resource/Resource_Manager.cxx
+@@ -31,6 +31,7 @@
+ #include <NCollection_Array1.hxx>
+ 
+ #include <algorithm>
++#include <atomic>
+ #include <cerrno>
+ 
+ IMPLEMENT_STANDARD_RTTIEXT(Resource_Manager, Standard_Transient)
+@@ -51,7 +52,7 @@
+ 
+ static int GetLine(OSD_File& aFile, TCollection_AsciiString& aLine);
+ 
+-static bool Debug;
++static std::atomic<bool> Debug(false);
+ 
+ //=================================================================================================
+ 
+diff --git a/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx b/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
+index 64d3f3d0..a3f7a807 100644
+--- a/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
++++ b/src/FoundationClasses/TKernel/Storage/Storage_Schema.cxx
+@@ -312,6 +312,12 @@ void Storage_Schema::Write(const occ::handle<Storage_BaseDriver>& theDriver,
+     return;
+   }
+ 
++  // ICurrentData() is process-wide scratch state for the duration of one Write() call; hold
++  // the lock for the whole body so no other Storage_Schema instance's construction (Clear())
++  // or Write() can interleave and stomp on it. Recursive: BindType/AddPersistent/etc. below
++  // re-enter it on this same thread via the driver callbacks.
++  std::lock_guard<std::recursive_mutex> aCurrentDataLock(Storage_Schema::ICurrentDataMutex());
++
+   // add all the persistent to write...
+   //
+   int                                                           posfrom, posto;
+@@ -612,6 +618,7 @@ occ::handle<Storage_CallBack> Storage_Schema::DefaultCallBack() const
+ void Storage_Schema::BindType(const TCollection_AsciiString&       aTypeName,
+                               const occ::handle<Storage_CallBack>& aCallBack) const
+ {
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
+   if (!HasTypeBinding(aTypeName))
+   {
+     occ::handle<Storage_InternalData>  iData = Storage_Schema::ICurrentData()->InternalData();
+@@ -629,7 +636,8 @@ void Storage_Schema::BindType(const TCollection_AsciiString&       aTypeName,
+ occ::handle<Storage_CallBack> Storage_Schema::TypeBinding(
+   const TCollection_AsciiString& aTypeName) const
+ {
+-  occ::handle<Storage_CallBack> result;
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
++  occ::handle<Storage_CallBack>         result;
+ 
+   if (HasTypeBinding(aTypeName))
+   {
+@@ -646,7 +654,8 @@ occ::handle<Storage_CallBack> Storage_Schema::TypeBinding(
+ bool Storage_Schema::AddPersistent(const occ::handle<Standard_Persistent>& sp,
+                                    const char* const                       tName) const
+ {
+-  bool result = false;
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
++  bool                                  result = false;
+ 
+   if (!sp.IsNull())
+   {
+@@ -675,7 +684,8 @@ bool Storage_Schema::AddPersistent(const occ::handle<Standard_Persistent>& sp,
+ 
+ bool Storage_Schema::PersistentToAdd(const occ::handle<Standard_Persistent>& sp) const
+ {
+-  bool result = false;
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
++  bool                                  result = false;
+ 
+   if (!sp.IsNull())
+   {
+@@ -696,6 +706,7 @@ bool Storage_Schema::PersistentToAdd(const occ::handle<Standard_Persistent>& sp)
+ 
+ void Storage_Schema::Clear() const
+ {
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
+   Storage_Schema::ICurrentData().Nullify();
+ }
+ 
+@@ -794,11 +805,20 @@ bool Storage_Schema::CheckTypeMigration(const TCollection_AsciiString& oldName,
+ 
+ void Storage_Schema::ISetCurrentData(const occ::handle<Storage_Data>& dData)
+ {
++  std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
+   Storage_Schema::ICurrentData() = dData;
+ }
+ 
+ //=================================================================================================
+ 
++std::recursive_mutex& Storage_Schema::ICurrentDataMutex()
++{
++  static std::recursive_mutex _Storage_CDataMutex;
++  return _Storage_CDataMutex;
++}
++
++//=================================================================================================
++
+ occ::handle<Storage_Data>& Storage_Schema::ICurrentData()
+ {
+   static occ::handle<Storage_Data> _Storage_CData;
+diff --git a/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx b/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
+index fa0d8959..c59413ec 100644
+--- a/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
++++ b/src/FoundationClasses/TKernel/Storage/Storage_Schema.hxx
+@@ -24,6 +24,7 @@
+ #include <NCollection_DataMap.hxx>
+ #include <NCollection_Sequence.hxx>
+ #include <NCollection_HSequence.hxx>
++#include <mutex>
+ 
+ class Storage_CallBack;
+ 
+@@ -167,6 +168,7 @@ public:
+ protected:
+   bool HasTypeBinding(const TCollection_AsciiString& aTypeName) const
+   {
++    std::lock_guard<std::recursive_mutex> aLock(Storage_Schema::ICurrentDataMutex());
+     return Storage_Schema::ICurrentData()->InternalData()->myTypeBinding.IsBound(aTypeName);
+   }
+ 
+@@ -181,6 +183,12 @@ private:
+ 
+   Standard_EXPORT static void ISetCurrentData(const occ::handle<Storage_Data>& dData);
+ 
++  //! Guards ICurrentData(), which is process-wide state shared by every Storage_Schema
++  //! instance: any instance's construction (Clear()) can otherwise race a different
++  //! instance's in-flight Write(). Recursive so Write()'s own critical section can call
++  //! back into BindType()/AddPersistent()/etc. on the same thread without deadlocking.
++  Standard_EXPORT static std::recursive_mutex& ICurrentDataMutex();
++
+   Standard_EXPORT static occ::handle<Storage_Data>& ICurrentData();
+ 
+   NCollection_DataMap<TCollection_AsciiString, occ::handle<Storage_TypedCallBack>> myCallBack;
