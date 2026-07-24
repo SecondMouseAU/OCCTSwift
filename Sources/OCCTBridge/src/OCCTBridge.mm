@@ -226,7 +226,6 @@ void occtEnsureSignals() {
 
 // XDE/XCAF Support (v0.6.0)
 #include <Graphic3d_Vec3.hxx>
-#include <XCAFApp_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>

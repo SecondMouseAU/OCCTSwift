@@ -7,13 +7,56 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.16
+## Current: v1.15.17
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.17 (July 2026) — fix (bridge): stop using the XCAFApp_Application::GetApplication() singleton (#371)
+
+Prompted by upstream maintainer feedback on [OCCT#1396](https://github.com/Open-Cascade-SAS/OCCT/issues/1396)
+(our #353 repro issue): `XCAFApp_Application::GetApplication()` "exists solely for compatibility
+reasons"; OCCT's own guidance since 7.1 is a private `TDocStd_Application` per caller, not a
+shared singleton. Our whole #341/#344/#349/#353 race cluster traced back to every document
+sharing that one singleton.
+
+**Fix:** `OCCTDocument`'s constructor (`OCCTBridge_Internal.h`) and every other bridge call site
+that grabbed the singleton (9 total, across `OCCTBridge_Document.mm`/`OCCTBridge_IO.mm`) now
+build a private `new TDocStd_Application()` instead — confirmed behaviorally equivalent via a
+ground-truth C++ test before touching bridge code. `CDF_Application::myDirectory`/`myReaders`/
+`myWriters` and `CDM_Application::myMetaDataLookUpTable` (the state #344/#349/#353 fixed) are all
+per-instance fields, so a private app per document makes that state exclusive to one document by
+construction. Two latent bugs fixed along the way: `OCCTDocumentLoadOCAF`/`OCCTDocumentLoadGLTF`
+each opened a document through a *different* app instance than the one stored on the returned
+`OCCTDocument` — harmless only because both were the same shared singleton before this change.
+
+**Not a clean win — a dedicated confirmation harness found two new upstream races.** Testing the
+new pattern in isolation (private app per thread, zero shared state, zero serialization, run
+against the real TSan-instrumented kernel) surfaced `Resource_Manager::Resource_Manager()`
+(unsynchronized global `Debug`) and `Storage_Schema::ICurrentData()` (unsynchronized global
+`Handle`) — both previously uncaught because every prior TSan investigation shared one
+application instance, which accidentally serialized them down to "runs once, ever." Filed
+upstream as [OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398), not yet fixed in
+the kernel. `ocafStoreMutex()` (the #349 bridge mitigation) is **not** redundant after this
+refactor — its coverage was expanded (not removed) to also wrap `OCCTDocumentDefineFormatBin/
+BinL/Xml/XmlL/BinXCAF/XmlXCAF` and `OCCTDocumentCreateWithFormat`, previously outside the lock.
+
+**Upstream kernel PRs for #344/#349/#353 were NOT withdrawn** — they fix real bugs in the
+singleton pattern OCCT's own header still calls "the only valid method"; every other OCCT
+consumer following that guidance remains exposed. This change only reduces our own bridge's
+exposure to those specific mechanisms.
+
+Full `swift test` (4428 tests) clean. `Scripts/tsan-stress.sh swift` (bridge-level, 445 tests)
+clean. `Scripts/tsan-stress.sh run` (kernel-level gate, 9 scenarios including the new
+`371-getapplication-singleton-elimination`) clean. See `docs/thread-safety.md` and
+`Scripts/repro/371-getapplication-singleton-elimination/` for the full writeup.
+
+**Binary release** — `OCCTBridge.xcframework` (the opt-in prebuilt bridge from #339) changed, so
+`Package.swift`'s URL/checksum are bumped to this release. `OCCT.xcframework` is unchanged (still
+v1.15.15) — this is a bridge-only change, no kernel patch.
 
 ### v1.15.16 (July 2026) — fix (bridge): Shape.fuseAll(_:) internal parallelism caused data corruption under concurrent calls (#367)
 

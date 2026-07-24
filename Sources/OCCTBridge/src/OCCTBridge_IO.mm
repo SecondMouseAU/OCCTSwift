@@ -63,7 +63,7 @@
 #include <RWObj_CafWriter.hxx>
 #include <RWPly_CafWriter.hxx>
 #include <TDocStd_Document.hxx>
-#include <XCAFApp_Application.hxx>
+#include <TDocStd_Application.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <IMeshTools_Parameters.hxx>
 #include <StlAPI_Writer.hxx>
@@ -881,7 +881,7 @@ OCCTShapeRef OCCTImportSTLRobust(const char* path, double sewingTolerance) {
 #include <RWObj_CafReader.hxx>
 #include <RWObj_CafWriter.hxx>
 #include <TDocStd_Document.hxx>
-#include <XCAFApp_Application.hxx>
+#include <TDocStd_Application.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <Message_ProgressRange.hxx>
 
@@ -894,7 +894,7 @@ OCCTShapeRef OCCTImportOBJ(const char* path) {
 
         // Create an XDE document
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
 
         objReader.SetDocument(doc);
@@ -925,7 +925,7 @@ bool OCCTExportOBJ(OCCTShapeRef shape, const char* path, double deflection) {
 
         // Create an XDE document
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
 
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
@@ -964,7 +964,7 @@ bool OCCTExportPLY(OCCTShapeRef shape, const char* path, double deflection) {
 
         // Create an XDE document
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
 
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
@@ -1390,7 +1390,7 @@ bool OCCTExportPLYWithOptions(OCCTShapeRef shape, const char* path, double defle
         mesher.Perform();
 
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
 
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
@@ -2851,7 +2851,7 @@ OCCTShapeRef _Nullable OCCTImportGLTF(const char* _Nonnull path) {
     try {
         RWGltf_CafReader reader;
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
         reader.SetDocument(doc);
         TCollection_AsciiString filePath(path);
@@ -2871,7 +2871,7 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape, const char* _Nonnull path,
     try {
         BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
         Handle(TDocStd_Document) doc;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Application) app = new TDocStd_Application();
         app->NewDocument("MDTV-XCAF", doc);
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
         shapeTool->AddShape(shape->shape);
@@ -2886,8 +2886,7 @@ OCCTDocumentRef _Nullable OCCTDocumentLoadGLTF(const char* _Nonnull path) {
     if (!path) return nullptr;
     try {
         auto* docRef = new OCCTDocument;
-        Handle(XCAFApp_Application) app = XCAFApp_Application::GetApplication();
-        app->NewDocument("MDTV-XCAF", docRef->doc);
+        docRef->app->NewDocument("MDTV-XCAF", docRef->doc);
         RWGltf_CafReader reader;
         reader.SetDocument(docRef->doc);
         TCollection_AsciiString filePath(path);

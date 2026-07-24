@@ -57,6 +57,7 @@ SCENARIOS=(
   "344-cdf-directory/occt_344_stress.cpp|8 25 @SCRATCH"
   "349-ocaf-driver-reentrancy/occt_349_barrier.cpp|8 50 @SCRATCH"
   "353-cdm-metadata-lookup-table/occt_353_barrier.cpp|8 50 @SCRATCH"
+  "371-getapplication-singleton-elimination/occt_371_private_app.cpp|8 50 @SCRATCH"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)

@@ -41,7 +41,7 @@
 #include <Poly_Polygon2D.hxx>
 #include <Poly_PolygonOnTriangulation.hxx>
 #include <BRepTools_History.hxx>
-#include <XCAFApp_Application.hxx>
+#include <TDocStd_Application.hxx>
 #include <TDocStd_Document.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_ColorTool.hxx>
@@ -89,7 +89,11 @@ struct OCCTMesh {
 
 // XDE Document for assembly structure, colors, materials (v0.6.0)
 struct OCCTDocument {
-    Handle(XCAFApp_Application) app;
+    // #371: a private instance, NOT XCAFApp_Application::GetApplication() -- that singleton is
+    // shared process-wide and was the root cause of #344/#349/#353 (CDF_Directory/driver-cache/
+    // metadata-table races), per upstream maintainer feedback on OCCT#1396: OCCT's own guidance
+    // since 7.1 is a private TDocStd_Application per caller, not the shared singleton.
+    Handle(TDocStd_Application) app;
     Handle(TDocStd_Document) doc;
     Handle(XCAFDoc_ShapeTool) shapeTool;
     Handle(XCAFDoc_ColorTool) colorTool;
@@ -104,7 +108,7 @@ struct OCCTDocument {
     TNaming_Scope namingScope{true};
 
     OCCTDocument() {
-        app = XCAFApp_Application::GetApplication();
+        app = new TDocStd_Application();
     }
 
     // Get or register a label, returns labelId
