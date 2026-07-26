@@ -7,13 +7,56 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.18
+## Current: v1.15.19
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.19 (July 2026): docs + tests — `Shape.mesh()`/`Shape.loadSTL()` winding guarantees, retract the #375 "loses winding" concern (#375)
+
+**Not a bug — investigated and retracted, both parts.** #375 asked whether `Shape.mesh()`
+(always outward for a valid solid, even after a mirror) and `Shape.loadSTL()` (reportedly
+"locally inconsistent" after round-tripping a globally-reversed STL) were losing orientation
+information. Both were root-caused with a ground-truth C++ test against the pinned xcframework,
+independent of any Swift-side code.
+
+1. **`Shape.mesh()` outward-normalization is genuine, intentional OCCT behavior.** A
+   `BRepPrimAPI_MakeBox` box already has a mixed FORWARD/REVERSED face-orientation split (3/3)
+   baked into its topology; mirroring it (`gp_Trsf::SetMirror`, a negative-determinant
+   transform) through `BRepBuilderAPI_Transform` produces the **identical** 3/3 split, and both
+   the original and mirrored mesh read 12/12 triangles outward. OCCT compensates a mirror
+   transform by flipping face orientation flags, preserving the invariant that a valid solid's
+   faces always classify consistently outward — the bridge's existing
+   `face.Orientation() == TopAbs_REVERSED` check (already correct) has nothing left to get
+   "wrong". There is no way, via a valid `Shape`, to get caller-controlled/"wrong-way" winding —
+   that's what `Mesh(vertices:normals:indices:)` is for.
+
+2. **`Shape.loadSTL()` preserves facet winding exactly, including a full global reversal.** A
+   from-scratch, independently-verified box STL — both normally wound and uniformly, globally
+   reversed — round-trips through `StlAPI_Reader` (`BRepBuilderAPI_MakeShapeOnMesh`) +
+   `BRepMesh_IncrementalMesh` + the bridge's extraction as **fully consistent** in both cases (12/12
+   outward, then 12/12 inward; zero shared-edge orientation conflicts either way). **The "locally
+   inconsistent" result that prompted the issue traced to a bug in the reporting test's own STL
+   fixture generator** (a `quad()` helper that copy-pasted the bottom face's relative vertex
+   layout onto the top face without mirroring it, so the top face's own "non-reversed" baseline
+   was already backwards) — confirmed by reproducing that exact fixture's geometry and finding
+   the same defect independent of any `reversed` flag. Not an OCCTSwift bug; not filed upstream.
+
+**Docs:** `Shape.mesh(linearDeflection:angularDeflection:)`, `mesh(parameters:)`, and
+`loadSTL(from:)`/`loadSTL(fromPath:)` (`Sources/OCCTSwift/Shape.swift`) each gain a `- Note:`
+explaining the orientation guarantee, pointing at `Mesh(vertices:normals:indices:)` for
+caller-controlled winding.
+
+**Tests:** `Issue375MeshWindingTests` (`OCCTMeshTests`) — a mirrored box still meshes 100%
+outward, both `mesh()` overloads. `Issue375STLWindingTests` (`OCCTIOTests`) — a normally-wound
+box STL round-trips 100% outward; a globally-reversed box STL round-trips as a clean 100% inward
+(not a fraction strictly between 0 and 1, which would mean local inconsistency).
+
+Docs + tests only, no code behavior change, no binary change — reuses the v1.15.18 xcframework
+(the binaryTarget URL is unchanged).
 
 ### v1.15.18 (July 2026) — fix (kernel): Resource_Manager::Debug / Storage_Schema::ICurrentData() races (#374)
 
