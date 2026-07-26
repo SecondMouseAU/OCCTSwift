@@ -796,6 +796,21 @@ public final class Shape: @unchecked Sendable {
     ///      approximates the `Geom_OffsetSurface` with a plain B-spline, which smooths the cusps
     ///      the angular check is choking on. Measured on the #286 solid: 125 s / 526 k vertices —
     ///      faster, but it resamples the geometry, so treat it as a rescue path, not a default.
+    ///
+    /// - Note: **Triangle winding always reflects the shape's true topological orientation, not
+    ///   a naive read of a caller-applied transform.** This method reads each face's
+    ///   `TopoDS_Face::Orientation()` faithfully (reversing the triangulation's node order when
+    ///   `REVERSED`), so it's never "wrong" — but for a **valid, closed solid**, that orientation
+    ///   is *always* consistently outward, even after a mirror (negative-determinant transform):
+    ///   ``mirrored(planeNormal:planeOrigin:)`` doesn't naively re-tessellate flipped geometry —
+    ///   OCCT's `BRepBuilderAPI_Transform` compensates by flipping each face's orientation flag,
+    ///   preserving the invariant that a valid solid's faces classify consistently outward.
+    ///   Confirmed empirically (#375): a box and its mirror both mesh 12/12 triangles outward,
+    ///   with the identical FORWARD/REVERSED face split before and after. There is currently no
+    ///   way, via a valid `Shape`, to obtain a mesh whose winding reflects an applied mirror — a
+    ///   caller who needs deliberately caller-controlled (including "wrong-way") winding, e.g. to
+    ///   test orientation-sensitive downstream code, should build a ``Mesh`` directly via
+    ///   ``Mesh/init(vertices:normals:indices:)`` instead of going through a `Shape`.
     public func mesh(
         linearDeflection: Double = 0.1,
         angularDeflection: Double = 0.5
@@ -877,6 +892,8 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameter parameters: Enhanced mesh parameters
     /// - Returns: A `Mesh` with the specified quality settings
+    /// - Note: Same orientation guarantee as ``mesh(linearDeflection:angularDeflection:)`` — see
+    ///   its doc for details on why a valid solid's mesh is always consistently outward.
     public func mesh(parameters: MeshParameters) -> Mesh? {
         let bridgeParams = parameters.toBridge()
         guard let meshHandle = OCCTShapeCreateMeshWithParams(handle, bridgeParams) else { return nil }
@@ -1390,9 +1407,20 @@ public final class Shape: @unchecked Sendable {
 
     /// Load a shape from an STL file
     ///
+    /// Builds one planar `TopoDS_Face` per STL facet via OCCT's `StlAPI_Reader`
+    /// (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn — call ``sewn(tolerance:)`` or use
+    /// ``loadSTLRobust(from:sewingTolerance:)`` if you need a connected shell/solid.
+    ///
     /// - Parameter url: URL to the STL file (.stl)
     /// - Returns: Imported shape
     /// - Throws: ImportError if import fails
+    /// - Note: Each facet's vertex winding is preserved exactly, including a globally-reversed
+    ///   (but self-consistent) file — confirmed empirically (#375) by round-tripping a uniformly
+    ///   reversed-winding box through `loadSTL` + ``mesh(linearDeflection:angularDeflection:)``
+    ///   and finding all 12 triangles consistently inward, with zero shared-edge orientation
+    ///   conflicts. If a round-tripped mesh comes back with *locally* inconsistent winding (some
+    ///   faces inward, some outward), the input STL itself is locally inconsistent — this method
+    ///   doesn't introduce that defect, it faithfully reproduces one already in the file.
     public static func loadSTL(from url: URL) throws -> Shape {
         guard let handle = OCCTImportSTL(url.path) else {
             throw ImportError.importFailed("Failed to import STL file: \(url.lastPathComponent)")
@@ -1401,6 +1429,8 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Load a shape from an STL file path
+    ///
+    /// - Note: Same winding-fidelity guarantee as ``loadSTL(from:)`` — see its doc for details.
     public static func loadSTL(fromPath path: String) throws -> Shape {
         guard let handle = OCCTImportSTL(path) else {
             throw ImportError.importFailed("Failed to import STL file: \(path)")

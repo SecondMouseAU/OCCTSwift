@@ -1258,6 +1258,8 @@ public func mesh(
   3. **Raise `angularDeflection`** (it sets the `AngleInterior` threshold doing all the splitting), or raise `MinSize` via `mesh(parameters:)` so the backstop bites sooner.
   4. `withSurfacesAsBSpline(offset: true)` approximates the offset surface with a plain B-spline, smoothing the cusps the angular check chokes on: 125 s / 526 k verts on the #286 solid. It resamples the geometry, so it is a rescue path, not a default.
 
+- **Winding always reflects true topological orientation, not a naive transform read** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). This reads each face's `TopoDS_Face::Orientation()` faithfully — but for a **valid, closed solid**, that orientation is always consistently outward, even after a mirror (negative-determinant transform): `mirrored(planeNormal:planeOrigin:)` doesn't naively re-tessellate flipped geometry — OCCT's `BRepBuilderAPI_Transform` compensates by flipping each face's orientation flag. Confirmed empirically: a box and its mirror both mesh 12/12 triangles outward, with the identical FORWARD/REVERSED face split before and after. There is no way, via a valid `Shape`, to get caller-controlled ("wrong-way") winding — use `Mesh(vertices:normals:indices:)` directly for that.
+
 ---
 
 ### `meshWithProgress(linearDeflection:angularDeflection:progress:)`
@@ -1322,6 +1324,7 @@ Provides fine-grained control over tessellation quality, useful for CAM toolpath
   params.inParallel = true   // multi-threaded
   if let mesh = shape.mesh(parameters: params) { }
   ```
+- Same winding guarantee as [`mesh(linearDeflection:angularDeflection:)`](#meshlineardeflectionangulardeflection) above ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)).
 
 ---
 
@@ -1931,7 +1934,8 @@ public static func loadSTL(from url: URL) throws -> Shape
 - **Parameters:** `url` — URL to the `.stl` file.
 - **Returns:** Imported shape (a shell of triangulated faces).
 - **Throws:** `ImportError.importFailed` on failure.
-- **OCCT:** `StlAPI_Reader` (via `OCCTImportSTL`).
+- **OCCT:** `StlAPI_Reader` (via `OCCTImportSTL`). Builds one planar `TopoDS_Face` per STL facet (`BRepBuilderAPI_MakeShapeOnMesh`); faces are unsewn — call `sewn(tolerance:)` or use `loadSTLRobust(from:sewingTolerance:)` if you need a connected shell/solid.
+- **Winding is preserved exactly, including a global reversal** ([#375](https://github.com/SecondMouseAU/OCCTSwift/issues/375)). Each facet's vertex order is preserved exactly — confirmed empirically by round-tripping a uniformly reversed-winding box and finding all triangles consistently inward, with zero shared-edge orientation conflicts. If a round-tripped mesh comes back with *locally* inconsistent winding (some faces inward, some outward), the input STL itself is locally inconsistent — this method doesn't introduce that defect, it faithfully reproduces one already in the file.
 - **Example:**
   ```swift
   let mesh = try Shape.loadSTL(from: stlURL)
@@ -1948,6 +1952,7 @@ public static func loadSTL(fromPath path: String) throws -> Shape
 ```
 
 - **OCCT:** `StlAPI_Reader` (via `OCCTImportSTL`).
+- Same winding-fidelity guarantee as [`Shape.loadSTL(from:)`](#shapeloadstlfrom) above.
 
 ---
 
