@@ -7,13 +7,32 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.19
+## Current: v1.15.20
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
+
+`Edge.circleProperties` (`MeasurementHelpers.swift`) fits a circle through three points sampled
+at `[parameterBounds.first, mid, parameterBounds.last]`. For a full circle the underlying curve
+is periodic and `parameterBounds` is `(0, 2π)`, so `point(at: parameterBounds.last)` evaluates to
+the same point as `point(at: parameterBounds.first)` (identical to ~1e-16) — the three-point fit
+then received two coincident points and returned `nil` for every full-circle edge: a drilled
+hole, a bore, a plain cylinder's cap boundary. Partial arcs (`first != last`) were unaffected.
+
+**Fixed:** when `parameterBounds` spans a full `2π` (periodic curve), sample the third point at
+2/3 of the range instead of at `bounds.last`, and the second point at 1/3 instead of the
+midpoint — all three samples land at distinct, non-wrapping parameters. Partial-arc sampling
+(midpoint + `bounds.last`) is unchanged. No public API surface change — same signature, same
+`nil`-for-non-circular-edges contract — so this is a patch per `docs/SEMVER.md`.
+
+**Tests:** `edgeCirclePropertiesFullCircle` (`v0.143 Circle property extraction` suite,
+`OCCTCurveTests`) — a cylinder's two full-circle cap edges now yield non-nil `circleProperties`
+with the correct radius and `isFullCircle == true`; confirmed it fails against the pre-fix code.
 
 ### v1.15.19 (July 2026): docs + tests — `Shape.mesh()`/`Shape.loadSTL()` winding guarantees, retract the #375 "loses winding" concern (#375)
 
