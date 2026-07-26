@@ -3836,6 +3836,26 @@ struct CirclePropertyTests {
         let p3 = SIMD3<Double>(2, 0, 0)
         #expect(circleThroughThreePoints(p1, p2, p3) == nil)
     }
+
+    @Test("Edge.circleProperties recovers a full-circle cap edge (#378)")
+    func edgeCirclePropertiesFullCircle() {
+        guard let cyl = Shape.cylinder(radius: 3, height: 8) else {
+            Issue.record("cyl nil"); return
+        }
+        var foundCircle = false
+        for edge in cyl.edges() where edge.isCircle {
+            guard let bounds = edge.parameterBounds else { continue }
+            #expect(abs((bounds.last - bounds.first) - 2 * .pi) < 1e-6)
+            if let props = edge.circleProperties {
+                #expect(abs(props.radius - 3.0) < 1e-6)
+                #expect(props.isFullCircle)
+                foundCircle = true
+            } else {
+                Issue.record("circleProperties nil for full-circle edge")
+            }
+        }
+        #expect(foundCircle)
+    }
 }
 
 // MARK: - v0.143 D2: Arc/circle in Sketch.buildProfile

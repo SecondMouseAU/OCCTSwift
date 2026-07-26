@@ -141,17 +141,21 @@ extension Edge {
     public var circleProperties: CircleProperties? {
         guard curveType == .circle else { return nil }
         guard let bounds = parameterBounds else { return nil }
+        let range = bounds.last - bounds.first
+        let full = abs(range - 2 * .pi) < 1e-6
         // For a Geom_Circle parameterisation, start/end parameters are the angles.
         // The point at parameter 0 is on the +X axis of the circle's local frame;
-        // we recover centre and radius from three sampled points.
+        // we recover centre and radius from three sampled points. A full circle
+        // is periodic, so point(at: bounds.last) coincides with point(at: bounds.first)
+        // to floating-point precision — sample interior thirds instead so all
+        // three points are distinct.
         let sample1Param = bounds.first
-        let sample2Param = bounds.first + (bounds.last - bounds.first) * 0.5
-        let sample3Param = bounds.last
+        let sample2Param = bounds.first + range * (full ? 1.0 / 3.0 : 0.5)
+        let sample3Param = bounds.first + range * (full ? 2.0 / 3.0 : 1.0)
         guard let p1 = point(at: sample1Param),
               let p2 = point(at: sample2Param),
               let p3 = point(at: sample3Param) else { return nil }
         guard let (center, radius, axis) = circleThroughThreePoints(p1, p2, p3) else { return nil }
-        let full = abs((bounds.last - bounds.first) - 2 * .pi) < 1e-6
         return CircleProperties(center: center, radius: radius, axis: axis,
                                  isFullCircle: full,
                                  startAngle: bounds.first,
