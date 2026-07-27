@@ -1005,12 +1005,14 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 
 ### `ApproxContinuity`
 
-Continuity level for BSpline approximation.
+> **Deprecated in #398.** `ApproxContinuity` was one of several copies of the same continuity-floor
+> vocabulary and is now a typealias of
+> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) (`.c0` ... `.c3`). No raw
+> value moved.
 
 ```swift
-public enum ApproxContinuity: Int32 {
-    case c0 = 0, c1 = 1, c2 = 2, c3 = 3
-}
+@available(*, deprecated, renamed: "ParametricContinuity")
+public typealias ApproxContinuity = ParametricContinuity
 ```
 
 ---
@@ -1035,7 +1037,7 @@ public struct ApproxCurveResult {
 Approximates a 3D curve as a BSpline with detailed result information.
 
 ```swift
-public func approxWithDetails(tolerance: Double, continuity: ApproxContinuity = .c2,
+public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
                                maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult
 ```
 
@@ -1076,8 +1078,8 @@ public struct ApproxSurfaceResult {
 Approximates a surface as a BSpline with detailed result information.
 
 ```swift
-public func approxWithDetails(tolerance: Double, uContinuity: ApproxContinuity = .c1,
-                               vContinuity: ApproxContinuity = .c1,
+public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
+                               vContinuity: ParametricContinuity = .c1,
                                maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult
 ```
 
