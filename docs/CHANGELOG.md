@@ -7,13 +7,44 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.20
+## Current: v1.15.21
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
 ---
 
 ## Release History
+
+### v1.15.21 (July 2026): fix: `Shape.fill` silently downgraded `.g2` continuity to first-derivative tangency (#398)
+
+`OCCTShapeFill` (`OCCTBridge_Healing.mm`) passed the Swift-side `SurfaceContinuity` raw value
+(`c0 = 0`, `g1 = 1`, `g2 = 2`) straight to `static_cast<GeomAbs_Shape>(...)` at both the
+`BRepOffsetAPI_MakeFilling` constructor and its per-edge `Add(edge, order)` call. `GeomAbs_Shape`'s
+own ordinals are not a plain 0/1/2 sequence (`GeomAbs_C0=0, GeomAbs_G1=1, GeomAbs_C1=2,
+GeomAbs_G2=3, ...`), so `static_cast<GeomAbs_Shape>(2)` landed on `GeomAbs_C1` (first-derivative
+continuity) instead of `GeomAbs_G2` (curvature continuity). `.c0`/`.g1` happened to land correctly
+by coincidence of alignment; only `.g2` was wrong. `Shape.fill(..., parameters:
+FillingParameters(continuity: .g2))` silently asked OCCT for weaker continuity than requested and
+documented (`docs/reference/Shape-Features.md`'s own doc comment says "curvature, very smooth"),
+with no test exercising `.g1`/`.g2` through `Shape.fill` to catch it.
+
+**Fixed:** both call sites now go through an explicit `surfaceContinuityToGeomAbs(int32_t)` mapping
+(0 to `GeomAbs_C0`, 1 to `GeomAbs_G1`, 2 to `GeomAbs_G2`) instead of a raw cast. Also added the
+signal-to-exception guard used by ~5 sibling bridge functions (`OCC_CATCH_SIGNALS` plus
+`occtEnsureSignals()`, issue #175) to `OCCTShapeFill`, which didn't have it: `BRepOffsetAPI_MakeFilling`
+has a separate, pre-existing OCCT engine crash when asked for non-`C0` continuity against a curved
+support surface (same class of issue as the already-disabled "Plate Surface Tests" suite). Without
+the guard, that crash took the whole process down instead of failing gracefully, which made it
+impossible to safely exercise `.g2` against real curved geometry at all. No public API surface
+change, same signatures, same `nil`-on-failure contract, so this is a patch per `docs/SEMVER.md`.
+
+**Tests:** `fillG2CurvedBoundaryDoesNotCrash` (`Surface Filling Tests` suite, `OCCTSurfaceTests`)
+fills a boundary edge borrowed from a curved (cylindrical) face, where `.c0` continuity succeeds
+but `.g2` continuity, verified empirically by temporarily reverting the mapping and rebuilding,
+crashed the whole test process pre-fix (`GeomAbs_C1` hits an unrecoverable path in this OCCT build)
+and now fails safely with `nil` post-fix (`GeomAbs_G2` is caught by the new `OCC_CATCH_SIGNALS`
+guard); reaching the final assertion at all is the regression check. `fillG1NoFaceAssociation`
+confirms `.g1` is unaffected and still fails safely without a face-associated boundary.
 
 ### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
 

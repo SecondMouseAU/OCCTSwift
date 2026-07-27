@@ -46,6 +46,7 @@
 #include <BRepGProp.hxx>
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepTools.hxx>
+#include <Standard_ErrorHandler.hxx>   // OCC_CATCH_SIGNALS (issue #175)
 
 #include <Geom_BSplineSurface.hxx>
 #include <Geom_Curve.hxx>
@@ -699,11 +700,30 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
     }
 }
 
+// Maps the Swift-side `Shape.SurfaceContinuity` raw value (c0 = 0, g1 = 1,
+// g2 = 2) to the matching `GeomAbs_Shape` enumerator. `GeomAbs_Shape`'s own
+// ordinals are NOT 0/1/2 for these three cases (GeomAbs_C0=0, GeomAbs_G1=1,
+// GeomAbs_C1=2, GeomAbs_G2=3, ...), so a raw `static_cast<GeomAbs_Shape>(...)`
+// silently turns a requested g2 (curvature) into GeomAbs_C1 (a plain
+// first-derivative tangency, not curvature-matched); see issue #398.
+static GeomAbs_Shape surfaceContinuityToGeomAbs(int32_t val) {
+    switch (val) {
+        case 0: return GeomAbs_C0;
+        case 1: return GeomAbs_G1;
+        case 2: return GeomAbs_G2;
+        default: return GeomAbs_C0;
+    }
+}
+
 OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
                             OCCTFillingParams params) {
     if (!boundaries || wireCount < 1) return nullptr;
 
+    occtEnsureSignals();
     try {
+        OCC_CATCH_SIGNALS
+        GeomAbs_Shape continuity = surfaceContinuityToGeomAbs(params.continuity);
+
         // Create filling operation
         BRepOffsetAPI_MakeFilling filling(
             params.maxDegree > 0 ? params.maxDegree : 8,
@@ -712,7 +732,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
             false,  // Anisotropie
             params.tolerance > 0 ? params.tolerance : 1e-4,
             params.tolerance > 0 ? params.tolerance : 1e-3,
-            static_cast<GeomAbs_Shape>(params.continuity)  // Continuity
+            continuity  // Continuity
         );
 
         // Add boundary constraints
@@ -722,7 +742,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
             // Add each edge from the wire as a constraint
             for (TopExp_Explorer exp(boundaries[i]->wire, TopAbs_EDGE); exp.More(); exp.Next()) {
                 TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-                filling.Add(edge, static_cast<GeomAbs_Shape>(params.continuity));
+                filling.Add(edge, continuity);
             }
         }
 

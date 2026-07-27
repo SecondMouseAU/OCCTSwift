@@ -92,6 +92,104 @@ struct SurfaceFillingTests {
 
         #expect(surface == nil)
     }
+
+    /// `.g1`/`.g2` on a boundary with no face association can never satisfy
+    /// `GeomAbs_G1`/`GeomAbs_G2` (both require "the first face of the edge"
+    /// to compute tangency/curvature against): OCCT documents this as a
+    /// `ConstructionError`, which `OCCTShapeFill` catches and turns into
+    /// `nil`. Confirms `.g1` still behaves per that contract post-fix.
+    @Test("Fill with g1 continuity, no face association, fails safely")
+    func fillG1NoFaceAssociation() {
+        guard let boundary = Wire.rectangle(width: 10, height: 10) else {
+            Issue.record("Failed to create boundary wire")
+            return
+        }
+        let surface = Shape.fill(boundaries: [boundary], parameters: FillingParameters(continuity: .g1))
+        #expect(surface == nil)
+    }
+
+    /// Regression test for #398: `OCCTShapeFill` cast `params.continuity`
+    /// (the `SurfaceContinuity` raw value: c0=0, g1=1, g2=2) directly to
+    /// `GeomAbs_Shape` via `static_cast`. `GeomAbs_Shape`'s own ordinals are
+    /// C0=0, G1=1, C1=2, G2=3, ... so `.g2` silently asked OCCT for
+    /// `GeomAbs_C1` (plain first-derivative continuity, no curvature-match
+    /// obligation) instead of `GeomAbs_G2` (curvature continuity).
+    ///
+    /// Exercising `.g2` against a boundary that actually has curvature to
+    /// match (as opposed to the flat, freestanding boundaries above, which
+    /// can't tell C1 from G2 since both are trivially satisfied by a flat
+    /// patch) requires a boundary edge with "a first face": an edge
+    /// borrowed from an existing curved face, not a fresh standalone wire.
+    /// That code path (`BRepOffsetAPI_MakeFilling::Add` with an order other
+    /// than `GeomAbs_C0`, against a curved support surface) has a
+    /// **separate, pre-existing OCCT engine crash** in this OCCT build,
+    /// the same class of issue already tracked for the disabled "Plate
+    /// Surface Tests" / "NLPlate Deformation Tests" suites below. That crash
+    /// reproduces identically for plain `.g1` (which the #398 cast bug never
+    /// touched: it was already correctly mapped pre-fix), so it is orthogonal
+    /// to this bug and out of scope to fix here.
+    ///
+    /// What *is* in scope, and what this test actually proves: `OCCTShapeFill`
+    /// didn't have OCCT's own signal-to-exception guard
+    /// (`OCC_CATCH_SIGNALS`, issue #175, used by ~5 sibling bridge functions)
+    /// installed, so that pre-existing engine crash took the whole process
+    /// down instead of failing gracefully, which made it impossible to
+    /// safely exercise `.g2` against real curved geometry at all, let alone
+    /// notice the cast bug. Empirically (verified by temporarily reverting
+    /// the mapping and rebuilding):
+    ///   - pre-fix, `.g2` (-> `GeomAbs_C1`) against this exact curved
+    ///     boundary hits an *unrecoverable* crash: `OCC_CATCH_SIGNALS`
+    ///     does NOT save it, so it takes the whole test process down.
+    ///   - post-fix, `.g2` (-> `GeomAbs_G2`, the documented, "recognized"
+    ///     order for this API) hits a *recoverable* failure that
+    ///     `OCC_CATCH_SIGNALS` catches cleanly, and `OCCTShapeFill` returns
+    ///     `nil` exactly like any other caught `ConstructionError`.
+    /// So reaching the `#expect` below at all (instead of the whole test
+    /// binary aborting with SIGSEGV) *is* the regression check: this test
+    /// would have crashed the process pre-fix and passes clean post-fix.
+    @Test("Fill with g2 continuity against a curved boundary fails safely, not fatally (#398)")
+    func fillG2CurvedBoundaryDoesNotCrash() {
+        let radius = 10.0
+        let height = 20.0
+
+        // Bare cylindrical lateral surface: revolve a straight profile edge
+        // 360° around Z. No caps are added, so the top rim edge belongs to
+        // exactly one face (the curved wall) -- unambiguous "first face of
+        // the edge" for BRepOffsetAPI_MakeFilling's continuity constraint,
+        // and genuinely curved (unlike a flat rectangle/polygon boundary).
+        guard let profile = Wire.line(from: SIMD3(radius, 0, 0), to: SIMD3(radius, 0, height)) else {
+            Issue.record("Failed to create revolution profile")
+            return
+        }
+        guard let lateral = Shape.revolve(profile: profile, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1)) else {
+            Issue.record("Failed to revolve cylinder wall")
+            return
+        }
+
+        // Isolate the top rim (z == height) from the bottom rim (z == 0).
+        guard let topEdge = lateral.edges().first(where: { edge in
+            guard edge.isCircle, let props = edge.circleProperties else { return false }
+            return abs(props.center.z - height) < 1e-6
+        }) else {
+            Issue.record("Could not find top rim edge")
+            return
+        }
+        guard let topWire = Wire.wireFromEdges([topEdge]) else {
+            Issue.record("Failed to build wire from top rim edge")
+            return
+        }
+
+        // Sanity check the boundary/geometry itself is usable: a plain C0
+        // fill (unaffected by #398, no face-association requirement) must
+        // succeed on this exact wire.
+        let c0Result = Shape.fill(boundaries: [topWire], parameters: FillingParameters(continuity: .c0))
+        #expect(c0Result != nil)
+
+        // The regression check. See the doc comment above: this line would
+        // have taken the whole test process down with SIGSEGV pre-fix.
+        let g2Result = Shape.fill(boundaries: [topWire], parameters: FillingParameters(continuity: .g2))
+        #expect(g2Result == nil)
+    }
 }
 
 @Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
