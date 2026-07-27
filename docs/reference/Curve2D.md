@@ -245,6 +245,7 @@ The circle is periodic with period `2π`. U=0 starts on the positive X axis of t
 - **Parameters:** `center` — circle centre; `radius` — circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0`.
 - **OCCT:** `Geom2d_Circle(gp_Circ2d(...))`.
+- **See also:** [`circleFromCenterRadius(center:radius:)`](Curve2D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc2d` algorithm and enforces the same `radius > 0` contract (#411).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!

@@ -111,6 +111,20 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a full circle.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// `circleFromCenterRadius(center:radius:)` builds the identical circle through OCCT's
+    /// `gce_MakeCirc2d` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let c = Curve2D.circle(center: .zero, radius: 5)
+    /// #expect(c?.isPeriodic == true)
+    /// #expect(Curve2D.circle(center: .zero, radius: 0) == nil)
+    /// ```
     public static func circle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
         guard let h = OCCTCurve2DCreateCircle(center.x, center.y, radius) else { return nil }
         return Curve2D(handle: h)
@@ -1858,7 +1872,22 @@ extension Curve2D {
                                     point2: SIMD2(r.x2, r.y2), param2: r.param2)
     }
 
-    /// Create a 2D circle from center + radius (gce_MakeCirc2d)
+    /// Create a 2D circle from center + radius (`gce_MakeCirc2d`).
+    ///
+    /// Geometrically identical to `circle(center:radius:)` — both produce a `Geom2d_Circle` on
+    /// the same X-axis-oriented frame — and, since #411, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// ```swift
+    /// let c = Curve2D.circleFromCenterRadius(center: .zero, radius: 5)
+    /// #expect(c != nil)
+    /// // Same rejection as the direct factory: no degenerate zero-radius circle.
+    /// #expect(Curve2D.circleFromCenterRadius(center: .zero, radius: 0) == nil)
+    /// ```
     public static func circleFromCenterRadius(center: SIMD2<Double>,
                                               radius: Double) -> Curve2D? {
         guard let h = OCCTGceMakeCirc2dFromCenterRadius(center.x, center.y, radius) else { return nil }
