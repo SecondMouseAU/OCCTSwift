@@ -2,15 +2,8 @@ import Foundation
 import simd
 import OCCTBridge
 
-/// Continuity order for filling surface constraints
-public enum FillingContinuity: Int32, Sendable {
-    /// Positional continuity (G0) — surface passes through the constraint
-    case c0 = 0
-    /// Tangent continuity (C1) — surface is tangent along the constraint
-    case c1 = 1
-    /// Curvature continuity (C2) — surface has curvature continuity along the constraint
-    case c2 = 2
-}
+// Continuity order for filling constraints is `SurfaceContinuity` (Continuity.swift); the
+// `FillingContinuity` copy this file used to declare is now a deprecated alias of it. See #398.
 
 /// Builder for N-sided surface filling using BRepFill_Filling.
 ///
@@ -21,10 +14,10 @@ public enum FillingContinuity: Int32, Sendable {
 /// ```swift
 /// let edges = box.edges()
 /// let filling = FillingSurface()
-/// filling.add(edge: edges[0], continuity: .c0)
-/// filling.add(edge: edges[1], continuity: .c0)
-/// filling.add(edge: edges[2], continuity: .c0)
-/// filling.add(edge: edges[3], continuity: .c0)
+/// filling.add(edge: edges[0], continuity: .g0)
+/// filling.add(edge: edges[1], continuity: .g0)
+/// filling.add(edge: edges[2], continuity: .g0)
+/// filling.add(edge: edges[3], continuity: .g0)
 /// filling.add(point: SIMD3(5, 5, 3))  // surface passes through this point
 /// let face = filling.build()
 /// ```
@@ -53,10 +46,15 @@ public final class FillingSurface: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - edge: Edge to add as boundary constraint
-    ///   - continuity: Continuity order at this edge (default .c0)
-    /// - Returns: true if the edge was added successfully
+    ///   - continuity: Continuity order at this edge (default .g0)
+    /// - Returns: true if the edge was added successfully, which says nothing about whether
+    ///   the order is usable: `BRepFill_Filling::Add` only appends, so a bad order surfaces
+    ///   later as a nil ``build()`` that takes every other constraint with it.
+    /// - Warning: Only ``SurfaceContinuity/g0`` currently behaves as documented here. This
+    ///   call still hand-maps the other two orders to the wrong OCCT values (`.g1` requests
+    ///   curvature, `.g2` requests an order every constraint class rejects). Tracked as #433.
     @discardableResult
-    public func add(edge: Edge, continuity: FillingContinuity = .c0) -> Bool {
+    public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool {
         OCCTFillingAddEdge(handle, edge.handle, continuity.rawValue)
     }
 
@@ -66,10 +64,11 @@ public final class FillingSurface: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - freeEdge: Edge to add as a free constraint
-    ///   - continuity: Continuity order at this edge (default .c0)
+    ///   - continuity: Continuity order at this edge (default .g0)
     /// - Returns: true if the edge was added successfully
+    /// - Warning: Carries the same #433 order mis-mapping as ``add(edge:continuity:)``.
     @discardableResult
-    public func add(freeEdge edge: Edge, continuity: FillingContinuity = .c0) -> Bool {
+    public func add(freeEdge edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool {
         OCCTFillingAddFreeEdge(handle, edge.handle, continuity.rawValue)
     }
 

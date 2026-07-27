@@ -97,7 +97,8 @@ OCCTSwift uses Swift-style dot-syntax with lowercase cases:
 
 ```swift
 ShapeType.solid, .face, .edge, .vertex
-GeometricContinuity.c0, .c1, .g1
+ParametricContinuity.c0, .c1, .c2
+SurfaceContinuity.g0, .g1, .g2
 ```
 
 ## Properties vs Query Methods

@@ -49,7 +49,7 @@ struct SurfaceFillingTests {
         // succeed with all boundary configurations. This tests the API.
         let surface = Shape.fill(
             boundaries: [boundary],
-            parameters: FillingParameters(continuity: .c0)
+            parameters: FillingParameters(continuity: .g0)
         )
 
         // The operation may or may not succeed depending on OCCT's
@@ -72,7 +72,7 @@ struct SurfaceFillingTests {
         }
 
         let params = FillingParameters(
-            continuity: .c0,
+            continuity: .g0,
             tolerance: 1e-3,
             maxDegree: 8,
             maxSegments: 9
@@ -148,7 +148,7 @@ struct FillingSupportFaceTests {
         }
 
         let flat = Shape.fill(boundaries: [rim],
-                              parameters: FillingParameters(continuity: .c0))
+                              parameters: FillingParameters(continuity: .g0))
         let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
                                  parameters: FillingParameters(continuity: .g1))
 
@@ -272,7 +272,7 @@ struct FillingSupportFaceTests {
         }
 
         let boundaryOnly = Shape.fill(constraints: [
-            FillConstraint(edge: rim, continuity: .c0)
+            FillConstraint(edge: rim, continuity: .g0)
         ])
 
         // A line well above the rim plane, spanning the opening. As an internal (non-bounding)
@@ -285,8 +285,8 @@ struct FillingSupportFaceTests {
         }
 
         let withInterior = Shape.fill(constraints: [
-            FillConstraint(edge: rim, continuity: .c0),
-            FillConstraint(edge: interior, continuity: .c0, isBoundary: false)
+            FillConstraint(edge: rim, continuity: .g0),
+            FillConstraint(edge: interior, continuity: .g0, isBoundary: false)
         ])
 
         guard let boundaryOnly = boundaryOnly, let withInterior = withInterior else {
@@ -310,7 +310,7 @@ struct FillingSupportFaceTests {
         let tangent = Shape.fill(boundaries: [square],
                                  parameters: FillingParameters(continuity: .g1))
         let positional = Shape.fill(boundaries: [square],
-                                    parameters: FillingParameters(continuity: .c0))
+                                    parameters: FillingParameters(continuity: .g0))
 
         #expect(tangent == nil)
         #expect(positional != nil)
@@ -369,7 +369,7 @@ struct FillingSupportFaceTests {
         // because SetApproxParam was never called — so the cap did nothing and the result came
         // back degree 8. Second site of #431.
         let filling = FillingSurface(maxDegree: 3)
-        #expect(filling.add(edge: rim, continuity: .c1))
+        #expect(filling.add(edge: rim, continuity: .g1))
 
         guard let surface = filling.build()?.faceSurfaceGeom() else {
             Issue.record("FillingSurface should build a face with an extractable surface")
@@ -394,7 +394,7 @@ struct FillingSupportFaceTests {
         // requests curvature, .c2 lands out of range and is dropped) — that is #433, because
         // correcting it changes documented public behavior.
         let filling = FillingSurface()
-        let added = filling.add(edge: rim, continuity: .c1)
+        let added = filling.add(edge: rim, continuity: .g1)
         #expect(added)
 
         let face = filling.build()
@@ -472,7 +472,7 @@ struct PlateSurfaceTests {
         // succeed depending on OCCT's GeomPlate algorithm
         let surface = Shape.plateSurface(
             constrainedBy: [curve1, curve2],
-            continuity: .c0,
+            continuity: .g0,
             tolerance: 1.0
         )
 
@@ -1012,7 +1012,7 @@ struct SurfaceCurveProjectionTests {
 
 // MARK: - Advanced Plate Surfaces Tests (v0.23.0)
 
-@Suite("Advanced Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Advanced Plate Surface Tests")
 struct AdvancedPlateSurfaceTests {
 
     @Test("Plate surface with G0 constraint orders")
@@ -1021,7 +1021,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
             SIMD3(0, 10, 1), SIMD3(5, 5, 3)
         ]
-        let orders: [PlateConstraintOrder] = [.g0, .g0, .g0, .g0, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g0, .g0, .g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
@@ -1035,7 +1035,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
             SIMD3(0, 10, 0), SIMD3(5, 5, 2)
         ]
-        let orders: [PlateConstraintOrder] = [.g0, .g1, .g0, .g1, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g1, .g0, .g1, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
     }
@@ -1047,7 +1047,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 5, 1), SIMD3(5, 5, 3), SIMD3(10, 5, 1),
             SIMD3(0, 10, 0), SIMD3(5, 10, 1), SIMD3(10, 10, 0)
         ]
-        let orders: [PlateConstraintOrder] = Array(repeating: .g0, count: 9)
+        let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 9)
         let shape = Shape.plateSurface(
             through: points, orders: orders,
             degree: 4, pointsOnCurves: 20, iterations: 3, tolerance: 0.001
@@ -1058,7 +1058,7 @@ struct AdvancedPlateSurfaceTests {
     @Test("Plate surface rejects mismatched point/order counts")
     func platePointsMismatch() {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
-        let orders: [PlateConstraintOrder] = [.g0, .g0]  // Too few
+        let orders: [SurfaceContinuity] = [.g0, .g0]  // Too few
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape == nil)
     }
@@ -1066,14 +1066,14 @@ struct AdvancedPlateSurfaceTests {
     @Test("Plate surface rejects fewer than 3 points")
     func platePointsTooFew() {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0)]
-        let orders: [PlateConstraintOrder] = [.g0, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape == nil)
     }
 
     @Test("Mixed plate surface with points and curves")
     func plateMixedPointsAndCurves() {
-        let pointConstraints: [(point: SIMD3<Double>, order: PlateConstraintOrder)] = [
+        let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(5, 5, 3), order: .g0),
             (point: SIMD3(2, 8, 1), order: .g0)
         ]
@@ -1087,7 +1087,7 @@ struct AdvancedPlateSurfaceTests {
             return
         }
 
-        let curveConstraints: [(wire: Wire, order: PlateConstraintOrder)] = [
+        let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = [
             (wire: w, order: .g0)
         ]
 
@@ -1100,13 +1100,13 @@ struct AdvancedPlateSurfaceTests {
 
     @Test("Mixed plate surface with points only")
     func plateMixedPointsOnly() {
-        let pointConstraints: [(point: SIMD3<Double>, order: PlateConstraintOrder)] = [
+        let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(0, 0, 0), order: .g0),
             (point: SIMD3(10, 0, 1), order: .g0),
             (point: SIMD3(10, 10, 2), order: .g0),
             (point: SIMD3(0, 10, 1), order: .g0)
         ]
-        let curveConstraints: [(wire: Wire, order: PlateConstraintOrder)] = []
+        let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = []
 
         let shape = Shape.plateSurface(
             pointConstraints: pointConstraints,
@@ -1121,7 +1121,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
             SIMD3(0, 10, 0), SIMD3(5, 5, 5)
         ]
-        let orders: [PlateConstraintOrder] = Array(repeating: .g0, count: 5)
+        let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 5)
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
@@ -1890,7 +1890,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            #expect(filling.add(edge: edge, continuity: .c0))
+            #expect(filling.add(edge: edge, continuity: .g0))
         }
 
         let result = filling.build()
@@ -1904,7 +1904,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         let _ = filling.build()
 
@@ -1921,7 +1921,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         // Add interior point above the plane
         filling.add(point: SIMD3(5, 5, 3))
@@ -1937,7 +1937,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         let _ = filling.build()
 
@@ -1955,9 +1955,9 @@ struct FillingSurfaceTests {
         let filling = FillingSurface()
         // Add 3 boundary edges and 1 free edge
         for i in 0..<3 {
-            filling.add(edge: edges[i], continuity: .c0)
+            filling.add(edge: edges[i], continuity: .g0)
         }
-        filling.add(freeEdge: edges[3], continuity: .c0)
+        filling.add(freeEdge: edges[3], continuity: .g0)
 
         let result = filling.build()
         #expect(result != nil)

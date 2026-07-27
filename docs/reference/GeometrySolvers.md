@@ -396,15 +396,20 @@ Builder for N-sided surface filling using `BRepFill_Filling`. Creates a smooth s
 
 ### `FillingContinuity`
 
-Continuity order for filling surface constraints.
+> **Deprecated in #398.** `FillingContinuity` was one of three copies of the same geometric
+> constraint-order vocabulary and is now a typealias of
+> [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`). The
+> `.c0` / `.c1` / `.c2` spellings still resolve, as deprecated aliases. No raw value moved.
 
 ```swift
-public enum FillingContinuity: Int32, Sendable {
-    case c0 = 0   // Positional continuity (G0)
-    case c1 = 1   // Tangent continuity (C1)
-    case c2 = 2   // Curvature continuity (C2)
-}
+@available(*, deprecated, renamed: "SurfaceContinuity")
+public typealias FillingContinuity = SurfaceContinuity
 ```
+
+> **Only `.g0` currently behaves as documented here.** `OCCTFillingAddEdge` still hand-maps the
+> other two orders to the wrong OCCT values: `.g1` requests curvature, and `.g2` requests an
+> order every constraint class rejects, which fails the whole `build()` rather than just that
+> one constraint. Tracked as issue #433.
 
 ---
 
@@ -437,12 +442,12 @@ Add a boundary edge constraint.
 
 ```swift
 @discardableResult
-public func add(edge: Edge, continuity: FillingContinuity = .c0) -> Bool
+public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
 ```
 
 - **Parameters:**
   - `edge` — edge to add as a boundary constraint.
-  - `continuity` — continuity order at this edge (default `.c0`).
+  - `continuity` — continuity order at this edge (default `.g0`).
 - **Returns:** `true` if the edge was added successfully.
 - **OCCT:** `BRepFill_Filling::Add` (boundary edge variant).
 - **Example:**
@@ -474,14 +479,14 @@ Add a free (non-boundary) edge constraint.
 
 ```swift
 @discardableResult
-public func add(freeEdge edge: Edge, continuity: FillingContinuity = .c0) -> Bool
+public func add(freeEdge edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
 ```
 
 Free edges are not required to be topologically connected to other boundary edges.
 
 - **Parameters:**
   - `freeEdge` — edge to add as a free constraint.
-  - `continuity` — continuity order (default `.c0`).
+  - `continuity` — continuity order (default `.g0`).
 - **Returns:** `true` if the edge was added successfully.
 - **OCCT:** `BRepFill_Filling::Add` (free edge variant).
 
