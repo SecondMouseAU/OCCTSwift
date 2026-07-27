@@ -4967,20 +4967,17 @@ const char* OCCTSurfaceTypeName(OCCTSurfaceRef surface) {
 // MARK: - v0.115: Surface additional (Normal + Curvatures)
 // --- Surface additional (new in v0.115.0) ---
 
+// Non-optional-return counterpart of OCCTSurfaceGetNormal. It keeps its own contract — a
+// zero vector where the normal is undefined, since the Swift wrapper returns a plain
+// SIMD3 — but delegates the computation so the two entry points cannot disagree about
+// *where* the normal is undefined. It used to hand-roll D1 + gp_Vec::Crossed against a
+// literal 1e-15 magnitude epsilon, which classified degeneracy differently from
+// GeomLProp_SLProps::IsNormalDefined() near a singularity (#401).
 void OCCTSurfaceNormal(OCCTSurfaceRef surface, double u, double v,
                          double* nx, double* ny, double* nz) {
+    if (!nx || !ny || !nz) return;
     *nx = *ny = *nz = 0;
-    if (!surface || surface->surface.IsNull()) return;
-    try {
-        gp_Pnt p;
-        gp_Vec d1u, d1v;
-        surface->surface->D1(u, v, p, d1u, d1v);
-        gp_Vec normal = d1u.Crossed(d1v);
-        if (normal.Magnitude() > 1e-15) {
-            normal.Normalize();
-            *nx = normal.X(); *ny = normal.Y(); *nz = normal.Z();
-        }
-    } catch (...) {}
+    OCCTSurfaceGetNormal(surface, u, v, nx, ny, nz);
 }
 
 #include <GeomLProp_SLProps.hxx>
