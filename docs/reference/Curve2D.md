@@ -500,7 +500,7 @@ public static func interpolate(through points: [SIMD2<Double>], closed: Bool = f
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-The curve passes exactly through every point. Use `closed: true` for a periodic loop.
+The curve passes exactly through every point. Use `closed: true` for a periodic loop — [`interpolatePeriodic(points:tolerance:)`](Curve2D-Analysis.md) is a spelling of exactly that case and delegates here (#412).
 
 - **Parameters:** `points` — interpolation points (minimum 2); `closed` — closed/periodic curve; `tolerance` — point coincidence tolerance.
 - **Returns:** Interpolated BSpline, or `nil` on failure.

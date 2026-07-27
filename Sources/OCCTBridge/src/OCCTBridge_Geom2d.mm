@@ -4059,20 +4059,14 @@ OCCTCurve2DRef OCCTInterpolate2DWithTangents(const double* points, int32_t count
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTCurve2DInterpolate with the periodicity flag pinned. It used to be a second,
+// independent Geom2dAPI_Interpolate call site, which had already drifted: it rejected count < 3
+// where the general entry point rejects only count < 2, so the same 2-point input reached OCCT
+// through one and not the other. Forwarding keeps the C ABI while leaving one implementation
+// (#412). Callers that need a tolerance other than the default should call
+// OCCTCurve2DInterpolate directly with closed = true.
 OCCTCurve2DRef OCCTInterpolate2DPeriodic(const double* points, int32_t count) {
-    if (!points || count < 3) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt2d) pts = new TColgp_HArray1OfPnt2d(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
-        }
-        Geom2dAPI_Interpolate interp(pts, Standard_True, 1e-6);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve2DRef)new OCCTCurve2D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve2DInterpolate(points, count, true, 1e-6);
 }
 // --- GeomAPI_PointsToBSpline expansion ---
 // Helper: map continuity int → GeomAbs_Shape (duplicate of Curve3D's mapContinuityV115, ODR-safe)
