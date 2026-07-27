@@ -36,6 +36,8 @@
 #include <Geom_Curve.hxx>
 #include <Geom2d_Curve.hxx>
 #include <Geom_Surface.hxx>
+#include <GeomAbs_Shape.hxx>
+#include <BRep_Tool.hxx>
 #include <Poly_Triangulation.hxx>
 #include <Poly_Polygon3D.hxx>
 #include <Poly_Polygon2D.hxx>
@@ -245,5 +247,67 @@ void occtEnsureSignals();
 // refuse the input (return nil) rather than build/heal the crashing solid. Cheap: a pure
 // BRepCheck topology pass, no meshing. Definition lives in OCCTBridge.mm. See issue #263.
 bool occtHasSelfIntersectingWire(const TopoDS_Shape& s);
+
+// === #430/#432: surface-filling constraint helpers ===
+//
+// Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm, on
+// BRepOffsetAPI_MakeFilling) and OCCTFilling* (OCCTBridge_Modeling.mm, on BRepFill_Filling).
+// Definitions live in OCCTBridge_Healing.mm. Converging the two wrappers themselves is #434.
+
+// Map a plate constraint order (0=position, 1=tangency, 2=curvature) onto the GeomAbs_Shape
+// value BRepFill_Filling actually accepts. It forwards the enum straight through to
+// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both reject
+// anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2 (ordinal 3) and
+// GeomAbs_C2 (ordinal 4) always throw, whatever BRepOffsetAPI_MakeFilling.hxx claims.
+GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity);
+
+// Build a support face carrying the edge's own pcurve, for edges with no nominated support face.
+//
+// This exists to keep BRepFill_Filling's face-less Add(edge, order) overload out of the call
+// path for continuity above C0. That overload builds its constraint from the UNTRIMMED pcurve
+// (it fetches the edge's [f, l] range and then discards it), which for the usual Geom2d_Line
+// pcurve means a +/-2e100 parameter range instead of the edge's own. What happens next depends
+// on the support surface: a bounded one throws a catchable Standard_Failure ("U parameters out
+// of range"), but an unbounded or periodic one accepts the garbage, the constraint cannot be
+// projected, and GeomPlate_BuildPlateSurface::Perform's recovery path then dereferences its own
+// still-null myGeomPlateSurface — an uncatchable SIGSEGV, not an exception. That planar/curved
+// split is why the defect stayed hidden. Routing through Add(edge, face, order) instead uses
+// BRepAdaptor_Curve2d, which trims correctly, and yields results identical to a real support
+// face. Upstream defect; see issue #430 and Scripts/repro/430-fill-untrimmed-pcurve/.
+//
+// Returns false when the edge has no pcurve at all, or when the synthesized face does not
+// resolve one — callers must then either skip the constraint or accept position-only continuity.
+bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace);
+
+// Add one edge constraint, preferring the face-carrying overload whenever a support face is
+// available or derivable. Templated because the two entry points hold different (but
+// Add-compatible) filler types: BRepOffsetAPI_MakeFilling forwards to a private BRepFill_Filling
+// that it does not expose, so there is no common base to take a reference to.
+template <class Filler>
+void occtFillingAddConstraint(Filler& filling,
+                              const TopoDS_Edge& edge,
+                              const TopoDS_Face& support,
+                              GeomAbs_Shape order,
+                              bool isBound) {
+    if (order != GeomAbs_C0) {
+        if (!support.IsNull()) {
+            // A nominated face still has to carry a pcurve for this edge; BRepFill_Filling
+            // raises "no 2d representation" if it does not (common on imported shapes).
+            double first = 0.0, last = 0.0;
+            if (!BRep_Tool::CurveOnSurface(edge, support, first, last).IsNull()) {
+                filling.Add(edge, support, order, isBound);
+                return;
+            }
+        }
+        TopoDS_Face derived;
+        if (occtFillingSupportFaceFromPCurve(edge, derived)) {
+            filling.Add(edge, derived, order, isBound);
+            return;
+        }
+        // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
+        // Standard_Failure here, which is OCCT's documented contract for this case.
+    }
+    filling.Add(edge, order, isBound);
+}
 
 #endif /* OCCTBridge_Internal_h */

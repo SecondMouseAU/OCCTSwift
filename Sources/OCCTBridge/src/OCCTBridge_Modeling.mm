@@ -4348,13 +4348,24 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
     delete filling;
 }
 
+// #432: these route through occtFillingAddConstraint rather than calling the face-less
+// BRepFill_Filling::Add(edge, order) overload directly, which SIGSEGVs on any curved boundary
+// edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the mechanism).
+//
+// The GeomAbs_C1/GeomAbs_C2 mapping below is deliberately left as-is: it is wrong — continuity
+// 1 requests curvature rather than tangency, and 2 lands on ordinal 4, which every constraint
+// class rejects at Build() time, failing the whole fill — but correcting it changes documented
+// public behavior, so it is #433's, not this crash fix's. Note Add() only appends and never
+// validates the order, so returning true here says nothing about the constraint's validity.
+// occtFillingContinuityToGeomAbs is the correct mapping when #433 lands.
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
     if (!filling || !edge) return false;
     try {
         GeomAbs_Shape cont = GeomAbs_C0;
         if (continuity == 1) cont = GeomAbs_C1;
         else if (continuity >= 2) cont = GeomAbs_C2;
-        filling->filler.Add(edge->edge, cont);
+        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(), cont,
+                                 /*isBound=*/true);
         return true;
     } catch (...) {
         return false;
@@ -4367,7 +4378,8 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
         GeomAbs_Shape cont = GeomAbs_C0;
         if (continuity == 1) cont = GeomAbs_C1;
         else if (continuity >= 2) cont = GeomAbs_C2;
-        filling->filler.Add(edge->edge, cont, /*IsBound=*/false);
+        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(), cont,
+                                 /*isBound=*/false);
         return true;
     } catch (...) {
         return false;

@@ -1638,7 +1638,7 @@ constrained positionally.
   ```swift
   // Cap the open top of a truncated sphere, tangent to the spherical wall
   let bowl = Shape.sphere(at: SIMD3(0,0,0), direction: SIMD3(0,0,1),
-                          radius: 10, angle1: -.pi/2, angle2: .pi/3)!
+                          radius: 10, angle1: -.pi/2, angle2: 50 * .pi/180)!
   let rim = bowl.edges()
       .filter { $0.isClosed3D }
       .max(by: { $0.bounds.max.z < $1.bounds.max.z })!

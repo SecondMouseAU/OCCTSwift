@@ -191,7 +191,7 @@ struct FillingSupportFaceTests {
         }
     }
 
-    @Test("Curvature continuity is accepted, not rejected outright")
+    @Test("Curvature continuity is accepted and differs from tangency")
     func curvatureContinuityIsAccepted() {
         guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
@@ -201,10 +201,101 @@ struct FillingSupportFaceTests {
         // Guards the continuity mapping: BRepFill_Filling forwards the GeomAbs_Shape value
         // as an integer plate order and rejects anything above 2, so curvature must map to
         // GeomAbs_C1 (ordinal 2). Mapping .g2 to GeomAbs_G2 (ordinal 3) makes this nil.
-        let capped = Shape.fill(boundaries: [rim], supportedBy: bowl,
-                                parameters: FillingParameters(continuity: .g2))
+        let curvature = Shape.fill(boundaries: [rim], supportedBy: bowl,
+                                   parameters: FillingParameters(continuity: .g2))
+        let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
+                                 parameters: FillingParameters(continuity: .g1))
 
-        #expect(capped != nil)
+        guard let curvature = curvature, let tangent = tangent else {
+            Issue.record("Both curvature and tangent fills should succeed")
+            return
+        }
+
+        // Non-nil alone would also pass if .g2 silently behaved as .g1, which is the other way
+        // this mapping can break. Matching the sphere's curvature as well as its tangent pushes
+        // the cap measurably further than tangency alone does.
+        #expect(curvature.size.z > tangent.size.z + 0.5)
+    }
+
+    @Test("maxDegree caps the degree of the resulting surface (#431)")
+    func maxDegreeCapsResultingSurfaceDegree() {
+        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        let capped = Shape.fill(boundaries: [rim], supportedBy: bowl,
+                                parameters: FillingParameters(continuity: .g1, maxDegree: 3))
+
+        guard let surface = capped?.faceSurfaceGeom() else {
+            Issue.record("Tangent fill should produce a face with an extractable surface")
+            return
+        }
+
+        // maxDegree binds to BRepOffsetAPI_MakeFilling's MaxDeg. Under the pre-#431 binding it
+        // went to Degree (the energy criterion) and MaxDeg stayed at its default 8, so the
+        // result overshot the requested cap — measured vDegree 6 for this same call.
+        #expect(surface.uDegree <= 3)
+        #expect(surface.vDegree <= 3)
+    }
+
+    @Test("A boundary edge absent from the support shape falls back rather than failing")
+    func edgeNotInSupportShapeFallsBack() {
+        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let unrelated = Shape.box(width: 1, height: 1, depth: 1) else {
+            Issue.record("Failed to create the unrelated support shape")
+            return
+        }
+
+        // The rim has no ancestor face in `unrelated`, so each edge falls back to its own
+        // underlying surface — the documented degradation. It must still fill, and still be
+        // tangent, rather than nil the whole operation.
+        let capped = Shape.fill(boundaries: [rim], supportedBy: unrelated,
+                                parameters: FillingParameters(continuity: .g1))
+
+        if let capped = capped {
+            #expect(capped.isValid)
+            #expect(capped.size.z > 0.5)
+        } else {
+            Issue.record("Fill should fall back per edge, not fail outright")
+        }
+    }
+
+    @Test("An internal constraint pulls the surface without bounding it")
+    func internalConstraintIsNotABoundary() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        let boundaryOnly = Shape.fill(constraints: [
+            FillConstraint(edge: rim, continuity: .c0)
+        ])
+
+        // A line well above the rim plane, spanning the opening. As an internal (non-bounding)
+        // constraint the surface has to pass through it, so the cap can no longer be the flat
+        // disc that the boundary alone produces.
+        guard let interiorWire = Wire.line(from: SIMD3(-5, 0, 10), to: SIMD3(5, 0, 10)),
+              let interior = interiorWire.edges().first else {
+            Issue.record("Failed to create the interior constraint edge")
+            return
+        }
+
+        let withInterior = Shape.fill(constraints: [
+            FillConstraint(edge: rim, continuity: .c0),
+            FillConstraint(edge: interior, continuity: .c0, isBoundary: false)
+        ])
+
+        guard let boundaryOnly = boundaryOnly, let withInterior = withInterior else {
+            Issue.record("Both constraint fills should succeed")
+            return
+        }
+
+        #expect(boundaryOnly.size.z < 1e-6)      // flat disc across the rim
+        #expect(withInterior.size.z > 0.5)       // pulled up to the interior edge
     }
 
     @Test("Free-standing boundary has nothing to be tangent to and fails cleanly")
@@ -228,6 +319,28 @@ struct FillingSupportFaceTests {
     @Test("Constraints fill rejects an empty constraint list")
     func emptyConstraintsReturnNil() {
         #expect(Shape.fill(constraints: []) == nil)
+    }
+
+    @Test("FillingSurface survives a curved boundary above positional continuity (#432)")
+    func fillingSurfaceCurvedBoundarySurvives() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        // The second filling entry point reaches the same OCCT defect through its own bridge
+        // implementation. Any continuity above .c0 on a curved edge used to SIGSEGV here too;
+        // as with the Shape.fill tests, reaching the assertion is the regression check.
+        //
+        // Only the crash is fixed. FillingSurface's continuity mapping is still wrong (.c1
+        // requests curvature, .c2 lands out of range and is dropped) — that is #433, because
+        // correcting it changes documented public behavior.
+        let filling = FillingSurface()
+        let added = filling.add(edge: rim, continuity: .c1)
+        #expect(added)
+
+        let face = filling.build()
+        #expect(face != nil)
     }
 }
 
@@ -5162,3 +5275,4 @@ struct GeomFillGordonReportTests {
         #expect(status == .invalidInput)
     }
 }
+

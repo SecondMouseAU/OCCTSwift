@@ -55,9 +55,21 @@ value to `GeomPlate_CurveConstraint` as an integer plate order and rejects anyth
 `[-1, 2]`, so `.g2` is `GeomAbs_C1` (ordinal 2). `GeomAbs_G2` (ordinal 3) always throws, despite
 OCCT's header docs naming it as the curvature value.
 
-**Not covered:** `FillingSurface` reaches the same OCCT defect through its own independent bridge
-implementation and still crashes; its `.c1`/`.c2` cases are mismapped separately. Filed as #432,
-#433, #434.
+`FillingSurface` reached the same OCCT defect through its own bridge implementation and crashed
+identically (#432). The constraint helpers moved to `OCCTBridge_Internal.h` and both entry points
+now share them, so that crash is fixed too.
+
+**Note on the planar/curved split** — worth knowing before probing this family. The same face-less
+call is a *catchable* `Standard_Failure` on a **planar** support surface, which rejects the ±2e100
+parameters, and an uncatchable SIGSEGV on an **unbounded or periodic** one (cylinder, sphere,
+cone), which accepts them. The pre-existing filling tests only ever used rectangles and polygons at
+`.c0`, so neither half of the defect ever showed.
+
+**Still open:** `FillingSurface`'s continuity mapping is wrong in its own way — `.c1` requests
+curvature rather than tangency, and `.c2` lands on an order OCCT rejects, which fails the entire
+`build()` (`add` returns `true` regardless; it only appends). Correcting that changes documented
+public behavior, so it is #433. Converging the two wrappers onto one implementation is
+#434. The kernel patch for the two upstream defects, and the upstream filing, are deferred.
 
 ### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
 

@@ -3546,7 +3546,7 @@ extension Shape {
     /// ```swift
     /// // Cap the open top of a truncated sphere, tangent to the spherical wall
     /// let bowl = Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
-    ///                         radius: 10, angle1: -.pi / 2, angle2: .pi / 3)!
+    ///                         radius: 10, angle1: -.pi / 2, angle2: 50 * .pi / 180)!
     ///
     /// // the open rim is the topmost closed edge
     /// let rim = bowl.edges()
@@ -3616,13 +3616,18 @@ extension Shape {
             )
         }
 
-        guard let result = cConstraints.withUnsafeMutableBufferPointer({ buffer in
-            OCCTShapeFillConstraints(buffer.baseAddress, Int32(constraints.count),
-                                     parameters.cParams)
-        }) else {
-            return nil
+        // cConstraints holds raw handles owned by the Edge/Face objects in `constraints`;
+        // withExtendedLifetime keeps those owners alive across the call rather than relying on
+        // the optimiser not releasing them early.
+        let handle = withExtendedLifetime(constraints) {
+            cConstraints.withUnsafeMutableBufferPointer { buffer in
+                OCCTShapeFillConstraints(buffer.baseAddress, Int32(constraints.count),
+                                         parameters.cParams)
+            }
         }
-        return Shape(handle: result)
+
+        guard let handle = handle else { return nil }
+        return Shape(handle: handle)
     }
 
     // MARK: - Plate Surfaces (v0.14.0)
