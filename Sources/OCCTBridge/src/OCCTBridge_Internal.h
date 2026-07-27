@@ -279,35 +279,54 @@ GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity);
 // resolve one — callers must then either skip the constraint or accept position-only continuity.
 bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace);
 
+// Where a support face came from, which decides what happens when it turns out to be unusable.
+enum class OCCTFillingSupport {
+    // The caller named this exact face. If it cannot serve as the continuity reference, that is
+    // a failure, not something to paper over — substituting a different surface would answer a
+    // question the caller did not ask.
+    Nominated,
+    // The bridge picked or derived this face on the caller's behalf (an ancestor lookup, or none
+    // at all). Falling back to another reference is the documented behaviour.
+    Inferred,
+};
+
 // Add one edge constraint, preferring the face-carrying overload whenever a support face is
 // available or derivable. Templated because the two entry points hold different (but
 // Add-compatible) filler types: BRepOffsetAPI_MakeFilling forwards to a private BRepFill_Filling
 // that it does not expose, so there is no common base to take a reference to.
+//
+// Returns false only when `kind` is Nominated and that face carries no pcurve for the edge; the
+// constraint is then NOT added and the caller should fail the whole fill. Every other path adds
+// a constraint and returns true — including the no-pcurve-anywhere case, which reaches the
+// face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
 template <class Filler>
-void occtFillingAddConstraint(Filler& filling,
+bool occtFillingAddConstraint(Filler& filling,
                               const TopoDS_Edge& edge,
                               const TopoDS_Face& support,
+                              OCCTFillingSupport kind,
                               GeomAbs_Shape order,
                               bool isBound) {
     if (order != GeomAbs_C0) {
         if (!support.IsNull()) {
-            // A nominated face still has to carry a pcurve for this edge; BRepFill_Filling
-            // raises "no 2d representation" if it does not (common on imported shapes).
+            // A support face still has to carry a pcurve for this edge; BRepFill_Filling raises
+            // "no 2d representation" if it does not (common on imported shapes).
             double first = 0.0, last = 0.0;
             if (!BRep_Tool::CurveOnSurface(edge, support, first, last).IsNull()) {
                 filling.Add(edge, support, order, isBound);
-                return;
+                return true;
             }
+            if (kind == OCCTFillingSupport::Nominated) return false;
         }
         TopoDS_Face derived;
         if (occtFillingSupportFaceFromPCurve(edge, derived)) {
             filling.Add(edge, derived, order, isBound);
-            return;
+            return true;
         }
         // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
         // Standard_Failure here, which is OCCT's documented contract for this case.
     }
     filling.Add(edge, order, isBound);
+    return true;
 }
 
 #endif /* OCCTBridge_Internal_h */

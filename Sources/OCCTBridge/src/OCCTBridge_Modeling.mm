@@ -4332,12 +4332,30 @@ struct OCCTFilling {
     BRepFill_Filling filler;
 };
 
+// #431 (second site): maxDegree/maxSegments used to be passed as SetResolParam's 3rd and 4th
+// arguments, which are NbIter and Anisotropie — so maxDegree silently became the solver's
+// iteration count (8 instead of 2, ~3x the work at the documented defaults) and maxSegments
+// became a bool (9 -> true). SetApproxParam, the only place MaxDeg/MaxSegments can actually be
+// set, was never called at all, leaving both documented parameters inert. Same defect class as
+// the BRepOffsetAPI_MakeFilling constructor mis-binding in OCCTBridge_Healing.mm.
+//
+//   SetResolParam(Degree = 3, NbPtsOnCur = 15, NbIter = 2, Anisotropie = false)
+//   SetApproxParam(MaxDeg = 8, MaxSegments = 9)
+//
+// Tol2d is a parameter-space tolerance and Tol3d a model-space one; a tenth reproduces OCCT's
+// own default pair (1e-5 / 1e-4) at the default tolerance, matching OCCTShapeFillMakeBuilder.
 OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t maxDegree,
                                   int32_t maxSegments, double tolerance3d) {
     try {
+        const double tol3d = tolerance3d > 0 ? tolerance3d : 1e-4;
         auto* filling = new OCCTFilling();
-        filling->filler.SetConstrParam(tolerance3d, tolerance3d, 0.0001, 0.1);
-        filling->filler.SetResolParam(degree, nbPtsOnCur, maxDegree, maxSegments);
+        filling->filler.SetConstrParam(tol3d * 0.1, tol3d, 0.01, 0.1);
+        filling->filler.SetResolParam(degree > 0 ? degree : 3,
+                                      nbPtsOnCur > 0 ? nbPtsOnCur : 15,
+                                      /*NbIter=*/2,
+                                      /*Anisotropie=*/false);
+        filling->filler.SetApproxParam(maxDegree > 0 ? maxDegree : 8,
+                                       maxSegments > 0 ? maxSegments : 9);
         return filling;
     } catch (...) {
         return nullptr;
@@ -4364,8 +4382,8 @@ bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t contin
         GeomAbs_Shape cont = GeomAbs_C0;
         if (continuity == 1) cont = GeomAbs_C1;
         else if (continuity >= 2) cont = GeomAbs_C2;
-        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(), cont,
-                                 /*isBound=*/true);
+        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
+                                 OCCTFillingSupport::Inferred, cont, /*isBound=*/true);
         return true;
     } catch (...) {
         return false;
@@ -4378,8 +4396,8 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
         GeomAbs_Shape cont = GeomAbs_C0;
         if (continuity == 1) cont = GeomAbs_C1;
         else if (continuity >= 2) cont = GeomAbs_C2;
-        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(), cont,
-                                 /*isBound=*/false);
+        occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
+                                 OCCTFillingSupport::Inferred, cont, /*isBound=*/false);
         return true;
     } catch (...) {
         return false;

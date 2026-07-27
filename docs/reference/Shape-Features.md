@@ -9,7 +9,7 @@ This page documents the Shape API from **Geometry Construction** through **Plate
 
 ## Topics
 
-- [Geometry Construction](#geometry-construction-v0110) · [Feature-Based Modeling](#feature-based-modeling-v0120) · [Shape Type](#shape-type) · [Sub-Shape Extraction](#sub-shape-extraction) · [Bounds](#bounds) · [Slicing](#slicing) · [Operators](#operators) · [Measurement & Analysis](#measurement--analysis-v070) · [Convenience Overloads](#wireenface-convenience-overloads) · [Selective Fillet / Draft / Defeaturing](#selective-fillet-draft--defeaturing) · [Advanced / Variable-Section Pipe Sweep](#advanced--variable-section-pipe-sweep) · [Surface Creation](#surface-creation-v090) · [Shape Healing / Analysis / Fixing / Unification](#shape-healing--analysis-v0130) · [Advanced Blends & Surface Filling](#advanced-blends--surface-filling-v0140) · [Variable Radius Fillet](#variable-radius-fillet-v0140) · [Multi-Edge Blend](#multi-edge-blend-v0140) · [Surface Filling](#surface-filling-v0140) · [Plate Surfaces](#plate-surfaces-v0140--v0230)
+- [Geometry Construction](#geometry-construction-v0110) · [Feature-Based Modeling](#feature-based-modeling-v0120) · [Shape Type](#shape-type) · [Sub-Shape Extraction](#sub-shape-extraction) · [Bounds](#bounds) · [Slicing](#slicing) · [Operators](#operators) · [Measurement & Analysis](#measurement--analysis-v070) · [Convenience Overloads](#wireenface-convenience-overloads) · [Selective Fillet / Draft / Defeaturing](#selective-fillet-draft--defeaturing) · [Advanced / Variable-Section Pipe Sweep](#advanced--variable-section-pipe-sweep) · [Surface Creation](#surface-creation-v090) · [Shape Healing / Analysis / Fixing / Unification](#shape-healing--analysis-v0130) · [Advanced Blends & Surface Filling](#advanced-blends--surface-filling-v0140) · [Variable Radius Fillet](#variable-radius-fillet-v0140) · [Multi-Edge Blend](#multi-edge-blend-v0140) · [Surface Filling](#surface-filling) · [Plate Surfaces](#plate-surfaces-v0140--v0230)
 
 ---
 
@@ -1569,7 +1569,7 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 
 ---
 
-## Surface Filling (v0.14.0 / v1.15.21)
+## Surface Filling
 
 ### Choosing a continuity reference
 
@@ -1690,7 +1690,7 @@ public struct FillConstraint {
 }
 ```
 
-- **`support`** — the face to be continuous with. `nil` falls back to the edge's own underlying surface.
+- **`support`** — the face to be continuous with, used or the fill fails. If the named face carries no pcurve for `edge` it cannot serve as the reference, and the whole fill returns `nil` rather than quietly substituting a different surface. `nil` instead accepts whichever surface the edge itself resolves. (A *planar* face works even with no pcurve stored: `BRep_Tool::CurveOnSurface` projects onto a plane on the fly.)
 - **`isBoundary`** — `true` bounds the resulting face; `false` makes it an internal constraint the surface passes through without being edged by it.
 
 > **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to

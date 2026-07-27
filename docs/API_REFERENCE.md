@@ -884,7 +884,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Surface.bezierFill(_:_:_:_:style:)` | `GeomFill_BezierCurves` |
 | `Surface.bezierFill(_:_:style:)` | `GeomFill_BezierCurves` |
 
-#### N-Side Surface Filling (v0.14.0 / v1.15.21)
+#### N-Side Surface Filling
 | Swift API | OCCT Class |
 |-----------|------------|
 | `Shape.fill(boundaries:parameters:)` | `BRepOffsetAPI_MakeFilling` |

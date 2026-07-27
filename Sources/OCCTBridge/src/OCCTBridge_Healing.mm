@@ -800,7 +800,8 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
 
         TopoDS_Face noSupport;
         for (const TopoDS_Edge& edge : edges) {
-            occtFillingAddConstraint(filling, edge, noSupport, order, /*isBound=*/true);
+            occtFillingAddConstraint(filling, edge, noSupport, OCCTFillingSupport::Inferred,
+                                     order, /*isBound=*/true);
         }
 
         return OCCTShapeFillBuildResult(filling);
@@ -832,13 +833,14 @@ OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wir
                 // An interior edge has two ancestor faces and this picks the first
                 // arbitrarily. Fine for the capping case these boundaries describe, where the
                 // opening side has no face; callers needing a specific one use
-                // OCCTShapeFillConstraints. occtFillingAddConstraint degrades per edge if the
-                // chosen face turns out to carry no pcurve for it, rather than failing the
-                // whole fill.
+                // OCCTShapeFillConstraints. The face is Inferred, not Nominated, so
+                // occtFillingAddConstraint degrades per edge if the chosen one turns out to
+                // carry no pcurve for it, rather than failing the whole fill.
                 const TopTools_ListOfShape& faces = edgeToFaces.FindFromKey(edge);
                 if (!faces.IsEmpty()) supportFace = TopoDS::Face(faces.First());
             }
-            occtFillingAddConstraint(filling, edge, supportFace, order, /*isBound=*/true);
+            occtFillingAddConstraint(filling, edge, supportFace, OCCTFillingSupport::Inferred,
+                                     order, /*isBound=*/true);
         }
 
         return OCCTShapeFillBuildResult(filling);
@@ -862,9 +864,15 @@ OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int
             TopoDS_Face support;
             if (c.support) support = c.support->face;
 
-            occtFillingAddConstraint(filling, c.edge->edge, support,
-                                     occtFillingContinuityToGeomAbs(c.continuity),
-                                     c.isBound != 0);
+            // A face the caller named is Nominated: if it cannot carry this edge's continuity,
+            // fail rather than silently answering with a different reference surface.
+            if (!occtFillingAddConstraint(filling, c.edge->edge, support,
+                                          c.support ? OCCTFillingSupport::Nominated
+                                                    : OCCTFillingSupport::Inferred,
+                                          occtFillingContinuityToGeomAbs(c.continuity),
+                                          c.isBound != 0)) {
+                return nullptr;
+            }
             added++;
         }
         if (added == 0) return nullptr;

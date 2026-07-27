@@ -3329,7 +3329,12 @@ public enum PlateConstraintOrder: Int32 {
 public struct FillConstraint {
     /// Edge the filled surface must satisfy
     public var edge: Edge
-    /// Face to be continuous with, or nil to derive one from the edge itself
+    /// Face to be continuous with, or nil to derive one from the edge itself.
+    ///
+    /// A face named here is used or the fill fails: if it carries no pcurve for `edge` it
+    /// cannot serve as the continuity reference, and the whole fill returns nil rather than
+    /// quietly substituting a different surface. Leave it nil to accept whichever surface the
+    /// edge itself resolves.
     public var support: Face?
     /// Continuity order at this edge
     public var continuity: SurfaceContinuity
@@ -3340,7 +3345,8 @@ public struct FillConstraint {
     ///
     /// - Parameters:
     ///   - edge: Edge the filled surface must satisfy
-    ///   - support: Face to be continuous with (default nil — derived from the edge)
+    ///   - support: Face to be continuous with, used or the fill fails (default nil — derived
+    ///     from the edge)
     ///   - continuity: Continuity order at this edge (default .g1)
     ///   - isBoundary: Whether the edge bounds the resulting face (default true)
     public init(

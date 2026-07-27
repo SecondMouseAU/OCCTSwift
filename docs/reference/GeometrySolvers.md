@@ -458,11 +458,13 @@ public func add(edge: Edge, continuity: FillingContinuity = .c0) -> Bool
 > constraint rather than a tangent one, and `.c2` maps out of the range OCCT accepts, which fails
 > the whole `build()` — `add` returns `true` either way, since it only appends and never validates
 > the order. See [#433](https://github.com/SecondMouseAU/OCCTSwift/issues/433).
-> Non-positional continuity also needs a support face to be continuous *with*, which this API has
-> no way to nominate ([#432](https://github.com/SecondMouseAU/OCCTSwift/issues/432)). For
-> tangent or curvature-continuous filling today, use
-> `Shape.fill(boundaries:supportedBy:parameters:)` or `Shape.fill(constraints:parameters:)`, which
-> take an explicit support face — see [Shape-Features](Shape-Features.md#surface-filling-v0140--v11521).
+> Non-positional continuity also needs a support face to be continuous *with*. This API cannot
+> nominate one, so it always uses the surface each edge itself resolves; converging it with the
+> `Shape.fill` overloads that can is
+> [#434](https://github.com/SecondMouseAU/OCCTSwift/issues/434). To choose the reference face
+> explicitly, use `Shape.fill(boundaries:supportedBy:parameters:)` or
+> `Shape.fill(constraints:parameters:)` — see
+> [Shape-Features](Shape-Features.md#surface-filling).
 
 ---
 

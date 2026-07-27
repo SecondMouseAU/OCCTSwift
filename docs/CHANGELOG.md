@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.21
+## Current: v1.15.20
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
@@ -15,7 +15,11 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### v1.15.21 (July 2026): fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
+### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then. (Two open PRs both predicted
+> v1.15.21 for themselves, which is exactly the collision this avoids.)
 
 `FillingParameters` defaults `continuity` to `.g1`, so the ordinary
 `Shape.fill(boundaries: [wire])` call requested tangent continuity. For any boundary edge
@@ -45,10 +49,25 @@ Two new overloads make the continuity reference explicit rather than implied:
 - `Shape.fill(constraints:parameters:)` with the new `FillConstraint` — per-edge support face,
   continuity order, and whether the edge bounds the face or is an internal constraint.
 
-Also corrected in the same path (#431): the `BRepOffsetAPI_MakeFilling` constructor call bound
-`maxDegree`/`maxSegments`/`continuity` to `Degree`/`NbPtsOnCur`/`TolAng`, leaving `MaxDeg` and
-`MaxSegments` at their defaults and making the angular tolerance the continuity ordinal. Measured
-effect on a cylinder-rim fill: G0Error 0.615 before, 0.00040 after.
+A face named through `FillConstraint.support` is now used or the fill fails. It previously fell
+back to a face derived from the edge when the named one carried no pcurve, which answered with a
+continuity reference the caller never asked for and gave no signal that their choice had been
+discarded. Auto-picked faces (`supportedBy`) still degrade per edge, since nothing was chosen
+there to begin with. Note a planar face is legitimately usable even with no pcurve stored, because
+`BRep_Tool::CurveOnSurface` projects onto a plane on the fly.
+
+Also corrected (#431), at both sites that had it:
+
+- `OCCTShapeFill`'s `BRepOffsetAPI_MakeFilling` constructor call bound
+  `maxDegree`/`maxSegments`/`continuity` to `Degree`/`NbPtsOnCur`/`TolAng`, leaving `MaxDeg` and
+  `MaxSegments` at their defaults and making the angular tolerance the continuity ordinal. Measured
+  effect on a cylinder-rim fill: G0Error 0.615 before, 0.00040 after.
+- `OCCTFillingCreate` (backing `FillingSurface`) passed `maxDegree`/`maxSegments` as
+  `SetResolParam`'s 3rd and 4th arguments, which are `NbIter` and `Anisotropie` — so `maxDegree`
+  silently became the solver's iteration count (8 instead of 2, roughly 3x the work at the
+  documented defaults) and `maxSegments` became a bool. `SetApproxParam`, the only place `MaxDeg`
+  and `MaxSegments` can actually be set, was never called at all, leaving both documented
+  parameters inert. `FillingSurface(maxDegree:maxSegments:)` now controls what its names say.
 
 Continuity mapping is now explicit and documented: `BRepFill_Filling` forwards the `GeomAbs_Shape`
 value to `GeomPlate_CurveConstraint` as an integer plate order and rejects anything outside

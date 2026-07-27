@@ -321,6 +321,64 @@ struct FillingSupportFaceTests {
         #expect(Shape.fill(constraints: []) == nil)
     }
 
+    @Test("A nominated support face that cannot serve is a failure, not a substitution")
+    func nominatedSupportFaceIsNotSilentlySubstituted() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        // Deliberately not a planar face: BRep_Tool::CurveOnSurface projects an edge onto a
+        // plane on the fly when no pcurve is stored (BRep_Tool.cxx:372), so a planar face CAN
+        // serve as a reference and is legitimately honoured. A sphere elsewhere in space
+        // cannot, which is the case that used to be papered over.
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        // The rim resolves no pcurve on that face, so it cannot be the continuity reference.
+        // The edge does resolve its own spherical surface, so a fallback would succeed — and
+        // would silently answer with a reference the caller never asked for. Naming a face
+        // means that face or nothing.
+        let substituted = Shape.fill(constraints: [
+            FillConstraint(edge: rim, support: strangerFace, continuity: .g1)
+        ])
+        #expect(substituted == nil)
+
+        // Same edge, same continuity, no nominated face: the derivation is allowed and works.
+        let derived = Shape.fill(constraints: [
+            FillConstraint(edge: rim, continuity: .g1)
+        ])
+        if let derived = derived {
+            #expect(derived.size.z > 0.5)
+        } else {
+            Issue.record("Deriving a support face from the edge should still succeed")
+        }
+    }
+
+    @Test("FillingSurface honours maxDegree instead of retargeting the iteration count (#431)")
+    func fillingSurfaceMaxDegreeIsHonoured() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        // maxDegree used to be passed as SetResolParam's NbIter, leaving MaxDeg at its default 8
+        // because SetApproxParam was never called — so the cap did nothing and the result came
+        // back degree 8. Second site of #431.
+        let filling = FillingSurface(maxDegree: 3)
+        #expect(filling.add(edge: rim, continuity: .c1))
+
+        guard let surface = filling.build()?.faceSurfaceGeom() else {
+            Issue.record("FillingSurface should build a face with an extractable surface")
+            return
+        }
+        #expect(surface.uDegree <= 3)
+        #expect(surface.vDegree <= 3)
+    }
+
     @Test("FillingSurface survives a curved boundary above positional continuity (#432)")
     func fillingSurfaceCurvedBoundarySurvives() {
         guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
