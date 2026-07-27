@@ -15,6 +15,43 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — `Shape.outerShell` answered for the wrong body on a multi-solid compound (#439)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+`Shape.outerShell` returned the **first solid's shell** on a compound holding more than one solid,
+where its own doc comment specified `nil`. The result was a plausible-looking `Shape` that silently
+answered for one arbitrary body, so callers guarding on `nil` never fired and every measurement
+taken against it was wrong with no signal. On the reporter's 2-solid part a per-vertex sweep went
+from mean 0.0131 mm / max 0.2511 mm to mean 2.3129 mm / max 18.2483 mm — output that reads as a
+poorly fitted part, not as an error.
+
+`OCCTShapeOuterShell` took the first solid a `TopExp_Explorer` yielded without ever checking whether
+a second followed. `OCCTShapeInnerShells` (#212) had the identical defect and is fixed with it: a
+2-solid compound reported the first solid's cavities as though they were the compound's.
+
+Both now resolve through one `occtSoleSolid` helper that accepts a solid, or a compound/compsolid
+wrapping exactly **one** solid, and returns nothing for a container of two or more. This is the
+contract the doc comment already stated; it is a behaviour change only for inputs that were being
+answered incorrectly.
+
+> **Behaviour change for consumers:** a caller that passed a multi-solid compound or compsolid to
+> `outerShell` and got a shell back now gets `nil`; the same input to `innerShells` now gives `[]`.
+> That shell was one arbitrary body's, so any measurement against it was already wrong. Migrate to
+> `outerShells` (per body), `solids.flatMap(\.innerShells)` (per body), or
+> `Shape.compound(shape.subShapes(ofType: .face))` (whole boundary, cavities included).
+
+**Added** `Shape.outerShells: [Shape]` (`OCCTShapeOuterShells`) — the outer shell of every solid, in
+exploration order, so the fix is not purely subtractive. Equivalent to `solids.compactMap(\.outerShell)`
+in a single traversal. Note these shells drop internal void walls by design; to measure against the
+complete boundary of a multi-body part, cavities included, use
+`Shape.compound(shape.subShapes(ofType: .face))`.
+
+Bridge-only (no OCCT kernel change, no `OCCT.xcframework` rebuild). Source comment, generated
+reference (`docs/reference/Shape-Measurement.md`) and `OCCTBridge.h` now state the same rule —
+the generated page had been paraphrasing the contract with the parenthetical dropped.
+
 ### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch
