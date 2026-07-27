@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,254** | |
+| **Total** | **4,257** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -883,6 +883,13 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 |-----------|------------|
 | `Surface.bezierFill(_:_:_:_:style:)` | `GeomFill_BezierCurves` |
 | `Surface.bezierFill(_:_:style:)` | `GeomFill_BezierCurves` |
+
+#### N-Side Surface Filling
+| Swift API | OCCT Class |
+|-----------|------------|
+| `Shape.fill(boundaries:parameters:)` | `BRepOffsetAPI_MakeFilling` |
+| `Shape.fill(boundaries:supportedBy:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order)` |
+| `Shape.fill(constraints:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order, isBound)` |
 
 #### Shape Healing (v0.31.0)
 | Swift API | OCCT Class |

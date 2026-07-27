@@ -15,6 +15,81 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then. (Two open PRs both predicted
+> v1.15.21 for themselves, which is exactly the collision this avoids.)
+
+`FillingParameters` defaults `continuity` to `.g1`, so the ordinary
+`Shape.fill(boundaries: [wire])` call requested tangent continuity. For any boundary edge
+borrowed from an existing face — the normal way to get one — that took the whole host process
+down with an uncatchable SIGSEGV rather than returning `nil`.
+
+The bridge always used `BRepFill_Filling`'s face-less `Add(edge, order)` overload. That overload
+fetches the edge's pcurve *and its `[first, last]` range*, then builds its constraint from the
+**untrimmed** pcurve, discarding the range it just read. For the usual `Geom2d_Line` pcurve that
+means a ±2e100 parameter span instead of, say, `[0, 2π]`. The resulting constraint cannot be
+projected, and `GeomPlate_BuildPlateSurface::Perform`'s projection-failure recovery branch then
+dereferences its own `myGeomPlateSurface` — which `Perform` unconditionally nullifies on entry and
+never assigns on that path. Both defects are upstream and present in OCCT master; neither is
+reachable through the face-carrying `Add(edge, face, order)` overload, which trims correctly.
+
+Fixed bridge-side by keeping the face-less overload out of the call path whenever continuity is
+above positional: a support face is used if one is available, derived from the edge's own pcurve
+surface if not, and only a boundary edge with no pcurve at all falls through to the old overload —
+where OCCT's documented `Standard_Failure` makes it a clean `nil`. Verified equivalent to a
+kernel-patched build: identical G0/G1 errors and identical geometry.
+
+Two new overloads make the continuity reference explicit rather than implied:
+
+- `Shape.fill(boundaries:supportedBy:parameters:)` — each boundary edge takes its tangency
+  reference from that edge's own ancestor face in a given shape. The "cap this opening so it flows
+  into the walls around it" case.
+- `Shape.fill(constraints:parameters:)` with the new `FillConstraint` — per-edge support face,
+  continuity order, and whether the edge bounds the face or is an internal constraint.
+
+A face named through `FillConstraint.support` is now used or the fill fails. It previously fell
+back to a face derived from the edge when the named one carried no pcurve, which answered with a
+continuity reference the caller never asked for and gave no signal that their choice had been
+discarded. Auto-picked faces (`supportedBy`) still degrade per edge, since nothing was chosen
+there to begin with. Note a planar face is legitimately usable even with no pcurve stored, because
+`BRep_Tool::CurveOnSurface` projects onto a plane on the fly.
+
+Also corrected (#431), at both sites that had it:
+
+- `OCCTShapeFill`'s `BRepOffsetAPI_MakeFilling` constructor call bound
+  `maxDegree`/`maxSegments`/`continuity` to `Degree`/`NbPtsOnCur`/`TolAng`, leaving `MaxDeg` and
+  `MaxSegments` at their defaults and making the angular tolerance the continuity ordinal. Measured
+  effect on a cylinder-rim fill: G0Error 0.615 before, 0.00040 after.
+- `OCCTFillingCreate` (backing `FillingSurface`) passed `maxDegree`/`maxSegments` as
+  `SetResolParam`'s 3rd and 4th arguments, which are `NbIter` and `Anisotropie` — so `maxDegree`
+  silently became the solver's iteration count (8 instead of 2, roughly 3x the work at the
+  documented defaults) and `maxSegments` became a bool. `SetApproxParam`, the only place `MaxDeg`
+  and `MaxSegments` can actually be set, was never called at all, leaving both documented
+  parameters inert. `FillingSurface(maxDegree:maxSegments:)` now controls what its names say.
+
+Continuity mapping is now explicit and documented: `BRepFill_Filling` forwards the `GeomAbs_Shape`
+value to `GeomPlate_CurveConstraint` as an integer plate order and rejects anything outside
+`[-1, 2]`, so `.g2` is `GeomAbs_C1` (ordinal 2). `GeomAbs_G2` (ordinal 3) always throws, despite
+OCCT's header docs naming it as the curvature value.
+
+`FillingSurface` reached the same OCCT defect through its own bridge implementation and crashed
+identically (#432). The constraint helpers moved to `OCCTBridge_Internal.h` and both entry points
+now share them, so that crash is fixed too.
+
+**Note on the planar/curved split** — worth knowing before probing this family. The same face-less
+call is a *catchable* `Standard_Failure` on a **planar** support surface, which rejects the ±2e100
+parameters, and an uncatchable SIGSEGV on an **unbounded or periodic** one (cylinder, sphere,
+cone), which accepts them. The pre-existing filling tests only ever used rectangles and polygons at
+`.c0`, so neither half of the defect ever showed.
+
+**Still open:** `FillingSurface`'s continuity mapping is wrong in its own way — `.c1` requests
+curvature rather than tangency, and `.c2` lands on an order OCCT rejects, which fails the entire
+`build()` (`add` returns `true` regardless; it only appends). Correcting that changes documented
+public behavior, so it is #433. Converging the two wrappers onto one implementation is
+#434. The kernel patch for the two upstream defects, and the upstream filing, are deferred.
+
 ### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
 
 `Edge.circleProperties` (`MeasurementHelpers.swift`) fits a circle through three points sampled

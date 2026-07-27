@@ -3309,6 +3309,59 @@ public enum PlateConstraintOrder: Int32 {
     case g2 = 2
 }
 
+/// One edge constraint for ``Shape/fill(constraints:parameters:)``.
+///
+/// Pairs an edge with the face the filled surface should be continuous with. Tangency and
+/// curvature are relative to *something* — without a `support` face, the edge's own
+/// underlying surface is used, and an edge that has neither can only be constrained
+/// positionally.
+///
+/// ```swift
+/// // Tangent to the wall the rim came from
+/// let tangent = FillConstraint(edge: rimEdge, support: wallFace, continuity: .g1)
+///
+/// // Pass through this edge, but let it float otherwise
+/// let positional = FillConstraint(edge: freeEdge, continuity: .c0)
+///
+/// // Pull the surface through an interior edge without it bounding the face
+/// let interior = FillConstraint(edge: ridgeEdge, continuity: .c0, isBoundary: false)
+/// ```
+public struct FillConstraint {
+    /// Edge the filled surface must satisfy
+    public var edge: Edge
+    /// Face to be continuous with, or nil to derive one from the edge itself.
+    ///
+    /// A face named here is used or the fill fails: if it carries no pcurve for `edge` it
+    /// cannot serve as the continuity reference, and the whole fill returns nil rather than
+    /// quietly substituting a different surface. Leave it nil to accept whichever surface the
+    /// edge itself resolves.
+    public var support: Face?
+    /// Continuity order at this edge
+    public var continuity: SurfaceContinuity
+    /// Whether this edge bounds the resulting face (true) or is an internal constraint (false)
+    public var isBoundary: Bool
+
+    /// Create an edge constraint.
+    ///
+    /// - Parameters:
+    ///   - edge: Edge the filled surface must satisfy
+    ///   - support: Face to be continuous with, used or the fill fails (default nil — derived
+    ///     from the edge)
+    ///   - continuity: Continuity order at this edge (default .g1)
+    ///   - isBoundary: Whether the edge bounds the resulting face (default true)
+    public init(
+        edge: Edge,
+        support: Face? = nil,
+        continuity: SurfaceContinuity = .g1,
+        isBoundary: Bool = true
+    ) {
+        self.edge = edge
+        self.support = support
+        self.continuity = continuity
+        self.isBoundary = isBoundary
+    }
+}
+
 /// Parameters for surface filling operations
 public struct FillingParameters {
     /// Surface continuity at boundaries
@@ -3436,6 +3489,14 @@ extension Shape {
     /// Creates a surface that passes through the given boundary wires
     /// with the specified continuity.
     ///
+    /// Tangency (`.g1`) and curvature (`.g2`) continuity need a surface to be continuous
+    /// *with*. This overload uses each boundary edge's own underlying surface, so any
+    /// continuity above `.c0` requires every boundary edge to have been borrowed from an
+    /// existing face; a boundary built from free-standing wires has nothing to match and
+    /// returns nil. To fill an opening smoothly into the shape around it, use
+    /// ``fill(boundaries:supportedBy:parameters:)``; to name the reference face per edge,
+    /// use ``fill(constraints:parameters:)``.
+    ///
     /// - Parameters:
     ///   - boundaries: Array of wires defining the boundary
     ///   - parameters: Filling parameters (continuity, tolerance, etc.)
@@ -3450,9 +3511,10 @@ extension Shape {
     /// let wire3 = Wire.line(from: SIMD3(10, 10, 5), to: SIMD3(0, 10, 3))
     /// let wire4 = Wire.line(from: SIMD3(0, 10, 3), to: SIMD3(0, 0, 0))
     ///
-    /// let surface = Shape.fill(
+    /// // Free-standing wires have no surface to be tangent to, so fill positionally.
+    /// let patch = Shape.fill(
     ///     boundaries: [wire1, wire2, wire3, wire4],
-    ///     parameters: FillingParameters(continuity: .g1)
+    ///     parameters: FillingParameters(continuity: .c0)
     /// )
     /// ```
     public static func fill(
@@ -3469,6 +3531,109 @@ extension Shape {
             return nil
         }
         return Shape(handle: result)
+    }
+
+    /// Fill an N-sided boundary, continuous with the shape surrounding it.
+    ///
+    /// The "cap this opening" case: each boundary edge takes its tangency/curvature
+    /// reference from that edge's own face in `support`, so a `.g1` fill leaves the
+    /// boundary along the surrounding walls instead of flat across them. A boundary edge
+    /// that isn't part of `support` falls back to its own underlying surface, and failing
+    /// that is constrained positionally.
+    ///
+    /// - Parameters:
+    ///   - boundaries: Array of wires defining the boundary
+    ///   - support: Shape whose faces supply the continuity reference
+    ///   - parameters: Filling parameters (continuity, tolerance, etc.)
+    /// - Returns: Face shape covering the boundary, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Cap the open top of a truncated sphere, tangent to the spherical wall
+    /// let bowl = Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1),
+    ///                         radius: 10, angle1: -.pi / 2, angle2: 50 * .pi / 180)!
+    ///
+    /// // the open rim is the topmost closed edge
+    /// let rim = bowl.edges()
+    ///     .filter { $0.isClosed3D }
+    ///     .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
+    ///
+    /// let cap = Shape.fill(
+    ///     boundaries: [Wire.wireFromEdges([rim])!],
+    ///     supportedBy: bowl,
+    ///     parameters: FillingParameters(continuity: .g1)
+    /// )
+    /// // cap leaves the rim along the sphere instead of closing it with a flat disc
+    /// ```
+    public static func fill(
+        boundaries: [Wire],
+        supportedBy support: Shape,
+        parameters: FillingParameters = FillingParameters()
+    ) -> Shape? {
+        guard !boundaries.isEmpty else { return nil }
+
+        var handles = boundaries.map { $0.handle as OCCTWireRef? }
+
+        guard let result = handles.withUnsafeMutableBufferPointer({ buffer in
+            OCCTShapeFillWithSupport(buffer.baseAddress, Int32(boundaries.count),
+                                     support.handle, parameters.cParams)
+        }) else {
+            return nil
+        }
+        return Shape(handle: result)
+    }
+
+    /// Fill a surface from explicit per-edge constraints.
+    ///
+    /// The precise form of ``fill(boundaries:parameters:)``: every edge names its own
+    /// reference face and continuity order, and may bound the resulting face or act as an
+    /// internal constraint the surface must also satisfy. `parameters.continuity` is
+    /// ignored — each constraint carries its own.
+    ///
+    /// - Parameters:
+    ///   - constraints: Edge constraints defining the surface
+    ///   - parameters: Filling parameters (tolerance, degree, segments; continuity unused)
+    /// - Returns: Face shape satisfying the constraints, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Curvature-continuous against the wall the rim came from, positional elsewhere
+    /// let wall = rim.adjacentFaces(in: bowl)!.0
+    ///
+    /// let patch = Shape.fill(constraints: [
+    ///     FillConstraint(edge: rim, support: wall, continuity: .g2),
+    ///     FillConstraint(edge: freeEdge, continuity: .c0)
+    /// ])
+    /// ```
+    public static func fill(
+        constraints: [FillConstraint],
+        parameters: FillingParameters = FillingParameters()
+    ) -> Shape? {
+        guard !constraints.isEmpty else { return nil }
+
+        var cConstraints = constraints.map { constraint in
+            OCCTFillConstraint(
+                edge: constraint.edge.handle,
+                support: constraint.support?.handle,
+                continuity: constraint.continuity.rawValue,
+                isBound: constraint.isBoundary ? 1 : 0
+            )
+        }
+
+        // cConstraints holds raw handles owned by the Edge/Face objects in `constraints`;
+        // withExtendedLifetime keeps those owners alive across the call rather than relying on
+        // the optimiser not releasing them early.
+        let handle = withExtendedLifetime(constraints) {
+            cConstraints.withUnsafeMutableBufferPointer { buffer in
+                OCCTShapeFillConstraints(buffer.baseAddress, Int32(constraints.count),
+                                         parameters.cParams)
+            }
+        }
+
+        guard let handle = handle else { return nil }
+        return Shape(handle: handle)
     }
 
     // MARK: - Plate Surfaces (v0.14.0)
