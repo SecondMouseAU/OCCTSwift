@@ -849,10 +849,15 @@ single body comes back as a solid, several as a compound in exploration order.
 A solid's **cavity** shells are deliberately skipped: a hole is not a body, and building it as a
 positive solid would yield a compound whose volume double-counts the part. So a hollow solid produces
 one solid bounded by its outer shell, with the cavity filled. To rebuild a solid that keeps its
-cavities, use [`Shape.solidFromShells(_:)`](Shape-Features.md) with the outer shell first.
+cavities, use [`Shape.solidFromShells(_:)`](Shape-Measurement.md#solidfromshells_) with the outer
+shell first.
 
-- **Returns:** A solid, a compound of solids for multi-body input, or `nil` if the receiver holds no
-  shell or none of them closes.
+> An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell` builds its solid before
+> classifying anything and never returns a null one, so a shell with gaps comes back as a solid that
+> is not closed rather than as `nil`. Check `isValid` or sew first if the input may be open.
+
+- **Returns:** A solid, a compound of solids for multi-body input, or `nil` only if the receiver
+  holds no shell at all.
 - **OCCT:** `ShapeFix_Solid::SolidFromShell`.
 - **Example:**
   ```swift

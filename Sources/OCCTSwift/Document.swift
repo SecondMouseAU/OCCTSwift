@@ -3871,8 +3871,13 @@ public extension Shape {
     /// print(solids.solids.count)   // 2 — one solid per shell
     /// ```
     ///
-    /// - Returns: A solid, a compound of solids for multi-body input, or `nil` if the
-    ///   receiver holds no shell or none of them closes.
+    /// - Important: An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell`
+    ///   builds its solid before classifying anything and never returns a null one, so a
+    ///   shell with gaps comes back as a solid that is not closed rather than as `nil`.
+    ///   Check ``Shape/isValid`` or sew first if the input may be open.
+    ///
+    /// - Returns: A solid, a compound of solids for multi-body input, or `nil` only if the
+    ///   receiver holds no shell at all.
     func solidFromShellFixed() -> Shape? {
         guard let ref = OCCTShapeSolidFromShell(handle) else { return nil }
         return Shape(handle: ref)
