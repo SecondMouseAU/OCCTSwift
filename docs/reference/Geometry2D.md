@@ -233,11 +233,14 @@ Minimum distance from this point to a 2D curve.
 public func distance(to curve: Curve2D) -> Double
 ```
 
-Returns `-1.0` if the projection fails or the curve has no projection points.
+Returns `.infinity` when the point has no projection onto the curve at all — one beyond the ends of a bounded curve, or the centre of a circle (equidistant from every point, so there is no local minimum). This is an ordinary outcome, not an error.
+
+Before #413 this returned the bridge's raw `-1.0` sentinel for that case, which any threshold test (`distance < tolerance`) would read as "touching" — the opposite of the truth.
 
 - **Parameters:** `curve` — the 2D curve to measure against.
-- **Returns:** Minimum distance, or `-1.0` on failure.
+- **Returns:** Minimum distance, or `.infinity` if there is no projection.
 - **OCCT:** `Geom2dAPI_ProjectPointOnCurve::LowerDistance()`.
+- **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md) and `Curve2D.project(_:)`, so all three agree on the value and on when there is no projection (#413).
 - **Example:**
   ```swift
   if let p = Point2D(x: 5.0, y: 5.0),
