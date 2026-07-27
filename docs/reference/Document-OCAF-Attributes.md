@@ -817,9 +817,21 @@ which wraps `ShapeFix_Shape` and preserves everything it is given.
 > **A result body is usually a healed solid, but not always** — and no body is ever dropped to make
 > that true. `ShapeFix_Solid` hands back a **shell** when it cannot close one into a solid, and a
 > solid it fails to heal outright is returned **unhealed** rather than discarded. So
-> `result.solids.count` can be lower than the number of input bodies even though nothing was lost;
-> check `result.subShapes(ofType: .shell)` or `isValid` if that distinction matters, rather than
-> reading a short `solids` count as a body having vanished.
+> `result.solids.count` can be lower than the number of input bodies even though nothing was lost.
+
+To spot an unclosed body, walk the result's **direct children**. Do not use
+`subShapes(ofType: .shell)`: it maps at every depth, so it reports one shell for every *healthy*
+solid too — a compound of two healed solids has two shells, and a single healed solid has one.
+
+```swift
+let healed = part.fixSolid()!
+let bodies = (0..<healed.nbChildren).compactMap { healed.child(at: $0) }
+let unclosed = bodies.filter { $0.shapeType == .shell }
+```
+
+When a single body came back, the result is that body rather than a compound, so
+`healed.shapeType == .shell` answers it directly. A body that came back *unhealed* is still a solid —
+use `isValid` for that.
 
 - **Returns:** The repaired body, a compound of one result per input body for multi-body input, or
   `nil` if the receiver holds no solid.

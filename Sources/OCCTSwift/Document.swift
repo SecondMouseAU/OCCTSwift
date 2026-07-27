@@ -3837,9 +3837,22 @@ public extension Shape {
     ///   is ever dropped to make that true. `ShapeFix_Solid` hands back a **shell** when it
     ///   cannot close one into a solid, and a solid it fails to heal outright is returned
     ///   **unhealed** rather than discarded. So `result.solids.count` can be lower than the
-    ///   number of input bodies even though nothing was lost — check
-    ///   `result.subShapes(ofType: .shell)` or ``Shape/isValid`` if that distinction
-    ///   matters, rather than treating a short `solids` count as a body having vanished.
+    ///   number of input bodies even though nothing was lost.
+    ///
+    ///   To spot an unclosed body, walk the result's **direct children** — not
+    ///   ``Shape/subShapes(ofType:)``, which maps at every depth and so reports one shell
+    ///   for every *healthy* solid too (a compound of two healed solids has two shells, and
+    ///   a single healed solid has one):
+    ///
+    ///   ```swift
+    ///   let healed = part.fixSolid()!
+    ///   let bodies = (0..<healed.nbChildren).compactMap { healed.child(at: $0) }
+    ///   let unclosed = bodies.filter { $0.shapeType == .shell }
+    ///   ```
+    ///
+    ///   When a single body came back, the result is that body rather than a compound, so
+    ///   `healed.shapeType == .shell` answers it directly. A body that came back *unhealed*
+    ///   is still a solid — use ``Shape/isValid`` for that.
     ///
     /// ```swift
     /// let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!

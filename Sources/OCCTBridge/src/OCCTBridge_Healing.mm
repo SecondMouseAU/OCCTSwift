@@ -3251,6 +3251,21 @@ static std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shap
         // a body nested inside another body's cavity correctly: enclosed twice, so even.
         std::vector<int> enclosedBy(shells.size(), 0);
         for (size_t i = 0; i < shells.size(); i++) {
+            // An open shell cannot enclose anything, and every shell is a reference under
+            // parity, so letting one classify would add a spurious ±1 to the others and
+            // flip their verdicts. Measured on {A_outer, A_cavity, openShell wrapping both}:
+            // without this the outer shell is DROPPED (count 1) and the cavity emitted as a
+            // body. BRep_Tool::IsClosed on a shell is a real edge-pairing check rather than
+            // the Closed() flag, so a genuine cavity shell still qualifies as a reference.
+            // Open shells reach here routinely — this function accepts them by contract.
+            //
+            // Deliberate trade-off, do not "fix" a double-count back out of this: on a body
+            // whose OUTER shell is the open one, the cavity becomes the only eligible
+            // reference, both end even, and the cavity is emitted as a positive body. Input
+            // that broken has no right answer, and an extra body beats a dropped one for a
+            // call whose whole contract is that bodies do not vanish silently.
+            if (!BRep_Tool::IsClosed(shells[i])) continue;
+
             // Reference built directly rather than through ShapeFix_Solid::SolidFromShell:
             // that call does sh.Free(true), a TShape-level write to state shared with the
             // caller's shape, and nothing here needs the reorientation it pays that for.

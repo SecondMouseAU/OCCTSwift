@@ -303,6 +303,82 @@ struct Issue442FixSolidMultiBody {
         #expect(face.solidFromShellFixed() == nil)
     }
 
+    /// The docs tell callers to spot an unclosed body by walking the result's **direct
+    /// children**, and explicitly not with `subShapes(ofType: .shell)`. This pins both
+    /// halves of that claim: the recommended walk reports no shell on healthy output, and
+    /// the rejected one reports a shell per solid whether or not anything went wrong.
+    @Test("the documented unclosed-body check works on healthy output")
+    func documentedUnclosedCheck() {
+        guard let compound = twoBoxes() else {
+            Issue.record("could not build the two-box compound")
+            return
+        }
+        guard let healed = compound.fixSolid() else {
+            Issue.record("fixSolid returned nil")
+            return
+        }
+        // Recommended: direct children, one per body, all solids.
+        let bodies = (0..<healed.nbChildren).compactMap { healed.child(at: $0) }
+        #expect(bodies.count == 2)
+        #expect(bodies.allSatisfy { $0.shapeType == .solid })
+        #expect(bodies.filter { $0.shapeType == .shell }.isEmpty)
+
+        // Rejected: maps at every depth, so healthy output reports one shell per solid.
+        #expect(healed.subShapeCount(ofType: .shell) == 2)
+
+        // Single-body input returns the body itself, so shapeType answers it directly.
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let single = box.fixSolid() else {
+            Issue.record("could not heal a single box")
+            return
+        }
+        #expect(single.shapeType == .solid)
+        #expect(single.subShapeCount(ofType: .shell) == 1)   // not a failure signal
+    }
+
+    /// An open shell reaching the parity pass must not perturb the other shells' verdicts.
+    /// Every shell is a reference under parity, and an open one cannot enclose anything;
+    /// without that guard, measured, a hollow body's outer shell is dropped outright
+    /// (enclosed count 1, odd) and its cavity emitted as a positive body.
+    @Test("an open shell does not flip other shells' verdicts")
+    func openShellDoesNotPerturbParity() {
+        guard let outerA = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
+              let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
+              let hollowA = outerA.subtracting(cavityA),
+              let bigBox = Shape.box(origin: SIMD3(-10, -10, -10), width: 40, height: 40, depth: 40)
+        else {
+            Issue.record("could not build the hollow body or the wrapping box")
+            return
+        }
+        // An open shell that wraps the hollow body: the big box's faces minus one, sewn.
+        let faces = bigBox.subShapes(ofType: .face)
+        #expect(faces.count == 6)
+        guard let openQuilt = Shape.compound(Array(faces.dropFirst()))?.sewn(tolerance: 1e-6),
+              let openShell = openQuilt.shells.first
+        else {
+            Issue.record("could not sew the open shell")
+            return
+        }
+        guard let solid = Shape.solidFromShells(hollowA.shells + [openShell]) else {
+            Issue.record("could not assemble the shells into one solid")
+            return
+        }
+        #expect(solid.shells.count == 3)
+
+        guard let bodies = solid.solidFromShellFixed() else {
+            Issue.record("solidFromShellFixed returned nil")
+            return
+        }
+        // The hollow body's outer shell must still be a body, and its cavity must not be.
+        // Without the guard the outer shell is dropped and the cavity comes back instead,
+        // which shows up as the 8000 mm³ body going missing.
+        let volumes = bodies.solids.compactMap(\.volume)
+        #expect(volumes.contains { abs($0 - 8000.0) < 1e-6 },
+                "the hollow body's outer shell was dropped; volumes: \(volumes)")
+        #expect(!volumes.contains { abs($0 - 1000.0) < 1e-6 },
+                "the cavity was emitted as a positive body; volumes: \(volumes)")
+    }
+
     // MARK: - The issue's measured table
 
     /// The exact table from the issue: every column read 1 solid / 6 faces / 1000.0 for

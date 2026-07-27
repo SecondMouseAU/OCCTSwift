@@ -40,6 +40,14 @@ volume double-counts the part (8000 + 1000 for a 7000 mm³ hollow box). Enclosur
 cavity shells are `FORWARD`, so orientation carries no signal here; each reference is read once with
 `PerformInfinitePoint` so an inside-out shell flips the sense rather than the answer.
 
+An **open** shell is skipped in the reference role (`BRep_Tool::IsClosed`, which for a shell is a real
+edge-pairing check rather than the `Closed()` flag, so a genuine cavity shell still qualifies). Open
+shells reach this code by contract — the same call accepts them and returns them as unclosed solids —
+and under parity every shell is a reference, so one that cannot enclose anything would still add a
+spurious ±1 to the others. Measured on `{A_outer, A_cavity, openShell wrapping both}`: without the
+guard the outer shell is **dropped outright** (enclosed count 1, odd) and the cavity emitted as a
+positive body.
+
 Parity is used because **every rule that picks one reference shell and calls everything outside it a
 body is wrong on some real input**, and the two obvious choices fail on different ones. Measured, on
 one solid holding `{A_outer 8000, A_cavity 1000, B_outer 27000}`: picking the widest shell emits
@@ -58,8 +66,10 @@ shell twice yields one solid, not two.
 > **Reading the result of `fixSolid()`:** because no body is dropped, a result body is not always a
 > solid. `ShapeFix_Solid` hands back a shell it could not close, and a solid it fails to heal comes
 > back unhealed. `result.solids.count` can therefore be lower than the number of input bodies with
-> nothing lost — check `subShapes(ofType: .shell)` or `isValid` rather than reading a short `solids`
-> count as a body having vanished.
+> nothing lost. Spot an unclosed body by walking the result's **direct children**
+> (`child(at:)` over `nbChildren`) — **not** `subShapes(ofType: .shell)`, which maps at every depth
+> and so reports one shell per *healthy* solid as well, making it useless as a failure signal. A body
+> that came back unhealed is still a solid; use `isValid` for that.
 
 > **Behaviour change for consumers:** these two calls now return a **compound** where they previously
 > returned one arbitrary body's solid, for multi-body input only. Single-body input is untouched, down
