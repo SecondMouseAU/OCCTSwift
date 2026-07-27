@@ -274,6 +274,23 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Interpolate a smooth B-spline curve through the given points.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2.
+    ///   - closed: Pass `true` for a periodic loop that closes back to `points[0]` — do not repeat
+    ///     the first point at the end. `interpolatePeriodic(points:tolerance:)` is a spelling of
+    ///     this case and delegates here.
+    ///   - tolerance: Interpolation tolerance.
+    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let open = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 3), SIMD2(10, 0)])
+    /// #expect(open?.isPeriodic == false)
+    ///
+    /// let loop = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8)],
+    ///                                closed: true, tolerance: 1e-4)
+    /// #expect(loop?.isPeriodic == true)
+    /// ```
     public static func interpolate(through points: [SIMD2<Double>], closed: Bool = false,
                                    tolerance: Double = 1e-6) -> Curve2D? {
         let flat = points.flatMap { [$0.x, $0.y] }
@@ -2183,13 +2200,32 @@ extension Curve2D {
     }
 
     /// Interpolate a periodic (closed) 2D BSpline through points.
-    public static func interpolatePeriodic(points: [SIMD2<Double>]) -> Curve2D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolate2DPeriodic(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
-        return Curve2D(handle: ref)
+    ///
+    /// A spelling of `interpolate(through:closed:tolerance:)` with `closed: true`, and it
+    /// delegates to it — the two cannot produce different curves for the same input.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
+    ///     do not repeat the first point at the end.
+    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
+    ///     to hardcode with no way to change it (#412).
+    /// - Returns: The periodic curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let loop = Curve2D.interpolatePeriodic(points: [
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    /// ])
+    /// #expect(loop?.isPeriodic == true)
+    ///
+    /// // Identical to spelling it out on the general factory:
+    /// let same = Curve2D.interpolate(through: [
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    /// ], closed: true)
+    /// #expect(loop?.domain == same?.domain)
+    /// ```
+    public static func interpolatePeriodic(points: [SIMD2<Double>],
+                                           tolerance: Double = 1e-6) -> Curve2D? {
+        interpolate(through: points, closed: true, tolerance: tolerance)
     }
 
     /// Approximate a 2D BSpline through points with degree and continuity control.
