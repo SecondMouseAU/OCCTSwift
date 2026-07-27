@@ -3820,13 +3820,84 @@ public extension Document {
 // MARK: - ShapeFix_Solid
 
 public extension Shape {
-    /// Fix a solid shape (topology and orientation).
+    /// Fix a solid shape (topology and orientation), using `ShapeFix_Solid`.
+    ///
+    /// Every solid in the receiver is healed, not just the first: a single-body input
+    /// comes back as a solid, a multi-body one as a compound of one result per input body,
+    /// in exploration order. A compound result is not new to this call — `ShapeFix_Solid`
+    /// already returns one when a single solid's shells resolve into several bodies.
+    ///
+    /// Only the receiver's *solids* are visited. Loose shells, faces or wires sitting
+    /// alongside them in a compound are not carried over, and an input holding no solid at
+    /// all returns `nil`. To heal a whole shape of mixed content instead, use
+    /// ``Shape/fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)``, which wraps
+    /// `ShapeFix_Shape` and preserves everything it is given.
+    ///
+    /// - Warning: A result body is usually a healed solid, but **not always**, and no body
+    ///   is ever dropped to make that true. `ShapeFix_Solid` hands back a **shell** when it
+    ///   cannot close one into a solid, and a solid it fails to heal outright is returned
+    ///   **unhealed** rather than discarded. So `result.solids.count` can be lower than the
+    ///   number of input bodies even though nothing was lost.
+    ///
+    ///   To spot an unclosed body, walk the result's **direct children** — not
+    ///   ``Shape/subShapes(ofType:)``, which maps at every depth and so reports one shell
+    ///   for every *healthy* solid too (a compound of two healed solids has two shells, and
+    ///   a single healed solid has one):
+    ///
+    ///   ```swift
+    ///   let healed = part.fixSolid()!
+    ///   let bodies = (0..<healed.nbChildren).compactMap { healed.child(at: $0) }
+    ///   let unclosed = bodies.filter { $0.shapeType == .shell }
+    ///   ```
+    ///
+    ///   When a single body came back, the result is that body rather than a compound, so
+    ///   `healed.shapeType == .shell` answers it directly. A body that came back *unhealed*
+    ///   is still a solid — use ``Shape/isValid`` for that.
+    ///
+    /// ```swift
+    /// let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let part = Shape.compound([a, b])!
+    ///
+    /// let healed = part.fixSolid()!
+    /// print(healed.solids.count)   // 2 — both bodies, not just the first
+    /// print(healed.volume!)        // 2000.0
+    /// ```
+    ///
+    /// - Returns: The repaired body, or a compound of one result per input body for
+    ///   multi-body input, or `nil` if the receiver holds no solid.
     func fixSolid() -> Shape? {
         guard let ref = OCCTShapeFixSolid(handle) else { return nil }
         return Shape(handle: ref)
     }
 
-    /// Create a solid from a shell shape using ShapeFix_Solid.
+    /// Create a solid from a shell shape using `ShapeFix_Solid`, orienting it to enclose
+    /// a finite volume.
+    ///
+    /// One solid is built per *body-bounding* shell, not just the first shell found: within
+    /// each solid, every shell that an **even** number of the other shells enclose, plus
+    /// every shell that belongs to no solid (the usual shape of sewing output). A single
+    /// body comes back as a solid, several as a compound in exploration order.
+    ///
+    /// A solid's *cavity* shells are deliberately skipped: a hole is not a body, and
+    /// building it as a positive solid would yield a compound whose volume double-counts
+    /// the part. So a hollow solid produces one solid bounded by its outer shell, with the
+    /// cavity filled. To rebuild a solid that keeps its cavities, use
+    /// ``Shape/solidFromShells(_:)`` with the outer shell first.
+    ///
+    /// ```swift
+    /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies
+    /// let solids = quilt.solidFromShellFixed()!
+    /// print(solids.solids.count)   // 2 — one solid per shell
+    /// ```
+    ///
+    /// - Important: An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell`
+    ///   builds its solid before classifying anything and never returns a null one, so a
+    ///   shell with gaps comes back as a solid that is not closed rather than as `nil`.
+    ///   Check ``Shape/isValid`` or sew first if the input may be open.
+    ///
+    /// - Returns: A solid, a compound of solids for multi-body input, or `nil` only if the
+    ///   receiver holds no shell at all.
     func solidFromShellFixed() -> Shape? {
         guard let ref = OCCTShapeSolidFromShell(handle) else { return nil }
         return Shape(handle: ref)

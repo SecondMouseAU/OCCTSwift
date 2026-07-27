@@ -15,6 +15,90 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+`Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed the **first** solid (respectively the
+first shell) a `TopExp_Explorer` yielded and discarded every other body without a signal. The return
+was a well-formed `Shape` that looked like a healed version of the input, so nothing downstream could
+tell that most of the part was gone: a 2000 mm³ two-box compound came back as a 1000 mm³ single solid.
+
+Both now cover every body. `ShapeFix_Solid` cannot be handed a compound — its constructor and `Init`
+take a `TopoDS_Solid`, and `TopoDS::Solid` throws on anything else — so multi-body input has to be
+driven one solid at a time. **A compound result is not a new return category:** `ShapeFix_Solid::Shape()`
+already hands one back when a single solid's shells resolve into several bodies, so callers that
+handled `fixSolid()` correctly for a multiconnex solid already handle this.
+
+`solidFromShellFixed()` builds one solid per **body-bounding** shell, decided by **enclosure parity**:
+within each solid, a shell bounds a body iff an *even* number of the other shells enclose it, plus
+every shell belonging to no solid at all (the usual shape of sewing output). A solid's *cavity* shells
+are skipped: a hole is not a body, and building one as a positive solid would return a compound whose
+volume double-counts the part (8000 + 1000 for a 7000 mm³ hollow box). Enclosure is decided with
+`BRepClass3d_SolidClassifier`, not by shell orientation — measured, both a hollow solid's outer and
+cavity shells are `FORWARD`, so orientation carries no signal here; each reference is read once with
+`PerformInfinitePoint` so an inside-out shell flips the sense rather than the answer.
+
+An **open** shell is skipped in the reference role (`BRep_Tool::IsClosed`, which for a shell is a real
+edge-pairing check rather than the `Closed()` flag, so a genuine cavity shell still qualifies). Open
+shells reach this code by contract — the same call accepts them and returns them as unclosed solids —
+and under parity every shell is a reference, so one that cannot enclose anything would still add a
+spurious ±1 to the others. Measured on `{A_outer, A_cavity, openShell wrapping both}`: without the
+guard the outer shell is **dropped outright** (enclosed count 1, odd) and the cavity emitted as a
+positive body.
+
+Parity is used because **every rule that picks one reference shell and calls everything outside it a
+body is wrong on some real input**, and the two obvious choices fail on different ones. Measured, on
+one solid holding `{A_outer 8000, A_cavity 1000, B_outer 27000}`: picking the widest shell emits
+`A_cavity` as a positive body (36000 mm³ against a correct 35000), because it is outside *B*; picking
+`BRepClass3d::OuterShell` gets that case right but names the *cavity* on an inside-out hollow solid,
+emitting the true outer shell as a second overlapping body (9000 mm³ for a 7000 mm³ part). Parity
+assumes no single enclosing shell and needs no orientation, and it also reads a body nested inside
+another body's cavity correctly — enclosed twice, so even, so a body (8064 mm³, measured). It is
+O(N²) classifications in the shells of one solid, where N is 1-3 on any real input and 1 is free.
+
+Neither call can drop a body by any path: a solid `ShapeFix_Solid` fails to heal comes back unhealed
+rather than vanishing, `Shape()`'s compound is flattened by direct children so a shell it could not
+close is kept rather than skipped by a `TopAbs_SOLID` explorer, and a compound holding the same free
+shell twice yields one solid, not two.
+
+> **Reading the result of `fixSolid()`:** because no body is dropped, a result body is not always a
+> solid. `ShapeFix_Solid` hands back a shell it could not close, and a solid it fails to heal comes
+> back unhealed. `result.solids.count` can therefore be lower than the number of input bodies with
+> nothing lost. Spot an unclosed body by walking the result's **direct children**
+> (`child(at:)` over `nbChildren`) — **not** `subShapes(ofType: .shell)`, which maps at every depth
+> and so reports one shell per *healthy* solid as well, making it useless as a failure signal. A body
+> that came back unhealed is still a solid; use `isValid` for that.
+
+> **Behaviour change for consumers:** these two calls now return a **compound** where they previously
+> returned one arbitrary body's solid, for multi-body input only. Single-body input is untouched, down
+> to the returned shape type. A caller that assumed `.solid` unconditionally should read `.solids`
+> instead; a caller that wants one specific body should pick it before healing.
+
+Unlike #439, no doc comment was being violated here — the Swift docs were one-liners that said nothing
+about multi-body input either way — so this is a design decision rather than a contract fix. Returning
+`nil` for multi-body input (what #439 did for `outerShell`) was rejected: `outerShell` answers a
+question about *one* body and has no meaningful answer for several, whereas refusing to heal a
+two-body part is a capability loss with no upside. `ShapeFix_Shape` was checked as the "call the other
+class" alternative the issue suggested — it does handle a multi-solid compound correctly (2 solids,
+2000 mm³) and is already wrapped as `Shape.fixed(tolerance:…)`, now cross-referenced from `fixSolid()`
+for callers with mixed content to preserve.
+
+`OCCTShapeFixSolid` also gains the `if (!shape) return nullptr;` guard its siblings in the file use.
+Not reachable through the Swift API, but a null deref is an uncatchable SIGSEGV rather than something
+the enclosing `try` would catch.
+
+**Documentation correction:** `solidFromShellFixed()` was previously described, before and after this
+change, as returning `nil` when a shell does not close. Reading `ShapeFix_Solid.cxx`, `SolidFromShell`
+does `B.MakeSolid(solid); B.Add(solid, sh);` unconditionally before any classification and returns
+that even on its exception path — it never returns a null solid and never rejects an open shell. The
+only `nil` is "no shells at all"; an open shell comes back as a solid that is not closed.
+
+Bridge-only (no OCCT kernel change, no `OCCT.xcframework` rebuild). Operation count is unchanged at
+4,258 — behaviour and documentation only. Source comments, `OCCTBridge.h` and the generated reference
+(`docs/reference/Document-OCAF-Attributes.md`) all state the same rule.
+
 ### Unreleased: fix — `Shape.outerShell` answered for the wrong body on a multi-solid compound (#439)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch
