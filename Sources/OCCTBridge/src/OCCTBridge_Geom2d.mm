@@ -111,6 +111,32 @@ static inline bool occtValidCircle2dRadius(double radius) {
     return radius > 0;
 }
 
+// One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
+// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and OCCTPoint2DDistanceToCurve.
+// They were three independent constructions of the same algorithm with three different
+// failure-signalling conventions bolted on separately (#413). It also gives the two that lacked
+// one an explicit null-handle guard rather than relying on catch(...) to absorb the dereference.
+//
+// Returns false when there is no projection at all — an ordinary outcome, not an error: a point
+// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Each caller
+// applies its own documented sentinel; none of them may report failure through the parameter,
+// since 0 is a legitimate parameter on any curve whose domain includes it.
+static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d& point,
+                                            gp_Pnt2d* outNearest, double* outParameter,
+                                            double* outDistance) {
+    if (!curve || curve->curve.IsNull()) return false;
+    try {
+        Geom2dAPI_ProjectPointOnCurve proj(point, curve->curve);
+        if (proj.NbPoints() == 0) return false;
+        if (outNearest) *outNearest = proj.NearestPoint();
+        if (outParameter) *outParameter = proj.LowerDistanceParameter();
+        if (outDistance) *outDistance = proj.LowerDistance();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 // MARK: - Batch Curve2D Evaluation (v0.28.0)
 
 #include <Geom2dGridEval_Curve.hxx>
@@ -1876,12 +1902,16 @@ OCCTPoint2DRef _Nullable OCCTPoint2DMirroredAxis(OCCTPoint2DRef _Nonnull ref,
     } catch (...) { return nullptr; }
 }
 
+// Failure contract: returns a negative distance. Swift's Point2D.distance(to:) maps that to
+// .infinity rather than passing the sentinel through as if it were a real distance (#413).
 double OCCTPoint2DDistanceToCurve(OCCTPoint2DRef _Nonnull ref, OCCTCurve2DRef _Nonnull curve) {
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(ref->point->Pnt2d(), curve->curve);
-        if (proj.NbPoints() == 0) return -1.0;
-        return proj.LowerDistance();
-    } catch (...) { return -1.0; }
+    if (!ref) return -1.0;
+    double distance = -1.0;
+    if (!occtNearestProjectionOnCurve2d(curve, ref->point->Pnt2d(), nullptr,
+                                        nullptr, &distance)) {
+        return -1.0;
+    }
+    return distance;
 }
 
 OCCTPoint2DRef _Nullable OCCTPoint2DTransformed(OCCTPoint2DRef _Nonnull ref,
@@ -2179,14 +2209,19 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
     } catch (...) { return nullptr; }
 }
 
+// Failure contract: *outDistance < 0, and NaN returned. The parameter cannot carry the failure
+// signal — 0 is a legitimate result (projecting a segment's own start point onto it returns
+// exactly 0), which is what the old "returns 0 on failure" contract conflated (#413).
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve, OCCTPoint2DRef _Nonnull point,
     double* _Nonnull outDistance) {
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(point->point->Pnt2d(), curve->curve);
-        if (proj.NbPoints() == 0) { *outDistance = -1.0; return 0.0; }
-        *outDistance = proj.LowerDistance();
-        return proj.LowerDistanceParameter();
-    } catch (...) { *outDistance = -1.0; return 0.0; }
+    if (!point) { *outDistance = -1.0; return std::numeric_limits<double>::quiet_NaN(); }
+    double parameter = 0.0;
+    if (!occtNearestProjectionOnCurve2d(curve, point->point->Pnt2d(), nullptr,
+                                        &parameter, outDistance)) {
+        *outDistance = -1.0;
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return parameter;
 }
 
 // MARK: - FairCurve Batten / MinimalVariation (v0.67)
@@ -5511,22 +5546,18 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef c, double tolerance,
 
 // Projection
 
+// Failure contract: distance < 0. The point/parameter fields are left zeroed and must not be
+// read when it is negative.
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef c, double px, double py) {
     OCCTCurve2DProjection result = {0, 0, 0, -1};
-    if (!c || c->curve.IsNull()) return result;
-    try {
-        gp_Pnt2d point(px, py);
-        Geom2dAPI_ProjectPointOnCurve proj(point, c->curve);
-        if (proj.NbPoints() == 0) return result;
-        gp_Pnt2d nearest = proj.NearestPoint();
-        result.x = nearest.X();
-        result.y = nearest.Y();
-        result.parameter = proj.LowerDistanceParameter();
-        result.distance = proj.LowerDistance();
-        return result;
-    } catch (...) {
+    gp_Pnt2d nearest;
+    if (!occtNearestProjectionOnCurve2d(c, gp_Pnt2d(px, py), &nearest,
+                                        &result.parameter, &result.distance)) {
         return result;
     }
+    result.x = nearest.X();
+    result.y = nearest.Y();
+    return result;
 }
 
 int32_t OCCTCurve2DProjectPointAll(OCCTCurve2DRef c, double px, double py,

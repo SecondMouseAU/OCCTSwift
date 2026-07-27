@@ -335,8 +335,9 @@ public func project(point p: SIMD2<Double>) -> Curve2DProjection?
 ```
 
 - **Parameters:** `p` — 2D point to project.
-- **Returns:** Nearest `Curve2DProjection`, or `nil` on failure (negative distance sentinel from bridge).
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve`.
+- **Returns:** Nearest `Curve2DProjection`, or `nil` when the point has no projection onto the curve — one beyond the ends of a bounded curve, or a circle's centre. An ordinary outcome, not an error.
+- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (`NearestPoint`/`LowerDistanceParameter`/`LowerDistance`).
+- **Note:** `project(_:)` (the `Point2D` overload) and [`Point2D.distance(to:)`](Geometry2D.md) compute the same nearest solution through the same shared bridge path, so all three agree on the value and on when there is no projection (#413).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),
@@ -355,16 +356,19 @@ Projects a point onto this curve, returning all projection solutions.
 public func allProjections(of p: SIMD2<Double>) -> [Curve2DProjection]
 ```
 
-Capped at 64 results. Useful when there are multiple equidistant points (e.g. projecting the center onto a circle).
+Capped at 64 results. Useful when a point has several local-minimum projections — e.g. a point outside a circle projects to both the near and the far side.
 
 - **Parameters:** `p` — 2D point to project.
-- **Returns:** Array of `Curve2DProjection` values (may be empty).
+- **Returns:** Array of `Curve2DProjection` values, empty when there is no projection at all.
 - **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (all solutions).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
-      let projs = circle.allProjections(of: .zero)
-      // all points on the circle are equidistant
+      let projs = circle.allProjections(of: SIMD2(10, 0))
+      // 2 solutions: the near side and the far side
+
+      let none = circle.allProjections(of: .zero)
+      // empty — the centre is equidistant from every point, so there is no local minimum
   }
   ```
 
@@ -1427,8 +1431,9 @@ public func project(_ point: Point2D) -> (parameter: Double, distance: Double)?
 ```
 
 - **Parameters:** `point` — the `Point2D` to project.
-- **Returns:** `(parameter, distance)` tuple, or `nil` on failure (negative distance sentinel).
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve`.
+- **Returns:** `(parameter, distance)` tuple, or `nil` when the point has no projection onto the curve.
+- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (`LowerDistanceParameter`/`LowerDistance`).
+- **Note:** A `parameter` of `0` is an ordinary success — projecting a segment's own start point onto it returns exactly that — so `nil` is the only failure signal. The underlying bridge function used to return `0` on failure too, conflating the two (#413).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),
