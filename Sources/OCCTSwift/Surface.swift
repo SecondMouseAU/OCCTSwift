@@ -34,6 +34,11 @@ public final class Surface: @unchecked Sendable {
     }
 
     /// Surface continuity class, derived from GeomAbs_Shape.
+    ///
+    /// - Note: This reports a surface's *measured* continuity, and its raw values are
+    ///   `GeomAbs_Shape`'s own ordinals, which are not a 0/1/2 order. Do not confuse it with
+    ///   the top-level ``SurfaceContinuity``, one dot away, which is the G0/G1/G2 order you
+    ///   *request* of a filling or plate constraint. See #398 for the full census.
     public enum Continuity: Int32, Sendable, CaseIterable {
         case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
     }

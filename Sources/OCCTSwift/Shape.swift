@@ -3289,25 +3289,8 @@ extension Face {
 
 // MARK: - Advanced Blends & Surface Filling (v0.14.0)
 
-/// Continuity specification for surface filling operations
-public enum SurfaceContinuity: Int32 {
-    /// Positional continuity (surfaces touch)
-    case c0 = 0
-    /// Tangent continuity (smooth transition)
-    case g1 = 1
-    /// Curvature continuity (very smooth)
-    case g2 = 2
-}
-
-/// Constraint order for advanced plate surface construction (v0.23.0)
-public enum PlateConstraintOrder: Int32 {
-    /// Position only — surface must pass through the point
-    case g0 = 0
-    /// Position + tangent — surface must be tangent-continuous
-    case g1 = 1
-    /// Position + tangent + curvature — surface must be curvature-continuous
-    case g2 = 2
-}
+// `SurfaceContinuity` (formerly declared here, alongside a second `PlateConstraintOrder` copy
+// of the same vocabulary) now lives in Continuity.swift. See #398.
 
 /// One edge constraint for ``Shape/fill(constraints:parameters:)``.
 ///
@@ -3321,10 +3304,10 @@ public enum PlateConstraintOrder: Int32 {
 /// let tangent = FillConstraint(edge: rimEdge, support: wallFace, continuity: .g1)
 ///
 /// // Pass through this edge, but let it float otherwise
-/// let positional = FillConstraint(edge: freeEdge, continuity: .c0)
+/// let positional = FillConstraint(edge: freeEdge, continuity: .g0)
 ///
 /// // Pull the surface through an interior edge without it bounding the face
-/// let interior = FillConstraint(edge: ridgeEdge, continuity: .c0, isBoundary: false)
+/// let interior = FillConstraint(edge: ridgeEdge, continuity: .g0, isBoundary: false)
 /// ```
 public struct FillConstraint {
     /// Edge the filled surface must satisfy
@@ -3514,7 +3497,7 @@ extension Shape {
     /// // Free-standing wires have no surface to be tangent to, so fill positionally.
     /// let patch = Shape.fill(
     ///     boundaries: [wire1, wire2, wire3, wire4],
-    ///     parameters: FillingParameters(continuity: .c0)
+    ///     parameters: FillingParameters(continuity: .g0)
     /// )
     /// ```
     public static func fill(
@@ -3604,7 +3587,7 @@ extension Shape {
     ///
     /// let patch = Shape.fill(constraints: [
     ///     FillConstraint(edge: rim, support: wall, continuity: .g2),
-    ///     FillConstraint(edge: freeEdge, continuity: .c0)
+    ///     FillConstraint(edge: freeEdge, continuity: .g0)
     /// ])
     /// ```
     public static func fill(
@@ -3749,7 +3732,7 @@ extension Shape {
     /// - Returns: Surface face, or nil on failure
     public static func plateSurface(
         through points: [SIMD3<Double>],
-        orders: [PlateConstraintOrder],
+        orders: [SurfaceContinuity],
         degree: Int = 3,
         pointsOnCurves: Int = 15,
         iterations: Int = 2,
@@ -3786,8 +3769,8 @@ extension Shape {
     ///   - tolerance: Approximation tolerance (default 0.01)
     /// - Returns: Surface face, or nil on failure
     public static func plateSurface(
-        pointConstraints points: [(point: SIMD3<Double>, order: PlateConstraintOrder)],
-        curveConstraints curves: [(wire: Wire, order: PlateConstraintOrder)],
+        pointConstraints points: [(point: SIMD3<Double>, order: SurfaceContinuity)],
+        curveConstraints curves: [(wire: Wire, order: SurfaceContinuity)],
         degree: Int = 3,
         tolerance: Double = 0.01
     ) -> Shape? {
@@ -3829,13 +3812,9 @@ extension Shape {
 
 // MARK: - Advanced Healing (v0.17.0)
 
-/// Target geometric continuity for shape divide operations
-public enum GeometricContinuity: Int32, Sendable {
-    case c0 = 0
-    case c1 = 1
-    case c2 = 2
-    case c3 = 3
-}
+// The enum formerly declared here as `GeometricContinuity` was a misnomer: it maps to
+// GeomAbs_C0...C3, so it is parametric continuity. It is now `ParametricContinuity` in
+// Continuity.swift, shared with the other APIs that take a continuity floor. See #398.
 
 extension Shape {
 
@@ -3843,7 +3822,7 @@ extension Shape {
     ///
     /// - Parameter continuity: Target continuity level
     /// - Returns: Divided shape, or nil on failure
-    public func divided(at continuity: GeometricContinuity) -> Shape? {
+    public func divided(at continuity: ParametricContinuity) -> Shape? {
         guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue) else { return nil }
         return Shape(handle: handle)
     }
@@ -7555,8 +7534,14 @@ extension Shape {
 
     // MARK: - ShapeUpgrade_ShapeDivideContinuity
 
-    /// Continuity level for shape division
-    public enum ContinuityLevel: Int32, Sendable {
+    /// Continuity level for shape division.
+    ///
+    /// Deliberately kept separate from ``ParametricContinuity`` (#398): this is a strict
+    /// superset, and `cn`, `g1` and `g2` are accepted only by
+    /// ``dividedByContinuity(criterion:tolerance:)``. Every other continuity-floor call site
+    /// silently defaults an unrecognised value, so widening them to this type would trade a
+    /// compile error for a wrong answer.
+    public enum ContinuityLevel: Int32, Sendable, CaseIterable {
         case c0 = 0, c1 = 1, c2 = 2, c3 = 3, cn = 4, g1 = 5, g2 = 6
     }
 
@@ -7684,10 +7669,9 @@ extension Shape {
 
     // MARK: - ShapeCustom
 
-    /// Continuity for BSpline restriction
-    public enum BSplineContinuity: Int32, Sendable {
-        case c0 = 0, c1 = 1, c2 = 2, c3 = 3
-    }
+    // Continuity for BSpline restriction is `ParametricContinuity` (Continuity.swift); the
+    // nested `BSplineContinuity` copy this file used to declare is now a deprecated alias
+    // of it. See #398.
 
     /// Simplify BSpline surfaces and curves by restricting degree and segment count.
     ///
@@ -7706,7 +7690,7 @@ extension Shape {
     public func bsplineRestriction(
         tol3d: Double = 0.01, tol2d: Double = 0.01,
         maxDegree: Int = 8, maxSegments: Int = 100,
-        continuity3d: BSplineContinuity = .c1, continuity2d: BSplineContinuity = .c1,
+        continuity3d: ParametricContinuity = .c1, continuity2d: ParametricContinuity = .c1,
         degreePriority: Bool = true, rational: Bool = false
     ) -> Shape? {
         guard let ref = OCCTShapeCustomBSplineRestriction(
@@ -11513,10 +11497,8 @@ extension Shape {
 
 // MARK: - GeomConvert_ApproxCurve/Surface
 
-/// Continuity level for approximation.
-public enum ApproxContinuity: Int32 {
-    case c0 = 0, c1 = 1, c2 = 2, c3 = 3
-}
+// Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
+// `ApproxContinuity` copy this file used to declare is now a deprecated alias of it. See #398.
 
 /// Result of curve approximation as BSpline.
 public struct ApproxCurveResult {
@@ -11528,7 +11510,7 @@ public struct ApproxCurveResult {
 
 extension Curve3D {
     /// Approximate this curve as a BSpline with detailed result (error, status).
-    public func approxWithDetails(tolerance: Double, continuity: ApproxContinuity = .c2,
+    public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
                                    maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
         let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
                                             Int32(maxSegments), Int32(maxDegree))
@@ -11547,8 +11529,8 @@ public struct ApproxSurfaceResult {
 
 extension Surface {
     /// Approximate this surface as a BSpline with detailed result (error, status).
-    public func approxWithDetails(tolerance: Double, uContinuity: ApproxContinuity = .c1,
-                                   vContinuity: ApproxContinuity = .c1,
+    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
+                                   vContinuity: ParametricContinuity = .c1,
                                    maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
         let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
                                               vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
