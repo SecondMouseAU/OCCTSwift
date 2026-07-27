@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.15.20
+## Current: v1.16.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
@@ -15,10 +15,7 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### Unreleased: fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then.
+### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 
 `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed the **first** solid (respectively the
 first shell) a `TopExp_Explorer` yielded and discarded every other body without a signal. The return
@@ -99,10 +96,7 @@ Bridge-only (no OCCT kernel change, no `OCCT.xcframework` rebuild). Operation co
 4,258 — behaviour and documentation only. Source comments, `OCCTBridge.h` and the generated reference
 (`docs/reference/Document-OCAF-Attributes.md`) all state the same rule.
 
-### Unreleased: fix — `Shape.outerShell` answered for the wrong body on a multi-solid compound (#439)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then.
+### v1.16.0 (July 2026): fix — `Shape.outerShell` answered for the wrong body on a multi-solid compound (#439)
 
 `Shape.outerShell` returned the **first solid's shell** on a compound holding more than one solid,
 where its own doc comment specified `nil`. The result was a plausible-looking `Shape` that silently
@@ -136,11 +130,7 @@ Bridge-only (no OCCT kernel change, no `OCCT.xcframework` rebuild). Source comme
 reference (`docs/reference/Shape-Measurement.md`) and `OCCTBridge.h` now state the same rule —
 the generated page had been paraphrasing the contract with the parenthetical dropped.
 
-### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then. (Two open PRs both predicted
-> v1.15.21 for themselves, which is exactly the collision this avoids.)
+### v1.16.0 (July 2026): fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
 
 `FillingParameters` defaults `continuity` to `.g1`, so the ordinary
 `Shape.fill(boundaries: [wire])` call requested tangent continuity. For any boundary edge
