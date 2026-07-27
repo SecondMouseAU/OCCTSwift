@@ -12186,10 +12186,14 @@ bool OCCTDocumentHasRelation(OCCTDocumentRef _Nonnull document, int tag);
 
 // MARK: - ShapeFix_Solid
 
-/// Fix a solid shape (topology and orientation). Returns fixed shape or NULL.
+/// Fix a solid shape (topology and orientation). Heals EVERY solid in the input, not
+/// just the first (#442): a single body comes back as a solid, several as a compound.
+/// Returns fixed shape or NULL when the input holds no solid.
 OCCTShapeRef _Nullable OCCTShapeFixSolid(OCCTShapeRef _Nonnull shape);
 
-/// Create a solid from a shell using ShapeFix_Solid
+/// Create a solid from a shell using ShapeFix_Solid. One solid per body-bounding shell
+/// (#442) — each solid's outer shell plus every free shell; a solid's cavity shells are
+/// skipped. A single body comes back as a solid, several as a compound.
 OCCTShapeRef _Nullable OCCTShapeSolidFromShell(OCCTShapeRef _Nonnull shellShape);
 
 // MARK: - ShapeFix_EdgeConnect

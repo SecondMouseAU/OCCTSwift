@@ -804,13 +804,31 @@ Fix topology and orientation problems in a solid shape.
 public func fixSolid() -> Shape?
 ```
 
-- **Returns:** The repaired solid, or `nil` on failure.
+**Every** solid in the receiver is healed, not just the first (#442): a single-body input comes back
+as a solid, a multi-body one as a compound of the healed solids in exploration order. A compound
+result is not new to this call — `ShapeFix_Solid` already returns one when a single solid's shells
+resolve into several bodies.
+
+Only solids are carried over. Loose shells, faces or wires sitting alongside them in a compound are
+dropped, and an input holding no solid at all returns `nil`. To heal a whole shape of mixed content
+instead, use [`fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire),
+which wraps `ShapeFix_Shape` and preserves everything it is given.
+
+- **Returns:** The repaired solid, a compound of repaired solids for multi-body input, or `nil` if
+  the receiver holds no solid.
 - **OCCT:** `ShapeFix_Solid::Perform`.
 - **Example:**
   ```swift
   if let solid = importedShape.fixSolid() {
       // solid.isValid == true
   }
+
+  // Multi-body input: both bodies are healed, not just the first.
+  let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
+  let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+  let healed = Shape.compound([a, b])!.fixSolid()!
+  print(healed.solids.count)   // 2
+  print(healed.volume!)        // 2000.0
   ```
 
 ---
@@ -823,8 +841,26 @@ Create a closed solid from a shell, using `ShapeFix_Solid` to orient and close t
 public func solidFromShellFixed() -> Shape?
 ```
 
-- **Returns:** A solid shape, or `nil` if the shell cannot be closed.
+One solid is built per *body-bounding* shell, not just the first shell found (#442): each solid's
+outer shell, plus every shell that belongs to no solid (the usual shape of sewing output), plus any
+further shell of a solid that lies outside it — a disjoint sibling body in a multiconnex solid. A
+single body comes back as a solid, several as a compound in exploration order.
+
+A solid's **cavity** shells are deliberately skipped: a hole is not a body, and building it as a
+positive solid would yield a compound whose volume double-counts the part. So a hollow solid produces
+one solid bounded by its outer shell, with the cavity filled. To rebuild a solid that keeps its
+cavities, use [`Shape.solidFromShells(_:)`](Shape-Features.md) with the outer shell first.
+
+- **Returns:** A solid, a compound of solids for multi-body input, or `nil` if the receiver holds no
+  shell or none of them closes.
 - **OCCT:** `ShapeFix_Solid::SolidFromShell`.
+- **Example:**
+  ```swift
+  // Two sewn bodies in one compound — one solid per shell.
+  let quilt = Shape.compound([shellA, shellB])!
+  let solids = quilt.solidFromShellFixed()!
+  print(solids.solids.count)   // 2
+  ```
 
 ---
 

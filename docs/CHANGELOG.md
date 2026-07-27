@@ -15,6 +15,52 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+`Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed the **first** solid (respectively the
+first shell) a `TopExp_Explorer` yielded and discarded every other body without a signal. The return
+was a well-formed `Shape` that looked like a healed version of the input, so nothing downstream could
+tell that most of the part was gone: a 2000 mm³ two-box compound came back as a 1000 mm³ single solid.
+
+Both now cover every body. `ShapeFix_Solid` cannot be handed a compound — its constructor and `Init`
+take a `TopoDS_Solid`, and `TopoDS::Solid` throws on anything else — so multi-body input has to be
+driven one solid at a time. **A compound result is not a new return category:** `ShapeFix_Solid::Shape()`
+already hands one back when a single solid's shells resolve into several bodies, so callers that
+handled `fixSolid()` correctly for a multiconnex solid already handle this.
+
+`solidFromShellFixed()` builds one solid per **body-bounding** shell: each solid's outer shell, every
+shell belonging to no solid (the usual shape of sewing output), and any further shell of a solid that
+lies outside it — a disjoint sibling body in a multiconnex solid. A solid's *cavity* shells are
+skipped: a hole is not a body, and building one as a positive solid would return a compound whose
+volume double-counts the part (8000 + 1000 for a 7000 mm³ hollow box). Enclosure is decided with
+`BRepClass3d_SolidClassifier`, not by shell orientation — measured, both a hollow solid's outer and
+cavity shells are `FORWARD`, so orientation carries no signal here.
+
+> **Behaviour change for consumers:** these two calls now return a **compound** where they previously
+> returned one arbitrary body's solid, for multi-body input only. Single-body input is untouched, down
+> to the returned shape type. A caller that assumed `.solid` unconditionally should read `.solids`
+> instead; a caller that wants one specific body should pick it before healing.
+
+Unlike #439, no doc comment was being violated here — the Swift docs were one-liners that said nothing
+about multi-body input either way — so this is a design decision rather than a contract fix. Returning
+`nil` for multi-body input (what #439 did for `outerShell`) was rejected: `outerShell` answers a
+question about *one* body and has no meaningful answer for several, whereas refusing to heal a
+two-body part is a capability loss with no upside. `ShapeFix_Shape` was checked as the "call the other
+class" alternative the issue suggested — it does handle a multi-solid compound correctly (2 solids,
+2000 mm³) and is already wrapped as `Shape.fixed(tolerance:…)`, now cross-referenced from `fixSolid()`
+for callers with mixed content to preserve.
+
+`OCCTShapeFixSolid` also gains the `if (!shape) return nullptr;` guard its siblings in the file use.
+Not reachable through the Swift API, but a null deref is an uncatchable SIGSEGV rather than something
+the enclosing `try` would catch.
+
+Bridge-only (no OCCT kernel change, no `OCCT.xcframework` rebuild). Operation count is unchanged at
+4,258 — behaviour and documentation only. Source comments, `OCCTBridge.h` and the generated reference
+(`docs/reference/Document-OCAF-Attributes.md`) all state the same rule.
+
 ### Unreleased: fix — `Shape.outerShell` answered for the wrong body on a multi-solid compound (#439)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch
