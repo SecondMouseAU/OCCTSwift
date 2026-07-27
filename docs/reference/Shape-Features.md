@@ -1475,29 +1475,30 @@ Returns the fixed result as a `Shape` (not `Face`) because the repair can restru
 
 ### `SurfaceContinuity`
 
-Continuity specification for surface filling operations.
+Geometric continuity order for a surface constraint. The single vocabulary behind every call
+that constrains a generated surface against a point, edge or wire: `Shape.fill(boundaries:)`,
+`Shape.fill(constraints:)`, `FillingSurface` and `Shape.plateSurface(through:orders:)`. All of
+them hand the raw value to OCCT as a plate constraint order, which `GeomPlate_CurveConstraint`
+validates directly and rejects outside `[-1, 2]`.
 
 ```swift
-public enum SurfaceContinuity: Int32 {
-    case c0 = 0   // positional — surfaces touch
-    case g1 = 1   // tangent — smooth transition
-    case g2 = 2   // curvature — very smooth
+public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
+    case g0 = 0   // positional (G0): the surface passes through the constraint
+    case g1 = 1   // tangent (G1): the surface is tangent along the constraint
+    case g2 = 2   // curvature (G2): the surface matches curvature along the constraint
 }
 ```
 
----
+Not every API accepts every order. A bare point carries no curvature to match, so
+`GeomPlate_PointConstraint` throws above order 1 and `Shape.plateSurface(through:orders:)`
+returns `nil` if any point is given `.g2`. `FillingSurface` currently mis-maps both non-default
+orders; see issue #433.
 
-### `PlateConstraintOrder`
-
-Constraint order for plate surface construction (v0.23.0).
-
-```swift
-public enum PlateConstraintOrder: Int32 {
-    case g0 = 0   // position only
-    case g1 = 1   // position + tangent
-    case g2 = 2   // position + tangent + curvature
-}
-```
+> **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
+> this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
+> `.c1` and `.c2` spellings remain as deprecated aliases of `.g0`, `.g1` and `.g2`. No raw
+> value moved, so behaviour is unchanged. Not to be confused with `ParametricContinuity`
+> (C0/C1/C2/C3), which is a different contract: see `docs/reference/Shape-Healing.md`.
 
 ---
 
@@ -1756,7 +1757,7 @@ Creates a plate surface through points with per-point constraint orders.
 ```swift
 public static func plateSurface(
     through points: [SIMD3<Double>],
-    orders: [PlateConstraintOrder],
+    orders: [SurfaceContinuity],
     degree: Int = 3,
     pointsOnCurves: Int = 15,
     iterations: Int = 2,
@@ -1784,8 +1785,8 @@ Creates a plate surface with mixed point and curve constraints.
 
 ```swift
 public static func plateSurface(
-    pointConstraints points: [(point: SIMD3<Double>, order: PlateConstraintOrder)],
-    curveConstraints curves: [(wire: Wire, order: PlateConstraintOrder)],
+    pointConstraints points: [(point: SIMD3<Double>, order: SurfaceContinuity)],
+    curveConstraints curves: [(wire: Wire, order: SurfaceContinuity)],
     degree: Int = 3,
     tolerance: Double = 0.01
 ) -> Shape?
@@ -1794,8 +1795,8 @@ public static func plateSurface(
 At least one of `points` or `curves` must be non-empty.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `PlateConstraintOrder`.
-  - `curves` — curve constraints, each with a `Wire` and a `PlateConstraintOrder`.
+  - `points` — point constraints, each with a position and a `SurfaceContinuity`.
+  - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree` — maximum polynomial degree (default 3).
   - `tolerance` — approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.

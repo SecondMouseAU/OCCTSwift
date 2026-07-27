@@ -1182,7 +1182,7 @@ struct BSplineKnotSplittingTests {
             #expect(bspline != nil)
             if let bspline {
                 // C0 breaks — should at least have first and last
-                let c0Breaks = bspline.continuityBreaks(minContinuity: Curve3D.ContinuityOrder.c0)
+                let c0Breaks = bspline.continuityBreaks(minContinuity: ParametricContinuity.c0)
                 #expect(c0Breaks != nil)
                 if let c0Breaks {
                     #expect(c0Breaks.count >= 2) // At minimum first/last knot
