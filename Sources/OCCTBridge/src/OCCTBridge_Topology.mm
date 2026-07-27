@@ -339,8 +339,13 @@ int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_
     try {
         int32_t n = 0;
         for (TopExp_Explorer ex(shape->shape, TopAbs_SOLID); ex.More(); ex.Next()) {
-            // Per-solid, so one unusable body is skipped rather than discarding every other
-            // shell — and so the count pass and the fill pass agree.
+            // Sizing query: the solid count is an upper bound on the shells, and reaching it
+            // costs one traversal. Classifying here instead would make a caller's count-then-fill
+            // pay BRepClass3d::OuterShell twice per solid — real work on a multi-shell body,
+            // where it runs a solid classification per candidate shell.
+            if (!outShells) { n++; continue; }
+            // Per-solid catch, so one unusable body is skipped rather than discarding every
+            // other shell.
             TopoDS_Shell shell;
             try {
                 shell = BRepClass3d::OuterShell(TopoDS::Solid(ex.Current()));
@@ -348,7 +353,7 @@ int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_
                 continue;
             }
             if (shell.IsNull()) continue;
-            if (outShells && n < maxCount) outShells[n] = new OCCTShape(shell);
+            if (n < maxCount) outShells[n] = new OCCTShape(shell);
             n++;
         }
         return n;

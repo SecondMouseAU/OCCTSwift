@@ -5052,8 +5052,11 @@ int32_t OCCTShapeGetShellCount(OCCTShapeRef shape);
 /// for an arbitrary member. Use OCCTShapeOuterShells for a multi-solid shape. #211, #439
 OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape);
 
-/// Outer shell of EVERY solid in a shape, in explorer order (one per solid). Count-then-fill
-/// (pass outShells=NULL to query the count). 0 for a shape with no solids. #439
+/// Outer shell of EVERY solid in a shape, in explorer order (one per solid). Count-then-fill:
+/// outShells=NULL returns a sizing UPPER BOUND (the solid count) rather than an exact count, so
+/// the query stays one traversal — classifying there would make every caller pay
+/// BRepClass3d::OuterShell twice per solid. The fill call returns the exact number written, which
+/// may be smaller (a solid with no usable outer shell is skipped). 0 for a shape with no solids. #439
 int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
 
 /// Inner (void/cavity) shells of a solid — all shells except the outer one. Count-then-fill

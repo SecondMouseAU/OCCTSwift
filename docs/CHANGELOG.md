@@ -36,6 +36,12 @@ wrapping exactly **one** solid, and returns nothing for a container of two or mo
 contract the doc comment already stated; it is a behaviour change only for inputs that were being
 answered incorrectly.
 
+> **Behaviour change for consumers:** a caller that passed a multi-solid compound or compsolid to
+> `outerShell` and got a shell back now gets `nil`; the same input to `innerShells` now gives `[]`.
+> That shell was one arbitrary body's, so any measurement against it was already wrong. Migrate to
+> `outerShells` (per body), `solids.flatMap(\.innerShells)` (per body), or
+> `Shape.compound(shape.subShapes(ofType: .face))` (whole boundary, cavities included).
+
 **Added** `Shape.outerShells: [Shape]` (`OCCTShapeOuterShells`) — the outer shell of every solid, in
 exploration order, so the fix is not purely subtractive. Equivalent to `solids.compactMap(\.outerShell)`
 in a single traversal. Note these shells drop internal void walls by design; to measure against the
