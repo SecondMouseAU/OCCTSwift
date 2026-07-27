@@ -60,11 +60,19 @@ struct Issue398KnotSplittingTests {
             return
         }
         #expect(splits.count > 256)
-        // The retry must return the whole set, not a second truncated window.
-        #expect(splits.count == splits.sorted().count)
-        #expect(splits == splits.sorted())
-        // Ascending and strictly so: these are distinct knot values, which is the ordering
-        // guarantee the `- Returns:` line promises.
+
+        // The retry must return the whole set, not a second truncated window. Count alone
+        // cannot tell those apart; the end parameters can, since a truncated result stops
+        // short of the curve's final knot. This also pins the `- Returns:` promise that the
+        // result is bounded by the curve's own end knots.
+        let domain = bspline.domain
+        if let first = splits.first, let last = splits.last {
+            #expect(abs(first - domain.lowerBound) < 1e-9)
+            #expect(abs(last - domain.upperBound) < 1e-9)
+        }
+
+        // Strictly ascending: these are distinct knot values, which is the other half of the
+        // ordering guarantee that same line promises.
         #expect(zip(splits, splits.dropFirst()).allSatisfy { $0 < $1 })
     }
 

@@ -15,7 +15,7 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### Unreleased: refactor, nine continuity enums collapsed to two shared vocabularies (#398)
+### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
 
 > Version and date deliberately unset; whoever tags stamps them.
 
@@ -79,7 +79,7 @@ re-enablement: the claim was never characterised and does not hold up.
 Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
 an enum/case combination that never existed.
 
-### Unreleased: fix, `Shape.fill` SIGSEGV'd on its own default parameters (#430)
+### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch
 > number is not this PR's to claim. Whoever tags stamps it then. (Two open PRs both predicted
