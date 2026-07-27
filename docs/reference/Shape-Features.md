@@ -1792,8 +1792,8 @@ public static func plateSurface(
 At least one of `points` or `curves` must be non-empty.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `PlateConstraintOrder`.
-  - `curves` — curve constraints, each with a `Wire` and a `PlateConstraintOrder`.
+  - `points` — point constraints, each with a position and a `SurfaceContinuity`.
+  - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree` — maximum polynomial degree (default 3).
   - `tolerance` — approximation tolerance.
 - **Returns:** Face shape, or `nil` on failure.

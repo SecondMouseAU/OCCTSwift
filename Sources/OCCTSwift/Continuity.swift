@@ -1,5 +1,3 @@
-import Foundation
-
 // Continuity vocabularies.
 //
 // OCCTSwift had grown nine separate enums for "continuity level", each written against a
@@ -91,7 +89,8 @@ public typealias PlateConstraintOrder = SurfaceContinuity
 ///
 /// Used wherever an operation splits, approximates or simplifies geometry against a continuity
 /// floor: ``Shape/divided(at:)``, ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``,
-/// ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)`` and
+/// ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``,
+/// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)`` and
 /// ``Curve3D/continuityBreaks(minContinuity:)``.
 ///
 /// ```swift

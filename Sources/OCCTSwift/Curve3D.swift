@@ -629,10 +629,12 @@ extension Curve3D {
     // Continuity order for knot splitting is `ParametricContinuity` (Continuity.swift); the
     // nested `ContinuityOrder` copy declared here is now a deprecated alias of it. See #398.
 
-    /// Find parameter values where continuity drops below a specified level
+    /// Knot parameters at which to split a BSpline so every arc is at least `minContinuity`
     ///
-    /// Only works on BSpline curves. Returns the knot parameters bounding arcs that are at
-    /// least `minContinuity`, which always includes the curve's own first and last knots.
+    /// Only works on BSpline curves. The result is a set of *split* parameters, not a set of
+    /// defects: the curve's own first and last knots are always included, so a curve that never
+    /// drops below `minContinuity` returns exactly those two rather than an empty array. Any
+    /// further entries are interior knots where the curve really is less continuous than asked.
     ///
     /// ```swift
     /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing
@@ -641,13 +643,27 @@ extension Curve3D {
     /// let breaks = bspline.continuityBreaks(minContinuity: .c3)  // + interior knots
     /// ```
     ///
-    /// - Parameter minContinuity: Minimum continuity to require
-    /// - Returns: Array of parameter values at continuity breaks, or nil if not a BSpline
+    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc
+    /// - Returns: Split parameters in ascending order, bounded by the curve's end knots, or
+    ///   nil if the curve is not a BSpline
     public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]? {
-        let maxParams: Int32 = 256
-        var params = [Double](repeating: 0, count: Int(maxParams))
-        let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue, &params, maxParams)
+        // The bridge returns the true split count even when it writes fewer, so one retry at
+        // that count is always enough. Worth doing since #398: the old c0...c2 range could not
+        // report interior knots at all on an ordinary cubic, and .c3 can, which brought a fixed
+        // 256-entry buffer within reach of real imported geometry.
+        func read(capacity: Int32) -> (count: Int32, params: [Double]) {
+            var params = [Double](repeating: 0, count: Int(capacity))
+            let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue,
+                                                     &params, capacity)
+            return (count, params)
+        }
+
+        var (count, params) = read(capacity: 256)
         guard count >= 0 else { return nil }
+        if count > 256 {
+            (count, params) = read(capacity: count)
+            guard count >= 0 else { return nil }
+        }
         return Array(params.prefix(Int(count)))
     }
 

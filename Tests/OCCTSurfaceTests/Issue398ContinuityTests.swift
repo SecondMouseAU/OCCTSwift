@@ -29,6 +29,21 @@ struct Issue398ContinuityTests {
         #expect(ParametricContinuity.allCases.count == 4)
     }
 
+    @Test("The two vocabularies are distinct types, not aliases of each other")
+    func vocabulariesAreNotSubstitutable() {
+        // The property this whole refactor exists to guarantee is compile-time: a G0/G1/G2
+        // constraint order must never be passable where a C0...C3 continuity floor is wanted,
+        // or vice versa. That cannot be asserted directly, but collapsing one into a typealias
+        // of the other is the realistic way it would be lost, and this catches exactly that.
+        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ParametricContinuity.self))
+        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(Surface.Continuity.self))
+        #expect(ObjectIdentifier(ParametricContinuity.self) != ObjectIdentifier(Shape.ContinuityLevel.self))
+
+        // They agree on 0/1/2 numerically, which is precisely why the type distinction is
+        // load-bearing: a raw-value mix-up would be silent.
+        #expect(SurfaceContinuity.g1.rawValue == ParametricContinuity.c1.rawValue)
+    }
+
     @Test("Surface.Continuity still mirrors the real GeomAbs_Shape ordinals")
     func surfaceContinuityMirrorsGeomAbsShape() {
         // Deliberately NOT folded into either shared enum: this one is a result type whose
@@ -61,6 +76,8 @@ struct Issue398ContinuityTests {
 
     // MARK: - Orders OCCT will not accept
 
+    // NOTE: both tests below pin a BUG, not desired behaviour. Flip the `== nil` expectations
+    // when #437 lands and .g2 either clamps or is rejected up front.
     @Test("Plate point constraints reject curvature order")
     func plateThroughPointsRejectsCurvatureOrder() {
         // GeomPlate_PointConstraint throws above order 1: a bare point carries no curvature

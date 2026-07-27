@@ -99,16 +99,16 @@ Pass to `continuityBreaks(minContinuity:)` to specify the minimum required conti
 
 ### `continuityBreaks(minContinuity:)`
 
-Parameter values where the B-spline's internal continuity drops below the specified level.
+Knot parameters at which to split the B-spline so that every resulting arc is at least `minContinuity`.
 
 ```swift
 public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]?
 ```
 
-Only works on `Geom_BSplineCurve`. Returns knot parameters where the curve's continuity is strictly less than `minContinuity`. Useful for splitting a composite B-spline into smooth segments.
+Only works on `Geom_BSplineCurve`. The result is a set of *split* parameters, not a set of defects: the curve's own first and last knots are always included, so a curve that never drops below `minContinuity` returns exactly those two rather than an empty array. Any further entries are interior knots where the curve really is less continuous than asked. Useful for splitting a composite B-spline into smooth segments.
 
-- **Parameters:** `minContinuity` — minimum continuity to require (default `.c1`).
-- **Returns:** Array of parameter values at continuity breaks (up to 256), or `nil` if the curve is not a B-spline.
+- **Parameters:** `minContinuity` — minimum continuity to require of each resulting arc (default `.c1`).
+- **Returns:** Split parameters in ascending order, bounded by the curve's end knots, or `nil` if the curve is not a B-spline.
 - **OCCT:** `GeomConvert_BSplineCurveKnotSplitting::NbSplits` / `SplitValue`, resolved via `Geom_BSplineCurve::Knot`.
 - **Example:**
   ```swift

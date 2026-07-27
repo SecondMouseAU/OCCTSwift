@@ -7534,8 +7534,14 @@ extension Shape {
 
     // MARK: - ShapeUpgrade_ShapeDivideContinuity
 
-    /// Continuity level for shape division
-    public enum ContinuityLevel: Int32, Sendable {
+    /// Continuity level for shape division.
+    ///
+    /// Deliberately kept separate from ``ParametricContinuity`` (#398): this is a strict
+    /// superset, and `cn`, `g1` and `g2` are accepted only by
+    /// ``dividedByContinuity(criterion:tolerance:)``. Every other continuity-floor call site
+    /// silently defaults an unrecognised value, so widening them to this type would trade a
+    /// compile error for a wrong answer.
+    public enum ContinuityLevel: Int32, Sendable, CaseIterable {
         case c0 = 0, c1 = 1, c2 = 2, c3 = 3, cn = 4, g1 = 5, g2 = 6
     }
 

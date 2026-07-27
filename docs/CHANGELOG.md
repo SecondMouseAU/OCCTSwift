@@ -15,7 +15,7 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
+### Unreleased: refactor, nine continuity enums collapsed to two shared vocabularies (#398)
 
 > Version and date deliberately unset; whoever tags stamps them.
 
@@ -34,7 +34,8 @@ Collapsed to `SurfaceContinuity` (`.g0` / `.g1` / `.g2`) and a new `ParametricCo
 is retained as a strict superset (it adds `cn`, `g1`, `g2` cases that only
 `dividedByContinuity(criterion:tolerance:)` accepts).
 
-**No raw value moved, and no bridge code changed, so no call's behaviour changed.** Every retired
+**No raw value moved, and no bridge code changed, so no existing call's behaviour changed.** (The
+one deliberate widening is `.c3` becoming reachable for `continuityBreaks`, below.) Every retired
 name and spelling remains as a deprecated alias, so existing source still compiles:
 
 ```swift
@@ -47,8 +48,12 @@ public typealias GeometricContinuity = ParametricContinuity // and ApproxContinu
 ```
 
 `SurfaceContinuity.c0` / `.c1` / `.c2` also survive as deprecated aliases of `.g0` / `.g1` /
-`.g2`. The one source-compatibility caveat: an *exhaustive* `switch` over one of these enums now
-needs a `default`, since the old spellings are static properties rather than cases.
+`.g2`. Two source-compatibility caveats, both fixed by adding a `default`:
+
+- An *exhaustive* `switch` over any of these enums now needs one, because the old spellings are
+  static properties rather than cases.
+- `Curve3D.ContinuityOrder` also *widens* from three cases to four, so even a switch written with
+  the correct `.c0` / `.c1` / `.c2` spellings stops being exhaustive.
 
 Two live defects surfaced while verifying the mappings the issue had assumed correct. Both are
 pre-existing, both are now pinned by tests, and neither is fixed here:
