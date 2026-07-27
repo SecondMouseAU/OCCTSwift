@@ -206,6 +206,58 @@ struct Issue443FirstOfN {
         expectVolume(fromShells, 8000.0, "sewn hollow body")
     }
 
+    /// Free shells are the one parity group with no natural bound on its size: sewing a raw
+    /// imported mesh can yield hundreds of disjoint shells, where a solid's own shells are
+    /// 1-3. Every other test here uses two or three bodies, so nothing else exercises the
+    /// bounding-box pre-filter that keeps the pass from going quadratic (measured at 200
+    /// disjoint shells: 160 ms without it, 0.7 ms with, same verdicts).
+    ///
+    /// This asserts the verdicts at scale rather than the time, which would be flaky. A
+    /// regression in the pre-filter shows up here as a wrong body count, and a removal of it
+    /// shows up as this test getting noticeably slower.
+    @Test("a hundred disjoint free shells are a hundred bodies")
+    func manyFreeShells() {
+        let count = 100
+        let boxes = (0..<count).compactMap {
+            Shape.box(origin: SIMD3(Double($0) * 20, 0, 0), width: 10, height: 10, depth: 10)
+        }
+        guard boxes.count == count, let compound = Shape.compound(boxes),
+              let sewn = compound.sewn(tolerance: 1e-6)
+        else {
+            Issue.record("could not build or sew \(count) boxes")
+            return
+        }
+        #expect(sewn.shells.count == count)
+
+        guard let solids = Shape.solid(from: sewn) else {
+            Issue.record("solid(from:) returned nil for \(count) free shells")
+            return
+        }
+        #expect(solids.solids.count == count)
+        expectVolume(solids, Double(count) * 1000.0, "solid(from: \(count) free shells)")
+    }
+
+    /// The pre-filter must not prune a pair whose boxes overlap without enclosure. Two boxes
+    /// sharing a face have overlapping bounds, so the cheap test cannot decide them and the
+    /// ray cast still has to run.
+    @Test("touching bodies are still two bodies")
+    func touchingBodiesNotPruned() {
+        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
+              let shellA = a.shells.first, let shellB = b.shells.first,
+              let quilt = Shape.compound([shellA, shellB])
+        else {
+            Issue.record("could not build the two touching shells")
+            return
+        }
+        guard let solids = Shape.solid(from: quilt) else {
+            Issue.record("solid(from:) returned nil for two touching shells")
+            return
+        }
+        #expect(solids.solids.count == 2)
+        expectVolume(solids, 2000.0, "solid(from: two touching shells)")
+    }
+
     // MARK: - Shape.solidWithFullHistory(from:)
 
     /// The history variant shares one `ShapeBuild_ReShape` across the per-body runs, so the

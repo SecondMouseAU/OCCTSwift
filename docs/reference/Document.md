@@ -1957,6 +1957,10 @@ public func setTriangulationFromShape(_ shape: Shape, deflection: Double = 1.0) 
 
 Meshes the shape and stores **every** face's triangulation, merged into one `Poly_Triangulation` in the shape's own coordinate system: per-face locations are applied to the nodes, and reversed faces have their winding and node normals flipped so the stored mesh is consistently outward. Node normals survive only if every contributing face carries them; per-face UV nodes are dropped, since they index parameter spaces that no longer mean anything once the faces are pooled. The stored deflection is the worst of the contributing faces'.
 
+> **The stored coordinate frame changed alongside the every-face fix.** This previously fetched each face's `TopLoc_Location` and **discarded** it, storing one face's nodes in that *face's* local frame. It now stores them in the **shape's** frame. For a shape with a non-identity location (an assembly component, anything from `Shape.moved(dx:dy:dz:)` or `located(matrix:)`) the numbers move independently of the node-count change: a box translated to (100, 200, 300) used to store a node at the origin and now stores it at (100, 200, 300). Re-read any OCAF document persisted before this change if you compare stored triangulations.
+
+Node normals are transformed and reversed here, which `Shape.mesh(...)` does **not** do for its own `Mesh.normals` (only the winding swap matches), so the two disagree for a located or reversed face. `BRepMesh_IncrementalMesh` produces no node normals at all, so this only arises for a face carrying a triangulation from elsewhere, such as glTF import.
+
 - **Parameters:** `shape`, the shape to tessellate, faces at any depth included; `deflection`, linear deflection for meshing (default `1.0`).
 - **Returns:** `false` if the shape has no face, or if nothing in it meshed.
 - **OCCT:** `BRepMesh_IncrementalMesh` + `TDataXtd_Triangulation::Set` (via `OCCTDocumentSetTriangulationFromShape`).
@@ -1992,6 +1996,50 @@ public var triangulationTriangleCount: Int32 { get }
 ```
 
 - **OCCT:** `Poly_Triangulation::NbTriangles` (via `OCCTDocumentTriangulationNbTriangles`).
+
+---
+
+### `triangulationNode(at:)`
+
+Read one node of the triangulation attribute, in the frame it was stored in.
+
+```swift
+public func triangulationNode(at index: Int32) -> SIMD3<Double>?
+```
+
+Nodes are numbered from 1, as `Poly_Triangulation` numbers them. Before this existed the attribute exposed only its counts and deflection, so nothing in the Swift API could see the coordinates it held.
+
+- **Parameters:** `index`, 1-based node index.
+- **Returns:** The node position, or `nil` if the label has no triangulation attribute or `index` is out of range.
+- **OCCT:** `Poly_Triangulation::Node` (via `OCCTDocumentTriangulationNode`).
+- **Example:**
+  ```swift
+  let moved = Shape.box(width: 10, height: 10, depth: 10)!.moved(dx: 100, dy: 200, dz: 300)!
+  label.setTriangulationFromShape(moved, deflection: 1.0)
+  print(label.triangulationNode(at: 1)!)   // absolute, not the box's local frame
+  ```
+
+---
+
+### `triangulationNormal(at:)`
+
+Read one node normal of the triangulation attribute, in the frame it was stored in.
+
+```swift
+public func triangulationNormal(at index: Int32) -> SIMD3<Double>?
+```
+
+Node normals exist only when the meshed faces carried them. `BRepMesh_IncrementalMesh` produces none, so this returns `nil` for anything meshed from B-Rep and a value for a shape whose faces arrived with a triangulation from elsewhere, such as glTF import.
+
+- **Parameters:** `index`, 1-based node index.
+- **Returns:** The unit normal, or `nil` if there is no attribute, the stored triangulation has no node normals, or `index` is out of range.
+- **OCCT:** `Poly_Triangulation::Normal` guarded by `HasNormals` (via `OCCTDocumentTriangulationNormal`).
+- **Example:**
+  ```swift
+  let imported = Shape.loadGLTF(from: url)!    // glTF meshes carry vertex normals
+  label.setTriangulationFromShape(imported, deflection: 1.0)
+  print(label.triangulationNormal(at: 1)!)
+  ```
 
 ---
 

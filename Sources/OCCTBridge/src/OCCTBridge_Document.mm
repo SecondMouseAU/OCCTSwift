@@ -2144,9 +2144,25 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId) {
 // Merge every meshed face of `shape` into one triangulation, in the coordinate system the
 // shape itself is expressed in: each face's per-face triangulation is stored in its own
 // TopLoc_Location, so the nodes are transformed on the way in, and a REVERSED face has its
-// winding (and node normals) flipped so the merged result is consistently outward, by the
-// same rules OCCTShapeCreateMesh applies. UV nodes are dropped: they index per-face parameter
-// spaces that no longer mean anything once the faces are pooled.
+// winding flipped so the merged result is consistently outward. UV nodes are dropped: they
+// index per-face parameter spaces that no longer mean anything once the faces are pooled.
+//
+// NOTE the frame. Before #443 this function fetched the location and DISCARDED it, storing
+// one face's nodes in that face's own local frame. For a located face (an assembly component,
+// anything from Shape.transformed()) the stored numbers therefore change, independently of
+// the "every face, not the first" fix. The shape's frame is the right one for an attribute
+// nothing else carries a location for, but it is a behaviour change; see the CHANGELOG.
+//
+// Node normals are handled MORE strictly than OCCTShapeCreateMesh, which pushes
+// triangulation->Normal(i) raw with neither the location transform nor the reversal
+// (OCCTBridge_Mesh.mm); only its winding swap matches this. That divergence means
+// Mesh.normals and this attribute disagree for a located or reversed face; settling which is
+// wrong is Shape.mesh()'s question, not this function's.
+//
+// The normal branch never fires on the ordinary path: BRepMesh_IncrementalMesh does not
+// populate node normals (measured, 0 of 6 box faces and 0 of 1 sphere face; there is no
+// SetNormal anywhere under occt-src TKMesh). It fires only for a face that arrived carrying
+// a normal-bearing triangulation from elsewhere, which glTF import does produce.
 //
 // Returns a null handle when the shape has no face, or when nothing in it meshed.
 static Handle(Poly_Triangulation) occtMergedTriangulation(const TopoDS_Shape& shape,
@@ -2241,6 +2257,47 @@ int32_t OCCTDocumentTriangulationNbTriangles(OCCTDocumentRef doc, int64_t labelI
         if (!label.FindAttribute(TDataXtd_Triangulation::GetID(), attr)) return 0;
         return attr->NbTriangles();
     } catch (...) { return 0; }
+}
+
+// Reading a stored node back was not possible before #443: the attribute exposed only its
+// counts and deflection, so nothing in the Swift API could see the coordinates it holds. That
+// is part of why the first-face bug, and the frame it stored in, went unnoticed.
+bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                   double* outXYZ) {
+    if (!doc || doc->doc.IsNull() || !outXYZ) return false;
+    try {
+        TDF_Label label = doc->getLabel(labelId);
+        if (label.IsNull()) return false;
+        Handle(TDataXtd_Triangulation) attr;
+        if (!label.FindAttribute(TDataXtd_Triangulation::GetID(), attr)) return false;
+        Handle(Poly_Triangulation) tri = attr->Get();
+        if (tri.IsNull() || index < 1 || index > tri->NbNodes()) return false;
+        const gp_Pnt p = tri->Node(index);
+        outXYZ[0] = p.X();
+        outXYZ[1] = p.Y();
+        outXYZ[2] = p.Z();
+        return true;
+    } catch (...) { return false; }
+}
+
+// HasNormals() first: Poly_Triangulation::Normal reads myNormals unconditionally, and that
+// array is empty for anything BRepMesh produced.
+bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                     double* outXYZ) {
+    if (!doc || doc->doc.IsNull() || !outXYZ) return false;
+    try {
+        TDF_Label label = doc->getLabel(labelId);
+        if (label.IsNull()) return false;
+        Handle(TDataXtd_Triangulation) attr;
+        if (!label.FindAttribute(TDataXtd_Triangulation::GetID(), attr)) return false;
+        Handle(Poly_Triangulation) tri = attr->Get();
+        if (tri.IsNull() || !tri->HasNormals() || index < 1 || index > tri->NbNodes()) return false;
+        const gp_Dir n = tri->Normal(index);
+        outXYZ[0] = n.X();
+        outXYZ[1] = n.Y();
+        outXYZ[2] = n.Z();
+        return true;
+    } catch (...) { return false; }
 }
 
 double OCCTDocumentTriangulationDeflection(OCCTDocumentRef doc, int64_t labelId) {

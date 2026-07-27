@@ -3086,6 +3086,10 @@ OCCTBooleanHistoryRef OCCTShapeHealWithHistory(OCCTShapeRef shape, OCCTShapeRef*
 // ShapeBuild_ReShape, so the single history covers every body: History() builds a
 // fresh BRepTools_History from the context's whole replacement map on each call
 // (BRepTools_ReShape::History), so replacements from earlier bodies are still in it.
+// The flip side of sharing: each body's Perform() calls Context()->Apply() against a map
+// that already holds the earlier bodies' replacements. Harmless for the disjoint bodies
+// sewing produces, since Apply returns an unmapped shape unchanged, but two bodies that
+// genuinely share a sub-shape would see the first body's replacement of it.
 OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shell,
                                                                   OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;

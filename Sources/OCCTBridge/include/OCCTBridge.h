@@ -7588,6 +7588,23 @@ int32_t OCCTDocumentTriangulationNbTriangles(OCCTDocumentRef doc, int64_t labelI
 /// Get the deflection of a triangulation attribute.
 double OCCTDocumentTriangulationDeflection(OCCTDocumentRef doc, int64_t labelId);
 
+/// Read one node of a triangulation attribute, in the coordinate frame it was stored in.
+/// @param index 1-based node index, as Poly_Triangulation numbers them.
+/// @param outXYZ receives x, y, z. Untouched when the call returns false.
+/// @return false if the label has no triangulation attribute or the index is out of range.
+bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                   double* outXYZ);
+
+/// Read one node normal of a triangulation attribute, in the frame it was stored in.
+/// Node normals exist only when the meshed faces carried them; BRepMesh_IncrementalMesh does
+/// not produce any, so this is false for anything meshed from B-Rep and true for e.g. an
+/// imported glTF mesh.
+/// @param index 1-based node index.
+/// @param outXYZ receives the normal. Untouched when the call returns false.
+/// @return false if there is no attribute, no node normals, or the index is out of range.
+bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                     double* outXYZ);
+
 // MARK: - TDataXtd Point/Axis/Plane Attributes (v0.56.0)
 
 /// Set a point attribute on a label.

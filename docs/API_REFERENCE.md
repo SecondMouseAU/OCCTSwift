@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed — see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,320** of the entry points (~78% of the `Total` below); the rest are real, callable,
+categorisation covering **3,322** of the entry points (~78% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -71,7 +71,7 @@ a map of the major areas, and the `Total` as the count.
 | **Topological Naming** | 13 | createLabel, recordNaming, currentShape, storedShape, namingEvolution, namingHistory, oldShape, newShape, tracedForward, tracedBackward, selectShape, resolveShape, deepCopy |
 | **TDF/OCAF Framework** | 31 | mainLabel, tag, depth, isNull, isRoot, father, root, hasAttribute, attributeCount, hasChild, childCount, findChild, forgetAllAttributes, descendants, setName, setReference, referencedLabel, copyLabel, openTransaction, commitTransaction, abortTransaction, hasOpenTransaction, setUndoLimit, undoLimit, undo, redo, availableUndos, availableRedos, setModified, clearModified, isModified |
 | **TDataStd Attributes** | 25 | setInteger, integer, setReal, real, setAsciiString, asciiString, setComment, comment, initIntegerArray, setIntegerArrayValue, integerArrayValue, integerArrayBounds, initRealArray, setRealArrayValue, realArrayValue, realArrayBounds, setTreeNode, appendTreeChild, treeNodeFather, treeNodeFirstChild, treeNodeNext, treeNodeHasFather, treeNodeDepth, treeNodeChildCount, namedData(set/get/has integer/real/string) |
-| **TDataXtd Attributes** | 16 | setShapeAttr, shapeAttribute, hasShapeAttribute, setPositionAttr, positionAttribute, hasPositionAttribute, setGeometryType, geometryType, hasGeometryAttribute, setTriangulationFromShape, triangulationNodeCount, triangulationTriangleCount, triangulationDeflection, setPointAttr, setAxisAttr, setPlaneAttr |
+| **TDataXtd Attributes** | 18 | setShapeAttr, shapeAttribute, hasShapeAttribute, setPositionAttr, positionAttribute, hasPositionAttribute, setGeometryType, geometryType, hasGeometryAttribute, setTriangulationFromShape, triangulationNodeCount, triangulationTriangleCount, triangulationDeflection, triangulationNode, triangulationNormal, setPointAttr, setAxisAttr, setPlaneAttr |
 | **TFunction Framework** | 13 | setLogbook, logbookSetTouched, logbookSetImpacted, logbookIsModified, logbookClear, logbookIsEmpty, setGraphNode, graphNodeAddPrevious, graphNodeAddNext, setGraphNodeStatus, graphNodeStatus, graphNodeRemoveAllPrevious, graphNodeRemoveAllNext |
 | **TFunction Function** | 4 | setFunctionAttribute, functionIsFailed, functionFailure, setFunctionFailure |
 | **OCAF Persistence** | 17 | defineFormatBin, defineFormatBinL, defineFormatXml, defineFormatXmlL, defineFormatBinXCAF, defineFormatXmlXCAF, defineAllFormats, saveOCAF, loadOCAF, saveOCAFInPlace, createWithFormat, isSaved, storageFormat, setStorageFormat, documentCount, readingFormats, writingFormats |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,258** | |
+| **Total** | **4,260** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 

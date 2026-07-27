@@ -191,12 +191,21 @@ gives it, and the only one available without a declaration. A body nested inside
 twice, so it is still a body. None of #442's shipped cases change (two disjoint free shells → 2 solids;
 the same free shell twice → 1).
 
+The parity pass is O(N²) classifications in the size of one group, which was fine when a group was one
+solid's 1-3 shells but is not when it is every free shell of a sewn mesh. A conservative bounding-box
+pre-filter now prunes pairs before any ray cast, and skips building a classifier for a reference that
+overlaps nothing: enclosure implies box containment, so no verdict changes. Measured at 200 disjoint
+shells: 160 ms without it, 0.7 ms with, identical results. This is not the `Bnd_Box` rule #442
+rejected; that failed as the *decision* rule, which is exactly why it is sound as a pre-filter.
+
 > **Behaviour change for consumers:** `Shape.solid(from:)`, `Shape.solidWithFullHistory(from:)` and
 > `Shape.upgraded()` now return a **compound** where they previously returned one arbitrary body's
 > solid, for multi-body input only. Single-body input is untouched, down to the returned shape type.
 > A caller that assumed `.solid` unconditionally should read `.solids` instead.
 > `Shape.solidFromShellFixed()` returns **one** body where it returned two for a sewn hollow part,
-> the second having been the cavity.
+> the second having been the cavity. `AssemblyNode.setTriangulationFromShape` stores nodes in the
+> **shape's** frame rather than the first face's local frame, so a located shape's stored coordinates
+> move as well as its node count.
 
 The seven remaining undocumented picks are documented in place, in both the Swift doc comment and the
 bridge, with why each stays singular: `MedialAxis.init(of:)` (a medial axis is a property of one face,
