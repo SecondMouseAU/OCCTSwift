@@ -643,6 +643,21 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Project a point onto this curve, returning the nearest projection.
+    ///
+    /// - Parameter p: Point to project.
+    /// - Returns: The nearest projection, or `nil` if the point has no projection onto this curve
+    ///   — one beyond the ends of a bounded curve, or the centre of a circle.
+    ///
+    /// `project(_:)` (the `Point2D` overload) and `Point2D.distance(to:)` compute the same nearest
+    /// solution through the same shared bridge path, and agree on both the value and on when
+    /// there is no projection.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let hit = segment.project(point: SIMD2(5, 3))
+    /// #expect(hit?.distance == 3)
+    /// #expect(segment.project(point: SIMD2(100, 0)) == nil)   // past the end
+    /// ```
     public func project(point p: SIMD2<Double>) -> Curve2DProjection? {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
         guard r.distance >= 0 else { return nil }
@@ -1772,7 +1787,22 @@ extension Curve2D {
     }
 
     /// Project a `Point2D` onto this curve.
-    /// Returns `(parameter, distance)` or `nil` on failure.
+    ///
+    /// - Parameter point: Point to project.
+    /// - Returns: `(parameter, distance)` of the nearest solution, or `nil` if the point has no
+    ///   projection onto this curve.
+    ///
+    /// The same nearest-solution computation as `project(point:)`, returned without the projected
+    /// point itself. Note that a parameter of `0` is a perfectly ordinary success — projecting a
+    /// segment's own start point onto it returns exactly that — so `nil` is the only failure
+    /// signal.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let start = Point2D(x: 0, y: 0)!
+    /// #expect(segment.project(start)?.parameter == 0)          // success, at parameter 0
+    /// #expect(segment.project(Point2D(x: 100, y: 0)!) == nil)  // no projection
+    /// ```
     public func project(_ point: Point2D) -> (parameter: Double, distance: Double)? {
         var dist: Double = 0
         let param = OCCTCurve2DProjectPoint2D(handle, point.handle, &dist)

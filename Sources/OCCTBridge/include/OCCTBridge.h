@@ -267,7 +267,8 @@
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DExtrema, OCCTCurve2DCurvatureExtrema
 // Geom2dAPI_InterCurveCurve           → OCCTCurve2DIntersect, OCCTCurve2DSelfIntersect
 // Geom2dAPI_Interpolate               → OCCTCurve2DInterpolate*
-// Geom2dAPI_ProjectPointOnCurve       → OCCTPoint2DDistanceToCurve, OCCTCurve2DProjectPoint2D
+// Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
+//                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve
 //
 // --- Geom2dGcc ---
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
@@ -2437,7 +2438,13 @@ typedef struct {
     double x, y, parameter, distance;
 } OCCTCurve2DProjection;
 
+/// Project a point onto a curve, nearest solution only.
+/// @return Projection with `distance >= 0` on success; on failure `distance` is -1 and the
+///         other fields are zeroed. A curve can legitimately have no projection for a point
+///         (one beyond the ends of a bounded curve, or a circle's centre).
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef curve, double px, double py);
+/// Project a point onto a curve, all local-minimum solutions.
+/// @return Number of solutions written to `out` (0 if there are none).
 int32_t OCCTCurve2DProjectPointAll(OCCTCurve2DRef curve, double px, double py,
                                    OCCTCurve2DProjection* out, int32_t max);
 
@@ -8678,6 +8685,9 @@ OCCTPoint2DRef _Nullable OCCTPoint2DMirroredPoint(OCCTPoint2DRef _Nonnull ref,
 OCCTPoint2DRef _Nullable OCCTPoint2DMirroredAxis(OCCTPoint2DRef _Nonnull ref,
     double ox, double oy, double dx, double dy);
 /// Distance from point to curve
+/// @return Minimum distance, or -1 when the point has no projection onto the curve (one beyond
+///         the ends of a bounded curve, or a circle's centre). Swift's Point2D.distance(to:)
+///         maps that to .infinity.
 double OCCTPoint2DDistanceToCurve(OCCTPoint2DRef _Nonnull ref, OCCTCurve2DRef _Nonnull curve);
 /// Apply a Transform2D to a point, returns new point
 OCCTPoint2DRef _Nullable OCCTPoint2DTransformed(OCCTPoint2DRef _Nonnull ref,
@@ -8788,8 +8798,10 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
     OCCTPoint2DRef _Nonnull p2);
 
 /// Project a Point2D onto a Curve2D, returns parameter at closest point
-/// @param outDistance Output: minimum distance
-/// @return parameter on curve, or 0 on failure
+/// @param outDistance Output: minimum distance, or -1 on failure — this is the failure signal
+/// @return parameter on curve, or NaN on failure. Do NOT test the return value against 0: 0 is a
+///         legitimate parameter on any curve whose domain includes it (projecting a segment's own
+///         start point onto it returns exactly 0). Test `outDistance < 0` instead.
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve, OCCTPoint2DRef _Nonnull point,
     double* _Nonnull outDistance);
 
