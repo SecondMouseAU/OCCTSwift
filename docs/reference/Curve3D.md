@@ -249,6 +249,7 @@ The circle is periodic with period `2π`. The X axis of the local frame is deter
 - **Parameters:** `center` — circle centre; `normal` — plane normal; `radius` — circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0` or `normal` is zero.
 - **OCCT:** `Geom_Circle(gp_Ax2(...), radius)`.
+- **See also:** [`circleFromCenterNormal(center:normal:radius:)`](Curve3D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc` algorithm and enforces the same `radius > 0` contract (#399). The same pairing exists for `ellipse`/`ellipseFromCenterNormal`, `hyperbola`/`hyperbolaFromCenterNormal` and `parabola`/`parabolaFromCenterNormal`.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
