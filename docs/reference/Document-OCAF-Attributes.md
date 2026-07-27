@@ -805,17 +805,24 @@ public func fixSolid() -> Shape?
 ```
 
 **Every** solid in the receiver is healed, not just the first (#442): a single-body input comes back
-as a solid, a multi-body one as a compound of the healed solids in exploration order. A compound
-result is not new to this call — `ShapeFix_Solid` already returns one when a single solid's shells
-resolve into several bodies.
+as a solid, a multi-body one as a compound of one result per input body, in exploration order. A
+compound result is not new to this call — `ShapeFix_Solid` already returns one when a single solid's
+shells resolve into several bodies.
 
-Only solids are carried over. Loose shells, faces or wires sitting alongside them in a compound are
-dropped, and an input holding no solid at all returns `nil`. To heal a whole shape of mixed content
-instead, use [`fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire),
+Only the receiver's **solids** are visited. Loose shells, faces or wires sitting alongside them in a
+compound are not carried over, and an input holding no solid at all returns `nil`. To heal a whole
+shape of mixed content instead, use [`fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`](Shape-Features.md#fixedtolerancefixsolidfixshellfixfacefixwire),
 which wraps `ShapeFix_Shape` and preserves everything it is given.
 
-- **Returns:** The repaired solid, a compound of repaired solids for multi-body input, or `nil` if
-  the receiver holds no solid.
+> **A result body is usually a healed solid, but not always** — and no body is ever dropped to make
+> that true. `ShapeFix_Solid` hands back a **shell** when it cannot close one into a solid, and a
+> solid it fails to heal outright is returned **unhealed** rather than discarded. So
+> `result.solids.count` can be lower than the number of input bodies even though nothing was lost;
+> check `result.subShapes(ofType: .shell)` or `isValid` if that distinction matters, rather than
+> reading a short `solids` count as a body having vanished.
+
+- **Returns:** The repaired body, a compound of one result per input body for multi-body input, or
+  `nil` if the receiver holds no solid.
 - **OCCT:** `ShapeFix_Solid::Perform`.
 - **Example:**
   ```swift
@@ -841,10 +848,10 @@ Create a closed solid from a shell, using `ShapeFix_Solid` to orient and close t
 public func solidFromShellFixed() -> Shape?
 ```
 
-One solid is built per *body-bounding* shell, not just the first shell found (#442): each solid's
-outer shell, plus every shell that belongs to no solid (the usual shape of sewing output), plus any
-further shell of a solid that lies outside it — a disjoint sibling body in a multiconnex solid. A
-single body comes back as a solid, several as a compound in exploration order.
+One solid is built per *body-bounding* shell, not just the first shell found (#442): within each
+solid, every shell that an **even** number of the other shells enclose, plus every shell that belongs
+to no solid (the usual shape of sewing output). A single body comes back as a solid, several as a
+compound in exploration order.
 
 A solid's **cavity** shells are deliberately skipped: a hole is not a body, and building it as a
 positive solid would yield a compound whose volume double-counts the part. So a hollow solid produces

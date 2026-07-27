@@ -31,24 +31,35 @@ driven one solid at a time. **A compound result is not a new return category:** 
 already hands one back when a single solid's shells resolve into several bodies, so callers that
 handled `fixSolid()` correctly for a multiconnex solid already handle this.
 
-`solidFromShellFixed()` builds one solid per **body-bounding** shell: each solid's enclosing shell,
-every shell belonging to no solid (the usual shape of sewing output), and any further shell of a solid
-that lies outside it — a disjoint sibling body in a multiconnex solid. A solid's *cavity* shells are
-skipped: a hole is not a body, and building one as a positive solid would return a compound whose
+`solidFromShellFixed()` builds one solid per **body-bounding** shell, decided by **enclosure parity**:
+within each solid, a shell bounds a body iff an *even* number of the other shells enclose it, plus
+every shell belonging to no solid at all (the usual shape of sewing output). A solid's *cavity* shells
+are skipped: a hole is not a body, and building one as a positive solid would return a compound whose
 volume double-counts the part (8000 + 1000 for a 7000 mm³ hollow box). Enclosure is decided with
 `BRepClass3d_SolidClassifier`, not by shell orientation — measured, both a hollow solid's outer and
-cavity shells are `FORWARD`, so orientation carries no signal here.
+cavity shells are `FORWARD`, so orientation carries no signal here; each reference is read once with
+`PerformInfinitePoint` so an inside-out shell flips the sense rather than the answer.
 
-The enclosing shell is picked by bounding-box extent rather than `BRepClass3d::OuterShell`: only the
-enclosing shell can have the largest box, and unlike `OuterShell` that does not depend on the input
-being correctly oriented, which a healing entry point cannot assume. Measured, the two agree on every
-well-formed input; on an **inside-out** hollow solid `OuterShell` names the *cavity*, which would emit
-it as a second overlapping body (9000 mm³ for a 7000 mm³ part).
+Parity is used because **every rule that picks one reference shell and calls everything outside it a
+body is wrong on some real input**, and the two obvious choices fail on different ones. Measured, on
+one solid holding `{A_outer 8000, A_cavity 1000, B_outer 27000}`: picking the widest shell emits
+`A_cavity` as a positive body (36000 mm³ against a correct 35000), because it is outside *B*; picking
+`BRepClass3d::OuterShell` gets that case right but names the *cavity* on an inside-out hollow solid,
+emitting the true outer shell as a second overlapping body (9000 mm³ for a 7000 mm³ part). Parity
+assumes no single enclosing shell and needs no orientation, and it also reads a body nested inside
+another body's cavity correctly — enclosed twice, so even, so a body (8064 mm³, measured). It is
+O(N²) classifications in the shells of one solid, where N is 1-3 on any real input and 1 is free.
 
 Neither call can drop a body by any path: a solid `ShapeFix_Solid` fails to heal comes back unhealed
 rather than vanishing, `Shape()`'s compound is flattened by direct children so a shell it could not
 close is kept rather than skipped by a `TopAbs_SOLID` explorer, and a compound holding the same free
 shell twice yields one solid, not two.
+
+> **Reading the result of `fixSolid()`:** because no body is dropped, a result body is not always a
+> solid. `ShapeFix_Solid` hands back a shell it could not close, and a solid it fails to heal comes
+> back unhealed. `result.solids.count` can therefore be lower than the number of input bodies with
+> nothing lost — check `subShapes(ofType: .shell)` or `isValid` rather than reading a short `solids`
+> count as a body having vanished.
 
 > **Behaviour change for consumers:** these two calls now return a **compound** where they previously
 > returned one arbitrary body's solid, for multi-body input only. Single-body input is untouched, down

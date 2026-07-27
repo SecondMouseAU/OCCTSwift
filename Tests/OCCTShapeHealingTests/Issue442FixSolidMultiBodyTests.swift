@@ -214,6 +214,38 @@ struct Issue442FixSolidMultiBody {
         expectVolume(solids, 2000.0, "solidFromShellFixed(multiconnex solid)")
     }
 
+    /// One solid holding a hollow body's two shells *and* a second, wider body's shell.
+    /// This is what rules out picking any single reference shell and calling everything
+    /// outside it a body: with the wider body as the reference, the first body's cavity
+    /// also classifies as outside, and gets emitted as a positive solid that double-counts
+    /// (36000 against a correct 35000). Enclosure parity has no such reference.
+    @Test("solidFromShellFixed skips a cavity even when another body is wider")
+    func solidFromShellCavityWithWiderSibling() {
+        guard let outerA = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20),
+              let cavityA = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10),
+              let hollowA = outerA.subtracting(cavityA),
+              let boxB = Shape.box(origin: SIMD3(50, 0, 0), width: 30, height: 30, depth: 30)
+        else {
+            Issue.record("could not build the hollow body plus wider sibling")
+            return
+        }
+        // One solid, three shells: A's outer (8000), A's cavity (1000), B's outer (27000).
+        let shells = hollowA.shells + boxB.shells
+        #expect(shells.count == 3)
+        guard let solid = Shape.solidFromShells(shells) else {
+            Issue.record("could not assemble the three shells into one solid")
+            return
+        }
+        #expect(solid.shells.count == 3)
+
+        guard let bodies = solid.solidFromShellFixed() else {
+            Issue.record("solidFromShellFixed returned nil")
+            return
+        }
+        #expect(bodies.solids.count == 2)
+        expectVolume(bodies, 35000.0, "solidFromShellFixed(cavity + wider sibling)")
+    }
+
     /// Free shells belong to no solid — the usual shape of sewing output.
     @Test("solidFromShellFixed builds one solid per free shell")
     func solidFromShellFreeShells() {

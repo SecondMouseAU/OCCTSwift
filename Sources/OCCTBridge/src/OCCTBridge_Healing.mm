@@ -3155,9 +3155,7 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
 // MARK: - ShapeFix_Solid
 
 #include <ShapeFix_Solid.hxx>
-#include <BRepBndLib.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
-#include <Bnd_Box.hxx>
 #include <Precision.hxx>
 #include <TopoDS_Iterator.hxx>
 
@@ -3213,17 +3211,9 @@ OCCTShapeRef OCCTShapeFixSolid(OCCTShapeRef shape) {
     } catch (...) { return nullptr; }
 }
 
-// Diagonal of a shell's bounding box, for picking the one shell that could enclose the
-// others. Zero when the box is void.
-static double occtShellExtent(const TopoDS_Shell& shell) {
-    Bnd_Box box;
-    BRepBndLib::Add(shell, box);
-    return box.IsVoid() ? 0.0 : box.SquareExtent();
-}
-
-// Does `shell` lie inside the solid the classifier was loaded with — i.e. is it a cavity
-// rather than a body of its own? `insideState` is the caller's once-per-solid reading of
-// which state means "inside" for that reference (see occtBodyBoundingShells).
+// Does `shell` lie inside the solid the classifier was loaded with? `insideState` is the
+// caller's once-per-reference reading of which state means "inside" for it (see
+// occtBodyBoundingShells).
 static bool occtShellIsInsideSolid(const TopoDS_Shell& shell,
                                    BRepClass3d_SolidClassifier& classifier,
                                    TopAbs_State insideState) {
@@ -3234,11 +3224,10 @@ static bool occtShellIsInsideSolid(const TopoDS_Shell& shell,
     return classifier.State() == insideState;
 }
 
-// The shells that bound a body, in exploration order: each solid's enclosing shell, any
-// further shell of that solid that lies outside it (a disjoint sibling in a multiconnex
-// solid), and every shell belonging to no solid at all. A solid's cavity shells are
-// left out — a hole is not a body, and turning one into a positive solid would give a
-// compound whose volume double-counts the part.
+// The shells that bound a body, in exploration order: within each solid, every shell an
+// even number of the others enclose, plus every shell belonging to no solid at all. A
+// solid's cavity shells are left out — a hole is not a body, and turning one into a
+// positive solid would give a compound whose volume double-counts the part.
 static std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape) {
     std::vector<TopoDS_Shell> selected;
     TopTools_IndexedMapOfShape claimed;
@@ -3252,40 +3241,38 @@ static std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shap
         }
         if (shells.empty()) continue;
 
-        // Widest shell, not BRepClass3d::OuterShell: only the enclosing shell can have
-        // the largest box, and unlike OuterShell this does not depend on the input being
-        // correctly oriented — which is exactly what a healing entry point cannot assume.
-        // Measured: the two agree on every well-formed input, and on an inside-out hollow
-        // solid OuterShell names the *cavity*, which would emit it as a second overlapping
-        // body (9000 mm³ for a 7000 mm³ part).
-        TopoDS_Shell outer = shells[0];
-        for (const TopoDS_Shell& candidate : shells)
-            if (occtShellExtent(candidate) > occtShellExtent(outer)) outer = candidate;
-        selected.push_back(outer);
-        if (shells.size() == 1) continue;
+        if (shells.size() == 1) { selected.push_back(shells[0]); continue; }
 
-        // Reference for the enclosure test, built directly rather than through
-        // ShapeFix_Solid::SolidFromShell: that call does sh.Free(true), a TShape-level
-        // write to state shared with the caller's shape, and nothing here needs the
-        // reorientation it pays that for. One classifier per solid, not per candidate —
-        // its constructor loads every face of the reference.
-        TopoDS_Solid reference;
-        BRep_Builder builder;
-        builder.MakeSolid(reference);
-        builder.Add(reference, outer);
+        // Enclosure parity: a shell bounds a body iff an EVEN number of the other shells
+        // enclose it. Nothing here assumes one shell encloses all the rest, which is what
+        // both simpler rules got wrong — picking a single reference (BRepClass3d::OuterShell
+        // or the widest box) and calling everything outside it a body double-counts one
+        // body's cavity as soon as a *different* body is the reference. Parity also reads
+        // a body nested inside another body's cavity correctly: enclosed twice, so even.
+        std::vector<int> enclosedBy(shells.size(), 0);
+        for (size_t i = 0; i < shells.size(); i++) {
+            // Reference built directly rather than through ShapeFix_Solid::SolidFromShell:
+            // that call does sh.Free(true), a TShape-level write to state shared with the
+            // caller's shape, and nothing here needs the reorientation it pays that for.
+            // One classifier per reference shell — its constructor loads every face.
+            TopoDS_Solid reference;
+            BRep_Builder builder;
+            builder.MakeSolid(reference);
+            builder.Add(reference, shells[i]);
 
-        BRepClass3d_SolidClassifier classifier(reference);
-        classifier.PerformInfinitePoint(Precision::Confusion());
-        // A shell added as-is can bound "everything outside" instead, which flips the
-        // sense of every later classification rather than making it wrong.
-        const TopAbs_State insideState =
-            (classifier.State() == TopAbs_IN) ? TopAbs_OUT : TopAbs_IN;
+            BRepClass3d_SolidClassifier classifier(reference);
+            classifier.PerformInfinitePoint(Precision::Confusion());
+            // A shell added as-is can bound "everything outside" instead, which flips the
+            // sense of every later classification rather than making it wrong.
+            const TopAbs_State insideState =
+                (classifier.State() == TopAbs_IN) ? TopAbs_OUT : TopAbs_IN;
 
-        for (const TopoDS_Shell& candidate : shells) {
-            if (candidate.IsSame(outer)) continue;
-            if (!occtShellIsInsideSolid(candidate, classifier, insideState))
-                selected.push_back(candidate);
+            for (size_t j = 0; j < shells.size(); j++)
+                if (i != j && occtShellIsInsideSolid(shells[j], classifier, insideState))
+                    enclosedBy[j]++;
         }
+        for (size_t i = 0; i < shells.size(); i++)
+            if (enclosedBy[i] % 2 == 0) selected.push_back(shells[i]);
     }
 
     for (TopExp_Explorer sh(shape, TopAbs_SHELL); sh.More(); sh.Next()) {
