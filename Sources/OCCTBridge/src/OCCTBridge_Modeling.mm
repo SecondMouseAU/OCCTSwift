@@ -98,6 +98,7 @@
 #include <BRepAlgo_AsDes.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepBuilderAPI_FindPlane.hxx>
+#include <BRepTools.hxx>
 #include <BRepTools_WireExplorer.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
@@ -2717,10 +2718,33 @@ OCCTShapeRef OCCTShapeCreateFaceFromWire(OCCTWireRef wire, bool planar) {
     }
 }
 
+// 3D points sampled along a wire in traversal order, `samplesPerEdge + 1` per edge (both
+// endpoints included, so consecutive edges repeat their shared point). Arc-aware: sampling the
+// parametric range is what lets a curved edge contribute its true bulge rather than just its two
+// vertices — the distinction #397 turned on. Degenerate edges, and edges carrying no 3D curve, are
+// skipped rather than throwing.
+static std::vector<gp_Pnt> occtSampleWirePoints(const TopoDS_Wire& wire, int samplesPerEdge) {
+    std::vector<gp_Pnt> pts;
+    for (BRepTools_WireExplorer explorer(wire); explorer.More(); explorer.Next()) {
+        const TopoDS_Edge& edge = explorer.Current();
+        if (BRep_Tool::Degenerated(edge)) continue;
+        try {
+            BRepAdaptor_Curve curve(edge);
+            const double f = curve.FirstParameter();
+            const double l = curve.LastParameter();
+            // Walk the curve in the edge's traversal direction within the wire.
+            const bool reversed = (edge.Orientation() == TopAbs_REVERSED);
+            for (int s = 0; s <= samplesPerEdge; s++) {
+                const double t = (double)s / (double)samplesPerEdge;
+                pts.push_back(curve.Value(reversed ? (l + (f - l) * t) : (f + (l - f) * t)));
+            }
+        } catch (...) { continue; }   // no 3D curve on this edge — nothing to sample
+    }
+    return pts;
+}
+
 // Signed area of a (nominally planar) wire measured in the plane spanned by pln's
-// X/Y directions. Arc-aware: each edge is sampled along its parametric range in
-// wire-traversal order and the shoelace sum is accumulated over the sampled polyline,
-// so curved edges contribute their true bulge to the sign. The magnitude is only an
+// X/Y directions, as a shoelace sum over the sampled polyline. The magnitude is only an
 // approximation, but the SIGN — all we use it for — is robust for simple loops.
 // A positive result means the wire winds counter-clockwise about pln's normal.
 static double occtSignedWireAreaInPlane(const TopoDS_Wire& wire, const gp_Pln& pln) {
@@ -2738,37 +2762,34 @@ static double occtSignedWireAreaInPlane(const TopoDS_Wire& wire, const gp_Pln& p
     bool hasPrev = false;
     double u0 = 0.0, v0 = 0.0;      // first sampled point (to close the loop)
     double uPrev = 0.0, vPrev = 0.0; // previous sampled point
-    const int samplesPerEdge = 24;
 
-    BRepTools_WireExplorer explorer(wire);
-    for (; explorer.More(); explorer.Next()) {
-        const TopoDS_Edge& edge = explorer.Current();
-        BRepAdaptor_Curve curve(edge);
-        const double f = curve.FirstParameter();
-        const double l = curve.LastParameter();
-        // Walk the curve in the edge's traversal direction within the wire.
-        const bool reversed = (edge.Orientation() == TopAbs_REVERSED);
-        for (int s = 0; s <= samplesPerEdge; s++) {
-            const double t = (double)s / (double)samplesPerEdge;
-            const double param = reversed ? (l + (f - l) * t) : (f + (l - f) * t);
-            const gp_Pnt p = curve.Value(param);
-            double u, v;
-            projectUV(p, u, v);
-            if (!hasPrev) {
-                u0 = uPrev = u;
-                v0 = vPrev = v;
-                hasPrev = true;
-            } else {
-                area += (uPrev * v - u * vPrev);
-                uPrev = u;
-                vPrev = v;
-            }
+    for (const gp_Pnt& p : occtSampleWirePoints(wire, 24)) {
+        double u, v;
+        projectUV(p, u, v);
+        if (!hasPrev) {
+            u0 = uPrev = u;
+            v0 = vPrev = v;
+            hasPrev = true;
+        } else {
+            area += (uPrev * v - u * vPrev);
+            uPrev = u;
+            vPrev = v;
         }
     }
     if (hasPrev) {
         area += (uPrev * v0 - u0 * vPrev); // close the loop
     }
     return 0.5 * area;
+}
+
+// The plane a face's boundary lies in, if it has one: the face's own surface when it is planar,
+// else a plane fitted to its outer wire. Used to compare hole/outer winding (#274, #397).
+static bool occtFacePlane(const TopoDS_Face& face, gp_Pln& plane) {
+    Handle(Geom_Plane) planar = Handle(Geom_Plane)::DownCast(BRep_Tool::Surface(face));
+    if (!planar.IsNull()) { plane = planar->Pln(); return true; }
+    BRepBuilderAPI_FindPlane finder(BRepTools::OuterWire(face));
+    if (finder.Found()) { plane = finder.Plane()->Pln(); return true; }
+    return false;
 }
 
 OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* holes, int32_t holeCount) {
@@ -7925,38 +7946,80 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire) {
     try {
         TopoDS_Wire w = TopoDS::Wire(wire->shape);
 
-        // #234: reject a DEGENERATE hole wire (fewer than 3 distinct vertices, or all-collinear =
-        // zero enclosed area). Adding such a wire yields a non-nil-but-invalid face; extruding it
-        // gives an invalid prism that SIGSEGVs OCCT's ShapeFix (`healed()`) downstream — an OS
-        // signal the bridge's catch(...) cannot recover. Failing here (return nil) breaks the chain.
-        TopTools_IndexedMapOfShape vmap;
-        TopExp::MapShapes(w, TopAbs_VERTEX, vmap);
-        std::vector<gp_Pnt> pts;
-        for (int i = 1; i <= vmap.Extent(); i++) {
-            gp_Pnt p = BRep_Tool::Pnt(TopoDS::Vertex(vmap(i)));
-            bool dup = false;
-            for (const gp_Pnt& q : pts) { if (q.Distance(p) < Precision::Confusion()) { dup = true; break; } }
-            if (!dup) pts.push_back(p);
+        // #234: reject a DEGENERATE hole wire (one enclosing no area). Adding such a wire yields a
+        // non-nil-but-invalid face; extruding it gives an invalid prism that SIGSEGVs OCCT's
+        // ShapeFix (`healed()`) downstream — an OS signal the bridge's catch(...) cannot recover.
+        // Failing here (return nil) breaks the chain.
+        //
+        // #397: the wire is sampled ALONG ITS CURVES, not at its vertices. A circular hole wire has
+        // one vertex (`Wire.circle`) or two (two joined arcs), so a vertex-count test rejected every
+        // curved hole ever passed in; only the sampled points describe what the wire encloses.
+        std::vector<gp_Pnt> pts = occtSampleWirePoints(w, 8);
+        const bool ordered = !pts.empty();
+        if (!ordered) {
+            // Nothing samplable (no 3D curves): fall back to the wire's vertices, unordered.
+            TopTools_IndexedMapOfShape vmap;
+            TopExp::MapShapes(w, TopAbs_VERTEX, vmap);
+            for (int i = 1; i <= vmap.Extent(); i++) pts.push_back(BRep_Tool::Pnt(TopoDS::Vertex(vmap(i))));
         }
-        if (pts.size() < 3) return nullptr;                     // sub-3-distinct-vertex → degenerate
+        std::vector<gp_Pnt> distinct;
+        for (const gp_Pnt& p : pts) {
+            bool dup = false;
+            for (const gp_Pnt& q : distinct) { if (q.Distance(p) < Precision::Confusion()) { dup = true; break; } }
+            if (!dup) distinct.push_back(p);
+        }
+        if (distinct.size() < 3) return nullptr;                // sub-3-distinct-point → degenerate
         // Collinearity (zero area): farthest pair defines a line; if every point lies on it, reject.
-        gp_Pnt a = pts[0], b = pts[0];
+        gp_Pnt a = distinct[0], b = distinct[0];
         double maxd = 0;
-        for (const gp_Pnt& p : pts) { double d = a.Distance(p); if (d > maxd) { maxd = d; b = p; } }
+        for (const gp_Pnt& p : distinct) { double d = a.Distance(p); if (d > maxd) { maxd = d; b = p; } }
         if (maxd < Precision::Confusion()) return nullptr;      // all coincident
         gp_Vec dir(a, b); dir.Normalize();
         double maxPerp = 0;
-        for (const gp_Pnt& p : pts) {
+        for (const gp_Pnt& p : distinct) {
             double perp = gp_Vec(a, p).Crossed(dir).Magnitude();   // perpendicular distance to the line
             if (perp > maxPerp) maxPerp = perp;
         }
         if (maxPerp < Precision::Confusion()) return nullptr;   // collinear → zero-area → degenerate
+        if (ordered) {
+            // A curved wire can spread out and still enclose nothing (an arc traversed out and back
+            // clears the collinearity test above), so measure the loop's own vector area too.
+            gp_Vec twiceArea(0, 0, 0);
+            for (size_t i = 1; i + 1 < pts.size(); i++) {
+                twiceArea += gp_Vec(pts[0], pts[i]).Crossed(gp_Vec(pts[0], pts[i + 1]));
+            }
+            // area/chord is the loop's mean width: below tolerance it encloses nothing measurable.
+            if (0.5 * twiceArea.Magnitude() < Precision::Confusion() * maxd) return nullptr;
+        }
 
-        BRepBuilderAPI_MakeFace mf(TopoDS::Face(face->shape));
-        mf.Add(w);
-        if (!mf.IsDone()) return nullptr;
+        const TopoDS_Face host = TopoDS::Face(face->shape);
+        // A hole subtracts area only when it winds OPPOSITE the face's outer boundary. `MakeFace::Add`
+        // does no reorienting, so a same-sense wire was added as a second outer loop: the face's area
+        // GREW by the hole's, and the prism built from it was not a valid solid. Decide by comparing
+        // windings in the face's plane, the same rule OCCTShapeCreateFaceWithHoles uses (#274).
+        bool reverse = false;
+        gp_Pln plane;
+        if (occtFacePlane(host, plane)) {
+            const double outerSign = occtSignedWireAreaInPlane(BRepTools::OuterWire(host), plane);
+            const double holeSign = occtSignedWireAreaInPlane(w, plane);
+            reverse = (outerSign != 0.0) && (holeSign * outerSign > 0.0);
+        }
+        auto build = [&](bool rev) -> TopoDS_Face {
+            BRepBuilderAPI_MakeFace mf(host);
+            mf.Add(rev ? TopoDS::Wire(w.Reversed()) : w);
+            return mf.IsDone() ? mf.Face() : TopoDS_Face();
+        };
+        TopoDS_Face holed = build(reverse);
+        if (holed.IsNull() || !BRepCheck_Analyzer(holed).IsValid()) {
+            // Non-planar host, or a winding test that couldn't decide: take the other orientation
+            // when it is the one that yields a valid face.
+            TopoDS_Face alt = build(!reverse);
+            if (!alt.IsNull() && BRepCheck_Analyzer(alt).IsValid()) holed = alt;
+            else if (holed.IsNull()) holed = alt;
+        }
+        if (holed.IsNull()) return nullptr;
         auto result = new OCCTShape();
-        result->shape = mf.Shape();
+        result->shape = holed;
         return result;
     } catch (...) { return nullptr; }
 }

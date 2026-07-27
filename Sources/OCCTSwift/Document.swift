@@ -9349,6 +9349,24 @@ extension Shape {
     }
 
     /// Add a hole (inner wire) to a face.
+    ///
+    /// The hole wire may be **polygonal or curved** (a `Wire.circle`, an arc, joined arcs) and may
+    /// wind either way: the wire is reoriented as needed so the hole always *removes* area, and the
+    /// holed face extrudes into a valid solid with a real through hole.
+    ///
+    /// ```swift
+    /// let plate = Shape.face(from: Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0),
+    ///                                              SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
+    ///                                             closed: true)!, planar: true)!
+    /// let bore = Shape.fromWire(Wire.circle(origin: SIMD3(10, 10, 0),
+    ///                                       normal: SIMD3(0, 0, 1), radius: 3)!)!
+    /// let holed = Shape.faceAddHole(face: plate, wire: bore)!
+    /// holed.surfaceArea          // 400 - pi*9
+    /// holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
+    /// ```
+    ///
+    /// - Returns: The face with the hole added, or nil if the wire encloses no area (a degenerate
+    ///   hole is declined rather than producing an invalid face — see #234).
     public static func faceAddHole(face: Shape, wire: Shape) -> Shape? {
         guard let ref = OCCTMakeFaceAddHole(face.handle, wire.handle) else { return nil }
         return Shape(handle: ref)
