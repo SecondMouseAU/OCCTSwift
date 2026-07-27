@@ -135,8 +135,15 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Shell.hxx>
+#include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
+
+#include <BRep_Builder.hxx>
+#include <Geom2d_Curve.hxx>
+#include <Geom_Surface.hxx>
+
+#include <vector>
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
@@ -699,40 +706,192 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
     }
 }
 
+// MARK: - Surface filling (#430)
+
+// Map a plate constraint order (0/1/2) onto the GeomAbs_Shape value BRepFill_Filling
+// actually accepts. It forwards the enum straight through to
+// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both
+// reject anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2
+// (ordinal 3) and GeomAbs_C2 (ordinal 4) always throw, whatever the header docs say.
+static GeomAbs_Shape OCCTFillingContinuityToGeomAbs(int32_t continuity) {
+    switch (continuity) {
+        case 0:  return GeomAbs_C0;  // order 0 — position
+        case 1:  return GeomAbs_G1;  // order 1 — position + tangency
+        case 2:  return GeomAbs_C1;  // order 2 — position + tangency + curvature
+        default: return GeomAbs_C0;
+    }
+}
+
+// Build a support face carrying the edge's own pcurve, for edges that have no nominated
+// support face.
+//
+// This exists to keep BRepFill_Filling's face-less Add(edge, order) overload out of the
+// call path for continuity > 0. That overload builds its constraint from the UNTRIMMED
+// pcurve (it fetches the edge's [f, l] range and then discards it), which for the usual
+// Geom2d_Line pcurve means a +/-2e100 parameter range instead of the edge's own. The
+// resulting constraint cannot be projected, and GeomPlate_BuildPlateSurface::Perform's
+// recovery path then dereferences its own still-null myGeomPlateSurface — an
+// uncatchable SIGSEGV, not an exception. Routing through Add(edge, face, order) instead
+// uses BRepAdaptor_Curve2d, which trims correctly, and yields results identical to a
+// real support face. Upstream defect; see issue #430.
+static bool OCCTFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace) {
+    Handle(Geom2d_Curve) pcurve;
+    Handle(Geom_Surface) surface;
+    TopLoc_Location location;
+    double first = 0.0, last = 0.0;
+
+    BRep_Tool::CurveOnSurface(edge, pcurve, surface, location, first, last);
+    if (pcurve.IsNull() || surface.IsNull()) return false;
+
+    BRep_Builder builder;
+    builder.MakeFace(outFace, surface, location, BRep_Tool::Tolerance(edge));
+    // Only useful if the edge really does resolve a pcurve against the face we just built.
+    double checkFirst = 0.0, checkLast = 0.0;
+    return !BRep_Tool::CurveOnSurface(edge, outFace, checkFirst, checkLast).IsNull();
+}
+
+// Add one edge constraint, preferring the face-carrying overload whenever a support face
+// is available or derivable (see OCCTFillingSupportFaceFromPCurve).
+static void OCCTFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
+                                     const TopoDS_Edge& edge,
+                                     const TopoDS_Face& support,
+                                     GeomAbs_Shape order,
+                                     bool isBound) {
+    if (order != GeomAbs_C0) {
+        if (!support.IsNull()) {
+            filling.Add(edge, support, order, isBound);
+            return;
+        }
+        TopoDS_Face derived;
+        if (OCCTFillingSupportFaceFromPCurve(edge, derived)) {
+            filling.Add(edge, derived, order, isBound);
+            return;
+        }
+        // No pcurve at all: nothing to be tangent to. The face-less overload raises
+        // Standard_Failure here, which is OCCT's documented contract for this case.
+    }
+    filling.Add(edge, order, isBound);
+}
+
+// Shared builder construction. Binds every argument to the parameter it names — the
+// previous code passed maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng
+// (#431), which left MaxDeg/MaxSegments at their defaults and made TolAng the continuity
+// ordinal. Measured effect on a cylinder-rim fill: G0Error 0.615 vs 0.00040.
+static BRepOffsetAPI_MakeFilling OCCTFillingMakeBuilder(OCCTFillingParams params) {
+    const double tol3d = params.tolerance > 0 ? params.tolerance : 1e-4;
+    return BRepOffsetAPI_MakeFilling(
+        3,                                                   // Degree (energy criterion)
+        15,                                                  // NbPtsOnCur
+        2,                                                   // NbIter
+        false,                                               // Anisotropie
+        tol3d * 0.1,                                         // Tol2d
+        tol3d,                                               // Tol3d
+        0.01,                                                // TolAng
+        0.1,                                                 // TolCurv
+        params.maxDegree > 0 ? params.maxDegree : 8,         // MaxDeg
+        params.maxSegments > 0 ? params.maxSegments : 9      // MaxSegments
+    );
+}
+
+// Collect the boundary edges of every wire, in order.
+static void OCCTFillingCollectEdges(const OCCTWireRef* boundaries, int32_t wireCount,
+                                    std::vector<TopoDS_Edge>& outEdges) {
+    for (int32_t i = 0; i < wireCount; i++) {
+        if (!boundaries[i]) continue;
+        for (TopExp_Explorer exp(boundaries[i]->wire, TopAbs_EDGE); exp.More(); exp.Next()) {
+            outEdges.push_back(TopoDS::Edge(exp.Current()));
+        }
+    }
+}
+
+static OCCTShapeRef OCCTFillingBuildResult(BRepOffsetAPI_MakeFilling& filling) {
+    filling.Build();
+    if (!filling.IsDone()) return nullptr;
+
+    TopoDS_Shape result = filling.Shape();
+    if (result.IsNull()) return nullptr;
+
+    return new OCCTShape(result);
+}
+
 OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
                             OCCTFillingParams params) {
     if (!boundaries || wireCount < 1) return nullptr;
 
     try {
-        // Create filling operation
-        BRepOffsetAPI_MakeFilling filling(
-            params.maxDegree > 0 ? params.maxDegree : 8,
-            params.maxSegments > 0 ? params.maxSegments : 9,
-            1,  // Number of iterations
-            false,  // Anisotropie
-            params.tolerance > 0 ? params.tolerance : 1e-4,
-            params.tolerance > 0 ? params.tolerance : 1e-3,
-            static_cast<GeomAbs_Shape>(params.continuity)  // Continuity
-        );
+        BRepOffsetAPI_MakeFilling filling = OCCTFillingMakeBuilder(params);
+        const GeomAbs_Shape order = OCCTFillingContinuityToGeomAbs(params.continuity);
 
-        // Add boundary constraints
-        for (int32_t i = 0; i < wireCount; i++) {
-            if (!boundaries[i]) continue;
+        std::vector<TopoDS_Edge> edges;
+        OCCTFillingCollectEdges(boundaries, wireCount, edges);
+        if (edges.empty()) return nullptr;
 
-            // Add each edge from the wire as a constraint
-            for (TopExp_Explorer exp(boundaries[i]->wire, TopAbs_EDGE); exp.More(); exp.Next()) {
-                TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-                filling.Add(edge, static_cast<GeomAbs_Shape>(params.continuity));
-            }
+        TopoDS_Face noSupport;
+        for (const TopoDS_Edge& edge : edges) {
+            OCCTFillingAddConstraint(filling, edge, noSupport, order, /*isBound=*/true);
         }
 
-        filling.Build();
-        if (!filling.IsDone()) return nullptr;
+        return OCCTFillingBuildResult(filling);
+    } catch (...) {
+        return nullptr;
+    }
+}
 
-        TopoDS_Shape result = filling.Shape();
-        if (result.IsNull()) return nullptr;
+OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wireCount,
+                                       OCCTShapeRef support, OCCTFillingParams params) {
+    if (!boundaries || wireCount < 1) return nullptr;
 
-        return new OCCTShape(result);
+    try {
+        BRepOffsetAPI_MakeFilling filling = OCCTFillingMakeBuilder(params);
+        const GeomAbs_Shape order = OCCTFillingContinuityToGeomAbs(params.continuity);
+
+        std::vector<TopoDS_Edge> edges;
+        OCCTFillingCollectEdges(boundaries, wireCount, edges);
+        if (edges.empty()) return nullptr;
+
+        TopTools_IndexedDataMapOfShapeListOfShape edgeToFaces;
+        if (support) {
+            TopExp::MapShapesAndAncestors(support->shape, TopAbs_EDGE, TopAbs_FACE, edgeToFaces);
+        }
+
+        for (const TopoDS_Edge& edge : edges) {
+            TopoDS_Face supportFace;
+            if (edgeToFaces.Contains(edge)) {
+                const TopTools_ListOfShape& faces = edgeToFaces.FindFromKey(edge);
+                if (!faces.IsEmpty()) supportFace = TopoDS::Face(faces.First());
+            }
+            OCCTFillingAddConstraint(filling, edge, supportFace, order, /*isBound=*/true);
+        }
+
+        return OCCTFillingBuildResult(filling);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int32_t count,
+                                       OCCTFillingParams params) {
+    if (!constraints || count < 1) return nullptr;
+
+    try {
+        BRepOffsetAPI_MakeFilling filling = OCCTFillingMakeBuilder(params);
+
+        int32_t added = 0;
+        for (int32_t i = 0; i < count; i++) {
+            const OCCTFillConstraint& c = constraints[i];
+            if (!c.edge) continue;
+
+            TopoDS_Face support;
+            if (c.support) support = c.support->face;
+
+            OCCTFillingAddConstraint(filling, c.edge->edge, support,
+                                     OCCTFillingContinuityToGeomAbs(c.continuity),
+                                     c.isBound != 0);
+            added++;
+        }
+        if (added == 0) return nullptr;
+
+        return OCCTFillingBuildResult(filling);
     } catch (...) {
         return nullptr;
     }

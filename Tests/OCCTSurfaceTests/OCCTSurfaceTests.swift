@@ -94,6 +94,143 @@ struct SurfaceFillingTests {
     }
 }
 
+/// Continuity above `.c0` needs a surface to be continuous *with*. Before #430 the bridge
+/// always used `BRepFill_Filling`'s face-less `Add(edge, order)` overload, which builds its
+/// constraint from the *untrimmed* pcurve; the unprojectable constraint that produces then
+/// tripped a null dereference inside `GeomPlate_BuildPlateSurface::Perform`, killing the
+/// process with an uncatchable SIGSEGV rather than returning nil.
+///
+/// Every test here therefore doubles as a crash regression: *reaching* its assertions at all
+/// is half the point. The other half is that tangency is really delivered, not just survived —
+/// checked geometrically, since a fill that silently degrades to `.c0` also returns non-nil.
+@Suite("Filling Continuity And Support Faces (#430)")
+struct FillingSupportFaceTests {
+
+    /// Truncated sphere: an open circular rim whose only adjacent face is the curved wall.
+    /// The rim sits at z = 10·sin(50°) ≈ 7.66; a flat cap spans no z at all, a tangent cap
+    /// leaves the rim along the sphere and so must.
+    private func bowl() -> Shape? {
+        Shape.sphere(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 10,
+                     angle1: -.pi / 2, angle2: 50.0 * .pi / 180.0)
+    }
+
+    /// The rim is the topmost closed edge of the truncated sphere.
+    private func rimEdge(of shape: Shape) -> Edge? {
+        shape.edges()
+            .filter { $0.isClosed3D }
+            .max(by: { $0.bounds.max.z < $1.bounds.max.z })
+    }
+
+    private func rimWire(of shape: Shape) -> Wire? {
+        guard let rim = rimEdge(of: shape) else { return nil }
+        return Wire.wireFromEdges([rim])
+    }
+
+    @Test("Default parameters on a curved boundary return a surface instead of crashing")
+    func defaultParametersOnCurvedBoundarySurvive() {
+        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        // FillingParameters() defaults to .g1, so this is the ordinary call that used to
+        // take the whole process down. Reaching the #expect is the regression check.
+        let capped = Shape.fill(boundaries: [rim])
+
+        #expect(capped != nil)
+    }
+
+    @Test("Tangent fill against a support shape is not flat")
+    func tangentFillWithSupportIsNotFlat() {
+        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        let flat = Shape.fill(boundaries: [rim],
+                              parameters: FillingParameters(continuity: .c0))
+        let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
+                                 parameters: FillingParameters(continuity: .g1))
+
+        if let flat = flat {
+            // A positional fill of a planar rim is a flat disc: no z extent.
+            #expect(flat.size.z < 1e-6)
+        } else {
+            Issue.record("Positional fill of the rim should succeed")
+        }
+
+        if let tangent = tangent {
+            #expect(tangent.isValid)
+            // Tangency to the spherical wall forces the cap off the rim plane.
+            #expect(tangent.size.z > 0.5)
+        } else {
+            Issue.record("Tangent fill with a support shape should succeed")
+        }
+    }
+
+    @Test("Explicit per-edge constraint with a support face is tangent")
+    func explicitConstraintWithSupportFaceIsTangent() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+
+        let capped = Shape.fill(constraints: [
+            FillConstraint(edge: rim, support: wall, continuity: .g1)
+        ])
+
+        if let capped = capped {
+            #expect(capped.isValid)
+            #expect(capped.size.z > 0.5)
+        } else {
+            Issue.record("Explicit constraint fill with a support face should succeed")
+        }
+    }
+
+    @Test("Curvature continuity is accepted, not rejected outright")
+    func curvatureContinuityIsAccepted() {
+        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+
+        // Guards the continuity mapping: BRepFill_Filling forwards the GeomAbs_Shape value
+        // as an integer plate order and rejects anything above 2, so curvature must map to
+        // GeomAbs_C1 (ordinal 2). Mapping .g2 to GeomAbs_G2 (ordinal 3) makes this nil.
+        let capped = Shape.fill(boundaries: [rim], supportedBy: bowl,
+                                parameters: FillingParameters(continuity: .g2))
+
+        #expect(capped != nil)
+    }
+
+    @Test("Free-standing boundary has nothing to be tangent to and fails cleanly")
+    func freeStandingBoundaryFailsCleanly() {
+        guard let square = Wire.rectangle(width: 10, height: 10) else {
+            Issue.record("Failed to create boundary wire")
+            return
+        }
+
+        // No pcurve on any edge, so no continuity reference exists. This must return nil
+        // rather than crash, and the positional fill of the same wire must still work.
+        let tangent = Shape.fill(boundaries: [square],
+                                 parameters: FillingParameters(continuity: .g1))
+        let positional = Shape.fill(boundaries: [square],
+                                    parameters: FillingParameters(continuity: .c0))
+
+        #expect(tangent == nil)
+        #expect(positional != nil)
+    }
+
+    @Test("Constraints fill rejects an empty constraint list")
+    func emptyConstraintsReturnNil() {
+        #expect(Shape.fill(constraints: []) == nil)
+    }
+}
+
 @Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
 struct PlateSurfaceTests {
 

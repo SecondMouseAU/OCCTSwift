@@ -2255,20 +2255,71 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
                                   const int32_t* edgeIndices, const double* radii, int32_t count);
 
 /// Parameters for surface filling operation
+///
+/// `continuity` is the plate constraint ORDER, not a GeomAbs_Shape ordinal:
+/// 0 = position only, 1 = position + tangency, 2 = position + tangency + curvature.
+/// BRepFill_Filling passes the GeomAbs_Shape value straight through to
+/// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as that integer order, and both
+/// reject anything outside [-1, 2] — so curvature continuity is GeomAbs_C1 (ordinal 2),
+/// and GeomAbs_G2 (ordinal 3) always throws despite what the OCCT header docs claim.
+/// See OCCTFillingContinuityToGeomAbs in OCCTBridge_Healing.mm. (#430)
 typedef struct {
-    int32_t continuity;   // 0=GeomAbs_C0, 1=GeomAbs_G1, 2=GeomAbs_G2
+    int32_t continuity;   // 0=position, 1=tangency, 2=curvature
     double tolerance;     // Surface tolerance
     int32_t maxDegree;    // Maximum surface degree (default 8)
     int32_t maxSegments;  // Maximum segments (default 9)
 } OCCTFillingParams;
 
 /// Fill an N-sided boundary with a surface
+///
+/// Tangency/curvature continuity needs a support surface to be continuous WITH. Each
+/// boundary edge's own pcurve support surface is used, so continuity > 0 requires every
+/// boundary edge to carry a pcurve (i.e. to have been borrowed from an existing face);
+/// a free-standing edge with no pcurve makes the whole call fail. Use
+/// OCCTShapeFillWithSupport or OCCTShapeFillConstraints to nominate support faces
+/// explicitly.
+///
 /// @param boundaries Array of boundary wires
 /// @param wireCount Number of boundary wires
 /// @param params Filling parameters
 /// @return Filled face, or NULL on failure
 OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
                             OCCTFillingParams params);
+
+/// Fill an N-sided boundary, taking tangency/curvature from a surrounding shape
+///
+/// For each boundary edge, the support face is the edge's own ancestor face in
+/// `support` — the "cap this opening, continuous with the walls around it" case. A
+/// boundary edge with no ancestor face in `support` falls back to its own pcurve
+/// surface, and failing that is added with position-only continuity.
+///
+/// @param boundaries Array of boundary wires
+/// @param wireCount Number of boundary wires
+/// @param support Shape whose faces supply the tangency/curvature reference
+/// @param params Filling parameters
+/// @return Filled face, or NULL on failure
+OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wireCount,
+                                       OCCTShapeRef support, OCCTFillingParams params);
+
+/// One edge constraint for OCCTShapeFillConstraints
+typedef struct {
+    OCCTEdgeRef edge;      // Constrained edge (required)
+    OCCTFaceRef support;   // Face to be continuous with, or NULL to derive one
+    int32_t continuity;    // 0=position, 1=tangency, 2=curvature
+    int32_t isBound;       // 1 = bounds the resulting face, 0 = internal constraint
+} OCCTFillConstraint;
+
+/// Fill a surface from explicit per-edge constraints
+///
+/// The precise form: every edge names its own support face and continuity order, and
+/// may be a boundary or an internal constraint. `params.continuity` is ignored.
+///
+/// @param constraints Array of edge constraints
+/// @param count Number of constraints
+/// @param params Filling parameters (continuity field unused)
+/// @return Filled face, or NULL on failure
+OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int32_t count,
+                                       OCCTFillingParams params);
 
 /// Create a surface constrained to pass through points
 /// @param points Array of points [x,y,z triplets]

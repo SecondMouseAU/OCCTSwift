@@ -1569,7 +1569,22 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 
 ---
 
-## Surface Filling (v0.14.0)
+## Surface Filling (v0.14.0 / v1.15.21)
+
+### Choosing a continuity reference
+
+Tangency (`.g1`) and curvature (`.g2`) are relative — the filled surface has to be continuous
+*with* something. That reference is a **support face**, and which overload you use is really the
+question of where that face comes from:
+
+| Overload | Support face | Use when |
+|---|---|---|
+| `fill(boundaries:parameters:)` | each edge's own underlying surface | the boundary edges were borrowed from existing faces and that surface is the right reference |
+| `fill(boundaries:supportedBy:parameters:)` | the edge's ancestor face in a given shape | capping an opening so it flows into the walls around it |
+| `fill(constraints:parameters:)` | named per edge | different edges need different references, orders, or internal (non-bounding) constraints |
+
+A boundary built from free-standing wires has no reference surface at all, so any continuity above
+`.c0` returns `nil` for every one of these. `.c0` always works — it constrains position only.
 
 ### `Shape.fill(boundaries:parameters:)`
 
@@ -1582,7 +1597,9 @@ public static func fill(
 ) -> Shape?
 ```
 
-Creates a face that passes through the given boundary wires with the specified continuity. Each wire's edges are added as edge constraints to the filler.
+Creates a face that passes through the given boundary wires with the specified continuity. Each
+wire's edges are added as edge constraints to the filler, each taking its continuity reference from
+its own underlying surface.
 
 - **Parameters:** `boundaries` — wires defining the boundary (at least one); `parameters` — filling parameters (continuity, tolerance, degree, segments).
 - **Returns:** Face shape covering the boundary, or `nil` on failure.
@@ -1593,9 +1610,93 @@ Creates a face that passes through the given boundary wires with the specified c
   let w2 = Wire.line(from: SIMD3(10,0,0), to: SIMD3(10,10,5))!
   let w3 = Wire.line(from: SIMD3(10,10,5), to: SIMD3(0,10,3))!
   let w4 = Wire.line(from: SIMD3(0,10,3), to: SIMD3(0,0,0))!
+  // free-standing wires: nothing to be tangent to, so fill positionally
   let face = Shape.fill(boundaries: [w1, w2, w3, w4],
-                         parameters: FillingParameters(continuity: .g1))
+                         parameters: FillingParameters(continuity: .c0))
   ```
+
+### `Shape.fill(boundaries:supportedBy:parameters:)`
+
+Fills a boundary so the result is continuous with the shape surrounding it.
+
+```swift
+public static func fill(
+    boundaries: [Wire],
+    supportedBy support: Shape,
+    parameters: FillingParameters = FillingParameters()
+) -> Shape?
+```
+
+Each boundary edge takes its continuity reference from that edge's own ancestor face in `support`.
+An edge that isn't part of `support` falls back to its own underlying surface, and failing that is
+constrained positionally.
+
+- **Parameters:** `boundaries` — wires defining the boundary; `support` — shape whose faces supply the continuity reference; `parameters` — filling parameters.
+- **Returns:** Face shape covering the boundary, or `nil` on failure.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add(edge, face, order)` (via `OCCTShapeFillWithSupport`).
+- **Example:**
+  ```swift
+  // Cap the open top of a truncated sphere, tangent to the spherical wall
+  let bowl = Shape.sphere(at: SIMD3(0,0,0), direction: SIMD3(0,0,1),
+                          radius: 10, angle1: -.pi/2, angle2: .pi/3)!
+  let rim = bowl.edges()
+      .filter { $0.isClosed3D }
+      .max(by: { $0.bounds.max.z < $1.bounds.max.z })!
+
+  let cap = Shape.fill(boundaries: [Wire.wireFromEdges([rim])!],
+                        supportedBy: bowl,
+                        parameters: FillingParameters(continuity: .g1))
+  // cap leaves the rim along the sphere; the .c0 fill of the same rim is a flat disc
+  ```
+
+### `Shape.fill(constraints:parameters:)`
+
+Fills a surface from explicit per-edge constraints.
+
+```swift
+public static func fill(
+    constraints: [FillConstraint],
+    parameters: FillingParameters = FillingParameters()
+) -> Shape?
+```
+
+Every edge names its own support face and continuity order, and may bound the resulting face or act
+as an internal constraint the surface must also satisfy. `parameters.continuity` is ignored — each
+constraint carries its own.
+
+- **Parameters:** `constraints` — edge constraints; `parameters` — filling parameters (continuity field unused).
+- **Returns:** Face shape satisfying the constraints, or `nil` on failure.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add(edge, face, order, isBound)` (via `OCCTShapeFillConstraints`).
+- **Example:**
+  ```swift
+  let wall = rim.adjacentFaces(in: bowl)!.0
+
+  let patch = Shape.fill(constraints: [
+      FillConstraint(edge: rim, support: wall, continuity: .g2),
+      FillConstraint(edge: freeEdge, continuity: .c0),
+      // pulled through, but does not bound the face
+      FillConstraint(edge: ridgeEdge, continuity: .c0, isBoundary: false)
+  ])
+  ```
+
+### `FillConstraint`
+
+```swift
+public struct FillConstraint {
+    public var edge: Edge
+    public var support: Face?              // nil — derive from the edge itself
+    public var continuity: SurfaceContinuity   // default .g1
+    public var isBoundary: Bool            // default true
+}
+```
+
+- **`support`** — the face to be continuous with. `nil` falls back to the edge's own underlying surface.
+- **`isBoundary`** — `true` bounds the resulting face; `false` makes it an internal constraint the surface passes through without being edged by it.
+
+> **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
+> `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.
+> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3) — the latter always
+> throws, despite OCCT's own header docs naming it as the curvature-continuity value.
 
 ---
 
