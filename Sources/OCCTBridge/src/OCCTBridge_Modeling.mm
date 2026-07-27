@@ -98,6 +98,7 @@
 #include <BRepAlgo_AsDes.hxx>
 #include <BRepCheck_Analyzer.hxx>
 #include <BRepBuilderAPI_FindPlane.hxx>
+#include <BRepBuilderAPI_Copy.hxx>
 #include <BRepTools_WireExplorer.hxx>
 #include <BRepAdaptor_Curve.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
@@ -8736,6 +8737,9 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
 
 struct OCCTUnifySameDomain {
     ShapeUpgrade_UnifySameDomain* usd;
+    // #446: the algorithm rewrites its input, so it is given a private copy. The copier outlives
+    // the copy so KeepShape can map the caller's sub-shapes onto their counterparts inside it.
+    BRepBuilderAPI_Copy copier;
 };
 
 // MARK: - UnifySameDomain extension funcs (hoisted with struct)
@@ -8744,7 +8748,9 @@ OCCTUnifySameDomainRef OCCTUnifySameDomainCreate(OCCTShapeRef shape, bool unifyE
     if (!shape) return nullptr;
     try {
         auto result = new OCCTUnifySameDomain();
-        result->usd = new ShapeUpgrade_UnifySameDomain(shape->shape, unifyEdges, unifyFaces, concatBSplines);
+        TopoDS_Shape work = occtUnifySameDomainInput(shape->shape, result->copier);
+        if (work.IsNull()) { delete result; return nullptr; }
+        result->usd = new ShapeUpgrade_UnifySameDomain(work, unifyEdges, unifyFaces, concatBSplines);
         return (OCCTUnifySameDomainRef)result;
     } catch (...) { return nullptr; }
 }
@@ -8766,7 +8772,9 @@ void OCCTUnifySameDomainAllowInternalEdges(OCCTUnifySameDomainRef ref, bool allo
 void OCCTUnifySameDomainKeepShape(OCCTUnifySameDomainRef ref, OCCTShapeRef shape) {
     auto usd = (OCCTUnifySameDomain*)ref;
     if (!usd || !shape) return;
-    try { usd->usd->KeepShape(shape->shape); } catch (...) {}
+    // #446: the algorithm holds a copy, so the caller's sub-shape has to be mapped onto its
+    // counterpart there — handing over the caller's own would keep nothing at all.
+    try { usd->usd->KeepShape(occtUnifySameDomainMapped(shape->shape, usd->copier)); } catch (...) {}
 }
 
 void OCCTUnifySameDomainSetSafeInputMode(OCCTUnifySameDomainRef ref, bool safe) {

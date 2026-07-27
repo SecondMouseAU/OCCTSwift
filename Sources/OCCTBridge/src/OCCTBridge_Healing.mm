@@ -353,16 +353,49 @@ OCCTShapeRef OCCTShapeFixDetailed(OCCTShapeRef shape, double tolerance,
     }
 }
 
+// #446: the three shared helpers declared in OCCTBridge_Internal.h — see the block comment there
+// for why every unify entry point works on a copy.
+TopoDS_Shape occtUnifySameDomainInput(const TopoDS_Shape& shape, BRepBuilderAPI_Copy& copier) {
+    try {
+        copier.Perform(shape);
+        return copier.Shape();
+    } catch (...) {
+        return TopoDS_Shape();
+    }
+}
+
+TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_Copy& copier) {
+    try {
+        // ModifiedShape raises Standard_NoSuchObject for a shape that was not part of the copy.
+        TopoDS_Shape mapped = copier.ModifiedShape(sub);
+        return mapped.IsNull() ? sub : mapped;
+    } catch (...) {
+        return sub;
+    }
+}
+
+TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
+                                 bool unifyEdges, bool unifyFaces, bool concatBSplines) {
+    try {
+        BRepBuilderAPI_Copy copier;
+        TopoDS_Shape work = occtUnifySameDomainInput(shape, copier);
+        if (work.IsNull()) return TopoDS_Shape();
+
+        ShapeUpgrade_UnifySameDomain unifier(work, unifyEdges, unifyFaces, concatBSplines);
+        unifier.Build();
+        return unifier.Shape();
+    } catch (...) {
+        return TopoDS_Shape();
+    }
+}
+
 OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
                                        bool unifyEdges, bool unifyFaces,
                                        bool concatBSplines) {
     if (!shape) return nullptr;
 
     try {
-        ShapeUpgrade_UnifySameDomain unifier(shape->shape, unifyEdges, unifyFaces, concatBSplines);
-        unifier.Build();
-
-        TopoDS_Shape result = unifier.Shape();
+        TopoDS_Shape result = occtUnifySameDomain(shape->shape, unifyEdges, unifyFaces, concatBSplines);
         if (result.IsNull()) return nullptr;
 
         return new OCCTShape(result);
@@ -418,10 +451,10 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance) {
     if (!shape) return nullptr;
 
     try {
-        // First unify same domain
-        ShapeUpgrade_UnifySameDomain unifier(shape->shape, true, true, true);
-        unifier.Build();
-        TopoDS_Shape unified = unifier.Shape();
+        // First unify same domain (#446: on a private copy — the caller's shape is not an input
+        // this algorithm may consume)
+        TopoDS_Shape unified = occtUnifySameDomain(shape->shape, true, true, true);
+        if (unified.IsNull()) return nullptr;
 
         // Then heal the shape
         Handle(ShapeFix_Shape) fixer = new ShapeFix_Shape(unified);

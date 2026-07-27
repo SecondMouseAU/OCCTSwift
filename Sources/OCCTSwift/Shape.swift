@@ -3176,11 +3176,20 @@ extension Shape {
     /// This method merges faces that share the same underlying surface and edges
     /// that share the same underlying curve.
     ///
+    /// The receiver is **not** modified: the merge runs on a private copy, so a caller who discards
+    /// the result still holds exactly the shape they started with (#446 — the underlying OCCT
+    /// algorithm rewrites sub-shapes of its input, which used to reach the receiver).
+    ///
     /// - Parameters:
     ///   - unifyEdges: Whether to merge edges on same curve (default: true)
     ///   - unifyFaces: Whether to merge faces on same surface (default: true)
-    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true)
+    ///   - concatBSplines: Whether to concatenate adjacent B-splines (default: true — note
+    ///     ``UnifySameDomainBuilder/init(shape:unifyEdges:unifyFaces:concatBSplines:)`` defaults
+    ///     this to `false`)
     /// - Returns: Unified shape, or nil on failure
+    ///
+    /// For angular/linear tolerance control, `keepShape`, or internal-edge handling, use
+    /// ``UnifySameDomainBuilder`` instead.
     ///
     /// ## Example
     ///
@@ -3222,7 +3231,8 @@ extension Shape {
 
     /// Simplify a shape by unifying same-domain geometry and healing.
     ///
-    /// This is a convenience method that combines `unified()` and `healed()`.
+    /// This is a convenience method that combines `unified()` and `healed()`. As with `unified()`,
+    /// the receiver is not modified (#446).
     ///
     /// - Parameter tolerance: Tolerance for simplification operations
     /// - Returns: Simplified shape, or nil on failure

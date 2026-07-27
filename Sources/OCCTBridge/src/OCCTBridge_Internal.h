@@ -248,6 +248,36 @@ void occtEnsureSignals();
 // BRepCheck topology pass, no meshing. Definition lives in OCCTBridge.mm. See issue #263.
 bool occtHasSelfIntersectingWire(const TopoDS_Shape& s);
 
+// === #446: ShapeUpgrade_UnifySameDomain consumes the shape it is given ===
+//
+// The algorithm rewrites sub-shapes of its INPUT, and those rewrites reach the TShapes the
+// caller's shape still shares — so a caller who discards the result still ends up with a
+// different (measurably worse: reported self-intersecting, and here provably larger in BREP)
+// shape than the one they handed in. `SetSafeInputMode` does not cover it: even in safe mode,
+// TransformPCurves (ShapeUpgrade_UnifySameDomain.cxx) writes temporary pcurves onto the input's
+// edges against a scratch reference face, and only ever removes them again when that face is
+// later replaced. OCCT documents the class as producing a new shape and says nothing about the
+// input being consumed.
+//
+// Every entry point in this bridge therefore unifies a private COPY: the three below, plus the
+// OCCTUnifySameDomain builder (OCCTBridge_Modeling.mm), which keeps its copier alive so
+// KeepShape can map the caller's sub-shapes onto their counterparts in the copy.
+// Definitions live in OCCTBridge_Healing.mm. See issue #446.
+class BRepBuilderAPI_Copy;
+
+// Copy `shape` through `copier`, which the caller owns and must keep alive for as long as it
+// needs to map sub-shapes (occtUnifySameDomainMapped). Returns a null shape if the copy fails.
+TopoDS_Shape occtUnifySameDomainInput(const TopoDS_Shape& shape, BRepBuilderAPI_Copy& copier);
+
+// The counterpart of `sub` inside a copy made by `copier`, or `sub` itself when it is not a
+// sub-shape of what was copied (in which case it was never going to match anything either way).
+TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_Copy& copier);
+
+// One-shot unify over a private copy: the whole copy/construct/Build/result sequence the
+// non-builder entry points share. Returns a null shape on failure.
+TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
+                                 bool unifyEdges, bool unifyFaces, bool concatBSplines);
+
 // === #430/#432: surface-filling constraint helpers ===
 //
 // Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm, on
