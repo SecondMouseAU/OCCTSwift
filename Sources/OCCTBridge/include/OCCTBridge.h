@@ -1766,9 +1766,10 @@ OCCTShapeRef OCCTShapeCreateFaceFromWire(OCCTWireRef wire, bool planar);
 /// @return Face shape with holes, or NULL on failure
 OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* holes, int32_t holeCount);
 
-/// Create a solid from a closed shell
-/// @param shell Shell shape (must be closed)
-/// @return Solid shape, or NULL on failure
+/// Create a solid from every body-bounding shell of a shape, not just the first (#443).
+/// Cavity shells are skipped; see occtBodyBoundingShells in OCCTBridge_Internal.h.
+/// @param shell Shell shape (must be closed), or any shape holding shells
+/// @return One solid, a compound of solids for multi-body input, or NULL if there is no shell
 OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell);
 
 /// Sew multiple faces/shapes into a shell or solid
@@ -2647,7 +2648,8 @@ OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape);
 /// Sew a single shape (reconnect disconnected faces)
 OCCTShapeRef OCCTShapeSewSingle(OCCTShapeRef shape, double tolerance);
 
-/// Upgrade shape: sew + make solid + heal (pipeline)
+/// Upgrade shape: sew + make solid + heal (pipeline). One solid per body-bounding shell of
+/// the sewn result, so multi-body input stays multi-body (#443).
 OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance);
 
 
@@ -4869,7 +4871,9 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHealWithHistory(OCCTShapeRef _Nonnull s
                                                             OCCTShapeRef _Nullable * _Nullable outResult);
 
 /// Create a solid from a closed shell (BRepBuilderAPI_MakeSolid + ShapeFix_Solid
-/// orientation fix), with full history.
+/// orientation fix), with full history. Same body selection as
+/// OCCTShapeCreateSolidFromShell; one shared ReShape context, so the single history
+/// covers every body (#443).
 OCCTBooleanHistoryRef _Nullable OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef _Nonnull shell,
                                                                            OCCTShapeRef _Nullable * _Nullable outResult);
 
@@ -7570,7 +7574,9 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId);
 
 // MARK: - TDataXtd Triangulation Attribute (v0.56.0)
 
-/// Set a triangulation attribute on a label by meshing a shape.
+/// Set a triangulation attribute on a label by meshing a shape. Stores EVERY face's
+/// triangulation merged into one Poly_Triangulation, not just the first face's (#443).
+/// Returns false if the shape has no face, or if nothing in it meshed.
 bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc, int64_t labelId, OCCTShapeRef shape, double deflection);
 
 /// Get the number of nodes in a triangulation attribute.

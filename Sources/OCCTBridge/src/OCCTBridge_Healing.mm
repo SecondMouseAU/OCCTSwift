@@ -1275,16 +1275,24 @@ OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance) {
         TopoDS_Shape sewedShape = sewing.SewedShape();
         if (sewedShape.IsNull()) sewedShape = shape->shape;
 
-        // Step 2: Try to create solid from shell
+        // Step 2: Try to create solids from the sewn shells. One solid per body-bounding
+        // shell, not just the first shell an explorer yields (#443). Sewing a multi-body
+        // part is the ordinary way to reach this function, and taking one shell reduced
+        // every such part to a single body. Cavity shells stay out for the reason
+        // documented on occtBodyBoundingShells.
+        //
+        // As before, this step replaces the sewn shape outright rather than merging into
+        // it, so non-shell content (a loose face sewing could not attach) does not reach
+        // the result; only the count of bodies changes here.
         TopoDS_Shape resultShape = sewedShape;
         if (sewedShape.ShapeType() != TopAbs_SOLID) {
-            TopExp_Explorer shellExp(sewedShape, TopAbs_SHELL);
-            if (shellExp.More()) {
-                BRepBuilderAPI_MakeSolid makeSolid(TopoDS::Shell(shellExp.Current()));
-                if (makeSolid.IsDone()) {
-                    resultShape = makeSolid.Solid();
-                }
+            std::vector<TopoDS_Shape> made;
+            for (const TopoDS_Shell& shell : occtBodyBoundingShells(sewedShape)) {
+                BRepBuilderAPI_MakeSolid makeSolid(shell);
+                if (makeSolid.IsDone()) made.push_back(makeSolid.Solid());
             }
+            TopoDS_Shape solids = occtSolidBodiesToShape(made);
+            if (!solids.IsNull()) resultShape = solids;
         }
 
         // Step 3: Apply shape healing
@@ -3195,7 +3203,9 @@ OCCTShapeRef _Nullable OCCTShapeFixComposeShell(OCCTShapeRef _Nonnull faceRef, d
 // Assemble one result shape from healed bodies: the body itself when there is exactly
 // one, a compound when there are several. ShapeFix_Solid::Shape() already returns a
 // compound for a multiconnex input, so a compound result is nothing new for callers.
-static TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies) {
+// Declared in OCCTBridge_Internal.h, because the solid-from-shell entry points in
+// OCCTBridge_Modeling.mm share it (#443).
+TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies) {
     if (bodies.empty()) return TopoDS_Shape();
     if (bodies.size() == 1) return bodies[0];
     TopoDS_Compound compound;
@@ -3257,11 +3267,67 @@ static bool occtShellIsInsideSolid(const TopoDS_Shell& shell,
     return classifier.State() == insideState;
 }
 
-// The shells that bound a body, in exploration order: within each solid, every shell an
-// even number of the others enclose, plus every shell belonging to no solid at all. A
-// solid's cavity shells are left out — a hole is not a body, and turning one into a
-// positive solid would give a compound whose volume double-counts the part.
-static std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape) {
+// Append the body-bounding members of one group of shells to `selected`, in the order
+// given. Enclosure parity: a shell bounds a body iff an EVEN number of the others in its
+// group enclose it. Nothing here assumes one shell encloses all the rest, which is what both
+// simpler rules got wrong: picking a single reference (BRepClass3d::OuterShell or the widest
+// box) and calling everything outside it a body double-counts one body's cavity as soon as a
+// *different* body is the reference. Parity also reads a body nested inside another body's
+// cavity correctly: enclosed twice, so even.
+static void occtSelectBodyShells(const std::vector<TopoDS_Shell>& shells,
+                                 std::vector<TopoDS_Shell>& selected) {
+    if (shells.empty()) return;
+    if (shells.size() == 1) { selected.push_back(shells[0]); return; }
+
+    std::vector<int> enclosedBy(shells.size(), 0);
+    for (size_t i = 0; i < shells.size(); i++) {
+        // An open shell cannot enclose anything, and every shell is a reference under
+        // parity, so letting one classify would add a spurious ±1 to the others and
+        // flip their verdicts. Measured on {A_outer, A_cavity, openShell wrapping both}:
+        // without this the outer shell is DROPPED (count 1) and the cavity emitted as a
+        // body. BRep_Tool::IsClosed on a shell is a real edge-pairing check rather than
+        // the Closed() flag, so a genuine cavity shell still qualifies as a reference.
+        // Open shells reach here routinely; this function accepts them by contract.
+        //
+        // Deliberate trade-off, do not "fix" a double-count back out of this: on a body
+        // whose OUTER shell is the open one, the cavity becomes the only eligible
+        // reference, both end even, and the cavity is emitted as a positive body. Input
+        // that broken has no right answer, and an extra body beats a dropped one for a
+        // call whose whole contract is that bodies do not vanish silently.
+        if (!BRep_Tool::IsClosed(shells[i])) continue;
+
+        // Reference built directly rather than through ShapeFix_Solid::SolidFromShell:
+        // that call does sh.Free(true), a TShape-level write to state shared with the
+        // caller's shape, and nothing here needs the reorientation it pays that for.
+        // One classifier per reference shell; its constructor loads every face.
+        TopoDS_Solid reference;
+        BRep_Builder builder;
+        builder.MakeSolid(reference);
+        builder.Add(reference, shells[i]);
+
+        BRepClass3d_SolidClassifier classifier(reference);
+        classifier.PerformInfinitePoint(Precision::Confusion());
+        // A shell added as-is can bound "everything outside" instead, which flips the
+        // sense of every later classification rather than making it wrong.
+        const TopAbs_State insideState =
+            (classifier.State() == TopAbs_IN) ? TopAbs_OUT : TopAbs_IN;
+
+        for (size_t j = 0; j < shells.size(); j++)
+            if (i != j && occtShellIsInsideSolid(shells[j], classifier, insideState))
+                enclosedBy[j]++;
+    }
+    for (size_t i = 0; i < shells.size(); i++)
+        if (enclosedBy[i] % 2 == 0) selected.push_back(shells[i]);
+}
+
+// The shells that bound a body, in exploration order: every shell an even number of the
+// others in its group enclose, where a group is one solid's own shells, or all the shells
+// belonging to no solid at all. A cavity shell is left out, because a hole is not a body and
+// turning one into a positive solid would give a compound whose volume double-counts the
+// part.
+// Declared in OCCTBridge_Internal.h, because the solid-from-shell entry points in
+// OCCTBridge_Modeling.mm share it (#443).
+std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape) {
     std::vector<TopoDS_Shell> selected;
     TopTools_IndexedMapOfShape claimed;
 
@@ -3272,65 +3338,30 @@ static std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shap
             claimed.Add(sh.Current());
             shells.push_back(TopoDS::Shell(sh.Current()));
         }
-        if (shells.empty()) continue;
-
-        if (shells.size() == 1) { selected.push_back(shells[0]); continue; }
-
-        // Enclosure parity: a shell bounds a body iff an EVEN number of the other shells
-        // enclose it. Nothing here assumes one shell encloses all the rest, which is what
-        // both simpler rules got wrong — picking a single reference (BRepClass3d::OuterShell
-        // or the widest box) and calling everything outside it a body double-counts one
-        // body's cavity as soon as a *different* body is the reference. Parity also reads
-        // a body nested inside another body's cavity correctly: enclosed twice, so even.
-        std::vector<int> enclosedBy(shells.size(), 0);
-        for (size_t i = 0; i < shells.size(); i++) {
-            // An open shell cannot enclose anything, and every shell is a reference under
-            // parity, so letting one classify would add a spurious ±1 to the others and
-            // flip their verdicts. Measured on {A_outer, A_cavity, openShell wrapping both}:
-            // without this the outer shell is DROPPED (count 1) and the cavity emitted as a
-            // body. BRep_Tool::IsClosed on a shell is a real edge-pairing check rather than
-            // the Closed() flag, so a genuine cavity shell still qualifies as a reference.
-            // Open shells reach here routinely — this function accepts them by contract.
-            //
-            // Deliberate trade-off, do not "fix" a double-count back out of this: on a body
-            // whose OUTER shell is the open one, the cavity becomes the only eligible
-            // reference, both end even, and the cavity is emitted as a positive body. Input
-            // that broken has no right answer, and an extra body beats a dropped one for a
-            // call whose whole contract is that bodies do not vanish silently.
-            if (!BRep_Tool::IsClosed(shells[i])) continue;
-
-            // Reference built directly rather than through ShapeFix_Solid::SolidFromShell:
-            // that call does sh.Free(true), a TShape-level write to state shared with the
-            // caller's shape, and nothing here needs the reorientation it pays that for.
-            // One classifier per reference shell — its constructor loads every face.
-            TopoDS_Solid reference;
-            BRep_Builder builder;
-            builder.MakeSolid(reference);
-            builder.Add(reference, shells[i]);
-
-            BRepClass3d_SolidClassifier classifier(reference);
-            classifier.PerformInfinitePoint(Precision::Confusion());
-            // A shell added as-is can bound "everything outside" instead, which flips the
-            // sense of every later classification rather than making it wrong.
-            const TopAbs_State insideState =
-                (classifier.State() == TopAbs_IN) ? TopAbs_OUT : TopAbs_IN;
-
-            for (size_t j = 0; j < shells.size(); j++)
-                if (i != j && occtShellIsInsideSolid(shells[j], classifier, insideState))
-                    enclosedBy[j]++;
-        }
-        for (size_t i = 0; i < shells.size(); i++)
-            if (enclosedBy[i] % 2 == 0) selected.push_back(shells[i]);
+        // Each solid is its own group: a free shell must not be able to perturb a declared
+        // body's cavity verdict, and vice versa.
+        occtSelectBodyShells(shells, selected);
     }
 
+    // Free shells form one further group and go through the same parity pass (#443).
+    // They used to be added unconditionally, on the grounds that a shell outside any solid
+    // has no declared cavity relationship. But sewing DISSOLVES the solid that carried
+    // that declaration, and sewing is the ordinary way these calls are reached. Measured on
+    // a sewn hollow box: unconditional gives 2 bodies where the same two shells inside a
+    // solid give 1, and on {hollow body, body inside its cavity} it gives 3 instead of 2.
+    // Containment among free shells is geometric rather than declared, so a closed shell
+    // sitting alone inside another is read as that one's cavity: the same reading OCCT's
+    // own solid convention would give it, and the only one available without a declaration.
+    std::vector<TopoDS_Shell> freeShells;
     for (TopExp_Explorer sh(shape, TopAbs_SHELL); sh.More(); sh.Next()) {
         // Contains, not Add: IndexedMap::Add returns an index, never a "was new" flag.
         // Without this a compound holding the same free shell twice yields two identical
         // solids.
         if (claimed.Contains(sh.Current())) continue;
         claimed.Add(sh.Current());
-        selected.push_back(TopoDS::Shell(sh.Current()));
+        freeShells.push_back(TopoDS::Shell(sh.Current()));
     }
+    occtSelectBodyShells(freeShells, selected);
 
     return selected;
 }

@@ -1279,6 +1279,26 @@ extension AssemblyNode {
     // MARK: - TDataXtd Triangulation Attribute
 
     /// Set a triangulation attribute on this label by meshing a shape.
+    ///
+    /// Meshes the shape and stores **every** face's triangulation, merged into one
+    /// `Poly_Triangulation` in the shape's own coordinate system: per-face locations are
+    /// applied to the nodes, and reversed faces have their winding and node normals flipped
+    /// so the stored mesh is consistently outward. Node normals survive only if every
+    /// contributing face carries them; per-face UV nodes are dropped, since they index
+    /// parameter spaces that no longer mean anything once the faces are pooled.
+    ///
+    /// ```swift
+    /// let label = doc.createLabel()!
+    /// label.setTriangulationFromShape(Shape.box(width: 10, height: 10, depth: 10)!,
+    ///                                 deflection: 1.0)
+    /// print(label.triangulationNodeCount)      // 24, all six faces, not 4
+    /// print(label.triangulationTriangleCount)  // 12
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - shape: The shape to mesh. Faces at any depth are included.
+    ///   - deflection: Linear meshing deflection (default: 1.0).
+    /// - Returns: `false` if the shape has no face, or if nothing in it meshed.
     @discardableResult
     public func setTriangulationFromShape(_ shape: Shape, deflection: Double = 1.0) -> Bool {
         OCCTDocumentSetTriangulationFromShape(document.handle, labelId, shape.handle, deflection)
@@ -3874,16 +3894,19 @@ public extension Shape {
     /// Create a solid from a shell shape using `ShapeFix_Solid`, orienting it to enclose
     /// a finite volume.
     ///
-    /// One solid is built per *body-bounding* shell, not just the first shell found: within
-    /// each solid, every shell that an **even** number of the other shells enclose, plus
-    /// every shell that belongs to no solid (the usual shape of sewing output). A single
-    /// body comes back as a solid, several as a compound in exploration order.
+    /// One solid is built per *body-bounding* shell, not just the first shell found: every
+    /// shell that an **even** number of the other shells in its group enclose, where a group
+    /// is one solid's own shells, or all the shells belonging to no solid (the usual shape
+    /// of sewing output). A single body comes back as a solid, several as a compound in
+    /// exploration order.
     ///
-    /// A solid's *cavity* shells are deliberately skipped: a hole is not a body, and
-    /// building it as a positive solid would yield a compound whose volume double-counts
-    /// the part. So a hollow solid produces one solid bounded by its outer shell, with the
-    /// cavity filled. To rebuild a solid that keeps its cavities, use
-    /// ``Shape/solidFromShells(_:)`` with the outer shell first.
+    /// *Cavity* shells are deliberately skipped: a hole is not a body, and building it as a
+    /// positive solid would yield a compound whose volume double-counts the part. So a
+    /// hollow solid produces one solid bounded by its outer shell, with the cavity filled,
+    /// and so does that same body after sewing has left its two shells free. A body nested
+    /// inside another body's cavity is enclosed twice, so it is still read as a body. To
+    /// rebuild a solid that keeps its cavities, use ``Shape/solidFromShells(_:)`` with the
+    /// outer shell first.
     ///
     /// ```swift
     /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies

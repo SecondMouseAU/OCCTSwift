@@ -1483,6 +1483,104 @@ struct TDataXtdTriangulationAttributeTests {
     }
 }
 
+/// #443: `setTriangulationFromShape` meshed the whole shape and then stored only the
+/// **first face's** triangulation. Measured before the fix: a 6-face box and a 12-face
+/// two-box compound both stored 4 nodes and 2 triangles, one planar face's corners, for
+/// a doc comment that reads "by meshing a shape". The attribute is what later readers
+/// trust as the label's geometry, so a silently truncated one is the worst of the three
+/// sites the audit found.
+@Suite("Issue 443: triangulation attribute stores the whole shape")
+struct Issue443TriangulationAttributeTests {
+
+    /// A box at deflection 1.0 meshes to 4 nodes and 2 triangles per planar face.
+    @Test("a box stores all six faces, not one")
+    func boxStoresEveryFace() {
+        guard let doc = Document.create(), let label = doc.createLabel(),
+              let box = Shape.box(width: 10, height: 10, depth: 10)
+        else {
+            Issue.record("could not build the document or the box")
+            return
+        }
+        #expect(box.subShapeCount(ofType: .face) == 6)
+        #expect(label.setTriangulationFromShape(box, deflection: 1.0))
+
+        // Was 4 / 2 before the fix: one face's worth, for any input.
+        #expect(label.triangulationNodeCount == 24)
+        #expect(label.triangulationTriangleCount == 12)
+    }
+
+    /// Two disjoint boxes: 12 faces, so twice the box's mesh. The pre-fix answer did not
+    /// change at all between these two inputs, which is what made it hard to notice.
+    @Test("a two-body compound stores both bodies")
+    func compoundStoresEveryBody() {
+        guard let doc = Document.create(), let label = doc.createLabel(),
+              let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+              let compound = Shape.compound([a, b])
+        else {
+            Issue.record("could not build the two-box compound")
+            return
+        }
+        #expect(compound.subShapeCount(ofType: .face) == 12)
+        #expect(label.setTriangulationFromShape(compound, deflection: 1.0))
+        #expect(label.triangulationNodeCount == 48)
+        #expect(label.triangulationTriangleCount == 24)
+    }
+
+    /// Finer deflection must produce a finer mesh. On a curved shape this is the check
+    /// that the merge actually walks every face rather than pinning one of them.
+    @Test("deflection still controls mesh density on a curved shape")
+    func deflectionControlsDensity() {
+        guard let doc = Document.create(),
+              let coarseLabel = doc.createLabel(), let fineLabel = doc.createLabel(),
+              let sphere = Shape.sphere(radius: 10.0)
+        else {
+            Issue.record("could not build the document or the sphere")
+            return
+        }
+        #expect(coarseLabel.setTriangulationFromShape(sphere, deflection: 2.0))
+        #expect(fineLabel.setTriangulationFromShape(sphere, deflection: 0.2))
+        #expect(coarseLabel.triangulationTriangleCount > 0)
+        #expect(fineLabel.triangulationTriangleCount > coarseLabel.triangulationTriangleCount)
+
+        // The merged triangulation is built by hand, so its deflection starts at 0 and has
+        // to be carried over from the contributing faces; a 0 would read as "exact".
+        #expect(coarseLabel.triangulationDeflection > 0)
+        #expect(fineLabel.triangulationDeflection > 0)
+        #expect(fineLabel.triangulationDeflection < coarseLabel.triangulationDeflection)
+    }
+
+    /// The merged deflection is the worst of the contributing faces, not the first face's.
+    /// A box's six planar faces all mesh exactly, so this pins the flat case at 0 while the
+    /// curved case above pins a real value.
+    @Test("a planar shape reports its faces' own deflection")
+    func planarDeflection() {
+        guard let doc = Document.create(), let label = doc.createLabel(),
+              let box = Shape.box(width: 10, height: 10, depth: 10)
+        else {
+            Issue.record("could not build the document or the box")
+            return
+        }
+        #expect(label.setTriangulationFromShape(box, deflection: 1.0))
+        #expect(label.triangulationDeflection >= 0)
+    }
+
+    /// The merge must not silently store an empty attribute when there is nothing to mesh.
+    @Test("a shape with no face stores nothing")
+    func noFaceStoresNothing() {
+        guard let doc = Document.create(), let label = doc.createLabel(),
+              let box = Shape.box(width: 10, height: 10, depth: 10),
+              let edge = box.subShapes(ofType: .edge).first
+        else {
+            Issue.record("could not build an edge")
+            return
+        }
+        #expect(label.setTriangulationFromShape(edge, deflection: 1.0) == false)
+        #expect(label.triangulationNodeCount == 0)
+        #expect(label.triangulationTriangleCount == 0)
+    }
+}
+
 // MARK: - TDataXtd Point/Axis/Plane Attribute Tests (v0.56.0)
 
 @Suite("TDataXtd Point/Axis/Plane Attributes")

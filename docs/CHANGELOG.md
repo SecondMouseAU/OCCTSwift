@@ -129,6 +129,89 @@ zero-area curved wire that must still be declined, and the boundary-crossing wir
 turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test` (combined with
 #446 above): 4480 tests in 1292 suites, all passing.
 
+### Unreleased: fix - three more first-of-N `TopExp_Explorer` sites dropped most of their input (#443)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+#442's audit note asked for the first-of-N `TopExp_Explorer` idiom to be grepped for across the whole
+bridge before closing it, on the grounds that #439 had two instances and #442 two more, and every one
+was found by someone reading the neighbouring lines rather than from a report. That sweep found **23
+candidate sites**: 8 false positives, 5 where "first" is the documented contract, and 10 undocumented
+silent picks. Three of those were confirmed **by measurement** to lose most of their input, and are
+fixed here. The other seven are documented rather than changed: each is singular by contract, and
+widening it would change what its arguments mean.
+
+Measured against a compound of two disjoint 10 mm boxes (2 solids, 12 faces, 2000 mm³):
+
+| call | before | after |
+| --- | --- | --- |
+| `Shape.solid(from:)` | 1 solid, 1000 mm³ | 2 solids, 2000 mm³ |
+| `Shape.upgraded()` | 1 solid, 1000 mm³ | 2 solids, 2000 mm³ |
+| `AssemblyNode.setTriangulationFromShape` | 4 nodes, 2 triangles | 48 nodes, 24 triangles |
+
+**`Shape.solid(from:)`** (and `Shape.solidWithFullHistory(from:)`) is the sharpest of the three: its
+own doc names sewing output as the expected input, and sewing two bodies yields exactly the two-shell
+input it mishandled. After #442 the two sibling entry points disagreed on that same shape:
+`sewn.solidFromShellFixed()` gave 2 solids / 2000 mm³ and `Shape.solid(from: sewn)` gave 1 / 1000.
+Both now go through #442's `occtBodyBoundingShells`, so they agree by construction; the helper moved
+to `OCCTBridge_Internal.h` for that. The history variant shares **one** `ShapeBuild_ReShape` across
+the per-body `ShapeFix_Solid` runs, so the single history still covers every body:
+`BRepTools_ReShape::History()` builds a fresh `BRepTools_History` from the context's whole replacement
+map on each call, so earlier bodies' replacements are still in it (confirmed against `occt-src`).
+
+**`Shape.upgraded()`** is documented as a "sew + make solid + heal pipeline" and is the call most
+likely to be pointed at a raw imported mesh, where multi-body input is the norm. Its solid step now
+builds one solid per body-bounding shell. Two limits inherent to sewing first are now documented
+rather than silent: sewing dissolves the input's solids, so a **hollow body's cavity is filled**
+(8000 mm³ for a 7000 mm³ hollow cube, unchanged from before but never stated); and the solid step
+replaces the sewn shape rather than merging into it, so content sewing could not attach to a shell is
+not carried through. `fixed(tolerance:)` is the call for either case, since it does not sew.
+
+**`AssemblyNode.setTriangulationFromShape`** meshed the whole shape and then stored only the **first
+face's** triangulation on the label. A 6-face box and a 12-face two-box compound both stored 4 nodes
+and 2 triangles, for a doc comment reading "by meshing a shape". Arguably the worst of the three,
+since the attribute is what later readers trust as the label's geometry. It now merges every meshed
+face into one `Poly_Triangulation` in the shape's own coordinate system: per-face locations applied to
+the nodes, reversed faces' winding and node normals flipped so the result is consistently outward
+(the same rules `Shape.mesh()` applies), the worst contributing face's deflection carried over, node
+normals kept only if every face has them, and per-face UV nodes dropped since they index parameter
+spaces that stop meaning anything once the faces are pooled.
+
+**A latent case in #442's own helper was found and fixed with them.** `occtBodyBoundingShells` ran its
+enclosure-parity pass within each solid but added every shell belonging to *no* solid unconditionally,
+on the reasoning that a free shell has no declared cavity relationship. But **sewing dissolves the
+solid that carried that declaration**, and sewing is the ordinary way all of these calls are reached.
+Measured on a sewn hollow box: the same two shells answered 1 body while inside a solid and 2 once
+sewn, the second being the cavity as a positive solid; on `{hollow body, body inside its cavity}` it
+gave 3 bodies for a 2-body part. Free shells are now one further group through the same parity pass,
+so both readings agree. Containment among free shells is geometric rather than declared, so a closed
+shell alone inside another is read as that one's cavity: the same reading OCCT's own solid convention
+gives it, and the only one available without a declaration. A body nested inside a cavity is enclosed
+twice, so it is still a body. None of #442's shipped cases change (two disjoint free shells → 2 solids;
+the same free shell twice → 1).
+
+> **Behaviour change for consumers:** `Shape.solid(from:)`, `Shape.solidWithFullHistory(from:)` and
+> `Shape.upgraded()` now return a **compound** where they previously returned one arbitrary body's
+> solid, for multi-body input only. Single-body input is untouched, down to the returned shape type.
+> A caller that assumed `.solid` unconditionally should read `.solids` instead.
+> `Shape.solidFromShellFixed()` returns **one** body where it returned two for a sewn hollow part,
+> the second having been the cavity.
+
+The seven remaining undocumented picks are documented in place, in both the Swift doc comment and the
+bridge, with why each stays singular: `MedialAxis.init(of:)` (a medial axis is a property of one face,
+and the result type holds one graph), `Shape.halfSpace(face:referencePoint:)` (a half-space is bounded
+by one face by definition), `Shape.fillet2D(vertexIndices:radii:)` and `chamfer2D(edgePairs:distances:)`
+(the indices are numbered within the chosen face, so covering every face would need per-face index
+lists and a different signature), `Shape.splitByWireOnFace(_:faceIndex:)` and
+`locOpeSplit(wiresOnFaces:)` (the pair list is already where several wires are named), and
+`Shape.solidFromShells(_:)` (the argument order *is* the outer-versus-cavity contract, so widening
+each argument would make it stop meaning anything). `OCCTShapeBuildThreadCutter` is internal and
+single-body by construction. `Shape.faceRestricted(by:)` and `Wire.offset(by:joinType:)` already
+stated what they do and are untouched.
+
+Bridge-only fix: no OCCT kernel change and no `OCCT.xcframework` rebuild.
+
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 
 `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed the **first** solid (respectively the

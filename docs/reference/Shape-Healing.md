@@ -217,6 +217,13 @@ public func upgraded(tolerance: Double = 1e-6) -> Shape?
 
 Applies a complete upgrade pipeline: sewing of disconnected faces, an attempt to build a solid from the resulting shells, and a final `ShapeFix_Shape` healing pass.
 
+The solid step builds one solid per **body-bounding** shell the sewing produced, so a multi-body part stays a multi-body part: it comes back as a compound of solids, and a single body as a bare solid. Body selection is the same rule as `Shape.solid(from:)`: cavity shells are skipped, free shells each become a body.
+
+Two things this pipeline does not preserve, both inherent to sewing first:
+
+- Sewing dissolves the input's solids, so a hollow body reaches the solid step as two free shells and comes back as one body with its **cavity filled** (8000 mm³ for a 7000 mm³ hollow cube). A body nested inside another body's cavity is still read as a body. To heal a hollow part without losing its cavities, use `fixed(tolerance:)`, which does not sew.
+- The solid step *replaces* the sewn shape rather than merging into it, so content sewing could not attach to a shell (a stray face, a loose edge) is not carried into the result.
+
 - **Parameters:** `tolerance` — tolerance used for sewing and healing (default 1e-6).
 - **Returns:** Upgraded shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Sewing` + `BRepBuilderAPI_MakeSolid` + `ShapeFix_Shape` (via `OCCTShapeUpgrade`).
@@ -225,6 +232,10 @@ Applies a complete upgrade pipeline: sewing of disconnected faces, an attempt to
   if let solid = roughImport.upgraded(tolerance: 0.01) {
       #expect(solid.isValid)
   }
+
+  // A raw imported mesh holding two separate bodies stays two bodies.
+  let part = twoBodyImport.upgraded(tolerance: 1e-6)!
+  print(part.solids.count)   // 2, not 1
   ```
 
 ---

@@ -1955,8 +1955,19 @@ Set a triangulation attribute on this label by meshing a shape.
 public func setTriangulationFromShape(_ shape: Shape, deflection: Double = 1.0) -> Bool
 ```
 
-- **Parameters:** `shape` — the shape to tessellate; `deflection` — linear deflection for meshing (default `1.0`).
+Meshes the shape and stores **every** face's triangulation, merged into one `Poly_Triangulation` in the shape's own coordinate system: per-face locations are applied to the nodes, and reversed faces have their winding and node normals flipped so the stored mesh is consistently outward. Node normals survive only if every contributing face carries them; per-face UV nodes are dropped, since they index parameter spaces that no longer mean anything once the faces are pooled. The stored deflection is the worst of the contributing faces'.
+
+- **Parameters:** `shape`, the shape to tessellate, faces at any depth included; `deflection`, linear deflection for meshing (default `1.0`).
+- **Returns:** `false` if the shape has no face, or if nothing in it meshed.
 - **OCCT:** `BRepMesh_IncrementalMesh` + `TDataXtd_Triangulation::Set` (via `OCCTDocumentSetTriangulationFromShape`).
+- **Example:**
+  ```swift
+  let label = doc.createLabel()!
+  label.setTriangulationFromShape(Shape.box(width: 10, height: 10, depth: 10)!,
+                                  deflection: 1.0)
+  print(label.triangulationNodeCount)      // 24, all six faces, not 4
+  print(label.triangulationTriangleCount)  // 12
+  ```
 
 ---
 

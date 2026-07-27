@@ -18,6 +18,8 @@
 
 // === Area-specific OCCT headers ===
 
+#include <algorithm>
+
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
 #include <STEPControl_StepModelType.hxx>
@@ -2139,21 +2141,79 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId) {
 
 // MARK: - TDataXtd Triangulation Attribute (v0.56.0)
 
+// Merge every meshed face of `shape` into one triangulation, in the coordinate system the
+// shape itself is expressed in: each face's per-face triangulation is stored in its own
+// TopLoc_Location, so the nodes are transformed on the way in, and a REVERSED face has its
+// winding (and node normals) flipped so the merged result is consistently outward, by the
+// same rules OCCTShapeCreateMesh applies. UV nodes are dropped: they index per-face parameter
+// spaces that no longer mean anything once the faces are pooled.
+//
+// Returns a null handle when the shape has no face, or when nothing in it meshed.
+static Handle(Poly_Triangulation) occtMergedTriangulation(const TopoDS_Shape& shape,
+                                                          double deflection) {
+    // The constructor meshes; no Perform() call, matching what this function did before.
+    BRepMesh_IncrementalMesh mesher(shape, deflection);
+
+    int nbNodes = 0, nbTriangles = 0;
+    bool hasNormals = true;
+    double worstDeflection = 0.0;
+    for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
+        TopLoc_Location loc;
+        Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(TopoDS::Face(exp.Current()), loc);
+        if (tri.IsNull()) continue;
+        nbNodes += tri->NbNodes();
+        nbTriangles += tri->NbTriangles();
+        // Normals only survive the merge if every contributing face carries them; a
+        // partially-filled normal array would read as valid and be wrong on the rest.
+        if (!tri->HasNormals()) hasNormals = false;
+        // Each face records the deflection it actually achieved, so the merged mesh's is
+        // the worst of them. A hand-built Poly_Triangulation starts at 0, and a 0 here
+        // would read as "exact".
+        worstDeflection = std::max(worstDeflection, tri->Deflection());
+    }
+    if (nbNodes == 0 || nbTriangles == 0) return Handle(Poly_Triangulation)();
+
+    Handle(Poly_Triangulation) merged =
+        new Poly_Triangulation(nbNodes, nbTriangles, Standard_False, hasNormals);
+    merged->Deflection(worstDeflection);
+    int nodeAt = 0, triangleAt = 0;
+    for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
+        TopoDS_Face face = TopoDS::Face(exp.Current());
+        TopLoc_Location loc;
+        Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
+        if (tri.IsNull()) continue;
+
+        const gp_Trsf transformation = loc.Transformation();
+        const bool reversed = (face.Orientation() == TopAbs_REVERSED);
+        const int base = nodeAt;   // 0-based offset; Poly_Triangulation indices are 1-based
+
+        for (int i = 1; i <= tri->NbNodes(); i++) {
+            merged->SetNode(++nodeAt, tri->Node(i).Transformed(transformation));
+            if (hasNormals) {
+                gp_Dir normal = tri->Normal(i);
+                if (reversed) normal.Reverse();
+                merged->SetNormal(nodeAt, normal.Transformed(transformation));
+            }
+        }
+        for (int i = 1; i <= tri->NbTriangles(); i++) {
+            int n1 = 0, n2 = 0, n3 = 0;
+            tri->Triangle(i).Get(n1, n2, n3);
+            if (reversed) std::swap(n2, n3);
+            merged->SetTriangle(++triangleAt, Poly_Triangle(base + n1, base + n2, base + n3));
+        }
+    }
+    return merged;
+}
+
+// Stores the WHOLE shape's mesh, not the first face's (#443). The attribute is what later
+// readers trust as "this label's geometry", and a 6-face box used to arrive as 4 nodes.
 bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc, int64_t labelId, OCCTShapeRef shape, double deflection) {
     if (!doc || doc->doc.IsNull() || !shape) return false;
     try {
         TDF_Label label = doc->getLabel(labelId);
         if (label.IsNull()) return false;
 
-        // Mesh the shape
-        BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
-
-        // Get triangulation from first face
-        TopExp_Explorer exp(shape->shape, TopAbs_FACE);
-        if (!exp.More()) return false;
-        TopoDS_Face face = TopoDS::Face(exp.Current());
-        TopLoc_Location loc;
-        Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
+        Handle(Poly_Triangulation) tri = occtMergedTriangulation(shape->shape, deflection);
         if (tri.IsNull()) return false;
 
         Handle(TDataXtd_Triangulation) attr = TDataXtd_Triangulation::Set(label, tri);

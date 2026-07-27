@@ -69,13 +69,21 @@ public static func solid(from shell: Shape) -> Shape?
 
 The shell must be closed (no gaps). A shell produced by `sew(shapes:)` is typically already closed when all boundary faces are included.
 
+One solid is built per **body-bounding** shell, not just the first shell found: every shell that an *even* number of the other shells in its group enclose, where a group is one solid's own shells, or all the shells belonging to no solid (the usual shape of sewing output). A single body comes back as a solid, several as a compound in exploration order. This is the same selection ``Shape.solidFromShellFixed()`` makes, so the two agree on any input.
+
+*Cavity* shells are skipped: a hole is not a body, and building one as a positive solid would return a compound whose volume double-counts the part. A body nested inside another body's cavity is enclosed twice, so it is still read as a body. To rebuild a solid that keeps its cavities, use `Shape.solidFromShells(_:)` with the outer shell first.
+
 - **Parameters:** `shell` — a shell shape (from sewing or face assembly).
-- **Returns:** A solid shape, or `nil` if the shell is not closed.
-- **OCCT:** `BRepBuilderAPI_MakeSolid(shell)`.
+- **Returns:** A solid, a compound of solids for multi-body input, or `nil` if the shape holds no shell at all.
+- **OCCT:** `BRepBuilderAPI_MakeSolid(shell)` + `ShapeFix_Solid` (orientation).
 - **Example:**
   ```swift
   let sewn = Shape.sew(shapes: faces, tolerance: 1e-6)!
   let solid = Shape.solid(from: sewn)!
+
+  // Sewing two disjoint bodies yields two shells, so this yields two solids.
+  let both = Shape.solid(from: Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!)!
+  print(both.solids.count)   // 2
   ```
 
 ---

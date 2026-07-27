@@ -705,7 +705,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Shape.face(from:)` | `BRepBuilderAPI_MakeFace` |
 | `Shape.face(outer:holes:)` | `BRepBuilderAPI_MakeFace` |
 | `Shape.face(from:outer:innerWires:)` | `BRepBuilderAPI_MakeFace(surface, outer)` + `.Add(hole)` + `ShapeFix_Face` |
-| `Shape.solid(from:)` | `BRepBuilderAPI_MakeSolid` |
+| `Shape.solid(from:)` | `BRepBuilderAPI_MakeSolid` + `ShapeFix_Solid` (one solid per body-bounding shell) |
 | `Shape.sew(shapes:tolerance:)` | `BRepBuilderAPI_Sewing` |
 | `Wire.interpolate(through:)` | `GeomAPI_Interpolate` |
 
