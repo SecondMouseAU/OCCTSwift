@@ -4178,3 +4178,94 @@ struct Curve2DInterpolatePeriodicParityTests {
         #expect(Curve2D.interpolate(through: one, closed: true) == nil)
     }
 }
+
+// MARK: - #413: the four point-to-curve projection entry points
+
+/// The same `Geom2dAPI_ProjectPointOnCurve` computation is reachable four ways:
+/// `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_ point: Point2D)`
+/// and `Point2D.distance(to:)`. They were four independent constructions with four different
+/// failure conventions bolted on separately — including one (`Point2D.distance(to:)`) that leaked
+/// the bridge's raw `-1` sentinel to callers as though it were a distance. They now share one
+/// bridge path and agree on both the values and on when there is no projection.
+@Suite("Curve2D projection entry points agree (#413)")
+struct Curve2DProjectionParityTests {
+
+    private static let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+
+    @Test("All four entry points agree for an ordinary projection")
+    func successAgreesAcrossAllFour() {
+        let cases: [(Curve2D, SIMD2<Double>)] = [
+            (Self.segment, SIMD2(5, 3)),
+            (Self.segment, SIMD2(0.5, -2)),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(10, 0)),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(3, 4)),
+        ]
+        for (curve, p) in cases {
+            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+            let comment: Comment = "\(p)"
+
+            let nearest = curve.project(point: p)
+            let asTuple = curve.project(point2D)
+            let distance = point2D.distance(to: curve)
+            let all = curve.allProjections(of: p)
+
+            #expect(nearest != nil, comment)
+            #expect(asTuple != nil, comment)
+            guard let nearest, let asTuple else { continue }
+
+            #expect(nearest.parameter == asTuple.parameter, comment)
+            #expect(nearest.distance == asTuple.distance, comment)
+            #expect(nearest.distance == distance, comment)
+
+            // The nearest solution must be the smallest of the full solution set.
+            #expect(!all.isEmpty, comment)
+            if let smallest = all.map(\.distance).min() {
+                #expect(abs(smallest - nearest.distance) < 1e-9, comment)
+            }
+        }
+    }
+
+    /// A point with no projection at all is an ordinary outcome, not an error: one beyond the
+    /// ends of a bounded curve, or a circle's centre (equidistant everywhere, so no local
+    /// minimum). All four entry points must report it, and none may report it as a distance a
+    /// threshold test would accept.
+    @Test("All four entry points agree when there is no projection")
+    func failureAgreesAcrossAllFour() {
+        let cases: [(Curve2D, SIMD2<Double>)] = [
+            (Self.segment, SIMD2(100, 0)),      // past the end
+            (Self.segment, SIMD2(-50, 3)),      // before the start
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0)),   // circle centre
+        ]
+        for (curve, p) in cases {
+            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+            let comment: Comment = "\(p)"
+
+            #expect(curve.project(point: p) == nil, comment)
+            #expect(curve.project(point2D) == nil, comment)
+            #expect(curve.allProjections(of: p).isEmpty, comment)
+
+            // Not -1: a raw sentinel here reads as "touching" to any `distance < tolerance` test.
+            let distance = point2D.distance(to: curve)
+            #expect(distance == .infinity, comment)
+            #expect(distance > 0, comment)
+        }
+    }
+
+    /// Parameter 0 is a legitimate success value, which is why no entry point may signal failure
+    /// through the parameter alone. Projecting a segment's own start point onto it returns
+    /// exactly 0 at distance 0.
+    @Test("Parameter zero is a success, not a failure signal")
+    func parameterZeroIsASuccess() {
+        guard let start = Point2D(x: 0, y: 0) else { return }
+        let asTuple = Self.segment.project(start)
+        #expect(asTuple != nil)
+        if let asTuple {
+            #expect(asTuple.parameter == 0)
+            #expect(asTuple.distance == 0)
+        }
+        let nearest = Self.segment.project(point: SIMD2(0, 0))
+        #expect(nearest?.parameter == 0)
+        #expect(nearest?.distance == 0)
+        #expect(start.distance(to: Self.segment) == 0)
+    }
+}

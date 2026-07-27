@@ -74,8 +74,27 @@ public final class Point2D: @unchecked Sendable {
     }
 
     /// Minimum distance from this point to a 2D curve.
+    ///
+    /// - Parameter curve: Curve to measure to.
+    /// - Returns: The distance to the nearest point of the curve, or `.infinity` if the point has
+    ///   no projection onto it at all.
+    ///
+    /// A point can legitimately have no projection: one beyond the ends of a bounded curve, or
+    /// the centre of a circle (equidistant from every point, so there is no local minimum). This
+    /// used to return the bridge's raw `-1` sentinel for that case, which any threshold test
+    /// (`distance < tolerance`) would read as "touching" — the opposite of the truth (#413).
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let above = Point2D(x: 5, y: 3)!
+    /// #expect(abs(above.distance(to: segment) - 3) < 1e-9)
+    ///
+    /// let pastTheEnd = Point2D(x: 100, y: 0)!
+    /// #expect(pastTheEnd.distance(to: segment) == .infinity)
+    /// ```
     public func distance(to curve: Curve2D) -> Double {
-        OCCTPoint2DDistanceToCurve(handle, curve.handle)
+        let d = OCCTPoint2DDistanceToCurve(handle, curve.handle)
+        return d < 0 ? .infinity : d
     }
 
     // MARK: - Transforms (return new Point2D)
