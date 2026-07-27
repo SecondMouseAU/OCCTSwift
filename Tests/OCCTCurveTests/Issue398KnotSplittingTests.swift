@@ -39,6 +39,35 @@ struct Issue398KnotSplittingTests {
         }
     }
 
+    @Test("More than 256 splits are returned in full, not silently truncated")
+    func largeSplitCountSurvivesTheBuffer() {
+        // continuityBreaks used a fixed 256-entry buffer while the bridge returns the true,
+        // unclamped split count, so anything past the 256th was dropped without a signal. The
+        // old c0...c2 range could not report interior knots at all on a cubic, which kept that
+        // out of reach; .c3 can, so this now needs the retry path. 400 points is comfortably
+        // past the old ceiling.
+        let points: [SIMD3<Double>] = (0..<400).map { i in
+            let t = Double(i) / 399.0 * 12.0 * .pi
+            return SIMD3(Double(i) * 0.25, sin(t) * 5.0, cos(t * 0.5) * 2.0)
+        }
+        guard let bspline = Curve3D.interpolate(points: points)?.toBSpline() else {
+            Issue.record("could not build the 400-point BSpline")
+            return
+        }
+
+        guard let splits = bspline.continuityBreaks(minContinuity: .c3) else {
+            Issue.record("continuityBreaks returned nil for a BSpline")
+            return
+        }
+        #expect(splits.count > 256)
+        // The retry must return the whole set, not a second truncated window.
+        #expect(splits.count == splits.sorted().count)
+        #expect(splits == splits.sorted())
+        // Ascending and strictly so: these are distinct knot values, which is the ordering
+        // guarantee the `- Returns:` line promises.
+        #expect(zip(splits, splits.dropFirst()).allSatisfy { $0 < $1 })
+    }
+
     @Test("Requesting more continuity never reports fewer split parameters")
     func higherOrdersAreMonotonic() {
         guard let bspline = cubicWithInteriorKnots() else {

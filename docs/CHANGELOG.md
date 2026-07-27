@@ -34,9 +34,12 @@ Collapsed to `SurfaceContinuity` (`.g0` / `.g1` / `.g2`) and a new `ParametricCo
 is retained as a strict superset (it adds `cn`, `g1`, `g2` cases that only
 `dividedByContinuity(criterion:tolerance:)` accepts).
 
-**No raw value moved, and no bridge code changed, so no existing call's behaviour changed.** (The
-one deliberate widening is `.c3` becoming reachable for `continuityBreaks`, below.) Every retired
-name and spelling remains as a deprecated alias, so existing source still compiles:
+**No raw value moved, and no bridge code changed, so no existing call's behaviour changed.** Two
+deliberate widenings, both in `Curve3D.continuityBreaks(minContinuity:)`: `.c3` becomes reachable
+(below), and results past the 256th are no longer silently dropped. The latter is the only new
+executable code in this PR, and the more consequential of the two for imported geometry, which is
+where split counts get large. Every retired name and spelling remains as a deprecated alias, so
+existing source still compiles:
 
 ```swift
 @available(*, deprecated, renamed: "SurfaceContinuity")
@@ -76,7 +79,7 @@ re-enablement: the claim was never characterised and does not hold up.
 Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
 an enum/case combination that never existed.
 
-### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
+### Unreleased: fix, `Shape.fill` SIGSEGV'd on its own default parameters (#430)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch
 > number is not this PR's to claim. Whoever tags stamps it then. (Two open PRs both predicted

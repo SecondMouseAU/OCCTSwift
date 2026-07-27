@@ -19,7 +19,8 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 
 Minimum parametric continuity to require of a piece of geometry. Shared by every operation
 that splits, approximates or simplifies against a continuity floor: `Shape.divided(at:)`,
-`Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)` and
+`Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)`,
+`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and
 `Curve3D.continuityBreaks(minContinuity:)`. The raw value maps to `GeomAbs_C0` through
 `GeomAbs_C3`.
 
