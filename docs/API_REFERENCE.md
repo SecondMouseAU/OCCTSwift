@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,257** | |
+| **Total** | **4,258** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -931,6 +931,13 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `shape.solids` / `shape.solidCount` | `TopExp_Explorer(TopAbs_SOLID)` |
 | `shape.shells` / `shape.shellCount` | `TopExp_Explorer(TopAbs_SHELL)` |
 | `shape.wires` / `shape.wireCount` | `TopExp_Explorer(TopAbs_WIRE)` |
+
+#### Shell Decomposition (outer body vs. cavities)
+| Swift API | OCCT Class |
+|-----------|------------|
+| `shape.outerShell` | `BRepClass3d::OuterShell` — `nil` unless the shape denotes exactly one solid |
+| `shape.outerShells` | `BRepClass3d::OuterShell` per solid — the multi-body counterpart |
+| `shape.innerShells` | `BRepClass3d::OuterShell` + `TopExp_Explorer(TopAbs_SHELL)` — every shell but the outer |
 
 #### Fuse and Blend (v0.38.0)
 | Swift API | OCCT Class |

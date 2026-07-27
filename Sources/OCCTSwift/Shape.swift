@@ -5689,16 +5689,66 @@ extension Shape {
     ///
     /// For a solid with internal voids (multiple shells — e.g. a body with a cavity), this
     /// returns the shell that bounds the outer body, distinguishing it from the inner void
-    /// shells. Returns `nil` if the shape is not a solid (or a compound wrapping one) or has
-    /// no shell. Useful for decomposing a part into outer-body + cavities. (#211)
+    /// shells. Useful for decomposing a part into outer-body + cavities.
+    ///
+    /// Returns `nil` unless this shape denotes exactly **one** solid — i.e. it is a solid, or a
+    /// compound/compsolid wrapping a single solid. A container holding two or more solids has no
+    /// single outer shell to name, so it gets `nil` rather than one arbitrary member's shell;
+    /// use ``outerShells`` for those. (#211, #439)
+    ///
+    /// ```swift
+    /// let hollow = Shape.box(width: 20, height: 20, depth: 20)!
+    ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
+    /// print(hollow.outerShell?.faceCount ?? -1)     // 6 — the 20-cube's boundary
+    /// print(hollow.innerShells.count)               // 1 — the cavity
+    ///
+    /// // Two bodies in one compound: nil, not the first body's shell.
+    /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+    /// print(Shape.compound([a, b])!.outerShell == nil)   // true
+    /// ```
     public var outerShell: Shape? {
         OCCTShapeOuterShell(handle).map(Shape.init(handle:))
     }
 
+    /// The **outer shell of every solid** in this shape, in exploration order.
+    ///
+    /// The multi-body counterpart of ``outerShell``: one shell per solid, so a compound of two
+    /// bodies yields two shells. Empty for a shape with no solids. Equivalent to
+    /// `solids.compactMap(\.outerShell)`, in a single traversal.
+    ///
+    /// Note that these shells drop internal void walls by design (that is what an *outer* shell
+    /// is). To measure against the complete boundary of a multi-body part — cavities included —
+    /// use `Shape.compound(subShapes(ofType: .face))` instead. (#439)
+    ///
+    /// ```swift
+    /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+    /// let part = Shape.compound([a, b])!
+    /// print(part.outerShells.count)                    // 2
+    /// print(part.outerShells.map(\.faceCount))         // [6, 6]
+    /// ```
+    public var outerShells: [Shape] {
+        let count = OCCTShapeOuterShells(handle, nil, 0)
+        guard count > 0 else { return [] }
+        var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
+        let actual = OCCTShapeOuterShells(handle, &handles, count)
+        return handles.prefix(Int(actual)).compactMap { h in h.map { Shape(handle: $0) } }
+    }
+
     /// The **inner** (void / cavity) shells of this solid — every shell except ``outerShell``.
     ///
-    /// Empty for a solid with no internal voids (or a non-solid). Pairs with ``outerShell`` to
-    /// decompose a part into outer body + cavities. (#212)
+    /// Empty for a solid with no internal voids, and — following the same single-solid rule as
+    /// ``outerShell`` — for a non-solid or a container holding two or more solids. Pairs with
+    /// ``outerShell`` to decompose a part into outer body + cavities; for a multi-body part,
+    /// take each solid separately (`solids.flatMap(\.innerShells)`). (#212, #439)
+    ///
+    /// ```swift
+    /// let block = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let cavity = Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!
+    /// let hollow = block.subtracting(cavity)!
+    /// print(hollow.innerShells.count)      // 1
+    /// ```
     public var innerShells: [Shape] {
         let count = OCCTShapeInnerShells(handle, nil, 0)
         guard count > 0 else { return [] }

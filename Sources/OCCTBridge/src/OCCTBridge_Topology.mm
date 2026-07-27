@@ -300,20 +300,31 @@ int32_t OCCTShapeFindContiguousEdges(OCCTShapeRef shape, double tolerance) {
 #include <TopoDS_Shell.hxx>
 #include <TopAbs_State.hxx>
 
+// The single solid a shape denotes: itself if it IS a solid, else the sole solid a
+// compound/compsolid wraps. False when the container holds two or more — a set of bodies has no
+// one outer shell, and answering with the first silently measures against the wrong solid. #439
+static bool occtSoleSolid(const TopoDS_Shape& shape, TopoDS_Solid& outSolid) {
+    if (shape.IsNull()) return false;
+    if (shape.ShapeType() == TopAbs_SOLID) {
+        outSolid = TopoDS::Solid(shape);
+        return true;
+    }
+    TopExp_Explorer ex(shape, TopAbs_SOLID);
+    if (!ex.More()) return false;
+    const TopoDS_Shape first = ex.Current();
+    ex.Next();
+    if (ex.More()) return false;          // two or more solids — no single body to answer for
+    outSolid = TopoDS::Solid(first);
+    return true;
+}
+
 // Outer shell of a solid (BRepClass3d::OuterShell) — distinguishes the outer body from
 // internal void shells of a multi-shell solid. #211
 OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape) {
     if (!shape) return nullptr;
     try {
         TopoDS_Solid solid;
-        if (shape->shape.ShapeType() == TopAbs_SOLID) {
-            solid = TopoDS::Solid(shape->shape);
-        } else {
-            // Accept a compound/compsolid wrapping a single solid.
-            TopExp_Explorer ex(shape->shape, TopAbs_SOLID);
-            if (!ex.More()) return nullptr;
-            solid = TopoDS::Solid(ex.Current());
-        }
+        if (!occtSoleSolid(shape->shape, solid)) return nullptr;
         TopoDS_Shell shell = BRepClass3d::OuterShell(solid);
         if (shell.IsNull()) return nullptr;
         return new OCCTShape(shell);
@@ -322,18 +333,36 @@ OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape) {
     }
 }
 
+// Outer shell of every solid in a shape — the multi-solid counterpart of OCCTShapeOuterShell. #439
+int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount) {
+    if (!shape) return 0;
+    try {
+        int32_t n = 0;
+        for (TopExp_Explorer ex(shape->shape, TopAbs_SOLID); ex.More(); ex.Next()) {
+            // Per-solid, so one unusable body is skipped rather than discarding every other
+            // shell — and so the count pass and the fill pass agree.
+            TopoDS_Shell shell;
+            try {
+                shell = BRepClass3d::OuterShell(TopoDS::Solid(ex.Current()));
+            } catch (...) {
+                continue;
+            }
+            if (shell.IsNull()) continue;
+            if (outShells && n < maxCount) outShells[n] = new OCCTShape(shell);
+            n++;
+        }
+        return n;
+    } catch (...) {
+        return 0;
+    }
+}
+
 // Inner (void/cavity) shells = every shell of the solid except the outer one. #212
 int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount) {
     if (!shape) return 0;
     try {
         TopoDS_Solid solid;
-        if (shape->shape.ShapeType() == TopAbs_SOLID) {
-            solid = TopoDS::Solid(shape->shape);
-        } else {
-            TopExp_Explorer se(shape->shape, TopAbs_SOLID);
-            if (!se.More()) return 0;
-            solid = TopoDS::Solid(se.Current());
-        }
+        if (!occtSoleSolid(shape->shape, solid)) return 0;
         TopoDS_Shell outer = BRepClass3d::OuterShell(solid);
         int32_t n = 0;
         for (TopExp_Explorer ex(solid, TopAbs_SHELL); ex.More(); ex.Next()) {

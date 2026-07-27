@@ -5046,11 +5046,19 @@ int32_t OCCTShapeGetSolids(OCCTShapeRef shape, OCCTShapeRef* outSolids, int32_t 
 /// Get the number of shell sub-shapes in a shape.
 int32_t OCCTShapeGetShellCount(OCCTShapeRef shape);
 
-/// Outer shell of a solid (BRepClass3d::OuterShell); NULL if not a solid / no shell. #211
+/// Outer shell of a solid (BRepClass3d::OuterShell); NULL if not a solid / no shell.
+/// A container (compound/compsolid) is accepted only when it holds exactly ONE solid — with two
+/// or more there is no single outer shell to name, so this returns NULL rather than answering
+/// for an arbitrary member. Use OCCTShapeOuterShells for a multi-solid shape. #211, #439
 OCCTShapeRef OCCTShapeOuterShell(OCCTShapeRef shape);
 
+/// Outer shell of EVERY solid in a shape, in explorer order (one per solid). Count-then-fill
+/// (pass outShells=NULL to query the count). 0 for a shape with no solids. #439
+int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
+
 /// Inner (void/cavity) shells of a solid — all shells except the outer one. Count-then-fill
-/// (pass outShells=NULL to query the count). #212
+/// (pass outShells=NULL to query the count). Same single-solid rule as OCCTShapeOuterShell:
+/// 0 for a container holding two or more solids. #212, #439
 int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
 
 /// Get shell sub-shapes from a shape.

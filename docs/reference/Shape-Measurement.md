@@ -70,15 +70,47 @@ The outer shell of this solid.
 public var outerShell: Shape? { get }
 ```
 
-For a solid with internal voids (multiple shells), returns the shell bounding the outer body, distinguishing it from inner void shells. Returns `nil` if the shape is not a solid or has no shell.
+For a solid with internal voids (multiple shells), returns the shell bounding the outer body, distinguishing it from inner void shells.
 
-- **Returns:** The outer shell, or `nil` if the shape is not a solid or has no shell.
+Answers only for a shape that denotes exactly **one** solid: a solid, or a compound/compsolid wrapping a single solid. A container holding two or more solids has no single outer shell to name, so it returns `nil` rather than one arbitrary member's shell — use [`outerShells`](#outershells) there.
+
+- **Returns:** The outer shell, or `nil` if the shape does not denote exactly one solid, or has no shell.
 - **OCCT:** `BRepClass3d::OuterShell`.
 - **Example:**
   ```swift
   if let outer = hollowSolid.outerShell {
       print(outer.faceCount)
   }
+
+  // Two bodies in one compound: nil, not the first body's shell.
+  let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+  let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+  print(Shape.compound([a, b])!.outerShell == nil)   // true
+  ```
+
+---
+
+### `outerShells`
+
+The outer shell of every solid in this shape, in exploration order.
+
+```swift
+public var outerShells: [Shape] { get }
+```
+
+The multi-body counterpart of [`outerShell`](#outershell): one shell per solid. Empty for a shape with no solids. Equivalent to `solids.compactMap(\.outerShell)`, in a single traversal.
+
+These shells drop internal void walls by design. To measure against the complete boundary of a multi-body part — cavities included — use `Shape.compound(subShapes(ofType: .face))`.
+
+- **Returns:** One outer shell per solid; empty if the shape has no solids.
+- **OCCT:** `BRepClass3d::OuterShell` per solid.
+- **Example:**
+  ```swift
+  let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+  let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
+  let part = Shape.compound([a, b])!
+  print(part.outerShells.count)              // 2
+  print(part.outerShells.map(\.faceCount))   // [6, 6]
   ```
 
 ---
@@ -91,7 +123,9 @@ Inner (void / cavity) shells of this solid — every shell except `outerShell`.
 public var innerShells: [Shape] { get }
 ```
 
-- **Returns:** Empty for a solid with no internal voids, or for a non-solid.
+Follows the same single-solid rule as [`outerShell`](#outershell): a container holding two or more solids reports no cavities of its own. For a multi-body part, take each solid separately with `solids.flatMap(\.innerShells)`.
+
+- **Returns:** Empty for a solid with no internal voids, for a non-solid, or for a container of two or more solids.
 - **OCCT:** `OCCTShapeInnerShells`.
 - **Example:**
   ```swift
