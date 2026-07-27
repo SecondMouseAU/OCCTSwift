@@ -1082,9 +1082,10 @@ Creates a 2D circle from a center point and radius using `gce_MakeCirc2d`.
 public static func circleFromCenterRadius(center: SIMD2<Double>, radius: Double) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center point; `radius` — radius.
-- **Returns:** `Curve2D` (circle), or `nil` on failure (e.g. radius ≤ 0).
+- **Parameters:** `center` — center point; `radius` — radius (must be > 0).
+- **Returns:** `Curve2D` (circle), or `nil` if `radius ≤ 0`.
 - **OCCT:** `gce_MakeCirc2d` (center + radius constructor).
+- **Note:** Geometrically identical to [`circle(center:radius:)`](Curve2D.md), and enforces the same radius precondition. `gce_MakeCirc2d` itself accepts `Radius >= 0`, so the bridge adds the zero check to keep the two factories in agreement — before #411 this page documented the `radius ≤ 0` rejection that only the direct factory actually performed.
 - **Example:**
   ```swift
   if let c = Curve2D.circleFromCenterRadius(center: SIMD2(1, 2), radius: 4) {
