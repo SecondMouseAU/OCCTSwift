@@ -45,14 +45,20 @@ struct Issue439OuterShellMultiSolid {
 
     // A compsolid is a connected set of solids rather than a loose bag, so it is the input where
     // "no single outer shell" is most arguable. It follows the same rule: two bodies, no one answer.
+    // The halves come from splitting one block so they genuinely share the cut face — two boxes
+    // merely abutting would be a bag with the compsolid type stamped on it.
     @Test("a compsolid of two solids follows the same rule as a compound")
     func compSolidOfTwoSolidsIsNil() {
-        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
-              let b = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10),
+        guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
+              let halves = block.split(atPlane: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0)),
               let cs = Shape.builderMakeCompSolid() else { #expect(Bool(false), "compsolid setup"); return }
-        cs.builderAdd(a)
-        cs.builderAdd(b)
+        let solids = halves.flatMap(\.solids)
+        guard solids.count == 2 else { #expect(Bool(false), "split gave \(solids.count) solids"); return }
+        cs.builderAdd(solids[0])
+        cs.builderAdd(solids[1])
         #expect(cs.solids.count == 2)
+        // 6 + 6 faces minus the one they share: connected, not two disjoint bodies (which read 12).
+        #expect(cs.subShapes(ofType: .face).count == 11)
         #expect(cs.outerShell == nil)
         #expect(cs.innerShells.isEmpty)
         #expect(cs.outerShells.count == 2)   // still reachable per body
@@ -109,14 +115,17 @@ struct Issue439OuterShellMultiSolid {
         #expect(shells.count == 2)
         #expect(shells.map { $0.subShapes(ofType: .face).count } == [6, 6])
         // A probe at the cavity's centre is 4 mm from the nearest cavity wall, which the
-        // faces-compound sees and the outer shell does not.
-        if let faces = Shape.compound(comp.subShapes(ofType: .face)),
-           let v = Shape.vertex(at: SIMD3(10, 10, 10)),
-           let dFaces = v.distance(to: faces),
-           let dOuter = shells.first.flatMap({ v.distance(to: $0) }) {
-            #expect(abs(dFaces.distance - 4.0) < 1e-6)
-            #expect(dOuter.distance > dFaces.distance)
+        // faces-compound sees and the outer shell does not. Guarded, not `if let`: a nil binding
+        // here has to fail the test, not quietly skip the two assertions that carry it.
+        guard let faces = Shape.compound(comp.subShapes(ofType: .face)),
+              let v = Shape.vertex(at: SIMD3(10, 10, 10)),
+              let dFaces = v.distance(to: faces),
+              let outer = shells.first,
+              let dOuter = v.distance(to: outer) else {
+            #expect(Bool(false), "cavity-centre probe setup"); return
         }
+        #expect(abs(dFaces.distance - 4.0) < 1e-6)
+        #expect(dOuter.distance > dFaces.distance)
     }
 
     @Test("outerShell is nil on the reporter's compound, and the faces-compound reads correctly")
