@@ -15,6 +15,62 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+OCCTSwift had grown **nine** separate "continuity level" enums, each written against one bridge
+call and each re-deriving its own raw-int meaning. Verified against the pinned kernel, they turn
+out to express exactly **three** contracts, not one:
+
+| contract | what OCCT receives | enums that expressed it |
+|---|---|---|
+| geometric constraint order, `0/1/2 = G0/G1/G2` | a plate constraint order; `GeomPlate_CurveConstraint` rejects outside `[-1, 2]` with "The continuity is not G0 G1 or G2" | `SurfaceContinuity`, `PlateConstraintOrder`, `FillingContinuity` |
+| required parametric continuity, `0…3 = C0…C3` | a `GeomAbs_Shape` continuity class, or a literal derivative-order integer | `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity`, `Curve3D.ContinuityOrder` |
+| a `GeomAbs_Shape` ordinal reported back | nothing; it is a *result* | `Surface.Continuity` |
+
+Collapsed to `SurfaceContinuity` (`.g0` / `.g1` / `.g2`) and a new `ParametricContinuity`
+(`.c0` … `.c3`). `Surface.Continuity` is retained as a result type, and `Shape.ContinuityLevel`
+is retained as a strict superset (it adds `cn`, `g1`, `g2` cases that only
+`dividedByContinuity(criterion:tolerance:)` accepts).
+
+**No raw value moved, and no bridge code changed, so no call's behaviour changed.** Every retired
+name and spelling remains as a deprecated alias, so existing source still compiles:
+
+```swift
+@available(*, deprecated, renamed: "SurfaceContinuity")
+public typealias FillingContinuity = SurfaceContinuity      // and PlateConstraintOrder
+@available(*, deprecated, renamed: "ParametricContinuity")
+public typealias GeometricContinuity = ParametricContinuity // and ApproxContinuity,
+                                                            // Shape.BSplineContinuity,
+                                                            // Curve3D.ContinuityOrder
+```
+
+`SurfaceContinuity.c0` / `.c1` / `.c2` also survive as deprecated aliases of `.g0` / `.g1` /
+`.g2`. The one source-compatibility caveat: an *exhaustive* `switch` over one of these enums now
+needs a `default`, since the old spellings are static properties rather than cases.
+
+Two live defects surfaced while verifying the mappings the issue had assumed correct. Both are
+pre-existing, both are now pinned by tests, and neither is fixed here:
+
+- **`Shape.plateSurface(through:orders:)` can never accept `.g2`.** A bare point carries no
+  curvature to match, so `GeomPlate_PointConstraint` throws above order 1 (the header's "Order is
+  not 0 or -1" doc is itself wrong; 1 is accepted). The throw fails the whole call, so a single
+  `.g2` in an otherwise valid order list returns `nil`.
+- **`Curve3D.ContinuityOrder`'s cap at `.c2` made every order it offered a no-op.**
+  `GeomConvert_BSplineCurveKnotSplitting` splits where `degree - multiplicity < ContinuityRange`,
+  and a cubic interpolation is already C2 at its interior knots. Measured: ranges 0, 1 and 2 all
+  return just the two end knots; range 3 returns five parameters. Sharing `ParametricContinuity`
+  makes `.c3` reachable, which fixes this as a side effect.
+
+Also re-enabled `AdvancedPlateSurfaceTests`, disabled since v0.23.0 under the claim "Plate surface
+operations cause segfault in OCCT". A C++ replica of that exact bridge path shows no segfault at
+orders 0 or 1, and the suite is 8/8 clean over repeated runs. Same pattern as the #341
+re-enablement: the claim was never characterised and does not hold up.
+
+Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
+an enum/case combination that never existed.
+
 ### Unreleased: fix — `Shape.fill` SIGSEGV'd on its own default parameters (#430)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch

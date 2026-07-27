@@ -15,20 +15,35 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 
 ## Advanced Healing
 
-### `GeometricContinuity`
+### `ParametricContinuity`
 
-Target continuity level for shape divide operations.
+Minimum parametric continuity to require of a piece of geometry. Shared by every operation
+that splits, approximates or simplifies against a continuity floor: `Shape.divided(at:)`,
+`Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)` and
+`Curve3D.continuityBreaks(minContinuity:)`. The raw value maps to `GeomAbs_C0` through
+`GeomAbs_C3`.
 
 ```swift
-public enum GeometricContinuity: Int32, Sendable {
-    case c0 = 0
-    case c1 = 1
-    case c2 = 2
-    case c3 = 3
+public enum ParametricContinuity: Int32, Sendable, CaseIterable {
+    case c0 = 0   // positional
+    case c1 = 1   // first derivative
+    case c2 = 2   // second derivative
+    case c3 = 3   // third derivative
 }
 ```
 
-Pass to `divided(at:)` to split a shape at discontinuities of the specified geometric continuity.
+Pass to `divided(at:)` to split a shape wherever it drops below the specified continuity.
+
+> **Renamed in #398.** This type used to be called `GeometricContinuity`, which was a misnomer:
+> the value maps to `GeomAbs_C0...C3`, so it is *parametric* continuity (equal derivative
+> vectors), not the geometric G0/G1/G2 constraint order of
+> [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (parallel tangent directions).
+> `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity` and
+> `Curve3D.ContinuityOrder` are now deprecated typealiases of it. No raw value moved.
+>
+> `Shape.ContinuityLevel` is deliberately **not** folded in: it is a strict superset used by
+> `dividedByContinuity(criterion:tolerance:)`, adding `cn`, `g1` and `g2` cases that the other
+> call sites cannot accept.
 
 ---
 
@@ -37,7 +52,7 @@ Pass to `divided(at:)` to split a shape at discontinuities of the specified geom
 Divide a shape at continuity discontinuities.
 
 ```swift
-public func divided(at continuity: GeometricContinuity) -> Shape?
+public func divided(at continuity: ParametricContinuity) -> Shape?
 ```
 
 Splits the shape wherever its underlying geometry drops below the requested continuity class.

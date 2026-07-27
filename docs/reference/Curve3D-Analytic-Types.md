@@ -77,15 +77,21 @@ public var degree: Int { get }
 
 ### `ContinuityOrder`
 
-Continuity level used for knot-splitting analysis.
+> **Deprecated in #398.** `ContinuityOrder` was one of several copies of the same
+> continuity-floor vocabulary and is now a typealias of
+> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity).
 
 ```swift
-public enum ContinuityOrder: Int32 {
-    case c0 = 0   // positional
-    case c1 = 1   // tangent
-    case c2 = 2   // curvature
-}
+@available(*, deprecated, renamed: "ParametricContinuity")
+public typealias ContinuityOrder = ParametricContinuity
 ```
+
+The old enum stopped at `.c2`, which made **every order it could express a no-op** for the
+query it exists to answer: `GeomConvert_BSplineCurveKnotSplitting` splits where
+`degree - multiplicity < ContinuityRange`, and an ordinary cubic interpolation has interior
+knots of multiplicity 1, so it is already C2 there. Measured on a degree-3 interpolated BSpline,
+ranges 0, 1 and 2 all return just the two end knots; range 3 returns five parameters.
+`ParametricContinuity.c3` is reachable and fixes that. OCCT itself accepts any range `>= 0`.
 
 Pass to `continuityBreaks(minContinuity:)` to specify the minimum required continuity across knots.
 
@@ -96,7 +102,7 @@ Pass to `continuityBreaks(minContinuity:)` to specify the minimum required conti
 Parameter values where the B-spline's internal continuity drops below the specified level.
 
 ```swift
-public func continuityBreaks(minContinuity: ContinuityOrder = .c1) -> [Double]?
+public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]?
 ```
 
 Only works on `Geom_BSplineCurve`. Returns knot parameters where the curve's continuity is strictly less than `minContinuity`. Useful for splitting a composite B-spline into smooth segments.

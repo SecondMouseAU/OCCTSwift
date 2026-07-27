@@ -626,23 +626,24 @@ extension Curve3D {
 
     // MARK: - BSpline Knot Splitting (v0.40.0)
 
-    /// Continuity order for knot splitting analysis
-    public enum ContinuityOrder: Int32 {
-        /// C0 continuity (positional)
-        case c0 = 0
-        /// C1 continuity (tangent)
-        case c1 = 1
-        /// C2 continuity (curvature)
-        case c2 = 2
-    }
+    // Continuity order for knot splitting is `ParametricContinuity` (Continuity.swift); the
+    // nested `ContinuityOrder` copy declared here is now a deprecated alias of it. See #398.
 
     /// Find parameter values where continuity drops below a specified level
     ///
-    /// Only works on BSpline curves. Returns knot parameters where the curve's
-    /// internal continuity is less than the requested order.
+    /// Only works on BSpline curves. Returns the knot parameters bounding arcs that are at
+    /// least `minContinuity`, which always includes the curve's own first and last knots.
+    ///
+    /// ```swift
+    /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing
+    /// // below C3 reports anything beyond the two end knots.
+    /// let ends   = bspline.continuityBreaks(minContinuity: .c2)  // [first, last]
+    /// let breaks = bspline.continuityBreaks(minContinuity: .c3)  // + interior knots
+    /// ```
+    ///
     /// - Parameter minContinuity: Minimum continuity to require
     /// - Returns: Array of parameter values at continuity breaks, or nil if not a BSpline
-    public func continuityBreaks(minContinuity: ContinuityOrder = .c1) -> [Double]? {
+    public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]? {
         let maxParams: Int32 = 256
         var params = [Double](repeating: 0, count: Int(maxParams))
         let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue, &params, maxParams)
