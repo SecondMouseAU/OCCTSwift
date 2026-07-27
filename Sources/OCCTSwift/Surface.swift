@@ -479,12 +479,41 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Gaussian curvature at (u, v)
+    /// Gaussian curvature at (u, v), or `0` where curvature is undefined.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Gaussian curvature, or `0` at a point where the tangent vectors are degenerate
+    ///   (a cone apex, a sphere pole) and `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// `curvatures(u:v:)` returns this value and `meanCurvature(atU:v:)` together from a single
+    /// evaluation; all three share one `GeomLProp_SLProps` construction and therefore agree
+    /// exactly on both the value and on whether curvature is defined at all.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// #expect(abs(sphere.gaussianCurvature(atU: 0, v: 0) - 1.0 / 25) < 1e-12)  // 1/r²
+    /// ```
     public func gaussianCurvature(atU u: Double, v: Double) -> Double {
         OCCTSurfaceGetGaussianCurvature(handle, u, v)
     }
 
-    /// Mean curvature at (u, v)
+    /// Mean curvature at (u, v), or `0` where curvature is undefined.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Mean curvature, or `0` at a point where the tangent vectors are degenerate and
+    ///   `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// `curvatures(u:v:)` returns this value and `gaussianCurvature(atU:v:)` together from a
+    /// single evaluation; all three share one `GeomLProp_SLProps` construction.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// #expect(abs(abs(sphere.meanCurvature(atU: 0, v: 0)) - 1.0 / 5) < 1e-12)  // 1/r
+    /// ```
     public func meanCurvature(atU u: Double, v: Double) -> Double {
         OCCTSurfaceGetMeanCurvature(handle, u, v)
     }
@@ -2256,7 +2285,26 @@ extension Surface {
         return SIMD3(nx, ny, nz)
     }
 
-    /// Compute Gaussian and mean curvature at (u, v).
+    /// Compute Gaussian and mean curvature at (u, v) in one evaluation.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Both curvatures, or `(0, 0)` where curvature is undefined.
+    ///
+    /// Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same
+    /// point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that one
+    /// construction, so they agree exactly — including on whether curvature is defined at all.
+    /// Before #405 this method built its own with a resolution ten times looser than its
+    /// siblings' `Precision::Confusion()`, and could report `(0, 0)` for a point where they
+    /// returned a real curvature.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4)
+    /// #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
+    /// #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// ```
     public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double) {
         var g = 0.0, m = 0.0
         OCCTSurfaceCurvatures(handle, u, v, &g, &m)
