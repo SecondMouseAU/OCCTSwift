@@ -741,26 +741,37 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 
 // Local Properties
 
-double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v) {
-    if (!s || s->surface.IsNull()) return 0.0;
+// Every curvature entry point goes through this one GeomLProp_SLProps construction, so the
+// resolution argument — the linear tolerance IsCurvatureDefined() tests tangent vectors against
+// for nullity — is stated once. OCCTSurfaceCurvatures used to construct its own with a hardcoded
+// 1e-6, 10x looser than Precision::Confusion(), so the two APIs could disagree about whether
+// curvature is defined at all for the same surface and the same (u, v) (#405).
+// Returns false (leaving the outputs untouched) where curvature is undefined; each caller
+// applies its own documented fallback.
+static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s, double u, double v,
+                                      double* gaussian, double* mean) {
+    if (!s || s->surface.IsNull()) return false;
     try {
         GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.GaussianCurvature();
+        if (!props.IsCurvatureDefined()) return false;
+        if (gaussian) *gaussian = props.GaussianCurvature();
+        if (mean) *mean = props.MeanCurvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
+double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v) {
+    double gaussian = 0.0;
+    occtSurfaceCurvaturePair(s, u, v, &gaussian, nullptr);
+    return gaussian;
+}
+
 double OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef s, double u, double v) {
-    if (!s || s->surface.IsNull()) return 0.0;
-    try {
-        GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MeanCurvature();
-    } catch (...) {
-        return 0.0;
-    }
+    double mean = 0.0;
+    occtSurfaceCurvaturePair(s, u, v, nullptr, &mean);
+    return mean;
 }
 
 bool OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef s, double u, double v,
@@ -4982,15 +4993,9 @@ void OCCTSurfaceNormal(OCCTSurfaceRef surface, double u, double v,
 
 void OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
                              double* gaussian, double* mean) {
+    if (!gaussian || !mean) return;
     *gaussian = *mean = 0;
-    if (!surface || surface->surface.IsNull()) return;
-    try {
-        GeomLProp_SLProps props(surface->surface, u, v, 2, 1e-6);
-        if (props.IsCurvatureDefined()) {
-            *gaussian = props.GaussianCurvature();
-            *mean = props.MeanCurvature();
-        }
-    } catch (...) {}
+    occtSurfaceCurvaturePair(surface, u, v, gaussian, mean);
 }
 
 // end of v0.115.0 implementations
