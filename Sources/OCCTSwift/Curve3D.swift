@@ -445,7 +445,12 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Approximate the curve with a BSpline of specified continuity
+    /// Approximate the curve with a BSpline of specified continuity.
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve2D.approximated` and
+    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// independent algorithms that would justify independently-tuned numeric defaults.
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D? {
         guard let h = OCCTCurve3DApproximate(handle, tolerance, Int32(continuity),

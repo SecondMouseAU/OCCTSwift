@@ -927,6 +927,10 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 - **Parameters:** `tolerance` — maximum approximation error, applied over the whole curve; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
+- **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406) —
+  all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
+  different OCCT geometry hierarchy, not independent algorithms that would justify
+  independently-tuned numeric defaults.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
