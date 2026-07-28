@@ -194,33 +194,12 @@ public static func hyperbolaThreePoints(
 
 ## Interpolation Expansion, Length, Closest Point (v0.115.0)
 
-### `Curve3D.interpolate(points:startTangent:endTangent:)`
+### `Curve3D.interpolate(points:startTangent:endTangent:tolerance:)`
 
-Interpolates a BSpline through points with constrained endpoint tangents.
-
-```swift
-public static func interpolate(
-    points: [SIMD3<Double>],
-    startTangent: SIMD3<Double>,
-    endTangent: SIMD3<Double>
-) -> Curve3D?
-```
-
-Like `interpolate(points:closed:tolerance:)` but pins the tangent direction at the first and last interpolation points. Useful when the approach and departure directions are known (e.g. G1 join to adjacent geometry).
-
-- **Parameters:** `points` — interpolation points (minimum 2); `startTangent` — tangent at the first point; `endTangent` — tangent at the last point.
-- **Returns:** Interpolated BSpline, or `nil` on failure.
-- **OCCT:** `GeomAPI_Interpolate::Load(startTangent, endTangent)` + `Perform()`.
-- **Example:**
-  ```swift
-  if let curve = Curve3D.interpolate(
-      points: [SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0)],
-      startTangent: SIMD3(1, 0, 0),
-      endTangent: SIMD3(1, 0, 0)
-  ) {
-      let len = curve.totalArcLength
-  }
-  ```
+Interpolates a BSpline through points with constrained endpoint tangents. Fully documented on the
+main [Curve3D](Curve3D.md#curve3dinterpolatepointsstarttangentendtangenttolerance) page under
+"BSpline & Bezier", alongside the sibling `interpolate(points:closed:tolerance:)` — see that entry
+for the signature, parameters, OCCT mapping, and an example.
 
 ---
 
