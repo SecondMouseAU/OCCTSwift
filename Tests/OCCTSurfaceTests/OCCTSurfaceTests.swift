@@ -782,6 +782,82 @@ struct SurfaceOperationsTests {
             #expect(abs(p.z + pOrig.z) < 1e-6)
         }
     }
+
+    @Test("Rotate surface around an axis")
+    func rotateSurface() {
+        // No existing test coverage for the copy-returning `rotated(axisOrigin:axisDirection:angle:)`
+        // overload prior to #414; verify against the known rotation applied to the *measured*
+        // original point rather than assuming the sphere's internal U/V parametrization.
+        let sphere = Surface.sphere(center: SIMD3(10, 0, 5), radius: 5)!
+        let angle = Double.pi / 2
+        let axisOrigin = SIMD3<Double>.zero
+        let axisDirection = SIMD3<Double>(0, 0, 1)
+
+        let rotated = sphere.rotated(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                                      angle: angle)
+        #expect(rotated != nil)
+        if let rotated = rotated {
+            let pOrig = sphere.point(atU: 0.3, v: 0.2)
+            let p = rotated.point(atU: 0.3, v: 0.2)
+            // Rotation around Z by `angle`: x' = x*cos - y*sin, y' = x*sin + y*cos, z' unchanged
+            let expectedX = pOrig.x * cos(angle) - pOrig.y * sin(angle)
+            let expectedY = pOrig.x * sin(angle) + pOrig.y * cos(angle)
+            #expect(abs(p.x - expectedX) < 1e-6)
+            #expect(abs(p.y - expectedY) < 1e-6)
+            #expect(abs(p.z - pOrig.z) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: 0.3, v: 0.2)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+            #expect(abs(pOrigAfter.y - pOrig.y) < 1e-10)
+        }
+    }
+
+    @Test("Mirror surface across a point")
+    func mirrorPointSurfaceCopyReturning() {
+        // #414: Surface's copy-returning family was missing mirrored(acrossPoint:)/(acrossAxis:direction:)
+        // even though the in-place mirrorPoint(_:)/mirrorAxis(origin:direction:) and the Curve3D/Curve2D
+        // copy-returning siblings both already have them.
+        let sphere = Surface.sphere(center: SIMD3(0, 0, 5), radius: 2)!
+        let mirrorPoint = SIMD3<Double>(1, 2, 3)
+
+        let mirrored = sphere.mirrored(acrossPoint: mirrorPoint)
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let pOrig = sphere.point(atU: 0.4, v: 0.1)
+            let p = mirrored.point(atU: 0.4, v: 0.1)
+            // Point reflection through `mirrorPoint`: p' = 2*mirrorPoint - p
+            let expectedX = 2 * mirrorPoint.x - pOrig.x
+            let expectedY = 2 * mirrorPoint.y - pOrig.y
+            let expectedZ = 2 * mirrorPoint.z - pOrig.z
+            #expect(abs(p.x - expectedX) < 1e-6)
+            #expect(abs(p.y - expectedY) < 1e-6)
+            #expect(abs(p.z - expectedZ) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: 0.4, v: 0.1)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+            #expect(abs(pOrigAfter.z - pOrig.z) < 1e-10)
+        }
+    }
+
+    @Test("Mirror surface across an axis")
+    func mirrorAxisSurfaceCopyReturning() {
+        // #414: same gap as mirrorPointSurfaceCopyReturning, for the axis (line) overload.
+        let sphere = Surface.sphere(center: SIMD3(5, 0, 0), radius: 2)!
+
+        // Mirror through the Z axis (through the origin): (x, y, z) -> (-x, -y, z)
+        let mirrored = sphere.mirrored(acrossAxis: .zero, direction: SIMD3(0, 0, 1))
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let pOrig = sphere.point(atU: .pi / 4, v: .pi / 6)
+            let p = mirrored.point(atU: .pi / 4, v: .pi / 6)
+            #expect(abs(p.x + pOrig.x) < 1e-6)
+            #expect(abs(p.y + pOrig.y) < 1e-6)
+            #expect(abs(p.z - pOrig.z) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: .pi / 4, v: .pi / 6)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+        }
+    }
 }
 
 @Suite("Surface Conversion")

@@ -573,6 +573,39 @@ struct Curve3DOperationsTests {
         #expect(abs(start.z + 1) < 1e-10)
     }
 
+    @Test("Mirror segment across a point")
+    func mirrorAcrossPointSegment() {
+        // #414: copy-returning mirrored(acrossPoint:)/mirrored(acrossAxis:direction:) had no
+        // dedicated test distinct from the in-place mirrorPoint(_:)/mirrorAxis(origin:direction:) suite.
+        let seg = Curve3D.segment(from: SIMD3(0, 0, 1), to: SIMD3(10, 0, 1))!
+        let mirrored = seg.mirrored(acrossPoint: .zero)!
+        // Point reflection through the origin negates every coordinate
+        let start = mirrored.startPoint
+        let end = mirrored.endPoint
+        #expect(abs(start.x) < 1e-10)
+        #expect(abs(start.z + 1) < 1e-10)
+        #expect(abs(end.x + 10) < 1e-10)
+        #expect(abs(end.z + 1) < 1e-10)
+        // The original curve must be untouched (copy-returning, not in-place)
+        #expect(abs(seg.startPoint.z - 1) < 1e-10)
+    }
+
+    @Test("Mirror segment across an axis")
+    func mirrorAcrossAxisSegment() {
+        let seg = Curve3D.segment(from: SIMD3(3, 4, 1), to: SIMD3(10, 2, 1))!
+        // Mirror through the Z axis (through the origin): (x, y, z) -> (-x, -y, z)
+        let mirrored = seg.mirrored(acrossAxis: .zero, direction: SIMD3(0, 0, 1))!
+        let start = mirrored.startPoint
+        let end = mirrored.endPoint
+        #expect(abs(start.x + 3) < 1e-10)
+        #expect(abs(start.y + 4) < 1e-10)
+        #expect(abs(start.z - 1) < 1e-10)
+        #expect(abs(end.x + 10) < 1e-10)
+        #expect(abs(end.y + 2) < 1e-10)
+        // The original curve must be untouched (copy-returning, not in-place)
+        #expect(abs(seg.startPoint.x - 3) < 1e-10)
+    }
+
     @Test("Length of segment")
     func segmentLength() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0))!

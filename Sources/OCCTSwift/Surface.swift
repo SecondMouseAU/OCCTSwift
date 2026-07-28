@@ -411,6 +411,31 @@ public final class Surface: @unchecked Sendable {
         return Surface(handle: h)
     }
 
+    /// Mirrored copy across a point.
+    ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// let mirrored = plane?.mirrored(acrossPoint: SIMD3(1, 1, 1))
+    /// ```
+    public func mirrored(acrossPoint point: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTSurfaceMirrorPoint(handle, point.x, point.y, point.z)
+        else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Mirrored copy across an axis (line).
+    ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// let mirrored = plane?.mirrored(acrossAxis: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
+    /// ```
+    public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTSurfaceMirrorAxis(handle, point.x, point.y, point.z,
+                                             direction.x, direction.y, direction.z)
+        else { return nil }
+        return Surface(handle: h)
+    }
+
     // MARK: - Conversion
 
     /// Convert to BSpline representation

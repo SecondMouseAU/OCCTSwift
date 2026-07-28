@@ -556,6 +556,35 @@ OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef s,
     }
 }
 
+OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef s,
+                                       double px, double py, double pz) {
+    if (!s || s->surface.IsNull()) return nullptr;
+    try {
+        Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
+        gp_Trsf trsf;
+        trsf.SetMirror(gp_Pnt(px, py, pz));
+        copy->Transform(trsf);
+        return new OCCTSurface(copy);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef s,
+                                      double px, double py, double pz,
+                                      double dx, double dy, double dz) {
+    if (!s || s->surface.IsNull()) return nullptr;
+    try {
+        Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
+        gp_Trsf trsf;
+        trsf.SetMirror(gp_Ax1(gp_Pnt(px, py, pz), gp_Dir(dx, dy, dz)));
+        copy->Transform(trsf);
+        return new OCCTSurface(copy);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
 // Conversion
 
 OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
