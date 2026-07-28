@@ -7253,24 +7253,6 @@ int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
                            OCCTCurve2DRef c2, double first2, double last2,
                            OCCTExtrema2dResult* out, int32_t max);
 
-// --- Geom2dLProp_NumericCurInf2d ---
-
-/// Curvature inflection/extremum point result
-typedef struct {
-    double parameter;
-    int32_t type;   ///< 0 = curvature minimum, 1 = curvature maximum, 2 = inflection
-} OCCTCurInfPoint;
-
-/// Find curvature extrema on a 2D curve.
-/// @return Number of extrema found
-int32_t OCCTGeom2dLPropCurExt(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max);
-
-/// Find inflection points on a 2D curve.
-/// @return Number of inflection points found
-int32_t OCCTGeom2dLPropCurInf(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max);
-
 // --- Bisector_BisecAna ---
 
 /// Compute analytical bisector between two 2D curves.
