@@ -287,9 +287,7 @@ public final class PointCloud: @unchecked Sendable {
         guard n > 0 else { return [] }
         var coords = [Double](repeating: 0, count: n * 3)
         let copied = OCCTPointCloudGetPoints(handle, &coords, Int32(n))
-        return (0..<Int(copied)).map { i in
-            SIMD3(coords[i * 3], coords[i * 3 + 1], coords[i * 3 + 2])
-        }
+        return unpackSIMD3(coords, count: Int(copied))
     }
 
     /// Get all point colors (empty if uncolored)
@@ -299,9 +297,7 @@ public final class PointCloud: @unchecked Sendable {
         var cols = [Float](repeating: 0, count: n * 3)
         let copied = OCCTPointCloudGetColors(handle, &cols, Int32(n))
         guard copied > 0 else { return [] }
-        return (0..<Int(copied)).map { i in
-            SIMD3(cols[i * 3], cols[i * 3 + 1], cols[i * 3 + 2])
-        }
+        return unpackSIMD3(cols, count: Int(copied))
     }
 }
 

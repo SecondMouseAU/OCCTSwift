@@ -345,7 +345,7 @@ public final class Curve3D: @unchecked Sendable {
         var buffer = [Double](repeating: 0, count: n * 3)
         let actual = Int(OCCTCurve3DGetPoles(handle, &buffer))
         guard actual > 0 else { return nil }
-        return (0..<actual).map { i in SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]) }
+        return unpackSIMD3(buffer, count: actual)
     }
 
     /// Degree of BSpline/Bezier curve (-1 if not applicable)
@@ -490,14 +490,14 @@ public final class Curve3D: @unchecked Sendable {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let n = Int(OCCTCurve3DDrawAdaptive(handle, angularDeflection, chordalDeflection,
                                              &buffer, Int32(maxPoints)))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     /// Uniform arc-length spacing discretization
     public func drawUniform(pointCount: Int) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let n = Int(OCCTCurve3DDrawUniform(handle, Int32(pointCount), &buffer))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     /// Chordal deflection discretization
@@ -505,7 +505,7 @@ public final class Curve3D: @unchecked Sendable {
                                maxPoints: Int = 4096) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let n = Int(OCCTCurve3DDrawDeflection(handle, deflection, &buffer, Int32(maxPoints)))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     // MARK: - Local Properties
@@ -586,7 +586,7 @@ extension Curve3D {
         guard !parameters.isEmpty else { return [] }
         var outXYZ = [Double](repeating: 0, count: parameters.count * 3)
         let n = Int(OCCTCurve3DEvaluateGrid(handle, parameters, Int32(parameters.count), &outXYZ))
-        return (0..<n).map { i in SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]) }
+        return unpackSIMD3(outXYZ, count: n)
     }
 
     /// Evaluate the curve and its first derivative at multiple parameters in one call.
@@ -598,10 +598,9 @@ extension Curve3D {
         var outXYZ = [Double](repeating: 0, count: parameters.count * 3)
         var outDXDYDZ = [Double](repeating: 0, count: parameters.count * 3)
         let n = Int(OCCTCurve3DEvaluateGridD1(handle, parameters, Int32(parameters.count), &outXYZ, &outDXDYDZ))
-        return (0..<n).map { i in
-            (point: SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]),
-             tangent: SIMD3(outDXDYDZ[i * 3], outDXDYDZ[i * 3 + 1], outDXDYDZ[i * 3 + 2]))
-        }
+        let points: [SIMD3<Double>] = unpackSIMD3(outXYZ, count: n)
+        let tangents: [SIMD3<Double>] = unpackSIMD3(outDXDYDZ, count: n)
+        return zip(points, tangents).map { (point: $0, tangent: $1) }
     }
 
     /// Check if this curve is planar.
@@ -942,12 +941,7 @@ extension Curve3D {
     public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let count = OCCTCurve3DGetSamplePoints3D(handle, first, last, &buffer, Int32(maxPoints))
-        var points = [SIMD3<Double>]()
-        points.reserveCapacity(Int(count))
-        for i in 0..<Int(count) {
-            points.append(SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]))
-        }
-        return points
+        return unpackSIMD3(buffer, count: Int(count))
     }
 
     // MARK: - v0.50.0: Arc construction, periodic conversion, splitting
