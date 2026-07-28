@@ -94,7 +94,22 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Full circle in a plane defined by center and normal
+    /// Full circle in a plane defined by center and normal.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - normal: Normal of the plane the circle lies in.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// `circleFromCenterNormal(center:normal:radius:)` builds the identical circle through
+    /// OCCT's `gce_MakeCirc` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)
+    /// #expect(c != nil)
+    /// #expect(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 0) == nil)
+    /// ```
     public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateCircle(center.x, center.y, center.z,
                                                normal.x, normal.y, normal.z,
@@ -118,7 +133,28 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Ellipse in a plane defined by center and normal
+    /// Ellipse in a plane defined by center and normal.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///
+    /// `ellipseFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
+    /// ellipse through OCCT's `gce_MakeElips` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// // minor > major, and a zero minor radius, are both rejected
+    /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 5, minorRadius: 10) == nil)
+    /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>,
                                majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateEllipse(center.x, center.y, center.z,
@@ -127,7 +163,22 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Parabola in a plane defined by center/normal with given focal length
+    /// Parabola in a plane defined by center/normal with given focal length.
+    ///
+    /// - Parameters:
+    ///   - center: Parabola apex.
+    ///   - normal: Normal of the plane the parabola lies in.
+    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
+    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///
+    /// `parabolaFromCenterNormal(center:normal:focal:)` builds the identical parabola through
+    /// OCCT's `gce_MakeParab` algorithm and enforces the same focal-length contract.
+    ///
+    /// ```swift
+    /// let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
+    /// #expect(p != nil)
+    /// #expect(Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 0) == nil)
+    /// ```
     public static func parabola(center: SIMD3<Double>, normal: SIMD3<Double>,
                                 focal: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateParabola(center.x, center.y, center.z,
@@ -136,7 +187,26 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Hyperbola in a plane defined by center/normal
+    /// Hyperbola in a plane defined by center/normal.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`. There is no ordering constraint between
+    ///     the two, unlike `ellipse(center:normal:majorRadius:minorRadius:)`.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// `hyperbolaFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
+    /// hyperbola through OCCT's `gce_MakeHypr` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 0, minorRadius: 3) == nil)
+    /// ```
     public static func hyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateHyperbola(center.x, center.y, center.z,
@@ -1130,7 +1200,24 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a circle from center, normal, and radius (gce_MakeCirc)
+    /// Create a circle from center, normal, and radius (`gce_MakeCirc`).
+    ///
+    /// Geometrically identical to `circle(center:normal:radius:)` — `gce_MakeCirc` builds the
+    /// same `gp_Ax2(center, normal)` frame — and, since #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - normal: Normal of the plane the circle lies in.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// ```swift
+    /// let c = Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), radius: 7)
+    /// #expect(c != nil)
+    /// // Same rejection as the direct factory: no degenerate zero-radius circle.
+    /// #expect(Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                        radius: 0) == nil)
+    /// ```
     public static func circleFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                               radius: Double) -> Curve3D? {
         guard let h = OCCTGceMakeCircFromCenterNormal(center.x, center.y, center.z,
@@ -1154,7 +1241,25 @@ extension Curve3D {
         return SIMD3(x, y, z)
     }
 
-    /// Create an ellipse (gce_MakeElips)
+    /// Create an ellipse (`gce_MakeElips`).
+    ///
+    /// Geometrically identical to `ellipse(center:normal:majorRadius:minorRadius:)` and, since
+    /// #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                         majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                         majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func ellipseFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                majorRadius: Double,
                                                minorRadius: Double) -> Curve3D? {
@@ -1164,7 +1269,25 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a hyperbola (gce_MakeHypr)
+    /// Create a hyperbola (`gce_MakeHypr`).
+    ///
+    /// Geometrically identical to `hyperbola(center:normal:majorRadius:minorRadius:)` and, since
+    /// #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// ```swift
+    /// let h = Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                           majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                           majorRadius: 8, minorRadius: 0) == nil)
+    /// ```
     public static func hyperbolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                  majorRadius: Double,
                                                  minorRadius: Double) -> Curve3D? {
@@ -1174,7 +1297,23 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a parabola (gce_MakeParab)
+    /// Create a parabola (`gce_MakeParab`).
+    ///
+    /// Geometrically identical to `parabola(center:normal:focal:)` and, since #399, enforces the
+    /// same focal-length contract.
+    ///
+    /// - Parameters:
+    ///   - center: Parabola apex.
+    ///   - normal: Normal of the plane the parabola lies in.
+    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
+    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///
+    /// ```swift
+    /// let p = Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
+    /// #expect(p != nil)
+    /// #expect(Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                          focal: 0) == nil)
+    /// ```
     public static func parabolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                 focal: Double) -> Curve3D? {
         guard let h = OCCTGceMakeParab(center.x, center.y, center.z,

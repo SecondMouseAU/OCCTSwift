@@ -251,6 +251,28 @@ void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
 
 // Primitive Curves
 
+// Conic dimension preconditions, shared by the two factory families that build the
+// same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
+// Geom_* construction) and OCCTGceMake{CircFromCenterNormal,Elips,Hypr,Parab} (gce_Make*
+// construction). The gce_Make* algorithms only reject strictly-negative dimensions, so
+// before #399 they silently produced degenerate zero-radius/zero-focal curves where the
+// direct family returned null for the identical input. One definition, both families.
+static inline bool occtValidCircleRadius(double radius) {
+    return radius > 0;
+}
+
+static inline bool occtValidEllipseRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0 && minorR <= majorR;
+}
+
+static inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0;
+}
+
+static inline bool occtValidParabolaFocal(double focal) {
+    return focal > 0;
+}
+
 OCCTCurve3DRef OCCTCurve3DCreateLine(double px, double py, double pz,
                                       double dx, double dy, double dz) {
     try {
@@ -281,7 +303,7 @@ OCCTCurve3DRef OCCTCurve3DCreateCircle(double cx, double cy, double cz,
                                         double nx, double ny, double nz,
                                         double radius) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt center(cx, cy, cz);
         gp_Dir normal(nx, ny, nz);
         gp_Ax2 axis(center, normal);
@@ -324,7 +346,7 @@ OCCTCurve3DRef OCCTCurve3DCreateEllipse(double cx, double cy, double cz,
                                          double nx, double ny, double nz,
                                          double majorR, double minorR) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Ellipse) ellipse = new Geom_Ellipse(axis, majorR, minorR);
         return new OCCTCurve3D(ellipse);
@@ -337,7 +359,7 @@ OCCTCurve3DRef OCCTCurve3DCreateParabola(double cx, double cy, double cz,
                                           double nx, double ny, double nz,
                                           double focal) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Parabola) parabola = new Geom_Parabola(axis, focal);
         return new OCCTCurve3D(parabola);
@@ -350,7 +372,7 @@ OCCTCurve3DRef OCCTCurve3DCreateHyperbola(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double majorR, double minorR) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Hyperbola) hyp = new Geom_Hyperbola(axis, majorR, minorR);
         return new OCCTCurve3D(hyp);
@@ -2349,6 +2371,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeCircFromCenterNormal(double cx, double cy, d
                                                           double nx, double ny, double nz,
                                                           double radius) {
     try {
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gce_MakeCirc mc(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom_Circle) circ = new Geom_Circle(mc.Value());
@@ -2380,6 +2403,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeElips(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeElips me(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
         Handle(Geom_Ellipse) elips = new Geom_Ellipse(me.Value());
@@ -2391,6 +2415,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeHypr(double cx, double cy, double cz,
                                           double nx, double ny, double nz,
                                           double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeHypr mh(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
         if (!mh.IsDone()) return nullptr;
         Handle(Geom_Hyperbola) hypr = new Geom_Hyperbola(mh.Value());
@@ -2402,6 +2427,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeParab(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double focal) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gce_MakeParab mp(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), focal);
         if (!mp.IsDone()) return nullptr;
         Handle(Geom_Parabola) parab = new Geom_Parabola(mp.Value());
