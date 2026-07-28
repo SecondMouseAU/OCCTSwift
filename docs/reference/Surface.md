@@ -673,8 +673,8 @@ Uses OCCT's exact conversion for analytic surfaces. Infinite surfaces must be tr
 Approximates this surface as a BSpline surface within a tolerance.
 
 ```swift
-public func approximated(tolerance: Double = 0.01, continuity: Int = 2,
-                          maxSegments: Int = 100, maxDegree: Int = 10) -> Surface?
+public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
+                          maxSegments: Int = 100, maxDegree: Int = 8) -> Surface?
 ```
 
 Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or composite surfaces).
@@ -686,6 +686,12 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
   - `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline surface, or `nil` on failure.
 - **OCCT:** `GeomConvert_ApproxSurface`.
+- **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406) — all three wrap
+  the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a different OCCT
+  geometry hierarchy, not independent algorithms whose numeric defaults should diverge. (Before
+  #406 this defaulted to `tolerance: 0.01, maxDegree: 10`, a 10x looser tolerance with no
+  documented reason; measurement found the tighter shared values succeed on every case tried,
+  with no meaningful cost difference.)
 - **Example:**
   ```swift
   let offset = sphere.offset(distance: 1)!

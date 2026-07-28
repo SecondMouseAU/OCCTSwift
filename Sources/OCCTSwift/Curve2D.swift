@@ -579,6 +579,12 @@ public final class Curve2D: @unchecked Sendable {
     ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve3D.approximated` and
+    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// independent algorithms that would justify independently-tuned numeric defaults.
+    ///
     /// - Returns: Approximated BSpline curve, or `nil` on failure
     ///
     /// ```swift
