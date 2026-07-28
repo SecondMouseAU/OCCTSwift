@@ -901,6 +901,10 @@ a restricted range, the other bounds a single whole-curve error. Continuity is f
 and is not caller-configurable; use the other overload if you need a different continuity order.
 See #407.
 
+**Renamed from `approximated(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.** The old
+spelling still compiles — it's kept as an `@available(*, deprecated, renamed:)` shim forwarding
+directly to this method, so existing call sites get a migration warning rather than a hard break.
+
 - **Parameters:** `first`/`last` — parameter sub-range to approximate; `toleranceU`/`toleranceV` — per-axis approximation tolerances; `maxDegree` — maximum polynomial degree (default 8); `maxSegments` — maximum number of segments (default 100).
 - **Returns:** Approximated BSpline `Curve2D`, or `nil` on failure.
 - **OCCT:** `Approx_Curve2d`.

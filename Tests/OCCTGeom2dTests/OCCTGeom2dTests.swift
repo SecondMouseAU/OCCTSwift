@@ -1459,26 +1459,110 @@ struct Curve2DApproximatedOverloadParityTests {
         #expect(ranged != nil)
     }
 
-    @Test("Default tolerances remain exactly 1000x apart")
-    func defaultTolerancesRemainThreeOrdersOfMagnitudeApart() {
-        // Locks in the exact factor #407 measured. Neither pre-existing test called either
-        // overload with implicit defaults, so a change to just one of the two literals
-        // (`1e-3` in `approximated`, `1e-6` in `approximatedInRange`) would have gone
-        // uncaught. This test fails if either default moves without the other moving too.
-        let wholeDomainDefaultTolerance = 1e-3
-        let rangedDefaultToleranceU = 1e-6
-        let rangedDefaultToleranceV = 1e-6
-        #expect(abs(wholeDomainDefaultTolerance / rangedDefaultToleranceU - 1000) < 1e-6)
-        #expect(abs(wholeDomainDefaultTolerance / rangedDefaultToleranceV - 1000) < 1e-6)
+    @available(*, deprecated, message: "Exercises the deprecated `approximated(first:last:...)` shim on purpose.")
+    @Test("Deprecated approximated(first:last:...) spelling still forwards to approximatedInRange")
+    func deprecatedShimForwardsToApproximatedInRange() {
+        // #407 renamed this overload; the retired spelling survives as a `@available(*,
+        // deprecated, renamed:)` shim per docs/SEMVER.md (a renamed method is a MAJOR-triggering
+        // breaking change, and the shim avoids forcing that immediately). Confirms the shim isn't
+        // just present but behaviorally identical to the method it forwards to.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let viaOldName = circle.approximated(first: d.lowerBound, last: d.upperBound,
+                                              toleranceU: 1e-6, toleranceV: 1e-6)
+        let viaNewName = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+                                                     toleranceU: 1e-6, toleranceV: 1e-6)
+        #expect(viaOldName != nil)
+        #expect(viaNewName != nil)
+        if let viaOldName, let viaNewName {
+            #expect(viaOldName.degree == viaNewName.degree)
+            #expect(viaOldName.poleCount == viaNewName.poleCount)
+        }
     }
 
-    @Test("The two overloads produce structurally different BSplines from the same curve")
-    func overloadsProduceDifferentResultsEvenAtMatchingTolerance() {
-        // Directly addresses the issue's own gap: no prior test called both overloads on the
-        // same input and compared results. Even with `tolerance` and `toleranceU`/`toleranceV`
-        // set to the same numeric value, `Geom2dConvert_ApproxCurve` (whole-domain, single
-        // error metric) and `Approx_Curve2d` (ranged, per-axis error) are different algorithms
-        // and are not expected to agree pole-for-pole or degree-for-degree.
+    /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
+    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
+    /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
+    /// 1e-2...1e-8 band converging to the same near-machine-precision result. Found empirically:
+    /// a two-frequency sine zigzag through 60 points. Below ~1e-5 the fit saturates at ~1e-14
+    /// (the algorithm can just reproduce the input almost exactly); at 1e-3 it measurably can't,
+    /// giving a real, tolerance-sized deviation. That gap is what makes the two real defaults
+    /// (1e-3 vs 1e-6) distinguishable by behavior instead of by reading the source.
+    private static func toleranceSensitiveCurve() -> Curve2D {
+        var pts: [SIMD2<Double>] = []
+        for i in 0..<60 {
+            let x = Double(i) * 0.5
+            let y = sin(Double(i) * 0.6) * 3.0 + sin(Double(i) * 1.3) * 0.6
+            pts.append(SIMD2(x, y))
+        }
+        return Curve2D.interpolate(through: pts)!
+    }
+
+    /// Largest sampled distance between `original` and `approx` over `original`'s domain.
+    private static func maxSampledDeviation(_ original: Curve2D, _ approx: Curve2D,
+                                            samples: Int = 300) -> Double {
+        let d = original.domain
+        var maxDev = 0.0
+        for i in 0...samples {
+            let t = d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / Double(samples)
+            let p1 = original.point(at: t)
+            let p2 = approx.point(at: t)
+            let dx = p1.x - p2.x, dy = p1.y - p2.y
+            maxDev = max(maxDev, (dx * dx + dy * dy).squareRoot())
+        }
+        return maxDev
+    }
+
+    @Test("Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error")
+    func wholeDomainDefaultToleranceProducesMeasurableError() {
+        // Calls with NO explicit `tolerance:` — exercising Curve2D.swift's actual `1e-3` default,
+        // not a copy of the literal. Measured on `toleranceSensitiveCurve()`: the default gives
+        // ~5.5e-4 max deviation, comfortably inside (1e-5, 5e-3). If the real default were
+        // mistakenly tightened toward `1e-6` (matching the other overload), deviation collapses
+        // to ~1.8e-14 and fails the lower bound; if loosened toward `1e-2`, deviation exceeds
+        // 8e-3 and fails the upper bound. Verified both directions by temporarily editing the
+        // real default in Curve2D.swift and confirming this test fails, then restoring it.
+        let curve = Self.toleranceSensitiveCurve()
+        let approx = curve.approximated()
+        #expect(approx != nil)
+        if let approx {
+            let dev = Self.maxSampledDeviation(curve, approx)
+            #expect(dev > 1e-5)
+            #expect(dev < 5e-3)
+        }
+    }
+
+    @Test("Ranged overload's implicit default tolerance produces a near-exact fit")
+    func rangedDefaultToleranceProducesNearExactFit() {
+        // Calls with NO explicit `toleranceU`/`toleranceV` — exercising the actual `1e-6`
+        // defaults. Measured on the same curve: ~1.8e-14 max deviation, i.e. this tolerance is
+        // tight enough that the fit is essentially exact. If the real default were mistakenly
+        // loosened toward `1e-3` (matching the other overload), deviation jumps to ~7e-4 and
+        // fails the bound below. Verified by temporarily editing the real default in
+        // Curve2D.swift and confirming this test fails, then restoring it.
+        let curve = Self.toleranceSensitiveCurve()
+        let d = curve.domain
+        let approx = curve.approximatedInRange(first: d.lowerBound, last: d.upperBound)
+        #expect(approx != nil)
+        if let approx {
+            let dev = Self.maxSampledDeviation(curve, approx)
+            #expect(dev < 1e-9)
+        }
+    }
+
+    @Test("Both overloads independently succeed on the same curve; neither promises to structurally match the other")
+    func bothOverloadsSucceedIndependentlyOnSameCurve() {
+        // Addresses the issue's own gap: no prior test called both overloads on the same input
+        // and compared results. Checked empirically before writing this test (pole/degree counts
+        // across a circle, an off-center circle, an ellipse, and a wiggly interpolated curve, at
+        // both matching and default tolerances): `Geom2dConvert_ApproxCurve` (whole-domain) and
+        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts — a circle at
+        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance — and only sometimes diverge
+        // (the wiggly curve at `tol=1e-3`: 268 poles/degree 7 vs. 315 poles/degree 8). So
+        // structural agreement or disagreement isn't a reliable, input-independent property of
+        // either API and isn't asserted here. What both overloads *do* promise is independently
+        // succeeding on the same curve; that's what this test checks.
         let circle = Curve2D.circle(center: .zero, radius: 10)!
         let d = circle.domain
 
@@ -1489,9 +1573,6 @@ struct Curve2DApproximatedOverloadParityTests {
         #expect(wholeDomain != nil)
         #expect(ranged != nil)
         if let wholeDomain, let ranged {
-            // Both are valid BSpline approximations of the same circle, but nothing about
-            // the two APIs promises they agree — record that they need not, rather than
-            // silently assuming interchangeability.
             #expect(wholeDomain.degree != nil)
             #expect(ranged.degree != nil)
         }
