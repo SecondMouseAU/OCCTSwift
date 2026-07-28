@@ -3417,6 +3417,16 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef graph,
     } catch (...) { return false; }
 }
 
+bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef graph, int32_t domain, int32_t kind, uint32_t counter) {
+    if (!graph) return false;
+    try {
+        BRepGraph_ItemUID uid = (domain == (int32_t)BRepGraph_ItemUID::Domain::Reference)
+            ? BRepGraph_ItemUID::Reference(refKindFromRawOrdinal(kind), (size_t)counter)
+            : BRepGraph_ItemUID::Node(kindFromInt(kind), (size_t)counter);
+        return graph->graph.UIDs().Has(uid);
+    } catch (...) { return false; }
+}
+
 uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef graph) {
     if (!graph) return 0;
     try { return graph->graph.UIDs().Generation(); } catch (...) { return 0; }
