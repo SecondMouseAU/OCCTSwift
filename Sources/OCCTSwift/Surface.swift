@@ -419,9 +419,31 @@ public final class Surface: @unchecked Sendable {
         return Surface(handle: h)
     }
 
-    /// Approximate as a BSpline surface within tolerance
-    public func approximated(tolerance: Double = 0.01, continuity: Int = 2,
-                             maxSegments: Int = 100, maxDegree: Int = 10) -> Surface? {
+    /// Approximate as a BSpline surface within tolerance.
+    ///
+    /// - Parameters:
+    ///   - tolerance: Maximum approximation error
+    ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - maxSegments: Maximum number of B-spline segments
+    ///   - maxDegree: Maximum polynomial degree
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) match `Curve3D.approximated`/
+    /// `Curve2D.approximated` (#406): all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy
+    /// (surface vs. 3D curve vs. 2D curve), not independent algorithms whose numeric defaults
+    /// should be tuned independently. Measured directly (analytic primitives — sphere, torus,
+    /// trimmed cylinder/cone — and a 40x40-point BSpline fit): the tighter tolerance and lower
+    /// degree succeed on every case tried, with no meaningful cost difference, so there was no
+    /// dimensional justification for the looser values this used to default to. An
+    /// infinite/unbounded surface must still be trimmed to a finite parameter domain before
+    /// calling this (see `trimmed(u1:u2:v1:v2:)`) — approximation does not do that for you.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
+    /// ```
+    public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
+                             maxSegments: Int = 100, maxDegree: Int = 8) -> Surface? {
         guard let h = OCCTSurfaceApproximate(handle, tolerance, Int32(continuity),
                                               Int32(maxSegments), Int32(maxDegree))
         else { return nil }

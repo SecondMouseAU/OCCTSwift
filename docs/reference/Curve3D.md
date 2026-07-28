@@ -827,6 +827,10 @@ Useful for converting an analytical curve to a polynomial BSpline with controlle
 - **Parameters:** `tolerance` — approximation error; `continuity` — minimum continuity order; `maxSegments` — maximum number of BSpline spans; `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`.
+- **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406) —
+  all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
+  different OCCT geometry hierarchy, not independent algorithms that would justify
+  independently-tuned numeric defaults.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)!
