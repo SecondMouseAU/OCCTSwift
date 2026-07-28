@@ -911,7 +911,8 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
 
 ### `approximated(tolerance:continuity:maxSegments:maxDegree:)`
 
-Re-approximates this curve as a BSpline with controlled degree and continuity.
+Re-approximates this curve's whole parameter domain as a BSpline, with a single scalar
+tolerance and explicit continuity control.
 
 ```swift
 public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
@@ -920,9 +921,12 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 
 `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=C1, 2=C2, 3=C3.
 
-- **Parameters:** `tolerance` — maximum approximation error; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
+**Distinct from** [`approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`](Curve2D-Analysis.md#approximatedinrangefirstlasttoleranceutolerancevmaxdegreemaxsegments)
+— a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
+
+- **Parameters:** `tolerance` — maximum approximation error, applied over the whole curve; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline, or `nil` on failure.
-- **OCCT:** `Approx_Curve2d` (via `OCCTCurve2DApproximate`).
+- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!

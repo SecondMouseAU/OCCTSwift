@@ -880,26 +880,37 @@ Mutates the receiver. Returns `true` if any knots were removed.
 
 ---
 
-### `approximated(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`
+### `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`
 
-Approximates this 2D curve as a BSpline over a given parameter range.
+Approximates an explicit parameter sub-range of this 2D curve as a BSpline, with independent
+U/V tolerances.
 
 ```swift
-public func approximated(
+public func approximatedInRange(
     first: Double, last: Double,
     toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
     maxDegree: Int = 8, maxSegments: Int = 100
 ) -> Curve2D?
 ```
 
-Distinct from the instance method `approximated(tolerance:continuity:maxSegments:maxDegree:)` (which takes continuity as a parameter). This overload uses `Approx_Curve2d` and accepts separate U/V tolerances.
+**Not a ranged overload of** [`approximated(tolerance:continuity:maxSegments:maxDegree:)`](Curve2D.md#approximatedtolerancecontinuitymaxsegmentsmaxdegree)
+— the two wrap different OCCT algorithms (`Approx_Curve2d` here vs. `Geom2dConvert_ApproxCurve`
+there) with different tolerance semantics, so their default tolerances (`1e-6` here, `1e-3`
+there — a 1000x gap) are not directly comparable: this one bounds independent per-axis error on
+a restricted range, the other bounds a single whole-curve error. Continuity is fixed at C2 here
+and is not caller-configurable; use the other overload if you need a different continuity order.
+See #407.
 
-- **Parameters:** `first`/`last` — parameter range; `toleranceU`/`toleranceV` — approximation tolerances; `maxDegree` — maximum polynomial degree (default 8); `maxSegments` — maximum number of segments (default 100).
+**Renamed from `approximated(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.** The old
+spelling still compiles — it's kept as an `@available(*, deprecated, renamed:)` shim forwarding
+directly to this method, so existing call sites get a migration warning rather than a hard break.
+
+- **Parameters:** `first`/`last` — parameter sub-range to approximate; `toleranceU`/`toleranceV` — per-axis approximation tolerances; `maxDegree` — maximum polynomial degree (default 8); `maxSegments` — maximum number of segments (default 100).
 - **Returns:** Approximated BSpline `Curve2D`, or `nil` on failure.
 - **OCCT:** `Approx_Curve2d`.
 - **Example:**
   ```swift
-  if let approx = someCurve.approximated(first: 0, last: 1, toleranceU: 1e-4) {
+  if let approx = someCurve.approximatedInRange(first: 0, last: 1, toleranceU: 1e-4) {
       print(approx.degree)
   }
   ```
