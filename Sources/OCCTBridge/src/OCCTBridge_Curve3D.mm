@@ -4552,21 +4552,7 @@ const char* OCCTCurve3DTypeName(OCCTCurve3DRef curve) {
 OCCTCurve3DRef OCCTInterpolateWithTangents(const double* points, int32_t count,
                                              double t1x, double t1y, double t1z,
                                              double t2x, double t2y, double t2z) {
-    if (!points || count < 2) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
-        }
-        GeomAPI_Interpolate interp(pts, Standard_False, 1e-6);
-        gp_Vec v1(t1x, t1y, t1z), v2(t2x, t2y, t2z);
-        interp.Load(v1, v2);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve3DRef)new OCCTCurve3D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve3DInterpolateWithTangents(points, count, t1x, t1y, t1z, t2x, t2y, t2z, 1e-6);
 }
 
 OCCTCurve3DRef OCCTInterpolateWithAllTangents(const double* points, int32_t count,
