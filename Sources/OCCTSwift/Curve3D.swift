@@ -275,7 +275,24 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Interpolate through points with start/end tangent constraints
+    /// Interpolate a BSpline through points with constrained start/end tangents.
+    ///
+    /// - Parameters:
+    ///   - points: Points the curve must pass through (minimum 2).
+    ///   - startTangent: Tangent vector at the first point.
+    ///   - endTangent: Tangent vector at the last point.
+    ///   - tolerance: Interpolation precision; also the minimum allowed distance between
+    ///     consecutive points. Defaults to `1e-6` and is honored on every call, including
+    ///     the bare 3-argument form.
+    /// - Returns: Interpolated BSpline curve, or `nil` on failure.
+    ///
+    /// ```swift
+    /// let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 5, 5), SIMD3(10, 0, 0)]
+    /// let curve = Curve3D.interpolate(points: pts,
+    ///                                 startTangent: SIMD3(1, 1, 1),
+    ///                                 endTangent: SIMD3(1, -1, -1),
+    ///                                 tolerance: 1e-9)
+    /// ```
     public static func interpolate(points: [SIMD3<Double>],
                                    startTangent: SIMD3<Double>,
                                    endTangent: SIMD3<Double>,
@@ -1574,20 +1591,6 @@ extension Curve3D {
     public var lineProperties: LineProperties { LineProperties(handle: handle) }
 
     // MARK: - v0.115.0: Interpolation expansion, length, closest point
-
-    /// Interpolate a 3D BSpline through points with endpoint tangents.
-    public static func interpolate(points: [SIMD3<Double>],
-                                   startTangent: SIMD3<Double>,
-                                   endTangent: SIMD3<Double>) -> Curve3D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolateWithTangents(buf.baseAddress!, Int32(points.count),
-                                        startTangent.x, startTangent.y, startTangent.z,
-                                        endTangent.x, endTangent.y, endTangent.z)
-        }) else { return nil }
-        return Curve3D(handle: ref)
-    }
 
     /// Interpolate a 3D BSpline with per-point tangent constraints.
     public static func interpolate(points: [SIMD3<Double>],

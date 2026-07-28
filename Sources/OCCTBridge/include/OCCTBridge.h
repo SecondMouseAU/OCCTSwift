@@ -17213,7 +17213,9 @@ OCCTShapeRef _Nullable OCCTShapeEmptyCopied(OCCTShapeRef _Nonnull shape);
 
 // --- GeomAPI_Interpolate expansion ---
 
-/// Interpolate 3D BSpline with endpoint tangents.
+/// Interpolate 3D BSpline with endpoint tangents. Forwards to
+/// OCCTCurve3DInterpolateWithTangents with a fixed 1e-6 tolerance; kept for
+/// existing C callers of this exact signature.
 OCCTCurve3DRef _Nullable OCCTInterpolateWithTangents(const double* _Nonnull points, int32_t count,
                                                        double t1x, double t1y, double t1z,
                                                        double t2x, double t2y, double t2z);
