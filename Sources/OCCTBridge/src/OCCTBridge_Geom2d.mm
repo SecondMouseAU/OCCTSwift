@@ -1029,9 +1029,6 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef curve, int32_t qualifier,
 #include <Extrema_ExtPElC2d.hxx>
 #include <Extrema_ExtCC2d.hxx>
 #include <Extrema_POnCurv2d.hxx>
-#include <GeomLProp_CurAndInf2d.hxx>
-#include <LProp_CurAndInf.hxx>
-#include <LProp_CIType.hxx>
 #include <Bisector_BisecAna.hxx>
 #include <GeomAbs_JoinType.hxx>
 #include <gp_Elips2d.hxx>
@@ -1645,40 +1642,6 @@ int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
         }
         return nb;
     } catch (...) { return -1; }
-}
-
-// --- GeomLProp_CurAndInf2d (was Geom2dLProp_NumericCurInf2d in RC4) ---
-int32_t OCCTGeom2dLPropCurExt(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max) {
-    try {
-        GeomLProp_CurAndInf2d solver;
-        solver.PerformCurExt(curve->curve);
-        if (!solver.IsDone()) return 0;
-        int32_t nb = std::min((int32_t)solver.NbPoints(), max);
-        for (int32_t i = 0; i < nb; i++) {
-            out[i].parameter = solver.Parameter(i + 1);
-            LProp_CIType t = solver.Type(i + 1);
-            if (t == LProp_MinCur) out[i].type = 0;
-            else if (t == LProp_MaxCur) out[i].type = 1;
-            else out[i].type = 2;
-        }
-        return nb;
-    } catch (...) { return 0; }
-}
-
-int32_t OCCTGeom2dLPropCurInf(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max) {
-    try {
-        GeomLProp_CurAndInf2d solver;
-        solver.PerformInf(curve->curve);
-        if (!solver.IsDone()) return 0;
-        int32_t nb = std::min((int32_t)solver.NbPoints(), max);
-        for (int32_t i = 0; i < nb; i++) {
-            out[i].parameter = solver.Parameter(i + 1);
-            out[i].type = 2;
-        }
-        return nb;
-    } catch (...) { return 0; }
 }
 
 // --- Bisector_BisecAna ---
