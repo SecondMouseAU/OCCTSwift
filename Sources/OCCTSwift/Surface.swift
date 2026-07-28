@@ -2082,21 +2082,40 @@ extension Surface {
                                         point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
-    /// Create a conical surface from 2 points (axis) + 2 radii (gce_MakeCone)
+    /// Create a conical surface from 2 points (axis) + 2 radii.
+    ///
+    /// Equivalent to ``conicalSurface(point1:point2:r1:r2:)`` — same underlying
+    /// `GC_MakeConicalSurface` construction, kept as a separate entry point for
+    /// API discoverability under the "gce_Make"-style naming used elsewhere in
+    /// this file. Previously this used an independent `gce_MakeCone` construction
+    /// path; unified onto `GC_MakeConicalSurface` to avoid maintaining two
+    /// implementations of the same operation (#420).
+    ///
+    /// ```swift
+    /// let cone = Surface.coneFrom2PointsRadii(
+    ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), radius1: 5.0, radius2: 2.0)
+    /// ```
     public static func coneFrom2PointsRadii(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                             radius1: Double, radius2: Double) -> Surface? {
-        guard let h = OCCTGceMakeCone(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z,
-                                       radius1, radius2) else { return nil }
-        return Surface(handle: h)
+        conicalSurface(point1: p1, point2: p2, r1: radius1, r2: radius2)
     }
 
-    /// Create a cylindrical surface from 3 points (gce_MakeCylinder)
+    /// Create a cylindrical surface from 3 points.
+    ///
+    /// Equivalent to ``cylindricalSurface(point1:point2:point3:)`` — same underlying
+    /// `GC_MakeCylindricalSurface` construction, kept as a separate entry point for
+    /// API discoverability under the "gce_Make"-style naming used elsewhere in
+    /// this file. Previously this used an independent `gce_MakeCylinder` construction
+    /// path; unified onto `GC_MakeCylindricalSurface` to avoid maintaining two
+    /// implementations of the same operation (#420).
+    ///
+    /// ```swift
+    /// let cyl = Surface.cylinderFrom3Points(
+    ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(5, 0, 5))
+    /// ```
     public static func cylinderFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                            p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGceMakeCylinderFrom3Points(p1.x, p1.y, p1.z,
-                                                      p2.x, p2.y, p2.z,
-                                                      p3.x, p3.y, p3.z) else { return nil }
-        return Surface(handle: h)
+        cylindricalSurface(point1: p1, point2: p2, point3: p3)
     }
 
     /// Create a plane from equation Ax+By+Cz+D=0 (gce_MakePln)
