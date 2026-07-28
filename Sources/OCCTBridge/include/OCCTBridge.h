@@ -17501,7 +17501,8 @@ double OCCTCurve3DClosestParameter(OCCTCurve3DRef _Nonnull curve, double px, dou
 /// Create a trimmed copy of a 2D curve between parameters u1 and u2.
 OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
-/// Compute the length of a 2D curve between parameters u1 and u2.
+/// Compute the length of a 2D curve between parameters u1 and u2 (u1 must not exceed u2).
+/// Returns -1.0 on failure (null curve, reversed range, or any other computation error).
 double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
 // --- Surface additional (v0.115.0) ---

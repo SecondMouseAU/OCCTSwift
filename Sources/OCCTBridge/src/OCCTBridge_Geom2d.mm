@@ -4130,14 +4130,16 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
 
 #include <Geom2dAdaptor_Curve.hxx>
 
+// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
+// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
+// unrestricted adaptor, which tolerates either order.
 double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return 0;
+    if (!curve || curve->curve.IsNull()) return -1.0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
         return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return 0; }
+    } catch (...) { return -1.0; }
 }
-// --- Curve3D Arc Length (GCPnts_AbscissaPoint) ---
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
