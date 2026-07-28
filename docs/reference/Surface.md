@@ -310,9 +310,11 @@ public static func plane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Surfac
 
 The surface is infinite in both U and V. Trim it with `trimmed(u1:u2:v1:v2:)` or convert to a face with `toFace(uRange:vRange:)` before use in B-Rep operations.
 
+An unlabeled-positional spelling of [`planeFromPointNormal(point:normal:)`](Surface-Advanced.md) and delegates to it (#421) — the two cannot produce different planes for the same input.
+
 - **Parameters:** `origin` — a point on the plane; `normal` — outward normal direction.
-- **Returns:** `Geom_Plane` surface, or `nil` if `normal` is zero-length.
-- **OCCT:** `Geom_Plane(gp_Pnt, gp_Dir)`.
+- **Returns:** `Geom_Plane` surface, or `nil` if `normal` has zero (or near-zero) length.
+- **OCCT:** `GC_MakePlane(gp_Pnt, gp_Dir)`.
 - **Example:**
   ```swift
   let floor = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))

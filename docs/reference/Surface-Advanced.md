@@ -462,7 +462,11 @@ the axis.
 
 ### `Surface.planeFromPoints(_:_:_:)`
 
-Creates a plane surface through three points.
+Creates a plane surface through three points. Canonical implementation for the 3-point
+constructor pair — `planeFrom3Points(p1:p2:p3:)` (below) is a labeled-argument spelling and
+delegates here (#421); a ground-truth check against the pinned OCCT headers confirmed
+`GC_MakePlane` and `gce_MakePln`'s 3-point overloads agree on every case tried (well-separated,
+collinear, and coincident points).
 
 ```swift
 public static func planeFromPoints(
@@ -473,8 +477,8 @@ public static func planeFromPoints(
 ```
 
 - **Parameters:** `point1`, `point2`, `point3` — three non-collinear points.
-- **Returns:** Plane surface, or `nil` if points are collinear.
-- **OCCT:** `Geom_Plane` from `gp_Pln` (three-point constructor).
+- **Returns:** Plane surface, or `nil` if points are collinear (including coincident).
+- **OCCT:** `GC_MakePlane(gp_Pnt, gp_Pnt, gp_Pnt)`.
 - **Example:**
   ```swift
   if let plane = Surface.planeFromPoints(
@@ -488,7 +492,9 @@ public static func planeFromPoints(
 
 ### `Surface.planeFromPointNormal(point:normal:)`
 
-Creates a plane surface from a point and normal direction.
+Creates a plane surface from a point and normal direction. Canonical implementation for the
+point+normal constructor pair — [`Surface.plane(origin:normal:)`](Surface.md) is an
+unlabeled-positional spelling and delegates here (#421).
 
 ```swift
 public static func planeFromPointNormal(
@@ -498,8 +504,8 @@ public static func planeFromPointNormal(
 ```
 
 - **Parameters:** `point` — a point on the plane; `normal` — plane normal direction.
-- **Returns:** Plane surface, or `nil` on failure.
-- **OCCT:** `Geom_Plane` from `gp_Pln(gp_Pnt, gp_Dir)`.
+- **Returns:** Plane surface, or `nil` if `normal` has zero (or near-zero) length.
+- **OCCT:** `GC_MakePlane(gp_Pnt, gp_Dir)`.
 - **Example:**
   ```swift
   if let plane = Surface.planeFromPointNormal(
@@ -1191,7 +1197,8 @@ public static func planeFromEquation(
 
 ### `Surface.planeFrom3Points(p1:p2:p3:)`
 
-Creates a plane surface from 3 points using the `gce_MakePln` factory.
+Creates a plane surface from 3 points. A labeled-argument spelling of `planeFromPoints(_:_:_:)`
+(above) and delegates to it (#421).
 
 ```swift
 public static func planeFrom3Points(
@@ -1202,8 +1209,8 @@ public static func planeFrom3Points(
 ```
 
 - **Parameters:** `p1`, `p2`, `p3` — three non-collinear points.
-- **Returns:** Plane surface, or `nil` if points are collinear.
-- **OCCT:** `gce_MakePln(gp_Pnt, gp_Pnt, gp_Pnt)`.
+- **Returns:** Plane surface, or `nil` if points are collinear (including coincident).
+- **OCCT:** `GC_MakePlane(gp_Pnt, gp_Pnt, gp_Pnt)` (via `planeFromPoints`).
 - **Example:**
   ```swift
   if let plane = Surface.planeFrom3Points(
