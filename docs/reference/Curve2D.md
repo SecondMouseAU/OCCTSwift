@@ -527,6 +527,9 @@ public static func interpolate(through points: [SIMD2<Double>],
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
 
+[`interpolate(points:startTangent:endTangent:tolerance:)`](Curve2D-Analysis.md#interpolatepointsstarttangentendtangenttolerance)
+is a spelling of this with the `points:` argument label, and delegates here.
+
 - **Parameters:** `points` — interpolation points; `startTangent` — tangent at the first point; `endTangent` — tangent at the last point; `tolerance` — precision.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate::Load(startTangent, endTangent)` + `Perform()`.

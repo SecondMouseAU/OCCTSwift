@@ -921,7 +921,7 @@ directly to this method, so existing call sites get a migration warning rather t
 
 ---
 
-### `interpolate(points:startTangent:endTangent:)`
+### `interpolate(points:startTangent:endTangent:tolerance:)`
 
 Interpolates a 2D BSpline through a sequence of points with prescribed endpoint tangents.
 
@@ -929,11 +929,17 @@ Interpolates a 2D BSpline through a sequence of points with prescribed endpoint 
 public static func interpolate(
     points: [SIMD2<Double>],
     startTangent: SIMD2<Double>,
-    endTangent: SIMD2<Double>
+    endTangent: SIMD2<Double>,
+    tolerance: Double = 1e-6
 ) -> Curve2D?
 ```
 
-- **Parameters:** `points` — interpolation points; `startTangent`/`endTangent` — tangent directions at the first and last point.
+A spelling of [`interpolate(through:startTangent:endTangent:tolerance:)`](Curve2D.md) with the
+`points:` argument label, and it delegates to it — the two cannot produce different curves for
+the same input. Before #410 it was a second, independent `Geom2dAPI_Interpolate` call site with
+the tolerance hardcoded at `1e-6` and no parameter to change it.
+
+- **Parameters:** `points` — interpolation points; `startTangent`/`endTangent` — tangent directions at the first and last point; `tolerance` — interpolation tolerance (default `1e-6`, matching the value this method used to hardcode).
 - **Returns:** Interpolated BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate` (with tangent constraints).
 - **Example:**
