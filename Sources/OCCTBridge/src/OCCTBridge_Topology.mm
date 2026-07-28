@@ -896,14 +896,10 @@ int32_t OCCTCurve3DBSplineKnotSplits(OCCTCurve3DRef curve3D, int32_t continuityO
         if (bspline.IsNull()) return -1;
 
         GeomConvert_BSplineCurveKnotSplitting splitter(bspline, continuityOrder);
-        int32_t nbSplits = splitter.NbSplits();
-        int32_t count = std::min(nbSplits, maxParams);
-
-        for (int32_t i = 0; i < count; i++) {
-            int32_t knotIndex = splitter.SplitValue(i + 1);
-            outParams[i] = bspline->Knot(knotIndex);
-        }
-        return nbSplits;
+        return occtWriteKnotSplitParams(splitter.NbSplits(),
+            [&](int32_t i) { return splitter.SplitValue(i); },
+            [&](int32_t idx) { return bspline->Knot(idx); },
+            outParams, maxParams);
     } catch (...) {
         return -1;
     }
