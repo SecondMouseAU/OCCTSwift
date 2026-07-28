@@ -39,8 +39,23 @@ that path). The input's serialized BREP grows from **1676 to 1778 bytes** across
 Every unify entry point now works on a private copy (`BRepBuilderAPI_Copy`), so the caller's shape is
 untouched whatever the algorithm does to its own input: `Shape.unified()`, `Shape.simplified()`, and
 `UnifySameDomainBuilder`. No API change and no new parameter — the copy is unconditional, because
-"the input survives" is what every call site already assumed, and the copy costs a fraction of the
-merge it precedes.
+"the input survives" is what every call site already assumed.
+
+**What the copy costs.** A real fraction of the call, not a rounding error: measured here at 0.6 ms
+against 2.3 ms for the merge itself on an 84-face compound (28%), and review measurement on a
+600-face compound put it at 18% where there is real merging to do but 64% on a nothing-to-merge input
+— which matters because `unified()` is the standard post-boolean cleanup and often finds nothing.
+Peak memory doubles for the duration. Unconditional anyway: a `copyInput:` flag would put the
+silent-corruption path back within reach of anyone optimising a hot loop, and it can be added later
+if a caller measures this as a real problem.
+
+**And what it costs in identity.** The result now shares **no** sub-shapes with the input, even where
+nothing was merged — before this change an untouched face came back `IsSame` with the one it came
+from. `Shape.isSame(as:)`, `isPartner(with:)` and `isEqual(to:)` are public and consumers do map
+selections and attributes across by sub-shape identity, so that code has to key off geometry instead.
+This is the unavoidable price of the fix rather than a choice, but it is a behaviour change and is
+pinned by a test. `UnifySameDomainBuilder.keepShape(_:)` is unaffected: it still takes the input's own
+sub-shapes and maps them across for you.
 
 **Deduplication.** Three bridge call sites constructed `ShapeUpgrade_UnifySameDomain` independently
 (`OCCTShapeUnifySameDomain` and `OCCTShapeSimplify` in `OCCTBridge_Healing.mm`, the builder in
@@ -57,11 +72,23 @@ copy means mapping it onto its counterpart there; without that, every `keepShape
 kept nothing. `setSafeInputMode(_:)`'s doc comment, which claimed it "copies input shape to preserve
 original", was wrong on both counts and is corrected.
 
+**Sibling audit (so nobody files a speculative sweep):** the same input-consumption class was checked
+on the same fixture for `ShapeFix_Shape` (`healed()`, `fixed(tolerance:)`), `BRepAlgoAPI_Defeaturing`
+(`withoutSmallFaces(minArea:)`) and `ShapeUpgrade_ShapeDivideClosed` (`dividedClosedFaces()`). All
+four leave the input byte-identical. `ShapeUpgrade_UnifySameDomain` is the outlier, not the first of
+a family.
+
 Bridge-only fix: no OCCT kernel change, no xcframework rebuild, no new operations (count unchanged at
 4,258). New regression suite `Issue446UnifyInputMutationTests` (`OCCTShapeHealingTests`) asserts the
 input's serialized BREP is byte-identical across all three entry points, that a declined merge leaves
-the shape's validity/self-intersection/volume unchanged, and that `keepShape` still blocks a merge
-through the copy.
+the shape's validity/self-intersection/volume unchanged, that the merged result's geometry is
+unmoved, that the result no longer shares sub-shapes with the input, and that `keepShape` still
+blocks a merge through the copy (per-edge: the junction seam blocks it, a cap circle does not). Full
+`swift test`: 4474 tests in 1291 suites, all passing.
+
+Also fixed in passing: `docs/reference/Shape-Features.md` credited `withoutSmallFaces(minArea:)` to
+`ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`; `OCCTShapeRemoveSmallFaces` uses
+neither, it collects small faces by area and removes them with `BRepAlgoAPI_Defeaturing`.
 
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 

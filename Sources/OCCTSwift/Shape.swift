@@ -3180,6 +3180,12 @@ extension Shape {
     /// the result still holds exactly the shape they started with (#446 — the underlying OCCT
     /// algorithm rewrites sub-shapes of its input, which used to reach the receiver).
     ///
+    /// The price of that copy is **identity**: the result shares no sub-shapes with the receiver,
+    /// even where nothing was merged, so `isSame(as:)`/`isPartner(with:)`/`isEqual(to:)` answer
+    /// `false` for faces that came through untouched. Code that maps selections or attributes from
+    /// the input onto the result by sub-shape identity has to key off geometry instead. Before #446
+    /// an unmerged face came back identical — but so did the damage this method did to it.
+    ///
     /// - Parameters:
     ///   - unifyEdges: Whether to merge edges on same curve (default: true)
     ///   - unifyFaces: Whether to merge faces on same surface (default: true)

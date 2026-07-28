@@ -15580,6 +15580,11 @@ public final class UnifySameDomainBuilder: @unchecked Sendable {
     /// the result still holds exactly the shape they passed in (#446 — the underlying OCCT
     /// algorithm rewrites sub-shapes of its input, which used to reach the caller's shape).
     ///
+    /// The price of that copy is **identity**: `shape` (the result of ``shape``, that is) shares no
+    /// sub-shapes with the input, even where nothing was merged, so `isSame(as:)` and friends answer
+    /// `false` for faces that came through untouched. `keepShape(_:)` still takes the input's own
+    /// sub-shapes — it maps them across for you.
+    ///
     /// ```swift
     /// let unifier = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
     /// unifier.setAngularTolerance(10.0 * .pi / 180)

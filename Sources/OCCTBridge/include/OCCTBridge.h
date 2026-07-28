@@ -18857,6 +18857,17 @@ void OCCTPipeShellSetBuildHistory(OCCTPipeShellRef _Nonnull ps, bool enabled);
 typedef void* OCCTUnifySameDomainRef;
 
 /// Create a UnifySameDomain builder.
+///
+/// The builder unifies a private COPY of `shape` — the algorithm rewrites its input, and those
+/// rewrites used to reach the caller's shape (#446). `OCCTUnifySameDomainKeepShape` takes the
+/// CALLER's sub-shapes and maps them onto the copy.
+///
+/// NOTE: despite the `_Nonnull` annotation this can return null — on a construction failure (which
+/// predates #446) and now also if the input cannot be copied. Every accessor below tolerates a null
+/// builder, and `OCCTUnifySameDomainRelease` accepts one, so a null degrades to "does nothing,
+/// answers null" rather than crashing. The annotation is kept for source compatibility: correcting
+/// it to `_Nullable` would make the Swift `UnifySameDomainBuilder.init` failable, which is a
+/// breaking API change for a path no caller can hit with a valid shape.
 OCCTUnifySameDomainRef _Nonnull OCCTUnifySameDomainCreate(OCCTShapeRef _Nonnull shape,
                                                            bool unifyEdges, bool unifyFaces, bool concatBSplines);
 

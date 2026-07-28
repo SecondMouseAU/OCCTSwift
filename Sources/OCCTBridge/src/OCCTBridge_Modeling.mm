@@ -8736,9 +8736,11 @@ OCCTShapeRef OCCTThruSectionsGeneratedFace(OCCTThruSectionsRef ref, OCCTShapeRef
 // --- UnifySameDomain builder ---
 
 struct OCCTUnifySameDomain {
-    ShapeUpgrade_UnifySameDomain* usd;
-    // #446: the algorithm rewrites its input, so it is given a private copy. The copier outlives
-    // the copy so KeepShape can map the caller's sub-shapes onto their counterparts inside it.
+    ShapeUpgrade_UnifySameDomain* usd = nullptr;
+    // #446: the algorithm rewrites its input, so it is given a private copy. The copier — and with
+    // it the copy and the modifier's sub-shape map — is held for the builder's whole lifetime, not
+    // just the copy call: that is what KeepShape needs to map the caller's own sub-shapes onto
+    // their counterparts inside the copy. Costs one duplicated shape per live builder.
     BRepBuilderAPI_Copy copier;
 };
 
@@ -8747,11 +8749,13 @@ struct OCCTUnifySameDomain {
 OCCTUnifySameDomainRef OCCTUnifySameDomainCreate(OCCTShapeRef shape, bool unifyEdges, bool unifyFaces, bool concatBSplines) {
     if (!shape) return nullptr;
     try {
-        auto result = new OCCTUnifySameDomain();
+        // unique_ptr, not a raw new: the wrapper now owns a whole shape copy, so leaking it when
+        // the algorithm's constructor throws is no longer one stray pointer.
+        std::unique_ptr<OCCTUnifySameDomain> result(new OCCTUnifySameDomain());
         TopoDS_Shape work = occtUnifySameDomainInput(shape->shape, result->copier);
-        if (work.IsNull()) { delete result; return nullptr; }
+        if (work.IsNull()) return nullptr;
         result->usd = new ShapeUpgrade_UnifySameDomain(work, unifyEdges, unifyFaces, concatBSplines);
-        return (OCCTUnifySameDomainRef)result;
+        return (OCCTUnifySameDomainRef)result.release();
     } catch (...) { return nullptr; }
 }
 

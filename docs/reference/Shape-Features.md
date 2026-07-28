@@ -1398,6 +1398,8 @@ public func unified(unifyEdges: Bool = true,
   - `concatBSplines` — concatenate adjacent B-spline edges / faces.
 - **Returns:** Unified shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain` (via `OCCTShapeUnifySameDomain`).
+- **The receiver is not modified.** The merge runs on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape — so discarding the result was not enough to keep it (#446).
+- **The result shares no sub-shapes with the receiver**, even where nothing was merged: that is the price of the copy, and it means `isSame(as:)`/`isPartner(with:)`/`isEqual(to:)` answer `false` for faces that came through untouched. Map selections and attributes by geometry, not by sub-shape identity.
 - **Example:**
   ```swift
   let result = box - cyl1 - cyl2
@@ -1416,7 +1418,7 @@ public func withoutSmallFaces(minArea: Double) -> Shape?
 
 - **Parameters:** `minArea` — minimum face area; faces below this are removed.
 - **Returns:** Cleaned shape, or `nil` on failure.
-- **OCCT:** `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain` (via `OCCTShapeRemoveSmallFaces`).
+- **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveSmallFaces`) — the small faces are collected by area and removed by defeaturing. (Corrected here: this row previously credited `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`, neither of which the implementation uses.)
 
 ---
 
@@ -1431,6 +1433,7 @@ public func simplified(tolerance: Double = 1e-6) -> Shape?
 - **Parameters:** `tolerance` — tolerance for simplification.
 - **Returns:** Simplified shape, or `nil` on failure.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain` + `ShapeFix_Shape` (via `OCCTShapeSimplify`).
+- **The receiver is not modified**, and the result shares no sub-shapes with it — see `unified(...)` above (#446).
 
 ---
 
