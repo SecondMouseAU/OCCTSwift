@@ -1189,6 +1189,22 @@ extension Curve2D {
             Int32(maxDegree), Int32(maxSegments)) else { return nil }
         return Curve2D(handle: h)
     }
+
+    /// Deprecated spelling of `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.
+    ///
+    /// Per `docs/SEMVER.md`, renaming a public method is a MAJOR-triggering breaking change; this
+    /// alias keeps existing call sites source-compatible (with a compiler warning steering them
+    /// to the clearer name) rather than forcing that bump immediately. Byte-for-byte identical
+    /// behavior — same bridge call, same defaults, forwards directly.
+    @available(*, deprecated, renamed: "approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)")
+    public func approximated(
+        first: Double, last: Double,
+        toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
+        maxDegree: Int = 8, maxSegments: Int = 100
+    ) -> Curve2D? {
+        approximatedInRange(first: first, last: last, toleranceU: toleranceU, toleranceV: toleranceV,
+                             maxDegree: maxDegree, maxSegments: maxSegments)
+    }
 }
 
 // ============================================================================
