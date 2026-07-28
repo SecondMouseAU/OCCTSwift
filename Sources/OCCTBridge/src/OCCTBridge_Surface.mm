@@ -286,16 +286,14 @@ bool OCCTSurfaceGetNormal(OCCTSurfaceRef s, double u, double v,
 
 // Analytic Surfaces
 
+// Exactly OCCTSurfacePlaneFromPointNormal (GC_MakePlane), a second, independent point+normal
+// plane constructor. Both throw/catch identically for a degenerate normal (ground-truthed for
+// #421: GC_MakePlane's point+normal overload adds no check beyond gp_Dir's own construction-time
+// validity), so forwarding is behaviour-preserving. Keeps the C ABI while leaving one
+// implementation.
 OCCTSurfaceRef OCCTSurfaceCreatePlane(double px, double py, double pz,
                                        double nx, double ny, double nz) {
-    try {
-        gp_Pnt origin(px, py, pz);
-        gp_Dir normal(nx, ny, nz);
-        Handle(Geom_Plane) plane = new Geom_Plane(origin, normal);
-        return new OCCTSurface(plane);
-    } catch (...) {
-        return nullptr;
-    }
+    return OCCTSurfacePlaneFromPointNormal(px, py, pz, nx, ny, nz);
 }
 
 OCCTSurfaceRef OCCTSurfaceCreateCylinder(double px, double py, double pz,
@@ -3292,15 +3290,14 @@ OCCTSurfaceRef _Nullable OCCTGceMakePlnFromEquation(double a, double b, double c
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTSurfacePlaneFromPoints (GC_MakePlane), a second, independent 3-point plane
+// constructor. Ground-truthed for #421 (control, collinear, collinear-uneven, and both
+// coincident-point cases): GC_MakePlane and gce_MakePln's 3-point overloads agree on every case
+// tested, so forwarding is behaviour-preserving. Keeps the C ABI while leaving one implementation.
 OCCTSurfaceRef _Nullable OCCTGceMakePlnFrom3Points(double p1x, double p1y, double p1z,
                                                     double p2x, double p2y, double p2z,
                                                     double p3x, double p3y, double p3z) {
-    try {
-        gce_MakePln mp(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), gp_Pnt(p3x, p3y, p3z));
-        if (!mp.IsDone()) return nullptr;
-        Handle(Geom_Plane) plane = new Geom_Plane(mp.Value());
-        return (OCCTSurfaceRef)new OCCTSurface{plane};
-    } catch (...) { return nullptr; }
+    return OCCTSurfacePlaneFromPoints(p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z);
 }
 
 // MARK: - Geom_RectangularTrimmedSurface handle (v0.86)
