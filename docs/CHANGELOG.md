@@ -46,11 +46,19 @@ retry of the other orientation for non-planar hosts where no plane can be fitted
 cuts, and the sampler both tests share is now one helper (`occtSampleWirePoints`) rather than two
 copies of the same traversal.
 
+**One behaviour change beyond the two bugs:** when *neither* winding yields a `BRepCheck`-valid face,
+`faceAddHole` now returns nil instead of the invalid face. That case is not a winding question — the
+wire does not lie inside the face's boundary, and no orientation makes it a hole — and returning a
+non-nil invalid face is exactly what #234 established breaks callers later. Pre-existing behaviour
+(the old code never validated its result at all), tightened here because the winding retry introduced
+the validity check anyway.
+
 Bridge-only fix: no OCCT kernel change, no xcframework rebuild, no new operations (count unchanged at
 4,258). New regression suite `Issue397CircularHoleTests` (`OCCTModelingTests`) covers `Wire.circle`
-and two-arc holes in both windings, the extruded-solid volume, same-winding polygon holes, and the
-zero-area curved wire that must still be declined; `Issue234DegenerateHoleTests` passes unchanged.
-Full `swift test`: 4473 tests in 1291 suites, all passing.
+and two-arc holes in both windings, the extruded-solid volume, same-winding polygon holes, the
+zero-area curved wire that must still be declined, and the boundary-crossing wire that no winding can
+turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test`: 4474 tests in
+1291 suites, all passing.
 
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 

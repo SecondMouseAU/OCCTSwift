@@ -9365,8 +9365,10 @@ extension Shape {
     /// holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
     /// ```
     ///
-    /// - Returns: The face with the hole added, or nil if the wire encloses no area (a degenerate
-    ///   hole is declined rather than producing an invalid face — see #234).
+    /// - Returns: The face with the hole added, or nil if the wire cannot serve as a hole for this
+    ///   face — it encloses no area (see #234), or it does not lie inside the face's boundary, so
+    ///   neither winding yields a valid face. A degenerate or unusable hole is declined rather than
+    ///   returned as an invalid face, which is what breaks callers downstream.
     public static func faceAddHole(face: Shape, wire: Shape) -> Shape? {
         guard let ref = OCCTMakeFaceAddHole(face.handle, wire.handle) else { return nil }
         return Shape(handle: ref)

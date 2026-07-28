@@ -8012,12 +8012,15 @@ OCCTShapeRef OCCTMakeFaceAddHole(OCCTShapeRef face, OCCTShapeRef wire) {
         TopoDS_Face holed = build(reverse);
         if (holed.IsNull() || !BRepCheck_Analyzer(holed).IsValid()) {
             // Non-planar host, or a winding test that couldn't decide: take the other orientation
-            // when it is the one that yields a valid face.
+            // when it is the one that yields a valid face. If NEITHER does, the wire is not a usable
+            // hole for this face at all (it crosses the boundary, say) and no winding will make it
+            // one — decline it, rather than hand back a face that is invalid for a reason this
+            // function cannot fix. That is the same call the degenerate guard above makes, and what
+            // #234 established: a non-nil invalid face is exactly what breaks the caller later.
             TopoDS_Face alt = build(!reverse);
-            if (!alt.IsNull() && BRepCheck_Analyzer(alt).IsValid()) holed = alt;
-            else if (holed.IsNull()) holed = alt;
+            if (alt.IsNull() || !BRepCheck_Analyzer(alt).IsValid()) return nullptr;
+            holed = alt;
         }
-        if (holed.IsNull()) return nullptr;
         auto result = new OCCTShape();
         result->shape = holed;
         return result;

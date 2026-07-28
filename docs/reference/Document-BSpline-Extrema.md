@@ -1284,7 +1284,7 @@ public static func faceAddHole(face: Shape, wire: Shape) -> Shape?
 ```
 
 - **Parameters:** `face` — the existing face; `wire` — hole boundary wire (must lie on the face surface). Polygonal or curved (a `Wire.circle`, an arc, joined arcs), wound either way.
-- **Returns:** New face with the hole added, or `nil` if the wire encloses no area (a degenerate hole is declined rather than producing an invalid face — #234).
+- **Returns:** New face with the hole added, or `nil` if the wire cannot serve as a hole for this face — it encloses no area (#234), or it does not lie inside the face's boundary, so neither winding yields a valid face. A degenerate or unusable hole is declined rather than returned as an invalid face, which is what breaks callers downstream.
 - **OCCT:** `BRepBuilderAPI_MakeFace::Add`.
 - **Winding:** the hole always *removes* area. `MakeFace::Add` does no reorienting of its own, so a wire wound the same way as the face's outer boundary would be added as a second outer loop; the wrapper compares windings in the face's plane and reverses the wire when needed (#397).
 
