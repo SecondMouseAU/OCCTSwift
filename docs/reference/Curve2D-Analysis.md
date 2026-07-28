@@ -1009,17 +1009,21 @@ public static func approximate(
 
 ### `arcLength(from:to:)`
 
-Computes the arc length of this curve between two parameter values. `u1` must not exceed `u2` —
-unlike `length(from:to:)`, which tolerates either order — since this entry point is backed by
-`Geom2dAdaptor_Curve`'s range-checked constructor.
+Computes the arc length of this curve between two parameter values (non-optional). `u1` must not
+exceed `u2` — unlike `length(from:to:)`, which tolerates either order — since this entry point is
+backed by `Geom2dAdaptor_Curve`'s range-checked constructor. Unlike `Curve3D.arcLength(from:to:)`,
+this does not delegate to `length(from:to:)`: the two use genuinely different adaptor
+constructions (range-checked vs. unrestricted), so collapsing them onto one call would silently
+drop the order validation.
 
 ```swift
-public func arcLength(from u1: Double, to u2: Double) -> Double?
+public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
 - **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`.
-- **Returns:** Arc length value, or `nil` on failure (e.g. a reversed range) — never a sentinel
-  `0.0` that could be mistaken for a genuine zero-length segment.
+- **Returns:** Arc length value, or `-1.0` on failure (e.g. a reversed range) — arc length is
+  otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
+  zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
 - **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
 - **Example:**
   ```swift

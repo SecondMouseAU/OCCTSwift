@@ -2972,11 +2972,7 @@ struct CurveLengthTests {
                                             endTangent: SIMD2(1, -1)) {
             let domain = curve.domain
             let len = curve.arcLength(from: domain.lowerBound, to: domain.upperBound)
-            if let len {
-                #expect(len > 0)
-            } else {
-                Issue.record("arcLength(from:to:) unexpectedly failed for a forward-ordered range")
-            }
+            #expect(len > 0)
         }
     }
 }

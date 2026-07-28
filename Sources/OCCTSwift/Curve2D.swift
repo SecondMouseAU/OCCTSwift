@@ -2354,13 +2354,17 @@ extension Curve2D {
         return Curve2D(handle: ref)
     }
 
-    /// Compute the arc length of this curve between parameters `u1` and `u2`. Unlike
-    /// `length(from:to:)`, `u1` must not exceed `u2`. Returns `nil` on failure (a reversed
-    /// range, a released curve, or any other computation error) rather than a sentinel `0.0`
-    /// that could be mistaken for a genuine zero-length segment.
-    public func arcLength(from u1: Double, to u2: Double) -> Double? {
+    /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
+    ///
+    /// Unlike `length(from:to:)`, `u1` must not exceed `u2` — the underlying computation uses a
+    /// range-checked adaptor that fails on a reversed range. Returns `-1.0` on failure (a
+    /// reversed range, a released curve, or any other computation error) — arc length is
+    /// otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use `length(from:to:)`
+    /// directly if you need an optional rather than a sentinel value (and order tolerance).
+    public func arcLength(from u1: Double, to u2: Double) -> Double {
         let l = OCCTCurve2DLength(handle, u1, u2)
-        return l >= 0 ? l : nil
+        return l >= 0 ? l : -1.0
     }
 
     /// Split this curve at C1 discontinuities.
