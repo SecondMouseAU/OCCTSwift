@@ -706,6 +706,12 @@ extension Curve3D {
     /// drops below `minContinuity` returns exactly those two rather than an empty array. Any
     /// further entries are interior knots where the curve really is less continuous than asked.
     ///
+    /// A curve's discontinuities are inherently 1D, so parameter values are the natural (and
+    /// only sensible) shape here -- unlike `Surface.knotSplitting` (2D, per-direction counts
+    /// *and* parameters) or `LawFunction.knotSplitting`/`knotSplitParameters` (1D, but split
+    /// across two methods for backward compatibility). See #403 for why these three siblings
+    /// return different shapes.
+    ///
     /// ```swift
     /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing
     /// // below C3 reports anything beyond the two end knots.

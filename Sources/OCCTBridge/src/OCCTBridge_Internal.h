@@ -19,6 +19,7 @@
 #ifndef OCCTBridge_Internal_h
 #define OCCTBridge_Internal_h
 
+#include <algorithm>
 #include <mutex>
 #include <vector>
 
@@ -357,6 +358,29 @@ bool occtFillingAddConstraint(Filler& filling,
     }
     filling.Add(edge, order, isBound);
     return true;
+}
+
+// === #403: shared BSpline knot-split-to-parameter conversion ===
+//
+// Curve3D.continuityBreaks, LawFunction.knotSplitParameters, and Surface.knotSplitting
+// each wrap a different OCCT *KnotSplitting analyzer (GeomConvert_BSplineCurveKnotSplitting,
+// Law_BSplineKnotSplitting, GeomConvert_BSplineSurfaceKnotSplitting -- the last one calling
+// this twice, once per parametric direction) but all three reduce to the identical loop:
+// walk the N computed split points, convert each one's knot-table index to a real
+// parameter value, write up to maxParams of them, and report the true split count even
+// when writing was truncated (so a caller can always retry with a bigger buffer).
+//
+// splitIndexAt(i) returns the underlying knot-table index for split i (1-based, matching
+// every *KnotSplitting class's own SplitValue/USplitValue/VSplitValue numbering);
+// knotAt(index) converts that knot-table index to an actual parameter value.
+template <class SplitIndexAt, class KnotAt>
+int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, KnotAt knotAt,
+                                  double* outParams, int32_t maxParams) {
+    int32_t count = std::min(nbSplits, maxParams);
+    for (int32_t i = 0; i < count; i++) {
+        outParams[i] = knotAt(splitIndexAt(i + 1));
+    }
+    return nbSplits;
 }
 
 #endif /* OCCTBridge_Internal_h */
