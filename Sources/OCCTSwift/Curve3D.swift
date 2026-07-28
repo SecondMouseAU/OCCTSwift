@@ -399,13 +399,25 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Arc length of the full curve
+    /// Arc length of the full curve.
+    ///
+    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a
+    /// numeric result. `totalArcLength` delegates to this and collapses failure back to `-1.0`
+    /// for source compatibility — prefer this property when you need to tell "failed" apart
+    /// from "genuinely zero".
     public var length: Double? {
         let l = OCCTCurve3DGetLength(handle)
         return l >= 0 ? l : nil
     }
 
-    /// Arc length between two parameters
+    /// Arc length between two parameters.
+    ///
+    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a
+    /// numeric result. `arcLength(from:to:)` and `arcLengthBetween(_:_:)` both delegate to this
+    /// and collapse failure back to `-1.0` for source compatibility — prefer this method when
+    /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
@@ -1681,8 +1693,14 @@ extension Curve3D {
     }
 
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
+    ///
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
+    /// if the underlying computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
+    /// result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional
+    /// rather than a sentinel value.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
-        OCCTCurve3DLength(handle, u1, u2)
+        length(from: u1, to: u2) ?? -1.0
     }
 
     /// Find the parameter at a given arc length distance from a starting parameter.
@@ -1698,13 +1716,24 @@ extension Curve3D {
     }
 
     /// Total arc length of the curve within its domain.
+    ///
+    /// Delegates to `length`, the failure-distinguishing entry point. Returns `-1.0` if the
+    /// underlying computation fails — arc length is otherwise always non-negative, so this is
+    /// an unambiguous failure sentinel, never confusable with a genuine zero-length curve. Use
+    /// `length` directly if you need an optional rather than a sentinel value.
     public var totalArcLength: Double {
-        OCCTCurve3DArcLength(handle)
+        length ?? -1.0
     }
 
     /// Arc length between two parameters.
+    ///
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
+    /// if the underlying computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
+    /// interval (e.g. `param1 == param2`). Use `length(from:to:)` directly if you need an
+    /// optional rather than a sentinel value.
     public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double {
-        OCCTCurve3DArcLengthBetween(handle, param1, param2)
+        length(from: param1, to: param2) ?? -1.0
     }
 
     /// Find the parameter of the closest point on this curve to a given point.
