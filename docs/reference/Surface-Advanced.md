@@ -1113,7 +1113,10 @@ public func extremaSSPoint(other: Surface, index: Int) -> Curve3D.ExtremaPointPa
 
 ### `Surface.coneFrom2PointsRadii(p1:p2:radius1:radius2:)`
 
-Creates a conical surface from 2 axis points and 2 radii using the `gce_MakeCone` factory.
+Creates a conical surface from 2 axis points and 2 radii. Equivalent to
+`conicalSurface(point1:point2:r1:r2:)` — as of #420 both call the same
+`GC_MakeConicalSurface` construction, kept as a separate `gce_Make`-style
+entry point.
 
 ```swift
 public static func coneFrom2PointsRadii(
@@ -1126,7 +1129,7 @@ public static func coneFrom2PointsRadii(
 
 - **Parameters:** `p1`, `p2` — axis points; `radius1` — radius at `p1`; `radius2` — radius at `p2`.
 - **Returns:** Conical surface, or `nil` on failure.
-- **OCCT:** `gce_MakeCone(gp_Pnt, gp_Pnt, Standard_Real, Standard_Real)`.
+- **OCCT:** `GC_MakeConicalSurface(gp_Pnt, gp_Pnt, Standard_Real, Standard_Real)`.
 - **Example:**
   ```swift
   if let cone = Surface.coneFrom2PointsRadii(
@@ -1140,7 +1143,10 @@ public static func coneFrom2PointsRadii(
 
 ### `Surface.cylinderFrom3Points(p1:p2:p3:)`
 
-Creates a cylindrical surface from 3 points using the `gce_MakeCylinder` factory.
+Creates a cylindrical surface from 3 points. Equivalent to
+`cylindricalSurface(point1:point2:point3:)` — as of #420 both call the same
+`GC_MakeCylindricalSurface` construction, kept as a separate `gce_Make`-style
+entry point.
 
 ```swift
 public static func cylinderFrom3Points(
@@ -1154,7 +1160,7 @@ The axis passes through `p1` and `p2`; `p3` defines the radius (its distance to 
 
 - **Parameters:** `p1`, `p2` — axis points; `p3` — radius-defining point.
 - **Returns:** Cylindrical surface, or `nil` on failure.
-- **OCCT:** `gce_MakeCylinder(gp_Pnt, gp_Pnt, gp_Pnt)`.
+- **OCCT:** `GC_MakeCylindricalSurface(gp_Pnt, gp_Pnt, gp_Pnt)`.
 - **Example:**
   ```swift
   if let cyl = Surface.cylinderFrom3Points(
