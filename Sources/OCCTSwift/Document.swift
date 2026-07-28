@@ -6277,7 +6277,7 @@ public enum IntAna {
                                 torusAxis.x, torusAxis.y, torusAxis.z,
                                 majorRadius, minorRadius, buf.baseAddress!)
         }
-        return (0..<Int(n)).map { i in SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]) }
+        return unpackSIMD3(buffer, count: Int(n))
     }
 }
 

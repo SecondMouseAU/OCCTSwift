@@ -2003,20 +2003,19 @@ public final class BRepGraph: @unchecked Sendable {
 
         guard result > 0 else { return nil }
 
-        var positions = [SIMD3<Double>]()
-        positions.reserveCapacity(total)
-        var normals = [SIMD3<Double>]()
-        normals.reserveCapacity(total)
-        for i in 0..<total {
-            positions.append(SIMD3(posBuffer[i * 3], posBuffer[i * 3 + 1], posBuffer[i * 3 + 2]))
-            normals.append(SIMD3(nrmBuffer[i * 3], nrmBuffer[i * 3 + 1], nrmBuffer[i * 3 + 2]))
-        }
+        // Unpack only the actually-written count (`result`), not the requested `total` — today
+        // the bridge is all-or-nothing so the two coincide, but nothing should assume that stays
+        // true (see #419). Truncate the scalar buffers to match for the same reason: all four
+        // outputs must agree on how many samples are actually valid.
+        let written = Int(result)
+        let positions: [SIMD3<Double>] = unpackSIMD3(posBuffer, count: written)
+        let normals: [SIMD3<Double>] = unpackSIMD3(nrmBuffer, count: written)
 
         return FaceGridSample(
             positions: positions,
             normals: normals,
-            gaussianCurvatures: gaussBuffer,
-            meanCurvatures: meanBuffer,
+            gaussianCurvatures: Array(gaussBuffer.prefix(written)),
+            meanCurvatures: Array(meanBuffer.prefix(written)),
             uSamples: uSamples,
             vSamples: vSamples
         )
@@ -2036,12 +2035,7 @@ public final class BRepGraph: @unchecked Sendable {
             OCCTBRepGraphSampleEdgeCurve(handle, Int32(edgeIndex), Int32(count), buf.baseAddress!)
         }
         guard result > 0 else { return [] }
-        var points = [SIMD3<Double>]()
-        points.reserveCapacity(Int(result))
-        for i in 0..<Int(result) {
-            points.append(SIMD3(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2]))
-        }
-        return points
+        return unpackSIMD3(buffer, count: Int(result))
     }
 
     // MARK: - Durable Identity (UID / RefUID / ItemUID) — OCCT 8.0.0p1

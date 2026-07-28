@@ -12894,14 +12894,8 @@ public func mergedMeshNodes(from shape: Shape,
 
     let nv = Int(nVerts)
     let nt = Int(triCount)
-    var verts = [SIMD3<Float>]()
-    verts.reserveCapacity(nv)
-    var norms = [SIMD3<Float>]()
-    norms.reserveCapacity(nv)
-    for i in 0..<nv {
-        verts.append(SIMD3(vertices[i*3], vertices[i*3+1], vertices[i*3+2]))
-        norms.append(SIMD3(normals[i*3], normals[i*3+1], normals[i*3+2]))
-    }
+    let verts: [SIMD3<Float>] = unpackSIMD3(vertices, count: nv)
+    let norms: [SIMD3<Float>] = unpackSIMD3(normals, count: nv)
     let idxSlice = Array(indices.prefix(nt * 3))
 
     return MergedMeshData(vertices: verts, normals: norms, indices: idxSlice,
