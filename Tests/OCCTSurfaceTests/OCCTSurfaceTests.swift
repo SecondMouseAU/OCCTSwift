@@ -5591,3 +5591,59 @@ struct SurfaceCurvatureParityTests {
         }
     }
 }
+
+// MARK: - #406: Surface.approximated defaults now match Curve3D/Curve2D.approximated
+
+/// Before #406, `Surface.approximated`'s defaults (`tolerance: 0.01`, `maxDegree: 10`) silently
+/// diverged from `Curve3D.approximated`/`Curve2D.approximated` (`tolerance: 1e-3`, `maxDegree: 8`)
+/// with no documented rationale. Manual measurement against analytic primitives and a 40x40-point
+/// BSpline fit found no case where the tighter shared values fail or cost meaningfully more, so
+/// the divergence was drift rather than a deliberate accuracy/cost tradeoff — `Surface.approximated`
+/// now shares the same defaults.
+@Suite("Surface.approximated defaults match Curve3D/Curve2D (#406)")
+struct SurfaceApproximateDefaultsParityTests {
+
+    @Test("Default call succeeds and respects the shared maxDegree cap")
+    func defaultCallRespectsSharedMaxDegree() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        // No explicit tolerance/maxDegree: exercises the *default* values directly.
+        let approx = sphere.approximated()
+        #expect(approx != nil)
+        if let approx = approx {
+            #expect(approx.uDegree <= 8)
+            #expect(approx.vDegree <= 8)
+        }
+    }
+
+    @Test("Default call is equivalent to an explicit tolerance: 1e-3, maxDegree: 8 call")
+    func defaultCallMatchesExplicitSharedValues() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let byDefault = sphere.approximated()
+        let explicit = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
+        #expect(byDefault != nil)
+        #expect(explicit != nil)
+        if let a = byDefault, let b = explicit {
+            #expect(a.uDegree == b.uDegree)
+            #expect(a.vDegree == b.vDegree)
+        }
+    }
+
+    @Test("Tighter shared defaults still succeed on every primitive the old looser defaults handled")
+    func tighterDefaultsSucceedOnCommonSurfaces() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        #expect(sphere.approximated() != nil)
+
+        if let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
+                                      majorRadius: 10, minorRadius: 3) {
+            #expect(torus.approximated() != nil)
+        }
+        if let cylinder = Surface.trimmedCylinder(origin: .zero, direction: SIMD3(0, 0, 1),
+                                                    radius: 5, height: 20) {
+            #expect(cylinder.approximated() != nil)
+        }
+        if let cone = Surface.trimmedCone(point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
+                                           r1: 5, r2: 2) {
+            #expect(cone.approximated() != nil)
+        }
+    }
+}
