@@ -563,12 +563,28 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Conversion Extras
 
-    /// Re-approximate this curve as a B-spline with controlled degree and segments.
+    /// Re-approximate this curve's whole parameter domain as a B-spline, with a single
+    /// scalar tolerance and explicit continuity control.
+    ///
+    /// Wraps `Geom2dConvert_ApproxCurve`, which fits the curve's entire native range in one
+    /// pass. This is a **different OCCT algorithm** from
+    /// ``approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)``, not a
+    /// whole-domain shorthand for it — the two aren't interchangeable by adding or dropping a
+    /// range, and their tolerance defaults (`1e-3` here vs. `1e-6` there) are not comparable:
+    /// this one bounds a single whole-curve error, the other bounds independent per-axis error
+    /// on a restricted range.
+    ///
     /// - Parameters:
-    ///   - tolerance: Maximum approximation error
+    ///   - tolerance: Maximum approximation error, applied over the whole curve
     ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
+    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let approx = circle.approximated(tolerance: 1e-3, continuity: 2)
+    /// ```
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve2D? {
         guard let h = OCCTCurve2DApproximate(handle, tolerance, Int32(continuity),
@@ -1135,17 +1151,35 @@ extension Curve2D {
         OCCTCurve2DSimplifyBSpline(handle, tolerance)
     }
 
-    /// Approximate this 2D curve as a BSpline.
+    /// Approximate an explicit parameter sub-range of this 2D curve as a BSpline, with
+    /// independent U/V tolerances.
+    ///
+    /// Wraps `Approx_Curve2d`, which fits only `[first, last]` and tracks separate U/V error
+    /// bounds. This is a **different OCCT algorithm** from
+    /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)``, not that method with an
+    /// added range — a caller cannot migrate incrementally between the two by adding
+    /// `first`/`last`, since switching overloads changes the algorithm, the tolerance
+    /// semantics, and the default tolerance magnitude (`1e-6` here vs. `1e-3` there) all at
+    /// once. Continuity is fixed at C2 and is not configurable through this overload; use
+    /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)`` if you need a different
+    /// continuity order.
     ///
     /// - Parameters:
-    ///   - first: First parameter
-    ///   - last: Last parameter
+    ///   - first: First parameter of the sub-range to approximate
+    ///   - last: Last parameter of the sub-range to approximate
     ///   - toleranceU: Tolerance in U direction (default 1e-6)
     ///   - toleranceV: Tolerance in V direction (default 1e-6)
     ///   - maxDegree: Maximum BSpline degree (default 8)
     ///   - maxSegments: Maximum number of segments (default 100)
-    /// - Returns: Approximated BSpline curve, or nil on failure
-    public func approximated(
+    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 10)!
+    /// let d = circle.domain
+    /// let approx = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+    ///                                          toleranceU: 1e-6, toleranceV: 1e-6)
+    /// ```
+    public func approximatedInRange(
         first: Double, last: Double,
         toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
         maxDegree: Int = 8, maxSegments: Int = 100
