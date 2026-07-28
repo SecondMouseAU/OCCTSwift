@@ -115,7 +115,7 @@ public func inflectionPoints() -> [Double]
 Capped internally at 256 results.
 
 - **Returns:** Array of parameter values at inflection points (may be empty).
-- **OCCT:** `Geom2dLProp_CLProps2d` inflection detection.
+- **OCCT:** `GeomLProp_CurAndInf2d::PerformInf`.
 - **Example:**
   ```swift
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {
@@ -136,7 +136,7 @@ public func curvatureExtrema() -> [Curve2DSpecialPoint]
 Returns `Curve2DSpecialPoint` values with `.minCurvature` or `.maxCurvature` type classification. Capped at 256 results.
 
 - **Returns:** Array of special points (may be empty).
-- **OCCT:** `Geom2dLProp_CLProps2d` curvature extrema.
+- **OCCT:** `GeomLProp_CurAndInf2d::PerformCurExt`.
 - **Example:**
   ```swift
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {
@@ -159,7 +159,7 @@ public func allSpecialPoints() -> [Curve2DSpecialPoint]
 Capped internally at 256 results.
 
 - **Returns:** Array of `Curve2DSpecialPoint` values (`.inflection`, `.minCurvature`, or `.maxCurvature`).
-- **OCCT:** `Geom2dLProp_CLProps2d`.
+- **OCCT:** `GeomLProp_CurAndInf2d::Perform`.
 - **Example:**
   ```swift
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {
@@ -622,13 +622,18 @@ Capped at 32 results.
 
 ## Geom2dLProp: Curvature Inflection/Extrema
 
-Higher-resolution curvature feature detection via `Geom2dLProp_NumericCurInf2d`.
+`CurInfPoint`/`CurInfType` are an alternate vocabulary for the same `curvatureExtrema()`/
+`inflectionPoints()` results above — same `GeomLProp_CurAndInf2d` computation, no second
+solver run. `curvatureExtremaDetailed()`/`inflectionPointsDetailed()` delegate to those two
+functions and translate each `Curve2DSpecialPoint` into a `CurInfPoint` via `CurInfType.init(_:)`.
 
 ---
 
 ### `CurInfType`
 
-Enum classifying a curvature feature point.
+Enum classifying a curvature feature point. Numbers the same 3 cases as
+`Curve2DSpecialPointType` in a different order; `CurInfType.init(_:)` is the pinned mapping
+between them (see the `Geom2dLProp Curvature Analysis` test suite for the parity tests).
 
 ```swift
 public enum CurInfType: Int32, Sendable {
@@ -661,10 +666,12 @@ Finds local curvature extrema with min/max type classification.
 public func curvatureExtremaDetailed() -> [CurInfPoint]
 ```
 
-Unlike `curvatureExtrema()` (which returns `Curve2DSpecialPoint`), this returns `CurInfPoint` values using the `CurInfType` enum. Capped at 64 results.
+Unlike `curvatureExtrema()` (which returns `Curve2DSpecialPoint`), this returns `CurInfPoint`
+values using the `CurInfType` enum — the two share one underlying `GeomLProp_CurAndInf2d` call,
+so their parameter/count results always agree. Capped at 256 results (the shared function's cap).
 
 - **Returns:** Array of `CurInfPoint` with `.curvatureMinimum` or `.curvatureMaximum` type.
-- **OCCT:** `Geom2dLProp_NumericCurInf2d::PerformCurExt`.
+- **OCCT:** `GeomLProp_CurAndInf2d::PerformCurExt`, via `curvatureExtrema()`.
 - **Example:**
   ```swift
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {
@@ -684,10 +691,12 @@ Finds inflection points with type information.
 public func inflectionPointsDetailed() -> [CurInfPoint]
 ```
 
-Like `inflectionPoints()` but returns `CurInfPoint` values (all with `.inflection` type) rather than bare `Double` parameters. Capped at 64 results.
+Like `inflectionPoints()` but returns `CurInfPoint` values (all with `.inflection` type) rather
+than bare `Double` parameters — delegates directly to it, so results always match. Capped at
+256 results (the shared function's cap).
 
 - **Returns:** Array of `CurInfPoint` (all `.inflection`).
-- **OCCT:** `Geom2dLProp_NumericCurInf2d::PerformInf`.
+- **OCCT:** `GeomLProp_CurAndInf2d::PerformInf`, via `inflectionPoints()`.
 - **Example:**
   ```swift
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {

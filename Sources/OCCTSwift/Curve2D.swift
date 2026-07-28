@@ -1651,10 +1651,26 @@ public enum Extrema2d {
 // MARK: - Geom2dLProp: Curvature Inflection/Extrema
 
 /// Type of curvature feature point.
+///
+/// A same-cases, different-ordering vocabulary for `Curve2DSpecialPointType`, kept for
+/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`. Both are derived
+/// from a single `GeomLProp_CurAndInf2d` computation (`curvatureExtrema()`/`inflectionPoints()`);
+/// see `CurInfType.init(_:)` for the (test-pinned) mapping between the two.
 public enum CurInfType: Int32, Sendable {
     case curvatureMinimum = 0
     case curvatureMaximum = 1
     case inflection = 2
+}
+
+extension CurInfType {
+    /// Maps from the `Curve2DSpecialPointType` vocabulary used by the plain family.
+    public init(_ type: Curve2DSpecialPointType) {
+        switch type {
+        case .inflection: self = .inflection
+        case .minCurvature: self = .curvatureMinimum
+        case .maxCurvature: self = .curvatureMaximum
+        }
+    }
 }
 
 /// A curvature feature point on a 2D curve.
@@ -1668,28 +1684,18 @@ public struct CurInfPoint: Sendable {
 extension Curve2D {
     /// Find curvature extrema (min/max) on this 2D curve with type classification.
     ///
-    /// Uses Geom2dLProp_NumericCurInf2d to find parameters where
-    /// curvature is at a local minimum or maximum. Returns detailed
-    /// `CurInfPoint` objects distinguishing min vs max.
+    /// Delegates to `curvatureExtrema()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func curvatureExtremaDetailed() -> [CurInfPoint] {
-        var buffer = [OCCTCurInfPoint](repeating: OCCTCurInfPoint(), count: 64)
-        let n = Int(OCCTGeom2dLPropCurExt(handle, &buffer, 64))
-        return (0..<n).map {
-            CurInfPoint(parameter: buffer[$0].parameter,
-                       type: CurInfType(rawValue: buffer[$0].type) ?? .inflection)
-        }
+        curvatureExtrema().map { CurInfPoint(parameter: $0.parameter, type: CurInfType($0.type)) }
     }
 
     /// Find inflection points on this 2D curve with type information.
     ///
-    /// Similar to `inflectionPoints()` but returns detailed `CurInfPoint`
-    /// objects including the type classification.
+    /// Delegates to `inflectionPoints()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func inflectionPointsDetailed() -> [CurInfPoint] {
-        var buffer = [OCCTCurInfPoint](repeating: OCCTCurInfPoint(), count: 64)
-        let n = Int(OCCTGeom2dLPropCurInf(handle, &buffer, 64))
-        return (0..<n).map {
-            CurInfPoint(parameter: buffer[$0].parameter, type: .inflection)
-        }
+        inflectionPoints().map { CurInfPoint(parameter: $0, type: .inflection) }
     }
 }
 
