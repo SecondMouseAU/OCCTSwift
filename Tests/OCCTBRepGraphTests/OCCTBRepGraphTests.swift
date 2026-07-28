@@ -2566,6 +2566,8 @@ struct BRepGraphDurableUIDTests {
         if let itemUID = boxGraph.itemUID(ofNodeKind: faceKind, index: 2) {
             #expect(boxGraph.item(forUID: itemUID) != nil)
             #expect(cylGraph.item(forUID: itemUID) == nil)
+            #expect(boxGraph.contains(uid: itemUID))
+            #expect(!cylGraph.contains(uid: itemUID))
         }
     }
 

@@ -21110,6 +21110,10 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef _Nonnull graph,
                               int32_t* _Nonnull outDomain, int32_t* _Nonnull outKind,
                               int32_t* _Nonnull outIndex);
 
+/// True if an item UID (domain, kind, counter) exists in this graph generation.
+bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef _Nonnull graph,
+                              int32_t domain, int32_t kind, uint32_t counter);
+
 /// Return the current graph generation counter.
 ///
 /// NOTE: always 1 in practice. OCCT advances it only from BRepGraph::Clear(); this bridge
