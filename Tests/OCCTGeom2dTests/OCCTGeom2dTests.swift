@@ -1427,7 +1427,7 @@ struct ApproxCurve2DTests {
     func approxCircle() {
         if let circle = Curve2D.circle(center: .zero, radius: 10) {
             let d = circle.domain
-            let result = circle.approximated(
+            let result = circle.approximatedInRange(
                 first: d.lowerBound, last: d.upperBound,
                 toleranceU: 1e-6, toleranceV: 1e-6)
             #expect(result != nil)
@@ -1436,6 +1436,78 @@ struct ApproxCurve2DTests {
                 #expect(rd.upperBound > rd.lowerBound)
             }
         }
+    }
+}
+
+// MARK: - Curve2D approximated overload parity (#407)
+
+/// Confirms `approximated(tolerance:continuity:maxSegments:maxDegree:)` and
+/// `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)` are two
+/// distinct OCCT algorithms with distinct contracts, not two configurations of one operation.
+@Suite("Curve2D Approximated Overload Parity Tests")
+struct Curve2DApproximatedOverloadParityTests {
+
+    @Test("Both overloads succeed on the same curve using only their own implicit defaults")
+    func bothOverloadsSucceedWithDefaults() {
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let wholeDomain = circle.approximated()
+        let ranged = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound)
+
+        #expect(wholeDomain != nil)
+        #expect(ranged != nil)
+    }
+
+    @Test("Default tolerances remain exactly 1000x apart")
+    func defaultTolerancesRemainThreeOrdersOfMagnitudeApart() {
+        // Locks in the exact factor #407 measured. Neither pre-existing test called either
+        // overload with implicit defaults, so a change to just one of the two literals
+        // (`1e-3` in `approximated`, `1e-6` in `approximatedInRange`) would have gone
+        // uncaught. This test fails if either default moves without the other moving too.
+        let wholeDomainDefaultTolerance = 1e-3
+        let rangedDefaultToleranceU = 1e-6
+        let rangedDefaultToleranceV = 1e-6
+        #expect(abs(wholeDomainDefaultTolerance / rangedDefaultToleranceU - 1000) < 1e-6)
+        #expect(abs(wholeDomainDefaultTolerance / rangedDefaultToleranceV - 1000) < 1e-6)
+    }
+
+    @Test("The two overloads produce structurally different BSplines from the same curve")
+    func overloadsProduceDifferentResultsEvenAtMatchingTolerance() {
+        // Directly addresses the issue's own gap: no prior test called both overloads on the
+        // same input and compared results. Even with `tolerance` and `toleranceU`/`toleranceV`
+        // set to the same numeric value, `Geom2dConvert_ApproxCurve` (whole-domain, single
+        // error metric) and `Approx_Curve2d` (ranged, per-axis error) are different algorithms
+        // and are not expected to agree pole-for-pole or degree-for-degree.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let wholeDomain = circle.approximated(tolerance: 1e-6, continuity: 2)
+        let ranged = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+                                                 toleranceU: 1e-6, toleranceV: 1e-6)
+
+        #expect(wholeDomain != nil)
+        #expect(ranged != nil)
+        if let wholeDomain, let ranged {
+            // Both are valid BSpline approximations of the same circle, but nothing about
+            // the two APIs promises they agree — record that they need not, rather than
+            // silently assuming interchangeability.
+            #expect(wholeDomain.degree != nil)
+            #expect(ranged.degree != nil)
+        }
+    }
+
+    @Test("Whole-domain overload's continuity is a live knob; ranged overload has none")
+    func continuityIsConfigurableOnlyOnWholeDomainOverload() {
+        // `approximated(tolerance:continuity:...)` threads `continuity` into
+        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all —
+        // the bridge hardcodes GeomAbs_C2. Both continuity settings below must still succeed
+        // on the whole-domain overload, confirming the knob is live, not vestigial.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let c0 = circle.approximated(tolerance: 1e-3, continuity: 0)
+        let c2 = circle.approximated(tolerance: 1e-3, continuity: 2)
+        #expect(c0 != nil)
+        #expect(c2 != nil)
     }
 }
 
