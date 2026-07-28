@@ -8,6 +8,9 @@ import OCCTBridge
 /// Useful for placing loft cross-sections along a measured section wire, walking a
 /// prismatic outline at a fixed step, etc. (#211)
 ///
+/// The arc-length composition (`point`/`tangent(atAbscissa:)`, `points(spacing:)`) is shared with
+/// ``EdgeCurve`` via ``ArcLengthCurveAdaptor``; see that protocol for the underlying primitives.
+///
 /// ```swift
 /// guard let wc = WireCurve(sectionWire) else { return }
 /// let n = 20
@@ -15,7 +18,7 @@ import OCCTBridge
 ///     wc.point(atAbscissa: wc.length * Double(i) / Double(n))
 /// }   // n+1 points spaced equally along the wire
 /// ```
-public final class WireCurve: @unchecked Sendable {
+public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     internal let ref: OCCTCompCurveRef
 
     /// Build an arc-length adaptor over `wire`. Returns `nil` if the wire is empty/invalid.
@@ -59,18 +62,6 @@ public final class WireCurve: @unchecked Sendable {
         return u
     }
 
-    /// Point at arc length `s` from the start of the wire (0...``length``).
-    public func point(atAbscissa s: Double) -> SIMD3<Double>? {
-        guard let u = parameter(atAbscissa: s) else { return nil }
-        return point(atParameter: u)
-    }
-
-    /// Unit tangent at arc length `s` from the start of the wire.
-    public func tangent(atAbscissa s: Double) -> SIMD3<Double>? {
-        guard let u = parameter(atAbscissa: s) else { return nil }
-        return tangent(atParameter: u)
-    }
-
     /// `count` points spaced **equally by arc length** along the wire (`count >= 2`),
     /// including both endpoints — `GCPnts_UniformAbscissa`. One pass, cheaper than calling
     /// ``point(atAbscissa:)`` in a loop.
@@ -81,12 +72,6 @@ public final class WireCurve: @unchecked Sendable {
         return (0..<n).map { SIMD3(buf[$0 * 3], buf[$0 * 3 + 1], buf[$0 * 3 + 2]) }
     }
 
-    /// Points spaced approximately `spacing` apart along the wire (by arc length). The exact
-    /// step is adjusted so the samples divide the wire evenly end-to-end.
-    public func points(spacing: Double) -> [SIMD3<Double>] {
-        let len = length
-        guard spacing > 0, len > 0 else { return [] }
-        let count = max(2, Int((len / spacing).rounded()) + 1)
-        return points(count: count)
-    }
+    // point(atAbscissa:), tangent(atAbscissa:), points(spacing:) are supplied by the
+    // ArcLengthCurveAdaptor extension — see that protocol.
 }
