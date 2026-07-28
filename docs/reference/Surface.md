@@ -1275,9 +1275,11 @@ Computes Gaussian and mean curvature at (u, v).
 public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)
 ```
 
+Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that single construction — and therefore its resolution argument, `Precision::Confusion()`, which is what `IsCurvatureDefined()` tests tangent vectors against for nullity. Before #405 this method built its own `GeomLProp_SLProps` with a hardcoded `1e-6`, ten times looser, and could report `(0, 0)` at a point where its two siblings returned a real curvature.
+
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2).
-- **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature`.
+- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `(0, 0)` where curvature is undefined.
+- **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature` (order 2, `Precision::Confusion()`).
 - **Example:**
   ```swift
   let sphere = Surface.sphere(center: .zero, radius: 5)!
