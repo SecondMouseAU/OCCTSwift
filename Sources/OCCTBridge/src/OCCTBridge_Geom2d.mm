@@ -102,6 +102,15 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 
+// Radius precondition for the 2D circle factories. Curve2D builds a circle from a centre and a
+// radius through two entry points — OCCTCurve2DCreateCircle (direct Geom2d_Circle construction)
+// and OCCTGceMakeCirc2dFromCenterRadius (gce_MakeCirc2d) — and gce_MakeCirc2d accepts
+// Radius >= 0, so before #411 the gce path returned a live, degenerate zero-radius circle where
+// the direct path returned null for the identical input. One definition, both entry points.
+static inline bool occtValidCircle2dRadius(double radius) {
+    return radius > 0;
+}
+
 // MARK: - Batch Curve2D Evaluation (v0.28.0)
 
 #include <Geom2dGridEval_Curve.hxx>
@@ -2872,6 +2881,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1, d
 // MARK: - gce_Make Circ2d / Lin2d / Elips2d / Hypr2d / Parab2d (v0.80)
 OCCTCurve2DRef _Nullable OCCTGceMakeCirc2dFromCenterRadius(double cx, double cy, double radius) {
     try {
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gce_MakeCirc2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom2d_Circle) circ = new Geom2d_Circle(mc.Value());
@@ -5023,7 +5033,7 @@ OCCTCurve2DRef OCCTCurve2DCreateSegment(double p1x, double p1y, double p2x, doub
 
 OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5036,7 +5046,7 @@ OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
 OCCTCurve2DRef OCCTCurve2DCreateArcOfCircle(double cx, double cy, double radius,
                                             double startAngle, double endAngle) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
