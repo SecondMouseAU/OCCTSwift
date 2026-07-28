@@ -2,6 +2,46 @@ import Foundation
 import simd
 import OCCTBridge
 
+/// A 2D grid of points sampled over a surface's UV parameter space.
+///
+/// Returned by ``Surface/drawMesh(uCount:vCount:)`` and
+/// ``Surface/evaluateGrid(uParameters:vParameters:)``. Both share this type specifically so
+/// indexing is unambiguous: access is always `.at(u:v:)`, regardless of how each method lays out
+/// its own bridge buffer internally — there is no `[[SIMD3<Double>]]` nesting order left for a
+/// caller to get backwards between the two.
+///
+/// ```swift
+/// let grid = surface.drawMesh(uCount: 20, vCount: 10)
+/// let corner = grid.at(u: 0, v: 0)
+/// let opposite = grid.at(u: grid.uCount - 1, v: grid.vCount - 1)
+/// ```
+public struct SurfaceGrid: Sendable {
+    /// Number of samples in the U direction.
+    public let uCount: Int
+    /// Number of samples in the V direction.
+    public let vCount: Int
+    /// Flat storage, U-major: `points[u * vCount + v]`.
+    private let points: [SIMD3<Double>]
+
+    init(uCount: Int, vCount: Int, points: [SIMD3<Double>]) {
+        self.uCount = uCount
+        self.vCount = vCount
+        self.points = points
+    }
+
+    static let empty = SurfaceGrid(uCount: 0, vCount: 0, points: [])
+
+    /// Whether this grid has no points (returned when sampling fails).
+    public var isEmpty: Bool { points.isEmpty }
+
+    /// Point at the given U/V grid index.
+    public func at(u: Int, v: Int) -> SIMD3<Double> {
+        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
+                      "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+        return points[u * vCount + v]
+    }
+}
+
 /// A parametric surface backed by OpenCASCADE Handle(Geom_Surface).
 ///
 /// Wraps analytic surfaces (plane, cylinder, cone, sphere, torus),
@@ -455,26 +495,28 @@ public final class Surface: @unchecked Sendable {
         return result
     }
 
-    /// Sample a uniform mesh grid of points for Metal visualization
-    /// - Returns: 2D array [uIndex][vIndex] of surface points
-    public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> [[SIMD3<Double>]] {
+    /// Sample a uniform mesh grid of points for Metal visualization.
+    ///
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails.
+    ///
+    /// ```swift
+    /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
+    /// let p = grid.at(u: 5, v: 3)
+    /// ```
+    public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
         let total = uCount * vCount
         var buffer = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceDrawMesh(handle, Int32(uCount), Int32(vCount), &buffer))
-        guard n == total else { return [] }
+        guard n == total else { return .empty }
 
-        var grid = [[SIMD3<Double>]]()
-        grid.reserveCapacity(uCount)
-        for i in 0..<uCount {
-            var row = [SIMD3<Double>]()
-            row.reserveCapacity(vCount)
-            for j in 0..<vCount {
-                let idx = (i * vCount + j) * 3
-                row.append(SIMD3(buffer[idx], buffer[idx + 1], buffer[idx + 2]))
-            }
-            grid.append(row)
+        // Bridge buffer is already U-major (idx = u * vCount + v), matching SurfaceGrid's storage.
+        var points = [SIMD3<Double>]()
+        points.reserveCapacity(total)
+        for idx in 0..<total {
+            let base = idx * 3
+            points.append(SIMD3(buffer[base], buffer[base + 1], buffer[base + 2]))
         }
-        return grid
+        return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
     }
 
     // MARK: - Local Properties
@@ -784,31 +826,38 @@ public final class Surface: @unchecked Sendable {
 extension Surface {
     /// Evaluate the surface at a UV grid in one call.
     ///
-    /// Returns points in row-major order (u varies fastest).
-    ///
     /// - Parameters:
     ///   - uParameters: Array of U parameter values
     ///   - vParameters: Array of V parameter values
-    /// - Returns: 2D array of evaluated 3D points [v][u]
-    public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> [[SIMD3<Double>]] {
-        guard !uParameters.isEmpty, !vParameters.isEmpty else { return [] }
-        let total = uParameters.count * vParameters.count
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if either input is
+    ///   empty or the evaluated count doesn't match `uParameters.count * vParameters.count`.
+    ///
+    /// ```swift
+    /// let grid = surface.evaluateGrid(uParameters: [0, 1, 2], vParameters: [0, 1])
+    /// let p = grid.at(u: 2, v: 0)
+    /// ```
+    public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> SurfaceGrid {
+        guard !uParameters.isEmpty, !vParameters.isEmpty else { return .empty }
+        let uCount = uParameters.count
+        let vCount = vParameters.count
+        let total = uCount * vCount
         var outXYZ = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceEvaluateGrid(handle,
-                                             uParameters, Int32(uParameters.count),
-                                             vParameters, Int32(vParameters.count),
+                                             uParameters, Int32(uCount),
+                                             vParameters, Int32(vCount),
                                              &outXYZ))
-        guard n == total else { return [] }
-        var result = [[SIMD3<Double>]]()
-        for v in 0..<vParameters.count {
-            var row = [SIMD3<Double>]()
-            for u in 0..<uParameters.count {
-                let i = v * uParameters.count + u
-                row.append(SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]))
+        guard n == total else { return .empty }
+
+        // Bridge buffer is V-major (v varies slowest, per OCCTSurfaceEvaluateGrid's own doc
+        // comment); SurfaceGrid's storage is U-major, so transpose while unpacking.
+        var points = [SIMD3<Double>](repeating: SIMD3(0, 0, 0), count: total)
+        for v in 0..<vCount {
+            for u in 0..<uCount {
+                let bridgeIdx = (v * uCount + u) * 3
+                points[u * vCount + v] = SIMD3(outXYZ[bridgeIdx], outXYZ[bridgeIdx + 1], outXYZ[bridgeIdx + 2])
             }
-            result.append(row)
         }
-        return result
+        return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
     }
 }
 
