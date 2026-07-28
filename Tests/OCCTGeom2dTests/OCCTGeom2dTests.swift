@@ -1721,6 +1721,51 @@ struct ApproxCurve2DTests {
             #expect(inflections.count >= 0)
         }
     }
+
+    // #402: curvatureExtremaDetailed()/inflectionPointsDetailed() ("Detailed" family) and
+    // curvatureExtrema()/inflectionPoints() ("plain" family) both wrap GeomLProp_CurAndInf2d.
+    // CurInfType and Curve2DSpecialPointType number the same 3 cases differently; these pin
+    // the mapping between them and confirm both families agree on the same curve.
+
+    @Test("CurInfType mirrors Curve2DSpecialPointType case-for-case")
+    func curInfTypeMirrorsSpecialPointType() {
+        #expect(CurInfType(.inflection) == .inflection)
+        #expect(CurInfType(.minCurvature) == .curvatureMinimum)
+        #expect(CurInfType(.maxCurvature) == .curvatureMaximum)
+    }
+
+    @Test("curvatureExtremaDetailed() agrees with curvatureExtrema() on the same curve")
+    func curvatureExtremaFamiliesAgree() {
+        let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)
+        if let ellipse {
+            let plain = ellipse.curvatureExtrema()
+            let detailed = ellipse.curvatureExtremaDetailed()
+            #expect(plain.count == detailed.count)
+            #expect(plain.count >= 2)
+            for (p, d) in zip(plain, detailed) {
+                #expect(abs(p.parameter - d.parameter) < 1e-9)
+                #expect(CurInfType(p.type) == d.type)
+            }
+        }
+    }
+
+    @Test("inflectionPointsDetailed() agrees with inflectionPoints() on the same curve")
+    func inflectionPointFamiliesAgree() {
+        let points: [SIMD2<Double>] = [
+            SIMD2(0, 0), SIMD2(2, 5), SIMD2(5, -5), SIMD2(8, 0)
+        ]
+        let curve = Curve2D.interpolate(through: points)
+        if let curve {
+            let plain = curve.inflectionPoints()
+            let detailed = curve.inflectionPointsDetailed()
+            #expect(plain.count == detailed.count)
+            #expect(plain.count >= 1)
+            for (p, d) in zip(plain, detailed) {
+                #expect(abs(p - d.parameter) < 1e-9)
+                #expect(d.type == .inflection)
+            }
+        }
+    }
 }
 
 @Suite("Bisector_BisecAna") struct BisectorBisecAnaTests {
