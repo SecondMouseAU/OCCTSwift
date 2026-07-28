@@ -1283,9 +1283,21 @@ Add an inner wire (hole) to an existing face.
 public static func faceAddHole(face: Shape, wire: Shape) -> Shape?
 ```
 
-- **Parameters:** `face` — the existing face; `wire` — hole boundary wire (must lie on the face surface).
-- **Returns:** New face with the hole added, or `nil` on failure.
+- **Parameters:** `face` — the existing face; `wire` — hole boundary wire (must lie on the face surface). Polygonal or curved (a `Wire.circle`, an arc, joined arcs), wound either way.
+- **Returns:** New face with the hole added, or `nil` if the wire cannot serve as a hole for this face — it encloses no area (#234), or it does not lie inside the face's boundary, so neither winding yields a valid face. A degenerate or unusable hole is declined rather than returned as an invalid face, which is what breaks callers downstream.
 - **OCCT:** `BRepBuilderAPI_MakeFace::Add`.
+- **Winding:** the hole always *removes* area. `MakeFace::Add` does no reorienting of its own, so a wire wound the same way as the face's outer boundary would be added as a second outer loop; the wrapper compares windings in the face's plane and reverses the wire when needed (#397).
+
+```swift
+let plate = Shape.face(from: Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0),
+                                             SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
+                                            closed: true)!, planar: true)!
+let bore = Shape.fromWire(Wire.circle(origin: SIMD3(10, 10, 0),
+                                      normal: SIMD3(0, 0, 1), radius: 3)!)!
+let holed = Shape.faceAddHole(face: plate, wire: bore)!
+holed.surfaceArea                                  // 400 - pi*9
+holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
+```
 
 ---
 

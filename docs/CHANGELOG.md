@@ -90,6 +90,51 @@ Also fixed in passing: `docs/reference/Shape-Features.md` credited `withoutSmall
 `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`; `OCCTShapeRemoveSmallFaces` uses
 neither, it collects small faces by area and removes them with `BRepAlgoAPI_Defeaturing`.
 
+### Unreleased: fix — `Shape.faceAddHole()` rejected every circular hole wire, and never oriented the ones it kept (#397)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+`Shape.faceAddHole(face:wire:)` returned `nil` for **every** hole wire built from circular geometry —
+`Wire.circle(origin:normal:radius:)` and a hand-joined two-arc circle alike, at any radius, in either
+winding — while a polygonal hole on the same face worked. The cause was this wrapper's own
+degenerate-wire guard (added for #234, which declines a zero-area hole because the invalid face it
+produces goes on to SIGSEGV `ShapeFix` downstream): the guard counted the wire's **vertices**, and a
+circle has one (`Wire.circle`) or two (two joined arcs), so it tripped the "fewer than 3 distinct
+vertices" rejection meant for out-and-back line segments. Nothing in OCCT was rejecting these wires;
+they never reached `BRepBuilderAPI_MakeFace::Add` at all.
+
+The guard now samples points **along the wire's curves** rather than at its vertices, which is what
+lets a circular hole describe the area it encloses. Sampling alone would weaken #234's protection —
+an arc traversed out and back spreads its samples over a curve and so clears the collinearity test
+that catches a straight out-and-back — so the loop's own vector area is checked as well, and a wire
+whose mean width (area ÷ longest chord) falls below `Precision::Confusion()` is still declined.
+
+**Fixing the `nil` exposed a second half to the same defect**, pre-existing and equally silent: the
+wrapper never oriented the wire it added. `MakeFace::Add` does no reorienting of its own, so a hole
+wound the same way as the face's outer boundary was added as a second **outer** loop — a 20×20 face
+given a 2×2 hole came back with area 404 rather than 396, and its prism was not a valid solid. Only
+callers who happened to hand in an opposite-wound wire ever got a hole. `faceAddHole` now compares the
+hole's winding against the face's outer boundary in the face's plane and reverses the wire when they
+match, the same rule `OCCTShapeCreateFaceWithHoles` has used since #274, with a validity-checked
+retry of the other orientation for non-planar hosts where no plane can be fitted. Either winding now
+cuts, and the sampler both tests share is now one helper (`occtSampleWirePoints`) rather than two
+copies of the same traversal.
+
+**One behaviour change beyond the two bugs:** when *neither* winding yields a `BRepCheck`-valid face,
+`faceAddHole` now returns nil instead of the invalid face. That case is not a winding question — the
+wire does not lie inside the face's boundary, and no orientation makes it a hole — and returning a
+non-nil invalid face is exactly what #234 established breaks callers later. Pre-existing behaviour
+(the old code never validated its result at all), tightened here because the winding retry introduced
+the validity check anyway.
+
+Bridge-only fix: no OCCT kernel change, no xcframework rebuild, no new operations (count unchanged at
+4,258). New regression suite `Issue397CircularHoleTests` (`OCCTModelingTests`) covers `Wire.circle`
+and two-arc holes in both windings, the extruded-solid volume, same-winding polygon holes, the
+zero-area curved wire that must still be declined, and the boundary-crossing wire that no winding can
+turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test`: 4474 tests in
+1291 suites, all passing.
+
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 
 `Shape.fixSolid()` and `Shape.solidFromShellFixed()` healed the **first** solid (respectively the
