@@ -532,12 +532,7 @@ public final class Surface: @unchecked Sendable {
         guard n == total else { return .empty }
 
         // Bridge buffer is already U-major (idx = u * vCount + v), matching SurfaceGrid's storage.
-        var points = [SIMD3<Double>]()
-        points.reserveCapacity(total)
-        for idx in 0..<total {
-            let base = idx * 3
-            points.append(SIMD3(buffer[base], buffer[base + 1], buffer[base + 2]))
-        }
+        let points: [SIMD3<Double>] = unpackSIMD3(buffer, count: total)
         return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
     }
 
@@ -2572,12 +2567,7 @@ extension Surface {
         guard uCount > 0 && vCount > 0 else { return [] }
         var flat = [Double](repeating: 0, count: uCount * vCount * 3)
         OCCTSurfaceBSplineGetPoles(handle, &flat)
-        var result = [SIMD3<Double>]()
-        result.reserveCapacity(uCount * vCount)
-        for i in stride(from: 0, to: flat.count, by: 3) {
-            result.append(SIMD3(flat[i], flat[i + 1], flat[i + 2]))
-        }
-        return result
+        return unpackSIMD3(flat, count: uCount * vCount)
     }
 
     /// Get parameter bounds for BSpline surface.
@@ -2653,12 +2643,7 @@ extension Surface {
         guard uCount > 0 && vCount > 0 else { return [] }
         var flat = [Double](repeating: 0, count: uCount * vCount * 3)
         OCCTSurfaceBezierGetPoles(handle, &flat)
-        var result = [SIMD3<Double>]()
-        result.reserveCapacity(uCount * vCount)
-        for i in stride(from: 0, to: flat.count, by: 3) {
-            result.append(SIMD3(flat[i], flat[i + 1], flat[i + 2]))
-        }
-        return result
+        return unpackSIMD3(flat, count: uCount * vCount)
     }
 
     /// Get all weights as flat array for Bezier surface. Returns nil if non-rational.
