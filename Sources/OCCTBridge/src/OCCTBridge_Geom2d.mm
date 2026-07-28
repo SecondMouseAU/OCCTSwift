@@ -4047,24 +4047,14 @@ const char* OCCTCurve2DTypeName(OCCTCurve2DRef curve) {
 
 
 // MARK: - v0.115: 2D interpolate / PointsToBSpline / SplitAtContinuity / Trimmed / Length (re-routed from Curve3D)
+// Exactly OCCTCurve2DInterpolateWithTangents with tolerance pinned to the OCCT default. It used to
+// be a second, independent Geom2dAPI_Interpolate call site with the tolerance hardcoded and no way
+// to reach it. Forwarding keeps the C ABI while leaving one implementation (#410). Callers that
+// need a different tolerance should call OCCTCurve2DInterpolateWithTangents directly.
 OCCTCurve2DRef OCCTInterpolate2DWithTangents(const double* points, int32_t count,
                                                double t1x, double t1y,
                                                double t2x, double t2y) {
-    if (!points || count < 2) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt2d) pts = new TColgp_HArray1OfPnt2d(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
-        }
-        Geom2dAPI_Interpolate interp(pts, Standard_False, 1e-6);
-        gp_Vec2d v1(t1x, t1y), v2(t2x, t2y);
-        interp.Load(v1, v2);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve2DRef)new OCCTCurve2D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve2DInterpolateWithTangents(points, count, t1x, t1y, t2x, t2y, 1e-6);
 }
 
 // Exactly OCCTCurve2DInterpolate with the periodicity flag pinned. It used to be a second,
