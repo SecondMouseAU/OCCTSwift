@@ -125,12 +125,23 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Circular arc through three points (alias)
+    /// Circular arc through three points.
+    ///
+    /// A spelling of `arcOfCircle(start:interior:end:)` and delegates to it — the two cannot
+    /// produce different curves for the same input (#415).
+    ///
+    /// - Parameters:
+    ///   - p1: First endpoint (maps to `arcOfCircle`'s `start`).
+    ///   - pm: A point on the arc (maps to `arcOfCircle`'s `interior`).
+    ///   - p2: Second endpoint (maps to `arcOfCircle`'s `end`).
+    /// - Returns: Arc curve, or `nil` if the three points are collinear or coincident.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
+    /// #expect(arc != nil)
+    /// ```
     public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateArc3Points(p1.x, p1.y, p1.z,
-                                                   pm.x, pm.y, pm.z,
-                                                   p2.x, p2.y, p2.z) else { return nil }
-        return Curve3D(handle: h)
+        arcOfCircle(start: p1, interior: pm, end: p2)
     }
 
     /// Ellipse in a plane defined by center and normal.
