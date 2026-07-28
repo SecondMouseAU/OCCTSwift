@@ -2882,9 +2882,6 @@ OCCTCurve3DRef OCCTCurve3DCreateCircle(double cx, double cy, double cz,
 OCCTCurve3DRef OCCTCurve3DCreateArcOfCircle(double p1x, double p1y, double p1z,
                                              double p2x, double p2y, double p2z,
                                              double p3x, double p3y, double p3z);
-OCCTCurve3DRef OCCTCurve3DCreateArc3Points(double p1x, double p1y, double p1z,
-                                            double pmx, double pmy, double pmz,
-                                            double p2x, double p2y, double p2z);
 OCCTCurve3DRef OCCTCurve3DCreateEllipse(double cx, double cy, double cz,
                                          double nx, double ny, double nz,
                                          double majorR, double minorR);

@@ -281,18 +281,19 @@ OCCT derives the centre and radius from the three points. The arc sweeps from `s
 
 ### `Curve3D.arc(through:_:_:)`
 
-Alias for `arcOfCircle(start:interior:end:)`.
+A spelling of [`arcOfCircle(start:interior:end:)`](#curve3darcofcirclestartinteriorend) and delegates to it — the two cannot produce different curves for the same input (#415).
 
 ```swift
 public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `p1` — first endpoint; `pm` — interior midpoint; `p2` — second endpoint.
+- **Parameters:** `p1` — first endpoint (maps to `arcOfCircle`'s `start`); `pm` — a point on the arc (maps to `interior`); `p2` — second endpoint (maps to `end`).
 - **Returns:** Arc curve, or `nil` if points are collinear or coincident.
-- **OCCT:** `GC_MakeArcOfCircle` → `Geom_TrimmedCurve`.
+- **OCCT:** `GC_MakeArcOfCircle` → `Geom_TrimmedCurve`, via `arcOfCircle(start:interior:end:)`.
 - **Example:**
   ```swift
   let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
+  #expect(arc != nil)
   ```
 
 ---
