@@ -697,13 +697,18 @@ Returns all intersection points (tangent and transverse) up to an internal cap o
 Evaluates the surface at a grid of UV parameters in a single call.
 
 ```swift
-public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> [[SIMD3<Double>]]
+public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> SurfaceGrid
 ```
 
-Returns a 2D array indexed `[vIndex][uIndex]` — V is the outer index. This is significantly faster than individual `point(atU:v:)` calls when building a dense mesh or sampling a parameter grid.
+Returns a `SurfaceGrid` (see [Surface.md](Surface.md#surfacegrid)) indexed `.at(u:v:)` — the same
+type `drawMesh(uCount:vCount:)` returns, so the two can never disagree on index order the way
+their old raw `[[SIMD3<Double>]]` returns could ([#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404)).
+This is significantly faster than individual `point(atU:v:)` calls when building a dense mesh or
+sampling a parameter grid.
 
 - **Parameters:** `uParameters` — array of U parameter values; `vParameters` — array of V parameter values.
-- **Returns:** 2D array of 3D positions of size `[vParameters.count][uParameters.count]`, or empty if either input is empty or the evaluated count mismatches.
+- **Returns:** A `SurfaceGrid` of size `uParameters.count × vParameters.count`, or an empty grid if
+  either input is empty or the evaluated count mismatches.
 - **OCCT:** `Geom_Surface::D0` called per grid point via the bridge buffer.
 - **Example:**
   ```swift
@@ -711,7 +716,7 @@ Returns a 2D array indexed `[vIndex][uIndex]` — V is the outer index. This is 
       let us = stride(from: 0.0, through: Double.pi * 2, by: 0.1).map { $0 }
       let vs = stride(from: -.pi / 2, through: .pi / 2, by: 0.1).map { $0 }
       let grid = srf.evaluateGrid(uParameters: us, vParameters: vs)
-      // grid[i][j] is the 3D point at (us[j], vs[i])
+      let p = grid.at(u: 2, v: 0)  // point at (us[2], vs[0])
   }
   ```
 - **Note:** Result is empty (not a partial result) if the internal buffer fill count does not match `uParameters.count × vParameters.count`.

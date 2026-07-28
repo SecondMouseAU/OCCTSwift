@@ -808,23 +808,46 @@ Samples `uLineCount` U-iso lines and `vLineCount` V-iso lines, each discretised 
 
 ---
 
+### `SurfaceGrid`
+
+A 2D grid of points sampled over a surface's UV parameter space, returned by `drawMesh(uCount:vCount:)`
+and `evaluateGrid(uParameters:vParameters:)` (see [Surface-Analysis.md](Surface-Analysis.md)). Both
+methods share this one type specifically so indexing is unambiguous — access is always
+`.at(u:v:)`, regardless of how each method lays out its own bridge buffer internally. Before
+[#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404), the two returned raw
+`[[SIMD3<Double>]]` with opposite nesting order (`[uIndex][vIndex]` vs `[vIndex][uIndex]`) and
+nothing at the type level stopped a caller from mixing them up.
+
+```swift
+public struct SurfaceGrid: Sendable {
+    public let uCount: Int
+    public let vCount: Int
+    public var isEmpty: Bool { get }
+    public func at(u: Int, v: Int) -> SIMD3<Double>
+}
+```
+
+- **`uCount`/`vCount`:** number of samples in each direction.
+- **`at(u:v:)`:** the point at that grid index. Traps if either index is out of range.
+- **`isEmpty`:** `true` for the grid returned when sampling fails.
+
+---
+
 ### `drawMesh(uCount:vCount:)`
 
 Samples a uniform mesh grid of points for Metal visualisation.
 
 ```swift
-public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> [[SIMD3<Double>]]
+public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
 ```
 
-Returns a 2D array indexed `[uIndex][vIndex]` of evaluated surface points on a uniform UV grid.
-
 - **Parameters:** `uCount` — number of U sample points; `vCount` — number of V sample points.
-- **Returns:** 2D array of 3D points, or `[]` if sampling fails.
+- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails.
 - **OCCT:** `Geom_Surface::D0` sampled on a uniform UV grid.
 - **Example:**
   ```swift
   let mesh = surface.drawMesh(uCount: 30, vCount: 30)
-  // mesh[i][j] is the surface point at the ith U and jth V sample
+  let p = mesh.at(u: 5, v: 3)
   ```
 
 ---
