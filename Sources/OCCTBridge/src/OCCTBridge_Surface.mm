@@ -4980,8 +4980,6 @@ void OCCTSurfaceNormal(OCCTSurfaceRef surface, double u, double v,
     OCCTSurfaceGetNormal(surface, u, v, nx, ny, nz);
 }
 
-#include <GeomLProp_SLProps.hxx>
-
 void OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
                              double* gaussian, double* mean) {
     *gaussian = *mean = 0;
