@@ -55,6 +55,29 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphRelease(handle)
     }
 
+    // MARK: - Internal Helpers
+
+    /// Shared count-then-fetch helper for the bridge's `...Count`/`...Indices` accessor pairs.
+    ///
+    /// Every adjacency/relation query (`adjacentFaces(of:)`, `sharedEdges(between:and:)`,
+    /// `edgeWires(_:)`, `rootProductIndices`, etc.) allocates an `Int32` buffer sized by a
+    /// prior count call, fills it via a bridge `...Indices` function, then maps back to
+    /// `[Int]`. `fetch` receives the buffer's base address to call the bridge function with.
+    ///
+    /// Guards `count <= 0`, not just `count == 0`: the underlying bridge `...Count` functions
+    /// derive their result via an unchecked narrowing `(int32_t)` cast from a `size_t`, so a
+    /// sufficiently large (theoretical) graph could produce a negative count. Without this
+    /// guard, `[Int32](repeating:count:)` would trap; with it, a negative count degrades to
+    /// `[]` like an empty result.
+    private func fetchIndices(count: Int, fetch: (UnsafeMutablePointer<Int32>) -> Void) -> [Int] {
+        guard count > 0 else { return [] }
+        var indices = [Int32](repeating: 0, count: count)
+        indices.withUnsafeMutableBufferPointer { buf in
+            fetch(buf.baseAddress!)
+        }
+        return indices.map { Int($0) }
+    }
+
     // MARK: - Topology Counts
 
     /// Total number of nodes in the graph (all entity kinds).
@@ -97,23 +120,17 @@ public final class BRepGraph: @unchecked Sendable {
     /// Indices of faces adjacent to a given face (sharing an edge).
     public func adjacentFaces(of faceIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphFaceAdjacentCount(handle, Int32(faceIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphFaceAdjacentIndices(handle, Int32(faceIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphFaceAdjacentIndices(handle, Int32(faceIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Indices of edges shared between two faces.
     public func sharedEdges(between faceA: Int, and faceB: Int) -> [Int] {
         let count = Int(OCCTBRepGraphFaceSharedEdgeCount(handle, Int32(faceA), Int32(faceB)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphFaceSharedEdgeIndices(handle, Int32(faceA), Int32(faceB), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphFaceSharedEdgeIndices(handle, Int32(faceA), Int32(faceB), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Index of the outer wire of a face.
@@ -130,13 +147,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Indices of faces an edge belongs to.
     public func faces(of edgeIndex: Int) -> [Int] {
-        let count = faceCount(of: edgeIndex)
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphEdgeFaceIndices(handle, Int32(edgeIndex), buf.baseAddress!)
+        fetchIndices(count: faceCount(of: edgeIndex)) { buf in
+            OCCTBRepGraphEdgeFaceIndices(handle, Int32(edgeIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Whether an edge is a boundary edge (belongs to only one face).
@@ -152,12 +165,9 @@ public final class BRepGraph: @unchecked Sendable {
     /// Indices of edges adjacent to a given edge (sharing a vertex).
     public func adjacentEdges(of edgeIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphEdgeAdjacentCount(handle, Int32(edgeIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphEdgeAdjacentIndices(handle, Int32(edgeIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphEdgeAdjacentIndices(handle, Int32(edgeIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - Vertex Queries
@@ -165,12 +175,9 @@ public final class BRepGraph: @unchecked Sendable {
     /// Indices of edges connected to a vertex.
     public func edges(of vertexIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphVertexEdgeCount(handle, Int32(vertexIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphVertexEdgeIndices(handle, Int32(vertexIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphVertexEdgeIndices(handle, Int32(vertexIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - Explorers
@@ -458,13 +465,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Indices of faces a wire belongs to.
     public func wireFaces(_ wireIndex: Int) -> [Int] {
-        let count = wireFaceCount(wireIndex)
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphWireFaceIndices(handle, Int32(wireIndex), buf.baseAddress!)
+        fetchIndices(count: wireFaceCount(wireIndex)) { buf in
+            OCCTBRepGraphWireFaceIndices(handle, Int32(wireIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - CoEdge Queries (v0.133.0)
@@ -506,13 +509,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Indices of solids a shell belongs to.
     public func shellSolids(_ shellIndex: Int) -> [Int] {
-        let count = shellSolidCount(shellIndex)
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphShellSolidIndices(handle, Int32(shellIndex), buf.baseAddress!)
+        fetchIndices(count: shellSolidCount(shellIndex)) { buf in
+            OCCTBRepGraphShellSolidIndices(handle, Int32(shellIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - Solid Queries (v0.133.0)
@@ -1012,12 +1011,9 @@ public final class BRepGraph: @unchecked Sendable {
     /// Indices of same-domain faces for a given face.
     public func sameDomainFaces(of faceIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphFaceSameDomainCount(handle, Int32(faceIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphFaceSameDomainIndices(handle, Int32(faceIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphFaceSameDomainIndices(handle, Int32(faceIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - Copy and Transform (v0.133.0)
@@ -1097,13 +1093,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Indices of root products.
     public var rootProductIndices: [Int] {
-        let count = rootProductCount
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphRootProductIndices(handle, buf.baseAddress!)
+        fetchIndices(count: rootProductCount) { buf in
+            OCCTBRepGraphRootProductIndices(handle, buf)
         }
-        return indices.map { Int($0) }
     }
 
     // MARK: - Reference Counts (v0.134.0)
@@ -1226,23 +1218,17 @@ public final class BRepGraph: @unchecked Sendable {
     /// Indices of wires an edge belongs to.
     public func edgeWires(_ edgeIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphEdgeWireCount(handle, Int32(edgeIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphEdgeWireIndices(handle, Int32(edgeIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphEdgeWireIndices(handle, Int32(edgeIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Indices of coedges of an edge.
     public func edgeCoEdges(_ edgeIndex: Int) -> [Int] {
         let count = Int(OCCTBRepGraphEdgeCoEdgeCount(handle, Int32(edgeIndex)))
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphEdgeCoEdgeIndices(handle, Int32(edgeIndex), buf.baseAddress!)
+        return fetchIndices(count: count) { buf in
+            OCCTBRepGraphEdgeCoEdgeIndices(handle, Int32(edgeIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Find the coedge index for an (edge, face) pair, or nil if not found.
@@ -1260,13 +1246,9 @@ public final class BRepGraph: @unchecked Sendable {
 
     /// Indices of shells a face belongs to.
     public func faceShells(_ faceIndex: Int) -> [Int] {
-        let count = faceShellCount(faceIndex)
-        if count == 0 { return [] }
-        var indices = [Int32](repeating: 0, count: count)
-        indices.withUnsafeMutableBufferPointer { buf in
-            OCCTBRepGraphFaceShellIndices(handle, Int32(faceIndex), buf.baseAddress!)
+        fetchIndices(count: faceShellCount(faceIndex)) { buf in
+            OCCTBRepGraphFaceShellIndices(handle, Int32(faceIndex), buf)
         }
-        return indices.map { Int($0) }
     }
 
     /// Number of compounds a face belongs to.
