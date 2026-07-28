@@ -301,6 +301,9 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Interpolate through points with specified start and end tangents.
+    ///
+    /// `interpolate(points:startTangent:endTangent:tolerance:)` is a spelling of this with the
+    /// `points:` argument label, and delegates here.
     public static func interpolate(through points: [SIMD2<Double>],
                                    startTangent: SIMD2<Double>,
                                    endTangent: SIMD2<Double>,
@@ -2278,17 +2281,31 @@ extension Curve2D {
     // MARK: - v0.115.0: Interpolation expansion, trim, length
 
     /// Interpolate a 2D BSpline through points with endpoint tangents.
+    ///
+    /// A spelling of `interpolate(through:startTangent:endTangent:tolerance:)` with the `points:`
+    /// argument label, and it delegates to it — the two cannot produce different curves for the
+    /// same input.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2.
+    ///   - startTangent: Tangent direction at the first point.
+    ///   - endTangent: Tangent direction at the last point.
+    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
+    ///     to hardcode with no way to change it (#410).
+    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let curve = Curve2D.interpolate(points: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)],
+    ///                                  startTangent: SIMD2(1, 1), endTangent: SIMD2(1, -1),
+    ///                                  tolerance: 1e-4)
+    /// #expect(curve != nil)
+    /// ```
     public static func interpolate(points: [SIMD2<Double>],
                                    startTangent: SIMD2<Double>,
-                                   endTangent: SIMD2<Double>) -> Curve2D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolate2DWithTangents(buf.baseAddress!, Int32(points.count),
-                                          startTangent.x, startTangent.y,
-                                          endTangent.x, endTangent.y)
-        }) else { return nil }
-        return Curve2D(handle: ref)
+                                   endTangent: SIMD2<Double>,
+                                   tolerance: Double = 1e-6) -> Curve2D? {
+        interpolate(through: points, startTangent: startTangent, endTangent: endTangent,
+                    tolerance: tolerance)
     }
 
     /// Interpolate a periodic (closed) 2D BSpline through points.
