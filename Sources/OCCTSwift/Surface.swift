@@ -2223,7 +2223,33 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Compute the surface normal at (u, v).
+    /// Compute the surface normal at (u, v), returning the zero vector where it is undefined.
+    ///
+    /// This is the non-optional counterpart of `normal(atU:v:)`. Both evaluate the same
+    /// `GeomLProp_SLProps` normal and use the same degeneracy test, so they always agree on
+    /// *where* the normal exists — they differ only in how they report its absence: this method
+    /// returns `SIMD3(0, 0, 0)`, `normal(atU:v:)` returns `nil`. Prefer `normal(atU:v:)` when you
+    /// need to tell "undefined" apart from a genuine result.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: The unit normal, or `SIMD3(0, 0, 0)` at a singular point (a sphere pole, a cone
+    ///   apex) where the tangent plane is degenerate.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let n = sphere.normal(u: 0, v: .pi / 4)     // unit length
+    /// #expect(abs(simd_length(n) - 1) < 1e-9)
+    ///
+    /// // A cone apex is a genuine singularity: zero vector here, nil from normal(atU:v:).
+    /// let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    /// #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
+    /// #expect(cone.normal(atU: 0, v: 0) == nil)
+    /// ```
+    ///
+    /// > A sphere pole (`v = ±π/2`) is *not* one of these points — `GeomLProp_SLProps` still
+    /// > resolves a normal there, and both methods return it.
     public func normal(u: Double, v: Double) -> SIMD3<Double> {
         var nx = 0.0, ny = 0.0, nz = 0.0
         OCCTSurfaceNormal(handle, u, v, &nx, &ny, &nz)
