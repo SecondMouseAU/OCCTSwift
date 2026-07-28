@@ -5653,9 +5653,68 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
     } catch (...) { return nullptr; }
 }
 
+// MARK: - Shared arc-length adaptor helpers (#211/#212/#422): generic over any Adaptor3d_Curve&
+//
+// BRepAdaptor_CompCurve (multi-edge wire) and BRepAdaptor_Curve (single edge) both derive from
+// Adaptor3d_Curve, so the entire arc-length API (length, native-parameter access, arc-length
+// lookup, uniform sampling) can be written once here and reused by both OCCTCompCurve* and
+// OCCTEdgeCurve* below — mirroring the pre-existing sampleAdaptorUniform() precedent, which this
+// unifies the other 5 operations to match. Callers keep their own try/catch + null-ref check
+// (matching sampleAdaptorUniform's own call sites) so a thrown Standard_Failure/StdFail_NotDone
+// can never cross the extern "C" boundary.
+#include <Adaptor3d_Curve.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
+#include <GCPnts_UniformAbscissa.hxx>
+
+static double adaptorLength(Adaptor3d_Curve& a) {
+    return GCPnts_AbscissaPoint::Length(a);
+}
+
+static void adaptorParamRange(Adaptor3d_Curve& a, double* first, double* last) {
+    if (first) *first = a.FirstParameter();
+    if (last)  *last  = a.LastParameter();
+}
+
+static bool adaptorPointAtParam(Adaptor3d_Curve& a, double u, double* x, double* y, double* z) {
+    gp_Pnt p = a.Value(u);
+    if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
+    return true;
+}
+
+static bool adaptorTangentAtParam(Adaptor3d_Curve& a, double u, double* x, double* y, double* z) {
+    gp_Pnt p; gp_Vec d1;
+    a.D1(u, p, d1);
+    if (d1.Magnitude() < 1e-12) return false;   // degenerate (e.g. cusp)
+    gp_Dir dir(d1);
+    if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
+    return true;
+}
+
+static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outParam) {
+    GCPnts_AbscissaPoint ap(a, s, a.FirstParameter());
+    if (!ap.IsDone()) return false;
+    if (outParam) *outParam = ap.Parameter();
+    return true;
+}
+
+// N points spaced equally by arc length along the curve. outXYZ must hold count*3 doubles;
+// returns the number of points actually written.
+static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
+    if (count < 2 || !outXYZ) return 0;
+    GCPnts_UniformAbscissa sampler(a, count);
+    if (!sampler.IsDone()) return 0;
+    int32_t n = sampler.NbPoints();
+    for (int32_t i = 1; i <= n; ++i) {
+        gp_Pnt p = a.Value(sampler.Parameter(i));
+        outXYZ[(i - 1) * 3 + 0] = p.X();
+        outXYZ[(i - 1) * 3 + 1] = p.Y();
+        outXYZ[(i - 1) * 3 + 2] = p.Z();
+    }
+    return n;
+}
+
 // MARK: - CompCurve adaptor (#211): a multi-edge wire as one arc-length-parameterized curve
 #include <BRepAdaptor_CompCurve.hxx>
-#include <GCPnts_AbscissaPoint.hxx>
 
 // Opaque handle: holds the adaptor by value (BRepAdaptor_CompCurve(const TopoDS_Wire&)).
 struct OCCTCompCurve {
@@ -5673,65 +5732,32 @@ void OCCTCompCurveRelease(OCCTCompCurveRef ref) { delete ref; }
 
 double OCCTCompCurveLength(OCCTCompCurveRef ref) {
     if (!ref) return -1.0;
-    try { return GCPnts_AbscissaPoint::Length(ref->adaptor); }
+    try { return adaptorLength(ref->adaptor); }
     catch (...) { return -1.0; }
 }
 
 void OCCTCompCurveParamRange(OCCTCompCurveRef ref, double* first, double* last) {
     if (!ref) return;
-    try {
-        if (first) *first = ref->adaptor.FirstParameter();
-        if (last)  *last  = ref->adaptor.LastParameter();
-    } catch (...) {}
+    try { adaptorParamRange(ref->adaptor, first, last); }
+    catch (...) {}
 }
 
 bool OCCTCompCurvePointAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p = ref->adaptor.Value(u);
-        if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorPointAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTCompCurveTangentAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p; gp_Vec d1;
-        ref->adaptor.D1(u, p, d1);
-        if (d1.Magnitude() < 1e-12) return false;   // degenerate (e.g. cusp)
-        gp_Dir dir(d1);
-        if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorTangentAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTCompCurveParamAtAbscissa(OCCTCompCurveRef ref, double s, double* outParam) {
     if (!ref) return false;
-    try {
-        GCPnts_AbscissaPoint ap(ref->adaptor, s, ref->adaptor.FirstParameter());
-        if (!ap.IsDone()) return false;
-        if (outParam) *outParam = ap.Parameter();
-        return true;
-    } catch (...) { return false; }
-}
-
-// Shared: N points spaced equally by arc length along any 3D curve adaptor.
-// outXYZ must hold count*3 doubles; returns the number of points actually written.
-#include <Adaptor3d_Curve.hxx>
-#include <GCPnts_UniformAbscissa.hxx>
-static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
-    if (count < 2 || !outXYZ) return 0;
-    GCPnts_UniformAbscissa sampler(a, count);
-    if (!sampler.IsDone()) return 0;
-    int32_t n = sampler.NbPoints();
-    for (int32_t i = 1; i <= n; ++i) {
-        gp_Pnt p = a.Value(sampler.Parameter(i));
-        outXYZ[(i - 1) * 3 + 0] = p.X();
-        outXYZ[(i - 1) * 3 + 1] = p.Y();
-        outXYZ[(i - 1) * 3 + 2] = p.Z();
-    }
-    return n;
+    try { return adaptorParamAtAbscissa(ref->adaptor, s, outParam); }
+    catch (...) { return false; }
 }
 
 int32_t OCCTCompCurveSampleUniform(OCCTCompCurveRef ref, int32_t count, double* outXYZ) {
@@ -5758,47 +5784,32 @@ void OCCTEdgeCurveRelease(OCCTEdgeCurveRef ref) { delete ref; }
 
 double OCCTEdgeCurveLength(OCCTEdgeCurveRef ref) {
     if (!ref) return -1.0;
-    try { return GCPnts_AbscissaPoint::Length(ref->adaptor); }
+    try { return adaptorLength(ref->adaptor); }
     catch (...) { return -1.0; }
 }
 
 void OCCTEdgeCurveParamRange(OCCTEdgeCurveRef ref, double* first, double* last) {
     if (!ref) return;
-    try {
-        if (first) *first = ref->adaptor.FirstParameter();
-        if (last)  *last  = ref->adaptor.LastParameter();
-    } catch (...) {}
+    try { adaptorParamRange(ref->adaptor, first, last); }
+    catch (...) {}
 }
 
 bool OCCTEdgeCurvePointAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p = ref->adaptor.Value(u);
-        if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorPointAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTEdgeCurveTangentAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p; gp_Vec d1;
-        ref->adaptor.D1(u, p, d1);
-        if (d1.Magnitude() < 1e-12) return false;
-        gp_Dir dir(d1);
-        if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorTangentAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTEdgeCurveParamAtAbscissa(OCCTEdgeCurveRef ref, double s, double* outParam) {
     if (!ref) return false;
-    try {
-        GCPnts_AbscissaPoint ap(ref->adaptor, s, ref->adaptor.FirstParameter());
-        if (!ap.IsDone()) return false;
-        if (outParam) *outParam = ap.Parameter();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorParamAtAbscissa(ref->adaptor, s, outParam); }
+    catch (...) { return false; }
 }
 
 int32_t OCCTEdgeCurveSampleUniform(OCCTEdgeCurveRef ref, int32_t count, double* outXYZ) {
