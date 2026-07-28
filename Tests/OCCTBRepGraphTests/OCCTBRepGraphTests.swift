@@ -951,6 +951,25 @@ struct BRepGraphProductTests {
             }
         }
     }
+
+    // #418: rootProductIndices had zero test coverage anywhere; only its
+    // sibling rootProductCount was exercised (productCountForPrimitive above).
+    @Test func rootProductIndices() {
+        let box = Shape.box(width: 10, height: 10, depth: 10)
+        if let box {
+            let graph = BRepGraph(shape: box)
+            if let graph {
+                let indices = graph.rootProductIndices
+                #expect(indices.count == graph.rootProductCount)
+                for index in indices {
+                    #expect(index >= 0)
+                    #expect(index < graph.productCount)
+                }
+                // Root product indices should be unique.
+                #expect(Set(indices).count == indices.count)
+            }
+        }
+    }
 }
 
 @Suite("BRepGraph Occurrences")
