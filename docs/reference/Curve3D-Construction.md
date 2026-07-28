@@ -355,11 +355,14 @@ The arc length of this curve between two parameter values.
 public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-Non-optional; returns `0` if the curve is invalid or an exception occurs internally.
+Non-optional; delegates to `length(from:to:)` (the failure-distinguishing entry point on the
+main page) and returns `-1.0` if the curve is invalid or the computation fails. Arc length is
+otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
+zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
 
 - **Parameters:** `u1` — start parameter; `u2` — end parameter (must satisfy `u1 ≤ u2`).
-- **Returns:** Arc length in model units.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve, u1, u2))`.
+- **Returns:** Arc length in model units, or `-1.0` on failure.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve, u1, u2))` (via `length(from:to:)`).
 - **Example:**
   ```swift
   if let curve = Curve3D.interpolate(
@@ -405,10 +408,13 @@ The total arc length of the curve over its full domain.
 public var totalArcLength: Double { get }
 ```
 
-Integrates the curve from `domain.lowerBound` to `domain.upperBound`. Distinct from the `length` property on the main page (which returns `Double?`); this always returns a `Double` (0 on failure).
+Delegates to `length` (the failure-distinguishing entry point on the main page) and returns
+`-1.0` if the curve is invalid or the computation fails, rather than `Double?`. Arc length is
+otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
+zero-length curve. Use `length` directly if you need an optional.
 
-- **Returns:** Total arc length in model units.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve))`.
+- **Returns:** Total arc length in model units, or `-1.0` on failure.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve))` (via `length`).
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 10)!
@@ -426,11 +432,13 @@ The arc length between two parameter values.
 public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double
 ```
 
-Like `arcLength(from:to:)` but with unlabelled parameters. Returns `0` on failure.
+Like `arcLength(from:to:)` but with unlabelled parameters. Delegates to `length(from:to:)` and
+returns `-1.0` on failure, never `0.0` (which would collide with a genuine zero-length interval,
+e.g. `param1 == param2`).
 
 - **Parameters:** `param1` — first parameter; `param2` — second parameter.
-- **Returns:** Arc length between the two parameters.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, param1, param2)`.
+- **Returns:** Arc length between the two parameters, or `-1.0` on failure.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, param1, param2)` (via `length(from:to:)`).
 - **Example:**
   ```swift
   let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
