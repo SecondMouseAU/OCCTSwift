@@ -10954,17 +10954,14 @@ OCCTCurve3DRef _Nullable OCCTGceMakeCircFromCenterNormal(double cx, double cy, d
                                                           double nx, double ny, double nz,
                                                           double radius);
 
-// --- gce_MakeCone ---
-/// Create a conical surface from 2 points (axis) + 2 radii
-OCCTSurfaceRef _Nullable OCCTGceMakeCone(double p1x, double p1y, double p1z,
-                                          double p2x, double p2y, double p2z,
-                                          double radius1, double radius2);
-
-// --- gce_MakeCylinder ---
-/// Create a cylindrical surface from 3 points (P1-P2 axis, P3 radius)
-OCCTSurfaceRef _Nullable OCCTGceMakeCylinderFrom3Points(double p1x, double p1y, double p1z,
-                                                         double p2x, double p2y, double p2z,
-                                                         double p3x, double p3y, double p3z);
+// --- gce_MakeCone / gce_MakeCylinder ---
+// Note (#420): conical/cylindrical surface-from-points construction is unified
+// on OCCTSurfaceConicalFromPointsRadii / OCCTSurfaceCylindricalFromPoints
+// (GC_MakeConicalSurface / GC_MakeCylindricalSurface, which return the
+// Handle(Geom_*) directly). The gce_MakeCone / gce_MakeCylinder-backed bridge
+// functions that previously duplicated this path were removed; the Swift
+// `Surface.coneFrom2PointsRadii`/`cylinderFrom3Points` entry points now call
+// through to `conicalSurface`/`cylindricalSurface`.
 
 // --- gce_MakeLin ---
 /// Create a line from 2 points
