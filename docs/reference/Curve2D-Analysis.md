@@ -1009,15 +1009,18 @@ public static func approximate(
 
 ### `arcLength(from:to:)`
 
-Computes the arc length of this curve between two parameter values.
+Computes the arc length of this curve between two parameter values. `u1` must not exceed `u2` —
+unlike `length(from:to:)`, which tolerates either order — since this entry point is backed by
+`Geom2dAdaptor_Curve`'s range-checked constructor.
 
 ```swift
-public func arcLength(from u1: Double, to u2: Double) -> Double
+public func arcLength(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1`/`u2` — parameter range.
-- **Returns:** Arc length value (always non-negative when `u1 ≤ u2`).
-- **OCCT:** `GeomAdaptor_Curve` + `GCPnts_AbscissaPoint::Length`.
+- **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`.
+- **Returns:** Arc length value, or `nil` on failure (e.g. a reversed range) — never a sentinel
+  `0.0` that could be mistaken for a genuine zero-length segment.
+- **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {

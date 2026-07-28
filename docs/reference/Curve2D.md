@@ -824,14 +824,16 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values.
+Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
+`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
+rather than a range-checked one.
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter.
-- **Returns:** Arc length, or `nil` on failure.
+- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
 - **Example:**
   ```swift
