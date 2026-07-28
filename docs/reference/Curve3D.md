@@ -710,6 +710,10 @@ The total arc length of the curve over its full domain.
 public var length: Double? { get }
 ```
 
+This is the canonical, failure-distinguishing entry point for the whole-domain arc length:
+`totalArcLength` (see [Curve3D-Construction](Curve3D-Construction.md)) delegates to this and
+collapses `nil` to a `-1.0` sentinel for source compatibility.
+
 - **Returns:** Arc length in model units, or `nil` if measurement fails (e.g. infinite line with unbounded domain).
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`.
 - **Example:**
@@ -727,6 +731,11 @@ The arc length between two parameter values.
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
+
+This is the canonical, failure-distinguishing entry point for a bounded-interval arc length:
+`arcLength(from:to:)` and `arcLengthBetween(_:_:)` (see
+[Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
+`-1.0` sentinel for source compatibility.
 
 - **Parameters:** `u1` — start parameter; `u2` — end parameter.
 - **Returns:** Arc length, or `nil` on failure.
