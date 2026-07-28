@@ -84,8 +84,6 @@
 #include <Extrema_ExtPS.hxx>
 #include <Extrema_ExtSS.hxx>
 #include <Extrema_POnSurf.hxx>
-#include <gce_MakeCone.hxx>
-#include <gce_MakeCylinder.hxx>
 #include <gce_MakePln.hxx>
 #include <Convert_CylinderToBSplineSurface.hxx>
 #include <Convert_ConeToBSplineSurface.hxx>
@@ -3249,28 +3247,13 @@ OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1, OCCTSurfaceR
     return result;
 }
 
-// MARK: - gce_Make Cone / Cylinder / Pln (v0.80)
-OCCTSurfaceRef _Nullable OCCTGceMakeCone(double p1x, double p1y, double p1z,
-                                          double p2x, double p2y, double p2z,
-                                          double radius1, double radius2) {
-    try {
-        gce_MakeCone mc(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), radius1, radius2);
-        if (!mc.IsDone()) return nullptr;
-        Handle(Geom_ConicalSurface) cone = new Geom_ConicalSurface(mc.Value().Position(), mc.Value().SemiAngle(), mc.Value().RefRadius());
-        return (OCCTSurfaceRef)new OCCTSurface{cone};
-    } catch (...) { return nullptr; }
-}
-
-OCCTSurfaceRef _Nullable OCCTGceMakeCylinderFrom3Points(double p1x, double p1y, double p1z,
-                                                         double p2x, double p2y, double p2z,
-                                                         double p3x, double p3y, double p3z) {
-    try {
-        gce_MakeCylinder mc(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), gp_Pnt(p3x, p3y, p3z));
-        if (!mc.IsDone()) return nullptr;
-        Handle(Geom_CylindricalSurface) cyl = new Geom_CylindricalSurface(mc.Value().Position(), mc.Value().Radius());
-        return (OCCTSurfaceRef)new OCCTSurface{cyl};
-    } catch (...) { return nullptr; }
-}
+// MARK: - gce_Make Pln (v0.80)
+// Note (#420): OCCTGceMakeCone / OCCTGceMakeCylinderFrom3Points used to live here,
+// duplicating OCCTSurfaceConicalFromPointsRadii / OCCTSurfaceCylindricalFromPoints
+// (same points-and-radii inputs) via a separate gce_MakeCone/gce_MakeCylinder ->
+// gp_Cone/gp_Cylinder -> Geom_ConicalSurface/Geom_CylindricalSurface round-trip.
+// Removed in favor of the single GC_MakeConicalSurface/GC_MakeCylindricalSurface
+// path; see Surface.coneFrom2PointsRadii/cylinderFrom3Points in Surface.swift.
 OCCTSurfaceRef _Nullable OCCTGceMakePlnFromEquation(double a, double b, double c, double d) {
     try {
         gce_MakePln mp(a, b, c, d);
