@@ -932,8 +932,9 @@ public static func circleFromCenterNormal(
 ```
 
 - **Parameters:** `center` — center of the circle; `normal` — plane normal; `radius` — circle radius.
-- **Returns:** A `Geom_Circle`, or `nil` on failure (e.g. zero normal or radius).
+- **Returns:** A `Geom_Circle`, or `nil` on failure (zero normal, or `radius <= 0`).
 - **OCCT:** `gce_MakeCirc` (center + normal + radius constructor).
+- **Note:** Geometrically identical to [`circle(center:normal:radius:)`](Curve3D.md), which builds the same `gp_Ax2(center, normal)` frame directly. Both enforce the same `radius > 0` precondition — `gce_MakeCirc` itself only rejects a strictly-negative radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let c = Curve3D.circleFromCenterNormal(
@@ -1003,8 +1004,9 @@ public static func ellipseFromCenterNormal(
 ```
 
 - **Parameters:** `center` — center of the ellipse; `normal` — plane normal; `majorRadius` — semi-major axis length; `minorRadius` — semi-minor axis length (must be ≤ `majorRadius`).
-- **Returns:** A `Geom_Ellipse`, or `nil` on failure.
+- **Returns:** A `Geom_Ellipse`, or `nil` on failure (either radius `<= 0`, or `minorRadius > majorRadius`).
 - **OCCT:** `gce_MakeElips`.
+- **Note:** Geometrically identical to [`ellipse(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions — `gce_MakeElips` itself accepts a zero minor radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let e = Curve3D.ellipseFromCenterNormal(
@@ -1030,8 +1032,9 @@ public static func hyperbolaFromCenterNormal(
 ```
 
 - **Parameters:** `center` — center; `normal` — plane normal; `majorRadius` — semi-transverse axis; `minorRadius` — semi-conjugate axis.
-- **Returns:** A `Geom_Hyperbola`, or `nil` on failure.
+- **Returns:** A `Geom_Hyperbola`, or `nil` on failure (either radius `<= 0`).
 - **OCCT:** `gce_MakeHypr`.
+- **Note:** Geometrically identical to [`hyperbola(center:normal:majorRadius:minorRadius:)`](Curve3D.md), and enforces the same radius preconditions — `gce_MakeHypr` itself accepts a zero radius, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let h = Curve3D.hyperbolaFromCenterNormal(
@@ -1054,8 +1057,9 @@ public static func parabolaFromCenterNormal(
 ```
 
 - **Parameters:** `center` — vertex (apex) of the parabola; `normal` — plane normal; `focal` — focal distance (distance from vertex to focus).
-- **Returns:** A `Geom_Parabola`, or `nil` on failure.
+- **Returns:** A `Geom_Parabola`, or `nil` on failure (`focal <= 0`).
 - **OCCT:** `gce_MakeParab`.
+- **Note:** Geometrically identical to [`parabola(center:normal:focal:)`](Curve3D.md), and enforces the same focal-length precondition — `gce_MakeParab` itself accepts a zero focal length, so the bridge adds the zero check to keep the two factories in agreement (#399).
 - **Example:**
   ```swift
   if let p = Curve3D.parabolaFromCenterNormal(
