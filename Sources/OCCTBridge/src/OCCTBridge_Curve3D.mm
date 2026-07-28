@@ -328,20 +328,6 @@ OCCTCurve3DRef OCCTCurve3DCreateArcOfCircle(double p1x, double p1y, double p1z,
     }
 }
 
-OCCTCurve3DRef OCCTCurve3DCreateArc3Points(double p1x, double p1y, double p1z,
-                                            double pmx, double pmy, double pmz,
-                                            double p2x, double p2y, double p2z) {
-    try {
-        GC_MakeArcOfCircle maker(gp_Pnt(p1x, p1y, p1z),
-                                  gp_Pnt(pmx, pmy, pmz),
-                                  gp_Pnt(p2x, p2y, p2z));
-        if (!maker.IsDone()) return nullptr;
-        return new OCCTCurve3D(maker.Value());
-    } catch (...) {
-        return nullptr;
-    }
-}
-
 OCCTCurve3DRef OCCTCurve3DCreateEllipse(double cx, double cy, double cz,
                                          double nx, double ny, double nz,
                                          double majorR, double minorR) {
