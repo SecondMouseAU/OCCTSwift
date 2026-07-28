@@ -4532,3 +4532,45 @@ struct Curve2DInterpolateTangentsParityTests {
                                     endTangent: Self.endTangent) == nil)
     }
 }
+
+// MARK: - #409: arcLength(from:to:) no longer collapses failure into 0.0
+
+/// `arcLength(from:to:)` and `length(from:to:)` both wrap `GCPnts_AbscissaPoint::Length` over
+/// a `Geom2dAdaptor_Curve`, but via different construction idioms: `arcLength(from:to:)` builds
+/// a range-checked adaptor (`Geom2dAdaptor_Curve(curve, u1, u2)`, which raises
+/// `Standard_ConstructionError` when `u1 > u2`), while `length(from:to:)` builds an unrestricted
+/// adaptor and calls the `Length(adaptor, u1, u2)` overload, which tolerates either order. That
+/// is a genuine behavioral difference, not just a cosmetic one, so `arcLength(from:to:)` keeps
+/// its own bridge call rather than delegating to `length(from:to:)`. Both used to collapse this
+/// (and any other computation failure) into a sentinel `0.0`/`-1.0` with no way for a caller to
+/// tell it apart from a legitimate zero-length result; both now return `nil` on failure.
+@Suite("Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)")
+struct Curve2DArcLengthFailureTests {
+
+    private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])!
+
+    @Test("A reversed range is a genuine failure, not a zero-length result")
+    func reversedRangeFails() {
+        #expect(Self.bezier.arcLength(from: 0.8, to: 0.2) == nil)
+    }
+
+    @Test("Equal bounds are a genuine zero-length result, not a failure")
+    func equalBoundsAreGenuinelyZero() {
+        let len = Self.bezier.arcLength(from: 0.3, to: 0.3)
+        #expect(len != nil)
+        if let len {
+            #expect(abs(len) < 1e-9)
+        }
+    }
+
+    @Test("length(from:to:) tolerates the same reversed range arcLength(from:to:) rejects")
+    func lengthToleratesReversedRange() {
+        let forward = Self.bezier.length(from: 0.2, to: 0.8)
+        let reversed = Self.bezier.length(from: 0.8, to: 0.2)
+        #expect(forward != nil)
+        #expect(reversed != nil)
+        if let forward, let reversed {
+            #expect(abs(forward - reversed) < 1e-9)
+        }
+    }
+}
