@@ -578,6 +578,7 @@ struct Curve3DOperationsTests {
     func mirrorAcrossPoint() {
         let seg = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
         let mirrored = seg.mirrored(acrossPoint: .zero)
+        #expect(mirrored != nil)
         if let mirrored = mirrored {
             let start = mirrored.startPoint
             let end = mirrored.endPoint
@@ -592,6 +593,7 @@ struct Curve3DOperationsTests {
     func mirrorAcrossAxis() {
         let seg = Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0))!
         let mirrored = seg.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
+        #expect(mirrored != nil)
         if let mirrored = mirrored {
             let start = mirrored.startPoint
             let end = mirrored.endPoint
@@ -670,6 +672,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.translated(by: SIMD3(3, -2, 1.5))
         let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
@@ -684,6 +687,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.rotated(around: axisOrigin, direction: axisDirection, angle: angle)
         let ok = base.rotate(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
@@ -696,6 +700,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.scaled(from: center, factor: 2.5)
         let ok = base.scale(center: center, factor: 2.5)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
@@ -708,6 +713,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.mirrored(acrossPoint: point)
         let ok = base.mirrorPoint(point)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
@@ -721,6 +727,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.mirrored(acrossAxis: origin, direction: direction)
         let ok = base.mirrorAxis(origin: origin, direction: direction)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
@@ -734,6 +741,7 @@ struct Curve3DTransformFamilyParityTests {
         let copy = base.mirrored(acrossPlane: origin, normal: normal)
         let ok = base.mirrorPlane(origin: origin, normal: normal)
         #expect(ok)
+        #expect(copy != nil)
         if let copy = copy {
             assertMatch(base, copy)
         }
