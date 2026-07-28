@@ -287,7 +287,8 @@ public func normal(atU u: Double, v: Double) -> SIMD3<Double>?
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
 - **Returns:** Unit normal vector, or `nil` at singular points where the tangent plane is degenerate.
-- **OCCT:** `GeomLProp_SLProps::Normal`.
+- **OCCT:** `GeomLProp_SLProps::Normal` (order 1, `Precision::Confusion()`), gated on `IsNormalDefined()`.
+- **See also:** [`normal(u:v:)`](#normaluv) — same computation and same degeneracy test, but returns the zero vector instead of `nil` where the normal is undefined (#401).
 - **Example:**
   ```swift
   if let n = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!.normal(atU: 0, v: 0) {
@@ -1248,11 +1249,21 @@ Computes the surface normal at (u, v).
 public func normal(u: Double, v: Double) -> SIMD3<Double>
 ```
 
-Always returns a vector; at singular points the result may be the zero vector. Prefer the optional-returning `normal(atU:v:)` (from the Evaluation section) when singularity detection matters.
+Always returns a vector; where the normal is undefined the result is the zero vector. Prefer the optional-returning `normal(atU:v:)` (from the Evaluation section) when you need to tell "undefined" apart from a genuine result.
+
+Both entry points evaluate the same `GeomLProp_SLProps` normal and gate on the same `IsNormalDefined()` test, so they always agree on *where* the normal exists — they differ only in how the absence is reported (`nil` vs. the zero vector). Before #401 this method hand-rolled `Geom_Surface::D1` plus a cross product against a literal `1e-15` magnitude epsilon, which classified degeneracy differently: arbitrarily close to a cone apex it returned a spurious zero vector for a normal OCCT resolves perfectly well.
+
+A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`) is not — OCCT still resolves the tangent plane there.
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Surface normal vector at (u, v).
-- **OCCT:** `GeomLProp_SLProps::Normal`.
+- **Returns:** Unit surface normal at (u, v), or `SIMD3(0, 0, 0)` where the normal is undefined.
+- **OCCT:** `GeomLProp_SLProps::Normal` (via the shared `OCCTSurfaceGetNormal` bridge path).
+- **Example:**
+  ```swift
+  let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+  #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)   // apex: undefined
+  #expect(cone.normal(atU: 0, v: 0) == nil)               // ... reported as nil here
+  ```
 
 ---
 
