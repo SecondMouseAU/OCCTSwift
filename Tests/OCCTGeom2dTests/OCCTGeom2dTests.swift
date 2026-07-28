@@ -4541,26 +4541,28 @@ struct Curve2DInterpolateTangentsParityTests {
 /// `Standard_ConstructionError` when `u1 > u2`), while `length(from:to:)` builds an unrestricted
 /// adaptor and calls the `Length(adaptor, u1, u2)` overload, which tolerates either order. That
 /// is a genuine behavioral difference, not just a cosmetic one, so `arcLength(from:to:)` keeps
-/// its own bridge call rather than delegating to `length(from:to:)`. Both used to collapse this
-/// (and any other computation failure) into a sentinel `0.0`/`-1.0` with no way for a caller to
-/// tell it apart from a legitimate zero-length result; both now return `nil` on failure.
+/// its own bridge call rather than delegating to `length(from:to:)`. `arcLength(from:to:)` stays
+/// non-optional (matching #408's `Curve3D.arcLength(from:to:)` shape, to avoid a source-breaking
+/// signature change) but now collapses failure to an unambiguous `-1.0` sentinel instead of
+/// `0.0`, which could be mistaken for a legitimate zero-length result; `length(from:to:)` is the
+/// optional, failure-distinguishing sibling for callers who need `nil` rather than a sentinel.
 @Suite("Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)")
 struct Curve2DArcLengthFailureTests {
 
     private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])!
 
-    @Test("A reversed range is a genuine failure, not a zero-length result")
+    @Test("A reversed range is a genuine failure, reported as -1.0, not 0.0")
     func reversedRangeFails() {
-        #expect(Self.bezier.arcLength(from: 0.8, to: 0.2) == nil)
+        let len = Self.bezier.arcLength(from: 0.8, to: 0.2)
+        #expect(len == -1.0)
+        #expect(len != 0.0)
     }
 
-    @Test("Equal bounds are a genuine zero-length result, not a failure")
+    @Test("Equal bounds are a genuine zero-length result, not the failure sentinel")
     func equalBoundsAreGenuinelyZero() {
         let len = Self.bezier.arcLength(from: 0.3, to: 0.3)
-        #expect(len != nil)
-        if let len {
-            #expect(abs(len) < 1e-9)
-        }
+        #expect(abs(len) < 1e-9)
+        #expect(len != -1.0)
     }
 
     @Test("length(from:to:) tolerates the same reversed range arcLength(from:to:) rejects")
