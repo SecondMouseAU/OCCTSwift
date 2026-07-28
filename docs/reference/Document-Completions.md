@@ -1034,13 +1034,16 @@ Create a `UnifySameDomainBuilder` for the given shape.
 public init(shape: Shape, unifyEdges: Bool = true, unifyFaces: Bool = true, concatBSplines: Bool = false)
 ```
 
-- **Parameters:** `shape` — the input shape; `unifyEdges` — merge same-domain edges; `unifyFaces` — merge same-domain faces; `concatBSplines` — concatenate adjacent BSplines.
+- **Parameters:** `shape` — the input shape, left unchanged; `unifyEdges` — merge same-domain edges; `unifyFaces` — merge same-domain faces; `concatBSplines` — concatenate adjacent BSplines (note `Shape.unified(...)` defaults this to `true`, this initialiser to `false`).
 - **OCCT:** `ShapeUpgrade_UnifySameDomain`.
+- **Input is not modified:** the builder works on a private copy. `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is given, and those rewrites reached the caller's own shape — so discarding the result was not enough to keep it (#446).
 - **Example:**
   ```swift
-  let unifier = UnifySameDomainBuilder(shape: myShape)
+  let unifier = UnifySameDomainBuilder(shape: body)
+  unifier.setAngularTolerance(10.0 * .pi / 180)
   unifier.build()
-  if let result = unifier.shape { ... }
+  if let merged = unifier.shape, merged.isValidSolid { body = merged }
+  // else: body is untouched, and usable
   ```
 
 ---
@@ -1070,7 +1073,7 @@ Prevent a specific sub-shape from being unified.
 public func keepShape(_ shape: Shape)
 ```
 
-- **Parameters:** `shape` — the sub-shape to preserve unchanged.
+- **Parameters:** `shape` — the sub-shape to preserve unchanged. Pass a sub-shape of the shape the builder was created with; it is matched to its counterpart in the builder's private copy for you (#446).
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::KeepShape`.
 - **Example:**
   ```swift
@@ -1081,14 +1084,15 @@ public func keepShape(_ shape: Shape)
 
 ### `UnifySameDomainBuilder.setSafeInputMode(_:)`
 
-Enable safe-input mode (copies the input shape before modification, preserving the original).
+Set OCCT's safe-input mode, which governs how freely the algorithm may rewrite the shape it is working on.
 
 ```swift
 public func setSafeInputMode(_ safe: Bool)
 ```
 
-- **Parameters:** `safe` — `true` to copy the input shape.
+- **Parameters:** `safe` — OCCT's own default is `true`.
 - **OCCT:** `ShapeUpgrade_UnifySameDomain::SetSafeInputMode`.
+- **This says nothing about your shape:** the builder always works on a private copy, so the shape passed to the initialiser is untouched either way. Safe mode does not fully protect the algorithm's own input in any case — `TransformPCurves` writes temporary pcurves onto it regardless (#446).
 - **Example:**
   ```swift
   unifier.setSafeInputMode(true)

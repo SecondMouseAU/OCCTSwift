@@ -15,6 +15,81 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — unify consumed the shape it was given, so a declined merge still damaged the caller's solid (#446)
+
+> Version and date are deliberately unset: this entry is written on a branch, and the next patch
+> number is not this PR's to claim. Whoever tags stamps it then.
+
+`ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and those rewrites
+reach the `TShape`s the caller's `Shape` still shares. The result: the idiom every consumer writes —
+take the merge if it is valid, otherwise keep what you had — silently damaged what you had. A solid
+that was a clean, non-self-intersecting manifold before the call came out of it self-intersecting,
+with no result ever accepted. OCCT documents the class as producing a new shape and says nothing
+about the input being consumed.
+
+**Root cause, traced in the kernel:** `TransformPCurves` (`ShapeUpgrade_UnifySameDomain.cxx:1228`
+and two sibling sites) writes temporary pcurves onto the **input's** edges, against a scratch
+reference face the algorithm builds for itself, and only ever removes them again if that reference
+face is later replaced. `SetSafeInputMode` does not cover this path — it is unguarded, and safe mode
+is OCCT's default anyway, so the reporter was already running it. Minimal reproducer: two stacked
+coaxial cylinders (same-domain cylindrical faces, differently parameterised, which is what drives
+that path). The input's serialized BREP grows from **1676 to 1778 bytes** across a single
+`unified()` call that the caller never even used the result of.
+
+Every unify entry point now works on a private copy (`BRepBuilderAPI_Copy`), so the caller's shape is
+untouched whatever the algorithm does to its own input: `Shape.unified()`, `Shape.simplified()`, and
+`UnifySameDomainBuilder`. No API change and no new parameter — the copy is unconditional, because
+"the input survives" is what every call site already assumed.
+
+**What the copy costs.** A real fraction of the call, not a rounding error: measured here at 0.6 ms
+against 2.3 ms for the merge itself on an 84-face compound (28%), and review measurement on a
+600-face compound put it at 18% where there is real merging to do but 64% on a nothing-to-merge input
+— which matters because `unified()` is the standard post-boolean cleanup and often finds nothing.
+Peak memory doubles for the duration. Unconditional anyway: a `copyInput:` flag would put the
+silent-corruption path back within reach of anyone optimising a hot loop, and it can be added later
+if a caller measures this as a real problem.
+
+**And what it costs in identity.** The result now shares **no** sub-shapes with the input, even where
+nothing was merged — before this change an untouched face came back `IsSame` with the one it came
+from. `Shape.isSame(as:)`, `isPartner(with:)` and `isEqual(to:)` are public and consumers do map
+selections and attributes across by sub-shape identity, so that code has to key off geometry instead.
+This is the unavoidable price of the fix rather than a choice, but it is a behaviour change and is
+pinned by a test. `UnifySameDomainBuilder.keepShape(_:)` is unaffected: it still takes the input's own
+sub-shapes and maps them across for you.
+
+**Deduplication.** Three bridge call sites constructed `ShapeUpgrade_UnifySameDomain` independently
+(`OCCTShapeUnifySameDomain` and `OCCTShapeSimplify` in `OCCTBridge_Healing.mm`, the builder in
+`OCCTBridge_Modeling.mm`), each with its own copy of the construct/`Build()`/null-check sequence —
+which is exactly why one fix had to be written three times. They now share
+`occtUnifySameDomain`/`occtUnifySameDomainInput`/`occtUnifySameDomainMapped`
+(`OCCTBridge_Internal.h`). The two public Swift entry points are **not** redundant and both stay:
+`Shape.unified()` is the one-shot, `UnifySameDomainBuilder` adds tolerances, `keepShape` and
+internal-edge control. Their `concatBSplines` defaults disagree (`true` vs `false`) — left as-is
+rather than silently changed under existing callers, but now cross-documented on both.
+
+`UnifySameDomainBuilder.keepShape(_:)` names a sub-shape of the **caller's** shape, so working on a
+copy means mapping it onto its counterpart there; without that, every `keepShape` would have quietly
+kept nothing. `setSafeInputMode(_:)`'s doc comment, which claimed it "copies input shape to preserve
+original", was wrong on both counts and is corrected.
+
+**Sibling audit (so nobody files a speculative sweep):** the same input-consumption class was checked
+on the same fixture for `ShapeFix_Shape` (`healed()`, `fixed(tolerance:)`), `BRepAlgoAPI_Defeaturing`
+(`withoutSmallFaces(minArea:)`) and `ShapeUpgrade_ShapeDivideClosed` (`dividedClosedFaces()`). All
+four leave the input byte-identical. `ShapeUpgrade_UnifySameDomain` is the outlier, not the first of
+a family.
+
+Bridge-only fix: no OCCT kernel change, no xcframework rebuild, no new operations (count unchanged at
+4,258). New regression suite `Issue446UnifyInputMutationTests` (`OCCTShapeHealingTests`) asserts the
+input's serialized BREP is byte-identical across all three entry points, that a declined merge leaves
+the shape's validity/self-intersection/volume unchanged, that the merged result's geometry is
+unmoved, that the result no longer shares sub-shapes with the input, and that `keepShape` still
+blocks a merge through the copy (per-edge: the junction seam blocks it, a cap circle does not). Full
+`swift test`: 4474 tests in 1291 suites, all passing.
+
+Also fixed in passing: `docs/reference/Shape-Features.md` credited `withoutSmallFaces(minArea:)` to
+`ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`; `OCCTShapeRemoveSmallFaces` uses
+neither, it collects small faces by area and removes them with `BRepAlgoAPI_Defeaturing`.
+
 ### Unreleased: fix — `Shape.faceAddHole()` rejected every circular hole wire, and never oriented the ones it kept (#397)
 
 > Version and date are deliberately unset: this entry is written on a branch, and the next patch

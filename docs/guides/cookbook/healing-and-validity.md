@@ -81,6 +81,23 @@ let upgraded = shape.upgraded(tolerance: 1e-3)         // sew + make-solid + hea
 - **`unified()`** — `ShapeUpgrade_UnifySameDomain`; the standard **post-boolean** cleanup that merges
   the redundant faces/edges a boolean leaves behind.
 
+**Declining a merge is safe.** The usual shape of this call is "take the merge if it survives your
+acceptance checks, otherwise keep what you had":
+
+```swift
+if let merged = body.unified(), merged.isValidSolid, merged.volume == body.volume {
+    body = merged
+}
+// else: body is exactly the shape it was before the call
+```
+
+`unified()`, `simplified()` and `UnifySameDomainBuilder` all work on a private copy, so that `else`
+branch is sound — the input survives a declined merge untouched. It did not before #446: the OCCT
+algorithm rewrites sub-shapes of the shape it is handed, and those rewrites reached the caller's own
+shape, so a solid could come out of a *rejected* merge self-intersecting. The copy costs one shape
+duplication per call, and the result shares no sub-shapes with the input even where nothing merged —
+so map selections and attributes across by geometry, not by `isSame(as:)`.
+
 ## Sewing faces into a shell
 
 Disconnected faces (e.g. from a surface model or a mesh conversion) become a watertight shell by
