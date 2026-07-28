@@ -925,15 +925,18 @@ public static func interpolate(
 
 ---
 
-### `interpolatePeriodic(points:)`
+### `interpolatePeriodic(points:tolerance:)`
 
 Interpolates a closed (periodic) 2D BSpline through a sequence of points.
 
 ```swift
-public static func interpolatePeriodic(points: [SIMD2<Double>]) -> Curve2D?
+public static func interpolatePeriodic(points: [SIMD2<Double>],
+                                       tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-- **Parameters:** `points` — interpolation points (do not repeat the first point at the end; the bridge closes the curve automatically).
+A spelling of [`interpolate(through:closed:tolerance:)`](Curve2D.md) with `closed: true`, and it delegates to it — the two cannot produce different curves for the same input. Before #412 it was a second, independent `Geom2dAPI_Interpolate` call site with the tolerance pinned at `1e-6` and unreachable, and with a stricter minimum point count (3, against the general entry point's 2) that the two had drifted into.
+
+- **Parameters:** `points` — interpolation points, minimum 2 (do not repeat the first point at the end; the curve closes automatically); `tolerance` — point coincidence tolerance.
 - **Returns:** Periodic BSpline, or `nil` on failure.
 - **OCCT:** `Geom2dAPI_Interpolate` (periodic).
 - **Example:**
