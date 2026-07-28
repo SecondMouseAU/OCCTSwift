@@ -3053,6 +3053,11 @@ OCCTSurfaceRef OCCTSurfaceScale(OCCTSurfaceRef surface,
 OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef surface,
                                        double px, double py, double pz,
                                        double nx, double ny, double nz);
+OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef surface,
+                                       double px, double py, double pz);
+OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef surface,
+                                      double px, double py, double pz,
+                                      double dx, double dy, double dz);
 
 // Conversion
 OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef surface);
