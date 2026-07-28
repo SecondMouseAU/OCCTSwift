@@ -6632,8 +6632,16 @@ typedef struct {
 /// @param surface BSpline surface to analyze
 /// @param uContinuity Desired U continuity (0=C0, 1=C1, 2=C2)
 /// @param vContinuity Desired V continuity (0=C0, 1=C1, 2=C2)
+/// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
+/// @param maxUParams Capacity of outUParams
+/// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
+/// @param maxVParams Capacity of outVParams
+/// @return Split counts; nbUSplits/nbVSplits are the true counts even when writing
+///   was truncated by maxUParams/maxVParams, so a caller can retry with a bigger buffer
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
-    int32_t uContinuity, int32_t vContinuity);
+    int32_t uContinuity, int32_t vContinuity,
+    double* outUParams, int32_t maxUParams,
+    double* outVParams, int32_t maxVParams);
 
 /// Join an array of Bezier surface patches into a single BSpline surface.
 /// @param patches Array of surface handles (row-major, nRows x nCols)
@@ -8970,6 +8978,18 @@ void OCCTGeomFillNSectionsInfo(
 int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef _Nonnull law,
     int32_t continuityOrder,
     int32_t* _Nonnull outIndices, int32_t maxIndices);
+
+/// Find PARAMETER values (not knot-table indices) where a BSpline law drops below
+/// given continuity -- the law-function analogue of OCCTCurve3DBSplineKnotSplits. #403.
+/// @param law BSpline law function handle
+/// @param continuityOrder Continuity level to check (0=C0, 1=C1, 2=C2)
+/// @param outParams Pre-allocated array for break parameter values
+/// @param maxParams Maximum number of parameters to return
+/// @return Number of break parameters found (true count, even if writing was truncated
+///   by maxParams), or -1 on failure
+int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef _Nonnull law,
+    int32_t continuityOrder,
+    double* _Nonnull outParams, int32_t maxParams);
 
 // --- Law_Composite ---
 /// Create a composite law from multiple sub-laws stitched together.

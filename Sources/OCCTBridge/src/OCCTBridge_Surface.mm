@@ -1702,8 +1702,14 @@ OCCTSurfaceRef OCCTSurfaceTrimmedCylinder(
 }
 
 // MARK: - Surface KnotSplitting / JoinBezierPatches (v0.50)
+// #403: also fills the U/V split PARAMETER buffers (not just the counts) -- the
+// underlying GeomConvert_BSplineSurfaceKnotSplitting analyzer always computed
+// USplitValue/VSplitValue, this just wasn't surfaced. outUParams/outVParams may be
+// null (or their max 0) to skip writing either direction.
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
-    int32_t uContinuity, int32_t vContinuity) {
+    int32_t uContinuity, int32_t vContinuity,
+    double* outUParams, int32_t maxUParams,
+    double* outVParams, int32_t maxVParams) {
     OCCTSurfaceKnotSplitResult result = {};
     if (!surface) return result;
     try {
@@ -1712,6 +1718,18 @@ OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
         GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, uContinuity, vContinuity);
         result.nbUSplits = splitter.NbUSplits();
         result.nbVSplits = splitter.NbVSplits();
+        if (outUParams && maxUParams > 0) {
+            occtWriteKnotSplitParams(result.nbUSplits,
+                [&](int32_t i) { return splitter.USplitValue(i); },
+                [&](int32_t idx) { return bsurf->UKnot(idx); },
+                outUParams, maxUParams);
+        }
+        if (outVParams && maxVParams > 0) {
+            occtWriteKnotSplitParams(result.nbVSplits,
+                [&](int32_t i) { return splitter.VSplitValue(i); },
+                [&](int32_t idx) { return bsurf->VKnot(idx); },
+                outVParams, maxVParams);
+        }
     } catch (...) {}
     return result;
 }

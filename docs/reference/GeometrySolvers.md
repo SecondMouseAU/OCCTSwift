@@ -748,10 +748,36 @@ public func knotSplitting(continuityOrder: Int = 2) -> [Int]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
+Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
+`bounds` — see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
 
 - **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
 - **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
 - **OCCT:** `Law_BSplineKnotSplitting`.
+
+---
+
+#### `knotSplitParameters(continuityOrder:)`
+
+Find parameter values (not raw knot indices) where a BSpline law drops below given continuity —
+the law-function analogue of `Curve3D.continuityBreaks`.
+
+```swift
+public func knotSplitParameters(continuityOrder: Int = 2) -> [Double]
+```
+
+Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
+Unlike `knotSplitting(continuityOrder:)`'s raw indices, these are real parameter values, directly
+usable with `value(at:)` and bounded by `bounds`.
+
+- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+- **Returns:** Split parameters in ascending order, or empty array if none or if the function is not BSpline-based.
+- **OCCT:** `Law_BSplineKnotSplitting`.
+- **Example:**
+  ```swift
+  let breaks = law.knotSplitParameters(continuityOrder: 2)
+  // breaks are real parameters within law.bounds, usable e.g. as sweep split points
+  ```
 
 ---
 

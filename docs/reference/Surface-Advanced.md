@@ -575,16 +575,18 @@ Analyses where a BSpline surface would need to be split to achieve a given conti
 public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult
 ```
 
-Returns the number of U and V splits needed; does not modify the surface.
+Returns the number of U and V splits needed, plus the actual U/V parameter values at each
+split; does not modify the surface.
 
 - **Parameters:** `uContinuity` — desired U continuity (0=C0, 1=C1, 2=C2); `vContinuity` — desired V continuity.
-- **Returns:** `KnotSplitResult` with `uSplitCount` and `vSplitCount`.
+- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount` and `uSplitParams`/`vSplitParams`
+  (ascending, bounded by the surface's own U/V domain).
 - **OCCT:** `BSplSLib::KnotSplitting`.
 - **Example:**
   ```swift
   let result = surf.knotSplitting(uContinuity: 2, vContinuity: 2)
-  print("U splits needed:", result.uSplitCount)
-  print("V splits needed:", result.vSplitCount)
+  print("U splits needed:", result.uSplitCount, result.uSplitParams)
+  print("V splits needed:", result.vSplitCount, result.vSplitParams)
   ```
 
 ---

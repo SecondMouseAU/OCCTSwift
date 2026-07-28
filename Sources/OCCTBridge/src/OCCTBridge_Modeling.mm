@@ -5935,6 +5935,31 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
     }
 }
 
+// #403: same analyzer as above, but converts each split's knot-table index to an actual
+// parameter value via Law_BSpline::Knot() -- raw indices are otherwise uninterpretable
+// since the public API exposes no way to read the law's own knot vector.
+int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef law, int32_t continuityOrder,
+    double* outParams, int32_t maxParams)
+{
+    if (!law || !outParams || maxParams <= 0) return -1;
+    try {
+        auto* wrapper = reinterpret_cast<OCCTLawFunction*>(law);
+        Handle(Law_BSpFunc) bspFunc = Handle(Law_BSpFunc)::DownCast(wrapper->law);
+        if (bspFunc.IsNull()) return -1;
+
+        Handle(Law_BSpline) bspl = bspFunc->Curve();
+        if (bspl.IsNull()) return -1;
+
+        Law_BSplineKnotSplitting splitter(bspl, continuityOrder);
+        return occtWriteKnotSplitParams(splitter.NbSplits(),
+            [&](int32_t i) { return splitter.SplitValue(i); },
+            [&](int32_t idx) { return bspl->Knot(idx); },
+            outParams, maxParams);
+    } catch (...) {
+        return -1;
+    }
+}
+
 // --- Law_Composite ---
 
 OCCTLawFunctionRef OCCTLawComposite(const OCCTLawFunctionRef* lawRefs,
