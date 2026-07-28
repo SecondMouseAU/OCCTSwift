@@ -121,7 +121,10 @@ public final class LawFunction: @unchecked Sendable {
 
     /// Find knot indices where a BSpline law drops below given continuity.
     ///
-    /// Only works on BSpline-based law functions.
+    /// Only works on BSpline-based law functions. Returns raw indices into the underlying
+    /// `Law_BSpline`'s own knot table -- not directly usable against `value(at:)` or
+    /// `bounds`, since this API exposes no way to read that knot table back. See
+    /// `knotSplitParameters(continuityOrder:)` for the actual parameter values (#403).
     ///
     /// - Parameter continuityOrder: Continuity level (0=C0, 1=C1, 2=C2)
     /// - Returns: Array of knot indices where continuity breaks, or empty array
@@ -130,5 +133,40 @@ public final class LawFunction: @unchecked Sendable {
         var indices = [Int32](repeating: 0, count: Int(maxIndices))
         let count = OCCTLawBSplineKnotSplitting(handle, Int32(continuityOrder), &indices, maxIndices)
         return (0..<Int(count)).map { Int(indices[$0]) }
+    }
+
+    /// Parameter values (not raw knot indices) at which continuity drops below `continuityOrder`.
+    ///
+    /// The law-function analogue of `Curve3D.continuityBreaks`: a law's discontinuities,
+    /// like a curve's, are inherently 1D, so parameter values (directly usable with
+    /// `value(at:)`, and bounded by `bounds`) are the natural shape here too -- unlike
+    /// `knotSplitting(continuityOrder:)`'s raw indices, which the public API otherwise
+    /// exposes no way to interpret. Added alongside `Surface.knotSplitting`'s new parameter
+    /// fields in #403: same "cheap to compute, previously dropped" gap.
+    ///
+    /// ```swift
+    /// let breaks = law.knotSplitParameters(continuityOrder: 2)
+    /// // breaks are real parameters within law.bounds, usable e.g. as sweep split points
+    /// ```
+    ///
+    /// - Parameter continuityOrder: Continuity level (0=C0, 1=C1, 2=C2)
+    /// - Returns: Split parameters in ascending order, or empty array if not a BSpline-based law
+    public func knotSplitParameters(continuityOrder: Int = 2) -> [Double] {
+        // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
+        // reports the true split count even when it writes fewer, so one retry sized to
+        // that count is always enough.
+        func read(capacity: Int32) -> (count: Int32, params: [Double]) {
+            var params = [Double](repeating: 0, count: Int(capacity))
+            let count = OCCTLawBSplineKnotSplitParams(handle, Int32(continuityOrder), &params, capacity)
+            return (count, params)
+        }
+
+        var (count, params) = read(capacity: 100)
+        guard count >= 0 else { return [] }
+        if count > 100 {
+            (count, params) = read(capacity: count)
+            guard count >= 0 else { return [] }
+        }
+        return Array(params.prefix(Int(count)))
     }
 }
