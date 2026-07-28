@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.16.0
+## Current: v1.16.1
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
@@ -15,10 +15,7 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### Unreleased: fix — unify consumed the shape it was given, so a declined merge still damaged the caller's solid (#446)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then.
+### v1.16.1 (July 2026): fix — unify consumed the shape it was given, so a declined merge still damaged the caller's solid (#446)
 
 `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and those rewrites
 reach the `TShape`s the caller's `Shape` still shares. The result: the idiom every consumer writes —
@@ -84,16 +81,13 @@ input's serialized BREP is byte-identical across all three entry points, that a 
 the shape's validity/self-intersection/volume unchanged, that the merged result's geometry is
 unmoved, that the result no longer shares sub-shapes with the input, and that `keepShape` still
 blocks a merge through the copy (per-edge: the junction seam blocks it, a cap circle does not). Full
-`swift test`: 4474 tests in 1291 suites, all passing.
+`swift test` (combined with #397 below): 4480 tests in 1292 suites, all passing.
 
 Also fixed in passing: `docs/reference/Shape-Features.md` credited `withoutSmallFaces(minArea:)` to
 `ShapeAnalysis_CheckSmallFace` + `ShapeUpgrade_UnifySameDomain`; `OCCTShapeRemoveSmallFaces` uses
 neither, it collects small faces by area and removes them with `BRepAlgoAPI_Defeaturing`.
 
-### Unreleased: fix — `Shape.faceAddHole()` rejected every circular hole wire, and never oriented the ones it kept (#397)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then.
+### v1.16.1 (July 2026): fix — `Shape.faceAddHole()` rejected every circular hole wire, and never oriented the ones it kept (#397)
 
 `Shape.faceAddHole(face:wire:)` returned `nil` for **every** hole wire built from circular geometry —
 `Wire.circle(origin:normal:radius:)` and a hand-joined two-arc circle alike, at any radius, in either
@@ -132,8 +126,8 @@ Bridge-only fix: no OCCT kernel change, no xcframework rebuild, no new operation
 4,258). New regression suite `Issue397CircularHoleTests` (`OCCTModelingTests`) covers `Wire.circle`
 and two-arc holes in both windings, the extruded-solid volume, same-winding polygon holes, the
 zero-area curved wire that must still be declined, and the boundary-crossing wire that no winding can
-turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test`: 4474 tests in
-1291 suites, all passing.
+turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test` (combined with
+#446 above): 4480 tests in 1292 suites, all passing.
 
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
 
