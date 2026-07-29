@@ -1279,6 +1279,42 @@ extension AssemblyNode {
     // MARK: - TDataXtd Triangulation Attribute
 
     /// Set a triangulation attribute on this label by meshing a shape.
+    ///
+    /// Meshes the shape and stores **every** face's triangulation, merged into one
+    /// `Poly_Triangulation` in the shape's own coordinate system: per-face locations are
+    /// applied to the nodes, and reversed faces have their winding and node normals flipped
+    /// so the stored mesh is consistently outward. Node normals survive only if every
+    /// contributing face carries them; per-face UV nodes are dropped, since they index
+    /// parameter spaces that no longer mean anything once the faces are pooled.
+    ///
+    /// - Important: **The stored coordinate frame changed in the same release as the
+    ///   every-face fix.** This previously stored one face's nodes in that *face's* local
+    ///   frame, discarding its `TopLoc_Location`. It now stores them in the **shape's**
+    ///   frame. For a shape with a non-identity location (an assembly component, anything
+    ///   from ``Shape/transformed(by:)``) the numbers therefore move, independently of the
+    ///   node-count change: a box translated to (100, 200, 300) used to store a node at the
+    ///   origin and now stores it at (100, 200, 300). Re-read any persisted OCAF document
+    ///   that was written before this change if you compare stored triangulations.
+    ///
+    /// - Note: Node normals are transformed and reversed here, which
+    ///   ``Shape/mesh(linearDeflection:angularDeflection:)`` does not do for its own
+    ///   ``Mesh/normals`` (only its winding swap matches). The two therefore disagree for a
+    ///   located or reversed face. `BRepMesh_IncrementalMesh` does not produce node normals
+    ///   at all, so this only arises for a face carrying a triangulation from elsewhere,
+    ///   such as glTF import.
+    ///
+    /// ```swift
+    /// let label = doc.createLabel()!
+    /// label.setTriangulationFromShape(Shape.box(width: 10, height: 10, depth: 10)!,
+    ///                                 deflection: 1.0)
+    /// print(label.triangulationNodeCount)      // 24, all six faces, not 4
+    /// print(label.triangulationTriangleCount)  // 12
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - shape: The shape to mesh. Faces at any depth are included.
+    ///   - deflection: Linear meshing deflection (default: 1.0).
+    /// - Returns: `false` if the shape has no face, or if nothing in it meshed.
     @discardableResult
     public func setTriangulationFromShape(_ shape: Shape, deflection: Double = 1.0) -> Bool {
         OCCTDocumentSetTriangulationFromShape(document.handle, labelId, shape.handle, deflection)
@@ -1297,6 +1333,53 @@ extension AssemblyNode {
     /// Get the deflection of the triangulation attribute.
     public var triangulationDeflection: Double {
         OCCTDocumentTriangulationDeflection(document.handle, labelId)
+    }
+
+    /// Read one node of the triangulation attribute, in the frame it was stored in.
+    ///
+    /// Nodes are numbered from 1, as `Poly_Triangulation` numbers them.
+    /// ``setTriangulationFromShape(_:deflection:)`` stores them in the **shape's** coordinate
+    /// frame, so a located shape's nodes come back in absolute coordinates.
+    ///
+    /// ```swift
+    /// let moved = Shape.box(width: 10, height: 10, depth: 10)!.moved(dx: 100, dy: 200, dz: 300)!
+    /// label.setTriangulationFromShape(moved, deflection: 1.0)
+    /// let node = label.triangulationNode(at: 1)!   // absolute, not the box's local frame
+    /// ```
+    ///
+    /// - Parameter index: 1-based node index.
+    /// - Returns: The node position, or `nil` if this label has no triangulation attribute or
+    ///   `index` is out of range.
+    public func triangulationNode(at index: Int32) -> SIMD3<Double>? {
+        var xyz = [Double](repeating: 0, count: 3)
+        guard OCCTDocumentTriangulationNode(document.handle, labelId, index, &xyz) else {
+            return nil
+        }
+        return SIMD3(xyz[0], xyz[1], xyz[2])
+    }
+
+    /// Read one node normal of the triangulation attribute, in the frame it was stored in.
+    ///
+    /// Node normals only exist when the meshed faces carried them.
+    /// `BRepMesh_IncrementalMesh` does not produce any, so this returns `nil` for anything
+    /// meshed from B-Rep, and a value for a shape whose faces arrived with a triangulation
+    /// from elsewhere, such as glTF import.
+    ///
+    /// ```swift
+    /// let imported = Shape.loadGLTF(from: url)!    // glTF meshes carry vertex normals
+    /// label.setTriangulationFromShape(imported, deflection: 1.0)
+    /// let n = label.triangulationNode(at: 1).flatMap { _ in label.triangulationNormal(at: 1) }
+    /// ```
+    ///
+    /// - Parameter index: 1-based node index.
+    /// - Returns: The unit normal, or `nil` if this label has no triangulation attribute, the
+    ///   stored triangulation has no node normals, or `index` is out of range.
+    public func triangulationNormal(at index: Int32) -> SIMD3<Double>? {
+        var xyz = [Double](repeating: 0, count: 3)
+        guard OCCTDocumentTriangulationNormal(document.handle, labelId, index, &xyz) else {
+            return nil
+        }
+        return SIMD3(xyz[0], xyz[1], xyz[2])
     }
 
     // MARK: - TDataXtd Point/Axis/Plane Attributes
@@ -3874,16 +3957,19 @@ public extension Shape {
     /// Create a solid from a shell shape using `ShapeFix_Solid`, orienting it to enclose
     /// a finite volume.
     ///
-    /// One solid is built per *body-bounding* shell, not just the first shell found: within
-    /// each solid, every shell that an **even** number of the other shells enclose, plus
-    /// every shell that belongs to no solid (the usual shape of sewing output). A single
-    /// body comes back as a solid, several as a compound in exploration order.
+    /// One solid is built per *body-bounding* shell, not just the first shell found: every
+    /// shell that an **even** number of the other shells in its group enclose, where a group
+    /// is one solid's own shells, or all the shells belonging to no solid (the usual shape
+    /// of sewing output). A single body comes back as a solid, several as a compound in
+    /// exploration order.
     ///
-    /// A solid's *cavity* shells are deliberately skipped: a hole is not a body, and
-    /// building it as a positive solid would yield a compound whose volume double-counts
-    /// the part. So a hollow solid produces one solid bounded by its outer shell, with the
-    /// cavity filled. To rebuild a solid that keeps its cavities, use
-    /// ``Shape/solidFromShells(_:)`` with the outer shell first.
+    /// *Cavity* shells are deliberately skipped: a hole is not a body, and building it as a
+    /// positive solid would yield a compound whose volume double-counts the part. So a
+    /// hollow solid produces one solid bounded by its outer shell, with the cavity filled,
+    /// and so does that same body after sewing has left its two shells free. A body nested
+    /// inside another body's cavity is enclosed twice, so it is still read as a body. To
+    /// rebuild a solid that keeps its cavities, use ``Shape/solidFromShells(_:)`` with the
+    /// outer shell first.
     ///
     /// ```swift
     /// let quilt = Shape.compound([shellA, shellB])!   // e.g. two sewn bodies

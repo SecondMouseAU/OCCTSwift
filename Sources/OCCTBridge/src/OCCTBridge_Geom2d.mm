@@ -402,6 +402,10 @@ struct OCCTMedialAxis {
     }
 };
 
+// #443 audit: first face only. A medial axis is a property of one face, and the result type
+// holds one graph, so widening this would mean a different return shape; documented on
+// MedialAxis.init(of:) rather than changed. Measured: a two-face compound returns the same
+// arcs as its first face alone.
 OCCTMedialAxisRef OCCTMedialAxisCompute(OCCTShapeRef shape, double tolerance) {
     if (!shape) return nullptr;
     try {

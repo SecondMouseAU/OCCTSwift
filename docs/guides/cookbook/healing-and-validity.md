@@ -80,6 +80,16 @@ let upgraded = shape.upgraded(tolerance: 1e-3)         // sew + make-solid + hea
   precision of imported data (e.g. `1e-3`, not the default `1e-6`).
 - **`unified()`** — `ShapeUpgrade_UnifySameDomain`; the standard **post-boolean** cleanup that merges
   the redundant faces/edges a boolean leaves behind.
+- **`upgraded(tolerance:)`** sews, then builds one solid per body, then heals. A **multi-body** part
+  stays multi-body and comes back as a compound of solids. Two things sewing costs you here: a hollow
+  body's **cavity is filled** (sewing dissolves the solid that declared it), and content that would
+  not attach to a shell is dropped. Use `fixed(tolerance:)` instead when either matters; it does not
+  sew.
+
+```swift
+let part = twoBodyImport.upgraded(tolerance: 1e-3)!
+print(part.solids.count)   // 2, every body kept
+```
 
 **Declining a merge is safe.** The usual shape of this call is "take the merge if it survives your
 acceptance checks, otherwise keep what you had":

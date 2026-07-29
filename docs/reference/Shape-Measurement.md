@@ -749,6 +749,9 @@ The first shape provides the outer shell; additional shapes provide cavity (inne
 - **Parameters:** `shells` — Array of shapes containing shells; must not be empty.
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeSolid` (via `OCCTSolidFromShells`).
+- **Note:** Each element contributes only the **first** shell found in it, so pass one shape per
+  shell rather than a compound of several. An element holding no shell is skipped silently,
+  except the first, which fails the whole call. (#443 audit)
 - **Example:**
   ```swift
   if let solid = Shape.solidFromShells([outerShell, innerShell]) {
@@ -772,6 +775,9 @@ public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape?
 - **Returns:** Modified shape with fillets, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeFillet2d` (via `OCCTFace2DFillet`).
 - **Note:** `vertexIndices` and `radii` must have equal length; mismatch returns `nil`.
+- **Note:** Only the **first** face of the receiver is filleted, and the result is that face
+  alone; the other faces of a multi-face shape are neither filleted nor carried through. Vertex
+  indices are numbered within that first face. Call this on one face at a time. (#443 audit)
 
 ---
 
@@ -788,6 +794,9 @@ public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape?
   - `distances` — Chamfer distance for each edge pair.
 - **Returns:** Modified shape with chamfers, or `nil` on failure.
 - **OCCT:** `BRepFilletAPI_MakeFillet2d` (via `OCCTFace2DChamfer`).
+- **Note:** Only the **first** face of the receiver is chamfered, and the result is that face
+  alone; the other faces of a multi-face shape are neither chamfered nor carried through. Edge
+  indices are numbered within that first face. Call this on one face at a time. (#443 audit)
 
 ---
 

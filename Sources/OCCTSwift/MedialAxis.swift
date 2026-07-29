@@ -78,6 +78,10 @@ public final class MedialAxis: @unchecked Sendable {
 
     /// Compute the medial axis of a planar face.
     ///
+    /// - Note: Only the **first** face found is used, and only its outer wire. A shape with
+    ///   several faces returns the same result as that first face on its own; the rest are
+    ///   ignored, not merged. Pass one face at a time to compute a medial axis per face.
+    ///
     /// - Parameters:
     ///   - shape: A shape containing at least one face.
     ///   - tolerance: Computation tolerance (default 1e-4).

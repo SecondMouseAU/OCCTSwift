@@ -1309,6 +1309,8 @@ public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape?
 - **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 1-based index of the face to split.
 - **Returns:** Modified shape with the face split, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape` + `LocOpe_Spliter` via `OCCTLocOpeSplitByWireOnFace`.
+- **Note:** Only the **first** wire of `wire` is used. Passing a shape that holds several wires
+  splits by one of them and silently ignores the rest; call once per wire. (#443 audit)
 
 ---
 

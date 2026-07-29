@@ -686,6 +686,8 @@ OCCTShapeRef OCCTShapeBuildThreadCutter(double ox, double oy, double oz,
         sewer.Perform();
         TopoDS_Shape shell = sewer.SewedShape();
         if (shell.IsNull()) return nullptr;
+        // #443 audit: first shell only, but the faces sewn above are one closed helical
+        // cutter by construction, so there is never a second. No caller-visible risk.
         TopExp_Explorer se(shell, TopAbs_SHELL);
         if (!se.More()) return nullptr;
         TopoDS_Solid solid = BRepBuilderAPI_MakeSolid(TopoDS::Shell(se.Current())).Solid();
@@ -932,6 +934,8 @@ OCCTShapeRef OCCTShapeNormalProjection(OCCTShapeRef wireOrEdge, OCCTShapeRef sur
 
 #include <BRepPrimAPI_MakeHalfSpace.hxx>
 
+// #443 audit: first face only. A half-space is bounded by one face by definition, so the
+// argument is expected to hold exactly one; documented on Shape.halfSpace rather than changed.
 OCCTShapeRef OCCTShapeCreateHalfSpace(OCCTShapeRef faceShape, double refX, double refY, double refZ) {
     if (!faceShape) return nullptr;
     try {
@@ -2854,41 +2858,51 @@ OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* 
     }
 }
 
+// One solid per body-bounding shell, not just the first shell an explorer yields (#443).
+// Sewing two disjoint bodies produces exactly the two-shell input this used to reduce to one
+// solid, which is the input its own doc comment names, and after #442 the sibling entry point
+// OCCTShapeSolidFromShell answered that same input with both bodies. Same helper, so the two
+// now agree; cavity shells stay out of the result for the reason documented there.
+//
+// #443 review flagged the IsDone()/IsNull() checks below as a silent-drop path reopened one
+// layer down: a MakeSolid failure used to fail the whole call, and per-shell it just skips that
+// body. Checked against occt-src rather than assumed: BRepLib_MakeSolid's single-shell
+// constructor (BRepLib_MakeSolid.cxx) unconditionally calls Done() after B.Add(myShape, S), with
+// no closure or coherence check anywhere in the path — its own header says as much ("a solid
+// under construction is always valid"). Confirmed with a probe (BRepBuilderAPI_MakeSolid on a
+// 5-of-6-face open shell, and on a bare empty shell): IsDone() true and Solid() non-null in both
+// cases, just a geometrically invalid solid (BRepCheck_Analyzer.IsValid() false) rather than a
+// null one. So neither branch below can fire for a real shell today. They stay as push-not-drop
+// rather than being deleted, matching OCCTShapeSolidFromShell's identical belt-and-braces
+// comment ("keeps a body rather than dropping it if that changes") — same defensive contract,
+// zero behaviour change either way.
 OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell) {
     if (!shell) return nullptr;
 
     try {
-        // Extract shell from shape
-        TopoDS_Shell topoShell;
-        if (shell->shape.ShapeType() == TopAbs_SHELL) {
-            topoShell = TopoDS::Shell(shell->shape);
-        } else {
-            // Try to find a shell in the shape
-            TopExp_Explorer exp(shell->shape, TopAbs_SHELL);
-            if (exp.More()) {
-                topoShell = TopoDS::Shell(exp.Current());
-            } else {
-                return nullptr;
+        std::vector<TopoDS_Shape> made;
+        for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
+            BRepBuilderAPI_MakeSolid makeSolid(topoShell);
+            TopoDS_Solid solid;
+            if (makeSolid.IsDone()) solid = makeSolid.Solid();
+            if (solid.IsNull()) {
+                made.push_back(topoShell);   // Kept, not dropped — see comment above.
+                continue;
             }
+
+            // Optionally fix the solid orientation
+            ShapeFix_Solid fixer(solid);
+            fixer.Perform();
+            TopoDS_Shape fixedShape = fixer.Solid();
+            // Keep the unfixed solid rather than dropping the body, as before.
+            made.push_back((fixedShape.IsNull() || fixedShape.ShapeType() != TopAbs_SOLID)
+                               ? TopoDS_Shape(solid)
+                               : fixedShape);
         }
 
-        BRepBuilderAPI_MakeSolid makeSolid(topoShell);
-        if (!makeSolid.IsDone()) {
-            return nullptr;
-        }
-
-        TopoDS_Solid solid = makeSolid.Solid();
-        if (solid.IsNull()) return nullptr;
-
-        // Optionally fix the solid orientation
-        ShapeFix_Solid fixer(solid);
-        fixer.Perform();
-        TopoDS_Shape fixedShape = fixer.Solid();
-        if (fixedShape.IsNull() || fixedShape.ShapeType() != TopAbs_SOLID) {
-            return new OCCTShape(solid);  // Return original if fix failed
-        }
-
-        return new OCCTShape(TopoDS::Solid(fixedShape));
+        TopoDS_Shape result = occtSolidBodiesToShape(made);
+        if (result.IsNull()) return nullptr;
+        return new OCCTShape(result);
     } catch (...) {
         return nullptr;
     }
@@ -3079,36 +3093,53 @@ OCCTBooleanHistoryRef OCCTShapeHealWithHistory(OCCTShapeRef shape, OCCTShapeRef*
 // nothing. The one stage that can actually touch sub-shape identity is the
 // ShapeFix_Solid orientation-fix pass, so that's the history source here.
 // ShapeFix_Solid::Init does NOT auto-create a context (verified in occt-src,
-// unlike ShapeFix_Shape above) — SetContext() must be called explicitly before
+// unlike ShapeFix_Shape above): SetContext() must be called explicitly before
 // Perform(), or Context()->History() below would dereference a null Handle.
+//
+// Multi-body input goes one body per body-bounding shell, matching the plain
+// OCCTShapeCreateSolidFromShell (#443). All the per-body fixers share ONE
+// ShapeBuild_ReShape, so the single history covers every body: History() builds a
+// fresh BRepTools_History from the context's whole replacement map on each call
+// (BRepTools_ReShape::History), so replacements from earlier bodies are still in it.
+// The flip side of sharing: each body's Perform() calls Context()->Apply() against a map
+// that already holds the earlier bodies' replacements. Harmless for the disjoint bodies
+// sewing produces, since Apply returns an unmapped shape unchanged, but two bodies that
+// genuinely share a sub-shape would see the first body's replacement of it.
 OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shell,
                                                                   OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
     if (!shell) return nullptr;
     try {
-        TopoDS_Shell topoShell;
-        if (shell->shape.ShapeType() == TopAbs_SHELL) {
-            topoShell = TopoDS::Shell(shell->shape);
-        } else {
-            TopExp_Explorer exp(shell->shape, TopAbs_SHELL);
-            if (!exp.More()) return nullptr;
-            topoShell = TopoDS::Shell(exp.Current());
+        Handle(ShapeBuild_ReShape) context = new ShapeBuild_ReShape;
+        std::vector<TopoDS_Shape> made;
+        for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
+            // Same MakeSolid IsDone()/IsNull() checks as OCCTShapeCreateSolidFromShell above,
+            // and the same finding applies: verified dead code (BRepLib_MakeSolid's single-shell
+            // constructor always Done()s, never a null Solid()), kept push-not-drop for the same
+            // belt-and-braces reason. A body that took this branch never reaches ShapeFix_Solid,
+            // so it contributes nothing to `context` — same as any body the loop never visits.
+            BRepBuilderAPI_MakeSolid makeSolid(topoShell);
+            TopoDS_Solid solid;
+            if (makeSolid.IsDone()) solid = makeSolid.Solid();
+            if (solid.IsNull()) {
+                made.push_back(topoShell);   // Kept, not dropped — see comment above.
+                continue;
+            }
+
+            ShapeFix_Solid fixer(solid);
+            fixer.SetContext(context);
+            fixer.Perform();
+            TopoDS_Shape result = fixer.Solid();
+            if (result.IsNull() || result.ShapeType() != TopAbs_SOLID) {
+                result = solid;  // Fall back to the unfixed solid, same as OCCTShapeCreateSolidFromShell.
+            }
+            made.push_back(result);
         }
 
-        BRepBuilderAPI_MakeSolid makeSolid(topoShell);
-        if (!makeSolid.IsDone()) return nullptr;
-        TopoDS_Solid solid = makeSolid.Solid();
-        if (solid.IsNull()) return nullptr;
+        TopoDS_Shape result = occtSolidBodiesToShape(made);
+        if (result.IsNull()) return nullptr;
 
-        ShapeFix_Solid fixer(solid);
-        fixer.SetContext(new ShapeBuild_ReShape);
-        fixer.Perform();
-        TopoDS_Shape result = fixer.Solid();
-        if (result.IsNull() || result.ShapeType() != TopAbs_SOLID) {
-            result = solid;  // Fall back to the unfixed solid, same as OCCTShapeCreateSolidFromShell.
-        }
-
-        Handle(BRepTools_History) hist = fixer.Context()->History();
+        Handle(BRepTools_History) hist = context->History();
         if (hist.IsNull()) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
         return new OCCTBooleanHistory(hist);
@@ -4248,6 +4279,10 @@ OCCTWireRef OCCTWireOffset3D(OCCTWireRef wire, double distance, double dirX, dou
 #include <GProp_PEquation.hxx>
 #include <TColgp_Array1OfPnt.hxx>
 
+// #443 audit: each argument contributes only its FIRST shell. The outer-versus-cavity
+// contract is the caller's to state (that is what the argument order means), but which shell
+// of a multi-shell argument gets used is not. Documented on Shape.solidFromShells rather
+// than changed, since widening it would make the argument order stop meaning anything.
 OCCTShapeRef OCCTSolidFromShells(OCCTShapeRef* shells, int32_t count) {
     if (!shells || count <= 0) return nullptr;
     try {
@@ -4289,6 +4324,9 @@ OCCTWireRef OCCTWireCreateFastPolygon(const double* coords, int32_t pointCount, 
     }
 }
 
+// #443 audit: first face only, and the result is that face alone. Left as-is because the
+// vertex indices are numbered within it, so filleting every face would need per-face index
+// lists, a different signature. Documented on Shape.fillet2D.
 OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
                                const double* radii, int32_t count) {
     if (!shape || !vertexIndices || !radii || count <= 0) return nullptr;
@@ -4317,6 +4355,7 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
     }
 }
 
+// #443 audit: first face only, same reasoning as OCCTFace2DFillet above.
 OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
                                 const int32_t* edge1Indices, const int32_t* edge2Indices,
                                 const double* distances, int32_t count) {
@@ -5740,6 +5779,9 @@ bool OCCTLocOpeBuildWires(OCCTShapeRef shape, int32_t faceIndex,
 }
 // --- LocOpe_WiresOnShape + LocOpe_Spliter ---
 
+// #443 audit: first WIRE of the splitting shape only (the face is named by index, so that
+// half is explicit). Singular by contract, since one wire splits one face. Documented on
+// Shape.splitByWireOnFace rather than changed.
 OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
     OCCTShapeRef wire, int32_t faceIndex) {
     if (!shape || !wire) return nullptr;
@@ -6582,6 +6624,9 @@ OCCTShapeRef _Nullable OCCTBRepFeatGluer(OCCTShapeRef _Nonnull baseShape,
 
 // --- LocOpe_WiresOnShape + LocOpe_Spliter (new functions) ---
 
+// #443 audit: each (wire, face) pair contributes only its first wire. The pair list is
+// already the place to name several wires, so this is singular by contract; documented on
+// Shape.locOpeSplit(wiresOnFaces:) rather than changed.
 OCCTShapeRef _Nullable OCCTLocOpeSplitByWires(OCCTShapeRef _Nonnull shape,
     const OCCTShapeRef _Nonnull * _Nonnull wiresOnFaces, int32_t pairCount,
     OCCTShapeRef _Nullable * _Nullable * _Nonnull outDirectLeft, int32_t* _Nonnull outDirectLeftCount) {

@@ -1766,9 +1766,10 @@ OCCTShapeRef OCCTShapeCreateFaceFromWire(OCCTWireRef wire, bool planar);
 /// @return Face shape with holes, or NULL on failure
 OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* holes, int32_t holeCount);
 
-/// Create a solid from a closed shell
-/// @param shell Shell shape (must be closed)
-/// @return Solid shape, or NULL on failure
+/// Create a solid from every body-bounding shell of a shape, not just the first (#443).
+/// Cavity shells are skipped; see occtBodyBoundingShells in OCCTBridge_Internal.h.
+/// @param shell Shell shape (must be closed), or any shape holding shells
+/// @return One solid, a compound of solids for multi-body input, or NULL if there is no shell
 OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell);
 
 /// Sew multiple faces/shapes into a shell or solid
@@ -2647,7 +2648,8 @@ OCCTShapeRef OCCTShapeConvertToBSpline(OCCTShapeRef shape);
 /// Sew a single shape (reconnect disconnected faces)
 OCCTShapeRef OCCTShapeSewSingle(OCCTShapeRef shape, double tolerance);
 
-/// Upgrade shape: sew + make solid + heal (pipeline)
+/// Upgrade shape: sew + make solid + heal (pipeline). One solid per body-bounding shell of
+/// the sewn result, so multi-body input stays multi-body (#443).
 OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance);
 
 
@@ -4869,7 +4871,9 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHealWithHistory(OCCTShapeRef _Nonnull s
                                                             OCCTShapeRef _Nullable * _Nullable outResult);
 
 /// Create a solid from a closed shell (BRepBuilderAPI_MakeSolid + ShapeFix_Solid
-/// orientation fix), with full history.
+/// orientation fix), with full history. Same body selection as
+/// OCCTShapeCreateSolidFromShell; one shared ReShape context, so the single history
+/// covers every body (#443).
 OCCTBooleanHistoryRef _Nullable OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef _Nonnull shell,
                                                                            OCCTShapeRef _Nullable * _Nullable outResult);
 
@@ -7570,7 +7574,9 @@ bool OCCTDocumentHasGeometryAttr(OCCTDocumentRef doc, int64_t labelId);
 
 // MARK: - TDataXtd Triangulation Attribute (v0.56.0)
 
-/// Set a triangulation attribute on a label by meshing a shape.
+/// Set a triangulation attribute on a label by meshing a shape. Stores EVERY face's
+/// triangulation merged into one Poly_Triangulation, not just the first face's (#443).
+/// Returns false if the shape has no face, or if nothing in it meshed.
 bool OCCTDocumentSetTriangulationFromShape(OCCTDocumentRef doc, int64_t labelId, OCCTShapeRef shape, double deflection);
 
 /// Get the number of nodes in a triangulation attribute.
@@ -7581,6 +7587,23 @@ int32_t OCCTDocumentTriangulationNbTriangles(OCCTDocumentRef doc, int64_t labelI
 
 /// Get the deflection of a triangulation attribute.
 double OCCTDocumentTriangulationDeflection(OCCTDocumentRef doc, int64_t labelId);
+
+/// Read one node of a triangulation attribute, in the coordinate frame it was stored in.
+/// @param index 1-based node index, as Poly_Triangulation numbers them.
+/// @param outXYZ receives x, y, z. Untouched when the call returns false.
+/// @return false if the label has no triangulation attribute or the index is out of range.
+bool OCCTDocumentTriangulationNode(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                   double* outXYZ);
+
+/// Read one node normal of a triangulation attribute, in the frame it was stored in.
+/// Node normals exist only when the meshed faces carried them; BRepMesh_IncrementalMesh does
+/// not produce any, so this is false for anything meshed from B-Rep and true for e.g. an
+/// imported glTF mesh.
+/// @param index 1-based node index.
+/// @param outXYZ receives the normal. Untouched when the call returns false.
+/// @return false if there is no attribute, no node normals, or the index is out of range.
+bool OCCTDocumentTriangulationNormal(OCCTDocumentRef doc, int64_t labelId, int32_t index,
+                                     double* outXYZ);
 
 // MARK: - TDataXtd Point/Axis/Plane Attributes (v0.56.0)
 

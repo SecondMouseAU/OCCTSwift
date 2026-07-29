@@ -860,16 +860,19 @@ Create a closed solid from a shell, using `ShapeFix_Solid` to orient and close t
 public func solidFromShellFixed() -> Shape?
 ```
 
-One solid is built per *body-bounding* shell, not just the first shell found (#442): within each
-solid, every shell that an **even** number of the other shells enclose, plus every shell that belongs
-to no solid (the usual shape of sewing output). A single body comes back as a solid, several as a
-compound in exploration order.
+One solid is built per *body-bounding* shell, not just the first shell found (#442): every shell that
+an **even** number of the other shells in its group enclose, where a group is one solid's own shells,
+or all the shells belonging to no solid (the usual shape of sewing output). A single body comes back
+as a solid, several as a compound in exploration order. [`Shape.solid(from:)`](Shape-Features.md#shapesolidfrom)
+makes the same selection, so the two agree on any input.
 
-A solid's **cavity** shells are deliberately skipped: a hole is not a body, and building it as a
-positive solid would yield a compound whose volume double-counts the part. So a hollow solid produces
-one solid bounded by its outer shell, with the cavity filled. To rebuild a solid that keeps its
-cavities, use [`Shape.solidFromShells(_:)`](Shape-Measurement.md#solidfromshells_) with the outer
-shell first.
+**Cavity** shells are deliberately skipped: a hole is not a body, and building it as a positive solid
+would yield a compound whose volume double-counts the part. So a hollow solid produces one solid
+bounded by its outer shell, with the cavity filled, and so does that same body after sewing has left
+its two shells free, since the free-shell group goes through the same parity pass (#443). A body
+nested inside another body's cavity is enclosed twice, so it is still read as a body. To rebuild a
+solid that keeps its cavities, use [`Shape.solidFromShells(_:)`](Shape-Measurement.md#solidfromshells_)
+with the outer shell first.
 
 > An **open** shell is not rejected. `ShapeFix_Solid::SolidFromShell` builds its solid before
 > classifying anything and never returns a null one, so a shell with gaps comes back as a solid that

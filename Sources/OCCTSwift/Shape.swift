@@ -1547,14 +1547,32 @@ public final class Shape: @unchecked Sendable {
     /// Converts a shell (set of connected faces) into a solid. The shell
     /// must be closed (no gaps) for this to succeed.
     ///
+    /// One solid is built per *body-bounding* shell, not just the first shell found: every
+    /// shell that an **even** number of the other shells in its group enclose, where a group
+    /// is one solid's own shells, or all the shells belonging to no solid (the usual shape
+    /// of sewing output). A single body comes back as a solid, several as a compound in
+    /// exploration order. This matches ``Shape/solidFromShellFixed()``, which asks the same
+    /// question of the same input.
+    ///
+    /// *Cavity* shells are deliberately skipped: a hole is not a body, and building it as a
+    /// positive solid would yield a compound whose volume double-counts the part. A body
+    /// nested inside another body's cavity is enclosed twice, so it is still read as a body.
+    /// To rebuild a solid that keeps its cavities, use ``Shape/solidFromShells(_:)`` with
+    /// the outer shell first.
+    ///
     /// - Parameter shell: A shell shape (typically from sewing operations)
-    /// - Returns: A solid shape, or nil if the shell is not closed
+    /// - Returns: A solid, a compound of solids for multi-body input, or nil if the shape
+    ///   holds no shell at all
     ///
     /// ## Example
     ///
     /// ```swift
     /// let sewn = Shape.sew(faces: faces, tolerance: 1e-6)!
     /// let solid = Shape.solid(from: sewn)!
+    ///
+    /// // Sewing two disjoint bodies yields two shells, so this yields two solids.
+    /// let both = Shape.solid(from: Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!)!
+    /// print(both.solids.count)   // 2
     /// ```
     public static func solid(from shell: Shape) -> Shape? {
         guard let handle = OCCTShapeCreateSolidFromShell(shell.handle) else {
@@ -3941,6 +3959,30 @@ extension Shape {
     /// Performs a complete upgrade of the shape by sewing disconnected faces,
     /// attempting to create a solid from shells, and applying shape healing.
     ///
+    /// The solid step builds one solid per *body-bounding* shell the sewing produced, so a
+    /// multi-body part stays a multi-body part; it comes back as a compound of solids, and
+    /// a single body as a bare solid. Body selection is the same rule as ``Shape/solid(from:)``:
+    /// every shell that an **even** number of the other shells in its group enclose, where a
+    /// group is one solid's own shells, or all the shells belonging to no solid — so a free
+    /// shell that is itself an even-enclosed cavity is skipped, not turned into a body.
+    ///
+    /// ```swift
+    /// // A raw imported mesh holding two separate bodies.
+    /// let part = imported.upgraded(tolerance: 1e-6)!
+    /// print(part.solids.count)   // 2, not 1
+    /// ```
+    ///
+    /// - Note: Sewing dissolves the solids in the input, so a hollow body reaches the solid
+    ///   step as two free shells and comes back as one body with its **cavity filled**
+    ///   (8000 mm³ for a 7000 mm³ hollow cube). A body nested inside another body's cavity
+    ///   is still read as a body. To heal a hollow part without losing its cavities, use
+    ///   ``Shape/fixed(tolerance:)``, which does not sew.
+    ///
+    /// - Note: The solid step *replaces* the sewn shape rather than merging into it, so
+    ///   content sewing could not attach to a shell (a stray face, a loose edge) is not
+    ///   carried into the result. If the input may contain such content, sew and heal it
+    ///   yourself with ``Shape/sewn(tolerance:)`` and ``Shape/fixed(tolerance:)``.
+    ///
     /// - Parameter tolerance: Tolerance for sewing and healing (default: 1e-6)
     /// - Returns: Upgraded shape, or nil on failure
     public func upgraded(tolerance: Double = 1e-6) -> Shape? {
@@ -4161,6 +4203,10 @@ extension Shape {
     ///
     /// A half-space is an infinite solid on one side of a face.
     /// The reference point indicates which side is solid.
+    ///
+    /// - Note: Only the **first** face of `face` is used. A shape holding several faces
+    ///   produces a half-space bounded by one of them, not by all of them; pass the single
+    ///   dividing face to be explicit about which.
     ///
     /// - Parameters:
     ///   - face: A shape containing the dividing face
@@ -5429,6 +5475,16 @@ extension Shape {
     /// Create a solid from a closed shell, with full per-input-subshape
     /// history. History only reflects the orientation-fix pass — wrapping an
     /// already-closed shell into a solid does not itself modify any sub-shape.
+    ///
+    /// Body selection matches ``Shape/solid(from:)``: one solid per body-bounding shell,
+    /// a compound when there is more than one, cavity shells skipped. The single history
+    /// covers every body.
+    ///
+    /// ```swift
+    /// let sewn = Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!
+    /// guard let (solids, history) = Shape.solidWithFullHistory(from: sewn) else { return }
+    /// print(solids.solids.count)   // 2
+    /// ```
     public static func solidWithFullHistory(from shell: Shape) -> (result: Shape, history: ShapeHistoryRef)? {
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeCreateSolidFromShellWithHistory(shell.handle, &resultRef),
@@ -6290,6 +6346,10 @@ extension Shape {
     /// the given shapes. The first shape provides the outer shell, and additional shapes
     /// provide cavity (inner) shells.
     ///
+    /// - Note: Each element contributes only the **first** shell found in it, so pass one
+    ///   shape per shell rather than a compound of several. An element holding no shell is
+    ///   skipped silently, except the first, which fails the whole call.
+    ///
     /// - Parameter shells: Array of shapes containing shells (first = outer, rest = cavities)
     /// - Returns: Solid shape, or nil on failure
     public static func solidFromShells(_ shells: [Shape]) -> Shape? {
@@ -6306,6 +6366,11 @@ extension Shape {
     ///
     /// Uses BRepFilletAPI_MakeFillet2d to round corners of a planar face.
     /// Vertex indices are 0-based and correspond to the topological vertex order.
+    ///
+    /// - Note: Only the **first** face of the receiver is filleted, and the result is that
+    ///   face alone; the other faces of a multi-face shape are neither filleted nor carried
+    ///   through. Vertex indices are numbered within that first face. Call this on one face
+    ///   at a time.
     ///
     /// - Parameters:
     ///   - vertexIndices: 0-based indices of vertices to fillet
@@ -6327,6 +6392,11 @@ extension Shape {
     ///
     /// Uses BRepFilletAPI_MakeFillet2d to add chamfers at the intersection of
     /// adjacent edges. Edge indices are 0-based and correspond to the topological edge order.
+    ///
+    /// - Note: Only the **first** face of the receiver is chamfered, and the result is that
+    ///   face alone; the other faces of a multi-face shape are neither chamfered nor carried
+    ///   through. Edge indices are numbered within that first face. Call this on one face at
+    ///   a time.
     ///
     /// - Parameters:
     ///   - edgePairs: Array of (edge1Index, edge2Index) pairs identifying adjacent edges
@@ -8992,6 +9062,10 @@ extension Shape {
     // MARK: LocOpe_WiresOnShape + LocOpe_Spliter
 
     /// Split a face of this shape by projecting a wire onto it.
+    ///
+    /// - Note: Only the **first** wire of `wire` is used. Passing a shape that holds several
+    ///   wires splits by one of them and silently ignores the rest; call once per wire.
+    ///
     /// - Parameters:
     ///   - wire: The splitting wire
     ///   - faceIndex: 1-based index of the face to split
@@ -10762,6 +10836,11 @@ extension Shape {
     /// Split this shape by projecting wires onto faces using LocOpe_Spliter.
     ///
     /// Uses LocOpe_WiresOnShape to bind wires to faces, then LocOpe_Spliter to split.
+    ///
+    /// - Note: Each pair contributes only the **first** wire of its `wire` shape. A pair
+    ///   whose shape holds several wires binds one of them and ignores the rest; give each
+    ///   wire its own pair. A pair whose shape holds no wire at all is skipped silently.
+    ///
     /// - Parameter wiresOnFaces: Array of (wire, face) pairs to bind.
     /// - Returns: Split result with direct-left faces, or nil on failure.
     public func locOpeSplit(wiresOnFaces: [(wire: Shape, face: Shape)]) -> LocOpeSplitResult? {

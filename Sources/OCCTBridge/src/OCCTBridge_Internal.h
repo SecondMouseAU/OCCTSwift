@@ -33,6 +33,7 @@
 #include <TopoDS_Wire.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Shell.hxx>
 #include <Geom_Curve.hxx>
 #include <Geom2d_Curve.hxx>
 #include <Geom_Surface.hxx>
@@ -277,6 +278,26 @@ TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_C
 // non-builder entry points share. Returns a null shape on failure.
 TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
                                  bool unifyEdges, bool unifyFaces, bool concatBSplines);
+
+// === #442/#443: multi-body shell selection ===
+//
+// Definitions live in OCCTBridge_Healing.mm, next to the ShapeFix_Solid entry points they
+// were written for (#442). Shared because the same "which shells bound a body" question is
+// asked by every call that turns shells into solids: the solid-from-shell entry points in
+// OCCTBridge_Modeling.mm ask it too, and each having its own answer is what #443 records.
+
+// The shells that bound a body, in exploration order: every shell an even number of the
+// others in its group enclose, where a group is one solid's own shells, or all the shells
+// belonging to no solid at all (free shells go through the same parity pass as a solid's own
+// shells, not added unconditionally — #443). A cavity shell is left out, because a hole is not
+// a body and turning one into a positive solid would give a compound whose volume
+// double-counts the part. Returns empty when `shape` holds no shell, which callers take as
+// "nothing to build".
+std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape);
+
+// Assemble one result shape from bodies: the body itself when there is exactly one, a
+// compound when there are several, a null shape when there are none.
+TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 
 // === #430/#432: surface-filling constraint helpers ===
 //
