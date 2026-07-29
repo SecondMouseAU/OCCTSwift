@@ -1289,7 +1289,13 @@ OCCTShapeRef OCCTShapeUpgrade(OCCTShapeRef shape, double tolerance) {
             std::vector<TopoDS_Shape> made;
             for (const TopoDS_Shell& shell : occtBodyBoundingShells(sewedShape)) {
                 BRepBuilderAPI_MakeSolid makeSolid(shell);
-                if (makeSolid.IsDone()) made.push_back(makeSolid.Solid());
+                // IsDone() false is dead code today — BRepLib_MakeSolid's single-shell
+                // constructor always Done()s, same finding as OCCTShapeCreateSolidFromShell —
+                // but kept push-not-drop for defense in depth rather than silently reducing
+                // the body count, matching every sibling per-body solid-construction loop
+                // this diff touches (#443 review).
+                made.push_back(makeSolid.IsDone() ? TopoDS_Shape(makeSolid.Solid())
+                                                   : TopoDS_Shape(shell));
             }
             TopoDS_Shape solids = occtSolidBodiesToShape(made);
             if (!solids.IsNull()) resultShape = solids;

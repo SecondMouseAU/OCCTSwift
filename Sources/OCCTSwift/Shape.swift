@@ -3961,8 +3961,10 @@ extension Shape {
     ///
     /// The solid step builds one solid per *body-bounding* shell the sewing produced, so a
     /// multi-body part stays a multi-body part; it comes back as a compound of solids, and
-    /// a single body as a bare solid. Body selection is the same rule as
-    /// ``Shape/solid(from:)``: cavity shells are skipped, free shells each become a body.
+    /// a single body as a bare solid. Body selection is the same rule as ``Shape/solid(from:)``:
+    /// every shell that an **even** number of the other shells in its group enclose, where a
+    /// group is one solid's own shells, or all the shells belonging to no solid — so a free
+    /// shell that is itself an even-enclosed cavity is skipped, not turned into a body.
     ///
     /// ```swift
     /// // A raw imported mesh holding two separate bodies.

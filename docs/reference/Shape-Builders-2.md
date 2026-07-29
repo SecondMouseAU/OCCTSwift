@@ -1891,6 +1891,9 @@ public func locOpeSplit(wiresOnFaces: [(wire: Shape, face: Shape)]) -> LocOpeSpl
 - **Parameters:** `wiresOnFaces` — pairs binding each wire to the face it lies on.
 - **Returns:** Split result with direct-left faces, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape` + `LocOpe_Spliter`
+- **Note:** Each pair contributes only the **first** wire of its `wire` shape. A pair whose
+  shape holds several wires binds one of them and ignores the rest; give each wire its own
+  pair. A pair whose shape holds no wire at all is skipped silently. (#443 audit)
 - **Example:**
   ```swift
   if let r = solid.locOpeSplit(wiresOnFaces: [(wire: w, face: f)]) {

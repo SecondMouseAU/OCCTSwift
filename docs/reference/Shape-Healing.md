@@ -217,7 +217,7 @@ public func upgraded(tolerance: Double = 1e-6) -> Shape?
 
 Applies a complete upgrade pipeline: sewing of disconnected faces, an attempt to build a solid from the resulting shells, and a final `ShapeFix_Shape` healing pass.
 
-The solid step builds one solid per **body-bounding** shell the sewing produced, so a multi-body part stays a multi-body part: it comes back as a compound of solids, and a single body as a bare solid. Body selection is the same rule as `Shape.solid(from:)`: cavity shells are skipped, free shells each become a body.
+The solid step builds one solid per **body-bounding** shell the sewing produced, so a multi-body part stays a multi-body part: it comes back as a compound of solids, and a single body as a bare solid. Body selection is the same rule as `Shape.solid(from:)`: every shell that an **even** number of the other shells in its group enclose, where a group is one solid's own shells, or all the shells belonging to no solid — so a free shell that is itself an even-enclosed cavity is skipped, not turned into a body.
 
 Two things this pipeline does not preserve, both inherent to sewing first:
 

@@ -499,6 +499,32 @@ struct Issue443FirstOfN {
         expectVolume(upgraded, 8512.0, "upgraded(body nested in a cavity)")
     }
 
+    /// Same review finding as `solidFromKeepsOpenBody`, on `OCCTShapeUpgrade`'s own
+    /// `BRepBuilderAPI_MakeSolid` loop: it dropped the shell outright on `IsDone() == false`
+    /// instead of keeping it unfixed, unlike every sibling per-body solid-construction loop
+    /// this diff touches. Dead code today for the same reason (`BRepLib_MakeSolid`'s
+    /// single-shell constructor always succeeds), fixed for symmetry/defense in depth.
+    ///
+    /// Unlike `solidFromKeepsOpenBody`, this cannot assert `solids.count == 2`: `upgraded()`
+    /// runs `ShapeFix_Shape` (Step 3) after the solid step, and that healing pass no longer
+    /// classifies the unclosable body as a `TopAbs_SOLID` once kept — measured directly by
+    /// feeding `solid(from: sewn)`'s 2-solid result (one valid, one wrapping the open shell)
+    /// into `Shape.fixed(tolerance:)`: `.solids.count` drops to 1 even though all 11 faces
+    /// survive. So the guarantee this test pins is on the faces, not the solid count — the
+    /// one that actually matters, since it is what "silently missing from the result" means.
+    @Test("upgraded() keeps an unclosable shell's faces rather than dropping them")
+    func upgradedKeepsOpenBody() {
+        guard let compound = closedAndOpenShellCompound() else {
+            Issue.record("could not build the closed+open shell compound")
+            return
+        }
+        guard let upgraded = compound.upgraded(tolerance: 1e-6) else {
+            Issue.record("upgraded() returned nil for a closed+open two-shell compound")
+            return
+        }
+        #expect(upgraded.subShapeCount(ofType: .face) == 11)
+    }
+
     /// Nothing sews into a shell here, so the solid step must leave the sewn shape alone
     /// rather than returning nil or an empty result.
     @Test("upgraded() passes shapes with no shell straight through")
