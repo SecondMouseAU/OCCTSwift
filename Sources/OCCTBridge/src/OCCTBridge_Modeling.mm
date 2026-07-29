@@ -4369,6 +4369,9 @@ struct OCCTFilling {
 OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t maxDegree,
                                   int32_t maxSegments, double tolerance3d) {
     try {
+        // Aggregate-initializing filler directly from occtFillingMakeBuilder's returned prvalue
+        // is covered by the same guaranteed-copy-elision guarantee that function's own comment
+        // documents: no copy or move of the BRepOffsetAPI_MakeFilling is performed here either.
         return new OCCTFilling{
             occtFillingMakeBuilder(degree, nbPtsOnCur, maxDegree, maxSegments, tolerance3d)
         };

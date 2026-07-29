@@ -452,6 +452,40 @@ struct FillingSupportFaceTests {
         let filling = FillingSurface()
         #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g1))
     }
+
+    @Test("add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)")
+    func fillingSurfaceAddWithSupportDefaultsToG1() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        // At .g0, `support` is never read (occtFillingAddConstraint only looks at it above
+        // GeomAbs_C0), which would make the "used or fails" doc claim false for the common
+        // zero-argument call if the default were .g0. Confirms the default is .g1: a real
+        // support face is accepted with no continuity argument at all...
+        let filling = FillingSurface()
+        #expect(filling.add(edge: rim, support: wall))
+        guard let face = filling.build() else {
+            Issue.record("Default-continuity fill with a real support face should succeed")
+            return
+        }
+        #expect(face.size.z > 0.5)   // tangent to the sphere, not a flat disc
+
+        // ...and an unrelated support face is rejected with no continuity argument either.
+        let rejecting = FillingSurface()
+        #expect(!rejecting.add(edge: rim, support: strangerFace))
+    }
 }
 
 @Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))

@@ -37,8 +37,12 @@ separate patch. `occtFillingAddConstraint` is no longer a template now that both
 same concrete filler type.
 
 New: `FillingSurface.add(edge:support:continuity:)`, mirroring `FillConstraint`'s support-face
-semantics — a face named here is used or the constraint fails, never silently substituted. The
-one capability `FillingSurface` was missing relative to `Shape.fill(constraints:)`.
+semantics — a face named here is used or the constraint fails, never silently substituted. Its
+`continuity` defaults to `.g1`, not `.g0`, matching `FillConstraint`: at `.g0` there is nothing
+to be tangent or curvature-continuous with, so `support` is never even read, and a `.g0` default
+would make the "used or fails" guarantee false for the common zero-argument call. Covers the
+boundary-edge case; `FillConstraint.isBoundary` also covers free edges with a named support
+face, which this PR does not add an equivalent for.
 
 ```swift
 // Tangent to the wall the rim came from
