@@ -2282,6 +2282,12 @@ public final class BRepGraph: @unchecked Sendable {
         return (Int(domain), Int(itemKind), Int(index))
     }
 
+    /// True if this graph minted the ItemUID and the item it names still exists here.
+    public func contains(uid: GraphItemUID) -> Bool {
+        guard uid.graphID == instanceID else { return false }
+        return OCCTBRepGraphHasItemUID(handle, Int32(uid.domain), Int32(uid.kind), uid.counter)
+    }
+
     /// Identifies this graph instance for as long as it lives.
     ///
     /// Unique among every graph this process builds, and — because the sequence starts at a random
