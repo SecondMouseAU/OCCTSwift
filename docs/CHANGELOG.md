@@ -7,7 +7,7 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.16.1
+## Current: v1.17.0
 
 **macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
 
@@ -15,9 +15,82 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
-### Unreleased (fix): Curve3D arc length was integrated as one quadrature across the whole domain (#477)
+### v1.17.0 (July 2026): pass 1a of the #377 duplication audit, and two source-breaking changes in a minor release
 
-> Version and date deliberately unset; whoever tags stamps them.
+**Read this before upgrading. Two changes in this release break source compatibility, which
+[`SEMVER.md`](SEMVER.md) reserves for a major bump.** The exception is deliberate and recorded
+there; the major version stays reserved for OCCT 9.0. Nothing else in this release requires a
+source change, and there is no binary or behavioural change to any API not named below.
+
+#### Breaking: `Surface.drawMesh` and `Surface.evaluateGrid` return `SurfaceGrid` (#404)
+
+Both previously returned `[[SIMD3<Double>]]`, and they nested in **opposite** orders:
+`drawMesh` was `[uIndex][vIndex]`, `evaluateGrid` was `[vIndex][uIndex]`. Nothing at the type
+level caught a caller mixing them up. They now share one `SurfaceGrid` type indexed by
+`at(u:v:)`, so the ambiguity is gone rather than documented.
+
+```swift
+// Before
+let mesh = surface.drawMesh(uCount: 30, vCount: 30)
+for row in mesh { for p in row { emit(p) } }
+let rows = mesh.count, cols = mesh[0].count
+
+// After
+let mesh = surface.drawMesh(uCount: 30, vCount: 30)
+for u in 0..<mesh.uCount {
+    for v in 0..<mesh.vCount {
+        if let p = mesh.at(u: u, v: v) { emit(p) }
+    }
+}
+let rows = mesh.uCount, cols = mesh.vCount
+```
+
+`SurfaceGrid` exposes `at(u:v:)`, `uCount`, `vCount` and `isEmpty`. It is not a `Collection` and
+is not subscriptable, so the break is a compile error at every call site rather than anything
+silent. **If you are migrating `evaluateGrid` specifically, check your index order**: its old
+shape was `[v][u]`, so a mechanical rewrite that assumes `[u][v]` transposes the data.
+
+No shim is possible here. Swift does not overload on return type alone, so a deprecated overload
+with the old return type would be ambiguous at every call site that binds the result to a variable.
+
+#### Breaking: `Curve3D.interpolate(points:startTangent:endTangent:)` removed (#400)
+
+The no-`tolerance` overload shadowed its tolerance-aware sibling: Swift always prefers the exact
+arity match, so the ordinary three-argument call could never reach the `tolerance:` parameter,
+which was pinned at `1e-6` regardless of what a caller asked for.
+
+```swift
+// Before and after — identical source, and it now compiles against the tolerance-aware overload
+let c = Curve3D.interpolate(points: pts, startTangent: t0, endTangent: t1)
+
+// Now reachable for the first time
+let c = Curve3D.interpolate(points: pts, startTangent: t0, endTangent: t1, tolerance: 1e-4)
+```
+
+In practice most call sites need no edit: the three-argument spelling still compiles and still
+defaults to `1e-6`. It breaks only where the removed overload was referenced as a value
+(`let f = Curve3D.interpolate(points:startTangent:endTangent:)`) or passed as a function argument.
+
+#### Everything else
+
+Pass 1a of the [#377](https://github.com/SecondMouseAU/OCCTSwift/issues/377) duplication audit:
+27 issues, each a pair of API spellings that turned out not to mean the same thing. Eleven of
+them change what an existing call returns without any compiler diagnostic, so the per-entry
+sections below carry a **behaviour-change table** listing each one as was/now. If you upgrade
+without reading anything else, read that table.
+
+The individual entries follow: #477 (arc-length integrator), #433/#434 (`FillingSurface`
+continuity), #398 (continuity enums), #399-#422 (the audit batch), #443 (first-of-N explorer
+sites).
+
+Consumers on the opt-in prebuilt bridge (`OCCTSWIFT_BRIDGE_PREBUILT=1`) **must** take this
+release's `OCCTBridge.xcframework.zip`: the bridge's C ABI changed (`OCCTSurfaceKnotSplitting`
+gained four parameters, five functions were removed), so a v1.16.1 bridge binary no longer
+matches this Swift layer. `Package.swift`'s URL and checksum are bumped accordingly.
+`OCCT.xcframework` is unchanged and stays pinned at its v1.15.18 asset: this release carries no
+kernel patch changes.
+
+### v1.17.0 (July 2026) — fix: Curve3D arc length was integrated as one quadrature across the whole domain (#477)
 
 `Curve3D.length` and `Curve3D.length(from:to:)` measured arc length with
 `CPnts_AbscissaPoint::Length`, a single Gauss quadrature of order ≤ 24 spanning the entire
@@ -68,9 +141,8 @@ an independently computed reference (a Richardson-extrapolated polyline, not the
 own answer), so it fails on the old integrator rather than ratifying it. 5 of its 8 tests fail
 against the previous code.
 
-### Unreleased: fix — `FillingSurface`'s continuity mapping was wrong for both non-default orders, and it converged onto `Shape.fill`'s implementation (#433, #434)
+### v1.17.0 (July 2026) — fix: `FillingSurface`'s continuity mapping was wrong for both non-default orders, and it converged onto `Shape.fill`'s implementation (#433, #434)
 
-> Version and date deliberately unset; whoever tags stamps them.
 
 `FillingSurface.add(edge:continuity:)`/`add(freeEdge:continuity:)` hand-mapped the plate
 constraint order onto `GeomAbs_Shape` locally instead of using `occtFillingContinuityToGeomAbs`,
@@ -108,9 +180,8 @@ which previously failed the whole `build()`, now succeeds and measurably bulges 
 `.g1` — matching `Shape.fill`'s own curvature-vs-tangency regression test on the other entry
 point.
 
-### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
+### v1.17.0 (July 2026) — refactor: nine continuity enums collapsed to two shared vocabularies (#398)
 
-> Version and date deliberately unset; whoever tags stamps them.
 
 OCCTSwift had grown **nine** separate "continuity level" enums, each written against one bridge
 call and each re-deriving its own raw-int meaning. Verified against the pinned kernel, they turn
@@ -172,9 +243,8 @@ re-enablement: the claim was never characterised and does not hold up.
 Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
 an enum/case combination that never existed.
 
-### Unreleased: refactor + fix - the #377 duplication audit, 24 near-duplicate API pairs collapsed onto one implementation each (#399-#422)
+### v1.17.0 (July 2026) - refactor + fix: the #377 duplication audit, 24 near-duplicate API pairs collapsed onto one implementation each (#399-#422)
 
-> Version and date deliberately unset; whoever tags stamps them.
 
 One entry for the whole batch, since the 24 issues are one piece of work with one recurring
 finding: **wherever two spellings of "the same" operation existed, they were not actually the
@@ -410,10 +480,7 @@ zero-area curved wire that must still be declined, and the boundary-crossing wir
 turn into a hole; `Issue234DegenerateHoleTests` passes unchanged. Full `swift test` (combined with
 #446 above): 4480 tests in 1292 suites, all passing.
 
-### Unreleased: fix - three more first-of-N `TopExp_Explorer` sites dropped most of their input (#443)
-
-> Version and date are deliberately unset: this entry is written on a branch, and the next patch
-> number is not this PR's to claim. Whoever tags stamps it then.
+### v1.17.0 (July 2026) - fix: three more first-of-N `TopExp_Explorer` sites dropped most of their input (#443)
 
 #442's audit note asked for the first-of-N `TopExp_Explorer` idiom to be grepped for across the whole
 bridge before closing it, on the grounds that #439 had two instances and #442 two more, and every one

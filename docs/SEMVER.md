@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with one recorded exception: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 
 ## Rules
 
@@ -30,6 +30,23 @@ A major bump is reserved for two events, either of which alone is sufficient:
 2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor — anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
 
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0). The next major bump is reserved for OCCT 9.0 (no announced date).
+
+#### Recorded exception: v1.17.0 (2026-07-29)
+
+**v1.17.0 is a minor release that breaks source compatibility in two places.** It is the only exception to the rule above, and it is recorded here rather than left for a consumer to discover at the compiler:
+
+| Break | Issue | What a caller does |
+|---|---|---|
+| `Surface.drawMesh` / `Surface.evaluateGrid` return `SurfaceGrid`, not `[[SIMD3<Double>]]` | #404 | Index via `at(u:v:)`; check index order when migrating `evaluateGrid`, whose old shape was `[v][u]` |
+| `Curve3D.interpolate(points:startTangent:endTangent:)` overload removed | #400 | Nothing, unless the overload was referenced as a value: the three-argument call now resolves to the tolerance-aware sibling with the same `1e-6` default |
+
+Both are compile errors, never silent. The decision was to take the exception rather than spend the major version, because:
+
+- Neither break can be shimmed into an additive change. Swift does not overload on return type alone, so a deprecated `drawMesh` returning the old type is ambiguous at every call site that binds the result. Preserving compatibility would have meant reverting #404 outright and reintroducing the `[u][v]` vs `[v][u]` hazard it removed.
+- The major version stays reserved for OCCT 9.0, so the cohort does not have to major together for a two-call-site change in one package.
+- Both are named at the top of [`CHANGELOG.md`](CHANGELOG.md)'s v1.17.0 entry with before/after code, and in the GitHub release notes.
+
+This exception does not amend the rule. A breaking change still triggers a major bump by default; taking an exception requires the same treatment given here, which is naming every break with a migration, in the release notes and in this file, before the tag is cut.
 
 ### MINOR — `x.y.0`
 
