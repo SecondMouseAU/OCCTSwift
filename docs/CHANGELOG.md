@@ -57,9 +57,11 @@ zero-length curves, periodic curves, and unbounded lines, and neither throws whe
 not.
 
 The three bridge functions that already used the composite integrator
-(`OCCTCurve3DArcLength` / `OCCTCurve3DLength` / `OCCTCurve3DArcLengthBetween`) stay exported: they
-are still the backing calls for the `arcLength` spellings on this branch, and they remain part of
-the published C bridge surface either way.
+(`OCCTCurve3DArcLength` / `OCCTCurve3DLength` / `OCCTCurve3DArcLengthBetween`) stay exported for
+direct C consumers, but they are no longer reached from Swift: #408 routed `totalArcLength`,
+`arcLength(from:to:)` and `arcLengthBetween(_:_:)` through `length`/`length(from:to:)`, so every
+Swift spelling now lands on `OCCTCurve3DGetLength`/`OCCTCurve3DGetLengthBetween`. Nothing in
+`Sources/OCCTSwift` references the older three.
 
 New suite `Issue477ArcLengthAccuracyTests` (`OCCTCurveTests`) pins all five Swift spellings against
 an independently computed reference (a Richardson-extrapolated polyline, not the implementation's
@@ -169,6 +171,130 @@ re-enablement: the claim was never characterised and does not hold up.
 
 Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
 an enum/case combination that never existed.
+
+### Unreleased: refactor + fix - the #377 duplication audit, 24 near-duplicate API pairs collapsed onto one implementation each (#399-#422)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+One entry for the whole batch, since the 24 issues are one piece of work with one recurring
+finding: **wherever two spellings of "the same" operation existed, they were not actually the
+same.** Each pair was run against the pinned kernel before being unified rather than assumed
+equivalent, and the divergences that turned up were real: a factory that accepted what its twin
+rejected, a tolerance an order of magnitude apart, a parameter one spelling could not reach.
+Collapsing a pair onto one implementation therefore changes behaviour on one side of it, listed
+in full below.
+
+Sibling entry: #398 (continuity enums), directly above. #433/#434 (`FillingSurface`) is the same
+audit and has its own entry.
+
+#### Behaviour changes
+
+Each of these changes what an existing, unmodified call returns. None produces a compiler
+diagnostic.
+
+| Call | Was | Now | Issue |
+|---|---|---|---|
+| `Curve3D.circleFromCenterNormal(radius: 0)`, `ellipseFromCenterNormal(minorRadius: 0)`, `hyperbolaFromCenterNormal` with either radius 0, `parabolaFromCenterNormal(focal: 0)` | a live, degenerate curve (`gce_Make*` rejects only strictly-negative dimensions) | `nil`, matching the direct `circle`/`ellipse`/`parabola`/`hyperbola` factories | #399 |
+| `Curve2D.circleFromCenterRadius(center:radius:)` at radius exactly 0 | a live, zero-radius curve | `nil`, matching `circle(center:radius:)` and the contract `Curve2D-Analysis.md` already documented | #411 |
+| `Surface.curvatures(u:v:)` | its own `GeomLProp_SLProps` at resolution `1e-6` | the shared construction at `Precision::Confusion()` (`1e-7`), matching `gaussianCurvature(atU:v:)`/`meanCurvature(atU:v:)` | #405 |
+| `Surface.normal(u:v:)` | accepted any `\|D1U × D1V\| > 1e-15` (absolute) | the same `GeomLProp_SLProps` degeneracy test `normal(atU:v:)` uses, a *relative* sine tolerance of `Precision::Confusion()`. A near-parallel-derivative point that used to yield a normal now yields `SIMD3(0, 0, 0)` | #401 |
+| `Surface.approximated()` with no arguments | `tolerance: 0.01`, `maxDegree: 10` | `tolerance: 1e-3`, `maxDegree: 8`, matching `Curve3D.approximated`/`Curve2D.approximated` | #406 |
+| `Curve3D.totalArcLength`, `arcLength(from:to:)`, `arcLengthBetween(_:_:)` on failure | `0.0`, indistinguishable from a genuine zero-length result | `-1.0` | #408 |
+| `Curve2D.arcLength(from:to:)` on failure (e.g. reversed `u1 > u2`, which its range-checked adaptor rejects) | `0.0` | `-1.0` | #409 |
+| `Point2D.distance(to: Curve2D)` with no projection (point past a bounded curve's ends, or a circle's centre) | `-1`, passed through as if it were a distance, so `distance < tolerance` read it as "touching" | `.infinity`, which such a test rejects correctly | #413 |
+| `Curve2D.interpolatePeriodic(points:)` with exactly 2 points | `nil` (bridge floor `count < 3`) | a valid out-and-back periodic loop, matching `interpolate(through:closed:)`'s floor of `count < 2`, which has always allowed it | #412 |
+| `Curve2D.interpolate(points:startTangent:endTangent:)` | tolerance pinned at `1e-6` with no parameter path to reach it | honours the new `tolerance:` parameter (default `1e-6`, so the bare call is unchanged) | #410 |
+| `BRepGraph.sampleFaceUVGrid` | unpacked `uSamples * vSamples` points regardless of how many the bridge wrote | unpacks the written count, with `gaussianCurvatures`/`meanCurvatures` truncated to match | #419 |
+
+Two lower-level changes with the same character:
+
+- `Curve3D.interpolate(points:startTangent:endTangent:)` (the overload without `tolerance:`) is
+  **removed**. Swift always prefers the exact-arity match, so the ordinary 3-argument call could
+  never reach the tolerance-aware overload it shadowed. The 3-argument call now resolves to that
+  overload with its default (#400).
+- `BRepGraph`'s 12 adjacency accessors guard `count <= 0` rather than `count == 0`. The bridge
+  `...Count` functions narrow through an unchecked `int32_t` cast, so a negative count now
+  degrades to `[]` instead of trapping `Array(repeating:count:)` (#418).
+
+Routing the three `arcLength` entry points through `length`/`length(from:to:)` also moved them onto
+that pair's integrator, which was the less accurate of the two the bridge carried. That is fixed in
+#477 (entry at the top of this file), so the accuracy the `arcLength` spellings had before #408 is
+restored and `length`/`length(from:to:)` gain it as well. Note the consequence for the C bridge:
+`OCCTCurve3DArcLength`, `OCCTCurve3DLength` and `OCCTCurve3DArcLengthBetween` are no longer reached
+from Swift at all (nothing in `Sources/OCCTSwift` references them), though they remain exported for
+direct C consumers.
+
+#### Public Swift API
+
+Source-breaking, both MAJOR-triggering under [`SEMVER.md`](SEMVER.md) and tracked on #377 so the
+obligation survives the squash-merge:
+
+- `Surface.drawMesh(uCount:vCount:)` and `Surface.evaluateGrid(uParameters:vParameters:)` return a
+  new `SurfaceGrid` instead of `[[SIMD3<Double>]]`. They previously nested in *opposite* orders
+  (`[u][v]` vs `[v][u]`) with nothing at the type level to catch a caller mixing them up;
+  `SurfaceGrid` is indexed by `.at(u:v:)`, so the ambiguity is gone rather than documented (#404).
+- `Curve3D.interpolate(points:startTangent:endTangent:)` removed, as above (#400).
+
+Renamed, with a deprecated shim, so existing source still compiles:
+
+- `Curve2D.approximated(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)` is now
+  `approximatedInRange(...)`. It wraps `Approx_Curve2d` (explicit sub-range, separate U/V
+  tolerances, continuity fixed at C2), a genuinely different algorithm from
+  `approximated(tolerance:continuity:maxSegments:maxDegree:)`'s `Geom2dConvert_ApproxCurve`, and
+  nothing steered a caller between them (#407).
+
+Additive:
+
+- `Surface.mirrored(acrossPoint:)` and `Surface.mirrored(acrossAxis:direction:)`, closing the gap
+  between `Surface`'s copy-returning transform family and `Curve3D`/`Curve2D`'s (#414).
+- `BRepGraph.contains(uid: GraphItemUID)`, the counterpart to the existing `GraphUID`/`GraphRefUID`
+  overloads (#417).
+- `Surface.KnotSplitResult.uSplitParams`/`vSplitParams`, and `LawFunction.knotSplitParameters(continuityOrder:)`.
+  Both back onto values their OCCT class already computed and discarded (#403).
+- `ArcLengthCurveAdaptor`, a public protocol carrying the composition logic
+  (`point`/`tangent(atAbscissa:)`, `points(spacing:)`) that `EdgeCurve` and `WireCurve` previously
+  duplicated line for line. Both stay distinct public classes (#422).
+- `tolerance:` parameters on `Curve2D.interpolatePeriodic` and
+  `Curve2D.interpolate(points:startTangent:endTangent:)`, defaulted to the value each used to
+  hardcode (#410, #412).
+
+#### Bridge C API
+
+The C surface is not covered by the Swift SemVer promise, but direct `OCCTBridge.h` consumers
+are affected:
+
+- **Signature changed:** `OCCTSurfaceKnotSplitting` takes four more arguments (`outUParams`,
+  `maxUParams`, `outVParams`, `maxVParams`) and reports true counts even when writing was
+  truncated, so a caller can retry with a bigger buffer (#403).
+- **Removed:** `OCCTCurve3DCreateArc3Points` (#415), `OCCTGceMakeCone` and
+  `OCCTGceMakeCylinderFrom3Points` (#420), `OCCTGeom2dLPropCurExt` and `OCCTGeom2dLPropCurInf`
+  along with the `OCCTCurInfPoint` struct (#402). Each duplicated a sibling that survives.
+- **Added:** `OCCTSurfaceMirrorPoint`, `OCCTSurfaceMirrorAxis` (#414), `OCCTBRepGraphHasItemUID`
+  (#417), `OCCTLawBSplineKnotSplitParams` (#403).
+- **Behaviour:** `OCCTCurve2DProjectPoint2D` returns `NaN` for the parameter on failure and
+  documents `outDistance < 0` as the signal. It used to return `0.0`, which is a legitimate
+  parameter: projecting a segment's own start point onto it returns exactly `0` at distance `0`
+  (#413). `OCCTInterpolate2DPeriodic`, `OCCTInterpolate2DWithTangents` and
+  `OCCTInterpolateWithTangents` now forward to their canonical siblings rather than holding a
+  second copy, so direct C consumers get the same behaviour as Swift callers (#412, #410, #400).
+
+#### Unified with no behaviour change
+
+`Curve2D.curvatureExtremaDetailed()`/`inflectionPointsDetailed()` now delegate to their plain
+siblings instead of re-running the same `GeomLProp_CurAndInf2d` (#402). `Curve3D.arc(through:_:_:)`
+became the true alias of `arcOfCircle(start:interior:end:)` it was already documented as (#415).
+`Curve3D`'s six immutable transform functions fold onto the same `buildTrsf3D` the mutating family
+used, and the mutating dispatcher gained the `IsNull()` guard the immutable six already had (#416).
+`BRepGraph`'s 12 count-buffer-fetch-map accessors share one helper (#418). Ten flat-buffer unpack
+sites share `unpackSIMD3` (#419). `Surface.coneFrom2PointsRadii`/`cylinderFrom3Points` delegate to
+their `GC_Make*`-backed counterparts (#420), as do the four overlapping plane factories (#421). The
+`EdgeCurve`/`WireCurve` bridge primitives share one `Adaptor3d_Curve&` helper set; public C symbol
+names are unchanged (#422).
+
+Test coverage went up where the audit found none: `Curve3D.arc(through:_:_:)`,
+`Surface.rotated(axisOrigin:axisDirection:angle:)`, `BRepGraph.rootProductIndices`,
+`EdgeCurve`/`WireCurve`'s `points(spacing:)`/`parameterRange`/`point(atParameter:)`, and
+degenerate-input cases across every unified factory pair had no dedicated tests before.
 
 ### v1.16.1 (July 2026): fix — unify consumed the shape it was given, so a declined merge still damaged the caller's solid (#446)
 
