@@ -301,6 +301,11 @@ OCCTShapeRef OCCTFaceFix(OCCTFaceRef face, double tolerance) {
 
     try {
         Handle(ShapeFix_Face) fixer = new ShapeFix_Face(face->face);
+        // #317/#484: ShapeFix_Face's base constructor leaves Context() null, and the fixes that
+        // need one then silently no-op (or, on an unpatched kernel, null-deref in
+        // FixPeriodicDegenerated). This was the fourth ShapeFix_Face call site in the bridge and
+        // the only one the #317 pass missed. Give it a context, as the other three do.
+        fixer->SetContext(new ShapeBuild_ReShape);
         fixer->SetPrecision(tolerance);
 
         // Enable fixing modes
@@ -2146,38 +2151,55 @@ OCCTShapeRef OCCTShapeFixSplitCommonVertex(OCCTShapeRef shape) {
     }
 }
 
+// Connect adjacent faces in every shell of the input, not just the first one an explorer yields
+// (#484, same first-of-N family as #439/#442/#443). ShapeFix_FaceConnect::Build takes one shell,
+// so a multi-shell input has to be driven one shell at a time; the results are reassembled with
+// the shared helper, so a single-shell input still returns a bare shell and multi-shell input
+// returns a compound.
 OCCTShapeRef OCCTShapeFixFaceConnect(OCCTShapeRef shape, double tolerance) {
     if (!shape) return nullptr;
     try {
-        // Get shell from shape
-        TopoDS_Shell shell;
+        std::vector<TopoDS_Shape> shells;
         if (shape->shape.ShapeType() == TopAbs_SHELL) {
-            shell = TopoDS::Shell(shape->shape);
+            shells.push_back(shape->shape);
         } else {
             for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next()) {
-                shell = TopoDS::Shell(exp.Current());
-                break;
+                shells.push_back(exp.Current());
             }
         }
-        if (shell.IsNull()) return nullptr;
+        if (shells.empty()) return nullptr;
 
-        // Get face pairs and connect them
-        ShapeFix_FaceConnect connector;
+        std::vector<TopoDS_Shape> connected;
+        bool anyConnected = false;
+        for (const TopoDS_Shape& shellShape : shells) {
+            TopoDS_Shell shell = TopoDS::Shell(shellShape);
 
-        // Collect all faces
-        std::vector<TopoDS_Face> faces;
-        for (TopExp_Explorer exp(shell, TopAbs_FACE); exp.More(); exp.Next()) {
-            faces.push_back(TopoDS::Face(exp.Current()));
+            // Get face pairs and connect them
+            ShapeFix_FaceConnect connector;
+
+            // Collect all faces
+            std::vector<TopoDS_Face> faces;
+            for (TopExp_Explorer exp(shell, TopAbs_FACE); exp.More(); exp.Next()) {
+                faces.push_back(TopoDS::Face(exp.Current()));
+            }
+
+            // Add adjacent face pairs
+            for (size_t i = 0; i + 1 < faces.size(); i++) {
+                connector.Add(faces[i], faces[i + 1]);
+            }
+
+            TopoDS_Shell result = connector.Build(shell, tolerance, tolerance);
+            // Build() returns a null shell when it could not connect this one; keep the input
+            // shell rather than dropping it from a multi-shell result.
+            anyConnected = anyConnected || !result.IsNull();
+            connected.push_back(result.IsNull() ? shell : (TopoDS_Shape)result);
         }
+        // Unchanged contract for the single-shell case: nil when nothing could be connected.
+        if (!anyConnected) return nullptr;
 
-        // Add adjacent face pairs
-        for (size_t i = 0; i + 1 < faces.size(); i++) {
-            connector.Add(faces[i], faces[i + 1]);
-        }
-
-        TopoDS_Shell result = connector.Build(shell, tolerance, tolerance);
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
+        TopoDS_Shape out = occtSolidBodiesToShape(connected);
+        if (out.IsNull()) return nullptr;
+        return new OCCTShape(out);
     } catch (...) {
         return nullptr;
     }
