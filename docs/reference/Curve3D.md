@@ -709,8 +709,13 @@ The total arc length of the curve over its full domain.
 public var length: Double? { get }
 ```
 
-- **Returns:** Arc length in model units, or `nil` if measurement fails (e.g. infinite line with unbounded domain).
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **Returns:** Arc length in model units, or `nil` if the OCCT computation fails.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`. The curve is split at its `GeomAbs_CN`
+  interval boundaries and each span integrated separately, so a multi-span BSpline measures
+  correctly. (Through v1.16.1 this call used `CPnts_AbscissaPoint::Length`, one quadrature across
+  the whole domain, which read up to several percent low on an interpolated curve. See #477.)
+- **Note:** An unbounded curve reports its parametric extent rather than failing: an untrimmed
+  `Curve3D.line(through:direction:)` spans ±2e100 and measures ~4e100. Trim before measuring.
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: .zero, to: SIMD3(3, 4, 0))!
@@ -729,7 +734,11 @@ public func length(from u1: Double, to u2: Double) -> Double?
 
 - **Parameters:** `u1` — start parameter; `u2` — end parameter.
 - **Returns:** Arc length, or `nil` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
+  `length`.
+- **Note:** The range may be given in either order, and equal parameters measure `0`. Parameters
+  outside the curve's domain are clamped to it, so a range wholly outside measures `0` rather
+  than extrapolating the curve's polynomial past its knots.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!
