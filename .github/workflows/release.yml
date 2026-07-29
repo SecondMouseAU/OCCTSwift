@@ -1,0 +1,48 @@
+name: Release verification
+
+# Confirms the binary pins in Package.swift (OCCT.xcframework + OCCTBridge.xcframework,
+# each a url:/checksum: pair) actually resolve and checksum-match a real release asset.
+# `swift build` on a clean checkout (no local Libraries/) is what does the real work here —
+# SwiftPM downloads each binaryTarget from its pinned URL and fails loudly on a checksum
+# mismatch or a 404, which is exactly the "forgot to bump both url and checksum" class of
+# mistake the comments in Package.swift already warn about by hand. `swift test` on top
+# confirms the tagged commit itself is genuinely healthy, not just that its binary pins
+# resolve.
+#
+# Triggered by the GitHub Release publish event rather than a raw tag push, since assets are
+# expected to be attached by the time a release is published. If an xcframework gets
+# rebuilt/republished as a follow-up fix after the release already published (this repo has
+# done that — see the v1.16.1 "Republish prebuilt OCCTBridge.xcframework" commit), re-run
+# this workflow manually via workflow_dispatch, selecting the tag as the ref, once the
+# replacement asset is uploaded.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  verify-binary-pins:
+    name: Verify binary pins + tagged build
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Show pinned binary targets
+        run: |
+          echo "Package.swift binaryTarget pins for this ref:"
+          grep -B1 -E 'url:|checksum:' Package.swift | grep -E 'releases/download|checksum:'
+
+      - name: swift build (forces binaryTarget download + checksum verification)
+        run: swift build
+
+      - name: swift test
+        run: swift test
