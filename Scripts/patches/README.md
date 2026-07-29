@@ -377,6 +377,6 @@ Both are the odd ones out in their own package. `ShapeUpgrade_FaceDivide::Perfor
 
 Both crashes were already closed **bridge-side**, before this patch existed: `OCCTShapeFixComposeShell` and `OCCTShapeUpgradeWireDivide` (`OCCTBridge_Healing.mm`) each call `SetContext(new ShapeBuild_ReShape())` with a comment naming the SIGSEGV. This patch fixes the kernel so those workarounds can eventually retire, and so the crash is closed for every other OCCT consumer following the documented `Init` + `Perform` usage.
 
-See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context) for the reproducer and full writeup.
+See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409) (repro) / [OCCT#1410](https://github.com/Open-Cascade-SAS/OCCT/pull/1410) (fix). Both defects are still present on upstream `master` (verified against `37dd5686` at filing time), and the PR branch's post-edit blobs hash identically to this patch's output, so the fix is the same on `master` as on our `V8_0_0_p1` pin.
 
 **Retire** once the bundled OCCT includes this fix.

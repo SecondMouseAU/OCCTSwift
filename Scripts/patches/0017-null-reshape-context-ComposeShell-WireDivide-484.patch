@@ -55,7 +55,8 @@ shape is byte-identical before and after the patch (BREP dump hash and
 face/wire/edge/vertex counts compared for both surfaces and both classes), and
 the no-context path now produces that same result rather than crashing.
 
-Reported downstream and isolated at SecondMouseAU/OCCTSwift#484.
+Reported downstream and isolated at SecondMouseAU/OCCTSwift#484; filed upstream as
+Open-Cascade-SAS/OCCT#1409 (repro) / OCCT#1410 (fix).
 ---
  .../TKShHealing/ShapeFix/ShapeFix_ComposeShell.cxx        | 12 ++++++++++++
  .../TKShHealing/ShapeUpgrade/ShapeUpgrade_WireDivide.cxx  |  6 ++++++

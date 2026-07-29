@@ -5,6 +5,9 @@ found while auditing every `ShapeFix_Face` call site in the bridge for #484. Sam
 [#317](https://github.com/SecondMouseAU/OCCTSwift/issues/317) (`Scripts/patches/0005-*`), in two
 classes that had never been patched or filed upstream.
 
+Filed upstream as [Open-Cascade-SAS/OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409)
+(repro) / [OCCT#1410](https://github.com/Open-Cascade-SAS/OCCT/pull/1410) (fix).
+
 No fixture file is needed: a plain 4-edge planar square face crashes both classes 100% of the time.
 
 ## Root cause
