@@ -4642,21 +4642,9 @@ void OCCTSurfaceBounds(OCCTSurfaceRef surface,
     } catch (...) {}
 }
 
+// Delegates to OCCTSurfaceGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTSurfaceContinuity(OCCTSurfaceRef surface) {
-    if (!surface) return -1;
-    try {
-        GeomAbs_Shape cont = surface->surface->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTSurfaceGetContinuity(surface);
 }
 
 OCCTSurfaceRef OCCTSurfaceCopy(OCCTSurfaceRef surface) {

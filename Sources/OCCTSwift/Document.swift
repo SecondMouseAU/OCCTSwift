@@ -8984,25 +8984,61 @@ extension Shape {
 // MARK: - Curve3D continuity (v0.106.0)
 
 extension Curve3D {
-    /// Get the global continuity of the 3D curve as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// ```swift
+    /// // A cubic BSpline with a doubled interior knot is C1, which is ordinal 2 (not 1).
+    /// print(bspline.continuity)        // 2
+    /// print(bspline.continuityClass)   // .c1
+    /// ```
     public var continuity: Int {
         Int(OCCTCurve3DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 3D curve.
+    ///
+    /// ```swift
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))
+    /// print(line?.continuityClass)                  // .cN
+    /// print(line?.continuityClass.satisfies(.c3))   // true
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve3DGetContinuity(handle)) ?? .c0
     }
 }
 
 // MARK: - Curve2D continuity (v0.106.0)
 
 extension Curve2D {
-    /// Get the global continuity of the 2D curve as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     public var continuity: Int {
         Int(OCCTCurve2DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 2D curve.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
+    /// print(segment?.continuityClass)   // .cN
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve2DGetContinuity(handle)) ?? .c0
     }
 }
 
 // MARK: - Surface continuity (v0.106.0)
 
 extension Surface {
-    /// Get the global continuity of the surface as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the surface, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     public var continuity: Int {
         Int(OCCTSurfaceGetContinuity(handle))
     }
@@ -10376,8 +10412,16 @@ extension Surface {
         return (uMin, uMax, vMin, vMax)
     }
 
-    /// Get the surface continuity order (0=C0, 1=C1, 2=C2, 3=C3, 99=CN).
-    public var surfaceContinuityOrder: Int { Int(OCCTSurfaceContinuity(handle)) }
+    /// Measured surface continuity as a raw `GeomAbs_Shape` ordinal. Same value as
+    /// ``continuity``; prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same surface for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.
     public func copy() -> Surface? {
@@ -14416,8 +14460,16 @@ extension Curve2D {
 
 extension Curve3D {
 
-    /// The overall continuity order of this curve (0=C0, 1=C1, 2=C2, etc.).
-    public var continuityOrder: Int { Int(OCCTCurve3DContinuity(handle)) }
+    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
+    /// prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
     public func isCN(_ n: Int) -> Bool {
@@ -14453,8 +14505,16 @@ extension Curve3D {
 
 extension Curve2D {
 
-    /// The overall continuity order of this curve (0=C0, 1=C1, 2=C2, etc.).
-    public var continuityOrder: Int { Int(OCCTCurve2DContinuity(handle)) }
+    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
+    /// prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
     public func isCN(_ n: Int) -> Bool {

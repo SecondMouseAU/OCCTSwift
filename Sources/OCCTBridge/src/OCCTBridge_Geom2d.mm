@@ -3921,21 +3921,9 @@ OCCTCurve2DRef OCCTCurve2DCopy(OCCTCurve2DRef curve) {
     } catch (...) { return nullptr; }
 }
 
+// Delegates to OCCTCurve2DGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTCurve2DContinuity(OCCTCurve2DRef curve) {
-    if (!curve) return -1;
-    try {
-        GeomAbs_Shape cont = curve->curve->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTCurve2DGetContinuity(curve);
 }
 // MARK: - Curve2D Evaluation (v0.110.0)
 

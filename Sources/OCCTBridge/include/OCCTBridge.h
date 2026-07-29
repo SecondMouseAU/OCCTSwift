@@ -15018,17 +15018,27 @@ int32_t OCCTShapeHashCode(OCCTShapeRef _Nonnull shape);
 
 // MARK: - Curve3D continuity (v0.106.0)
 
-/// Get the global continuity of a 3D curve. Returns GeomAbs_Shape as int: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2.
+/// Get the global continuity of a 3D curve.
+///
+/// Returns the raw GeomAbs_Shape ordinal in its own declared order, which is NOT a
+/// monotonic 0/1/2 "order" and interleaves the geometric classes with the parametric ones:
+/// 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN. Returns 0 for a null curve.
 int32_t OCCTCurve3DGetContinuity(OCCTCurve3DRef _Nonnull curve);
 
 // MARK: - Curve2D continuity (v0.106.0)
 
-/// Get the global continuity of a 2D curve. Returns GeomAbs_Shape as int.
+/// Get the global continuity of a 2D curve.
+///
+/// Returns the raw GeomAbs_Shape ordinal: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN.
+/// Returns 0 for a null curve.
 int32_t OCCTCurve2DGetContinuity(OCCTCurve2DRef _Nonnull curve);
 
 // MARK: - Surface continuity (v0.106.0)
 
-/// Get the global continuity of a surface. Returns GeomAbs_Shape as int.
+/// Get the global continuity of a surface.
+///
+/// Returns the raw GeomAbs_Shape ordinal: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN.
+/// Returns 0 for a null surface.
 int32_t OCCTSurfaceGetContinuity(OCCTSurfaceRef _Nonnull surface);
 
 /// Get number of UV bounds for a surface.
@@ -15967,7 +15977,12 @@ bool OCCTCurve3DReverse(OCCTCurve3DRef _Nonnull curve);
 /// Deep copy a 3D curve.
 OCCTCurve3DRef _Nullable OCCTCurve3DCopy(OCCTCurve3DRef _Nonnull curve);
 
-/// Get the continuity order of a 3D curve (0=C0, 1=C1, 2=C2, 3=C3, ...).
+/// Deprecated alias of OCCTCurve3DGetContinuity, kept for ABI compatibility (#485).
+///
+/// Prefer OCCTCurve3DGetContinuity. This used to re-encode the same GeomAbs_Shape through a
+/// hand-written switch producing {C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3}, an encoding
+/// that matched neither the real enum nor its own doc comment; it now returns the raw
+/// GeomAbs_Shape ordinal, identical to OCCTCurve3DGetContinuity.
 int32_t OCCTCurve3DContinuity(OCCTCurve3DRef _Nonnull curve);
 
 // MARK: - Curve2D Extras (v0.109.0)
@@ -15978,7 +15993,10 @@ bool OCCTCurve2DReverse(OCCTCurve2DRef _Nonnull curve);
 /// Deep copy a 2D curve.
 OCCTCurve2DRef _Nullable OCCTCurve2DCopy(OCCTCurve2DRef _Nonnull curve);
 
-/// Get the continuity order of a 2D curve.
+/// Deprecated alias of OCCTCurve2DGetContinuity, kept for ABI compatibility (#485).
+///
+/// Prefer OCCTCurve2DGetContinuity. Formerly re-encoded the same GeomAbs_Shape as
+/// {C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3}; now returns the raw ordinal.
 int32_t OCCTCurve2DContinuity(OCCTCurve2DRef _Nonnull curve);
 
 // MARK: - Surface Extras (v0.109.0)
@@ -15988,7 +16006,10 @@ void OCCTSurfaceBounds(OCCTSurfaceRef _Nonnull surface,
                         double* _Nonnull uMin, double* _Nonnull uMax,
                         double* _Nonnull vMin, double* _Nonnull vMax);
 
-/// Get the continuity order of a surface (0=C0, 1=C1, 2=C2...).
+/// Deprecated alias of OCCTSurfaceGetContinuity, kept for ABI compatibility (#485).
+///
+/// Prefer OCCTSurfaceGetContinuity. Formerly re-encoded the same GeomAbs_Shape as
+/// {C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3}; now returns the raw ordinal.
 int32_t OCCTSurfaceContinuity(OCCTSurfaceRef _Nonnull surface);
 
 /// Deep copy a surface.
