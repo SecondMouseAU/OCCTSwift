@@ -166,7 +166,7 @@
 #include <GCPnts_UniformDeflection.hxx>
 #include <Bnd_Box.hxx>
 #include <BndLib_Add3dCurve.hxx>
-#include <CPnts_AbscissaPoint.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 
 void OCCTCurve3DRelease(OCCTCurve3DRef c) {
@@ -666,11 +666,15 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
     }
 }
 
+// GCPnts, not CPnts: CPnts_AbscissaPoint::Length runs one Gauss quadrature over the whole
+// domain, which is measurably wrong on a multi-span BSpline (up to 5% on an interpolated
+// curve with sharply varying speed). GCPnts splits at the GeomAbs_CN interval boundaries and
+// integrates each span. #477.
 double OCCTCurve3DGetLength(OCCTCurve3DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return CPnts_AbscissaPoint::Length(adaptor);
+        return GCPnts_AbscissaPoint::Length(adaptor);
     } catch (...) {
         return -1.0;
     }
@@ -680,7 +684,7 @@ double OCCTCurve3DGetLengthBetween(OCCTCurve3DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return CPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
@@ -4703,7 +4707,7 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 }
 // --- Curve3D/2D additional (new in v0.115.0) ---
 
-#include <CPnts_AbscissaPoint.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
 #include <GeomAdaptor_Curve.hxx>
 
 double OCCTCurve3DLength(OCCTCurve3DRef curve, double u1, double u2) {

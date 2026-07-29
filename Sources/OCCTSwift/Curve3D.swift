@@ -417,6 +417,23 @@ public final class Curve3D: @unchecked Sendable {
     /// numeric result. `totalArcLength` delegates to this and collapses failure back to `-1.0`
     /// for source compatibility — prefer this property when you need to tell "failed" apart
     /// from "genuinely zero".
+    ///
+    /// Backed by `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
+    /// interval boundaries and integrates each span separately, so a multi-span BSpline (an
+    /// interpolated toolpath, an imported spline) measures correctly rather than being integrated
+    /// as one Gauss quadrature across the whole domain.
+    ///
+    /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so
+    /// trim before measuring if that is not what you want.
+    ///
+    /// - Returns: Arc length in model units, or `nil` if the OCCT computation fails.
+    ///
+    /// ```swift
+    /// let path = Curve3D.interpolate(points: waypoints)!
+    /// if let total = path.length {
+    ///     let steps = Int((total / stepOver).rounded(.up))
+    /// }
+    /// ```
     public var length: Double? {
         let l = OCCTCurve3DGetLength(handle)
         return l >= 0 ? l : nil
@@ -429,6 +446,21 @@ public final class Curve3D: @unchecked Sendable {
     /// numeric result. `arcLength(from:to:)` and `arcLengthBetween(_:_:)` both delegate to this
     /// and collapse failure back to `-1.0` for source compatibility — prefer this method when
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
+    ///
+    /// Same composite integrator as ``length``. The range may be given in either order; equal
+    /// parameters measure `0`. Parameters outside the curve's domain are clamped to it, so a
+    /// range wholly outside measures `0` rather than extrapolating the curve's polynomial.
+    ///
+    /// - Parameters:
+    ///   - u1: Start parameter.
+    ///   - u2: End parameter.
+    /// - Returns: Arc length in model units, or `nil` if the OCCT computation fails.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 1)!
+    /// let d = circle.domain
+    /// let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)  // ~= pi
+    /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
