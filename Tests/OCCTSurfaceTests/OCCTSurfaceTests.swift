@@ -389,16 +389,68 @@ struct FillingSupportFaceTests {
         // The second filling entry point reaches the same OCCT defect through its own bridge
         // implementation. Any continuity above .c0 on a curved edge used to SIGSEGV here too;
         // as with the Shape.fill tests, reaching the assertion is the regression check.
-        //
-        // Only the crash is fixed. FillingSurface's continuity mapping is still wrong (.c1
-        // requests curvature, .c2 lands out of range and is dropped) — that is #433, because
-        // correcting it changes documented public behavior.
         let filling = FillingSurface()
         let added = filling.add(edge: rim, continuity: .g1)
         #expect(added)
 
         let face = filling.build()
         #expect(face != nil)
+    }
+
+    @Test("FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)")
+    func fillingSurfaceContinuityMappingIsCorrect() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+
+        // Before #433, .g1 hand-mapped to GeomAbs_C1 (curvature, ordinal 2) instead of
+        // GeomAbs_G1 (tangency, ordinal 1), and .g2 mapped to GeomAbs_C2 (ordinal 4), which
+        // every constraint class rejects — failing the whole build() rather than just that one
+        // constraint. Mirrors Shape.fill's own "Curvature continuity is accepted and differs
+        // from tangency" test above, which guards the same mapping on the other entry point.
+        let tangentFilling = FillingSurface()
+        #expect(tangentFilling.add(edge: rim, support: wall, continuity: .g1))
+        guard let tangentFace = tangentFilling.build() else {
+            Issue.record("Tangent fill via FillingSurface should succeed")
+            return
+        }
+
+        let curvatureFilling = FillingSurface()
+        #expect(curvatureFilling.add(edge: rim, support: wall, continuity: .g2))
+        guard let curvatureFace = curvatureFilling.build() else {
+            Issue.record(".g2 must be accepted, not rejected as an out-of-range plate order")
+            return
+        }
+
+        #expect(tangentFace.size.z > 0.5)
+        // Non-nil alone would also pass if .g2 silently behaved as .g1. Matching curvature as
+        // well as tangency pushes the cap measurably further than tangency alone.
+        #expect(curvatureFace.size.z > tangentFace.size.z + 0.5)
+    }
+
+    @Test("add(edge:support:continuity:) rejects a support face that cannot serve (#434)")
+    func fillingSurfaceNominatedSupportFaceIsNotSilentlySubstituted() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        // Same fixture as Shape.fill's "A nominated support face that cannot serve is a
+        // failure, not a substitution" test: a sphere elsewhere in space resolves no pcurve
+        // for the rim, so it cannot be the continuity reference.
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        let filling = FillingSurface()
+        #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g1))
     }
 }
 

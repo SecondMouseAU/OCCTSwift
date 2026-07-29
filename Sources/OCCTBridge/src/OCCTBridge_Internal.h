@@ -51,6 +51,7 @@
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
+#include <BRepOffsetAPI_MakeFilling.hxx>
 
 // === Foundation struct definitions ===
 
@@ -279,18 +280,31 @@ TopoDS_Shape occtUnifySameDomainMapped(const TopoDS_Shape& sub, BRepBuilderAPI_C
 TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
                                  bool unifyEdges, bool unifyFaces, bool concatBSplines);
 
-// === #430/#432: surface-filling constraint helpers ===
+// === #430/#432/#434: surface-filling helpers ===
 //
-// Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm, on
-// BRepOffsetAPI_MakeFilling) and OCCTFilling* (OCCTBridge_Modeling.mm, on BRepFill_Filling).
-// Definitions live in OCCTBridge_Healing.mm. Converging the two wrappers themselves is #434.
+// Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm) and OCCTFilling*
+// (OCCTBridge_Modeling.mm). Both now build on BRepOffsetAPI_MakeFilling (#434 converged
+// OCCTFilling* off its own separate BRepFill_Filling onto the same class). Definitions live in
+// OCCTBridge_Healing.mm.
 
 // Map a plate constraint order (0=position, 1=tangency, 2=curvature) onto the GeomAbs_Shape
-// value BRepFill_Filling actually accepts. It forwards the enum straight through to
+// value BRepOffsetAPI_MakeFilling actually accepts. It forwards the enum straight through to
 // GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both reject
 // anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2 (ordinal 3) and
 // GeomAbs_C2 (ordinal 4) always throw, whatever BRepOffsetAPI_MakeFilling.hxx claims.
 GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity);
+
+// Construct a BRepOffsetAPI_MakeFilling, binding every argument to the parameter it names — the
+// pre-#431 code passed maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng, which left
+// MaxDeg/MaxSegments at their defaults and made TolAng the continuity ordinal. Tol2d/Tol3d are a
+// parameter-space/model-space tolerance pair; a tenth reproduces OCCT's own default ratio
+// (1e-5 / 1e-4) at the default tolerance.
+//
+// Returned by value: C++17 guaranteed copy elision (Package.swift sets .cxx17) constructs it
+// directly into the caller's variable, so no copy or move of the filler is performed.
+BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree, int32_t nbPtsOnCur,
+                                                  int32_t maxDegree, int32_t maxSegments,
+                                                  double tolerance3d);
 
 // Build a support face carrying the edge's own pcurve, for edges with no nominated support face.
 //
@@ -321,44 +335,24 @@ enum class OCCTFillingSupport {
     Inferred,
 };
 
-// Add one edge constraint, preferring the face-carrying overload whenever a support face is
-// available or derivable. Templated because the two entry points hold different (but
-// Add-compatible) filler types: BRepOffsetAPI_MakeFilling forwards to a private BRepFill_Filling
-// that it does not expose, so there is no common base to take a reference to.
+// Add one edge constraint to `filling`, preferring the face-carrying overload whenever a
+// support face is available or derivable.
+//
+// No longer templated: before #434, the two callers held different (but Add-compatible) filler
+// types — BRepOffsetAPI_MakeFilling here, BRepFill_Filling directly in OCCTBridge_Modeling.mm —
+// with no common base to take a reference to. #434 moved OCCTFilling* onto
+// BRepOffsetAPI_MakeFilling too, so both callers now share the same concrete type.
 //
 // Returns false only when `kind` is Nominated and that face carries no pcurve for the edge; the
 // constraint is then NOT added and the caller should fail the whole fill. Every other path adds
 // a constraint and returns true — including the no-pcurve-anywhere case, which reaches the
 // face-less overload and surfaces as OCCT's documented Standard_Failure at Build() time.
-template <class Filler>
-bool occtFillingAddConstraint(Filler& filling,
+bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               const TopoDS_Edge& edge,
                               const TopoDS_Face& support,
                               OCCTFillingSupport kind,
                               GeomAbs_Shape order,
-                              bool isBound) {
-    if (order != GeomAbs_C0) {
-        if (!support.IsNull()) {
-            // A support face still has to carry a pcurve for this edge; BRepFill_Filling raises
-            // "no 2d representation" if it does not (common on imported shapes).
-            double first = 0.0, last = 0.0;
-            if (!BRep_Tool::CurveOnSurface(edge, support, first, last).IsNull()) {
-                filling.Add(edge, support, order, isBound);
-                return true;
-            }
-            if (kind == OCCTFillingSupport::Nominated) return false;
-        }
-        TopoDS_Face derived;
-        if (occtFillingSupportFaceFromPCurve(edge, derived)) {
-            filling.Add(edge, derived, order, isBound);
-            return true;
-        }
-        // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
-        // Standard_Failure here, which is OCCT's documented contract for this case.
-    }
-    filling.Add(edge, order, isBound);
-    return true;
-}
+                              bool isBound);
 
 // === #403: shared BSpline knot-split-to-parameter conversion ===
 //

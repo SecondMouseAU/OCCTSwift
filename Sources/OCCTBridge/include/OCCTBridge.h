@@ -117,7 +117,6 @@
 // --- BRepFill ---
 // BRepFill_CompatibleWires            → OCCTShapeCompatibleWires
 // BRepFill_Draft                      → OCCTShapeDraftFromWire
-// BRepFill_Filling                    → OCCTFillingSurface*
 // BRepFill_Generator                  → OCCTShapeRuledShell
 // BRepFill_OffsetWire                 → OCCTWireOffset
 // BRepFill_Pipe                       → OCCTShapePipeSweep
@@ -157,7 +156,8 @@
 // BRepOffsetAPI_DraftAngle            → OCCTShapeDraft
 // BRepOffsetAPI_MakeDraft             → OCCTShapeMakeDraft
 // BRepOffsetAPI_MakeEvolved           → OCCTShapeEvolved*
-// BRepOffsetAPI_MakeFilling           → OCCTFillingSurface*
+// BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
+//                                        (FillingSurface) — one implementation, #434
 // BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
 // BRepOffsetAPI_MakePipe              → OCCTShapePipe*
 // BRepOffsetAPI_MakePipeShell         → OCCTShapePipeShell*
@@ -5582,10 +5582,12 @@ OCCTShapeRef OCCTShapeConnectEdges(OCCTShapeRef shape);
 /// @return Converted shape, or NULL on failure
 OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape);
 
-// MARK: - v0.45.0: BRepFill_Filling, BRepExtrema_SelfIntersection, BRepGProp_Face, ShapeAnalysis_WireOrder
+// MARK: - v0.45.0: BRepOffsetAPI_MakeFilling, BRepExtrema_SelfIntersection, BRepGProp_Face, ShapeAnalysis_WireOrder
 
 /// N-side surface filling: create a face from boundary edges and optional point constraints.
-/// Call OCCTFillingCreate, add edges/points, then Build, get face, and Release.
+/// Call OCCTFillingCreate, add edges/points, then Build, get face, and Release. Backs
+/// FillingSurface; shares its BRepOffsetAPI_MakeFilling implementation with OCCTShapeFill*
+/// (Shape.fill) as of #434 — see the continuity note on OCCTFillingParams above.
 typedef struct OCCTFilling* OCCTFillingRef;
 
 /// Create a filling surface builder with specified degree and number of points.
@@ -5601,19 +5603,32 @@ OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t max
 /// Release a filling surface builder.
 void OCCTFillingRelease(OCCTFillingRef filling);
 
-/// Add a boundary edge constraint.
+/// Add a boundary edge constraint, deriving the continuity reference from the edge's own pcurve.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
-/// @param continuity Continuity order: 0=C0, 1=C1, 2=C2
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
 /// @return true if edge was added
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity);
 
 /// Add a free boundary edge constraint (not required to be connected to other edges).
 /// @param filling Filling handle
 /// @param edge Edge to add
-/// @param continuity Continuity order: 0=C0, 1=C1, 2=C2
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
 /// @return true if edge was added
 bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity);
+
+/// Add a boundary edge constraint with an explicit reference face for tangency/curvature.
+///
+/// `support` is used or the constraint fails: if it carries no pcurve for `edge` it cannot
+/// serve as the continuity reference, matching OCCTShapeFillConstraints' per-constraint
+/// contract. Pass NULL to derive the reference from the edge itself, same as OCCTFillingAddEdge.
+/// @param filling Filling handle
+/// @param edge Edge to add as constraint
+/// @param support Face to be continuous with, or NULL to derive one from the edge
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
+/// @return true if the edge was added successfully
+bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
+                                    OCCTFaceRef support, int32_t continuity);
 
 /// Add a point constraint that the filling surface must pass through.
 /// @param filling Filling handle

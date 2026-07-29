@@ -739,11 +739,12 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
     }
 }
 
-// MARK: - Surface filling (#430)
+// MARK: - Surface filling (#430/#434)
 //
-// occtFillingContinuityToGeomAbs / occtFillingSupportFaceFromPCurve / occtFillingAddConstraint
-// are shared with OCCTBridge_Modeling.mm's OCCTFilling* family — declared, and documented at
-// length, in OCCTBridge_Internal.h. The OCCTShapeFill* helpers below are local to this file.
+// occtFillingContinuityToGeomAbs / occtFillingSupportFaceFromPCurve / occtFillingAddConstraint /
+// occtFillingMakeBuilder are shared with OCCTBridge_Modeling.mm's OCCTFilling* family —
+// declared, and documented at length, in OCCTBridge_Internal.h. The OCCTShapeFill* helpers
+// below are local to this file.
 
 GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity) {
     switch (continuity) {
@@ -772,18 +773,46 @@ bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outF
     return !BRep_Tool::CurveOnSurface(edge, outFace, checkFirst, checkLast).IsNull();
 }
 
-// Shared builder construction. Binds every argument to the parameter it names — the
-// previous code passed maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng
-// (#431), which left MaxDeg/MaxSegments at their defaults and made TolAng the continuity
-// ordinal. Measured effect on a cylinder-rim fill: G0Error 0.615 vs 0.00040.
-//
-// Returned by value: C++17 guaranteed copy elision (Package.swift sets .cxx17) constructs it
-// directly into the caller's variable, so no copy or move of the filler is performed.
-static BRepOffsetAPI_MakeFilling OCCTShapeFillMakeBuilder(OCCTFillingParams params) {
-    const double tol3d = params.tolerance > 0 ? params.tolerance : 1e-4;
+bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
+                              const TopoDS_Edge& edge,
+                              const TopoDS_Face& support,
+                              OCCTFillingSupport kind,
+                              GeomAbs_Shape order,
+                              bool isBound) {
+    if (order != GeomAbs_C0) {
+        if (!support.IsNull()) {
+            // A support face still has to carry a pcurve for this edge; BRepFill_Filling raises
+            // "no 2d representation" if it does not (common on imported shapes).
+            double first = 0.0, last = 0.0;
+            if (!BRep_Tool::CurveOnSurface(edge, support, first, last).IsNull()) {
+                filling.Add(edge, support, order, isBound);
+                return true;
+            }
+            if (kind == OCCTFillingSupport::Nominated) return false;
+        }
+        TopoDS_Face derived;
+        if (occtFillingSupportFaceFromPCurve(edge, derived)) {
+            filling.Add(edge, derived, order, isBound);
+            return true;
+        }
+        // No pcurve anywhere: nothing to be tangent to. The face-less overload raises
+        // Standard_Failure here, which is OCCT's documented contract for this case.
+    }
+    filling.Add(edge, order, isBound);
+    return true;
+}
+
+// Binds every argument to the parameter it names — the pre-#431 code passed
+// maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng, which left MaxDeg/MaxSegments
+// at their defaults and made TolAng the continuity ordinal. Measured effect on a cylinder-rim
+// fill: G0Error 0.615 vs 0.00040.
+BRepOffsetAPI_MakeFilling occtFillingMakeBuilder(int32_t degree, int32_t nbPtsOnCur,
+                                                  int32_t maxDegree, int32_t maxSegments,
+                                                  double tolerance3d) {
+    const double tol3d = tolerance3d > 0 ? tolerance3d : 1e-4;
     return BRepOffsetAPI_MakeFilling(
-        3,                                                   // Degree (energy criterion)
-        15,                                                  // NbPtsOnCur
+        degree > 0 ? degree : 3,                            // Degree (energy criterion)
+        nbPtsOnCur > 0 ? nbPtsOnCur : 15,                   // NbPtsOnCur
         2,                                                   // NbIter
         false,                                               // Anisotropie
         // Tol2d is a parameter-space tolerance and Tol3d a model-space one, so no ratio is
@@ -793,9 +822,16 @@ static BRepOffsetAPI_MakeFilling OCCTShapeFillMakeBuilder(OCCTFillingParams para
         tol3d,                                               // Tol3d
         0.01,                                                // TolAng
         0.1,                                                 // TolCurv
-        params.maxDegree > 0 ? params.maxDegree : 8,         // MaxDeg
-        params.maxSegments > 0 ? params.maxSegments : 9      // MaxSegments
+        maxDegree > 0 ? maxDegree : 8,                       // MaxDeg
+        maxSegments > 0 ? maxSegments : 9                    // MaxSegments
     );
+}
+
+// Fixed at the degree/nbPtsOnCur OCCTShapeFill's public API doesn't expose per-call control
+// over (FillingParameters has no such fields); OCCTFillingCreate's caller-supplied variants
+// go straight to occtFillingMakeBuilder.
+static BRepOffsetAPI_MakeFilling OCCTShapeFillMakeBuilder(OCCTFillingParams params) {
+    return occtFillingMakeBuilder(3, 15, params.maxDegree, params.maxSegments, params.tolerance);
 }
 
 // Collect the boundary edges of every wire, in order.
