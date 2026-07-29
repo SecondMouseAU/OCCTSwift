@@ -644,6 +644,44 @@ public func mirrored(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> 
 
 ---
 
+### `mirrored(acrossPoint:)`
+
+Returns a mirrored copy of this surface across a point.
+
+```swift
+public func mirrored(acrossPoint point: SIMD3<Double>) -> Surface?
+```
+
+- **Parameters:** `point` — the mirror point.
+- **Returns:** Mirrored surface copy, or `nil` on failure.
+- **OCCT:** `Geom_Surface::Mirrored(gp_Pnt)`.
+- **Example:**
+  ```swift
+  let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let mirrored = plane?.mirrored(acrossPoint: SIMD3(1, 1, 1))
+  ```
+
+---
+
+### `mirrored(acrossAxis:direction:)`
+
+Returns a mirrored copy of this surface across an axis (line).
+
+```swift
+public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface?
+```
+
+- **Parameters:** `point` — a point on the mirror axis; `direction` — axis direction.
+- **Returns:** Mirrored surface copy, or `nil` on failure.
+- **OCCT:** `Geom_Surface::Mirrored(gp_Ax1)`.
+- **Example:**
+  ```swift
+  let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let mirrored = plane?.mirrored(acrossAxis: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
+  ```
+
+---
+
 ## Conversion
 
 ### `toBSpline()`
