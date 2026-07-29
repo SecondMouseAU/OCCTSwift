@@ -249,6 +249,7 @@ The circle is periodic with period `2π`. The X axis of the local frame is deter
 - **Parameters:** `center` — circle centre; `normal` — plane normal; `radius` — circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0` or `normal` is zero.
 - **OCCT:** `Geom_Circle(gp_Ax2(...), radius)`.
+- **See also:** [`circleFromCenterNormal(center:normal:radius:)`](Curve3D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc` algorithm and enforces the same `radius > 0` contract (#399). The same pairing exists for `ellipse`/`ellipseFromCenterNormal`, `hyperbola`/`hyperbolaFromCenterNormal` and `parabola`/`parabolaFromCenterNormal`.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
@@ -280,18 +281,19 @@ OCCT derives the centre and radius from the three points. The arc sweeps from `s
 
 ### `Curve3D.arc(through:_:_:)`
 
-Alias for `arcOfCircle(start:interior:end:)`.
+A spelling of [`arcOfCircle(start:interior:end:)`](#curve3darcofcirclestartinteriorend) and delegates to it — the two cannot produce different curves for the same input (#415).
 
 ```swift
 public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D?
 ```
 
-- **Parameters:** `p1` — first endpoint; `pm` — interior midpoint; `p2` — second endpoint.
+- **Parameters:** `p1` — first endpoint (maps to `arcOfCircle`'s `start`); `pm` — a point on the arc (maps to `interior`); `p2` — second endpoint (maps to `end`).
 - **Returns:** Arc curve, or `nil` if points are collinear or coincident.
-- **OCCT:** `GC_MakeArcOfCircle` → `Geom_TrimmedCurve`.
+- **OCCT:** `GC_MakeArcOfCircle` → `Geom_TrimmedCurve`, via `arcOfCircle(start:interior:end:)`.
 - **Example:**
   ```swift
   let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
+  #expect(arc != nil)
   ```
 
 ---
@@ -709,6 +711,10 @@ The total arc length of the curve over its full domain.
 public var length: Double? { get }
 ```
 
+This is the canonical, failure-distinguishing entry point for the whole-domain arc length:
+`totalArcLength` (see [Curve3D-Construction](Curve3D-Construction.md)) delegates to this and
+collapses `nil` to a `-1.0` sentinel for source compatibility.
+
 - **Returns:** Arc length in model units, or `nil` if the OCCT computation fails.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`. The curve is split at its `GeomAbs_CN`
   interval boundaries and each span integrated separately, so a multi-span BSpline measures
@@ -731,6 +737,11 @@ The arc length between two parameter values.
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
+
+This is the canonical, failure-distinguishing entry point for a bounded-interval arc length:
+`arcLength(from:to:)` and `arcLengthBetween(_:_:)` (see
+[Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
+`-1.0` sentinel for source compatibility.
 
 - **Parameters:** `u1` — start parameter; `u2` — end parameter.
 - **Returns:** Arc length, or `nil` on failure.
@@ -835,6 +846,10 @@ Useful for converting an analytical curve to a polynomial BSpline with controlle
 - **Parameters:** `tolerance` — approximation error; `continuity` — minimum continuity order; `maxSegments` — maximum number of BSpline spans; `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`.
+- **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406) —
+  all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
+  different OCCT geometry hierarchy, not independent algorithms that would justify
+  independently-tuned numeric defaults.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)!

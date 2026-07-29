@@ -117,7 +117,6 @@
 // --- BRepFill ---
 // BRepFill_CompatibleWires            → OCCTShapeCompatibleWires
 // BRepFill_Draft                      → OCCTShapeDraftFromWire
-// BRepFill_Filling                    → OCCTFillingSurface*
 // BRepFill_Generator                  → OCCTShapeRuledShell
 // BRepFill_OffsetWire                 → OCCTWireOffset
 // BRepFill_Pipe                       → OCCTShapePipeSweep
@@ -157,7 +156,8 @@
 // BRepOffsetAPI_DraftAngle            → OCCTShapeDraft
 // BRepOffsetAPI_MakeDraft             → OCCTShapeMakeDraft
 // BRepOffsetAPI_MakeEvolved           → OCCTShapeEvolved*
-// BRepOffsetAPI_MakeFilling           → OCCTFillingSurface*
+// BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
+//                                        (FillingSurface) — one implementation, #434
 // BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
 // BRepOffsetAPI_MakePipe              → OCCTShapePipe*
 // BRepOffsetAPI_MakePipeShell         → OCCTShapePipeShell*
@@ -267,7 +267,8 @@
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DExtrema, OCCTCurve2DCurvatureExtrema
 // Geom2dAPI_InterCurveCurve           → OCCTCurve2DIntersect, OCCTCurve2DSelfIntersect
 // Geom2dAPI_Interpolate               → OCCTCurve2DInterpolate*
-// Geom2dAPI_ProjectPointOnCurve       → OCCTPoint2DDistanceToCurve, OCCTCurve2DProjectPoint2D
+// Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
+//                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve
 //
 // --- Geom2dGcc ---
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
@@ -2438,7 +2439,13 @@ typedef struct {
     double x, y, parameter, distance;
 } OCCTCurve2DProjection;
 
+/// Project a point onto a curve, nearest solution only.
+/// @return Projection with `distance >= 0` on success; on failure `distance` is -1 and the
+///         other fields are zeroed. A curve can legitimately have no projection for a point
+///         (one beyond the ends of a bounded curve, or a circle's centre).
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef curve, double px, double py);
+/// Project a point onto a curve, all local-minimum solutions.
+/// @return Number of solutions written to `out` (0 if there are none).
 int32_t OCCTCurve2DProjectPointAll(OCCTCurve2DRef curve, double px, double py,
                                    OCCTCurve2DProjection* out, int32_t max);
 
@@ -2875,9 +2882,6 @@ OCCTCurve3DRef OCCTCurve3DCreateCircle(double cx, double cy, double cz,
 OCCTCurve3DRef OCCTCurve3DCreateArcOfCircle(double p1x, double p1y, double p1z,
                                              double p2x, double p2y, double p2z,
                                              double p3x, double p3y, double p3z);
-OCCTCurve3DRef OCCTCurve3DCreateArc3Points(double p1x, double p1y, double p1z,
-                                            double pmx, double pmy, double pmz,
-                                            double p2x, double p2y, double p2z);
 OCCTCurve3DRef OCCTCurve3DCreateEllipse(double cx, double cy, double cz,
                                          double nx, double ny, double nz,
                                          double majorR, double minorR);
@@ -3049,6 +3053,11 @@ OCCTSurfaceRef OCCTSurfaceScale(OCCTSurfaceRef surface,
 OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef surface,
                                        double px, double py, double pz,
                                        double nx, double ny, double nz);
+OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef surface,
+                                       double px, double py, double pz);
+OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef surface,
+                                      double px, double py, double pz,
+                                      double dx, double dy, double dz);
 
 // Conversion
 OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef surface);
@@ -5577,10 +5586,12 @@ OCCTShapeRef OCCTShapeConnectEdges(OCCTShapeRef shape);
 /// @return Converted shape, or NULL on failure
 OCCTShapeRef OCCTShapeConvertToBezier(OCCTShapeRef shape);
 
-// MARK: - v0.45.0: BRepFill_Filling, BRepExtrema_SelfIntersection, BRepGProp_Face, ShapeAnalysis_WireOrder
+// MARK: - v0.45.0: BRepOffsetAPI_MakeFilling, BRepExtrema_SelfIntersection, BRepGProp_Face, ShapeAnalysis_WireOrder
 
 /// N-side surface filling: create a face from boundary edges and optional point constraints.
-/// Call OCCTFillingCreate, add edges/points, then Build, get face, and Release.
+/// Call OCCTFillingCreate, add edges/points, then Build, get face, and Release. Backs
+/// FillingSurface; shares its BRepOffsetAPI_MakeFilling implementation with OCCTShapeFill*
+/// (Shape.fill) as of #434 — see the continuity note on OCCTFillingParams above.
 typedef struct OCCTFilling* OCCTFillingRef;
 
 /// Create a filling surface builder with specified degree and number of points.
@@ -5596,19 +5607,32 @@ OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t max
 /// Release a filling surface builder.
 void OCCTFillingRelease(OCCTFillingRef filling);
 
-/// Add a boundary edge constraint.
+/// Add a boundary edge constraint, deriving the continuity reference from the edge's own pcurve.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
-/// @param continuity Continuity order: 0=C0, 1=C1, 2=C2
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
 /// @return true if edge was added
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity);
 
 /// Add a free boundary edge constraint (not required to be connected to other edges).
 /// @param filling Filling handle
 /// @param edge Edge to add
-/// @param continuity Continuity order: 0=C0, 1=C1, 2=C2
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
 /// @return true if edge was added
 bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity);
+
+/// Add a boundary edge constraint with an explicit reference face for tangency/curvature.
+///
+/// `support` is used or the constraint fails: if it carries no pcurve for `edge` it cannot
+/// serve as the continuity reference, matching OCCTShapeFillConstraints' per-constraint
+/// contract. Pass NULL to derive the reference from the edge itself, same as OCCTFillingAddEdge.
+/// @param filling Filling handle
+/// @param edge Edge to add as constraint
+/// @param support Face to be continuous with, or NULL to derive one from the edge
+/// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
+/// @return true if the edge was added successfully
+bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
+                                    OCCTFaceRef support, int32_t continuity);
 
 /// Add a point constraint that the filling surface must pass through.
 /// @param filling Filling handle
@@ -6629,8 +6653,16 @@ typedef struct {
 /// @param surface BSpline surface to analyze
 /// @param uContinuity Desired U continuity (0=C0, 1=C1, 2=C2)
 /// @param vContinuity Desired V continuity (0=C0, 1=C1, 2=C2)
+/// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
+/// @param maxUParams Capacity of outUParams
+/// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
+/// @param maxVParams Capacity of outVParams
+/// @return Split counts; nbUSplits/nbVSplits are the true counts even when writing
+///   was truncated by maxUParams/maxVParams, so a caller can retry with a bigger buffer
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
-    int32_t uContinuity, int32_t vContinuity);
+    int32_t uContinuity, int32_t vContinuity,
+    double* outUParams, int32_t maxUParams,
+    double* outVParams, int32_t maxVParams);
 
 /// Join an array of Bezier surface patches into a single BSpline surface.
 /// @param patches Array of surface handles (row-major, nRows x nCols)
@@ -7245,24 +7277,6 @@ int32_t OCCTExtremaExtPElC2dLin(double px, double py,
 int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
                            OCCTCurve2DRef c2, double first2, double last2,
                            OCCTExtrema2dResult* out, int32_t max);
-
-// --- Geom2dLProp_NumericCurInf2d ---
-
-/// Curvature inflection/extremum point result
-typedef struct {
-    double parameter;
-    int32_t type;   ///< 0 = curvature minimum, 1 = curvature maximum, 2 = inflection
-} OCCTCurInfPoint;
-
-/// Find curvature extrema on a 2D curve.
-/// @return Number of extrema found
-int32_t OCCTGeom2dLPropCurExt(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max);
-
-/// Find inflection points on a 2D curve.
-/// @return Number of inflection points found
-int32_t OCCTGeom2dLPropCurInf(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max);
 
 // --- Bisector_BisecAna ---
 
@@ -8701,6 +8715,9 @@ OCCTPoint2DRef _Nullable OCCTPoint2DMirroredPoint(OCCTPoint2DRef _Nonnull ref,
 OCCTPoint2DRef _Nullable OCCTPoint2DMirroredAxis(OCCTPoint2DRef _Nonnull ref,
     double ox, double oy, double dx, double dy);
 /// Distance from point to curve
+/// @return Minimum distance, or -1 when the point has no projection onto the curve (one beyond
+///         the ends of a bounded curve, or a circle's centre). Swift's Point2D.distance(to:)
+///         maps that to .infinity.
 double OCCTPoint2DDistanceToCurve(OCCTPoint2DRef _Nonnull ref, OCCTCurve2DRef _Nonnull curve);
 /// Apply a Transform2D to a point, returns new point
 OCCTPoint2DRef _Nullable OCCTPoint2DTransformed(OCCTPoint2DRef _Nonnull ref,
@@ -8811,8 +8828,10 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
     OCCTPoint2DRef _Nonnull p2);
 
 /// Project a Point2D onto a Curve2D, returns parameter at closest point
-/// @param outDistance Output: minimum distance
-/// @return parameter on curve, or 0 on failure
+/// @param outDistance Output: minimum distance, or -1 on failure — this is the failure signal
+/// @return parameter on curve, or NaN on failure. Do NOT test the return value against 0: 0 is a
+///         legitimate parameter on any curve whose domain includes it (projecting a segment's own
+///         start point onto it returns exactly 0). Test `outDistance < 0` instead.
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve, OCCTPoint2DRef _Nonnull point,
     double* _Nonnull outDistance);
 
@@ -8999,6 +9018,18 @@ void OCCTGeomFillNSectionsInfo(
 int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef _Nonnull law,
     int32_t continuityOrder,
     int32_t* _Nonnull outIndices, int32_t maxIndices);
+
+/// Find PARAMETER values (not knot-table indices) where a BSpline law drops below
+/// given continuity -- the law-function analogue of OCCTCurve3DBSplineKnotSplits. #403.
+/// @param law BSpline law function handle
+/// @param continuityOrder Continuity level to check (0=C0, 1=C1, 2=C2)
+/// @param outParams Pre-allocated array for break parameter values
+/// @param maxParams Maximum number of parameters to return
+/// @return Number of break parameters found (true count, even if writing was truncated
+///   by maxParams), or -1 on failure
+int32_t OCCTLawBSplineKnotSplitParams(OCCTLawFunctionRef _Nonnull law,
+    int32_t continuityOrder,
+    double* _Nonnull outParams, int32_t maxParams);
 
 // --- Law_Composite ---
 /// Create a composite law from multiple sub-laws stitched together.
@@ -10940,17 +10971,14 @@ OCCTCurve3DRef _Nullable OCCTGceMakeCircFromCenterNormal(double cx, double cy, d
                                                           double nx, double ny, double nz,
                                                           double radius);
 
-// --- gce_MakeCone ---
-/// Create a conical surface from 2 points (axis) + 2 radii
-OCCTSurfaceRef _Nullable OCCTGceMakeCone(double p1x, double p1y, double p1z,
-                                          double p2x, double p2y, double p2z,
-                                          double radius1, double radius2);
-
-// --- gce_MakeCylinder ---
-/// Create a cylindrical surface from 3 points (P1-P2 axis, P3 radius)
-OCCTSurfaceRef _Nullable OCCTGceMakeCylinderFrom3Points(double p1x, double p1y, double p1z,
-                                                         double p2x, double p2y, double p2z,
-                                                         double p3x, double p3y, double p3z);
+// --- gce_MakeCone / gce_MakeCylinder ---
+// Note (#420): conical/cylindrical surface-from-points construction is unified
+// on OCCTSurfaceConicalFromPointsRadii / OCCTSurfaceCylindricalFromPoints
+// (GC_MakeConicalSurface / GC_MakeCylindricalSurface, which return the
+// Handle(Geom_*) directly). The gce_MakeCone / gce_MakeCylinder-backed bridge
+// functions that previously duplicated this path were removed; the Swift
+// `Surface.coneFrom2PointsRadii`/`cylinderFrom3Points` entry points now call
+// through to `conicalSurface`/`cylindricalSurface`.
 
 // --- gce_MakeLin ---
 /// Create a line from 2 points
@@ -17201,7 +17229,9 @@ OCCTShapeRef _Nullable OCCTShapeEmptyCopied(OCCTShapeRef _Nonnull shape);
 
 // --- GeomAPI_Interpolate expansion ---
 
-/// Interpolate 3D BSpline with endpoint tangents.
+/// Interpolate 3D BSpline with endpoint tangents. Forwards to
+/// OCCTCurve3DInterpolateWithTangents with a fixed 1e-6 tolerance; kept for
+/// existing C callers of this exact signature.
 OCCTCurve3DRef _Nullable OCCTInterpolateWithTangents(const double* _Nonnull points, int32_t count,
                                                        double t1x, double t1y, double t1z,
                                                        double t2x, double t2y, double t2z);
@@ -17485,7 +17515,8 @@ double OCCTCurve3DClosestParameter(OCCTCurve3DRef _Nonnull curve, double px, dou
 /// Create a trimmed copy of a 2D curve between parameters u1 and u2.
 OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
-/// Compute the length of a 2D curve between parameters u1 and u2.
+/// Compute the length of a 2D curve between parameters u1 and u2 (u1 must not exceed u2).
+/// Returns -1.0 on failure (null curve, reversed range, or any other computation error).
 double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
 // --- Surface additional (v0.115.0) ---
@@ -21095,6 +21126,10 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef _Nonnull graph,
                               int32_t domain, int32_t kind, uint32_t counter,
                               int32_t* _Nonnull outDomain, int32_t* _Nonnull outKind,
                               int32_t* _Nonnull outIndex);
+
+/// True if an item UID (domain, kind, counter) exists in this graph generation.
+bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef _Nonnull graph,
+                              int32_t domain, int32_t kind, uint32_t counter);
 
 /// Return the current graph generation counter.
 ///

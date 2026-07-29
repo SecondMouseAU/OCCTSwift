@@ -2,6 +2,46 @@ import Foundation
 import simd
 import OCCTBridge
 
+/// A 2D grid of points sampled over a surface's UV parameter space.
+///
+/// Returned by ``Surface/drawMesh(uCount:vCount:)`` and
+/// ``Surface/evaluateGrid(uParameters:vParameters:)``. Both share this type specifically so
+/// indexing is unambiguous: access is always `.at(u:v:)`, regardless of how each method lays out
+/// its own bridge buffer internally — there is no `[[SIMD3<Double>]]` nesting order left for a
+/// caller to get backwards between the two.
+///
+/// ```swift
+/// let grid = surface.drawMesh(uCount: 20, vCount: 10)
+/// let corner = grid.at(u: 0, v: 0)
+/// let opposite = grid.at(u: grid.uCount - 1, v: grid.vCount - 1)
+/// ```
+public struct SurfaceGrid: Sendable {
+    /// Number of samples in the U direction.
+    public let uCount: Int
+    /// Number of samples in the V direction.
+    public let vCount: Int
+    /// Flat storage, U-major: `points[u * vCount + v]`.
+    private let points: [SIMD3<Double>]
+
+    init(uCount: Int, vCount: Int, points: [SIMD3<Double>]) {
+        self.uCount = uCount
+        self.vCount = vCount
+        self.points = points
+    }
+
+    static let empty = SurfaceGrid(uCount: 0, vCount: 0, points: [])
+
+    /// Whether this grid has no points (returned when sampling fails).
+    public var isEmpty: Bool { points.isEmpty }
+
+    /// Point at the given U/V grid index.
+    public func at(u: Int, v: Int) -> SIMD3<Double> {
+        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
+                      "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+        return points[u * vCount + v]
+    }
+}
+
 /// A parametric surface backed by OpenCASCADE Handle(Geom_Surface).
 ///
 /// Wraps analytic surfaces (plane, cylinder, cone, sphere, torus),
@@ -34,6 +74,11 @@ public final class Surface: @unchecked Sendable {
     }
 
     /// Surface continuity class, derived from GeomAbs_Shape.
+    ///
+    /// - Note: This reports a surface's *measured* continuity, and its raw values are
+    ///   `GeomAbs_Shape`'s own ordinals, which are not a 0/1/2 order. Do not confuse it with
+    ///   the top-level ``SurfaceContinuity``, one dot away, which is the G0/G1/G2 order you
+    ///   *request* of a filling or plate constraint. See #398 for the full census.
     public enum Continuity: Int32, Sendable, CaseIterable {
         case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
     }
@@ -142,12 +187,22 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Analytic Surfaces
 
-    /// Create an infinite plane from a point and normal direction
+    /// Create an infinite plane from a point and normal direction.
+    ///
+    /// A spelling of `planeFromPointNormal(point:normal:)` with unlabeled positional arguments,
+    /// and it delegates to it — the two cannot produce different planes for the same input (#421).
+    ///
+    /// - Parameters:
+    ///   - origin: A point on the plane
+    ///   - normal: Normal direction of the plane
+    /// - Returns: Plane surface, or nil if `normal` has zero (or near-zero) length
+    ///
+    /// ```swift
+    /// let ground = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
+    /// #expect(ground != nil)
+    /// ```
     public static func plane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceCreatePlane(origin.x, origin.y, origin.z,
-                                              normal.x, normal.y, normal.z)
-        else { return nil }
-        return Surface(handle: h)
+        planeFromPointNormal(point: origin, normal: normal)
     }
 
     /// Create a cylindrical surface
@@ -366,6 +421,31 @@ public final class Surface: @unchecked Sendable {
         return Surface(handle: h)
     }
 
+    /// Mirrored copy across a point.
+    ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// let mirrored = plane?.mirrored(acrossPoint: SIMD3(1, 1, 1))
+    /// ```
+    public func mirrored(acrossPoint point: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTSurfaceMirrorPoint(handle, point.x, point.y, point.z)
+        else { return nil }
+        return Surface(handle: h)
+    }
+
+    /// Mirrored copy across an axis (line).
+    ///
+    /// ```swift
+    /// let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// let mirrored = plane?.mirrored(acrossAxis: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
+    /// ```
+    public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface? {
+        guard let h = OCCTSurfaceMirrorAxis(handle, point.x, point.y, point.z,
+                                             direction.x, direction.y, direction.z)
+        else { return nil }
+        return Surface(handle: h)
+    }
+
     // MARK: - Conversion
 
     /// Convert to BSpline representation
@@ -374,9 +454,31 @@ public final class Surface: @unchecked Sendable {
         return Surface(handle: h)
     }
 
-    /// Approximate as a BSpline surface within tolerance
-    public func approximated(tolerance: Double = 0.01, continuity: Int = 2,
-                             maxSegments: Int = 100, maxDegree: Int = 10) -> Surface? {
+    /// Approximate as a BSpline surface within tolerance.
+    ///
+    /// - Parameters:
+    ///   - tolerance: Maximum approximation error
+    ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - maxSegments: Maximum number of B-spline segments
+    ///   - maxDegree: Maximum polynomial degree
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) match `Curve3D.approximated`/
+    /// `Curve2D.approximated` (#406): all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy
+    /// (surface vs. 3D curve vs. 2D curve), not independent algorithms whose numeric defaults
+    /// should be tuned independently. Measured directly (analytic primitives — sphere, torus,
+    /// trimmed cylinder/cone — and a 40x40-point BSpline fit): the tighter tolerance and lower
+    /// degree succeed on every case tried, with no meaningful cost difference, so there was no
+    /// dimensional justification for the looser values this used to default to. An
+    /// infinite/unbounded surface must still be trimmed to a finite parameter domain before
+    /// calling this (see `trimmed(u1:u2:v1:v2:)`) — approximation does not do that for you.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
+    /// ```
+    public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
+                             maxSegments: Int = 100, maxDegree: Int = 8) -> Surface? {
         guard let h = OCCTSurfaceApproximate(handle, tolerance, Int32(continuity),
                                               Int32(maxSegments), Int32(maxDegree))
         else { return nil }
@@ -450,36 +552,62 @@ public final class Surface: @unchecked Sendable {
         return result
     }
 
-    /// Sample a uniform mesh grid of points for Metal visualization
-    /// - Returns: 2D array [uIndex][vIndex] of surface points
-    public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> [[SIMD3<Double>]] {
+    /// Sample a uniform mesh grid of points for Metal visualization.
+    ///
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails.
+    ///
+    /// ```swift
+    /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
+    /// let p = grid.at(u: 5, v: 3)
+    /// ```
+    public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
         let total = uCount * vCount
         var buffer = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceDrawMesh(handle, Int32(uCount), Int32(vCount), &buffer))
-        guard n == total else { return [] }
+        guard n == total else { return .empty }
 
-        var grid = [[SIMD3<Double>]]()
-        grid.reserveCapacity(uCount)
-        for i in 0..<uCount {
-            var row = [SIMD3<Double>]()
-            row.reserveCapacity(vCount)
-            for j in 0..<vCount {
-                let idx = (i * vCount + j) * 3
-                row.append(SIMD3(buffer[idx], buffer[idx + 1], buffer[idx + 2]))
-            }
-            grid.append(row)
-        }
-        return grid
+        // Bridge buffer is already U-major (idx = u * vCount + v), matching SurfaceGrid's storage.
+        let points: [SIMD3<Double>] = unpackSIMD3(buffer, count: total)
+        return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
     }
 
     // MARK: - Local Properties
 
-    /// Gaussian curvature at (u, v)
+    /// Gaussian curvature at (u, v), or `0` where curvature is undefined.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Gaussian curvature, or `0` at a point where the tangent vectors are degenerate
+    ///   (a cone apex, a sphere pole) and `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// `curvatures(u:v:)` returns this value and `meanCurvature(atU:v:)` together from a single
+    /// evaluation; all three share one `GeomLProp_SLProps` construction and therefore agree
+    /// exactly on both the value and on whether curvature is defined at all.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// #expect(abs(sphere.gaussianCurvature(atU: 0, v: 0) - 1.0 / 25) < 1e-12)  // 1/r²
+    /// ```
     public func gaussianCurvature(atU u: Double, v: Double) -> Double {
         OCCTSurfaceGetGaussianCurvature(handle, u, v)
     }
 
-    /// Mean curvature at (u, v)
+    /// Mean curvature at (u, v), or `0` where curvature is undefined.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Mean curvature, or `0` at a point where the tangent vectors are degenerate and
+    ///   `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// `curvatures(u:v:)` returns this value and `gaussianCurvature(atU:v:)` together from a
+    /// single evaluation; all three share one `GeomLProp_SLProps` construction.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// #expect(abs(abs(sphere.meanCurvature(atU: 0, v: 0)) - 1.0 / 5) < 1e-12)  // 1/r
+    /// ```
     public func meanCurvature(atU u: Double, v: Double) -> Double {
         OCCTSurfaceGetMeanCurvature(handle, u, v)
     }
@@ -750,31 +878,38 @@ public final class Surface: @unchecked Sendable {
 extension Surface {
     /// Evaluate the surface at a UV grid in one call.
     ///
-    /// Returns points in row-major order (u varies fastest).
-    ///
     /// - Parameters:
     ///   - uParameters: Array of U parameter values
     ///   - vParameters: Array of V parameter values
-    /// - Returns: 2D array of evaluated 3D points [v][u]
-    public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> [[SIMD3<Double>]] {
-        guard !uParameters.isEmpty, !vParameters.isEmpty else { return [] }
-        let total = uParameters.count * vParameters.count
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if either input is
+    ///   empty or the evaluated count doesn't match `uParameters.count * vParameters.count`.
+    ///
+    /// ```swift
+    /// let grid = surface.evaluateGrid(uParameters: [0, 1, 2], vParameters: [0, 1])
+    /// let p = grid.at(u: 2, v: 0)
+    /// ```
+    public func evaluateGrid(uParameters: [Double], vParameters: [Double]) -> SurfaceGrid {
+        guard !uParameters.isEmpty, !vParameters.isEmpty else { return .empty }
+        let uCount = uParameters.count
+        let vCount = vParameters.count
+        let total = uCount * vCount
         var outXYZ = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceEvaluateGrid(handle,
-                                             uParameters, Int32(uParameters.count),
-                                             vParameters, Int32(vParameters.count),
+                                             uParameters, Int32(uCount),
+                                             vParameters, Int32(vCount),
                                              &outXYZ))
-        guard n == total else { return [] }
-        var result = [[SIMD3<Double>]]()
-        for v in 0..<vParameters.count {
-            var row = [SIMD3<Double>]()
-            for u in 0..<uParameters.count {
-                let i = v * uParameters.count + u
-                row.append(SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]))
+        guard n == total else { return .empty }
+
+        // Bridge buffer is V-major (v varies slowest, per OCCTSurfaceEvaluateGrid's own doc
+        // comment); SurfaceGrid's storage is U-major, so transpose while unpacking.
+        var points = [SIMD3<Double>](repeating: SIMD3(0, 0, 0), count: total)
+        for v in 0..<vCount {
+            for u in 0..<uCount {
+                let bridgeIdx = (v * uCount + u) * 3
+                points[u * vCount + v] = SIMD3(outXYZ[bridgeIdx], outXYZ[bridgeIdx + 1], outXYZ[bridgeIdx + 2])
             }
-            result.append(row)
         }
-        return result
+        return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
     }
 }
 
@@ -1323,13 +1458,27 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Create a plane surface through three points.
+    /// Create a plane surface through three points, via `GC_MakePlane`.
+    ///
+    /// `planeFrom3Points(p1:p2:p3:)` is a labeled-argument spelling of the same construction
+    /// (`gce_MakePln` instead of `GC_MakePlane`) and delegates here — ground-truthed for #421,
+    /// the two OCCT algorithm classes agree on every case tested (well-separated, collinear, and
+    /// coincident points), so there is only one implementation.
     ///
     /// - Parameters:
     ///   - point1: First point
     ///   - point2: Second point
     ///   - point3: Third point
-    /// - Returns: Plane surface, or nil if points are collinear
+    /// - Returns: Plane surface, or nil if points are collinear (including coincident)
+    ///
+    /// ```swift
+    /// let base = Surface.planeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0))
+    /// #expect(base != nil)
+    ///
+    /// // Collinear points fail construction:
+    /// let degenerate = Surface.planeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0))
+    /// #expect(degenerate == nil)
+    /// ```
     public static func planeFromPoints(
         _ point1: SIMD3<Double>,
         _ point2: SIMD3<Double>,
@@ -1342,12 +1491,20 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Create a plane surface from a point and normal direction.
+    /// Create a plane surface from a point and normal direction, via `GC_MakePlane`.
+    ///
+    /// `plane(origin:normal:)` is an unlabeled-positional spelling of the same construction and
+    /// delegates here.
     ///
     /// - Parameters:
     ///   - point: A point on the plane
     ///   - normal: Normal direction of the plane
-    /// - Returns: Plane surface, or nil on failure
+    /// - Returns: Plane surface, or nil if `normal` has zero (or near-zero) length
+    ///
+    /// ```swift
+    /// let sheet = Surface.planeFromPointNormal(point: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
+    /// #expect(sheet != nil)
+    /// ```
     public static func planeFromPointNormal(
         point: SIMD3<Double>,
         normal: SIMD3<Double>
@@ -1401,23 +1558,65 @@ extension Surface {
     }
 
     /// Result of BSpline surface knot splitting analysis.
+    ///
+    /// `uSplitParams`/`vSplitParams` are the actual parameter values (from the surface's
+    /// own U/V knot vectors) at which those splits occur -- the 2D, per-direction analogue
+    /// of `Curve3D.continuityBreaks`'s 1D split parameters. Added in #403: the counts alone
+    /// made this strictly weaker than its curve/law siblings even though the underlying
+    /// analyzer (`GeomConvert_BSplineSurfaceKnotSplitting`) always computed the locations
+    /// too, via `USplitValue`/`VSplitValue`, this just wasn't surfaced.
     public struct KnotSplitResult {
         /// Number of U split indices needed for the requested continuity
         public let uSplitCount: Int
         /// Number of V split indices needed for the requested continuity
         public let vSplitCount: Int
+        /// U parameter values (ascending, bounded by the surface's own U range) at each split
+        public let uSplitParams: [Double]
+        /// V parameter values (ascending, bounded by the surface's own V range) at each split
+        public let vSplitParams: [Double]
     }
 
     /// Analyze where a BSpline surface would need to be split to achieve
     /// a given continuity level.
     ///
+    /// A surface's discontinuities are inherently 2D -- U and V are independent parametric
+    /// directions, each with its own knot vector -- so this reports counts *and* parameter
+    /// locations per direction, unlike `Curve3D.continuityBreaks` (one 1D parameter list).
+    ///
+    /// ```swift
+    /// let result = bsplineSurface.knotSplitting(uContinuity: 0, vContinuity: 0)
+    /// // result.uSplitParams / result.vSplitParams are real U/V parameters, usable to
+    /// // split the surface into same-continuity patches (e.g. via GeomConvert).
+    /// ```
+    ///
     /// - Parameters:
     ///   - uContinuity: Desired U continuity (0=C0, 1=C1, 2=C2)
     ///   - vContinuity: Desired V continuity (0=C0, 1=C1, 2=C2)
-    /// - Returns: Number of U and V splits needed
+    /// - Returns: Split counts plus the actual U/V parameter values, or all-empty/zero for
+    ///   a non-BSpline surface
     public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult {
-        let result = OCCTSurfaceKnotSplitting(handle, Int32(uContinuity), Int32(vContinuity))
-        return KnotSplitResult(uSplitCount: Int(result.nbUSplits), vSplitCount: Int(result.nbVSplits))
+        // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
+        // reports the true split counts even when it writes fewer, so one retry sized to
+        // those counts is always enough.
+        func read(uCapacity: Int32, vCapacity: Int32) -> (OCCTSurfaceKnotSplitResult, [Double], [Double]) {
+            var uParams = [Double](repeating: 0, count: Int(uCapacity))
+            var vParams = [Double](repeating: 0, count: Int(vCapacity))
+            let result = OCCTSurfaceKnotSplitting(handle, Int32(uContinuity), Int32(vContinuity),
+                                                   &uParams, uCapacity, &vParams, vCapacity)
+            return (result, uParams, vParams)
+        }
+
+        var (result, uParams, vParams) = read(uCapacity: 64, vCapacity: 64)
+        if result.nbUSplits > 64 || result.nbVSplits > 64 {
+            (result, uParams, vParams) = read(uCapacity: max(result.nbUSplits, 1),
+                                               vCapacity: max(result.nbVSplits, 1))
+        }
+        return KnotSplitResult(
+            uSplitCount: Int(result.nbUSplits),
+            vSplitCount: Int(result.nbVSplits),
+            uSplitParams: Array(uParams.prefix(Int(result.nbUSplits))),
+            vSplitParams: Array(vParams.prefix(Int(result.nbVSplits)))
+        )
     }
 
     /// Join an array of Bezier surface patches into a single BSpline surface.
@@ -1935,21 +2134,40 @@ extension Surface {
                                         point2: SIMD3(r.x2, r.y2, r.z2), param2: r.param2)
     }
 
-    /// Create a conical surface from 2 points (axis) + 2 radii (gce_MakeCone)
+    /// Create a conical surface from 2 points (axis) + 2 radii.
+    ///
+    /// Equivalent to ``conicalSurface(point1:point2:r1:r2:)`` — same underlying
+    /// `GC_MakeConicalSurface` construction, kept as a separate entry point for
+    /// API discoverability under the "gce_Make"-style naming used elsewhere in
+    /// this file. Previously this used an independent `gce_MakeCone` construction
+    /// path; unified onto `GC_MakeConicalSurface` to avoid maintaining two
+    /// implementations of the same operation (#420).
+    ///
+    /// ```swift
+    /// let cone = Surface.coneFrom2PointsRadii(
+    ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), radius1: 5.0, radius2: 2.0)
+    /// ```
     public static func coneFrom2PointsRadii(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                             radius1: Double, radius2: Double) -> Surface? {
-        guard let h = OCCTGceMakeCone(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z,
-                                       radius1, radius2) else { return nil }
-        return Surface(handle: h)
+        conicalSurface(point1: p1, point2: p2, r1: radius1, r2: radius2)
     }
 
-    /// Create a cylindrical surface from 3 points (gce_MakeCylinder)
+    /// Create a cylindrical surface from 3 points.
+    ///
+    /// Equivalent to ``cylindricalSurface(point1:point2:point3:)`` — same underlying
+    /// `GC_MakeCylindricalSurface` construction, kept as a separate entry point for
+    /// API discoverability under the "gce_Make"-style naming used elsewhere in
+    /// this file. Previously this used an independent `gce_MakeCylinder` construction
+    /// path; unified onto `GC_MakeCylindricalSurface` to avoid maintaining two
+    /// implementations of the same operation (#420).
+    ///
+    /// ```swift
+    /// let cyl = Surface.cylinderFrom3Points(
+    ///     p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(5, 0, 5))
+    /// ```
     public static func cylinderFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                            p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGceMakeCylinderFrom3Points(p1.x, p1.y, p1.z,
-                                                      p2.x, p2.y, p2.z,
-                                                      p3.x, p3.y, p3.z) else { return nil }
-        return Surface(handle: h)
+        cylindricalSurface(point1: p1, point2: p2, point3: p3)
     }
 
     /// Create a plane from equation Ax+By+Cz+D=0 (gce_MakePln)
@@ -1958,13 +2176,25 @@ extension Surface {
         return Surface(handle: h)
     }
 
-    /// Create a plane from 3 points (gce_MakePln)
+    /// Create a plane from 3 points.
+    ///
+    /// A labeled-argument spelling of `planeFromPoints(_:_:_:)` (`gce_MakePln` instead of
+    /// `GC_MakePlane`), and it delegates to it — the two cannot produce different planes for the
+    /// same input (#421).
+    ///
+    /// - Parameters:
+    ///   - p1: First point
+    ///   - p2: Second point
+    ///   - p3: Third point
+    /// - Returns: Plane surface, or nil if points are collinear (including coincident)
+    ///
+    /// ```swift
+    /// let base = Surface.planeFrom3Points(p1: SIMD3(0, 0, 0), p2: SIMD3(1, 0, 0), p3: SIMD3(0, 1, 0))
+    /// #expect(base != nil)
+    /// ```
     public static func planeFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                         p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGceMakePlnFrom3Points(p1.x, p1.y, p1.z,
-                                                 p2.x, p2.y, p2.z,
-                                                 p3.x, p3.y, p3.z) else { return nil }
-        return Surface(handle: h)
+        planeFromPoints(p1, p2, p3)
     }
 
     /// Serialize surfaces to string via GeomTools_SurfaceSet
@@ -2218,14 +2448,59 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Compute the surface normal at (u, v).
+    /// Compute the surface normal at (u, v), returning the zero vector where it is undefined.
+    ///
+    /// This is the non-optional counterpart of `normal(atU:v:)`. Both evaluate the same
+    /// `GeomLProp_SLProps` normal and use the same degeneracy test, so they always agree on
+    /// *where* the normal exists — they differ only in how they report its absence: this method
+    /// returns `SIMD3(0, 0, 0)`, `normal(atU:v:)` returns `nil`. Prefer `normal(atU:v:)` when you
+    /// need to tell "undefined" apart from a genuine result.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: The unit normal, or `SIMD3(0, 0, 0)` at a singular point (a sphere pole, a cone
+    ///   apex) where the tangent plane is degenerate.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let n = sphere.normal(u: 0, v: .pi / 4)     // unit length
+    /// #expect(abs(simd_length(n) - 1) < 1e-9)
+    ///
+    /// // A cone apex is a genuine singularity: zero vector here, nil from normal(atU:v:).
+    /// let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    /// #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
+    /// #expect(cone.normal(atU: 0, v: 0) == nil)
+    /// ```
+    ///
+    /// > A sphere pole (`v = ±π/2`) is *not* one of these points — `GeomLProp_SLProps` still
+    /// > resolves a normal there, and both methods return it.
     public func normal(u: Double, v: Double) -> SIMD3<Double> {
         var nx = 0.0, ny = 0.0, nz = 0.0
         OCCTSurfaceNormal(handle, u, v, &nx, &ny, &nz)
         return SIMD3(nx, ny, nz)
     }
 
-    /// Compute Gaussian and mean curvature at (u, v).
+    /// Compute Gaussian and mean curvature at (u, v) in one evaluation.
+    ///
+    /// - Parameters:
+    ///   - u: U parameter.
+    ///   - v: V parameter.
+    /// - Returns: Both curvatures, or `(0, 0)` where curvature is undefined.
+    ///
+    /// Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same
+    /// point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that one
+    /// construction, so they agree exactly — including on whether curvature is defined at all.
+    /// Before #405 this method built its own with a resolution ten times looser than its
+    /// siblings' `Precision::Confusion()`, and could report `(0, 0)` for a point where they
+    /// returned a real curvature.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4)
+    /// #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
+    /// #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// ```
     public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double) {
         var g = 0.0, m = 0.0
         OCCTSurfaceCurvatures(handle, u, v, &g, &m)
@@ -2380,12 +2655,7 @@ extension Surface {
         guard uCount > 0 && vCount > 0 else { return [] }
         var flat = [Double](repeating: 0, count: uCount * vCount * 3)
         OCCTSurfaceBSplineGetPoles(handle, &flat)
-        var result = [SIMD3<Double>]()
-        result.reserveCapacity(uCount * vCount)
-        for i in stride(from: 0, to: flat.count, by: 3) {
-            result.append(SIMD3(flat[i], flat[i + 1], flat[i + 2]))
-        }
-        return result
+        return unpackSIMD3(flat, count: uCount * vCount)
     }
 
     /// Get parameter bounds for BSpline surface.
@@ -2461,12 +2731,7 @@ extension Surface {
         guard uCount > 0 && vCount > 0 else { return [] }
         var flat = [Double](repeating: 0, count: uCount * vCount * 3)
         OCCTSurfaceBezierGetPoles(handle, &flat)
-        var result = [SIMD3<Double>]()
-        result.reserveCapacity(uCount * vCount)
-        for i in stride(from: 0, to: flat.count, by: 3) {
-            result.append(SIMD3(flat[i], flat[i + 1], flat[i + 2]))
-        }
-        return result
+        return unpackSIMD3(flat, count: uCount * vCount)
     }
 
     /// Get all weights as flat array for Bezier surface. Returns nil if non-rational.

@@ -245,6 +245,7 @@ The circle is periodic with period `2π`. U=0 starts on the positive X axis of t
 - **Parameters:** `center` — circle centre; `radius` — circle radius (must be > 0).
 - **Returns:** Full circle curve, or `nil` if `radius ≤ 0`.
 - **OCCT:** `Geom2d_Circle(gp_Circ2d(...))`.
+- **See also:** [`circleFromCenterRadius(center:radius:)`](Curve2D-Analysis.md) builds the identical circle through OCCT's `gce_MakeCirc2d` algorithm and enforces the same `radius > 0` contract (#411).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!
@@ -500,7 +501,7 @@ public static func interpolate(through points: [SIMD2<Double>], closed: Bool = f
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
 
-The curve passes exactly through every point. Use `closed: true` for a periodic loop.
+The curve passes exactly through every point. Use `closed: true` for a periodic loop — [`interpolatePeriodic(points:tolerance:)`](Curve2D-Analysis.md) is a spelling of exactly that case and delegates here (#412).
 
 - **Parameters:** `points` — interpolation points (minimum 2); `closed` — closed/periodic curve; `tolerance` — point coincidence tolerance.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
@@ -525,6 +526,9 @@ public static func interpolate(through points: [SIMD2<Double>],
                                endTangent: SIMD2<Double>,
                                tolerance: Double = 1e-6) -> Curve2D?
 ```
+
+[`interpolate(points:startTangent:endTangent:tolerance:)`](Curve2D-Analysis.md#interpolatepointsstarttangentendtangenttolerance)
+is a spelling of this with the `points:` argument label, and delegates here.
 
 - **Parameters:** `points` — interpolation points; `startTangent` — tangent at the first point; `endTangent` — tangent at the last point; `tolerance` — precision.
 - **Returns:** Interpolated BSpline, or `nil` on failure.
@@ -820,14 +824,16 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values.
+Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
+`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
+rather than a range-checked one.
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter.
-- **Returns:** Arc length, or `nil` on failure.
+- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
 - **Example:**
   ```swift
@@ -910,7 +916,8 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
 
 ### `approximated(tolerance:continuity:maxSegments:maxDegree:)`
 
-Re-approximates this curve as a BSpline with controlled degree and continuity.
+Re-approximates this curve's whole parameter domain as a BSpline, with a single scalar
+tolerance and explicit continuity control.
 
 ```swift
 public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
@@ -919,9 +926,16 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 
 `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=C1, 2=C2, 3=C3.
 
-- **Parameters:** `tolerance` — maximum approximation error; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
+**Distinct from** [`approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`](Curve2D-Analysis.md#approximatedinrangefirstlasttoleranceutolerancevmaxdegreemaxsegments)
+— a different OCCT algorithm, not a whole-domain shorthand for it. See #407.
+
+- **Parameters:** `tolerance` — maximum approximation error, applied over the whole curve; `continuity` — desired continuity order; `maxSegments` — maximum number of BSpline segments; `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline, or `nil` on failure.
-- **OCCT:** `Approx_Curve2d` (via `OCCTCurve2DApproximate`).
+- **OCCT:** `Geom2dConvert_ApproxCurve` (via `OCCTCurve2DApproximate`).
+- **Note:** Defaults are shared with `Curve3D.approximated` and `Surface.approximated` (#406) —
+  all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
+  different OCCT geometry hierarchy, not independent algorithms that would justify
+  independently-tuned numeric defaults.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 5)!

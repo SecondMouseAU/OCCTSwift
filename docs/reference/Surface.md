@@ -287,7 +287,8 @@ public func normal(atU u: Double, v: Double) -> SIMD3<Double>?
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
 - **Returns:** Unit normal vector, or `nil` at singular points where the tangent plane is degenerate.
-- **OCCT:** `GeomLProp_SLProps::Normal`.
+- **OCCT:** `GeomLProp_SLProps::Normal` (order 1, `Precision::Confusion()`), gated on `IsNormalDefined()`.
+- **See also:** [`normal(u:v:)`](#normaluv) — same computation and same degeneracy test, but returns the zero vector instead of `nil` where the normal is undefined (#401).
 - **Example:**
   ```swift
   if let n = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!.normal(atU: 0, v: 0) {
@@ -309,9 +310,11 @@ public static func plane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Surfac
 
 The surface is infinite in both U and V. Trim it with `trimmed(u1:u2:v1:v2:)` or convert to a face with `toFace(uRange:vRange:)` before use in B-Rep operations.
 
+An unlabeled-positional spelling of [`planeFromPointNormal(point:normal:)`](Surface-Advanced.md) and delegates to it (#421) — the two cannot produce different planes for the same input.
+
 - **Parameters:** `origin` — a point on the plane; `normal` — outward normal direction.
-- **Returns:** `Geom_Plane` surface, or `nil` if `normal` is zero-length.
-- **OCCT:** `Geom_Plane(gp_Pnt, gp_Dir)`.
+- **Returns:** `Geom_Plane` surface, or `nil` if `normal` has zero (or near-zero) length.
+- **OCCT:** `GC_MakePlane(gp_Pnt, gp_Dir)`.
 - **Example:**
   ```swift
   let floor = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
@@ -643,6 +646,44 @@ public func mirrored(planeOrigin: SIMD3<Double>, planeNormal: SIMD3<Double>) -> 
 
 ---
 
+### `mirrored(acrossPoint:)`
+
+Returns a mirrored copy of this surface across a point.
+
+```swift
+public func mirrored(acrossPoint point: SIMD3<Double>) -> Surface?
+```
+
+- **Parameters:** `point` — the mirror point.
+- **Returns:** Mirrored surface copy, or `nil` on failure.
+- **OCCT:** `Geom_Surface::Mirrored(gp_Pnt)`.
+- **Example:**
+  ```swift
+  let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let mirrored = plane?.mirrored(acrossPoint: SIMD3(1, 1, 1))
+  ```
+
+---
+
+### `mirrored(acrossAxis:direction:)`
+
+Returns a mirrored copy of this surface across an axis (line).
+
+```swift
+public func mirrored(acrossAxis point: SIMD3<Double>, direction: SIMD3<Double>) -> Surface?
+```
+
+- **Parameters:** `point` — a point on the mirror axis; `direction` — axis direction.
+- **Returns:** Mirrored surface copy, or `nil` on failure.
+- **OCCT:** `Geom_Surface::Mirrored(gp_Ax1)`.
+- **Example:**
+  ```swift
+  let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+  let mirrored = plane?.mirrored(acrossAxis: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
+  ```
+
+---
+
 ## Conversion
 
 ### `toBSpline()`
@@ -672,8 +713,8 @@ Uses OCCT's exact conversion for analytic surfaces. Infinite surfaces must be tr
 Approximates this surface as a BSpline surface within a tolerance.
 
 ```swift
-public func approximated(tolerance: Double = 0.01, continuity: Int = 2,
-                          maxSegments: Int = 100, maxDegree: Int = 10) -> Surface?
+public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
+                          maxSegments: Int = 100, maxDegree: Int = 8) -> Surface?
 ```
 
 Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or composite surfaces).
@@ -685,6 +726,12 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
   - `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline surface, or `nil` on failure.
 - **OCCT:** `GeomConvert_ApproxSurface`.
+- **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406) — all three wrap
+  the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a different OCCT
+  geometry hierarchy, not independent algorithms whose numeric defaults should diverge. (Before
+  #406 this defaulted to `tolerance: 0.01, maxDegree: 10`, a 10x looser tolerance with no
+  documented reason; measurement found the tighter shared values succeed on every case tried,
+  with no meaningful cost difference.)
 - **Example:**
   ```swift
   let offset = sphere.offset(distance: 1)!
@@ -807,23 +854,46 @@ Samples `uLineCount` U-iso lines and `vLineCount` V-iso lines, each discretised 
 
 ---
 
+### `SurfaceGrid`
+
+A 2D grid of points sampled over a surface's UV parameter space, returned by `drawMesh(uCount:vCount:)`
+and `evaluateGrid(uParameters:vParameters:)` (see [Surface-Analysis.md](Surface-Analysis.md)). Both
+methods share this one type specifically so indexing is unambiguous — access is always
+`.at(u:v:)`, regardless of how each method lays out its own bridge buffer internally. Before
+[#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404), the two returned raw
+`[[SIMD3<Double>]]` with opposite nesting order (`[uIndex][vIndex]` vs `[vIndex][uIndex]`) and
+nothing at the type level stopped a caller from mixing them up.
+
+```swift
+public struct SurfaceGrid: Sendable {
+    public let uCount: Int
+    public let vCount: Int
+    public var isEmpty: Bool { get }
+    public func at(u: Int, v: Int) -> SIMD3<Double>
+}
+```
+
+- **`uCount`/`vCount`:** number of samples in each direction.
+- **`at(u:v:)`:** the point at that grid index. Traps if either index is out of range.
+- **`isEmpty`:** `true` for the grid returned when sampling fails.
+
+---
+
 ### `drawMesh(uCount:vCount:)`
 
 Samples a uniform mesh grid of points for Metal visualisation.
 
 ```swift
-public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> [[SIMD3<Double>]]
+public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
 ```
 
-Returns a 2D array indexed `[uIndex][vIndex]` of evaluated surface points on a uniform UV grid.
-
 - **Parameters:** `uCount` — number of U sample points; `vCount` — number of V sample points.
-- **Returns:** 2D array of 3D points, or `[]` if sampling fails.
+- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails.
 - **OCCT:** `Geom_Surface::D0` sampled on a uniform UV grid.
 - **Example:**
   ```swift
   let mesh = surface.drawMesh(uCount: 30, vCount: 30)
-  // mesh[i][j] is the surface point at the ith U and jth V sample
+  let p = mesh.at(u: 5, v: 3)
   ```
 
 ---
@@ -1248,11 +1318,21 @@ Computes the surface normal at (u, v).
 public func normal(u: Double, v: Double) -> SIMD3<Double>
 ```
 
-Always returns a vector; at singular points the result may be the zero vector. Prefer the optional-returning `normal(atU:v:)` (from the Evaluation section) when singularity detection matters.
+Always returns a vector; where the normal is undefined the result is the zero vector. Prefer the optional-returning `normal(atU:v:)` (from the Evaluation section) when you need to tell "undefined" apart from a genuine result.
+
+Both entry points evaluate the same `GeomLProp_SLProps` normal and gate on the same `IsNormalDefined()` test, so they always agree on *where* the normal exists — they differ only in how the absence is reported (`nil` vs. the zero vector). Before #401 this method hand-rolled `Geom_Surface::D1` plus a cross product against a literal `1e-15` magnitude epsilon, which classified degeneracy differently: arbitrarily close to a cone apex it returned a spurious zero vector for a normal OCCT resolves perfectly well.
+
+A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`) is not — OCCT still resolves the tangent plane there.
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Surface normal vector at (u, v).
-- **OCCT:** `GeomLProp_SLProps::Normal`.
+- **Returns:** Unit surface normal at (u, v), or `SIMD3(0, 0, 0)` where the normal is undefined.
+- **OCCT:** `GeomLProp_SLProps::Normal` (via the shared `OCCTSurfaceGetNormal` bridge path).
+- **Example:**
+  ```swift
+  let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+  #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)   // apex: undefined
+  #expect(cone.normal(atU: 0, v: 0) == nil)               // ... reported as nil here
+  ```
 
 ---
 
@@ -1264,9 +1344,11 @@ Computes Gaussian and mean curvature at (u, v).
 public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)
 ```
 
+Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that single construction — and therefore its resolution argument, `Precision::Confusion()`, which is what `IsCurvatureDefined()` tests tangent vectors against for nullity. Before #405 this method built its own `GeomLProp_SLProps` with a hardcoded `1e-6`, ten times looser, and could report `(0, 0)` at a point where its two siblings returned a real curvature.
+
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2).
-- **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature`.
+- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `(0, 0)` where curvature is undefined.
+- **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature` (order 2, `Precision::Confusion()`).
 - **Example:**
   ```swift
   let sphere = Surface.sphere(center: .zero, radius: 5)!

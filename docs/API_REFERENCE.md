@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed — see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,322** of the entry points (~78% of the `Total` below); the rest are real, callable,
+categorisation covering **3,321** of the entry points (~78% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -133,7 +133,7 @@ a map of the major areas, and the `Total` as the count.
 | **TopTrans** | 4 | surfaceTransition, surfaceTransitionWithCurvature, curveTransition, curveTransitionWithCurvature |
 | **GeomFill Trihedrons** | 7 | draftTrihedron, discreteTrihedron, correctedFrenet, frenetTrihedron, fixedTrihedron, constantBiNormalTrihedron, darbouxTrihedron |
 | **GeomFill NSections** | 2 | nSections, nSectionsInfo |
-| **Law Extensions** | 2 | composite, knotSplitting |
+| **Law Extensions** | 3 | composite, knotSplitting, knotSplitParameters |
 | **GccAna Circ2d3Tan** | 6 | circleThrough3Points, circleTangent3Lines, circleTangent3Circles, circleTangent2CirclesPoint, circleTangentCircle2Points, circleTangent2LinesPoint |
 | **Polygon Interference** | 2 | polygonInterference, polygonSelfInterference |
 | **ChFi2d Edge Operations** | 2 | chamfer2dEdges, fillet2dEdges |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,260** | |
+| **Total** | **4,266** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 

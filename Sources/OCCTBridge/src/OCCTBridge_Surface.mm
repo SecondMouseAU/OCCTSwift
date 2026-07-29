@@ -84,8 +84,6 @@
 #include <Extrema_ExtPS.hxx>
 #include <Extrema_ExtSS.hxx>
 #include <Extrema_POnSurf.hxx>
-#include <gce_MakeCone.hxx>
-#include <gce_MakeCylinder.hxx>
 #include <gce_MakePln.hxx>
 #include <Convert_CylinderToBSplineSurface.hxx>
 #include <Convert_ConeToBSplineSurface.hxx>
@@ -288,16 +286,14 @@ bool OCCTSurfaceGetNormal(OCCTSurfaceRef s, double u, double v,
 
 // Analytic Surfaces
 
+// Exactly OCCTSurfacePlaneFromPointNormal (GC_MakePlane), a second, independent point+normal
+// plane constructor. Both throw/catch identically for a degenerate normal (ground-truthed for
+// #421: GC_MakePlane's point+normal overload adds no check beyond gp_Dir's own construction-time
+// validity), so forwarding is behaviour-preserving. Keeps the C ABI while leaving one
+// implementation.
 OCCTSurfaceRef OCCTSurfaceCreatePlane(double px, double py, double pz,
                                        double nx, double ny, double nz) {
-    try {
-        gp_Pnt origin(px, py, pz);
-        gp_Dir normal(nx, ny, nz);
-        Handle(Geom_Plane) plane = new Geom_Plane(origin, normal);
-        return new OCCTSurface(plane);
-    } catch (...) {
-        return nullptr;
-    }
+    return OCCTSurfacePlaneFromPointNormal(px, py, pz, nx, ny, nz);
 }
 
 OCCTSurfaceRef OCCTSurfaceCreateCylinder(double px, double py, double pz,
@@ -556,6 +552,35 @@ OCCTSurfaceRef OCCTSurfaceMirrorPlane(OCCTSurfaceRef s,
     }
 }
 
+OCCTSurfaceRef OCCTSurfaceMirrorPoint(OCCTSurfaceRef s,
+                                       double px, double py, double pz) {
+    if (!s || s->surface.IsNull()) return nullptr;
+    try {
+        Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
+        gp_Trsf trsf;
+        trsf.SetMirror(gp_Pnt(px, py, pz));
+        copy->Transform(trsf);
+        return new OCCTSurface(copy);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef s,
+                                      double px, double py, double pz,
+                                      double dx, double dy, double dz) {
+    if (!s || s->surface.IsNull()) return nullptr;
+    try {
+        Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(s->surface->Copy());
+        gp_Trsf trsf;
+        trsf.SetMirror(gp_Ax1(gp_Pnt(px, py, pz), gp_Dir(dx, dy, dz)));
+        copy->Transform(trsf);
+        return new OCCTSurface(copy);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
 // Conversion
 
 OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
@@ -741,26 +766,37 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 
 // Local Properties
 
-double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v) {
-    if (!s || s->surface.IsNull()) return 0.0;
+// Every curvature entry point goes through this one GeomLProp_SLProps construction, so the
+// resolution argument — the linear tolerance IsCurvatureDefined() tests tangent vectors against
+// for nullity — is stated once. OCCTSurfaceCurvatures used to construct its own with a hardcoded
+// 1e-6, 10x looser than Precision::Confusion(), so the two APIs could disagree about whether
+// curvature is defined at all for the same surface and the same (u, v) (#405).
+// Returns false (leaving the outputs untouched) where curvature is undefined; each caller
+// applies its own documented fallback.
+static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s, double u, double v,
+                                      double* gaussian, double* mean) {
+    if (!s || s->surface.IsNull()) return false;
     try {
         GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.GaussianCurvature();
+        if (!props.IsCurvatureDefined()) return false;
+        if (gaussian) *gaussian = props.GaussianCurvature();
+        if (mean) *mean = props.MeanCurvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
+double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v) {
+    double gaussian = 0.0;
+    occtSurfaceCurvaturePair(s, u, v, &gaussian, nullptr);
+    return gaussian;
+}
+
 double OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef s, double u, double v) {
-    if (!s || s->surface.IsNull()) return 0.0;
-    try {
-        GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MeanCurvature();
-    } catch (...) {
-        return 0.0;
-    }
+    double mean = 0.0;
+    occtSurfaceCurvaturePair(s, u, v, nullptr, &mean);
+    return mean;
 }
 
 bool OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef s, double u, double v,
@@ -1691,8 +1727,14 @@ OCCTSurfaceRef OCCTSurfaceTrimmedCylinder(
 }
 
 // MARK: - Surface KnotSplitting / JoinBezierPatches (v0.50)
+// #403: also fills the U/V split PARAMETER buffers (not just the counts) -- the
+// underlying GeomConvert_BSplineSurfaceKnotSplitting analyzer always computed
+// USplitValue/VSplitValue, this just wasn't surfaced. outUParams/outVParams may be
+// null (or their max 0) to skip writing either direction.
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
-    int32_t uContinuity, int32_t vContinuity) {
+    int32_t uContinuity, int32_t vContinuity,
+    double* outUParams, int32_t maxUParams,
+    double* outVParams, int32_t maxVParams) {
     OCCTSurfaceKnotSplitResult result = {};
     if (!surface) return result;
     try {
@@ -1701,6 +1743,18 @@ OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
         GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, uContinuity, vContinuity);
         result.nbUSplits = splitter.NbUSplits();
         result.nbVSplits = splitter.NbVSplits();
+        if (outUParams && maxUParams > 0) {
+            occtWriteKnotSplitParams(result.nbUSplits,
+                [&](int32_t i) { return splitter.USplitValue(i); },
+                [&](int32_t idx) { return bsurf->UKnot(idx); },
+                outUParams, maxUParams);
+        }
+        if (outVParams && maxVParams > 0) {
+            occtWriteKnotSplitParams(result.nbVSplits,
+                [&](int32_t i) { return splitter.VSplitValue(i); },
+                [&](int32_t idx) { return bsurf->VKnot(idx); },
+                outVParams, maxVParams);
+        }
     } catch (...) {}
     return result;
 }
@@ -3220,28 +3274,13 @@ OCCTExtremaPointPair OCCTExtremaExtSSPoint(OCCTSurfaceRef surface1, OCCTSurfaceR
     return result;
 }
 
-// MARK: - gce_Make Cone / Cylinder / Pln (v0.80)
-OCCTSurfaceRef _Nullable OCCTGceMakeCone(double p1x, double p1y, double p1z,
-                                          double p2x, double p2y, double p2z,
-                                          double radius1, double radius2) {
-    try {
-        gce_MakeCone mc(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), radius1, radius2);
-        if (!mc.IsDone()) return nullptr;
-        Handle(Geom_ConicalSurface) cone = new Geom_ConicalSurface(mc.Value().Position(), mc.Value().SemiAngle(), mc.Value().RefRadius());
-        return (OCCTSurfaceRef)new OCCTSurface{cone};
-    } catch (...) { return nullptr; }
-}
-
-OCCTSurfaceRef _Nullable OCCTGceMakeCylinderFrom3Points(double p1x, double p1y, double p1z,
-                                                         double p2x, double p2y, double p2z,
-                                                         double p3x, double p3y, double p3z) {
-    try {
-        gce_MakeCylinder mc(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), gp_Pnt(p3x, p3y, p3z));
-        if (!mc.IsDone()) return nullptr;
-        Handle(Geom_CylindricalSurface) cyl = new Geom_CylindricalSurface(mc.Value().Position(), mc.Value().Radius());
-        return (OCCTSurfaceRef)new OCCTSurface{cyl};
-    } catch (...) { return nullptr; }
-}
+// MARK: - gce_Make Pln (v0.80)
+// Note (#420): OCCTGceMakeCone / OCCTGceMakeCylinderFrom3Points used to live here,
+// duplicating OCCTSurfaceConicalFromPointsRadii / OCCTSurfaceCylindricalFromPoints
+// (same points-and-radii inputs) via a separate gce_MakeCone/gce_MakeCylinder ->
+// gp_Cone/gp_Cylinder -> Geom_ConicalSurface/Geom_CylindricalSurface round-trip.
+// Removed in favor of the single GC_MakeConicalSurface/GC_MakeCylindricalSurface
+// path; see Surface.coneFrom2PointsRadii/cylinderFrom3Points in Surface.swift.
 OCCTSurfaceRef _Nullable OCCTGceMakePlnFromEquation(double a, double b, double c, double d) {
     try {
         gce_MakePln mp(a, b, c, d);
@@ -3251,15 +3290,14 @@ OCCTSurfaceRef _Nullable OCCTGceMakePlnFromEquation(double a, double b, double c
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTSurfacePlaneFromPoints (GC_MakePlane), a second, independent 3-point plane
+// constructor. Ground-truthed for #421 (control, collinear, collinear-uneven, and both
+// coincident-point cases): GC_MakePlane and gce_MakePln's 3-point overloads agree on every case
+// tested, so forwarding is behaviour-preserving. Keeps the C ABI while leaving one implementation.
 OCCTSurfaceRef _Nullable OCCTGceMakePlnFrom3Points(double p1x, double p1y, double p1z,
                                                     double p2x, double p2y, double p2z,
                                                     double p3x, double p3y, double p3z) {
-    try {
-        gce_MakePln mp(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z), gp_Pnt(p3x, p3y, p3z));
-        if (!mp.IsDone()) return nullptr;
-        Handle(Geom_Plane) plane = new Geom_Plane(mp.Value());
-        return (OCCTSurfaceRef)new OCCTSurface{plane};
-    } catch (...) { return nullptr; }
+    return OCCTSurfacePlaneFromPoints(p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z);
 }
 
 // MARK: - Geom_RectangularTrimmedSurface handle (v0.86)
@@ -4967,35 +5005,24 @@ const char* OCCTSurfaceTypeName(OCCTSurfaceRef surface) {
 // MARK: - v0.115: Surface additional (Normal + Curvatures)
 // --- Surface additional (new in v0.115.0) ---
 
+// Non-optional-return counterpart of OCCTSurfaceGetNormal. It keeps its own contract — a
+// zero vector where the normal is undefined, since the Swift wrapper returns a plain
+// SIMD3 — but delegates the computation so the two entry points cannot disagree about
+// *where* the normal is undefined. It used to hand-roll D1 + gp_Vec::Crossed against a
+// literal 1e-15 magnitude epsilon, which classified degeneracy differently from
+// GeomLProp_SLProps::IsNormalDefined() near a singularity (#401).
 void OCCTSurfaceNormal(OCCTSurfaceRef surface, double u, double v,
                          double* nx, double* ny, double* nz) {
+    if (!nx || !ny || !nz) return;
     *nx = *ny = *nz = 0;
-    if (!surface || surface->surface.IsNull()) return;
-    try {
-        gp_Pnt p;
-        gp_Vec d1u, d1v;
-        surface->surface->D1(u, v, p, d1u, d1v);
-        gp_Vec normal = d1u.Crossed(d1v);
-        if (normal.Magnitude() > 1e-15) {
-            normal.Normalize();
-            *nx = normal.X(); *ny = normal.Y(); *nz = normal.Z();
-        }
-    } catch (...) {}
+    OCCTSurfaceGetNormal(surface, u, v, nx, ny, nz);
 }
-
-#include <GeomLProp_SLProps.hxx>
 
 void OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
                              double* gaussian, double* mean) {
+    if (!gaussian || !mean) return;
     *gaussian = *mean = 0;
-    if (!surface || surface->surface.IsNull()) return;
-    try {
-        GeomLProp_SLProps props(surface->surface, u, v, 2, 1e-6);
-        if (props.IsCurvatureDefined()) {
-            *gaussian = props.GaussianCurvature();
-            *mean = props.MeanCurvature();
-        }
-    } catch (...) {}
+    occtSurfaceCurvaturePair(surface, u, v, gaussian, mean);
 }
 
 // end of v0.115.0 implementations

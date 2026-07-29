@@ -392,18 +392,26 @@ public var continuity: Int { get }
 
 ## FillingSurface
 
-Builder for N-sided surface filling using `BRepFill_Filling`. Creates a smooth surface that satisfies boundary edge constraints and optional interior point constraints. Useful for creating patches that fill holes or connect multiple surface boundaries.
+Builder for N-sided surface filling using `BRepOffsetAPI_MakeFilling`. Creates a smooth surface that satisfies boundary edge constraints and optional interior point constraints. Useful for creating patches that fill holes or connect multiple surface boundaries.
+
+As of #434, `FillingSurface` shares its bridge implementation with
+[`Shape.fill(boundaries:parameters:)`](Shape-Features.md#surface-filling) and
+`Shape.fill(constraints:parameters:)` — same `BRepOffsetAPI_MakeFilling` builder, same
+continuity mapping, same untrimmed-pcurve guard (#430). `FillingSurface` is the incremental,
+stateful form (build up constraints one call at a time, inspect per-build error introspection);
+the `Shape.fill` overloads are one-shot convenience calls over an array of boundaries or
+constraints.
 
 ### `FillingContinuity`
 
-Continuity order for filling surface constraints.
+> **Deprecated in #398.** `FillingContinuity` was one of three copies of the same geometric
+> constraint-order vocabulary and is now a typealias of
+> [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`). The
+> `.c0` / `.c1` / `.c2` spellings still resolve, as deprecated aliases. No raw value moved.
 
 ```swift
-public enum FillingContinuity: Int32, Sendable {
-    case c0 = 0   // Positional continuity (G0)
-    case c1 = 1   // Tangent continuity (C1)
-    case c2 = 2   // Curvature continuity (C2)
-}
+@available(*, deprecated, renamed: "SurfaceContinuity")
+public typealias FillingContinuity = SurfaceContinuity
 ```
 
 ---
@@ -423,7 +431,7 @@ public init(degree: Int = 3, pointsOnCurve: Int = 15, maxDegree: Int = 8,
   - `maxDegree` — maximum polynomial degree (default `8`).
   - `maxSegments` — maximum number of segments (default `9`).
   - `tolerance` — 3D tolerance (default `1e-4`).
-- **OCCT:** `BRepFill_Filling` constructor.
+- **OCCT:** `BRepOffsetAPI_MakeFilling` constructor.
 - **Example:**
   ```swift
   let filling = FillingSurface(degree: 3, tolerance: 1e-5)
@@ -433,38 +441,64 @@ public init(degree: Int = 3, pointsOnCurve: Int = 15, maxDegree: Int = 8,
 
 ### `add(edge:continuity:)`
 
-Add a boundary edge constraint.
+Add a boundary edge constraint, deriving the continuity reference from the edge's own underlying surface.
 
 ```swift
 @discardableResult
-public func add(edge: Edge, continuity: FillingContinuity = .c0) -> Bool
+public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
 ```
 
 - **Parameters:**
   - `edge` — edge to add as a boundary constraint.
-  - `continuity` — continuity order at this edge (default `.c0`).
-- **Returns:** `true` if the edge was added successfully.
-- **OCCT:** `BRepFill_Filling::Add` (boundary edge variant).
+  - `continuity` — continuity order at this edge (default `.g0`).
+- **Returns:** `true` if the edge was added successfully. This says nothing about whether the
+  order is usable: `Add` only appends, so a bad order surfaces later as a `nil` `build()` that
+  takes every other constraint with it.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (boundary edge variant), via the same
+  `occtFillingContinuityToGeomAbs` order mapping `Shape.fill` uses — see
+  [Shape-Features](Shape-Features.md#surface-filling) for why `.g1` is not `GeomAbs_G1` and `.g2`
+  is not `GeomAbs_G2`.
 - **Example:**
   ```swift
   let filling = FillingSurface()
   for e in someWire.edges() {
-      filling.add(edge: e, continuity: .c0)
+      filling.add(edge: e, continuity: .g0)
   }
   if let face = filling.build() { print(face.isValid) }
   ```
 
-> **Continuity above `.c0` is currently unreliable here.** `.c1` maps to a curvature-order
-> constraint rather than a tangent one, and `.c2` maps out of the range OCCT accepts, which fails
-> the whole `build()` — `add` returns `true` either way, since it only appends and never validates
-> the order. See [#433](https://github.com/SecondMouseAU/OCCTSwift/issues/433).
-> Non-positional continuity also needs a support face to be continuous *with*. This API cannot
-> nominate one, so it always uses the surface each edge itself resolves; converging it with the
-> `Shape.fill` overloads that can is
-> [#434](https://github.com/SecondMouseAU/OCCTSwift/issues/434). To choose the reference face
-> explicitly, use `Shape.fill(boundaries:supportedBy:parameters:)` or
-> `Shape.fill(constraints:parameters:)` — see
-> [Shape-Features](Shape-Features.md#surface-filling).
+---
+
+### `add(edge:support:continuity:)`
+
+Add a boundary edge constraint with an explicit reference face for tangency/curvature.
+
+```swift
+@discardableResult
+public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g1) -> Bool
+```
+
+Mirrors `FillConstraint`'s support-face semantics: a face named here is used or the constraint
+fails, rather than silently falling back to another surface. Use `add(edge:continuity:)` to
+accept whichever surface the edge itself resolves instead.
+
+`support` is only meaningful above `.g0` — a positional constraint has nothing to be tangent or
+curvature-continuous *with*, so at `.g0` it is never read. `continuity` defaults to `.g1` rather
+than `.g0` for this reason, matching `FillConstraint`'s own default.
+
+- **Parameters:**
+  - `edge` — edge to add as a boundary constraint.
+  - `support` — face to be continuous with. Used or the constraint fails: if it carries no
+    pcurve for `edge` it cannot serve as the continuity reference.
+  - `continuity` — continuity order at this edge (default `.g1`).
+- **Returns:** `true` if the edge was added successfully.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (edge + support face variant).
+- **Example:**
+  ```swift
+  // Tangent to the wall the rim came from
+  let filling = FillingSurface()
+  filling.add(edge: rim, support: wall, continuity: .g1)
+  ```
 
 ---
 
@@ -474,16 +508,16 @@ Add a free (non-boundary) edge constraint.
 
 ```swift
 @discardableResult
-public func add(freeEdge edge: Edge, continuity: FillingContinuity = .c0) -> Bool
+public func add(freeEdge edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
 ```
 
 Free edges are not required to be topologically connected to other boundary edges.
 
 - **Parameters:**
   - `freeEdge` — edge to add as a free constraint.
-  - `continuity` — continuity order (default `.c0`).
+  - `continuity` — continuity order (default `.g0`).
 - **Returns:** `true` if the edge was added successfully.
-- **OCCT:** `BRepFill_Filling::Add` (free edge variant).
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (free edge variant).
 
 ---
 
@@ -498,7 +532,7 @@ public func add(point: SIMD3<Double>) -> Bool
 
 - **Parameters:** `point` — 3D point the surface must interpolate.
 - **Returns:** `true` if the point was added successfully.
-- **OCCT:** `BRepFill_Filling::Add` (point variant).
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (point variant).
 
 ---
 
@@ -511,14 +545,14 @@ public func build() -> Shape?
 ```
 
 - **Returns:** The filled face as a `Shape`, or `nil` if building failed.
-- **OCCT:** `BRepFill_Filling::Build`, `BRepFill_Filling::Face`.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::Build`, `BRepOffsetAPI_MakeFilling::Shape`.
 - **Example:**
   ```swift
   let filling = FillingSurface()
-  filling.add(edge: e0, continuity: .c0)
-  filling.add(edge: e1, continuity: .c0)
-  filling.add(edge: e2, continuity: .c0)
-  filling.add(edge: e3, continuity: .c0)
+  filling.add(edge: e0, continuity: .g0)
+  filling.add(edge: e1, continuity: .g0)
+  filling.add(edge: e2, continuity: .g0)
+  filling.add(edge: e3, continuity: .g0)
   if let face = filling.build() {
       print("G0 error:", filling.g0Error ?? -1)
   }
@@ -534,7 +568,7 @@ Whether the filling surface has been successfully built.
 public var isDone: Bool { get }
 ```
 
-- **OCCT:** `BRepFill_Filling::IsDone`.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::IsDone`.
 
 ---
 
@@ -547,7 +581,7 @@ public var g0Error: Double? { get }
 ```
 
 - **Returns:** Maximum distance from the surface to its constraints, or `nil` if not yet built.
-- **OCCT:** `BRepFill_Filling::G0Error`.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::G0Error`.
 
 ---
 
@@ -560,7 +594,7 @@ public var g1Error: Double? { get }
 ```
 
 - **Returns:** Maximum tangent deviation, or `nil` if not yet built.
-- **OCCT:** `BRepFill_Filling::G1Error`.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::G1Error`.
 
 ---
 
@@ -573,7 +607,7 @@ public var g2Error: Double? { get }
 ```
 
 - **Returns:** Maximum curvature deviation, or `nil` if not yet built.
-- **OCCT:** `BRepFill_Filling::G2Error`.
+- **OCCT:** `BRepOffsetAPI_MakeFilling::G2Error`.
 
 ---
 
@@ -743,10 +777,36 @@ public func knotSplitting(continuityOrder: Int = 2) -> [Int]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
+Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
+`bounds` — see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
 
 - **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
 - **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
 - **OCCT:** `Law_BSplineKnotSplitting`.
+
+---
+
+#### `knotSplitParameters(continuityOrder:)`
+
+Find parameter values (not raw knot indices) where a BSpline law drops below given continuity —
+the law-function analogue of `Curve3D.continuityBreaks`.
+
+```swift
+public func knotSplitParameters(continuityOrder: Int = 2) -> [Double]
+```
+
+Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
+Unlike `knotSplitting(continuityOrder:)`'s raw indices, these are real parameter values, directly
+usable with `value(at:)` and bounded by `bounds`.
+
+- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+- **Returns:** Split parameters in ascending order, or empty array if none or if the function is not BSpline-based.
+- **OCCT:** `Law_BSplineKnotSplitting`.
+- **Example:**
+  ```swift
+  let breaks = law.knotSplitParameters(continuityOrder: 2)
+  // breaks are real parameters within law.bounds, usable e.g. as sweep split points
+  ```
 
 ---
 

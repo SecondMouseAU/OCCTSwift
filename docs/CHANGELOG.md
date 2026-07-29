@@ -66,6 +66,110 @@ an independently computed reference (a Richardson-extrapolated polyline, not the
 own answer), so it fails on the old integrator rather than ratifying it. 5 of its 8 tests fail
 against the previous code.
 
+### Unreleased: fix — `FillingSurface`'s continuity mapping was wrong for both non-default orders, and it converged onto `Shape.fill`'s implementation (#433, #434)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`FillingSurface.add(edge:continuity:)`/`add(freeEdge:continuity:)` hand-mapped the plate
+constraint order onto `GeomAbs_Shape` locally instead of using `occtFillingContinuityToGeomAbs`,
+the helper #430 introduced for `Shape.fill`: order 1 requested `GeomAbs_C1` (curvature) instead
+of `GeomAbs_G1` (tangency), and order 2 requested `GeomAbs_C2` (ordinal 4), which every
+constraint class rejects — failing the whole `build()` rather than just that one constraint
+(#433). `add` returned `true` regardless, since `BRepOffsetAPI_MakeFilling::Add` only appends and
+never validates the order.
+
+`FillingSurface` also held its own, separate `BRepFill_Filling` — the private implementation
+class `BRepOffsetAPI_MakeFilling` (what `Shape.fill` already used) forwards to internally, and
+never exposes. #434 converges the two onto one implementation: `FillingSurface` now holds the
+same `BRepOffsetAPI_MakeFilling`, built through the same shared `occtFillingMakeBuilder`, and
+every `add` call shares `occtFillingAddConstraint` outright rather than each having its own copy
+of the same defensive logic — fixing #433 as a consequence of the convergence rather than as a
+separate patch. `occtFillingAddConstraint` is no longer a template now that both callers hold the
+same concrete filler type.
+
+New: `FillingSurface.add(edge:support:continuity:)`, mirroring `FillConstraint`'s support-face
+semantics — a face named here is used or the constraint fails, never silently substituted. Its
+`continuity` defaults to `.g1`, not `.g0`, matching `FillConstraint`: at `.g0` there is nothing
+to be tangent or curvature-continuous with, so `support` is never even read, and a `.g0` default
+would make the "used or fails" guarantee false for the common zero-argument call. Covers the
+boundary-edge case; `FillConstraint.isBoundary` also covers free edges with a named support
+face, which this PR does not add an equivalent for.
+
+```swift
+// Tangent to the wall the rim came from
+let filling = FillingSurface()
+filling.add(edge: rim, support: wall, continuity: .g1)
+```
+
+Verified on the same truncated-sphere fixture #430's own tests use: `.g2` on a curved boundary,
+which previously failed the whole `build()`, now succeeds and measurably bulges further than
+`.g1` — matching `Shape.fill`'s own curvature-vs-tangency regression test on the other entry
+point.
+
+### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+OCCTSwift had grown **nine** separate "continuity level" enums, each written against one bridge
+call and each re-deriving its own raw-int meaning. Verified against the pinned kernel, they turn
+out to express exactly **three** contracts, not one:
+
+| contract | what OCCT receives | enums that expressed it |
+|---|---|---|
+| geometric constraint order, `0/1/2 = G0/G1/G2` | a plate constraint order; `GeomPlate_CurveConstraint` rejects outside `[-1, 2]` with "The continuity is not G0 G1 or G2" | `SurfaceContinuity`, `PlateConstraintOrder`, `FillingContinuity` |
+| required parametric continuity, `0…3 = C0…C3` | a `GeomAbs_Shape` continuity class, or a literal derivative-order integer | `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity`, `Curve3D.ContinuityOrder` |
+| a `GeomAbs_Shape` ordinal reported back | nothing; it is a *result* | `Surface.Continuity` |
+
+Collapsed to `SurfaceContinuity` (`.g0` / `.g1` / `.g2`) and a new `ParametricContinuity`
+(`.c0` … `.c3`). `Surface.Continuity` is retained as a result type, and `Shape.ContinuityLevel`
+is retained as a strict superset (it adds `cn`, `g1`, `g2` cases that only
+`dividedByContinuity(criterion:tolerance:)` accepts).
+
+**No raw value moved, and no bridge code changed, so no existing call's behaviour changed.** Two
+deliberate widenings, both in `Curve3D.continuityBreaks(minContinuity:)`: `.c3` becomes reachable
+(below), and results past the 256th are no longer silently dropped. The latter is the only new
+executable code in this PR, and the more consequential of the two for imported geometry, which is
+where split counts get large. Every retired name and spelling remains as a deprecated alias, so
+existing source still compiles:
+
+```swift
+@available(*, deprecated, renamed: "SurfaceContinuity")
+public typealias FillingContinuity = SurfaceContinuity      // and PlateConstraintOrder
+@available(*, deprecated, renamed: "ParametricContinuity")
+public typealias GeometricContinuity = ParametricContinuity // and ApproxContinuity,
+                                                            // Shape.BSplineContinuity,
+                                                            // Curve3D.ContinuityOrder
+```
+
+`SurfaceContinuity.c0` / `.c1` / `.c2` also survive as deprecated aliases of `.g0` / `.g1` /
+`.g2`. Two source-compatibility caveats, both fixed by adding a `default`:
+
+- An *exhaustive* `switch` over any of these enums now needs one, because the old spellings are
+  static properties rather than cases.
+- `Curve3D.ContinuityOrder` also *widens* from three cases to four, so even a switch written with
+  the correct `.c0` / `.c1` / `.c2` spellings stops being exhaustive.
+
+Two live defects surfaced while verifying the mappings the issue had assumed correct. Both are
+pre-existing, both are now pinned by tests, and neither is fixed here:
+
+- **`Shape.plateSurface(through:orders:)` can never accept `.g2`.** A bare point carries no
+  curvature to match, so `GeomPlate_PointConstraint` throws above order 1 (the header's "Order is
+  not 0 or -1" doc is itself wrong; 1 is accepted). The throw fails the whole call, so a single
+  `.g2` in an otherwise valid order list returns `nil`.
+- **`Curve3D.ContinuityOrder`'s cap at `.c2` made every order it offered a no-op.**
+  `GeomConvert_BSplineCurveKnotSplitting` splits where `degree - multiplicity < ContinuityRange`,
+  and a cubic interpolation is already C2 at its interior knots. Measured: ranges 0, 1 and 2 all
+  return just the two end knots; range 3 returns five parameters. Sharing `ParametricContinuity`
+  makes `.c3` reachable, which fixes this as a side effect.
+
+Also re-enabled `AdvancedPlateSurfaceTests`, disabled since v0.23.0 under the claim "Plate surface
+operations cause segfault in OCCT". A C++ replica of that exact bridge path shows no segfault at
+orders 0 or 1, and the suite is 8/8 clean over repeated runs. Same pattern as the #341
+re-enablement: the claim was never characterised and does not hold up.
+
+Docs: `naming-conventions.md` carried `GeometricContinuity.c0, .c1, .g1` as its worked example,
+an enum/case combination that never existed.
+
 ### v1.16.1 (July 2026): fix — unify consumed the shape it was given, so a declined merge still damaged the caller's solid (#446)
 
 `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and those rewrites
@@ -494,11 +598,11 @@ parameters, and an uncatchable SIGSEGV on an **unbounded or periodic** one (cyli
 cone), which accepts them. The pre-existing filling tests only ever used rectangles and polygons at
 `.c0`, so neither half of the defect ever showed.
 
-**Still open:** `FillingSurface`'s continuity mapping is wrong in its own way — `.c1` requests
-curvature rather than tangency, and `.c2` lands on an order OCCT rejects, which fails the entire
-`build()` (`add` returns `true` regardless; it only appends). Correcting that changes documented
-public behavior, so it is #433. Converging the two wrappers onto one implementation is
-#434. The kernel patch for the two upstream defects, and the upstream filing, are deferred.
+**Was open, now fixed above:** `FillingSurface`'s continuity mapping was wrong in its own way —
+`.c1` requested curvature rather than tangency, and `.c2` landed on an order OCCT rejects, which
+failed the entire `build()` (`add` returned `true` regardless; it only appends). Fixed as #433,
+folded into #434's convergence of the two wrappers onto one implementation — see the entry above.
+The kernel patch for the two upstream defects, and the upstream filing, remain deferred.
 
 ### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
 

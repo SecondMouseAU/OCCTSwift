@@ -102,6 +102,41 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 
+// Radius precondition for the 2D circle factories. Curve2D builds a circle from a centre and a
+// radius through two entry points — OCCTCurve2DCreateCircle (direct Geom2d_Circle construction)
+// and OCCTGceMakeCirc2dFromCenterRadius (gce_MakeCirc2d) — and gce_MakeCirc2d accepts
+// Radius >= 0, so before #411 the gce path returned a live, degenerate zero-radius circle where
+// the direct path returned null for the identical input. One definition, both entry points.
+static inline bool occtValidCircle2dRadius(double radius) {
+    return radius > 0;
+}
+
+// One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
+// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and OCCTPoint2DDistanceToCurve.
+// They were three independent constructions of the same algorithm with three different
+// failure-signalling conventions bolted on separately (#413). It also gives the two that lacked
+// one an explicit null-handle guard rather than relying on catch(...) to absorb the dereference.
+//
+// Returns false when there is no projection at all — an ordinary outcome, not an error: a point
+// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Each caller
+// applies its own documented sentinel; none of them may report failure through the parameter,
+// since 0 is a legitimate parameter on any curve whose domain includes it.
+static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d& point,
+                                            gp_Pnt2d* outNearest, double* outParameter,
+                                            double* outDistance) {
+    if (!curve || curve->curve.IsNull()) return false;
+    try {
+        Geom2dAPI_ProjectPointOnCurve proj(point, curve->curve);
+        if (proj.NbPoints() == 0) return false;
+        if (outNearest) *outNearest = proj.NearestPoint();
+        if (outParameter) *outParameter = proj.LowerDistanceParameter();
+        if (outDistance) *outDistance = proj.LowerDistance();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 // MARK: - Batch Curve2D Evaluation (v0.28.0)
 
 #include <Geom2dGridEval_Curve.hxx>
@@ -998,9 +1033,6 @@ int32_t OCCTGccLine2dTanPt(OCCTCurve2DRef curve, int32_t qualifier,
 #include <Extrema_ExtPElC2d.hxx>
 #include <Extrema_ExtCC2d.hxx>
 #include <Extrema_POnCurv2d.hxx>
-#include <GeomLProp_CurAndInf2d.hxx>
-#include <LProp_CurAndInf.hxx>
-#include <LProp_CIType.hxx>
 #include <Bisector_BisecAna.hxx>
 #include <GeomAbs_JoinType.hxx>
 #include <gp_Elips2d.hxx>
@@ -1616,40 +1648,6 @@ int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
     } catch (...) { return -1; }
 }
 
-// --- GeomLProp_CurAndInf2d (was Geom2dLProp_NumericCurInf2d in RC4) ---
-int32_t OCCTGeom2dLPropCurExt(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max) {
-    try {
-        GeomLProp_CurAndInf2d solver;
-        solver.PerformCurExt(curve->curve);
-        if (!solver.IsDone()) return 0;
-        int32_t nb = std::min((int32_t)solver.NbPoints(), max);
-        for (int32_t i = 0; i < nb; i++) {
-            out[i].parameter = solver.Parameter(i + 1);
-            LProp_CIType t = solver.Type(i + 1);
-            if (t == LProp_MinCur) out[i].type = 0;
-            else if (t == LProp_MaxCur) out[i].type = 1;
-            else out[i].type = 2;
-        }
-        return nb;
-    } catch (...) { return 0; }
-}
-
-int32_t OCCTGeom2dLPropCurInf(OCCTCurve2DRef curve,
-                              OCCTCurInfPoint* out, int32_t max) {
-    try {
-        GeomLProp_CurAndInf2d solver;
-        solver.PerformInf(curve->curve);
-        if (!solver.IsDone()) return 0;
-        int32_t nb = std::min((int32_t)solver.NbPoints(), max);
-        for (int32_t i = 0; i < nb; i++) {
-            out[i].parameter = solver.Parameter(i + 1);
-            out[i].type = 2;
-        }
-        return nb;
-    } catch (...) { return 0; }
-}
-
 // --- Bisector_BisecAna ---
 OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurveCurve(
     OCCTCurve2DRef curve1, OCCTCurve2DRef curve2,
@@ -1867,12 +1865,16 @@ OCCTPoint2DRef _Nullable OCCTPoint2DMirroredAxis(OCCTPoint2DRef _Nonnull ref,
     } catch (...) { return nullptr; }
 }
 
+// Failure contract: returns a negative distance. Swift's Point2D.distance(to:) maps that to
+// .infinity rather than passing the sentinel through as if it were a real distance (#413).
 double OCCTPoint2DDistanceToCurve(OCCTPoint2DRef _Nonnull ref, OCCTCurve2DRef _Nonnull curve) {
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(ref->point->Pnt2d(), curve->curve);
-        if (proj.NbPoints() == 0) return -1.0;
-        return proj.LowerDistance();
-    } catch (...) { return -1.0; }
+    if (!ref) return -1.0;
+    double distance = -1.0;
+    if (!occtNearestProjectionOnCurve2d(curve, ref->point->Pnt2d(), nullptr,
+                                        nullptr, &distance)) {
+        return -1.0;
+    }
+    return distance;
 }
 
 OCCTPoint2DRef _Nullable OCCTPoint2DTransformed(OCCTPoint2DRef _Nonnull ref,
@@ -2170,14 +2172,19 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
     } catch (...) { return nullptr; }
 }
 
+// Failure contract: *outDistance < 0, and NaN returned. The parameter cannot carry the failure
+// signal — 0 is a legitimate result (projecting a segment's own start point onto it returns
+// exactly 0), which is what the old "returns 0 on failure" contract conflated (#413).
 double OCCTCurve2DProjectPoint2D(OCCTCurve2DRef _Nonnull curve, OCCTPoint2DRef _Nonnull point,
     double* _Nonnull outDistance) {
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(point->point->Pnt2d(), curve->curve);
-        if (proj.NbPoints() == 0) { *outDistance = -1.0; return 0.0; }
-        *outDistance = proj.LowerDistance();
-        return proj.LowerDistanceParameter();
-    } catch (...) { *outDistance = -1.0; return 0.0; }
+    if (!point) { *outDistance = -1.0; return std::numeric_limits<double>::quiet_NaN(); }
+    double parameter = 0.0;
+    if (!occtNearestProjectionOnCurve2d(curve, point->point->Pnt2d(), nullptr,
+                                        &parameter, outDistance)) {
+        *outDistance = -1.0;
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return parameter;
 }
 
 // MARK: - FairCurve Batten / MinimalVariation (v0.67)
@@ -2876,6 +2883,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1, d
 // MARK: - gce_Make Circ2d / Lin2d / Elips2d / Hypr2d / Parab2d (v0.80)
 OCCTCurve2DRef _Nullable OCCTGceMakeCirc2dFromCenterRadius(double cx, double cy, double radius) {
     try {
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gce_MakeCirc2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom2d_Circle) circ = new Geom2d_Circle(mc.Value());
@@ -4043,40 +4051,24 @@ const char* OCCTCurve2DTypeName(OCCTCurve2DRef curve) {
 
 
 // MARK: - v0.115: 2D interpolate / PointsToBSpline / SplitAtContinuity / Trimmed / Length (re-routed from Curve3D)
+// Exactly OCCTCurve2DInterpolateWithTangents with tolerance pinned to the OCCT default. It used to
+// be a second, independent Geom2dAPI_Interpolate call site with the tolerance hardcoded and no way
+// to reach it. Forwarding keeps the C ABI while leaving one implementation (#410). Callers that
+// need a different tolerance should call OCCTCurve2DInterpolateWithTangents directly.
 OCCTCurve2DRef OCCTInterpolate2DWithTangents(const double* points, int32_t count,
                                                double t1x, double t1y,
                                                double t2x, double t2y) {
-    if (!points || count < 2) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt2d) pts = new TColgp_HArray1OfPnt2d(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
-        }
-        Geom2dAPI_Interpolate interp(pts, Standard_False, 1e-6);
-        gp_Vec2d v1(t1x, t1y), v2(t2x, t2y);
-        interp.Load(v1, v2);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve2DRef)new OCCTCurve2D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve2DInterpolateWithTangents(points, count, t1x, t1y, t2x, t2y, 1e-6);
 }
 
+// Exactly OCCTCurve2DInterpolate with the periodicity flag pinned. It used to be a second,
+// independent Geom2dAPI_Interpolate call site, which had already drifted: it rejected count < 3
+// where the general entry point rejects only count < 2, so the same 2-point input reached OCCT
+// through one and not the other. Forwarding keeps the C ABI while leaving one implementation
+// (#412). Callers that need a tolerance other than the default should call
+// OCCTCurve2DInterpolate directly with closed = true.
 OCCTCurve2DRef OCCTInterpolate2DPeriodic(const double* points, int32_t count) {
-    if (!points || count < 3) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt2d) pts = new TColgp_HArray1OfPnt2d(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
-        }
-        Geom2dAPI_Interpolate interp(pts, Standard_True, 1e-6);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve2DRef)new OCCTCurve2D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve2DInterpolate(points, count, true, 1e-6);
 }
 // --- GeomAPI_PointsToBSpline expansion ---
 // Helper: map continuity int → GeomAbs_Shape (duplicate of Curve3D's mapContinuityV115, ODR-safe)
@@ -4138,14 +4130,16 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
 
 #include <Geom2dAdaptor_Curve.hxx>
 
+// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
+// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
+// unrestricted adaptor, which tolerates either order.
 double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return 0;
+    if (!curve || curve->curve.IsNull()) return -1.0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
         return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return 0; }
+    } catch (...) { return -1.0; }
 }
-// --- Curve3D Arc Length (GCPnts_AbscissaPoint) ---
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
@@ -5027,7 +5021,7 @@ OCCTCurve2DRef OCCTCurve2DCreateSegment(double p1x, double p1y, double p2x, doub
 
 OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5040,7 +5034,7 @@ OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
 OCCTCurve2DRef OCCTCurve2DCreateArcOfCircle(double cx, double cy, double radius,
                                             double startAngle, double endAngle) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircle2dRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5507,22 +5501,18 @@ int32_t OCCTCurve2DSelfIntersect(OCCTCurve2DRef c, double tolerance,
 
 // Projection
 
+// Failure contract: distance < 0. The point/parameter fields are left zeroed and must not be
+// read when it is negative.
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef c, double px, double py) {
     OCCTCurve2DProjection result = {0, 0, 0, -1};
-    if (!c || c->curve.IsNull()) return result;
-    try {
-        gp_Pnt2d point(px, py);
-        Geom2dAPI_ProjectPointOnCurve proj(point, c->curve);
-        if (proj.NbPoints() == 0) return result;
-        gp_Pnt2d nearest = proj.NearestPoint();
-        result.x = nearest.X();
-        result.y = nearest.Y();
-        result.parameter = proj.LowerDistanceParameter();
-        result.distance = proj.LowerDistance();
-        return result;
-    } catch (...) {
+    gp_Pnt2d nearest;
+    if (!occtNearestProjectionOnCurve2d(c, gp_Pnt2d(px, py), &nearest,
+                                        &result.parameter, &result.distance)) {
         return result;
     }
+    result.x = nearest.X();
+    result.y = nearest.Y();
+    return result;
 }
 
 int32_t OCCTCurve2DProjectPointAll(OCCTCurve2DRef c, double px, double py,

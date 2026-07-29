@@ -61,6 +61,38 @@ struct Issue211WireCurve {
         }
         #expect(wc.points(count: 1).isEmpty)   // need >= 2
     }
+
+    // #422: parameterRange/point(atParameter:)/tangent(atParameter:) were previously only
+    // exercised indirectly, as internals of point/tangent(atAbscissa:).
+    @Test("parameterRange bounds match the wire's start/end via point(atParameter:)")
+    func parameterRangeMatchesEndpoints() {
+        guard let w = lWire(), let wc = WireCurve(w) else { #expect(Bool(false)); return }
+        let range = wc.parameterRange
+        #expect(range.first < range.last)
+        if let start = wc.point(atParameter: range.first) {
+            #expect(simd_distance(start, SIMD3(0, 0, 0)) < 1e-6)
+        } else { #expect(Bool(false), "point(atParameter: first) nil") }
+        if let end = wc.point(atParameter: range.last) {
+            #expect(simd_distance(end, SIMD3(10, 10, 0)) < 1e-6)
+        } else { #expect(Bool(false), "point(atParameter: last) nil") }
+        if let t = wc.tangent(atParameter: range.first) {
+            #expect(abs(simd_length(t) - 1.0) < 1e-6)
+        } else { #expect(Bool(false), "tangent(atParameter: first) nil") }
+    }
+
+    // #422: points(spacing:) was untested on both EdgeCurve and WireCurve.
+    @Test("points(spacing:) divides the wire evenly and includes both endpoints")
+    func pointsSpacing() {
+        guard let w = lWire(), let wc = WireCurve(w) else { #expect(Bool(false)); return }
+        let pts = wc.points(spacing: 4)   // length 20 -> 6 points, 4 apart
+        #expect(pts.count == 6)
+        if let first = pts.first, let last = pts.last {
+            #expect(simd_distance(first, SIMD3(0, 0, 0)) < 1e-6)
+            #expect(simd_distance(last, SIMD3(10, 10, 0)) < 1e-6)
+        }
+        #expect(wc.points(spacing: 0).isEmpty)          // spacing must be > 0
+        #expect(wc.points(spacing: -1).isEmpty)
+    }
 }
 
 // #211/#212: EdgeCurve — single-edge arc-length adaptor.
@@ -82,5 +114,47 @@ struct Issue211EdgeCurve {
         if let t = ec.tangent(atAbscissa: ec.length / 2) {
             #expect(abs(simd_length(t) - 1.0) < 1e-6)
         } else { #expect(Bool(false), "tangent nil") }
+    }
+
+    // #422: parity with WireCurve's count < 2 empty-array case (previously untested on EdgeCurve).
+    @Test("points(count:) below 2 returns an empty array")
+    func pointsCountBelowTwoIsEmpty() {
+        guard let e = anEdge(), let ec = EdgeCurve(e) else { #expect(Bool(false)); return }
+        #expect(ec.points(count: 1).isEmpty)
+        #expect(ec.points(count: 0).isEmpty)
+    }
+
+    // #422: parameterRange/point(atParameter:)/tangent(atParameter:) were previously only
+    // exercised indirectly, as internals of point/tangent(atAbscissa:).
+    @Test("parameterRange bounds match the edge's start/end via point(atParameter:)")
+    func parameterRangeMatchesEndpoints() {
+        guard let e = anEdge(), let ec = EdgeCurve(e) else { #expect(Bool(false)); return }
+        let range = ec.parameterRange
+        #expect(range.first < range.last)
+        guard let start = ec.point(atParameter: range.first),
+              let end = ec.point(atParameter: range.last),
+              let abscissaStart = ec.point(atAbscissa: 0),
+              let abscissaEnd = ec.point(atAbscissa: ec.length)
+        else { #expect(Bool(false), "point(atParameter:)/point(atAbscissa:) nil"); return }
+        #expect(simd_distance(start, abscissaStart) < 1e-6)
+        #expect(simd_distance(end, abscissaEnd) < 1e-6)
+        if let t = ec.tangent(atParameter: range.first) {
+            #expect(abs(simd_length(t) - 1.0) < 1e-6)
+        } else { #expect(Bool(false), "tangent(atParameter: first) nil") }
+    }
+
+    // #422: points(spacing:) was untested on both EdgeCurve and WireCurve.
+    @Test("points(spacing:) divides the edge evenly and includes both endpoints")
+    func pointsSpacing() {
+        guard let e = anEdge(), let ec = EdgeCurve(e) else { #expect(Bool(false)); return }
+        let pts = ec.points(spacing: 5)   // length 10 -> 3 points, 5 apart
+        #expect(pts.count == 3)
+        if pts.count == 3, let abscissaStart = ec.point(atAbscissa: 0), let abscissaEnd = ec.point(atAbscissa: ec.length) {
+            #expect(simd_distance(pts.first!, abscissaStart) < 1e-6)
+            #expect(simd_distance(pts.last!, abscissaEnd) < 1e-6)
+            #expect(abs(simd_distance(pts[0], pts[1]) - 5.0) < 1e-6)
+        }
+        #expect(ec.points(spacing: 0).isEmpty)          // spacing must be > 0
+        #expect(ec.points(spacing: -1).isEmpty)
     }
 }

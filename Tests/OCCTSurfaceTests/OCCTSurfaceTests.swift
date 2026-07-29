@@ -49,7 +49,7 @@ struct SurfaceFillingTests {
         // succeed with all boundary configurations. This tests the API.
         let surface = Shape.fill(
             boundaries: [boundary],
-            parameters: FillingParameters(continuity: .c0)
+            parameters: FillingParameters(continuity: .g0)
         )
 
         // The operation may or may not succeed depending on OCCT's
@@ -72,7 +72,7 @@ struct SurfaceFillingTests {
         }
 
         let params = FillingParameters(
-            continuity: .c0,
+            continuity: .g0,
             tolerance: 1e-3,
             maxDegree: 8,
             maxSegments: 9
@@ -148,7 +148,7 @@ struct FillingSupportFaceTests {
         }
 
         let flat = Shape.fill(boundaries: [rim],
-                              parameters: FillingParameters(continuity: .c0))
+                              parameters: FillingParameters(continuity: .g0))
         let tangent = Shape.fill(boundaries: [rim], supportedBy: bowl,
                                  parameters: FillingParameters(continuity: .g1))
 
@@ -272,7 +272,7 @@ struct FillingSupportFaceTests {
         }
 
         let boundaryOnly = Shape.fill(constraints: [
-            FillConstraint(edge: rim, continuity: .c0)
+            FillConstraint(edge: rim, continuity: .g0)
         ])
 
         // A line well above the rim plane, spanning the opening. As an internal (non-bounding)
@@ -285,8 +285,8 @@ struct FillingSupportFaceTests {
         }
 
         let withInterior = Shape.fill(constraints: [
-            FillConstraint(edge: rim, continuity: .c0),
-            FillConstraint(edge: interior, continuity: .c0, isBoundary: false)
+            FillConstraint(edge: rim, continuity: .g0),
+            FillConstraint(edge: interior, continuity: .g0, isBoundary: false)
         ])
 
         guard let boundaryOnly = boundaryOnly, let withInterior = withInterior else {
@@ -310,7 +310,7 @@ struct FillingSupportFaceTests {
         let tangent = Shape.fill(boundaries: [square],
                                  parameters: FillingParameters(continuity: .g1))
         let positional = Shape.fill(boundaries: [square],
-                                    parameters: FillingParameters(continuity: .c0))
+                                    parameters: FillingParameters(continuity: .g0))
 
         #expect(tangent == nil)
         #expect(positional != nil)
@@ -369,7 +369,7 @@ struct FillingSupportFaceTests {
         // because SetApproxParam was never called — so the cap did nothing and the result came
         // back degree 8. Second site of #431.
         let filling = FillingSurface(maxDegree: 3)
-        #expect(filling.add(edge: rim, continuity: .c1))
+        #expect(filling.add(edge: rim, continuity: .g1))
 
         guard let surface = filling.build()?.faceSurfaceGeom() else {
             Issue.record("FillingSurface should build a face with an extractable surface")
@@ -389,16 +389,102 @@ struct FillingSupportFaceTests {
         // The second filling entry point reaches the same OCCT defect through its own bridge
         // implementation. Any continuity above .c0 on a curved edge used to SIGSEGV here too;
         // as with the Shape.fill tests, reaching the assertion is the regression check.
-        //
-        // Only the crash is fixed. FillingSurface's continuity mapping is still wrong (.c1
-        // requests curvature, .c2 lands out of range and is dropped) — that is #433, because
-        // correcting it changes documented public behavior.
         let filling = FillingSurface()
-        let added = filling.add(edge: rim, continuity: .c1)
+        let added = filling.add(edge: rim, continuity: .g1)
         #expect(added)
 
         let face = filling.build()
         #expect(face != nil)
+    }
+
+    @Test("FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)")
+    func fillingSurfaceContinuityMappingIsCorrect() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+
+        // Before #433, .g1 hand-mapped to GeomAbs_C1 (curvature, ordinal 2) instead of
+        // GeomAbs_G1 (tangency, ordinal 1), and .g2 mapped to GeomAbs_C2 (ordinal 4), which
+        // every constraint class rejects — failing the whole build() rather than just that one
+        // constraint. Mirrors Shape.fill's own "Curvature continuity is accepted and differs
+        // from tangency" test above, which guards the same mapping on the other entry point.
+        let tangentFilling = FillingSurface()
+        #expect(tangentFilling.add(edge: rim, support: wall, continuity: .g1))
+        guard let tangentFace = tangentFilling.build() else {
+            Issue.record("Tangent fill via FillingSurface should succeed")
+            return
+        }
+
+        let curvatureFilling = FillingSurface()
+        #expect(curvatureFilling.add(edge: rim, support: wall, continuity: .g2))
+        guard let curvatureFace = curvatureFilling.build() else {
+            Issue.record(".g2 must be accepted, not rejected as an out-of-range plate order")
+            return
+        }
+
+        #expect(tangentFace.size.z > 0.5)
+        // Non-nil alone would also pass if .g2 silently behaved as .g1. Matching curvature as
+        // well as tangency pushes the cap measurably further than tangency alone.
+        #expect(curvatureFace.size.z > tangentFace.size.z + 0.5)
+    }
+
+    @Test("add(edge:support:continuity:) rejects a support face that cannot serve (#434)")
+    func fillingSurfaceNominatedSupportFaceIsNotSilentlySubstituted() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        // Same fixture as Shape.fill's "A nominated support face that cannot serve is a
+        // failure, not a substitution" test: a sphere elsewhere in space resolves no pcurve
+        // for the rim, so it cannot be the continuity reference.
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        let filling = FillingSurface()
+        #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g1))
+    }
+
+    @Test("add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)")
+    func fillingSurfaceAddWithSupportDefaultsToG1() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        // At .g0, `support` is never read (occtFillingAddConstraint only looks at it above
+        // GeomAbs_C0), which would make the "used or fails" doc claim false for the common
+        // zero-argument call if the default were .g0. Confirms the default is .g1: a real
+        // support face is accepted with no continuity argument at all...
+        let filling = FillingSurface()
+        #expect(filling.add(edge: rim, support: wall))
+        guard let face = filling.build() else {
+            Issue.record("Default-continuity fill with a real support face should succeed")
+            return
+        }
+        #expect(face.size.z > 0.5)   // tangent to the sphere, not a flat disc
+
+        // ...and an unrelated support face is rejected with no continuity argument either.
+        let rejecting = FillingSurface()
+        #expect(!rejecting.add(edge: rim, support: strangerFace))
     }
 }
 
@@ -472,7 +558,7 @@ struct PlateSurfaceTests {
         // succeed depending on OCCT's GeomPlate algorithm
         let surface = Shape.plateSurface(
             constrainedBy: [curve1, curve2],
-            continuity: .c0,
+            continuity: .g0,
             tolerance: 1.0
         )
 
@@ -782,6 +868,82 @@ struct SurfaceOperationsTests {
             #expect(abs(p.z + pOrig.z) < 1e-6)
         }
     }
+
+    @Test("Rotate surface around an axis")
+    func rotateSurface() {
+        // No existing test coverage for the copy-returning `rotated(axisOrigin:axisDirection:angle:)`
+        // overload prior to #414; verify against the known rotation applied to the *measured*
+        // original point rather than assuming the sphere's internal U/V parametrization.
+        let sphere = Surface.sphere(center: SIMD3(10, 0, 5), radius: 5)!
+        let angle = Double.pi / 2
+        let axisOrigin = SIMD3<Double>.zero
+        let axisDirection = SIMD3<Double>(0, 0, 1)
+
+        let rotated = sphere.rotated(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                                      angle: angle)
+        #expect(rotated != nil)
+        if let rotated = rotated {
+            let pOrig = sphere.point(atU: 0.3, v: 0.2)
+            let p = rotated.point(atU: 0.3, v: 0.2)
+            // Rotation around Z by `angle`: x' = x*cos - y*sin, y' = x*sin + y*cos, z' unchanged
+            let expectedX = pOrig.x * cos(angle) - pOrig.y * sin(angle)
+            let expectedY = pOrig.x * sin(angle) + pOrig.y * cos(angle)
+            #expect(abs(p.x - expectedX) < 1e-6)
+            #expect(abs(p.y - expectedY) < 1e-6)
+            #expect(abs(p.z - pOrig.z) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: 0.3, v: 0.2)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+            #expect(abs(pOrigAfter.y - pOrig.y) < 1e-10)
+        }
+    }
+
+    @Test("Mirror surface across a point")
+    func mirrorPointSurfaceCopyReturning() {
+        // #414: Surface's copy-returning family was missing mirrored(acrossPoint:)/(acrossAxis:direction:)
+        // even though the in-place mirrorPoint(_:)/mirrorAxis(origin:direction:) and the Curve3D/Curve2D
+        // copy-returning siblings both already have them.
+        let sphere = Surface.sphere(center: SIMD3(0, 0, 5), radius: 2)!
+        let mirrorPoint = SIMD3<Double>(1, 2, 3)
+
+        let mirrored = sphere.mirrored(acrossPoint: mirrorPoint)
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let pOrig = sphere.point(atU: 0.4, v: 0.1)
+            let p = mirrored.point(atU: 0.4, v: 0.1)
+            // Point reflection through `mirrorPoint`: p' = 2*mirrorPoint - p
+            let expectedX = 2 * mirrorPoint.x - pOrig.x
+            let expectedY = 2 * mirrorPoint.y - pOrig.y
+            let expectedZ = 2 * mirrorPoint.z - pOrig.z
+            #expect(abs(p.x - expectedX) < 1e-6)
+            #expect(abs(p.y - expectedY) < 1e-6)
+            #expect(abs(p.z - expectedZ) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: 0.4, v: 0.1)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+            #expect(abs(pOrigAfter.z - pOrig.z) < 1e-10)
+        }
+    }
+
+    @Test("Mirror surface across an axis")
+    func mirrorAxisSurfaceCopyReturning() {
+        // #414: same gap as mirrorPointSurfaceCopyReturning, for the axis (line) overload.
+        let sphere = Surface.sphere(center: SIMD3(5, 0, 0), radius: 2)!
+
+        // Mirror through the Z axis (through the origin): (x, y, z) -> (-x, -y, z)
+        let mirrored = sphere.mirrored(acrossAxis: .zero, direction: SIMD3(0, 0, 1))
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let pOrig = sphere.point(atU: .pi / 4, v: .pi / 6)
+            let p = mirrored.point(atU: .pi / 4, v: .pi / 6)
+            #expect(abs(p.x + pOrig.x) < 1e-6)
+            #expect(abs(p.y + pOrig.y) < 1e-6)
+            #expect(abs(p.z - pOrig.z) < 1e-6)
+            // The original surface must be untouched (copy-returning, not in-place)
+            let pOrigAfter = sphere.point(atU: .pi / 4, v: .pi / 6)
+            #expect(abs(pOrigAfter.x - pOrig.x) < 1e-10)
+        }
+    }
 }
 
 @Suite("Surface Conversion")
@@ -861,8 +1023,39 @@ struct SurfaceDrawTests {
     func drawMesh() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         let mesh = sphere.drawMesh(uCount: 10, vCount: 10)
-        #expect(mesh.count == 10)
-        #expect(mesh[0].count == 10)
+        #expect(mesh.uCount == 10)
+        #expect(mesh.vCount == 10)
+        let p = mesh.at(u: 0, v: 0)
+        #expect(abs(simd_length(p) - 5.0) < 1e-6)
+    }
+
+    @Test("Draw mesh on an asymmetric grid indexes .at(u:v:) correctly")
+    func drawMeshAsymmetric() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let uCount = 6, vCount = 4
+        let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)
+        #expect(mesh.uCount == uCount)
+        #expect(mesh.vCount == vCount)
+
+        // Recompute the same clamped domain the bridge samples (OCCTSurfaceDrawMesh), and cross
+        // check every grid point against the independent single-point evaluator. Before #404,
+        // drawMesh's own test used a symmetric 10x10 grid, which cannot distinguish [u][v] from
+        // [v][u] ordering — this asymmetric grid can.
+        var (uMin, uMax, vMin, vMax) = sphere.domain
+        if uMin < -1e6 { uMin = -100 }
+        if uMax > 1e6 { uMax = 100 }
+        if vMin < -1e6 { vMin = -100 }
+        if vMax > 1e6 { vMax = 100 }
+
+        for u in 0..<uCount {
+            let uParam = uMin + (uMax - uMin) * Double(u) / Double(uCount - 1)
+            for v in 0..<vCount {
+                let vParam = vMin + (vMax - vMin) * Double(v) / Double(vCount - 1)
+                let expected = sphere.point(atU: uParam, v: vParam)
+                let actual = mesh.at(u: u, v: v)
+                #expect(simd_length(actual - expected) < 1e-6)
+            }
+        }
     }
 }
 
@@ -1012,7 +1205,7 @@ struct SurfaceCurveProjectionTests {
 
 // MARK: - Advanced Plate Surfaces Tests (v0.23.0)
 
-@Suite("Advanced Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Advanced Plate Surface Tests")
 struct AdvancedPlateSurfaceTests {
 
     @Test("Plate surface with G0 constraint orders")
@@ -1021,7 +1214,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
             SIMD3(0, 10, 1), SIMD3(5, 5, 3)
         ]
-        let orders: [PlateConstraintOrder] = [.g0, .g0, .g0, .g0, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g0, .g0, .g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
@@ -1035,7 +1228,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
             SIMD3(0, 10, 0), SIMD3(5, 5, 2)
         ]
-        let orders: [PlateConstraintOrder] = [.g0, .g1, .g0, .g1, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g1, .g0, .g1, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
     }
@@ -1047,7 +1240,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 5, 1), SIMD3(5, 5, 3), SIMD3(10, 5, 1),
             SIMD3(0, 10, 0), SIMD3(5, 10, 1), SIMD3(10, 10, 0)
         ]
-        let orders: [PlateConstraintOrder] = Array(repeating: .g0, count: 9)
+        let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 9)
         let shape = Shape.plateSurface(
             through: points, orders: orders,
             degree: 4, pointsOnCurves: 20, iterations: 3, tolerance: 0.001
@@ -1058,7 +1251,7 @@ struct AdvancedPlateSurfaceTests {
     @Test("Plate surface rejects mismatched point/order counts")
     func platePointsMismatch() {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
-        let orders: [PlateConstraintOrder] = [.g0, .g0]  // Too few
+        let orders: [SurfaceContinuity] = [.g0, .g0]  // Too few
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape == nil)
     }
@@ -1066,14 +1259,14 @@ struct AdvancedPlateSurfaceTests {
     @Test("Plate surface rejects fewer than 3 points")
     func platePointsTooFew() {
         let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 0, 0)]
-        let orders: [PlateConstraintOrder] = [.g0, .g0]
+        let orders: [SurfaceContinuity] = [.g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape == nil)
     }
 
     @Test("Mixed plate surface with points and curves")
     func plateMixedPointsAndCurves() {
-        let pointConstraints: [(point: SIMD3<Double>, order: PlateConstraintOrder)] = [
+        let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(5, 5, 3), order: .g0),
             (point: SIMD3(2, 8, 1), order: .g0)
         ]
@@ -1087,7 +1280,7 @@ struct AdvancedPlateSurfaceTests {
             return
         }
 
-        let curveConstraints: [(wire: Wire, order: PlateConstraintOrder)] = [
+        let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = [
             (wire: w, order: .g0)
         ]
 
@@ -1100,13 +1293,13 @@ struct AdvancedPlateSurfaceTests {
 
     @Test("Mixed plate surface with points only")
     func plateMixedPointsOnly() {
-        let pointConstraints: [(point: SIMD3<Double>, order: PlateConstraintOrder)] = [
+        let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(0, 0, 0), order: .g0),
             (point: SIMD3(10, 0, 1), order: .g0),
             (point: SIMD3(10, 10, 2), order: .g0),
             (point: SIMD3(0, 10, 1), order: .g0)
         ]
-        let curveConstraints: [(wire: Wire, order: PlateConstraintOrder)] = []
+        let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = []
 
         let shape = Shape.plateSurface(
             pointConstraints: pointConstraints,
@@ -1121,7 +1314,7 @@ struct AdvancedPlateSurfaceTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
             SIMD3(0, 10, 0), SIMD3(5, 5, 5)
         ]
-        let orders: [PlateConstraintOrder] = Array(repeating: .g0, count: 5)
+        let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 5)
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
@@ -1322,12 +1515,12 @@ struct BatchSurfaceTests {
         let uParams = [0.0, 1.0, 2.0]
         let vParams = [0.0, 1.0]
         let grid = plane.evaluateGrid(uParameters: uParams, vParameters: vParams)
-        #expect(grid.count == 2) // 2 rows (v)
-        #expect(grid[0].count == 3) // 3 columns (u)
+        #expect(grid.uCount == 3)
+        #expect(grid.vCount == 2)
         // All z should be 0 on the XY plane
-        for row in grid {
-            for pt in row {
-                #expect(abs(pt.z) < 1e-10)
+        for u in 0..<grid.uCount {
+            for v in 0..<grid.vCount {
+                #expect(abs(grid.at(u: u, v: v).z) < 1e-10)
             }
         }
     }
@@ -1338,13 +1531,66 @@ struct BatchSurfaceTests {
         let uParams = stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 4).map { $0 }
         let vParams = stride(from: -Double.pi / 2, to: Double.pi / 2, by: Double.pi / 4).map { $0 }
         let grid = sphere.evaluateGrid(uParameters: uParams, vParameters: vParams)
-        #expect(grid.count == vParams.count)
-        #expect(grid[0].count == uParams.count)
+        #expect(grid.uCount == uParams.count)
+        #expect(grid.vCount == vParams.count)
         // All points should be at distance 5 from origin
-        for row in grid {
-            for pt in row {
+        for u in 0..<grid.uCount {
+            for v in 0..<grid.vCount {
+                let pt = grid.at(u: u, v: v)
                 let dist = sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z)
                 #expect(abs(dist - 5.0) < 1e-6)
+            }
+        }
+    }
+
+    @Test("evaluateGrid indexes each (u, v) at its own parameter, not transposed")
+    func evalGridAsymmetricMatchesDirectEvaluation() {
+        // #404: evaluateGrid used to return [vIndex][uIndex] while drawMesh returned
+        // [uIndex][vIndex] — a symmetric grid can't tell the two conventions apart, so use an
+        // asymmetric one and cross-check every sample against the independent point(atU:v:)
+        // evaluator.
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let uParams = [0.0, 0.4, 1.1, 2.0, 3.5]
+        let vParams = [-1.2, 0.0, 1.2]
+        let grid = sphere.evaluateGrid(uParameters: uParams, vParameters: vParams)
+        #expect(grid.uCount == uParams.count)
+        #expect(grid.vCount == vParams.count)
+
+        for u in 0..<uParams.count {
+            for v in 0..<vParams.count {
+                let expected = sphere.point(atU: uParams[u], v: vParams[v])
+                let actual = grid.at(u: u, v: v)
+                #expect(simd_length(actual - expected) < 1e-6)
+            }
+        }
+    }
+
+    @Test("drawMesh and evaluateGrid agree at matching parameters")
+    func drawMeshAndEvaluateGridAgree() {
+        // #404: the two methods used opposite index conventions internally, but nothing at the
+        // type level distinguished them — a caller mixing them up would silently read transposed
+        // data. Now both return SurfaceGrid, sampled here at the same asymmetric (u, v) grid, so
+        // they must agree point-for-point under the same .at(u:v:) indexing.
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let uCount = 5, vCount = 3
+        let meshGrid = sphere.drawMesh(uCount: uCount, vCount: vCount)
+
+        var (uMin, uMax, vMin, vMax) = sphere.domain
+        if uMin < -1e6 { uMin = -100 }
+        if uMax > 1e6 { uMax = 100 }
+        if vMin < -1e6 { vMin = -100 }
+        if vMax > 1e6 { vMax = 100 }
+        let uParams = (0..<uCount).map { uMin + (uMax - uMin) * Double($0) / Double(uCount - 1) }
+        let vParams = (0..<vCount).map { vMin + (vMax - vMin) * Double($0) / Double(vCount - 1) }
+        let evalGrid = sphere.evaluateGrid(uParameters: uParams, vParameters: vParams)
+
+        #expect(meshGrid.uCount == evalGrid.uCount)
+        #expect(meshGrid.vCount == evalGrid.vCount)
+        for u in 0..<uCount {
+            for v in 0..<vCount {
+                let fromMesh = meshGrid.at(u: u, v: v)
+                let fromEval = evalGrid.at(u: u, v: v)
+                #expect(simd_length(fromMesh - fromEval) < 1e-6)
             }
         }
     }
@@ -1890,7 +2136,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            #expect(filling.add(edge: edge, continuity: .c0))
+            #expect(filling.add(edge: edge, continuity: .g0))
         }
 
         let result = filling.build()
@@ -1904,7 +2150,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         let _ = filling.build()
 
@@ -1921,7 +2167,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         // Add interior point above the plane
         filling.add(point: SIMD3(5, 5, 3))
@@ -1937,7 +2183,7 @@ struct FillingSurfaceTests {
 
         let filling = FillingSurface()
         for edge in edges {
-            filling.add(edge: edge, continuity: .c0)
+            filling.add(edge: edge, continuity: .g0)
         }
         let _ = filling.build()
 
@@ -1955,9 +2201,9 @@ struct FillingSurfaceTests {
         let filling = FillingSurface()
         // Add 3 boundary edges and 1 free edge
         for i in 0..<3 {
-            filling.add(edge: edges[i], continuity: .c0)
+            filling.add(edge: edges[i], continuity: .g0)
         }
-        filling.add(freeEdge: edges[3], continuity: .c0)
+        filling.add(freeEdge: edges[3], continuity: .g0)
 
         let result = filling.build()
         #expect(result != nil)
@@ -5334,3 +5580,306 @@ struct GeomFillGordonReportTests {
     }
 }
 
+// MARK: - #401: the two Surface normal entry points
+
+/// `Surface` exposes the same normal twice: `normal(atU:v:)` returns an optional and reports an
+/// undefined normal as `nil`, `normal(u:v:)` returns a plain vector and reports it as
+/// `SIMD3(0, 0, 0)`. That difference in *reporting* is intentional. What was not intentional is
+/// that they used to disagree about *where* the normal is undefined: `normal(u:v:)` hand-rolled
+/// `D1` + a cross product against a literal `1e-15` magnitude epsilon instead of asking
+/// `GeomLProp_SLProps::IsNormalDefined()`, so near a singularity each could call the point
+/// degenerate when the other did not.
+@Suite("Surface normal entry points agree (#401)")
+struct SurfaceNormalParityTests {
+
+    /// A cone with `radius: 0` at the origin has its apex exactly at `v = 0`.
+    private static func apexCone() -> Surface {
+        Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    }
+
+    @Test("Regular points: both entry points return the same unit normal")
+    func regularPointsAgree() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        let cone = Self.apexCone()
+
+        let samples: [(Surface, Double, Double)] = [
+            (sphere, 0, 0), (sphere, .pi / 3, .pi / 4), (sphere, 1.2, -0.8),
+            (plane, 0, 0), (plane, 3, -7),
+            (cone, 0, 5), (cone, .pi / 2, -5),
+        ]
+        for (surface, u, v) in samples {
+            let optional = surface.normal(atU: u, v: v)
+            let plain = surface.normal(u: u, v: v)
+            #expect(optional != nil)
+            if let n = optional {
+                #expect(simd_distance(n, plain) < 1e-12)
+                #expect(abs(simd_length(plain) - 1) < 1e-9)
+            }
+        }
+    }
+
+    @Test("Cone apex: nil from the optional entry point, zero vector from the plain one")
+    func coneApexIsUndefinedInBoth() {
+        let cone = Self.apexCone()
+        #expect(cone.normal(atU: 0, v: 0) == nil)
+        #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
+    }
+
+    /// Regression for the divergence window the hand-rolled epsilon created. Arbitrarily close to
+    /// (but not at) the apex the cross product `d1u × d1v` underflows the old literal `1e-15`
+    /// magnitude test, so `normal(u:v:)` returned a spurious zero vector — while OCCT's own
+    /// `IsNormalDefined()` resolves a perfectly good normal there, the same one every other point
+    /// on that generatrix has.
+    @Test("Near-apex: a defined normal is no longer reported as a zero vector")
+    func nearApexNormalIsNotSpuriouslyZero() {
+        let cone = Self.apexCone()
+        let v = 1e-16                       // |d1u x d1v| ≈ 5e-17, under the old 1e-15 epsilon
+
+        let (_, d1u, d1v) = cone.d1(atU: 0, v: v)
+        #expect(simd_length(simd_cross(d1u, d1v)) < 1e-15)   // the window really is entered
+
+        let optional = cone.normal(atU: 0, v: v)
+        let plain = cone.normal(u: 0, v: v)
+        #expect(optional != nil)                             // OCCT says the normal exists
+        #expect(abs(simd_length(plain) - 1) < 1e-9)          // ... and so does normal(u:v:) now
+        if let n = optional {
+            #expect(simd_distance(n, plain) < 1e-12)
+        }
+        // Same normal as a well-conditioned point on the same generatrix.
+        #expect(simd_distance(plain, cone.normal(u: 0, v: 5)) < 1e-9)
+    }
+
+    /// A sphere pole is a parameterisation singularity but not a normal singularity: OCCT still
+    /// resolves the tangent plane there. Pinned because the finding assumed otherwise.
+    @Test("Sphere pole is not a normal singularity")
+    func spherePoleStillHasANormal() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        for v in [Double.pi / 2, -Double.pi / 2] {
+            let optional = sphere.normal(atU: 0, v: v)
+            #expect(optional != nil)
+            if let n = optional {
+                #expect(simd_distance(n, sphere.normal(u: 0, v: v)) < 1e-12)
+                #expect(abs(abs(n.z) - 1) < 1e-9)
+            }
+        }
+    }
+}
+
+// MARK: - #405: the curvature entry points share one tolerance
+
+/// `curvatures(u:v:)` computes exactly what `gaussianCurvature(atU:v:)` and
+/// `meanCurvature(atU:v:)` compute, from the same `GeomLProp_SLProps` — but it used to construct
+/// that with a hardcoded `1e-6` resolution while the other two used `Precision::Confusion()`
+/// (`1e-7`). Since that argument is what `IsCurvatureDefined()` tests tangent vectors against for
+/// nullity, the two APIs could disagree about whether curvature is defined at all for the same
+/// surface at the same (u, v). They now share one construction.
+@Suite("Surface curvature entry points agree (#405)")
+struct SurfaceCurvatureParityTests {
+
+    /// A cone with `radius: 0` at the origin: its apex is at `v = 0`, and the tangent magnitude
+    /// falls off linearly with `v`, so it sweeps through the resolution threshold smoothly.
+    private static func apexCone() -> Surface {
+        Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    }
+
+    private func expectAgreement(_ surface: Surface, u: Double, v: Double,
+                                 _ comment: Comment? = nil) {
+        let pair = surface.curvatures(u: u, v: v)
+        #expect(pair.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
+        #expect(pair.mean == surface.meanCurvature(atU: u, v: v), comment)
+    }
+
+    @Test("Well-conditioned points agree across all three entry points")
+    func wellConditionedPointsAgree() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
+        let cone = Self.apexCone()
+
+        for (u, v) in [(0.0, 0.0), (Double.pi / 3, 0.4), (1.2, -0.8)] {
+            expectAgreement(sphere, u: u, v: v)
+            expectAgreement(plane, u: u, v: v)
+            expectAgreement(cylinder, u: u, v: v)
+        }
+        for v in [10.0, 1.0, 0.01] {
+            expectAgreement(cone, u: 0, v: v)
+        }
+    }
+
+    /// The regression proper. On this cone the two resolutions put the "curvature is defined"
+    /// threshold a decade apart: `Precision::Confusion()` gives up below v ≈ 2e-7, the old
+    /// hardcoded `1e-6` gave up below v ≈ 2e-6. At v = 1e-6 — inside that window —
+    /// `curvatures(u:v:)` returned (0, 0) for a point where `meanCurvature(atU:v:)` returned
+    /// -866025.4.
+    @Test("Inside the old tolerance window the two entry points no longer disagree")
+    func toleranceWindowAgrees() {
+        let cone = Self.apexCone()
+        for v in [2e-6, 1e-6, 5e-7, 3e-7] {
+            expectAgreement(cone, u: 0, v: v, "cone v=\(v)")
+        }
+
+        // v = 1e-6 specifically: curvature IS defined at Precision::Confusion(), and both
+        // entry points must now report the same non-zero mean curvature.
+        let pair = cone.curvatures(u: 0, v: 1e-6)
+        #expect(pair.mean < -1e5)
+        #expect(pair.mean == cone.meanCurvature(atU: 0, v: 1e-6))
+    }
+
+    @Test("Genuinely undefined points return zero from all three entry points")
+    func undefinedPointsAgree() {
+        let cone = Self.apexCone()
+        let pair = cone.curvatures(u: 0, v: 0)          // exactly at the apex
+        #expect(pair.gaussian == 0)
+        #expect(pair.mean == 0)
+        #expect(cone.gaussianCurvature(atU: 0, v: 0) == 0)
+        #expect(cone.meanCurvature(atU: 0, v: 0) == 0)
+
+        // Sphere pole: curvature (unlike the normal) is undefined there for both.
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        expectAgreement(sphere, u: 0, v: .pi / 2)
+        expectAgreement(sphere, u: 0, v: -.pi / 2)
+    }
+
+    @Test("Domain-boundary evaluation agrees on a BSpline patch")
+    func bsplineBoundsAgree() {
+        let poles: [[SIMD3<Double>]] = (0..<4).map { i in
+            (0..<4).map { j in SIMD3(Double(i), Double(j), Double(i * j) * 0.3) }
+        }
+        guard let bezier = Surface.bezier(poles: poles) else { return }
+        let dom = bezier.domain
+        for (u, v) in [(dom.uMin, dom.vMin), (dom.uMax, dom.vMax), (dom.uMin, dom.vMax)] {
+            expectAgreement(bezier, u: u, v: v)
+        }
+    }
+}
+
+// MARK: - #406: Surface.approximated defaults now match Curve3D/Curve2D.approximated
+
+/// Before #406, `Surface.approximated`'s defaults (`tolerance: 0.01`, `maxDegree: 10`) silently
+/// diverged from `Curve3D.approximated`/`Curve2D.approximated` (`tolerance: 1e-3`, `maxDegree: 8`)
+/// with no documented rationale. Manual measurement against analytic primitives and a 40x40-point
+/// BSpline fit found no case where the tighter shared values fail or cost meaningfully more, so
+/// the divergence was drift rather than a deliberate accuracy/cost tradeoff — `Surface.approximated`
+/// now shares the same defaults.
+@Suite("Surface.approximated defaults match Curve3D/Curve2D (#406)")
+struct SurfaceApproximateDefaultsParityTests {
+
+    @Test("Default call succeeds and respects the shared maxDegree cap")
+    func defaultCallRespectsSharedMaxDegree() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        // No explicit tolerance/maxDegree: exercises the *default* values directly.
+        let approx = sphere.approximated()
+        #expect(approx != nil)
+        if let approx = approx {
+            #expect(approx.uDegree <= 8)
+            #expect(approx.vDegree <= 8)
+        }
+    }
+
+    @Test("Default call is equivalent to an explicit tolerance: 1e-3, maxDegree: 8 call")
+    func defaultCallMatchesExplicitSharedValues() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let byDefault = sphere.approximated()
+        let explicit = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
+        #expect(byDefault != nil)
+        #expect(explicit != nil)
+        if let a = byDefault, let b = explicit {
+            #expect(a.uDegree == b.uDegree)
+            #expect(a.vDegree == b.vDegree)
+        }
+    }
+
+    @Test("Tighter shared defaults still succeed on every primitive the old looser defaults handled")
+    func tighterDefaultsSucceedOnCommonSurfaces() {
+        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        #expect(sphere.approximated() != nil)
+
+        if let torus = Surface.torus(origin: .zero, axis: SIMD3(0, 0, 1),
+                                      majorRadius: 10, minorRadius: 3) {
+            #expect(torus.approximated() != nil)
+        }
+        if let cylinder = Surface.trimmedCylinder(origin: .zero, direction: SIMD3(0, 0, 1),
+                                                    radius: 5, height: 20) {
+            #expect(cylinder.approximated() != nil)
+        }
+        if let cone = Surface.trimmedCone(point1: SIMD3(0, 0, 0), point2: SIMD3(0, 0, 10),
+                                           r1: 5, r2: 2) {
+            #expect(cone.approximated() != nil)
+        }
+    }
+
+    /// Review follow-up on #406/PR #460: the suite above only exercises primitives (sphere,
+    /// torus, trimmed cylinder/cone) that have an *exact* BSpline conversion — easy cases for
+    /// `GeomConvert_ApproxSurface`. This test targets a genuinely non-analytic surface instead:
+    /// the offset of a free-form (point-grid-fit) BSpline surface, which has no closed-form
+    /// equivalent.
+    ///
+    /// Verified directly against the OCCT source before writing this (do not trust "offset
+    /// surfaces are hard" as a assumption): `Geom_OffsetSurface::Surface()` only computes an
+    /// exact equivalent for Plane/Cylindrical/Conical/Spherical/Toroidal bases
+    /// (`Geom_OffsetSurface.cxx:867-990`) — for those, `toBSpline()` succeeds exactly, so
+    /// offsetting a *primitive* (e.g. `sphere.offset(distance:)`) is actually still an easy case,
+    /// not a hard one, despite the doc comment's example suggesting otherwise. For an offset of a
+    /// BSpline base (this test), `Geom_OffsetSurface::Surface()` returns null, and
+    /// `GeomConvert::SurfaceToBSplineSurface` falls through to its own internal fallback — a
+    /// `GeomConvert_ApproxSurface` with hardcoded `Tol3d: 1e-4, MaxDegree: 14`
+    /// (`GeomConvert_1.cxx:934-961`) — so `toBSpline()` does *not* return `nil` here either; OCCT
+    /// silently approximates it for you, just with different, fixed parameters we don't control.
+    /// "Does `toBSpline()` return `nil`" therefore isn't a reliable signal of hardness for a
+    /// *bounded* composite surface in this OCCT version — what makes this surface genuinely
+    /// non-analytic is structural (no elementary-surface equivalent exists for its basis), not
+    /// that `toBSpline()` fails outright.
+    @Test("Non-analytic surface (offset of a BSpline base) still approximates at the new default")
+    func nonAnalyticOffsetSurfaceApproximates() {
+        var gridPoints: [SIMD3<Double>] = []
+        let uCount = 8, vCount = 8
+        for i in 0..<uCount {
+            for j in 0..<vCount {
+                let u = Double(i) / Double(uCount - 1) * 10.0
+                let v = Double(j) / Double(vCount - 1) * 10.0
+                let z = sin(u * 0.7) * cos(v * 0.7) * 1.5
+                gridPoints.append(SIMD3(u, v, z))
+            }
+        }
+        guard let base = Surface.fromPointGrid(points: gridPoints, uCount: uCount, vCount: vCount)
+        else {
+            Issue.record("fromPointGrid failed to build the base surface")
+            return
+        }
+        #expect(base.isBSpline)
+
+        guard let offsetSurface = base.offset(distance: 0.3) else {
+            Issue.record("offset(distance:) failed on the BSpline base")
+            return
+        }
+        #expect(offsetSurface.isOffsetSurface)
+
+        // The empirical claim from PR #460: the new tighter default (tolerance: 1e-3,
+        // maxDegree: 8) still succeeds here, not just on the easy analytic primitives above.
+        let approx = offsetSurface.approximated()
+        #expect(approx != nil)
+        if let approx = approx {
+            #expect(approx.uDegree <= 8)
+            #expect(approx.vDegree <= 8)
+
+            // Loose fidelity sanity check (not a tight tolerance bound: GeomConvert_ApproxSurface's
+            // HasResult() — what the bridge checks — is documented as true even when the result is
+            // "not NECESSARILY within the required tolerance", so asserting a bound near 1e-3 itself
+            // would assert something OCCT's own contract doesn't promise). This only needs to catch
+            // a gross regression (e.g. silently returning the un-offset base surface instead).
+            let domain = approx.domain
+            var maxDeviation = 0.0
+            for i in 0...4 {
+                for j in 0...4 {
+                    let u = domain.uMin + (domain.uMax - domain.uMin) * Double(i) / 4
+                    let v = domain.vMin + (domain.vMax - domain.vMin) * Double(j) / 4
+                    let approxPoint = approx.point(atU: u, v: v)
+                    let truePoint = offsetSurface.point(atU: u, v: v)
+                    maxDeviation = max(maxDeviation, simd_length(approxPoint - truePoint))
+                }
+            }
+            #expect(maxDeviation < 0.5)
+        }
+    }
+}

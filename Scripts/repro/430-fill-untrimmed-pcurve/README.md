@@ -131,9 +131,9 @@ the kernel patched, and the helper already exists in the tree. It is file-`stati
 |---|---|---|
 | #430 | `Shape.fill` SIGSEGV on default `.g1` | fixed bridge-side by PR #435 |
 | #431 | `BRepOffsetAPI_MakeFilling` ctor args misbound | fixed in PR #435 |
-| #432 | `FillingSurface` reaches the same defect | open, reproducer 2 above |
-| #433 | `FillingSurface` `.c1`/`.c2` mismapped | open |
-| #434 | The two entry points should converge | open |
+| #432 | `FillingSurface` reaches the same defect | fixed in PR #435 (same commit, reproducer 2 above) |
+| #433 | `FillingSurface` `.c1`/`.c2` mismapped | fixed, folded into #434's convergence |
+| #434 | The two entry points should converge | fixed — `FillingSurface` now shares `BRepOffsetAPI_MakeFilling` with `Shape.fill` |
 
 The kernel patch for defects 1 and 2, and the upstream filing, are not yet done. Defect 1 is a
 one-line fix (`new Geom2dAdaptor_Curve(C2d, f, l)`); defect 2 wants a guard on the `!Ok` branch,

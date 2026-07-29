@@ -94,7 +94,22 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Full circle in a plane defined by center and normal
+    /// Full circle in a plane defined by center and normal.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - normal: Normal of the plane the circle lies in.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// `circleFromCenterNormal(center:normal:radius:)` builds the identical circle through
+    /// OCCT's `gce_MakeCirc` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)
+    /// #expect(c != nil)
+    /// #expect(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 0) == nil)
+    /// ```
     public static func circle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateCircle(center.x, center.y, center.z,
                                                normal.x, normal.y, normal.z,
@@ -110,15 +125,47 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Circular arc through three points (alias)
+    /// Circular arc through three points.
+    ///
+    /// A spelling of `arcOfCircle(start:interior:end:)` and delegates to it — the two cannot
+    /// produce different curves for the same input (#415).
+    ///
+    /// - Parameters:
+    ///   - p1: First endpoint (maps to `arcOfCircle`'s `start`).
+    ///   - pm: A point on the arc (maps to `arcOfCircle`'s `interior`).
+    ///   - p2: Second endpoint (maps to `arcOfCircle`'s `end`).
+    /// - Returns: Arc curve, or `nil` if the three points are collinear or coincident.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arc(through: SIMD3(5, 0, 0), SIMD3(0, 5, 0), SIMD3(-5, 0, 0))
+    /// #expect(arc != nil)
+    /// ```
     public static func arc(through p1: SIMD3<Double>, _ pm: SIMD3<Double>, _ p2: SIMD3<Double>) -> Curve3D? {
-        guard let h = OCCTCurve3DCreateArc3Points(p1.x, p1.y, p1.z,
-                                                   pm.x, pm.y, pm.z,
-                                                   p2.x, p2.y, p2.z) else { return nil }
-        return Curve3D(handle: h)
+        arcOfCircle(start: p1, interior: pm, end: p2)
     }
 
-    /// Ellipse in a plane defined by center and normal
+    /// Ellipse in a plane defined by center and normal.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///
+    /// `ellipseFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
+    /// ellipse through OCCT's `gce_MakeElips` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// // minor > major, and a zero minor radius, are both rejected
+    /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 5, minorRadius: 10) == nil)
+    /// #expect(Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func ellipse(center: SIMD3<Double>, normal: SIMD3<Double>,
                                majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateEllipse(center.x, center.y, center.z,
@@ -127,7 +174,22 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Parabola in a plane defined by center/normal with given focal length
+    /// Parabola in a plane defined by center/normal with given focal length.
+    ///
+    /// - Parameters:
+    ///   - center: Parabola apex.
+    ///   - normal: Normal of the plane the parabola lies in.
+    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
+    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///
+    /// `parabolaFromCenterNormal(center:normal:focal:)` builds the identical parabola through
+    /// OCCT's `gce_MakeParab` algorithm and enforces the same focal-length contract.
+    ///
+    /// ```swift
+    /// let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
+    /// #expect(p != nil)
+    /// #expect(Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 0) == nil)
+    /// ```
     public static func parabola(center: SIMD3<Double>, normal: SIMD3<Double>,
                                 focal: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateParabola(center.x, center.y, center.z,
@@ -136,7 +198,26 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Hyperbola in a plane defined by center/normal
+    /// Hyperbola in a plane defined by center/normal.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`. There is no ordering constraint between
+    ///     the two, unlike `ellipse(center:normal:majorRadius:minorRadius:)`.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// `hyperbolaFromCenterNormal(center:normal:majorRadius:minorRadius:)` builds the identical
+    /// hyperbola through OCCT's `gce_MakeHypr` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 0, minorRadius: 3) == nil)
+    /// ```
     public static func hyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let h = OCCTCurve3DCreateHyperbola(center.x, center.y, center.z,
@@ -205,7 +286,24 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Interpolate through points with start/end tangent constraints
+    /// Interpolate a BSpline through points with constrained start/end tangents.
+    ///
+    /// - Parameters:
+    ///   - points: Points the curve must pass through (minimum 2).
+    ///   - startTangent: Tangent vector at the first point.
+    ///   - endTangent: Tangent vector at the last point.
+    ///   - tolerance: Interpolation precision; also the minimum allowed distance between
+    ///     consecutive points. Defaults to `1e-6` and is honored on every call, including
+    ///     the bare 3-argument form.
+    /// - Returns: Interpolated BSpline curve, or `nil` on failure.
+    ///
+    /// ```swift
+    /// let pts: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 5, 5), SIMD3(10, 0, 0)]
+    /// let curve = Curve3D.interpolate(points: pts,
+    ///                                 startTangent: SIMD3(1, 1, 1),
+    ///                                 endTangent: SIMD3(1, -1, -1),
+    ///                                 tolerance: 1e-9)
+    /// ```
     public static func interpolate(points: [SIMD3<Double>],
                                    startTangent: SIMD3<Double>,
                                    endTangent: SIMD3<Double>,
@@ -247,7 +345,7 @@ public final class Curve3D: @unchecked Sendable {
         var buffer = [Double](repeating: 0, count: n * 3)
         let actual = Int(OCCTCurve3DGetPoles(handle, &buffer))
         guard actual > 0 else { return nil }
-        return (0..<actual).map { i in SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]) }
+        return unpackSIMD3(buffer, count: actual)
     }
 
     /// Degree of BSpline/Bezier curve (-1 if not applicable)
@@ -314,6 +412,12 @@ public final class Curve3D: @unchecked Sendable {
 
     /// Arc length of the full curve.
     ///
+    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a
+    /// numeric result. `totalArcLength` delegates to this and collapses failure back to `-1.0`
+    /// for source compatibility — prefer this property when you need to tell "failed" apart
+    /// from "genuinely zero".
+    ///
     /// Backed by `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
     /// interval boundaries and integrates each span separately, so a multi-span BSpline (an
     /// interpolated toolpath, an imported spline) measures correctly rather than being integrated
@@ -336,6 +440,12 @@ public final class Curve3D: @unchecked Sendable {
     }
 
     /// Arc length between two parameters.
+    ///
+    /// This is the canonical, failure-distinguishing entry point: returns `nil` if the curve
+    /// is invalid or the underlying computation fails, rather than collapsing failure into a
+    /// numeric result. `arcLength(from:to:)` and `arcLengthBetween(_:_:)` both delegate to this
+    /// and collapse failure back to `-1.0` for source compatibility — prefer this method when
+    /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
     /// parameters measure `0`. Parameters outside the curve's domain are clamped to it, so a
@@ -390,7 +500,12 @@ public final class Curve3D: @unchecked Sendable {
         return Curve3D(handle: h)
     }
 
-    /// Approximate the curve with a BSpline of specified continuity
+    /// Approximate the curve with a BSpline of specified continuity.
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve2D.approximated` and
+    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// independent algorithms that would justify independently-tuned numeric defaults.
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D? {
         guard let h = OCCTCurve3DApproximate(handle, tolerance, Int32(continuity),
@@ -407,14 +522,14 @@ public final class Curve3D: @unchecked Sendable {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let n = Int(OCCTCurve3DDrawAdaptive(handle, angularDeflection, chordalDeflection,
                                              &buffer, Int32(maxPoints)))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     /// Uniform arc-length spacing discretization
     public func drawUniform(pointCount: Int) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let n = Int(OCCTCurve3DDrawUniform(handle, Int32(pointCount), &buffer))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     /// Chordal deflection discretization
@@ -422,7 +537,7 @@ public final class Curve3D: @unchecked Sendable {
                                maxPoints: Int = 4096) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let n = Int(OCCTCurve3DDrawDeflection(handle, deflection, &buffer, Int32(maxPoints)))
-        return (0..<n).map { SIMD3(buffer[$0*3], buffer[$0*3+1], buffer[$0*3+2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 
     // MARK: - Local Properties
@@ -503,7 +618,7 @@ extension Curve3D {
         guard !parameters.isEmpty else { return [] }
         var outXYZ = [Double](repeating: 0, count: parameters.count * 3)
         let n = Int(OCCTCurve3DEvaluateGrid(handle, parameters, Int32(parameters.count), &outXYZ))
-        return (0..<n).map { i in SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]) }
+        return unpackSIMD3(outXYZ, count: n)
     }
 
     /// Evaluate the curve and its first derivative at multiple parameters in one call.
@@ -515,10 +630,9 @@ extension Curve3D {
         var outXYZ = [Double](repeating: 0, count: parameters.count * 3)
         var outDXDYDZ = [Double](repeating: 0, count: parameters.count * 3)
         let n = Int(OCCTCurve3DEvaluateGridD1(handle, parameters, Int32(parameters.count), &outXYZ, &outDXDYDZ))
-        return (0..<n).map { i in
-            (point: SIMD3(outXYZ[i * 3], outXYZ[i * 3 + 1], outXYZ[i * 3 + 2]),
-             tangent: SIMD3(outDXDYDZ[i * 3], outDXDYDZ[i * 3 + 1], outDXDYDZ[i * 3 + 2]))
-        }
+        let points: [SIMD3<Double>] = unpackSIMD3(outXYZ, count: n)
+        let tangents: [SIMD3<Double>] = unpackSIMD3(outDXDYDZ, count: n)
+        return zip(points, tangents).map { (point: $0, tangent: $1) }
     }
 
     /// Check if this curve is planar.
@@ -658,27 +772,50 @@ extension Curve3D {
 
     // MARK: - BSpline Knot Splitting (v0.40.0)
 
-    /// Continuity order for knot splitting analysis
-    public enum ContinuityOrder: Int32 {
-        /// C0 continuity (positional)
-        case c0 = 0
-        /// C1 continuity (tangent)
-        case c1 = 1
-        /// C2 continuity (curvature)
-        case c2 = 2
-    }
+    // Continuity order for knot splitting is `ParametricContinuity` (Continuity.swift); the
+    // nested `ContinuityOrder` copy declared here is now a deprecated alias of it. See #398.
 
-    /// Find parameter values where continuity drops below a specified level
+    /// Knot parameters at which to split a BSpline so every arc is at least `minContinuity`
     ///
-    /// Only works on BSpline curves. Returns knot parameters where the curve's
-    /// internal continuity is less than the requested order.
-    /// - Parameter minContinuity: Minimum continuity to require
-    /// - Returns: Array of parameter values at continuity breaks, or nil if not a BSpline
-    public func continuityBreaks(minContinuity: ContinuityOrder = .c1) -> [Double]? {
-        let maxParams: Int32 = 256
-        var params = [Double](repeating: 0, count: Int(maxParams))
-        let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue, &params, maxParams)
+    /// Only works on BSpline curves. The result is a set of *split* parameters, not a set of
+    /// defects: the curve's own first and last knots are always included, so a curve that never
+    /// drops below `minContinuity` returns exactly those two rather than an empty array. Any
+    /// further entries are interior knots where the curve really is less continuous than asked.
+    ///
+    /// A curve's discontinuities are inherently 1D, so parameter values are the natural (and
+    /// only sensible) shape here -- unlike `Surface.knotSplitting` (2D, per-direction counts
+    /// *and* parameters) or `LawFunction.knotSplitting`/`knotSplitParameters` (1D, but split
+    /// across two methods for backward compatibility). See #403 for why these three siblings
+    /// return different shapes.
+    ///
+    /// ```swift
+    /// // A cubic interpolated BSpline is already C2 at its interior knots, so nothing
+    /// // below C3 reports anything beyond the two end knots.
+    /// let ends   = bspline.continuityBreaks(minContinuity: .c2)  // [first, last]
+    /// let breaks = bspline.continuityBreaks(minContinuity: .c3)  // + interior knots
+    /// ```
+    ///
+    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc
+    /// - Returns: Split parameters in ascending order, bounded by the curve's end knots, or
+    ///   nil if the curve is not a BSpline
+    public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]? {
+        // The bridge returns the true split count even when it writes fewer, so one retry at
+        // that count is always enough. Worth doing since #398: the old c0...c2 range could not
+        // report interior knots at all on an ordinary cubic, and .c3 can, which brought a fixed
+        // 256-entry buffer within reach of real imported geometry.
+        func read(capacity: Int32) -> (count: Int32, params: [Double]) {
+            var params = [Double](repeating: 0, count: Int(capacity))
+            let count = OCCTCurve3DBSplineKnotSplits(handle, minContinuity.rawValue,
+                                                     &params, capacity)
+            return (count, params)
+        }
+
+        var (count, params) = read(capacity: 256)
         guard count >= 0 else { return nil }
+        if count > 256 {
+            (count, params) = read(capacity: count)
+            guard count >= 0 else { return nil }
+        }
         return Array(params.prefix(Int(count)))
     }
 
@@ -836,12 +973,7 @@ extension Curve3D {
     public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         let count = OCCTCurve3DGetSamplePoints3D(handle, first, last, &buffer, Int32(maxPoints))
-        var points = [SIMD3<Double>]()
-        points.reserveCapacity(Int(count))
-        for i in 0..<Int(count) {
-            points.append(SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]))
-        }
-        return points
+        return unpackSIMD3(buffer, count: Int(count))
     }
 
     // MARK: - v0.50.0: Arc construction, periodic conversion, splitting
@@ -1145,7 +1277,24 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a circle from center, normal, and radius (gce_MakeCirc)
+    /// Create a circle from center, normal, and radius (`gce_MakeCirc`).
+    ///
+    /// Geometrically identical to `circle(center:normal:radius:)` — `gce_MakeCirc` builds the
+    /// same `gp_Ax2(center, normal)` frame — and, since #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - normal: Normal of the plane the circle lies in.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// ```swift
+    /// let c = Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), radius: 7)
+    /// #expect(c != nil)
+    /// // Same rejection as the direct factory: no degenerate zero-radius circle.
+    /// #expect(Curve3D.circleFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                        radius: 0) == nil)
+    /// ```
     public static func circleFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                               radius: Double) -> Curve3D? {
         guard let h = OCCTGceMakeCircFromCenterNormal(center.x, center.y, center.z,
@@ -1169,7 +1318,25 @@ extension Curve3D {
         return SIMD3(x, y, z)
     }
 
-    /// Create an ellipse (gce_MakeElips)
+    /// Create an ellipse (`gce_MakeElips`).
+    ///
+    /// Geometrically identical to `ellipse(center:normal:majorRadius:minorRadius:)` and, since
+    /// #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The ellipse, or `nil` if the radii violate that contract.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                         majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Curve3D.ellipseFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                         majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func ellipseFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                majorRadius: Double,
                                                minorRadius: Double) -> Curve3D? {
@@ -1179,7 +1346,25 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a hyperbola (gce_MakeHypr)
+    /// Create a hyperbola (`gce_MakeHypr`).
+    ///
+    /// Geometrically identical to `hyperbola(center:normal:majorRadius:minorRadius:)` and, since
+    /// #399, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// ```swift
+    /// let h = Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                           majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.hyperbolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                           majorRadius: 8, minorRadius: 0) == nil)
+    /// ```
     public static func hyperbolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                  majorRadius: Double,
                                                  minorRadius: Double) -> Curve3D? {
@@ -1189,7 +1374,23 @@ extension Curve3D {
         return Curve3D(handle: h)
     }
 
-    /// Create a parabola (gce_MakeParab)
+    /// Create a parabola (`gce_MakeParab`).
+    ///
+    /// Geometrically identical to `parabola(center:normal:focal:)` and, since #399, enforces the
+    /// same focal-length contract.
+    ///
+    /// - Parameters:
+    ///   - center: Parabola apex.
+    ///   - normal: Normal of the plane the parabola lies in.
+    ///   - focal: Focal length. Must be `> 0`; zero and negative focal lengths return `nil`.
+    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///
+    /// ```swift
+    /// let p = Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1), focal: 4)
+    /// #expect(p != nil)
+    /// #expect(Curve3D.parabolaFromCenterNormal(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                          focal: 0) == nil)
+    /// ```
     public static func parabolaFromCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>,
                                                 focal: Double) -> Curve3D? {
         guard let h = OCCTGceMakeParab(center.x, center.y, center.z,
@@ -1451,20 +1652,6 @@ extension Curve3D {
 
     // MARK: - v0.115.0: Interpolation expansion, length, closest point
 
-    /// Interpolate a 3D BSpline through points with endpoint tangents.
-    public static func interpolate(points: [SIMD3<Double>],
-                                   startTangent: SIMD3<Double>,
-                                   endTangent: SIMD3<Double>) -> Curve3D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolateWithTangents(buf.baseAddress!, Int32(points.count),
-                                        startTangent.x, startTangent.y, startTangent.z,
-                                        endTangent.x, endTangent.y, endTangent.z)
-        }) else { return nil }
-        return Curve3D(handle: ref)
-    }
-
     /// Interpolate a 3D BSpline with per-point tangent constraints.
     public static func interpolate(points: [SIMD3<Double>],
                                    tangents: [SIMD3<Double>],
@@ -1543,8 +1730,14 @@ extension Curve3D {
     }
 
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
+    ///
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
+    /// if the underlying computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
+    /// result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional
+    /// rather than a sentinel value.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
-        OCCTCurve3DLength(handle, u1, u2)
+        length(from: u1, to: u2) ?? -1.0
     }
 
     /// Find the parameter at a given arc length distance from a starting parameter.
@@ -1560,13 +1753,24 @@ extension Curve3D {
     }
 
     /// Total arc length of the curve within its domain.
+    ///
+    /// Delegates to `length`, the failure-distinguishing entry point. Returns `-1.0` if the
+    /// underlying computation fails — arc length is otherwise always non-negative, so this is
+    /// an unambiguous failure sentinel, never confusable with a genuine zero-length curve. Use
+    /// `length` directly if you need an optional rather than a sentinel value.
     public var totalArcLength: Double {
-        OCCTCurve3DArcLength(handle)
+        length ?? -1.0
     }
 
     /// Arc length between two parameters.
+    ///
+    /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
+    /// if the underlying computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
+    /// interval (e.g. `param1 == param2`). Use `length(from:to:)` directly if you need an
+    /// optional rather than a sentinel value.
     public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double {
-        OCCTCurve3DArcLengthBetween(handle, param1, param2)
+        length(from: param1, to: param2) ?? -1.0
     }
 
     /// Find the parameter of the closest point on this curve to a given point.

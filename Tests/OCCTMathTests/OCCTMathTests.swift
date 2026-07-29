@@ -910,21 +910,56 @@ struct GceMakeCircTests {
 
 @Suite("gce_MakeCone Tests")
 struct GceMakeConeTests {
-    @Test func coneFrom2PointsRadii() {
-        if let cone = Surface.coneFrom2PointsRadii(p1: SIMD3(0,0,0), p2: SIMD3(0,0,10),
-                                                    radius1: 5.0, radius2: 2.0) {
-            #expect(Bool(true)) // Construction succeeded
-        }
+    @Test func coneFrom2PointsRadii() throws {
+        let cone = try #require(Surface.coneFrom2PointsRadii(
+            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
+            radius1: 5.0, radius2: 2.0))
+        #expect(cone.handle != nil)
+    }
+
+    // #420: coneFrom2PointsRadii and conicalSurface(point1:point2:r1:r2:) now
+    // share one implementation (GC_MakeConicalSurface) — assert they still
+    // produce geometrically equivalent cones for the same inputs.
+    @Test func parityWithConicalSurface() throws {
+        let p1 = SIMD3(0.0, 0.0, 0.0)
+        let p2 = SIMD3(0.0, 0.0, 10.0)
+        let radius1 = 5.0
+        let radius2 = 2.0
+
+        let viaGce = try #require(Surface.coneFrom2PointsRadii(
+            p1: p1, p2: p2, radius1: radius1, radius2: radius2))
+        let viaGC = try #require(Surface.conicalSurface(
+            point1: p1, point2: p2, r1: radius1, r2: radius2))
+
+        #expect(abs(viaGce.coneProperties.semiAngle - viaGC.coneProperties.semiAngle) < 1e-9)
+        #expect(abs(viaGce.coneProperties.refRadius - viaGC.coneProperties.refRadius) < 1e-9)
+        #expect(simd_length(viaGce.coneProperties.axis.position - viaGC.coneProperties.axis.position) < 1e-9)
+        #expect(simd_length(viaGce.coneProperties.axis.direction - viaGC.coneProperties.axis.direction) < 1e-9)
     }
 }
 
 @Suite("gce_MakeCylinder Tests")
 struct GceMakeCylinderTests {
-    @Test func cylinderFrom3Points() {
-        if let cyl = Surface.cylinderFrom3Points(p1: SIMD3(0,0,0), p2: SIMD3(0,0,10),
-                                                  p3: SIMD3(3,0,0)) {
-            #expect(Bool(true))
-        }
+    @Test func cylinderFrom3Points() throws {
+        let cyl = try #require(Surface.cylinderFrom3Points(
+            p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10), p3: SIMD3(3, 0, 0)))
+        #expect(cyl.handle != nil)
+    }
+
+    // #420: cylinderFrom3Points and cylindricalSurface(point1:point2:point3:) now
+    // share one implementation (GC_MakeCylindricalSurface) — assert they still
+    // produce geometrically equivalent cylinders for the same inputs.
+    @Test func parityWithCylindricalSurface() throws {
+        let p1 = SIMD3(0.0, 0.0, 0.0)
+        let p2 = SIMD3(0.0, 0.0, 10.0)
+        let p3 = SIMD3(3.0, 0.0, 0.0)
+
+        let viaGce = try #require(Surface.cylinderFrom3Points(p1: p1, p2: p2, p3: p3))
+        let viaGC = try #require(Surface.cylindricalSurface(point1: p1, point2: p2, point3: p3))
+
+        #expect(abs(viaGce.cylinderProperties.radius - viaGC.cylinderProperties.radius) < 1e-9)
+        #expect(simd_length(viaGce.cylinderProperties.axis.position - viaGC.cylinderProperties.axis.position) < 1e-9)
+        #expect(simd_length(viaGce.cylinderProperties.axis.direction - viaGC.cylinderProperties.axis.direction) < 1e-9)
     }
 }
 
@@ -3067,5 +3102,103 @@ struct DrawingCompositionTests {
         // At least some lines or polylines should have been emitted.
         let counts = writer.entityCounts
         #expect(counts.lines + counts.polylines > 0)
+    }
+}
+
+// MARK: - #421: plane factories are unified (delegate, not reimplement)
+
+/// Four plane factories used to be four independent OCCT call paths for two operations:
+/// `planeFromPoints`/`planeFrom3Points` (3-point) and `plane(origin:normal:)`/
+/// `planeFromPointNormal` (point+normal). A ground-truth C++ test against the pinned OCCT headers
+/// (`GC_MakePlane`, `gce_MakePln`) confirmed the two 3-point algorithm classes agree on every case
+/// tried — well-separated points, collinear-but-distinct points (both evenly and unevenly
+/// spaced), one coincident pair, and all three points coincident — and that `GC_MakePlane`'s
+/// point+normal overload adds no check beyond `gp_Dir`'s own zero-length guard, matching the raw
+/// `Geom_Plane` constructor exactly. `planeFrom3Points`/`plane(origin:normal:)` now delegate to
+/// `planeFromPoints`/`planeFromPointNormal` instead of calling `gce_MakePln`/`new Geom_Plane`
+/// independently, so this coverage is a regression guard, not a live bug fix. None of these four
+/// degenerate-input cases had any test coverage before #421.
+@Suite("Surface plane factory parity (#421)")
+struct PlaneFactoryParityTests {
+
+    private func expectSamePlane(_ a: Surface?, _ b: Surface?, _ comment: Comment? = nil) {
+        #expect(a != nil, comment)
+        #expect(b != nil, comment)
+        guard let a, let b else { return }
+        let pa = a.point(atU: 0, v: 0)
+        let pb = b.point(atU: 0, v: 0)
+        #expect(abs(pa.x - pb.x) < 1e-9, comment)
+        #expect(abs(pa.y - pb.y) < 1e-9, comment)
+        #expect(abs(pa.z - pb.z) < 1e-9, comment)
+        let na = a.normal(atU: 0, v: 0)
+        let nb = b.normal(atU: 0, v: 0)
+        #expect(na != nil, comment)
+        #expect(nb != nil, comment)
+        if let na, let nb {
+            // Plane normals may point in opposite senses depending on point winding /
+            // algorithm internals; compare direction up to sign.
+            let dot = na.x * nb.x + na.y * nb.y + na.z * nb.z
+            #expect(abs(abs(dot) - 1.0) < 1e-9, comment)
+        }
+    }
+
+    // MARK: 3-point pair: planeFromPoints (GC_MakePlane, canonical) vs planeFrom3Points (delegates)
+
+    @Test("Well-separated points: both entry points agree")
+    func threePointControlMatches() {
+        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(10, 0, 0), p3 = SIMD3<Double>(0, 10, 0)
+        expectSamePlane(Surface.planeFromPoints(p1, p2, p3),
+                        Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3))
+    }
+
+    @Test("Collinear-but-distinct points: both entry points return nil")
+    func threePointCollinearRejectedByBoth() {
+        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(1, 0, 0), p3 = SIMD3<Double>(2, 0, 0)
+        #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
+        #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
+    }
+
+    @Test("Collinear, unevenly spaced points: both entry points return nil")
+    func threePointCollinearUnevenRejectedByBoth() {
+        let p1 = SIMD3<Double>(0, 0, 0), p2 = SIMD3<Double>(0.3, 0, 0), p3 = SIMD3<Double>(5, 0, 0)
+        #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
+        #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
+    }
+
+    @Test("Two coincident points: both entry points return nil")
+    func threePointTwoCoincidentRejectedByBoth() {
+        let p1 = SIMD3<Double>(1, 1, 1), p2 = SIMD3<Double>(1, 1, 1), p3 = SIMD3<Double>(0, 1, 0)
+        #expect(Surface.planeFromPoints(p1, p2, p3) == nil)
+        #expect(Surface.planeFrom3Points(p1: p1, p2: p2, p3: p3) == nil)
+    }
+
+    @Test("All three points coincident: both entry points return nil")
+    func threePointAllCoincidentRejectedByBoth() {
+        let p = SIMD3<Double>(2, 2, 2)
+        #expect(Surface.planeFromPoints(p, p, p) == nil)
+        #expect(Surface.planeFrom3Points(p1: p, p2: p, p3: p) == nil)
+    }
+
+    // MARK: Point+normal pair: planeFromPointNormal (GC_MakePlane, canonical) vs plane (delegates)
+
+    @Test("Valid normal: both entry points agree")
+    func pointNormalControlMatches() {
+        let origin = SIMD3<Double>(5, 5, 5), normal = SIMD3<Double>(1, 1, 1)
+        expectSamePlane(Surface.planeFromPointNormal(point: origin, normal: normal),
+                        Surface.plane(origin: origin, normal: normal))
+    }
+
+    @Test("Zero-length normal: both entry points return nil")
+    func pointNormalZeroLengthRejectedByBoth() {
+        let origin = SIMD3<Double>(0, 0, 0), zero = SIMD3<Double>(0, 0, 0)
+        #expect(Surface.planeFromPointNormal(point: origin, normal: zero) == nil)
+        #expect(Surface.plane(origin: origin, normal: zero) == nil)
+    }
+
+    @Test("Near-zero-length normal: both entry points return nil")
+    func pointNormalNearZeroLengthRejectedByBoth() {
+        let origin = SIMD3<Double>(0, 0, 0), tiny = SIMD3<Double>(1e-300, 0, 0)
+        #expect(Surface.planeFromPointNormal(point: origin, normal: tiny) == nil)
+        #expect(Surface.plane(origin: origin, normal: tiny) == nil)
     }
 }

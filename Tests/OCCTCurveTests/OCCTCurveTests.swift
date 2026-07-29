@@ -573,6 +573,38 @@ struct Curve3DOperationsTests {
         #expect(abs(start.z + 1) < 1e-10)
     }
 
+    // #416: mirrored(acrossPoint:) had zero test coverage anywhere in Tests/.
+    @Test("Mirror across a point")
+    func mirrorAcrossPoint() {
+        let seg = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
+        let mirrored = seg.mirrored(acrossPoint: .zero)
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let start = mirrored.startPoint
+            let end = mirrored.endPoint
+            // Point mirror through the origin negates every coordinate.
+            #expect(abs(start.x + 1) < 1e-10)
+            #expect(abs(end.x + 2) < 1e-10)
+        }
+    }
+
+    // #416: mirrored(acrossAxis:direction:) had zero test coverage anywhere in Tests/.
+    @Test("Mirror across an axis")
+    func mirrorAcrossAxis() {
+        let seg = Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0))!
+        let mirrored = seg.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
+        #expect(mirrored != nil)
+        if let mirrored = mirrored {
+            let start = mirrored.startPoint
+            let end = mirrored.endPoint
+            // Mirroring across the X axis negates y (and z) but leaves x unchanged.
+            #expect(abs(start.x - 1) < 1e-10)
+            #expect(abs(start.y + 1) < 1e-10)
+            #expect(abs(end.x - 2) < 1e-10)
+            #expect(abs(end.y + 1) < 1e-10)
+        }
+    }
+
     @Test("Length of segment")
     func segmentLength() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0))!
@@ -602,6 +634,116 @@ struct Curve3DOperationsTests {
         #expect(halfLen != nil)
         if let h = halfLen {
             #expect(abs(h - 5.0) < 0.01)
+        }
+    }
+}
+
+// #416: no existing test asserted that Curve3D's immutable transform family
+// (translated/rotated/scaled/mirrored) and its mutating counterpart
+// (translate/rotate/scale/mirrorPoint/mirrorAxis/mirrorPlane) produce identical
+// geometry for identical input, despite sharing the same underlying gp_Trsf
+// construction. For each pair: take one immutable copy BEFORE mutating the
+// original in place, apply the same transform to both, then compare.
+@Suite("Curve3D Transform Family Parity")
+struct Curve3DTransformFamilyParityTests {
+
+    private func points(on curve: Curve3D, count: Int = 5) -> [SIMD3<Double>] {
+        let d = curve.domain
+        return (0..<count).map { i in
+            let t = d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / Double(count - 1)
+            return curve.point(at: t)
+        }
+    }
+
+    private func assertMatch(_ a: Curve3D, _ b: Curve3D, tolerance: Double = 1e-9) {
+        let pa = points(on: a)
+        let pb = points(on: b)
+        #expect(pa.count == pb.count)
+        for (p, q) in zip(pa, pb) {
+            #expect(abs(p.x - q.x) < tolerance)
+            #expect(abs(p.y - q.y) < tolerance)
+            #expect(abs(p.z - q.z) < tolerance)
+        }
+    }
+
+    @Test("translate vs translated")
+    func translateParity() {
+        let base = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+        let copy = base.translated(by: SIMD3(3, -2, 1.5))
+        let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("rotate vs rotated")
+    func rotateParity() {
+        let base = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0))!
+        let axisOrigin = SIMD3<Double>(0, 0, 0)
+        let axisDirection = SIMD3<Double>(0, 0, 1)
+        let angle = Double.pi / 3
+        let copy = base.rotated(around: axisOrigin, direction: axisDirection, angle: angle)
+        let ok = base.rotate(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("scale vs scaled")
+    func scaleParity() {
+        let base = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
+        let center = SIMD3<Double>(0, 0, 0)
+        let copy = base.scaled(from: center, factor: 2.5)
+        let ok = base.scale(center: center, factor: 2.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPoint vs mirrored(acrossPoint:)")
+    func mirrorPointParity() {
+        let base = Curve3D.segment(from: SIMD3(1, 2, 3), to: SIMD3(4, 5, 6))!
+        let point = SIMD3<Double>(1, 1, 1)
+        let copy = base.mirrored(acrossPoint: point)
+        let ok = base.mirrorPoint(point)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorAxis vs mirrored(acrossAxis:direction:)")
+    func mirrorAxisParity() {
+        let base = Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0))!
+        let origin = SIMD3<Double>(0, 0, 0)
+        let direction = SIMD3<Double>(1, 0, 0)
+        let copy = base.mirrored(acrossAxis: origin, direction: direction)
+        let ok = base.mirrorAxis(origin: origin, direction: direction)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPlane vs mirrored(acrossPlane:normal:)")
+    func mirrorPlaneParity() {
+        let base = Curve3D.segment(from: SIMD3(1, 0, 5), to: SIMD3(2, 0, 5))!
+        let origin = SIMD3<Double>(0, 0, 0)
+        let normal = SIMD3<Double>(0, 0, 1)
+        let copy = base.mirrored(acrossPlane: origin, normal: normal)
+        let ok = base.mirrorPlane(origin: origin, normal: normal)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
         }
     }
 }
@@ -1182,7 +1324,7 @@ struct BSplineKnotSplittingTests {
             #expect(bspline != nil)
             if let bspline {
                 // C0 breaks — should at least have first and last
-                let c0Breaks = bspline.continuityBreaks(minContinuity: Curve3D.ContinuityOrder.c0)
+                let c0Breaks = bspline.continuityBreaks(minContinuity: ParametricContinuity.c0)
                 #expect(c0Breaks != nil)
                 if let c0Breaks {
                     #expect(c0Breaks.count >= 2) // At minimum first/last knot
@@ -3990,5 +4132,298 @@ struct CuttingPlaneLineTests {
         let counts = writer.entityCounts
         #expect(counts.lines >= 9)   // 3 chain + 6 arrow
         #expect(counts.texts >= 2)
+    }
+}
+
+// MARK: - #399: direct vs gce_Make* conic factory families
+
+/// The four `Curve3D` conic factories exist twice: a direct family that builds `Geom_*` objects
+/// straight from a `gp_Ax2`, and a `*FromCenterNormal` family that routes through OCCT's
+/// `gce_Make*` algorithms. The two are geometrically identical (`gce_Make*` builds the same
+/// `gp_Ax2(center, normal)` frame), but the `gce_Make*` algorithms only reject strictly-negative
+/// dimensions, so the gce family used to return a degenerate zero-radius/zero-focal curve where
+/// the direct family returned `nil`. Both families now share one set of preconditions.
+@Suite("Curve3D conic factory families agree (#399)")
+struct Curve3DConicFactoryParityTests {
+
+    private static let center = SIMD3<Double>(1, 2, 3)
+    private static let normal = SIMD3<Double>(0, 0, 1)
+
+    @Test("Circle: both families reject zero and negative radius")
+    func circleDegenerateRadiusParity() {
+        for radius in [0.0, -1.0] {
+            #expect(Curve3D.circle(center: Self.center, normal: Self.normal, radius: radius) == nil)
+            #expect(Curve3D.circleFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                   radius: radius) == nil)
+        }
+    }
+
+    @Test("Ellipse: both families reject zero radii and inverted radii")
+    func ellipseDegenerateRadiiParity() {
+        let rejected: [(Double, Double)] = [(10, 0), (0, 0), (5, 10), (10, -1)]
+        for (major, minor) in rejected {
+            #expect(Curve3D.ellipse(center: Self.center, normal: Self.normal,
+                                    majorRadius: major, minorRadius: minor) == nil)
+            #expect(Curve3D.ellipseFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                    majorRadius: major, minorRadius: minor) == nil)
+        }
+    }
+
+    @Test("Hyperbola: both families reject a zero or negative radius")
+    func hyperbolaDegenerateRadiiParity() {
+        let rejected: [(Double, Double)] = [(0, 3), (8, 0), (0, 0), (-8, 3)]
+        for (major, minor) in rejected {
+            #expect(Curve3D.hyperbola(center: Self.center, normal: Self.normal,
+                                      majorRadius: major, minorRadius: minor) == nil)
+            #expect(Curve3D.hyperbolaFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                      majorRadius: major,
+                                                      minorRadius: minor) == nil)
+        }
+    }
+
+    @Test("Parabola: both families reject zero and negative focal length")
+    func parabolaDegenerateFocalParity() {
+        for focal in [0.0, -1.0] {
+            #expect(Curve3D.parabola(center: Self.center, normal: Self.normal, focal: focal) == nil)
+            #expect(Curve3D.parabolaFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                     focal: focal) == nil)
+        }
+    }
+
+    @Test("Valid inputs still build the identical curve in both families")
+    func validInputsProduceMatchingGeometry() {
+        // Circle
+        let c1 = Curve3D.circle(center: Self.center, normal: Self.normal, radius: 7)
+        let c2 = Curve3D.circleFromCenterNormal(center: Self.center, normal: Self.normal, radius: 7)
+        #expect(c1 != nil)
+        #expect(c2 != nil)
+        if let a = c1, let b = c2 {
+            for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
+                let pa = a.point(at: t), pb = b.point(at: t)
+                #expect(simd_distance(pa, pb) < 1e-9)
+            }
+        }
+
+        // Ellipse
+        let e1 = Curve3D.ellipse(center: Self.center, normal: Self.normal,
+                                 majorRadius: 10, minorRadius: 5)
+        let e2 = Curve3D.ellipseFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                 majorRadius: 10, minorRadius: 5)
+        #expect(e1 != nil)
+        #expect(e2 != nil)
+        if let a = e1, let b = e2 {
+            for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
+                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+            }
+        }
+
+        // Hyperbola
+        let h1 = Curve3D.hyperbola(center: Self.center, normal: Self.normal,
+                                   majorRadius: 8, minorRadius: 3)
+        let h2 = Curve3D.hyperbolaFromCenterNormal(center: Self.center, normal: Self.normal,
+                                                   majorRadius: 8, minorRadius: 3)
+        #expect(h1 != nil)
+        #expect(h2 != nil)
+        if let a = h1, let b = h2 {
+            for t in stride(from: -1.0, through: 1.0, by: 0.25) {
+                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+            }
+        }
+
+        // Parabola
+        let p1 = Curve3D.parabola(center: Self.center, normal: Self.normal, focal: 4)
+        let p2 = Curve3D.parabolaFromCenterNormal(center: Self.center, normal: Self.normal, focal: 4)
+        #expect(p1 != nil)
+        #expect(p2 != nil)
+        if let a = p1, let b = p2 {
+            for t in stride(from: -2.0, through: 2.0, by: 0.5) {
+                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+            }
+        }
+    }
+}
+
+/// `interpolate(points:startTangent:endTangent:)` used to be shadowed by a second, later-added
+/// overload of the same name that lacked a `tolerance` parameter entirely: Swift's overload
+/// resolution always prefers the exact-arity match, so the ordinary 3-argument call could never
+/// reach `interpolate(points:startTangent:endTangent:tolerance:)`'s `tolerance` knob. The
+/// duplicate overload (and its separate bridge implementation) is gone; there is now exactly one
+/// `interpolate(points:startTangent:endTangent:...)`, so the bare 3-argument call and an explicit
+/// `tolerance:` argument reach the same code path.
+@Suite("Curve3D.interpolate tangent-tolerance reachability (#400)")
+struct Curve3DInterpolateTangentToleranceParityTests {
+
+    private static let points: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(5, 5, 5), SIMD3(10, 0, 0)]
+    private static let startTangent = SIMD3<Double>(1, 1, 1)
+    private static let endTangent = SIMD3<Double>(1, -1, -1)
+
+    @Test("Bare 3-arg call matches an explicit default-tolerance call exactly")
+    func bareCallMatchesExplicitDefaultTolerance() {
+        let bare = Curve3D.interpolate(points: Self.points,
+                                       startTangent: Self.startTangent,
+                                       endTangent: Self.endTangent)
+        let explicitDefault = Curve3D.interpolate(points: Self.points,
+                                                   startTangent: Self.startTangent,
+                                                   endTangent: Self.endTangent,
+                                                   tolerance: 1e-6)
+        #expect(bare != nil)
+        #expect(explicitDefault != nil)
+        if let a = bare, let b = explicitDefault {
+            #expect(a.domain.lowerBound == b.domain.lowerBound)
+            #expect(a.domain.upperBound == b.domain.upperBound)
+            for t in stride(from: a.domain.lowerBound, through: a.domain.upperBound,
+                            by: (a.domain.upperBound - a.domain.lowerBound) / 8) {
+                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-12)
+            }
+        }
+    }
+
+    @Test("tolerance: is reachable and actually governs the minimum inter-point distance")
+    func toleranceParameterIsReachableAndEffective() {
+        // Two points 5e-7 apart: farther than 1e-9, but not farther than the 1e-6 default.
+        let closePoints: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(0, 0, 5e-7), SIMD3(10, 0, 0)]
+        let tan = SIMD3<Double>(1, 0, 0)
+
+        // Default tolerance (bare call): the two near-coincident points are too close, so
+        // GeomAPI_Interpolate's construction rejects them.
+        let bareDefault = Curve3D.interpolate(points: closePoints, startTangent: tan, endTangent: tan)
+        #expect(bareDefault == nil)
+
+        // A tighter explicit tolerance accepts the exact same points.
+        let tighter = Curve3D.interpolate(points: closePoints, startTangent: tan, endTangent: tan,
+                                          tolerance: 1e-9)
+        #expect(tighter != nil)
+    }
+}
+
+@Suite("Curve3D arc-length failure vs. zero-length distinguishability (#408)")
+struct Curve3DArcLengthFailureParityTests {
+
+    @Test("A genuine zero-width interval reports exactly 0.0, not a failure sentinel")
+    func genuineZeroLengthIsZero() {
+        let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
+        if let line {
+            let d = line.domain
+            let mid = (d.lowerBound + d.upperBound) / 2
+            #expect(line.arcLength(from: mid, to: mid) == 0.0)
+            #expect(line.arcLengthBetween(mid, mid) == 0.0)
+            #expect(line.totalArcLength >= 0.0)
+            if let l = line.length(from: mid, to: mid) {
+                #expect(l == 0.0)
+            }
+        }
+    }
+
+    @Test("A genuinely failing computation is distinguishable from a real zero-length result")
+    func genuineFailureIsDistinguishableFromZero() {
+        let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
+        if let line {
+            let d = line.domain
+
+            // `length(from:to:)` is the canonical, failure-distinguishing entry point: a NaN
+            // bound makes the underlying OCCT abscissa computation produce NaN, which fails the
+            // `l >= 0` guard and reports nil -- a genuine computation failure, not a valid
+            // (let alone zero) length.
+            let canonical = line.length(from: d.lowerBound, to: .nan)
+            #expect(canonical == nil)
+
+            // The non-optional convenience accessors must collapse that same failure to an
+            // unambiguous sentinel (-1.0) rather than to 0.0, which would be indistinguishable
+            // from the genuine zero-length interval covered by genuineZeroLengthIsZero() above.
+            let arcLen = line.arcLength(from: d.lowerBound, to: .nan)
+            let arcLenBetween = line.arcLengthBetween(d.lowerBound, .nan)
+            #expect(arcLen == -1.0)
+            #expect(arcLenBetween == -1.0)
+            #expect(arcLen != 0.0)
+            #expect(arcLenBetween != 0.0)
+        }
+    }
+
+    @Test("totalArcLength and length agree on a valid curve (single source of truth)")
+    func totalArcLengthMatchesLength() {
+        let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
+        if let line, let expected = line.length {
+            #expect(line.totalArcLength == expected)
+        }
+    }
+
+    @Test("arcLength(from:to:) and length(from:to:) agree on a valid curve")
+    func arcLengthMatchesLengthBetween() {
+        let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))
+        if let line {
+            let d = line.domain
+            let quarter = d.lowerBound + (d.upperBound - d.lowerBound) / 4
+            if let expected = line.length(from: d.lowerBound, to: quarter) {
+                #expect(line.arcLength(from: d.lowerBound, to: quarter) == expected)
+                #expect(line.arcLengthBetween(d.lowerBound, quarter) == expected)
+            }
+        }
+    }
+}
+
+// MARK: - #415: arc(through:_:_:) delegates to arcOfCircle(start:interior:end:)
+
+/// `Curve3D.arc(through:_:_:)` was documented as an alias for `arcOfCircle(start:interior:end:)`
+/// but was actually a second, independently-maintained bridge entry point
+/// (`OCCTCurve3DCreateArc3Points`) wrapping the same `GC_MakeArcOfCircle` constructor with a
+/// structurally identical body. Nothing enforced the "alias" contract and `arc(through:_:_:)` had
+/// zero test coverage. It now delegates directly to `arcOfCircle(start:interior:end:)`; the
+/// redundant bridge function was removed.
+@Suite("Curve3D.arc(through:_:_:) is a true alias of arcOfCircle (#415)")
+struct Curve3DArcAliasParityTests {
+
+    private static let start = SIMD3<Double>(5, 0, 0)
+    private static let interior = SIMD3<Double>(0, 5, 0)
+    private static let end = SIMD3<Double>(-5, 0, 0)
+
+    @Test("arc(through:_:_:) produces a valid arc")
+    func arcThroughThreePoints() {
+        let arc = Curve3D.arc(through: Self.start, Self.interior, Self.end)
+        #expect(arc != nil)
+        if let arc {
+            #expect(!arc.isClosed)
+            let s = arc.startPoint
+            #expect(abs(s.x - Self.start.x) < 0.01)
+            #expect(abs(s.y - Self.start.y) < 0.01)
+            #expect(abs(s.z - Self.start.z) < 0.01)
+        }
+    }
+
+    @Test("arc(through:_:_:) and arcOfCircle(start:interior:end:) produce identical geometry")
+    func parityWithArcOfCircle() {
+        let viaArc = Curve3D.arc(through: Self.start, Self.interior, Self.end)
+        let viaArcOfCircle = Curve3D.arcOfCircle(start: Self.start, interior: Self.interior, end: Self.end)
+        #expect(viaArc != nil)
+        #expect(viaArcOfCircle != nil)
+        guard let a = viaArc, let b = viaArcOfCircle else { return }
+        #expect(a.isClosed == b.isClosed)
+        #expect(a.isPeriodic == b.isPeriodic)
+        #expect(abs(a.domain.lowerBound - b.domain.lowerBound) < 1e-12)
+        #expect(abs(a.domain.upperBound - b.domain.upperBound) < 1e-12)
+        for t in stride(from: 0.0, through: 1.0, by: 0.1) {
+            let ua = a.domain.lowerBound + t * (a.domain.upperBound - a.domain.lowerBound)
+            let ub = b.domain.lowerBound + t * (b.domain.upperBound - b.domain.lowerBound)
+            let pa = a.point(at: ua), pb = b.point(at: ub)
+            #expect(abs(pa.x - pb.x) < 1e-9)
+            #expect(abs(pa.y - pb.y) < 1e-9)
+            #expect(abs(pa.z - pb.z) < 1e-9)
+        }
+    }
+
+    @Test("Both entry points reject collinear points")
+    func collinearRejectedByBoth() {
+        let a = Curve3D.arc(through: SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0))
+        let b = Curve3D.arcOfCircle(start: SIMD3(0, 0, 0), interior: SIMD3(1, 0, 0), end: SIMD3(2, 0, 0))
+        #expect(a == nil)
+        #expect(b == nil)
+    }
+
+    @Test("Both entry points reject coincident points")
+    func coincidentRejectedByBoth() {
+        let p = SIMD3<Double>(3, 4, 5)
+        let a = Curve3D.arc(through: p, p, p)
+        let b = Curve3D.arcOfCircle(start: p, interior: p, end: p)
+        #expect(a == nil)
+        #expect(b == nil)
     }
 }

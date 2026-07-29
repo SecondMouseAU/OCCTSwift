@@ -1200,7 +1200,7 @@ extension Wire {
         guard OCCTWireExplorerGetEdge(handle, Int32(index), &buffer, Int32(limit), &pointCount)
         else { return nil }
         let n = Int(pointCount)
-        return (0..<n).map { i in SIMD3(buffer[i * 3], buffer[i * 3 + 1], buffer[i * 3 + 2]) }
+        return unpackSIMD3(buffer, count: n)
     }
 }
 

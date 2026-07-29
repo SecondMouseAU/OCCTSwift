@@ -111,6 +111,20 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a full circle.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// `circleFromCenterRadius(center:radius:)` builds the identical circle through OCCT's
+    /// `gce_MakeCirc2d` algorithm and enforces the same radius contract.
+    ///
+    /// ```swift
+    /// let c = Curve2D.circle(center: .zero, radius: 5)
+    /// #expect(c?.isPeriodic == true)
+    /// #expect(Curve2D.circle(center: .zero, radius: 0) == nil)
+    /// ```
     public static func circle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
         guard let h = OCCTCurve2DCreateCircle(center.x, center.y, radius) else { return nil }
         return Curve2D(handle: h)
@@ -260,6 +274,23 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Interpolate a smooth B-spline curve through the given points.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2.
+    ///   - closed: Pass `true` for a periodic loop that closes back to `points[0]` — do not repeat
+    ///     the first point at the end. `interpolatePeriodic(points:tolerance:)` is a spelling of
+    ///     this case and delegates here.
+    ///   - tolerance: Interpolation tolerance.
+    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let open = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 3), SIMD2(10, 0)])
+    /// #expect(open?.isPeriodic == false)
+    ///
+    /// let loop = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8)],
+    ///                                closed: true, tolerance: 1e-4)
+    /// #expect(loop?.isPeriodic == true)
+    /// ```
     public static func interpolate(through points: [SIMD2<Double>], closed: Bool = false,
                                    tolerance: Double = 1e-6) -> Curve2D? {
         let flat = points.flatMap { [$0.x, $0.y] }
@@ -270,6 +301,9 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Interpolate through points with specified start and end tangents.
+    ///
+    /// `interpolate(points:startTangent:endTangent:tolerance:)` is a spelling of this with the
+    /// `points:` argument label, and delegates here.
     public static func interpolate(through points: [SIMD2<Double>],
                                    startTangent: SIMD2<Double>,
                                    endTangent: SIMD2<Double>,
@@ -416,7 +450,10 @@ public final class Curve2D: @unchecked Sendable {
         return l >= 0 ? l : nil
     }
 
-    /// Arc length between two parameter values.
+    /// Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be
+    /// greater than `u2` (order doesn't affect the result). Returns `nil` on failure (e.g. a
+    /// released curve), never a sentinel value that could be mistaken for a real zero-length
+    /// segment.
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
@@ -532,12 +569,34 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Conversion Extras
 
-    /// Re-approximate this curve as a B-spline with controlled degree and segments.
+    /// Re-approximate this curve's whole parameter domain as a B-spline, with a single
+    /// scalar tolerance and explicit continuity control.
+    ///
+    /// Wraps `Geom2dConvert_ApproxCurve`, which fits the curve's entire native range in one
+    /// pass. This is a **different OCCT algorithm** from
+    /// ``approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)``, not a
+    /// whole-domain shorthand for it — the two aren't interchangeable by adding or dropping a
+    /// range, and their tolerance defaults (`1e-3` here vs. `1e-6` there) are not comparable:
+    /// this one bounds a single whole-curve error, the other bounds independent per-axis error
+    /// on a restricted range.
+    ///
     /// - Parameters:
-    ///   - tolerance: Maximum approximation error
+    ///   - tolerance: Maximum approximation error, applied over the whole curve
     ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
+    ///
+    /// Defaults (`tolerance: 1e-3`, `maxDegree: 8`) are shared with `Curve3D.approximated` and
+    /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
+    /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
+    /// independent algorithms that would justify independently-tuned numeric defaults.
+    ///
+    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let approx = circle.approximated(tolerance: 1e-3, continuity: 2)
+    /// ```
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve2D? {
         guard let h = OCCTCurve2DApproximate(handle, tolerance, Int32(continuity),
@@ -612,6 +671,21 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Project a point onto this curve, returning the nearest projection.
+    ///
+    /// - Parameter p: Point to project.
+    /// - Returns: The nearest projection, or `nil` if the point has no projection onto this curve
+    ///   — one beyond the ends of a bounded curve, or the centre of a circle.
+    ///
+    /// `project(_:)` (the `Point2D` overload) and `Point2D.distance(to:)` compute the same nearest
+    /// solution through the same shared bridge path, and agree on both the value and on when
+    /// there is no projection.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let hit = segment.project(point: SIMD2(5, 3))
+    /// #expect(hit?.distance == 3)
+    /// #expect(segment.project(point: SIMD2(100, 0)) == nil)   // past the end
+    /// ```
     public func project(point p: SIMD2<Double>) -> Curve2DProjection? {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
         guard r.distance >= 0 else { return nil }
@@ -1089,17 +1163,35 @@ extension Curve2D {
         OCCTCurve2DSimplifyBSpline(handle, tolerance)
     }
 
-    /// Approximate this 2D curve as a BSpline.
+    /// Approximate an explicit parameter sub-range of this 2D curve as a BSpline, with
+    /// independent U/V tolerances.
+    ///
+    /// Wraps `Approx_Curve2d`, which fits only `[first, last]` and tracks separate U/V error
+    /// bounds. This is a **different OCCT algorithm** from
+    /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)``, not that method with an
+    /// added range — a caller cannot migrate incrementally between the two by adding
+    /// `first`/`last`, since switching overloads changes the algorithm, the tolerance
+    /// semantics, and the default tolerance magnitude (`1e-6` here vs. `1e-3` there) all at
+    /// once. Continuity is fixed at C2 and is not configurable through this overload; use
+    /// ``approximated(tolerance:continuity:maxSegments:maxDegree:)`` if you need a different
+    /// continuity order.
     ///
     /// - Parameters:
-    ///   - first: First parameter
-    ///   - last: Last parameter
+    ///   - first: First parameter of the sub-range to approximate
+    ///   - last: Last parameter of the sub-range to approximate
     ///   - toleranceU: Tolerance in U direction (default 1e-6)
     ///   - toleranceV: Tolerance in V direction (default 1e-6)
     ///   - maxDegree: Maximum BSpline degree (default 8)
     ///   - maxSegments: Maximum number of segments (default 100)
-    /// - Returns: Approximated BSpline curve, or nil on failure
-    public func approximated(
+    /// - Returns: Approximated BSpline curve, or `nil` on failure
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 10)!
+    /// let d = circle.domain
+    /// let approx = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+    ///                                          toleranceU: 1e-6, toleranceV: 1e-6)
+    /// ```
+    public func approximatedInRange(
         first: Double, last: Double,
         toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
         maxDegree: Int = 8, maxSegments: Int = 100
@@ -1108,6 +1200,22 @@ extension Curve2D {
             handle, first, last, toleranceU, toleranceV,
             Int32(maxDegree), Int32(maxSegments)) else { return nil }
         return Curve2D(handle: h)
+    }
+
+    /// Deprecated spelling of `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.
+    ///
+    /// Per `docs/SEMVER.md`, renaming a public method is a MAJOR-triggering breaking change; this
+    /// alias keeps existing call sites source-compatible (with a compiler warning steering them
+    /// to the clearer name) rather than forcing that bump immediately. Byte-for-byte identical
+    /// behavior — same bridge call, same defaults, forwards directly.
+    @available(*, deprecated, renamed: "approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)")
+    public func approximated(
+        first: Double, last: Double,
+        toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
+        maxDegree: Int = 8, maxSegments: Int = 100
+    ) -> Curve2D? {
+        approximatedInRange(first: first, last: last, toleranceU: toleranceU, toleranceV: toleranceV,
+                             maxDegree: maxDegree, maxSegments: maxSegments)
     }
 }
 
@@ -1605,10 +1713,26 @@ public enum Extrema2d {
 // MARK: - Geom2dLProp: Curvature Inflection/Extrema
 
 /// Type of curvature feature point.
+///
+/// A same-cases, different-ordering vocabulary for `Curve2DSpecialPointType`, kept for
+/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`. Both are derived
+/// from a single `GeomLProp_CurAndInf2d` computation (`curvatureExtrema()`/`inflectionPoints()`);
+/// see `CurInfType.init(_:)` for the (test-pinned) mapping between the two.
 public enum CurInfType: Int32, Sendable {
     case curvatureMinimum = 0
     case curvatureMaximum = 1
     case inflection = 2
+}
+
+extension CurInfType {
+    /// Maps from the `Curve2DSpecialPointType` vocabulary used by the plain family.
+    public init(_ type: Curve2DSpecialPointType) {
+        switch type {
+        case .inflection: self = .inflection
+        case .minCurvature: self = .curvatureMinimum
+        case .maxCurvature: self = .curvatureMaximum
+        }
+    }
 }
 
 /// A curvature feature point on a 2D curve.
@@ -1622,28 +1746,18 @@ public struct CurInfPoint: Sendable {
 extension Curve2D {
     /// Find curvature extrema (min/max) on this 2D curve with type classification.
     ///
-    /// Uses Geom2dLProp_NumericCurInf2d to find parameters where
-    /// curvature is at a local minimum or maximum. Returns detailed
-    /// `CurInfPoint` objects distinguishing min vs max.
+    /// Delegates to `curvatureExtrema()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func curvatureExtremaDetailed() -> [CurInfPoint] {
-        var buffer = [OCCTCurInfPoint](repeating: OCCTCurInfPoint(), count: 64)
-        let n = Int(OCCTGeom2dLPropCurExt(handle, &buffer, 64))
-        return (0..<n).map {
-            CurInfPoint(parameter: buffer[$0].parameter,
-                       type: CurInfType(rawValue: buffer[$0].type) ?? .inflection)
-        }
+        curvatureExtrema().map { CurInfPoint(parameter: $0.parameter, type: CurInfType($0.type)) }
     }
 
     /// Find inflection points on this 2D curve with type information.
     ///
-    /// Similar to `inflectionPoints()` but returns detailed `CurInfPoint`
-    /// objects including the type classification.
+    /// Delegates to `inflectionPoints()` — the same `GeomLProp_CurAndInf2d` computation —
+    /// translating its results into the `CurInfPoint`/`CurInfType` vocabulary.
     public func inflectionPointsDetailed() -> [CurInfPoint] {
-        var buffer = [OCCTCurInfPoint](repeating: OCCTCurInfPoint(), count: 64)
-        let n = Int(OCCTGeom2dLPropCurInf(handle, &buffer, 64))
-        return (0..<n).map {
-            CurInfPoint(parameter: buffer[$0].parameter, type: .inflection)
-        }
+        inflectionPoints().map { CurInfPoint(parameter: $0, type: .inflection) }
     }
 }
 
@@ -1741,7 +1855,22 @@ extension Curve2D {
     }
 
     /// Project a `Point2D` onto this curve.
-    /// Returns `(parameter, distance)` or `nil` on failure.
+    ///
+    /// - Parameter point: Point to project.
+    /// - Returns: `(parameter, distance)` of the nearest solution, or `nil` if the point has no
+    ///   projection onto this curve.
+    ///
+    /// The same nearest-solution computation as `project(point:)`, returned without the projected
+    /// point itself. Note that a parameter of `0` is a perfectly ordinary success — projecting a
+    /// segment's own start point onto it returns exactly that — so `nil` is the only failure
+    /// signal.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// let start = Point2D(x: 0, y: 0)!
+    /// #expect(segment.project(start)?.parameter == 0)          // success, at parameter 0
+    /// #expect(segment.project(Point2D(x: 100, y: 0)!) == nil)  // no projection
+    /// ```
     public func project(_ point: Point2D) -> (parameter: Double, distance: Double)? {
         var dist: Double = 0
         let param = OCCTCurve2DProjectPoint2D(handle, point.handle, &dist)
@@ -1858,7 +1987,22 @@ extension Curve2D {
                                     point2: SIMD2(r.x2, r.y2), param2: r.param2)
     }
 
-    /// Create a 2D circle from center + radius (gce_MakeCirc2d)
+    /// Create a 2D circle from center + radius (`gce_MakeCirc2d`).
+    ///
+    /// Geometrically identical to `circle(center:radius:)` — both produce a `Geom2d_Circle` on
+    /// the same X-axis-oriented frame — and, since #411, enforces the same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Circle centre.
+    ///   - radius: Circle radius. Must be `> 0`; zero and negative radii return `nil`.
+    /// - Returns: The circle, or `nil` if `radius <= 0`.
+    ///
+    /// ```swift
+    /// let c = Curve2D.circleFromCenterRadius(center: .zero, radius: 5)
+    /// #expect(c != nil)
+    /// // Same rejection as the direct factory: no degenerate zero-radius circle.
+    /// #expect(Curve2D.circleFromCenterRadius(center: .zero, radius: 0) == nil)
+    /// ```
     public static func circleFromCenterRadius(center: SIMD2<Double>,
                                               radius: Double) -> Curve2D? {
         guard let h = OCCTGceMakeCirc2dFromCenterRadius(center.x, center.y, radius) else { return nil }
@@ -2140,27 +2284,60 @@ extension Curve2D {
     // MARK: - v0.115.0: Interpolation expansion, trim, length
 
     /// Interpolate a 2D BSpline through points with endpoint tangents.
+    ///
+    /// A spelling of `interpolate(through:startTangent:endTangent:tolerance:)` with the `points:`
+    /// argument label, and it delegates to it — the two cannot produce different curves for the
+    /// same input.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2.
+    ///   - startTangent: Tangent direction at the first point.
+    ///   - endTangent: Tangent direction at the last point.
+    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
+    ///     to hardcode with no way to change it (#410).
+    /// - Returns: The interpolated curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let curve = Curve2D.interpolate(points: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)],
+    ///                                  startTangent: SIMD2(1, 1), endTangent: SIMD2(1, -1),
+    ///                                  tolerance: 1e-4)
+    /// #expect(curve != nil)
+    /// ```
     public static func interpolate(points: [SIMD2<Double>],
                                    startTangent: SIMD2<Double>,
-                                   endTangent: SIMD2<Double>) -> Curve2D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolate2DWithTangents(buf.baseAddress!, Int32(points.count),
-                                          startTangent.x, startTangent.y,
-                                          endTangent.x, endTangent.y)
-        }) else { return nil }
-        return Curve2D(handle: ref)
+                                   endTangent: SIMD2<Double>,
+                                   tolerance: Double = 1e-6) -> Curve2D? {
+        interpolate(through: points, startTangent: startTangent, endTangent: endTangent,
+                    tolerance: tolerance)
     }
 
     /// Interpolate a periodic (closed) 2D BSpline through points.
-    public static func interpolatePeriodic(points: [SIMD2<Double>]) -> Curve2D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolate2DPeriodic(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
-        return Curve2D(handle: ref)
+    ///
+    /// A spelling of `interpolate(through:closed:tolerance:)` with `closed: true`, and it
+    /// delegates to it — the two cannot produce different curves for the same input.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
+    ///     do not repeat the first point at the end.
+    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
+    ///     to hardcode with no way to change it (#412).
+    /// - Returns: The periodic curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let loop = Curve2D.interpolatePeriodic(points: [
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    /// ])
+    /// #expect(loop?.isPeriodic == true)
+    ///
+    /// // Identical to spelling it out on the general factory:
+    /// let same = Curve2D.interpolate(through: [
+    ///     SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    /// ], closed: true)
+    /// #expect(loop?.domain == same?.domain)
+    /// ```
+    public static func interpolatePeriodic(points: [SIMD2<Double>],
+                                           tolerance: Double = 1e-6) -> Curve2D? {
+        interpolate(through: points, closed: true, tolerance: tolerance)
     }
 
     /// Approximate a 2D BSpline through points with degree and continuity control.
@@ -2177,9 +2354,17 @@ extension Curve2D {
         return Curve2D(handle: ref)
     }
 
-    /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
+    /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
+    ///
+    /// Unlike `length(from:to:)`, `u1` must not exceed `u2` — the underlying computation uses a
+    /// range-checked adaptor that fails on a reversed range. Returns `-1.0` on failure (a
+    /// reversed range, a released curve, or any other computation error) — arc length is
+    /// otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use `length(from:to:)`
+    /// directly if you need an optional rather than a sentinel value (and order tolerance).
     public func arcLength(from u1: Double, to u2: Double) -> Double {
-        OCCTCurve2DLength(handle, u1, u2)
+        let l = OCCTCurve2DLength(handle, u1, u2)
+        return l >= 0 ? l : -1.0
     }
 
     /// Split this curve at C1 discontinuities.

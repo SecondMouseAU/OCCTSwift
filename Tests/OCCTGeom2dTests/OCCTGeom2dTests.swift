@@ -1427,7 +1427,7 @@ struct ApproxCurve2DTests {
     func approxCircle() {
         if let circle = Curve2D.circle(center: .zero, radius: 10) {
             let d = circle.domain
-            let result = circle.approximated(
+            let result = circle.approximatedInRange(
                 first: d.lowerBound, last: d.upperBound,
                 toleranceU: 1e-6, toleranceV: 1e-6)
             #expect(result != nil)
@@ -1436,6 +1436,159 @@ struct ApproxCurve2DTests {
                 #expect(rd.upperBound > rd.lowerBound)
             }
         }
+    }
+}
+
+// MARK: - Curve2D approximated overload parity (#407)
+
+/// Confirms `approximated(tolerance:continuity:maxSegments:maxDegree:)` and
+/// `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)` are two
+/// distinct OCCT algorithms with distinct contracts, not two configurations of one operation.
+@Suite("Curve2D Approximated Overload Parity Tests")
+struct Curve2DApproximatedOverloadParityTests {
+
+    @Test("Both overloads succeed on the same curve using only their own implicit defaults")
+    func bothOverloadsSucceedWithDefaults() {
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let wholeDomain = circle.approximated()
+        let ranged = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound)
+
+        #expect(wholeDomain != nil)
+        #expect(ranged != nil)
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated `approximated(first:last:...)` shim on purpose.")
+    @Test("Deprecated approximated(first:last:...) spelling still forwards to approximatedInRange")
+    func deprecatedShimForwardsToApproximatedInRange() {
+        // #407 renamed this overload; the retired spelling survives as a `@available(*,
+        // deprecated, renamed:)` shim per docs/SEMVER.md (a renamed method is a MAJOR-triggering
+        // breaking change, and the shim avoids forcing that immediately). Confirms the shim isn't
+        // just present but behaviorally identical to the method it forwards to.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let viaOldName = circle.approximated(first: d.lowerBound, last: d.upperBound,
+                                              toleranceU: 1e-6, toleranceV: 1e-6)
+        let viaNewName = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+                                                     toleranceU: 1e-6, toleranceV: 1e-6)
+        #expect(viaOldName != nil)
+        #expect(viaNewName != nil)
+        if let viaOldName, let viaNewName {
+            #expect(viaOldName.degree == viaNewName.degree)
+            #expect(viaOldName.poleCount == viaNewName.poleCount)
+        }
+    }
+
+    /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
+    /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
+    /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
+    /// 1e-2...1e-8 band converging to the same near-machine-precision result. Found empirically:
+    /// a two-frequency sine zigzag through 60 points. Below ~1e-5 the fit saturates at ~1e-14
+    /// (the algorithm can just reproduce the input almost exactly); at 1e-3 it measurably can't,
+    /// giving a real, tolerance-sized deviation. That gap is what makes the two real defaults
+    /// (1e-3 vs 1e-6) distinguishable by behavior instead of by reading the source.
+    private static func toleranceSensitiveCurve() -> Curve2D {
+        var pts: [SIMD2<Double>] = []
+        for i in 0..<60 {
+            let x = Double(i) * 0.5
+            let y = sin(Double(i) * 0.6) * 3.0 + sin(Double(i) * 1.3) * 0.6
+            pts.append(SIMD2(x, y))
+        }
+        return Curve2D.interpolate(through: pts)!
+    }
+
+    /// Largest sampled distance between `original` and `approx` over `original`'s domain.
+    private static func maxSampledDeviation(_ original: Curve2D, _ approx: Curve2D,
+                                            samples: Int = 300) -> Double {
+        let d = original.domain
+        var maxDev = 0.0
+        for i in 0...samples {
+            let t = d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / Double(samples)
+            let p1 = original.point(at: t)
+            let p2 = approx.point(at: t)
+            let dx = p1.x - p2.x, dy = p1.y - p2.y
+            maxDev = max(maxDev, (dx * dx + dy * dy).squareRoot())
+        }
+        return maxDev
+    }
+
+    @Test("Whole-domain overload's implicit default tolerance produces a real, non-trivial fit error")
+    func wholeDomainDefaultToleranceProducesMeasurableError() {
+        // Calls with NO explicit `tolerance:` — exercising Curve2D.swift's actual `1e-3` default,
+        // not a copy of the literal. Measured on `toleranceSensitiveCurve()`: the default gives
+        // ~5.5e-4 max deviation, comfortably inside (1e-5, 5e-3). If the real default were
+        // mistakenly tightened toward `1e-6` (matching the other overload), deviation collapses
+        // to ~1.8e-14 and fails the lower bound; if loosened toward `1e-2`, deviation exceeds
+        // 8e-3 and fails the upper bound. Verified both directions by temporarily editing the
+        // real default in Curve2D.swift and confirming this test fails, then restoring it.
+        let curve = Self.toleranceSensitiveCurve()
+        let approx = curve.approximated()
+        #expect(approx != nil)
+        if let approx {
+            let dev = Self.maxSampledDeviation(curve, approx)
+            #expect(dev > 1e-5)
+            #expect(dev < 5e-3)
+        }
+    }
+
+    @Test("Ranged overload's implicit default tolerance produces a near-exact fit")
+    func rangedDefaultToleranceProducesNearExactFit() {
+        // Calls with NO explicit `toleranceU`/`toleranceV` — exercising the actual `1e-6`
+        // defaults. Measured on the same curve: ~1.8e-14 max deviation, i.e. this tolerance is
+        // tight enough that the fit is essentially exact. If the real default were mistakenly
+        // loosened toward `1e-3` (matching the other overload), deviation jumps to ~7e-4 and
+        // fails the bound below. Verified by temporarily editing the real default in
+        // Curve2D.swift and confirming this test fails, then restoring it.
+        let curve = Self.toleranceSensitiveCurve()
+        let d = curve.domain
+        let approx = curve.approximatedInRange(first: d.lowerBound, last: d.upperBound)
+        #expect(approx != nil)
+        if let approx {
+            let dev = Self.maxSampledDeviation(curve, approx)
+            #expect(dev < 1e-9)
+        }
+    }
+
+    @Test("Both overloads independently succeed on the same curve; neither promises to structurally match the other")
+    func bothOverloadsSucceedIndependentlyOnSameCurve() {
+        // Addresses the issue's own gap: no prior test called both overloads on the same input
+        // and compared results. Checked empirically before writing this test (pole/degree counts
+        // across a circle, an off-center circle, an ellipse, and a wiggly interpolated curve, at
+        // both matching and default tolerances): `Geom2dConvert_ApproxCurve` (whole-domain) and
+        // `Approx_Curve2d` (ranged) frequently produce IDENTICAL pole/degree counts — a circle at
+        // `tol=1e-6` gives 27 poles/degree 8 on both, for instance — and only sometimes diverge
+        // (the wiggly curve at `tol=1e-3`: 268 poles/degree 7 vs. 315 poles/degree 8). So
+        // structural agreement or disagreement isn't a reliable, input-independent property of
+        // either API and isn't asserted here. What both overloads *do* promise is independently
+        // succeeding on the same curve; that's what this test checks.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let d = circle.domain
+
+        let wholeDomain = circle.approximated(tolerance: 1e-6, continuity: 2)
+        let ranged = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
+                                                 toleranceU: 1e-6, toleranceV: 1e-6)
+
+        #expect(wholeDomain != nil)
+        #expect(ranged != nil)
+        if let wholeDomain, let ranged {
+            #expect(wholeDomain.degree != nil)
+            #expect(ranged.degree != nil)
+        }
+    }
+
+    @Test("Whole-domain overload's continuity is a live knob; ranged overload has none")
+    func continuityIsConfigurableOnlyOnWholeDomainOverload() {
+        // `approximated(tolerance:continuity:...)` threads `continuity` into
+        // `Geom2dConvert_ApproxCurve`. `approximatedInRange` has no such parameter at all —
+        // the bridge hardcodes GeomAbs_C2. Both continuity settings below must still succeed
+        // on the whole-domain overload, confirming the knob is live, not vestigial.
+        let circle = Curve2D.circle(center: .zero, radius: 10)!
+        let c0 = circle.approximated(tolerance: 1e-3, continuity: 0)
+        let c2 = circle.approximated(tolerance: 1e-3, continuity: 2)
+        #expect(c0 != nil)
+        #expect(c2 != nil)
     }
 }
 
@@ -1719,6 +1872,51 @@ struct ApproxCurve2DTests {
             let inflections = curve.inflectionPointsDetailed()
             // May or may not find inflections depending on the actual curve shape
             #expect(inflections.count >= 0)
+        }
+    }
+
+    // #402: curvatureExtremaDetailed()/inflectionPointsDetailed() ("Detailed" family) and
+    // curvatureExtrema()/inflectionPoints() ("plain" family) both wrap GeomLProp_CurAndInf2d.
+    // CurInfType and Curve2DSpecialPointType number the same 3 cases differently; these pin
+    // the mapping between them and confirm both families agree on the same curve.
+
+    @Test("CurInfType mirrors Curve2DSpecialPointType case-for-case")
+    func curInfTypeMirrorsSpecialPointType() {
+        #expect(CurInfType(.inflection) == .inflection)
+        #expect(CurInfType(.minCurvature) == .curvatureMinimum)
+        #expect(CurInfType(.maxCurvature) == .curvatureMaximum)
+    }
+
+    @Test("curvatureExtremaDetailed() agrees with curvatureExtrema() on the same curve")
+    func curvatureExtremaFamiliesAgree() {
+        let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)
+        if let ellipse {
+            let plain = ellipse.curvatureExtrema()
+            let detailed = ellipse.curvatureExtremaDetailed()
+            #expect(plain.count == detailed.count)
+            #expect(plain.count >= 2)
+            for (p, d) in zip(plain, detailed) {
+                #expect(abs(p.parameter - d.parameter) < 1e-9)
+                #expect(CurInfType(p.type) == d.type)
+            }
+        }
+    }
+
+    @Test("inflectionPointsDetailed() agrees with inflectionPoints() on the same curve")
+    func inflectionPointFamiliesAgree() {
+        let points: [SIMD2<Double>] = [
+            SIMD2(0, 0), SIMD2(2, 5), SIMD2(5, -5), SIMD2(8, 0)
+        ]
+        let curve = Curve2D.interpolate(through: points)
+        if let curve {
+            let plain = curve.inflectionPoints()
+            let detailed = curve.inflectionPointsDetailed()
+            #expect(plain.count == detailed.count)
+            #expect(plain.count >= 1)
+            for (p, d) in zip(plain, detailed) {
+                #expect(abs(p - d.parameter) < 1e-9)
+                #expect(d.type == .inflection)
+            }
         }
     }
 }
@@ -4068,6 +4266,313 @@ struct Section2DTests {
             let hasLabel = v.drawing.annotations.contains { if case .textLabel = $0 { return true } else { return false } }
             #expect(hasHatch)
             #expect(hasLabel)
+        }
+    }
+}
+
+// MARK: - #411: Curve2D's two centre+radius circle factories
+
+/// `Curve2D.circle(center:radius:)` builds a `Geom2d_Circle` directly;
+/// `Curve2D.circleFromCenterRadius(center:radius:)` routes through OCCT's `gce_MakeCirc2d`.
+/// Same purpose, same signature, same resulting circle — but `gce_MakeCirc2d` accepts
+/// `Radius >= 0`, so the gce factory used to return a live degenerate zero-radius curve where
+/// the direct factory returned `nil`. Both now share one radius precondition.
+@Suite("Curve2D circle factories agree (#411)")
+struct Curve2DCircleFactoryParityTests {
+
+    @Test("Both factories reject zero and negative radius")
+    func degenerateRadiusParity() {
+        for radius in [0.0, -1.0, -5.0] {
+            #expect(Curve2D.circle(center: .zero, radius: radius) == nil)
+            #expect(Curve2D.circleFromCenterRadius(center: .zero, radius: radius) == nil)
+        }
+    }
+
+    @Test("Both factories build the identical circle for a valid radius")
+    func validRadiusProducesMatchingGeometry() {
+        let center = SIMD2<Double>(3, -4)
+        let direct = Curve2D.circle(center: center, radius: 5)
+        let gce = Curve2D.circleFromCenterRadius(center: center, radius: 5)
+        #expect(direct != nil)
+        #expect(gce != nil)
+        guard let a = direct, let b = gce else { return }
+
+        #expect(a.isClosed == b.isClosed)
+        #expect(a.isPeriodic == b.isPeriodic)
+        for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 6) {
+            let pa = a.point(at: t), pb = b.point(at: t)
+            #expect(abs(pa.x - pb.x) < 1e-9)
+            #expect(abs(pa.y - pb.y) < 1e-9)
+        }
+    }
+}
+
+// MARK: - #412: interpolatePeriodic is interpolate(closed: true)
+
+/// `Curve2D.interpolatePeriodic(points:)` and `Curve2D.interpolate(through:closed:tolerance:)`
+/// wrap the same `Geom2dAPI_Interpolate` constructor with the same `Perform()`/`IsDone()`/
+/// `Curve()` sequence. As two independent implementations they had already drifted: the periodic
+/// one pinned the tolerance at `1e-6` with no way to reach it, and rejected `count < 3` where the
+/// general one rejects only `count < 2`. It now delegates.
+@Suite("Curve2D periodic interpolation delegates (#412)")
+struct Curve2DInterpolatePeriodicParityTests {
+
+    private static let square: [SIMD2<Double>] = [
+        SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10),
+    ]
+
+    private func expectSameCurve(_ a: Curve2D?, _ b: Curve2D?,
+                                 _ comment: Comment? = nil) {
+        #expect(a != nil, comment)
+        #expect(b != nil, comment)
+        guard let a, let b else { return }
+        #expect(a.isClosed == b.isClosed, comment)
+        #expect(a.isPeriodic == b.isPeriodic, comment)
+        #expect(abs(a.domain.lowerBound - b.domain.lowerBound) < 1e-12, comment)
+        #expect(abs(a.domain.upperBound - b.domain.upperBound) < 1e-12, comment)
+        for t in stride(from: 0.0, through: 1.0, by: 0.1) {
+            let ua = a.domain.lowerBound + t * (a.domain.upperBound - a.domain.lowerBound)
+            let ub = b.domain.lowerBound + t * (b.domain.upperBound - b.domain.lowerBound)
+            let pa = a.point(at: ua), pb = b.point(at: ub)
+            #expect(abs(pa.x - pb.x) < 1e-9, comment)
+            #expect(abs(pa.y - pb.y) < 1e-9, comment)
+        }
+    }
+
+    @Test("Default tolerance: the two entry points produce the same curve")
+    func defaultToleranceMatches() {
+        expectSameCurve(Curve2D.interpolatePeriodic(points: Self.square),
+                        Curve2D.interpolate(through: Self.square, closed: true))
+    }
+
+    @Test("A non-default tolerance is now reachable through interpolatePeriodic")
+    func customToleranceIsReachable() {
+        for tolerance in [1e-3, 1e-4, 1e-8] {
+            expectSameCurve(Curve2D.interpolatePeriodic(points: Self.square, tolerance: tolerance),
+                            Curve2D.interpolate(through: Self.square, closed: true,
+                                                tolerance: tolerance),
+                            "tolerance=\(tolerance)")
+        }
+    }
+
+    /// The point-count floor the two had drifted apart on. OCCT accepts a 2-point periodic
+    /// interpolation — it produces a valid out-and-back loop — and the general entry point always
+    /// let it through; only the periodic wrapper rejected it at the bridge boundary.
+    @Test("A 2-point periodic interpolation is accepted by both entry points")
+    func twoPointFloorMatches() {
+        let two: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(10, 0)]
+        let periodic = Curve2D.interpolatePeriodic(points: two)
+        expectSameCurve(periodic, Curve2D.interpolate(through: two, closed: true))
+        if let c = periodic {
+            #expect(c.isClosed)
+            #expect(c.isPeriodic)
+        }
+    }
+
+    @Test("Both entry points reject a single point")
+    func singlePointRejectedByBoth() {
+        let one: [SIMD2<Double>] = [SIMD2(1, 2)]
+        #expect(Curve2D.interpolatePeriodic(points: one) == nil)
+        #expect(Curve2D.interpolate(through: one, closed: true) == nil)
+    }
+}
+
+// MARK: - #413: the four point-to-curve projection entry points
+
+/// The same `Geom2dAPI_ProjectPointOnCurve` computation is reachable four ways:
+/// `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_ point: Point2D)`
+/// and `Point2D.distance(to:)`. They were four independent constructions with four different
+/// failure conventions bolted on separately — including one (`Point2D.distance(to:)`) that leaked
+/// the bridge's raw `-1` sentinel to callers as though it were a distance. They now share one
+/// bridge path and agree on both the values and on when there is no projection.
+@Suite("Curve2D projection entry points agree (#413)")
+struct Curve2DProjectionParityTests {
+
+    private static let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+
+    @Test("All four entry points agree for an ordinary projection")
+    func successAgreesAcrossAllFour() {
+        let cases: [(Curve2D, SIMD2<Double>)] = [
+            (Self.segment, SIMD2(5, 3)),
+            (Self.segment, SIMD2(0.5, -2)),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(10, 0)),
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(3, 4)),
+        ]
+        for (curve, p) in cases {
+            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+            let comment: Comment = "\(p)"
+
+            let nearest = curve.project(point: p)
+            let asTuple = curve.project(point2D)
+            let distance = point2D.distance(to: curve)
+            let all = curve.allProjections(of: p)
+
+            #expect(nearest != nil, comment)
+            #expect(asTuple != nil, comment)
+            guard let nearest, let asTuple else { continue }
+
+            #expect(nearest.parameter == asTuple.parameter, comment)
+            #expect(nearest.distance == asTuple.distance, comment)
+            #expect(nearest.distance == distance, comment)
+
+            // The nearest solution must be the smallest of the full solution set.
+            #expect(!all.isEmpty, comment)
+            if let smallest = all.map(\.distance).min() {
+                #expect(abs(smallest - nearest.distance) < 1e-9, comment)
+            }
+        }
+    }
+
+    /// A point with no projection at all is an ordinary outcome, not an error: one beyond the
+    /// ends of a bounded curve, or a circle's centre (equidistant everywhere, so no local
+    /// minimum). All four entry points must report it, and none may report it as a distance a
+    /// threshold test would accept.
+    @Test("All four entry points agree when there is no projection")
+    func failureAgreesAcrossAllFour() {
+        let cases: [(Curve2D, SIMD2<Double>)] = [
+            (Self.segment, SIMD2(100, 0)),      // past the end
+            (Self.segment, SIMD2(-50, 3)),      // before the start
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0)),   // circle centre
+        ]
+        for (curve, p) in cases {
+            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+            let comment: Comment = "\(p)"
+
+            #expect(curve.project(point: p) == nil, comment)
+            #expect(curve.project(point2D) == nil, comment)
+            #expect(curve.allProjections(of: p).isEmpty, comment)
+
+            // Not -1: a raw sentinel here reads as "touching" to any `distance < tolerance` test.
+            let distance = point2D.distance(to: curve)
+            #expect(distance == .infinity, comment)
+            #expect(distance > 0, comment)
+        }
+    }
+
+    /// Parameter 0 is a legitimate success value, which is why no entry point may signal failure
+    /// through the parameter alone. Projecting a segment's own start point onto it returns
+    /// exactly 0 at distance 0.
+    @Test("Parameter zero is a success, not a failure signal")
+    func parameterZeroIsASuccess() {
+        guard let start = Point2D(x: 0, y: 0) else { return }
+        let asTuple = Self.segment.project(start)
+        #expect(asTuple != nil)
+        if let asTuple {
+            #expect(asTuple.parameter == 0)
+            #expect(asTuple.distance == 0)
+        }
+        let nearest = Self.segment.project(point: SIMD2(0, 0))
+        #expect(nearest?.parameter == 0)
+        #expect(nearest?.distance == 0)
+        #expect(start.distance(to: Self.segment) == 0)
+    }
+}
+
+// MARK: - #410: interpolate(points:startTangent:endTangent:) gains the tolerance its sibling had
+
+/// `Curve2D.interpolate(points:startTangent:endTangent:)` and
+/// `Curve2D.interpolate(through:startTangent:endTangent:tolerance:)` wrap the same
+/// `Geom2dAPI_Interpolate` constructor with the same `Load()`/`Perform()`/`IsDone()`/`Curve()`
+/// sequence. As two independent implementations, the `points:` spelling had drifted: it hardcoded
+/// tolerance at `1e-6` with no parameter to change it. It now delegates.
+@Suite("Curve2D tangent interpolation entry points agree (#410)")
+struct Curve2DInterpolateTangentsParityTests {
+
+    private static let points: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
+    private static let startTangent = SIMD2<Double>(1, 1)
+    private static let endTangent = SIMD2<Double>(1, -1)
+
+    private func expectSameCurve(_ a: Curve2D?, _ b: Curve2D?,
+                                 _ comment: Comment? = nil) {
+        #expect(a != nil, comment)
+        #expect(b != nil, comment)
+        guard let a, let b else { return }
+        #expect(a.isClosed == b.isClosed, comment)
+        #expect(a.isPeriodic == b.isPeriodic, comment)
+        #expect(abs(a.domain.lowerBound - b.domain.lowerBound) < 1e-12, comment)
+        #expect(abs(a.domain.upperBound - b.domain.upperBound) < 1e-12, comment)
+        for t in stride(from: 0.0, through: 1.0, by: 0.1) {
+            let ua = a.domain.lowerBound + t * (a.domain.upperBound - a.domain.lowerBound)
+            let ub = b.domain.lowerBound + t * (b.domain.upperBound - b.domain.lowerBound)
+            let pa = a.point(at: ua), pb = b.point(at: ub)
+            #expect(abs(pa.x - pb.x) < 1e-9, comment)
+            #expect(abs(pa.y - pb.y) < 1e-9, comment)
+        }
+    }
+
+    @Test("Default tolerance: the two entry points produce the same curve")
+    func defaultToleranceMatches() {
+        expectSameCurve(
+            Curve2D.interpolate(points: Self.points, startTangent: Self.startTangent,
+                                endTangent: Self.endTangent),
+            Curve2D.interpolate(through: Self.points, startTangent: Self.startTangent,
+                                endTangent: Self.endTangent))
+    }
+
+    /// The capability gap #410 found: previously `interpolate(points:...)` had no way to reach
+    /// any tolerance other than the hardcoded `1e-6`.
+    @Test("A non-default tolerance is now reachable through interpolate(points:...)")
+    func customToleranceIsReachable() {
+        for tolerance in [1e-3, 1e-4, 1e-8] {
+            expectSameCurve(
+                Curve2D.interpolate(points: Self.points, startTangent: Self.startTangent,
+                                    endTangent: Self.endTangent, tolerance: tolerance),
+                Curve2D.interpolate(through: Self.points, startTangent: Self.startTangent,
+                                    endTangent: Self.endTangent, tolerance: tolerance),
+                "tolerance=\(tolerance)")
+        }
+    }
+
+    @Test("Both entry points reject a single point")
+    func singlePointRejectedByBoth() {
+        let one: [SIMD2<Double>] = [SIMD2(1, 2)]
+        #expect(Curve2D.interpolate(points: one, startTangent: Self.startTangent,
+                                    endTangent: Self.endTangent) == nil)
+        #expect(Curve2D.interpolate(through: one, startTangent: Self.startTangent,
+                                    endTangent: Self.endTangent) == nil)
+    }
+}
+
+// MARK: - #409: arcLength(from:to:) no longer collapses failure into 0.0
+
+/// `arcLength(from:to:)` and `length(from:to:)` both wrap `GCPnts_AbscissaPoint::Length` over
+/// a `Geom2dAdaptor_Curve`, but via different construction idioms: `arcLength(from:to:)` builds
+/// a range-checked adaptor (`Geom2dAdaptor_Curve(curve, u1, u2)`, which raises
+/// `Standard_ConstructionError` when `u1 > u2`), while `length(from:to:)` builds an unrestricted
+/// adaptor and calls the `Length(adaptor, u1, u2)` overload, which tolerates either order. That
+/// is a genuine behavioral difference, not just a cosmetic one, so `arcLength(from:to:)` keeps
+/// its own bridge call rather than delegating to `length(from:to:)`. `arcLength(from:to:)` stays
+/// non-optional (matching #408's `Curve3D.arcLength(from:to:)` shape, to avoid a source-breaking
+/// signature change) but now collapses failure to an unambiguous `-1.0` sentinel instead of
+/// `0.0`, which could be mistaken for a legitimate zero-length result; `length(from:to:)` is the
+/// optional, failure-distinguishing sibling for callers who need `nil` rather than a sentinel.
+@Suite("Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)")
+struct Curve2DArcLengthFailureTests {
+
+    private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])!
+
+    @Test("A reversed range is a genuine failure, reported as -1.0, not 0.0")
+    func reversedRangeFails() {
+        let len = Self.bezier.arcLength(from: 0.8, to: 0.2)
+        #expect(len == -1.0)
+        #expect(len != 0.0)
+    }
+
+    @Test("Equal bounds are a genuine zero-length result, not the failure sentinel")
+    func equalBoundsAreGenuinelyZero() {
+        let len = Self.bezier.arcLength(from: 0.3, to: 0.3)
+        #expect(abs(len) < 1e-9)
+        #expect(len != -1.0)
+    }
+
+    @Test("length(from:to:) tolerates the same reversed range arcLength(from:to:) rejects")
+    func lengthToleratesReversedRange() {
+        let forward = Self.bezier.length(from: 0.2, to: 0.8)
+        let reversed = Self.bezier.length(from: 0.8, to: 0.2)
+        #expect(forward != nil)
+        #expect(reversed != nil)
+        if let forward, let reversed {
+            #expect(abs(forward - reversed) < 1e-9)
         }
     }
 }

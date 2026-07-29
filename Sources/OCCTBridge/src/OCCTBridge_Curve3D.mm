@@ -251,6 +251,28 @@ void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
 
 // Primitive Curves
 
+// Conic dimension preconditions, shared by the two factory families that build the
+// same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
+// Geom_* construction) and OCCTGceMake{CircFromCenterNormal,Elips,Hypr,Parab} (gce_Make*
+// construction). The gce_Make* algorithms only reject strictly-negative dimensions, so
+// before #399 they silently produced degenerate zero-radius/zero-focal curves where the
+// direct family returned null for the identical input. One definition, both families.
+static inline bool occtValidCircleRadius(double radius) {
+    return radius > 0;
+}
+
+static inline bool occtValidEllipseRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0 && minorR <= majorR;
+}
+
+static inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0;
+}
+
+static inline bool occtValidParabolaFocal(double focal) {
+    return focal > 0;
+}
+
 OCCTCurve3DRef OCCTCurve3DCreateLine(double px, double py, double pz,
                                       double dx, double dy, double dz) {
     try {
@@ -281,7 +303,7 @@ OCCTCurve3DRef OCCTCurve3DCreateCircle(double cx, double cy, double cz,
                                         double nx, double ny, double nz,
                                         double radius) {
     try {
-        if (radius <= 0) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt center(cx, cy, cz);
         gp_Dir normal(nx, ny, nz);
         gp_Ax2 axis(center, normal);
@@ -306,25 +328,11 @@ OCCTCurve3DRef OCCTCurve3DCreateArcOfCircle(double p1x, double p1y, double p1z,
     }
 }
 
-OCCTCurve3DRef OCCTCurve3DCreateArc3Points(double p1x, double p1y, double p1z,
-                                            double pmx, double pmy, double pmz,
-                                            double p2x, double p2y, double p2z) {
-    try {
-        GC_MakeArcOfCircle maker(gp_Pnt(p1x, p1y, p1z),
-                                  gp_Pnt(pmx, pmy, pmz),
-                                  gp_Pnt(p2x, p2y, p2z));
-        if (!maker.IsDone()) return nullptr;
-        return new OCCTCurve3D(maker.Value());
-    } catch (...) {
-        return nullptr;
-    }
-}
-
 OCCTCurve3DRef OCCTCurve3DCreateEllipse(double cx, double cy, double cz,
                                          double nx, double ny, double nz,
                                          double majorR, double minorR) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Ellipse) ellipse = new Geom_Ellipse(axis, majorR, minorR);
         return new OCCTCurve3D(ellipse);
@@ -337,7 +345,7 @@ OCCTCurve3DRef OCCTCurve3DCreateParabola(double cx, double cy, double cz,
                                           double nx, double ny, double nz,
                                           double focal) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Parabola) parabola = new Geom_Parabola(axis, focal);
         return new OCCTCurve3D(parabola);
@@ -350,7 +358,7 @@ OCCTCurve3DRef OCCTCurve3DCreateHyperbola(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double majorR, double minorR) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Ax2 axis(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         Handle(Geom_Hyperbola) hyp = new Geom_Hyperbola(axis, majorR, minorR);
         return new OCCTCurve3D(hyp);
@@ -543,6 +551,13 @@ int32_t OCCTCurve3DGetDegree(OCCTCurve3DRef c) {
 
 // Operations
 
+// Shared gp_Trsf builder (defined below, near OCCTCurve3DTransform); forward-declared here so
+// the immutable translate/rotate/scale/mirror* family can reuse the same transform-construction
+// logic as the in-place OCCTCurve3DTransform dispatcher instead of duplicating it.
+static bool buildTrsf3D(gp_Trsf& trsf, int32_t type,
+                          double p1, double p2, double p3,
+                          double p4, double p5, double p6, double p7);
+
 OCCTCurve3DRef OCCTCurve3DTrim(OCCTCurve3DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
@@ -569,7 +584,7 @@ OCCTCurve3DRef OCCTCurve3DTranslate(OCCTCurve3DRef c, double dx, double dy, doub
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
         gp_Trsf t;
-        t.SetTranslation(gp_Vec(dx, dy, dz));
+        if (!buildTrsf3D(t, 0, dx, dy, dz, 0, 0, 0, 0)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -584,9 +599,8 @@ OCCTCurve3DRef OCCTCurve3DRotate(OCCTCurve3DRef c,
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
-        gp_Ax1 axis(gp_Pnt(axisOx, axisOy, axisOz), gp_Dir(axisDx, axisDy, axisDz));
         gp_Trsf t;
-        t.SetRotation(axis, angle);
+        if (!buildTrsf3D(t, 1, axisOx, axisOy, axisOz, axisDx, axisDy, axisDz, angle)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -600,7 +614,7 @@ OCCTCurve3DRef OCCTCurve3DScale(OCCTCurve3DRef c,
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
         gp_Trsf t;
-        t.SetScale(gp_Pnt(cx, cy, cz), factor);
+        if (!buildTrsf3D(t, 2, cx, cy, cz, factor, 0, 0, 0)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -614,7 +628,7 @@ OCCTCurve3DRef OCCTCurve3DMirrorPoint(OCCTCurve3DRef c,
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
         gp_Trsf t;
-        t.SetMirror(gp_Pnt(px, py, pz));
+        if (!buildTrsf3D(t, 3, px, py, pz, 0, 0, 0, 0)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -628,9 +642,8 @@ OCCTCurve3DRef OCCTCurve3DMirrorAxis(OCCTCurve3DRef c,
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
-        gp_Ax1 axis(gp_Pnt(px, py, pz), gp_Dir(dx, dy, dz));
         gp_Trsf t;
-        t.SetMirror(axis);
+        if (!buildTrsf3D(t, 4, px, py, pz, dx, dy, dz, 0)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -644,9 +657,8 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());
-        gp_Ax2 plane(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz));
         gp_Trsf t;
-        t.SetMirror(plane);
+        if (!buildTrsf3D(t, 5, px, py, pz, nx, ny, nz, 0)) return nullptr;
         copy->Transform(t);
         return new OCCTCurve3D(copy);
     } catch (...) {
@@ -2353,6 +2365,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeCircFromCenterNormal(double cx, double cy, d
                                                           double nx, double ny, double nz,
                                                           double radius) {
     try {
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gce_MakeCirc mc(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom_Circle) circ = new Geom_Circle(mc.Value());
@@ -2384,6 +2397,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeElips(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeElips me(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
         Handle(Geom_Ellipse) elips = new Geom_Ellipse(me.Value());
@@ -2395,6 +2409,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeHypr(double cx, double cy, double cz,
                                           double nx, double ny, double nz,
                                           double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeHypr mh(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
         if (!mh.IsDone()) return nullptr;
         Handle(Geom_Hyperbola) hypr = new Geom_Hyperbola(mh.Value());
@@ -2406,6 +2421,7 @@ OCCTCurve3DRef _Nullable OCCTGceMakeParab(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double focal) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gce_MakeParab mp(gp_Ax2(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz)), focal);
         if (!mp.IsDone()) return nullptr;
         Handle(Geom_Parabola) parab = new Geom_Parabola(mp.Value());
@@ -4530,21 +4546,7 @@ const char* OCCTCurve3DTypeName(OCCTCurve3DRef curve) {
 OCCTCurve3DRef OCCTInterpolateWithTangents(const double* points, int32_t count,
                                              double t1x, double t1y, double t1z,
                                              double t2x, double t2y, double t2z) {
-    if (!points || count < 2) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
-        }
-        GeomAPI_Interpolate interp(pts, Standard_False, 1e-6);
-        gp_Vec v1(t1x, t1y, t1z), v2(t2x, t2y, t2z);
-        interp.Load(v1, v2);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve3DRef)new OCCTCurve3D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve3DInterpolateWithTangents(points, count, t1x, t1y, t1z, t2x, t2y, t2z, 1e-6);
 }
 
 OCCTCurve3DRef OCCTInterpolateWithAllTangents(const double* points, int32_t count,
@@ -5200,7 +5202,7 @@ static bool buildTrsf3D(gp_Trsf& trsf, int32_t type,
 bool OCCTCurve3DTransform(OCCTCurve3DRef curve, int32_t transformType,
                            double p1, double p2, double p3,
                            double p4, double p5, double p6, double p7) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         gp_Trsf trsf;
         if (!buildTrsf3D(trsf, transformType, p1, p2, p3, p4, p5, p6, p7)) return false;
@@ -5655,9 +5657,68 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
     } catch (...) { return nullptr; }
 }
 
+// MARK: - Shared arc-length adaptor helpers (#211/#212/#422): generic over any Adaptor3d_Curve&
+//
+// BRepAdaptor_CompCurve (multi-edge wire) and BRepAdaptor_Curve (single edge) both derive from
+// Adaptor3d_Curve, so the entire arc-length API (length, native-parameter access, arc-length
+// lookup, uniform sampling) can be written once here and reused by both OCCTCompCurve* and
+// OCCTEdgeCurve* below — mirroring the pre-existing sampleAdaptorUniform() precedent, which this
+// unifies the other 5 operations to match. Callers keep their own try/catch + null-ref check
+// (matching sampleAdaptorUniform's own call sites) so a thrown Standard_Failure/StdFail_NotDone
+// can never cross the extern "C" boundary.
+#include <Adaptor3d_Curve.hxx>
+#include <GCPnts_AbscissaPoint.hxx>
+#include <GCPnts_UniformAbscissa.hxx>
+
+static double adaptorLength(Adaptor3d_Curve& a) {
+    return GCPnts_AbscissaPoint::Length(a);
+}
+
+static void adaptorParamRange(Adaptor3d_Curve& a, double* first, double* last) {
+    if (first) *first = a.FirstParameter();
+    if (last)  *last  = a.LastParameter();
+}
+
+static bool adaptorPointAtParam(Adaptor3d_Curve& a, double u, double* x, double* y, double* z) {
+    gp_Pnt p = a.Value(u);
+    if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
+    return true;
+}
+
+static bool adaptorTangentAtParam(Adaptor3d_Curve& a, double u, double* x, double* y, double* z) {
+    gp_Pnt p; gp_Vec d1;
+    a.D1(u, p, d1);
+    if (d1.Magnitude() < 1e-12) return false;   // degenerate (e.g. cusp)
+    gp_Dir dir(d1);
+    if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
+    return true;
+}
+
+static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outParam) {
+    GCPnts_AbscissaPoint ap(a, s, a.FirstParameter());
+    if (!ap.IsDone()) return false;
+    if (outParam) *outParam = ap.Parameter();
+    return true;
+}
+
+// N points spaced equally by arc length along the curve. outXYZ must hold count*3 doubles;
+// returns the number of points actually written.
+static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
+    if (count < 2 || !outXYZ) return 0;
+    GCPnts_UniformAbscissa sampler(a, count);
+    if (!sampler.IsDone()) return 0;
+    int32_t n = sampler.NbPoints();
+    for (int32_t i = 1; i <= n; ++i) {
+        gp_Pnt p = a.Value(sampler.Parameter(i));
+        outXYZ[(i - 1) * 3 + 0] = p.X();
+        outXYZ[(i - 1) * 3 + 1] = p.Y();
+        outXYZ[(i - 1) * 3 + 2] = p.Z();
+    }
+    return n;
+}
+
 // MARK: - CompCurve adaptor (#211): a multi-edge wire as one arc-length-parameterized curve
 #include <BRepAdaptor_CompCurve.hxx>
-#include <GCPnts_AbscissaPoint.hxx>
 
 // Opaque handle: holds the adaptor by value (BRepAdaptor_CompCurve(const TopoDS_Wire&)).
 struct OCCTCompCurve {
@@ -5675,65 +5736,32 @@ void OCCTCompCurveRelease(OCCTCompCurveRef ref) { delete ref; }
 
 double OCCTCompCurveLength(OCCTCompCurveRef ref) {
     if (!ref) return -1.0;
-    try { return GCPnts_AbscissaPoint::Length(ref->adaptor); }
+    try { return adaptorLength(ref->adaptor); }
     catch (...) { return -1.0; }
 }
 
 void OCCTCompCurveParamRange(OCCTCompCurveRef ref, double* first, double* last) {
     if (!ref) return;
-    try {
-        if (first) *first = ref->adaptor.FirstParameter();
-        if (last)  *last  = ref->adaptor.LastParameter();
-    } catch (...) {}
+    try { adaptorParamRange(ref->adaptor, first, last); }
+    catch (...) {}
 }
 
 bool OCCTCompCurvePointAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p = ref->adaptor.Value(u);
-        if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorPointAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTCompCurveTangentAtParam(OCCTCompCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p; gp_Vec d1;
-        ref->adaptor.D1(u, p, d1);
-        if (d1.Magnitude() < 1e-12) return false;   // degenerate (e.g. cusp)
-        gp_Dir dir(d1);
-        if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorTangentAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTCompCurveParamAtAbscissa(OCCTCompCurveRef ref, double s, double* outParam) {
     if (!ref) return false;
-    try {
-        GCPnts_AbscissaPoint ap(ref->adaptor, s, ref->adaptor.FirstParameter());
-        if (!ap.IsDone()) return false;
-        if (outParam) *outParam = ap.Parameter();
-        return true;
-    } catch (...) { return false; }
-}
-
-// Shared: N points spaced equally by arc length along any 3D curve adaptor.
-// outXYZ must hold count*3 doubles; returns the number of points actually written.
-#include <Adaptor3d_Curve.hxx>
-#include <GCPnts_UniformAbscissa.hxx>
-static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
-    if (count < 2 || !outXYZ) return 0;
-    GCPnts_UniformAbscissa sampler(a, count);
-    if (!sampler.IsDone()) return 0;
-    int32_t n = sampler.NbPoints();
-    for (int32_t i = 1; i <= n; ++i) {
-        gp_Pnt p = a.Value(sampler.Parameter(i));
-        outXYZ[(i - 1) * 3 + 0] = p.X();
-        outXYZ[(i - 1) * 3 + 1] = p.Y();
-        outXYZ[(i - 1) * 3 + 2] = p.Z();
-    }
-    return n;
+    try { return adaptorParamAtAbscissa(ref->adaptor, s, outParam); }
+    catch (...) { return false; }
 }
 
 int32_t OCCTCompCurveSampleUniform(OCCTCompCurveRef ref, int32_t count, double* outXYZ) {
@@ -5760,47 +5788,32 @@ void OCCTEdgeCurveRelease(OCCTEdgeCurveRef ref) { delete ref; }
 
 double OCCTEdgeCurveLength(OCCTEdgeCurveRef ref) {
     if (!ref) return -1.0;
-    try { return GCPnts_AbscissaPoint::Length(ref->adaptor); }
+    try { return adaptorLength(ref->adaptor); }
     catch (...) { return -1.0; }
 }
 
 void OCCTEdgeCurveParamRange(OCCTEdgeCurveRef ref, double* first, double* last) {
     if (!ref) return;
-    try {
-        if (first) *first = ref->adaptor.FirstParameter();
-        if (last)  *last  = ref->adaptor.LastParameter();
-    } catch (...) {}
+    try { adaptorParamRange(ref->adaptor, first, last); }
+    catch (...) {}
 }
 
 bool OCCTEdgeCurvePointAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p = ref->adaptor.Value(u);
-        if (x) *x = p.X(); if (y) *y = p.Y(); if (z) *z = p.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorPointAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTEdgeCurveTangentAtParam(OCCTEdgeCurveRef ref, double u, double* x, double* y, double* z) {
     if (!ref) return false;
-    try {
-        gp_Pnt p; gp_Vec d1;
-        ref->adaptor.D1(u, p, d1);
-        if (d1.Magnitude() < 1e-12) return false;
-        gp_Dir dir(d1);
-        if (x) *x = dir.X(); if (y) *y = dir.Y(); if (z) *z = dir.Z();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorTangentAtParam(ref->adaptor, u, x, y, z); }
+    catch (...) { return false; }
 }
 
 bool OCCTEdgeCurveParamAtAbscissa(OCCTEdgeCurveRef ref, double s, double* outParam) {
     if (!ref) return false;
-    try {
-        GCPnts_AbscissaPoint ap(ref->adaptor, s, ref->adaptor.FirstParameter());
-        if (!ap.IsDone()) return false;
-        if (outParam) *outParam = ap.Parameter();
-        return true;
-    } catch (...) { return false; }
+    try { return adaptorParamAtAbscissa(ref->adaptor, s, outParam); }
+    catch (...) { return false; }
 }
 
 int32_t OCCTEdgeCurveSampleUniform(OCCTEdgeCurveRef ref, int32_t count, double* outXYZ) {
