@@ -15,6 +15,57 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased (fix): Curve3D arc length was integrated as one quadrature across the whole domain (#477)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`Curve3D.length` and `Curve3D.length(from:to:)` measured arc length with
+`CPnts_AbscissaPoint::Length`, a single Gauss quadrature of order ≤ 24 spanning the entire
+parameter domain. That is exact for a line or a circle and wrong for anything with many spans, and
+nothing signalled the difference: the call returned a plausible number. Every other arc-length call
+site in the bridge (`Curve2D`, `Edge`, `WireCurve`, the property queries) already used
+`GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN` interval boundaries and
+integrates each span separately. These two were the only `CPnts_AbscissaPoint` call sites left in
+the bridge, and the reference docs had already described them as `GCPnts` for some time.
+
+Measured against a densely sampled polyline reference over the same domain, on the pinned kernel:
+
+| curve | spans | GCPnts (now) | CPnts (before) |
+|---|---|---|---|
+| 40-pt interpolated BSpline, varying speed | 39 | `2.9e-7` rel. | **`5.1e-2` rel. (5% of 356 units)** |
+| 60-pt interpolated helix | 59 | `4.3e-15` rel. | `3.9e-6` rel. |
+| 5-pt interpolated BSpline | 4 | `6.9e-12` rel. | `2.5e-3` rel. |
+| line, circle, arc | 1 | exact | exact |
+
+(On the helix and 5-point rows the `GCPnts` figure sits at or below the reference's own residual
+error, so it bounds the remaining error rather than measuring it. The first row's `2.9e-7` is
+`GCPnts`'s genuine per-span quadrature residual on a sharply wiggling curve.)
+
+The error is worst where `|C'(u)|` varies sharply along the curve, which is the ordinary case for
+an interpolated toolpath or an imported spline, so a CAM step-over or a sweep spacing derived from
+a curve's length was percent-level wrong. The ranged overload had the identical gap, and
+`totalArcLength` / `arcLength(from:to:)` / `arcLengthBetween(_:_:)` inherit the fix as soon as they
+route through `length` (#408).
+
+**One behavioural change beyond accuracy**, on out-of-domain parameters: `GCPnts` clamps to the
+curve's domain where `CPnts` extrapolated the polynomial past its knots. On the 356-unit test
+curve, overshooting both ends by a full domain width used to measure 441,972; it now measures the
+curve's own length. A range wholly outside the domain used to measure 865,392; it now measures `0`.
+Nothing else in the failure contract moves:
+probed against the pinned kernel, both integrators agree on reversed ranges, equal parameters,
+zero-length curves, periodic curves, and unbounded lines, and neither throws where the other does
+not.
+
+The three bridge functions that already used the composite integrator
+(`OCCTCurve3DArcLength` / `OCCTCurve3DLength` / `OCCTCurve3DArcLengthBetween`) stay exported: they
+are still the backing calls for the `arcLength` spellings on this branch, and they remain part of
+the published C bridge surface either way.
+
+New suite `Issue477ArcLengthAccuracyTests` (`OCCTCurveTests`) pins all five Swift spellings against
+an independently computed reference (a Richardson-extrapolated polyline, not the implementation's
+own answer), so it fails on the old integrator rather than ratifying it. 5 of its 8 tests fail
+against the previous code.
+
 ### Unreleased: fix — `FillingSurface`'s continuity mapping was wrong for both non-default orders, and it converged onto `Shape.fill`'s implementation (#433, #434)
 
 > Version and date deliberately unset; whoever tags stamps them.
