@@ -475,18 +475,22 @@ Add a boundary edge constraint with an explicit reference face for tangency/curv
 
 ```swift
 @discardableResult
-public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g0) -> Bool
+public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g1) -> Bool
 ```
 
 Mirrors `FillConstraint`'s support-face semantics: a face named here is used or the constraint
 fails, rather than silently falling back to another surface. Use `add(edge:continuity:)` to
 accept whichever surface the edge itself resolves instead.
 
+`support` is only meaningful above `.g0` — a positional constraint has nothing to be tangent or
+curvature-continuous *with*, so at `.g0` it is never read. `continuity` defaults to `.g1` rather
+than `.g0` for this reason, matching `FillConstraint`'s own default.
+
 - **Parameters:**
   - `edge` — edge to add as a boundary constraint.
   - `support` — face to be continuous with. Used or the constraint fails: if it carries no
     pcurve for `edge` it cannot serve as the continuity reference.
-  - `continuity` — continuity order at this edge (default `.g0`).
+  - `continuity` — continuity order at this edge (default `.g1`).
 - **Returns:** `true` if the edge was added successfully.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (edge + support face variant).
 - **Example:**
