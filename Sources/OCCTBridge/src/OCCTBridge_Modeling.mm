@@ -39,7 +39,7 @@
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepFill.hxx>
-#include <BRepFill_Filling.hxx>
+#include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <LocOpe_CSIntersector.hxx>
 #include <LocOpe_PntFace.hxx>
@@ -4388,36 +4388,29 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
     }
 }
 
-// MARK: - BRepFill_Filling (v0.45)
+// MARK: - BRepOffsetAPI_MakeFilling (v0.45, converged onto BRepOffsetAPI_MakeFilling by #434)
+//
+// This used to hold a BRepFill_Filling directly. #430/#432 already routed every Add() here
+// through occtFillingAddConstraint to dodge BRepFill_Filling's untrimmed-pcurve SIGSEGV, and
+// #431 already reimplemented BRepOffsetAPI_MakeFilling's own correctly-bound construction
+// (OCCTShapeFillMakeBuilder in OCCTBridge_Healing.mm) once for OCCTShapeFill* — so the two
+// entry points were independently reaching for the same fix. #434 converges them: this struct
+// now holds the same BRepOffsetAPI_MakeFilling that OCCTShapeFill* does, built through the same
+// occtFillingMakeBuilder, and every Add() below shares occtFillingAddConstraint outright rather
+// than each having its own copy of the same defensive logic. BRepOffsetAPI_MakeFilling is a
+// thin forwarder to a private BRepFill_Filling (BRepOffsetAPI_MakeFilling.hxx), so nothing
+// observable changes for a caller other than gaining BRepBuilderAPI_MakeShape's Generated()
+// history for free.
 struct OCCTFilling {
-    BRepFill_Filling filler;
+    BRepOffsetAPI_MakeFilling filler;
 };
 
-// #431 (second site): maxDegree/maxSegments used to be passed as SetResolParam's 3rd and 4th
-// arguments, which are NbIter and Anisotropie — so maxDegree silently became the solver's
-// iteration count (8 instead of 2, ~3x the work at the documented defaults) and maxSegments
-// became a bool (9 -> true). SetApproxParam, the only place MaxDeg/MaxSegments can actually be
-// set, was never called at all, leaving both documented parameters inert. Same defect class as
-// the BRepOffsetAPI_MakeFilling constructor mis-binding in OCCTBridge_Healing.mm.
-//
-//   SetResolParam(Degree = 3, NbPtsOnCur = 15, NbIter = 2, Anisotropie = false)
-//   SetApproxParam(MaxDeg = 8, MaxSegments = 9)
-//
-// Tol2d is a parameter-space tolerance and Tol3d a model-space one; a tenth reproduces OCCT's
-// own default pair (1e-5 / 1e-4) at the default tolerance, matching OCCTShapeFillMakeBuilder.
 OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t maxDegree,
                                   int32_t maxSegments, double tolerance3d) {
     try {
-        const double tol3d = tolerance3d > 0 ? tolerance3d : 1e-4;
-        auto* filling = new OCCTFilling();
-        filling->filler.SetConstrParam(tol3d * 0.1, tol3d, 0.01, 0.1);
-        filling->filler.SetResolParam(degree > 0 ? degree : 3,
-                                      nbPtsOnCur > 0 ? nbPtsOnCur : 15,
-                                      /*NbIter=*/2,
-                                      /*Anisotropie=*/false);
-        filling->filler.SetApproxParam(maxDegree > 0 ? maxDegree : 8,
-                                       maxSegments > 0 ? maxSegments : 9);
-        return filling;
+        return new OCCTFilling{
+            occtFillingMakeBuilder(degree, nbPtsOnCur, maxDegree, maxSegments, tolerance3d)
+        };
     } catch (...) {
         return nullptr;
     }
@@ -4427,24 +4420,21 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
     delete filling;
 }
 
-// #432: these route through occtFillingAddConstraint rather than calling the face-less
-// BRepFill_Filling::Add(edge, order) overload directly, which SIGSEGVs on any curved boundary
-// edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the mechanism).
-//
-// The GeomAbs_C1/GeomAbs_C2 mapping below is deliberately left as-is: it is wrong — continuity
-// 1 requests curvature rather than tangency, and 2 lands on ordinal 4, which every constraint
-// class rejects at Build() time, failing the whole fill — but correcting it changes documented
-// public behavior, so it is #433's, not this crash fix's. Note Add() only appends and never
-// validates the order, so returning true here says nothing about the constraint's validity.
-// occtFillingContinuityToGeomAbs is the correct mapping when #433 lands.
+// #432/#433: route through occtFillingAddConstraint rather than calling the face-less
+// BRepOffsetAPI_MakeFilling::Add(edge, order) overload directly, which SIGSEGVs on any curved
+// boundary edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the
+// mechanism); and use occtFillingContinuityToGeomAbs for the order mapping rather than a local
+// copy — the local one that used to be here mapped order 1 to GeomAbs_C1 (curvature) instead of
+// GeomAbs_G1 (tangency) and order 2 to GeomAbs_C2 (ordinal 4, rejected outright), failing the
+// whole fill (#433). Note Add() only appends and never validates the order itself, so returning
+// true here says nothing about the constraint's validity — a bad order still only surfaces as a
+// nil Build() later.
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
     if (!filling || !edge) return false;
     try {
-        GeomAbs_Shape cont = GeomAbs_C0;
-        if (continuity == 1) cont = GeomAbs_C1;
-        else if (continuity >= 2) cont = GeomAbs_C2;
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
-                                 OCCTFillingSupport::Inferred, cont, /*isBound=*/true);
+                                 OCCTFillingSupport::Inferred,
+                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/true);
         return true;
     } catch (...) {
         return false;
@@ -4454,12 +4444,30 @@ bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t contin
 bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
     if (!filling || !edge) return false;
     try {
-        GeomAbs_Shape cont = GeomAbs_C0;
-        if (continuity == 1) cont = GeomAbs_C1;
-        else if (continuity >= 2) cont = GeomAbs_C2;
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
-                                 OCCTFillingSupport::Inferred, cont, /*isBound=*/false);
+                                 OCCTFillingSupport::Inferred,
+                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/false);
         return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+// #434: gives FillingSurface the same explicit-support-face capability
+// Shape.fill(constraints:)/FillConstraint already has. A face named here is Nominated: if it
+// cannot carry `edge`'s continuity, the constraint is not added and the caller should treat the
+// whole fill as failed, matching OCCTShapeFillConstraints' per-constraint contract.
+bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
+                                    OCCTFaceRef support, int32_t continuity) {
+    if (!filling || !edge) return false;
+    try {
+        TopoDS_Face supportFace;
+        if (support) supportFace = support->face;
+        return occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
+                                        support ? OCCTFillingSupport::Nominated
+                                                : OCCTFillingSupport::Inferred,
+                                        occtFillingContinuityToGeomAbs(continuity),
+                                        /*isBound=*/true);
     } catch (...) {
         return false;
     }
@@ -4493,9 +4501,11 @@ bool OCCTFillingIsDone(OCCTFillingRef filling) {
 OCCTShapeRef OCCTFillingGetFace(OCCTFillingRef filling) {
     if (!filling || !filling->filler.IsDone()) return nullptr;
     try {
-        TopoDS_Face face = filling->filler.Face();
-        if (face.IsNull()) return nullptr;
-        return new OCCTShape(face);
+        // BRepOffsetAPI_MakeFilling has no Face() of its own (BRepFill_Filling's accessor);
+        // Shape() is BRepBuilderAPI_MakeShape's, and Build() sets it to the same face.
+        TopoDS_Shape result = filling->filler.Shape();
+        if (result.IsNull()) return nullptr;
+        return new OCCTShape(result);
     } catch (...) {
         return nullptr;
     }

@@ -1499,8 +1499,7 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 
 Not every API accepts every order. A bare point carries no curvature to match, so
 `GeomPlate_PointConstraint` throws above order 1 and `Shape.plateSurface(through:orders:)`
-returns `nil` if any point is given `.g2`. `FillingSurface` currently mis-maps both non-default
-orders; see issue #433.
+returns `nil` if any point is given `.g2`.
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
@@ -1597,6 +1596,11 @@ question of where that face comes from:
 
 A boundary built from free-standing wires has no reference surface at all, so any continuity above
 `.c0` returns `nil` for every one of these. `.c0` always works — it constrains position only.
+
+`FillingSurface` (`docs/reference/GeometrySolvers.md#fillingsurface`) shares this exact
+`BRepOffsetAPI_MakeFilling` implementation as of #434 — same continuity mapping, same support-face
+rules — as the incremental, stateful alternative to these one-shot array-based overloads. Its
+`add(edge:support:continuity:)` mirrors `FillConstraint`'s support-face semantics below.
 
 ### `Shape.fill(boundaries:parameters:)`
 

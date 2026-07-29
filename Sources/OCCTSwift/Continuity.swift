@@ -48,7 +48,7 @@
 /// - Note: Not every API accepts every order. A bare point cannot carry curvature, so
 ///   ``Shape/plateSurface(through:orders:degree:pointsOnCurves:iterations:tolerance:)``
 ///   fails outright if any point is given ``g2`` (`GeomPlate_PointConstraint` throws above
-///   order 1). ``FillingSurface`` currently mis-maps both non-default orders; see issue #433.
+///   order 1).
 public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     /// Positional continuity (G0). The surface passes through the constraint.
     case g0 = 0

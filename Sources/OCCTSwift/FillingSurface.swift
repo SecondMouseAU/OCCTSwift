@@ -5,11 +5,16 @@ import OCCTBridge
 // Continuity order for filling constraints is `SurfaceContinuity` (Continuity.swift); the
 // `FillingContinuity` copy this file used to declare is now a deprecated alias of it. See #398.
 
-/// Builder for N-sided surface filling using BRepFill_Filling.
+/// Builder for N-sided surface filling using BRepOffsetAPI_MakeFilling.
 ///
 /// Creates a smooth surface that satisfies boundary edge constraints and optional
 /// interior point constraints. Useful for creating patches that fill holes or
 /// connect multiple surface boundaries.
+///
+/// Shares its bridge implementation with ``Shape/fill(boundaries:parameters:)`` and
+/// ``Shape/fill(constraints:parameters:)`` (#434); this is the incremental, stateful form —
+/// build up constraints one call at a time and inspect per-build error introspection —
+/// where those are one-shot convenience calls over an array.
 ///
 /// ```swift
 /// let edges = box.edges()
@@ -42,20 +47,35 @@ public final class FillingSurface: @unchecked Sendable {
         OCCTFillingRelease(handle)
     }
 
-    /// Add a boundary edge constraint.
+    /// Add a boundary edge constraint, deriving the continuity reference from the edge's own
+    /// underlying surface.
     ///
     /// - Parameters:
     ///   - edge: Edge to add as boundary constraint
     ///   - continuity: Continuity order at this edge (default .g0)
     /// - Returns: true if the edge was added successfully, which says nothing about whether
-    ///   the order is usable: `BRepFill_Filling::Add` only appends, so a bad order surfaces
-    ///   later as a nil ``build()`` that takes every other constraint with it.
-    /// - Warning: Only ``SurfaceContinuity/g0`` currently behaves as documented here. This
-    ///   call still hand-maps the other two orders to the wrong OCCT values (`.g1` requests
-    ///   curvature, `.g2` requests an order every constraint class rejects). Tracked as #433.
+    ///   the order is usable: `BRepOffsetAPI_MakeFilling::Add` only appends, so a bad order
+    ///   surfaces later as a nil ``build()`` that takes every other constraint with it.
     @discardableResult
     public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool {
         OCCTFillingAddEdge(handle, edge.handle, continuity.rawValue)
+    }
+
+    /// Add a boundary edge constraint with an explicit reference face for tangency/curvature.
+    ///
+    /// Mirrors ``FillConstraint``'s support-face semantics: a face named here is used or the
+    /// constraint fails, rather than silently falling back to another surface. Use
+    /// ``add(edge:continuity:)`` to accept whichever surface the edge itself resolves instead.
+    ///
+    /// - Parameters:
+    ///   - edge: Edge to add as boundary constraint
+    ///   - support: Face to be continuous with. Used or the constraint fails: if it carries no
+    ///     pcurve for `edge` it cannot serve as the continuity reference.
+    ///   - continuity: Continuity order at this edge (default .g0)
+    /// - Returns: true if the edge was added successfully
+    @discardableResult
+    public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g0) -> Bool {
+        OCCTFillingAddEdgeWithSupport(handle, edge.handle, support.handle, continuity.rawValue)
     }
 
     /// Add a free (non-boundary) edge constraint.
@@ -66,7 +86,6 @@ public final class FillingSurface: @unchecked Sendable {
     ///   - freeEdge: Edge to add as a free constraint
     ///   - continuity: Continuity order at this edge (default .g0)
     /// - Returns: true if the edge was added successfully
-    /// - Warning: Carries the same #433 order mis-mapping as ``add(edge:continuity:)``.
     @discardableResult
     public func add(freeEdge edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool {
         OCCTFillingAddFreeEdge(handle, edge.handle, continuity.rawValue)

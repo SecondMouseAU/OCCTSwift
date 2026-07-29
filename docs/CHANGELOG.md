@@ -15,6 +15,42 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix — `FillingSurface`'s continuity mapping was wrong for both non-default orders, and it converged onto `Shape.fill`'s implementation (#433, #434)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`FillingSurface.add(edge:continuity:)`/`add(freeEdge:continuity:)` hand-mapped the plate
+constraint order onto `GeomAbs_Shape` locally instead of using `occtFillingContinuityToGeomAbs`,
+the helper #430 introduced for `Shape.fill`: order 1 requested `GeomAbs_C1` (curvature) instead
+of `GeomAbs_G1` (tangency), and order 2 requested `GeomAbs_C2` (ordinal 4), which every
+constraint class rejects — failing the whole `build()` rather than just that one constraint
+(#433). `add` returned `true` regardless, since `BRepOffsetAPI_MakeFilling::Add` only appends and
+never validates the order.
+
+`FillingSurface` also held its own, separate `BRepFill_Filling` — the private implementation
+class `BRepOffsetAPI_MakeFilling` (what `Shape.fill` already used) forwards to internally, and
+never exposes. #434 converges the two onto one implementation: `FillingSurface` now holds the
+same `BRepOffsetAPI_MakeFilling`, built through the same shared `occtFillingMakeBuilder`, and
+every `add` call shares `occtFillingAddConstraint` outright rather than each having its own copy
+of the same defensive logic — fixing #433 as a consequence of the convergence rather than as a
+separate patch. `occtFillingAddConstraint` is no longer a template now that both callers hold the
+same concrete filler type.
+
+New: `FillingSurface.add(edge:support:continuity:)`, mirroring `FillConstraint`'s support-face
+semantics — a face named here is used or the constraint fails, never silently substituted. The
+one capability `FillingSurface` was missing relative to `Shape.fill(constraints:)`.
+
+```swift
+// Tangent to the wall the rim came from
+let filling = FillingSurface()
+filling.add(edge: rim, support: wall, continuity: .g1)
+```
+
+Verified on the same truncated-sphere fixture #430's own tests use: `.g2` on a curved boundary,
+which previously failed the whole `build()`, now succeeds and measurably bulges further than
+`.g1` — matching `Shape.fill`'s own curvature-vs-tangency regression test on the other entry
+point.
+
 ### Unreleased: refactor — nine continuity enums collapsed to two shared vocabularies (#398)
 
 > Version and date deliberately unset; whoever tags stamps them.
@@ -507,11 +543,11 @@ parameters, and an uncatchable SIGSEGV on an **unbounded or periodic** one (cyli
 cone), which accepts them. The pre-existing filling tests only ever used rectangles and polygons at
 `.c0`, so neither half of the defect ever showed.
 
-**Still open:** `FillingSurface`'s continuity mapping is wrong in its own way — `.c1` requests
-curvature rather than tangency, and `.c2` lands on an order OCCT rejects, which fails the entire
-`build()` (`add` returns `true` regardless; it only appends). Correcting that changes documented
-public behavior, so it is #433. Converging the two wrappers onto one implementation is
-#434. The kernel patch for the two upstream defects, and the upstream filing, are deferred.
+**Was open, now fixed above:** `FillingSurface`'s continuity mapping was wrong in its own way —
+`.c1` requested curvature rather than tangency, and `.c2` landed on an order OCCT rejects, which
+failed the entire `build()` (`add` returned `true` regardless; it only appends). Fixed as #433,
+folded into #434's convergence of the two wrappers onto one implementation — see the entry above.
+The kernel patch for the two upstream defects, and the upstream filing, remain deferred.
 
 ### v1.15.20 (July 2026): fix — `Edge.circleProperties` returned `nil` for every full-circle edge (#378)
 
