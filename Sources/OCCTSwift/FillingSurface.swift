@@ -67,14 +67,19 @@ public final class FillingSurface: @unchecked Sendable {
     /// constraint fails, rather than silently falling back to another surface. Use
     /// ``add(edge:continuity:)`` to accept whichever surface the edge itself resolves instead.
     ///
+    /// - Note: `support` is only meaningful above `.g0` — a positional constraint has nothing
+    ///   to be tangent or curvature-continuous *with*, so at `.g0` it is never read, matching
+    ///   ``FillConstraint``, whose `continuity` also defaults to `.g1` rather than `.g0` for
+    ///   this reason.
+    ///
     /// - Parameters:
     ///   - edge: Edge to add as boundary constraint
     ///   - support: Face to be continuous with. Used or the constraint fails: if it carries no
     ///     pcurve for `edge` it cannot serve as the continuity reference.
-    ///   - continuity: Continuity order at this edge (default .g0)
+    ///   - continuity: Continuity order at this edge (default .g1)
     /// - Returns: true if the edge was added successfully
     @discardableResult
-    public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g0) -> Bool {
+    public func add(edge: Edge, support: Face, continuity: SurfaceContinuity = .g1) -> Bool {
         OCCTFillingAddEdgeWithSupport(handle, edge.handle, support.handle, continuity.rawValue)
     }
 
