@@ -1,6 +1,6 @@
 name: Feature Request
 description: Request a new OCCT operation, API improvement, or integration
-labels: ["enhancement"]
+labels: ["type:feature"]
 body:
   - type: markdown
     attributes:

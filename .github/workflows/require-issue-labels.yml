@@ -1,0 +1,62 @@
+name: Require Issue Labels
+
+on:
+  issues:
+    types: [opened, labeled, unlabeled, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  check-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for type:* and priority:* labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- require-issue-labels -->';
+            const labels = context.payload.issue.labels.map(l => l.name);
+            const hasType = labels.some(l => l.startsWith('type:'));
+            const hasPriority = labels.some(l => l.startsWith('priority:'));
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.data.find(c => c.body.includes(marker));
+
+            if (hasType && hasPriority) {
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existing.id,
+                  body: `${marker}\nLabeled — thanks!`,
+                });
+              }
+              return;
+            }
+
+            const missing = [];
+            if (!hasType) missing.push('a `type:*` label (e.g. `type:bug`, `type:feature`, `type:chore`, `type:epic`, `type:spike`, `type:docs`)');
+            if (!hasPriority) missing.push('a `priority:*` label (`priority:P0`–`priority:P3`)');
+
+            const body = `${marker}\nThis issue is missing ${missing.join(' and ')}. Please add the appropriate label so it shows up correctly in triage.`;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
