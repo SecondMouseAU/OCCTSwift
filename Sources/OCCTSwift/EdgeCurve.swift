@@ -7,12 +7,15 @@ import OCCTBridge
 /// *native* parameter space; `EdgeCurve` adds the arc-length side — `length`,
 /// `point(atAbscissa:)`, evenly-spaced sampling — matching ``WireCurve`` for a single edge. (#211/#212)
 ///
+/// The arc-length composition (`point`/`tangent(atAbscissa:)`, `points(spacing:)`) is shared with
+/// ``WireCurve`` via ``ArcLengthCurveAdaptor``; see that protocol for the underlying primitives.
+///
 /// ```swift
 /// guard let ec = EdgeCurve(edge) else { return }
 /// let mids = ec.points(count: 11)        // 11 points equally spaced along the edge
 /// let half = ec.point(atAbscissa: ec.length / 2)
 /// ```
-public final class EdgeCurve: @unchecked Sendable {
+public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     internal let ref: OCCTEdgeCurveRef
 
     /// Build an arc-length adaptor over `edge`. Returns `nil` if the edge is invalid (e.g.
@@ -55,18 +58,6 @@ public final class EdgeCurve: @unchecked Sendable {
         return u
     }
 
-    /// Point at arc length `s` from the start of the edge (0...``length``).
-    public func point(atAbscissa s: Double) -> SIMD3<Double>? {
-        guard let u = parameter(atAbscissa: s) else { return nil }
-        return point(atParameter: u)
-    }
-
-    /// Unit tangent at arc length `s` from the start of the edge.
-    public func tangent(atAbscissa s: Double) -> SIMD3<Double>? {
-        guard let u = parameter(atAbscissa: s) else { return nil }
-        return tangent(atParameter: u)
-    }
-
     /// `count` points spaced equally by arc length along the edge (`count >= 2`), endpoints included.
     public func points(count: Int) -> [SIMD3<Double>] {
         guard count >= 2 else { return [] }
@@ -75,11 +66,6 @@ public final class EdgeCurve: @unchecked Sendable {
         return (0..<n).map { SIMD3(buf[$0 * 3], buf[$0 * 3 + 1], buf[$0 * 3 + 2]) }
     }
 
-    /// Points spaced approximately `spacing` apart along the edge (by arc length).
-    public func points(spacing: Double) -> [SIMD3<Double>] {
-        let len = length
-        guard spacing > 0, len > 0 else { return [] }
-        let count = max(2, Int((len / spacing).rounded()) + 1)
-        return points(count: count)
-    }
+    // point(atAbscissa:), tangent(atAbscissa:), points(spacing:) are supplied by the
+    // ArcLengthCurveAdaptor extension — see that protocol.
 }
