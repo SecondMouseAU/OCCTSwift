@@ -13,6 +13,61 @@ All notable changes to OCCTSwift.
 
 ---
 
+## Unreleased
+
+Pass 1b of the [#377](https://github.com/SecondMouseAU/OCCTSwift/issues/377) duplication audit
+([#381](https://github.com/SecondMouseAU/OCCTSwift/issues/381)).
+
+### One result vocabulary for measured continuity, not three encodings (#485)
+
+`OCCTCurve3DContinuity` / `OCCTCurve2DContinuity` / `OCCTSurfaceContinuity` and their
+`*GetContinuity` siblings wrapped the identical `Geom*::Continuity()` call but reported it
+through two incompatible numeric schemes. **C0 was the only class the two agreed on:**
+
+| class | `GetContinuity` (real `GeomAbs_Shape`) | `Continuity` (hand-written switch) |
+|-------|---------------------------------------|------------------------------------|
+| C0 | 0 | 0 |
+| G1 | 1 | −2 |
+| C1 | 2 | 1 |
+| G2 | 3 | −3 |
+| C2 | 4 | 2 |
+| C3 | 5 | 3 |
+| CN | 6 | 99 |
+
+Neither doc comment described either scheme correctly. `GetContinuity`'s claimed
+`0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2`, which is not what a `static_cast` of
+`GeomAbs_Shape` produces; `Continuity`'s omitted its own `−2`/`−3`/`99` values entirely. Both
+wrong comments had been copy-pasted into the Swift layer.
+
+**Behaviour change.** `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and
+`Surface.surfaceContinuityOrder` now report the real `GeomAbs_Shape` ordinal. A C2 curve that
+answered `2` answers `4`; a CN curve that answered `99` answers `6`; a G1 curve that answered
+`−2` answers `1`. All three are deprecated in favour of `continuityClass`. Any threshold check
+of the form `continuityOrder >= someOrder` needs revisiting — that idiom compared two different
+encodings, which is the defect this family invited.
+
+- **Bridge:** the three `switch` bodies were byte-identical to each other and each duplicated
+  its `GetContinuity` sibling's one-line body. All three now delegate to that sibling, which
+  also picks up the `.IsNull()` handle guard the `Continuity` family was missing (it checked
+  only the wrapper pointer, then dereferenced a possibly-null `Handle`). The C declarations are
+  retained for ABI compatibility.
+- **Swift:** new top-level `ContinuityClass` is the shared result vocabulary — the third
+  contract `Continuity.swift` already documented after #398 but had only half-implemented.
+  `Surface.Continuity` becomes a deprecated alias of it (raw values unchanged), and `Curve3D` /
+  `Curve2D` gain `continuityClass`; they previously had no typed form at all.
+  `ContinuityClass` is `Comparable` by increasing smoothness, and adds `derivativeOrder` and
+  `satisfies(_:)` so a continuity floor can be checked without comparing raw values across
+  vocabularies. `g1`/`g2` correctly satisfy no parametric order.
+- **Tests:** 17 across `OCCTCurveTests`, `OCCTGeom2dTests` and `OCCTSurfaceTests`. The
+  pre-existing coverage only ever asserted `>= 0` against CN-continuous primitives, which both
+  encodings satisfy, so none of it could catch this. The new tests pin the real ordinals,
+  compare the two properties on the same object, and reach the G1 class no earlier test could —
+  an offset curve over a C0-but-tangent-continuous BSpline basis, which is the only route to a
+  G1 measurement in the `Geom` hierarchy (`Geom_BSplineCurve` itself only ever reports C0…C3
+  or CN, so `GeomAbs_Shape.hxx`'s own "G2: for BSpline curves only" comment is also wrong).
+
+---
+
 ## Release History
 
 ### v1.17.0 (July 2026): pass 1a of the #377 duplication audit, and two source-breaking changes in a minor release

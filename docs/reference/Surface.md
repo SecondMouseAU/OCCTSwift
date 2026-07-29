@@ -54,30 +54,33 @@ public var surfaceKind: SurfaceType { get }
 
 ### `Continuity`
 
-Continuity class enum derived from `GeomAbs_Shape`.
+Deprecated alias of the top-level `ContinuityClass`, which `Curve3D` and `Curve2D` now share
+(#485). The raw values are unchanged.
 
 ```swift
-public enum Continuity: Int32, Sendable, CaseIterable {
-    case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
-}
+@available(*, deprecated, renamed: "ContinuityClass")
+public typealias Continuity = ContinuityClass
 ```
 
 ---
 
 ### `continuityClass`
 
-The overall continuity of the surface.
+The measured overall continuity of the surface.
 
 ```swift
-public var continuityClass: Continuity { get }
+public var continuityClass: ContinuityClass { get }
 ```
 
-- **Returns:** A `Continuity` value describing positional through CN continuity.
-- **OCCT:** `Geom_Surface::Continuity`.
+- **Returns:** A `ContinuityClass` describing positional through CN continuity. Raw values are
+  `GeomAbs_Shape`'s own ordinals (`c0=0, g1=1, c1=2, g2=3, c2=4, c3=5, cN=6`), which are not a
+  0/1/2 order — use `satisfies(_:)` rather than comparing raw values.
+- **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
   ```swift
   let bsp = Surface.bspline(poles: ..., ...)!
-  print(bsp.continuityClass)  // typically .c2
+  print(bsp.continuityClass)                  // typically .c2
+  print(bsp.continuityClass.satisfies(.c2))   // true
   ```
 
 ---
