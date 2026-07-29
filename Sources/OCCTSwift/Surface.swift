@@ -187,12 +187,22 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Analytic Surfaces
 
-    /// Create an infinite plane from a point and normal direction
+    /// Create an infinite plane from a point and normal direction.
+    ///
+    /// A spelling of `planeFromPointNormal(point:normal:)` with unlabeled positional arguments,
+    /// and it delegates to it — the two cannot produce different planes for the same input (#421).
+    ///
+    /// - Parameters:
+    ///   - origin: A point on the plane
+    ///   - normal: Normal direction of the plane
+    /// - Returns: Plane surface, or nil if `normal` has zero (or near-zero) length
+    ///
+    /// ```swift
+    /// let ground = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
+    /// #expect(ground != nil)
+    /// ```
     public static func plane(origin: SIMD3<Double>, normal: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTSurfaceCreatePlane(origin.x, origin.y, origin.z,
-                                              normal.x, normal.y, normal.z)
-        else { return nil }
-        return Surface(handle: h)
+        planeFromPointNormal(point: origin, normal: normal)
     }
 
     /// Create a cylindrical surface
@@ -1453,13 +1463,27 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Create a plane surface through three points.
+    /// Create a plane surface through three points, via `GC_MakePlane`.
+    ///
+    /// `planeFrom3Points(p1:p2:p3:)` is a labeled-argument spelling of the same construction
+    /// (`gce_MakePln` instead of `GC_MakePlane`) and delegates here — ground-truthed for #421,
+    /// the two OCCT algorithm classes agree on every case tested (well-separated, collinear, and
+    /// coincident points), so there is only one implementation.
     ///
     /// - Parameters:
     ///   - point1: First point
     ///   - point2: Second point
     ///   - point3: Third point
-    /// - Returns: Plane surface, or nil if points are collinear
+    /// - Returns: Plane surface, or nil if points are collinear (including coincident)
+    ///
+    /// ```swift
+    /// let base = Surface.planeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0))
+    /// #expect(base != nil)
+    ///
+    /// // Collinear points fail construction:
+    /// let degenerate = Surface.planeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(2, 0, 0))
+    /// #expect(degenerate == nil)
+    /// ```
     public static func planeFromPoints(
         _ point1: SIMD3<Double>,
         _ point2: SIMD3<Double>,
@@ -1472,12 +1496,20 @@ extension Surface {
         return Surface(handle: ref)
     }
 
-    /// Create a plane surface from a point and normal direction.
+    /// Create a plane surface from a point and normal direction, via `GC_MakePlane`.
+    ///
+    /// `plane(origin:normal:)` is an unlabeled-positional spelling of the same construction and
+    /// delegates here.
     ///
     /// - Parameters:
     ///   - point: A point on the plane
     ///   - normal: Normal direction of the plane
-    /// - Returns: Plane surface, or nil on failure
+    /// - Returns: Plane surface, or nil if `normal` has zero (or near-zero) length
+    ///
+    /// ```swift
+    /// let sheet = Surface.planeFromPointNormal(point: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))
+    /// #expect(sheet != nil)
+    /// ```
     public static func planeFromPointNormal(
         point: SIMD3<Double>,
         normal: SIMD3<Double>
@@ -2149,13 +2181,25 @@ extension Surface {
         return Surface(handle: h)
     }
 
-    /// Create a plane from 3 points (gce_MakePln)
+    /// Create a plane from 3 points.
+    ///
+    /// A labeled-argument spelling of `planeFromPoints(_:_:_:)` (`gce_MakePln` instead of
+    /// `GC_MakePlane`), and it delegates to it — the two cannot produce different planes for the
+    /// same input (#421).
+    ///
+    /// - Parameters:
+    ///   - p1: First point
+    ///   - p2: Second point
+    ///   - p3: Third point
+    /// - Returns: Plane surface, or nil if points are collinear (including coincident)
+    ///
+    /// ```swift
+    /// let base = Surface.planeFrom3Points(p1: SIMD3(0, 0, 0), p2: SIMD3(1, 0, 0), p3: SIMD3(0, 1, 0))
+    /// #expect(base != nil)
+    /// ```
     public static func planeFrom3Points(p1: SIMD3<Double>, p2: SIMD3<Double>,
                                         p3: SIMD3<Double>) -> Surface? {
-        guard let h = OCCTGceMakePlnFrom3Points(p1.x, p1.y, p1.z,
-                                                 p2.x, p2.y, p2.z,
-                                                 p3.x, p3.y, p3.z) else { return nil }
-        return Surface(handle: h)
+        planeFromPoints(p1, p2, p3)
     }
 
     /// Serialize surfaces to string via GeomTools_SurfaceSet
