@@ -241,6 +241,26 @@ change today. Two new tests (`solid(from:) keeps an open body rather than droppi
 actually matters regardless of mechanism: a closed shell alongside a disjoint 5-of-6-face open shell
 still comes back as 2 bodies / 11 faces, not 1.
 
+**Review round 4: `OCCTShapeUpgrade` had the same dead-but-inconsistent `MakeSolid` drop round 3
+fixed on its siblings, and two doc passages didn't hold up.** Round 3 fixed the silent per-body drop
+on `Shape.solid(from:)`/`solidWithFullHistory(from:)`, but `OCCTShapeUpgrade`'s own per-shell loop —
+touched by this same PR — still had the plain `continue`-style drop, missed because it wasn't one of
+the two functions round 3's own finding was about. Fixed the same way: `push_back` the unfixed shell
+on `IsDone() == false` instead of dropping it, same belt-and-braces reasoning, same "dead code today"
+status (verified: `BRepBuilderAPI_MakeSolid`'s single-shell constructor never fails). A new test,
+`upgraded() keeps an unclosable shell's faces rather than dropping them`, pins it — on face count
+rather than solid count, since `upgraded()`'s later `ShapeFix_Shape` pass reclassifies the kept body
+so it no longer counts as a `TopAbs_SOLID`, unlike the round-3 siblings that don't run that pass.
+
+Also: three existing `docs/reference/` pages covering methods documented (not changed) by this PR —
+`Shape-Measurement.md` (`fillet2D`/`chamfer2D`/`solidFromShells`), `Shape-Builders-1.md`
+(`splitByWireOnFace`), `Shape-Builders-2.md` (`locOpeSplit(wiresOnFaces:)`) — had the caveat added to
+the Swift doc comment but not mirrored into the page; now they match. And `upgraded()`'s own doc
+comment claimed "free shells each become a body," which is what this very PR's free-shell parity fix
+made untrue — the next line already stated the correct, narrower rule (an even-enclosed free shell is
+skipped), so the topic sentence was reworded to match rather than contradict it, reusing
+`solid(from:)`'s more precise phrasing.
+
 Bridge-only fix: no OCCT kernel change and no `OCCT.xcframework` rebuild.
 
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)
