@@ -286,11 +286,13 @@ TopoDS_Shape occtUnifySameDomain(const TopoDS_Shape& shape,
 // asked by every call that turns shells into solids: the solid-from-shell entry points in
 // OCCTBridge_Modeling.mm ask it too, and each having its own answer is what #443 records.
 
-// The shells that bound a body, in exploration order: within each solid, every shell an even
-// number of the others enclose, plus every shell belonging to no solid at all. A solid's
-// cavity shells are left out, because a hole is not a body and turning one into a positive solid
-// would give a compound whose volume double-counts the part. Returns empty when `shape`
-// holds no shell, which callers take as "nothing to build".
+// The shells that bound a body, in exploration order: every shell an even number of the
+// others in its group enclose, where a group is one solid's own shells, or all the shells
+// belonging to no solid at all (free shells go through the same parity pass as a solid's own
+// shells, not added unconditionally — #443). A cavity shell is left out, because a hole is not
+// a body and turning one into a positive solid would give a compound whose volume
+// double-counts the part. Returns empty when `shape` holds no shell, which callers take as
+// "nothing to build".
 std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape);
 
 // Assemble one result shape from bodies: the body itself when there is exactly one, a

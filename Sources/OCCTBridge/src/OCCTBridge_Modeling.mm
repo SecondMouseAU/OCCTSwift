@@ -2869,6 +2869,15 @@ OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell) {
     try {
         std::vector<TopoDS_Shape> made;
         for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
+            // TODO(#443 review, unresolved — must be fixed before this merges): before this
+            // change, a MakeSolid failure on the (only) shell was a hard failure (return
+            // nullptr for the whole call). Now, for multi-body input, it just drops this one
+            // body and keeps going — occtSolidBodiesToShape only returns null if EVERY body
+            // failed, so a caller can get back a silently partial compound missing a body,
+            // with no signal that it happened. That is the exact class of defect this PR
+            // exists to eliminate, reopened one layer down. Needs either a real error path
+            // (propagate the failure instead of swallowing it) or explicit, documented
+            // acceptance of partial results — not silence.
             BRepBuilderAPI_MakeSolid makeSolid(topoShell);
             if (!makeSolid.IsDone()) continue;
 
@@ -3098,6 +3107,11 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shel
         Handle(ShapeBuild_ReShape) context = new ShapeBuild_ReShape;
         std::vector<TopoDS_Shape> made;
         for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
+            // TODO(#443 review, unresolved — must be fixed before this merges): same silent
+            // partial-body drop as OCCTShapeCreateSolidFromShell above on a MakeSolid failure,
+            // see the comment there. Here it also means the returned history stays keyed to
+            // whichever bodies DID make it into `made`, with no way for the caller to tell a
+            // body silently failed rather than never having existed.
             BRepBuilderAPI_MakeSolid makeSolid(topoShell);
             if (!makeSolid.IsDone()) continue;
             TopoDS_Solid solid = makeSolid.Solid();

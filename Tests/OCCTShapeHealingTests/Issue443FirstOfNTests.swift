@@ -277,6 +277,49 @@ struct Issue443FirstOfN {
         expectVolume(result, 2000.0, "solidWithFullHistory(two sewn bodies)")
     }
 
+    /// `solidWithHistoryMultiBody` above discards the returned history entirely
+    /// (`let (result, _) =`), so nothing confirms that the ONE shared `ShapeBuild_ReShape`
+    /// context stays queryable for a body other than the last one `ShapeFix_Solid` ran
+    /// against. That is the "flip side of sharing" the bridge comment on
+    /// `OCCTShapeCreateSolidFromShellWithHistory` documents: each body's `Perform()` runs
+    /// against a context that already holds the earlier bodies' replacements, stated to be
+    /// harmless for the disjoint bodies sewing produces. Genuinely sharing a sub-shape between
+    /// two bodies (the case that same comment flags as unsafe) cannot be constructed through
+    /// this public API — two independently-built, disjoint solids never reference the same
+    /// underlying `TopoDS_Face` — so this pins the safe side of that trade-off instead: every
+    /// input face of BOTH bodies must resolve through the single returned history, not just
+    /// the body built last.
+    ///
+    /// Goes straight to two shells (no sewing), matching the precedent single-shell history
+    /// test in `OCCTModelingTests`, so face identity between the input and what
+    /// `occtBodyBoundingShells` explores is guaranteed rather than dependent on whether
+    /// sewing happens to preserve it.
+    @Test("solidWithFullHistory(from:) keeps every body's face queryable in the one shared history")
+    func solidWithHistoryQueryableForEveryBody() {
+        guard let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+              let shellA = a.shells.first, let shellB = b.shells.first,
+              let quilt = Shape.compound([shellA, shellB])
+        else {
+            Issue.record("could not build the two-shell compound")
+            return
+        }
+        guard let (result, history) = Shape.solidWithFullHistory(from: quilt) else {
+            Issue.record("solidWithFullHistory(from:) returned nil")
+            return
+        }
+        #expect(result.solids.count == 2)
+
+        // Every original face of BOTH bodies, queried against the ONE returned history — not
+        // just body B, whose ShapeFix_Solid ran last against the shared context.
+        for (label, box) in [("A", a), ("B", b)] {
+            for face in box.subShapes(ofType: .face) {
+                let rec = history.record(of: face)
+                #expect(!rec.isDeleted, "body \(label) face reported Deleted by the shared history")
+            }
+        }
+    }
+
     @Test("solidWithFullHistory(from:) still returns a bare solid for single-shell input")
     func solidWithHistorySingleShell() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
