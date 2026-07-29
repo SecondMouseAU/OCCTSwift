@@ -219,6 +219,28 @@ each argument would make it stop meaning anything). `OCCTShapeBuildThreadCutter`
 single-body by construction. `Shape.faceRestricted(by:)` and `Wire.offset(by:joinType:)` already
 stated what they do and are untouched.
 
+**Review round 3: the one item left open, `Shape.solid(from:)`/`solidWithFullHistory(from:)`'s own
+`BRepBuilderAPI_MakeSolid` failure path.** Flagged unresolved in review round 2: before this PR, a
+`MakeSolid` failure on the (only) shell was a hard failure for the whole call; per-body, it silently
+dropped just that one body from the result compound — the exact defect class this PR exists to fix,
+reopened one layer down. Checked against `occt-src` rather than assumed: `BRepLib_MakeSolid`'s
+single-shell constructor (`BRepLib_MakeSolid.cxx`) unconditionally calls `Done()` after adding the
+shell, with no closure or coherence check anywhere in the path — matching its own header's "a solid
+under construction is always valid." Confirmed with a probe: `BRepBuilderAPI_MakeSolid` on a
+5-of-6-face open shell, and on a bare empty shell, both come back `IsDone() == true` with a non-null
+`Solid()` — just a geometrically invalid one (`BRepCheck_Analyzer.IsValid() == false`), not a failure.
+**So the failure this review item worried about cannot occur for this call**, confirmed by re-running
+the two new regression tests below against the pre-fix code: both still pass, because the code path
+they exercise never reaches the branch in question either way.
+
+Fixed anyway, for defense in depth: the dead `continue` (drop) is now `push_back` (keep the shell
+as-is), matching `OCCTShapeSolidFromShell`'s identical "keeps a body rather than dropping it if that
+changes" comment — same belt-and-braces contract as its #442 sibling, zero observable behaviour
+change today. Two new tests (`solid(from:) keeps an open body rather than dropping it`,
+`solidWithFullHistory(from:) keeps an open body rather than dropping it`) pin the guarantee that
+actually matters regardless of mechanism: a closed shell alongside a disjoint 5-of-6-face open shell
+still comes back as 2 bodies / 11 faces, not 1.
+
 Bridge-only fix: no OCCT kernel change and no `OCCT.xcframework` rebuild.
 
 ### v1.16.0 (July 2026): fix — `Shape.fixSolid()`/`solidFromShellFixed()` healed only the first body (#442)

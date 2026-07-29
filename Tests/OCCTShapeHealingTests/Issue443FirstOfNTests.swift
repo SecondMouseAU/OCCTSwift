@@ -48,6 +48,19 @@ struct Issue443FirstOfN {
         return outer.subtracting(cavity)
     }
 
+    /// One closed 10mm-cube shell, and a disjoint 5-of-6-face shell that cannot close
+    /// (`BRep_Tool::IsClosed` false, `BRepCheck_Analyzer` invalid): 11 faces, 2 bodies.
+    private func closedAndOpenShellCompound() -> Shape? {
+        guard let closedBox = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10),
+              let closedShell = closedBox.shells.first,
+              let openBox = Shape.box(origin: SIMD3(30, 0, 0), width: 10, height: 10, depth: 10)
+        else { return nil }
+        let fiveFaces = Array(openBox.subShapes(ofType: .face).dropFirst())
+        guard fiveFaces.count == 5, let openShell = Shape.sew(shapes: fiveFaces, tolerance: 1e-6)
+        else { return nil }
+        return Shape.compound([closedShell, openShell])
+    }
+
     // MARK: - Shape.solid(from:)
 
     /// The measured row from the issue: sewing the two-box compound gives one shell per
@@ -106,6 +119,30 @@ struct Issue443FirstOfN {
         #expect(solid.solids.count == 1)
         #expect(solid.isValid)
         expectVolume(solid, 1000.0, "solid(from: one shell)")
+    }
+
+    /// #443 review flagged the bridge's `BRepBuilderAPI_MakeSolid` `IsDone()`/`IsNull()` checks
+    /// as a possible silent-drop path: a per-body `MakeSolid` failure used to fail the whole
+    /// call, and per-shell it could just skip that one body with no signal. Checked against
+    /// occt-src rather than assumed (see the bridge comment on `OCCTShapeCreateSolidFromShell`):
+    /// `BRepLib_MakeSolid`'s single-shell constructor unconditionally succeeds, even wrapping a
+    /// wide-open shell, so that specific failure cannot occur. The bridge keeps a push-not-drop
+    /// fallback anyway, matching `OCCTShapeSolidFromShell`'s identical defensive contract — this
+    /// pins the guarantee that actually matters either way: an unclosable body-bounding shell is
+    /// never silently missing from the result.
+    @Test("solid(from:) keeps an open body rather than dropping it")
+    func solidFromKeepsOpenBody() {
+        guard let compound = closedAndOpenShellCompound() else {
+            Issue.record("could not build the closed+open shell compound")
+            return
+        }
+        guard let solid = Shape.solid(from: compound) else {
+            Issue.record("solid(from:) returned nil for a closed+open two-shell compound")
+            return
+        }
+        // Both bodies present — the open one is not dropped for failing to close.
+        #expect(solid.solids.count == 2)
+        #expect(solid.subShapeCount(ofType: .face) == 11)
     }
 
     /// A cavity is a hole, not a body. Emitting one as a positive solid would give a
@@ -334,6 +371,22 @@ struct Issue443FirstOfN {
         }
         #expect(result.shapeType == .solid)
         expectVolume(result, 1000.0, "solidWithFullHistory(one shell)")
+    }
+
+    /// Same review finding as `solidFromKeepsOpenBody`, for the history variant's own
+    /// `MakeSolid` check — a body that cannot close is kept, not dropped.
+    @Test("solidWithFullHistory(from:) keeps an open body rather than dropping it")
+    func solidWithHistoryKeepsOpenBody() {
+        guard let compound = closedAndOpenShellCompound() else {
+            Issue.record("could not build the closed+open shell compound")
+            return
+        }
+        guard let (result, _) = Shape.solidWithFullHistory(from: compound) else {
+            Issue.record("solidWithFullHistory(from:) returned nil for a closed+open compound")
+            return
+        }
+        #expect(result.solids.count == 2)
+        #expect(result.subShapeCount(ofType: .face) == 11)
     }
 
     // MARK: - Shape.upgraded()

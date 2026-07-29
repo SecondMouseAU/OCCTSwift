@@ -2863,26 +2863,32 @@ OCCTShapeRef OCCTShapeCreateFaceWithHoles(OCCTWireRef outer, const OCCTWireRef* 
 // solid, which is the input its own doc comment names, and after #442 the sibling entry point
 // OCCTShapeSolidFromShell answered that same input with both bodies. Same helper, so the two
 // now agree; cavity shells stay out of the result for the reason documented there.
+//
+// #443 review flagged the IsDone()/IsNull() checks below as a silent-drop path reopened one
+// layer down: a MakeSolid failure used to fail the whole call, and per-shell it just skips that
+// body. Checked against occt-src rather than assumed: BRepLib_MakeSolid's single-shell
+// constructor (BRepLib_MakeSolid.cxx) unconditionally calls Done() after B.Add(myShape, S), with
+// no closure or coherence check anywhere in the path — its own header says as much ("a solid
+// under construction is always valid"). Confirmed with a probe (BRepBuilderAPI_MakeSolid on a
+// 5-of-6-face open shell, and on a bare empty shell): IsDone() true and Solid() non-null in both
+// cases, just a geometrically invalid solid (BRepCheck_Analyzer.IsValid() false) rather than a
+// null one. So neither branch below can fire for a real shell today. They stay as push-not-drop
+// rather than being deleted, matching OCCTShapeSolidFromShell's identical belt-and-braces
+// comment ("keeps a body rather than dropping it if that changes") — same defensive contract,
+// zero behaviour change either way.
 OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell) {
     if (!shell) return nullptr;
 
     try {
         std::vector<TopoDS_Shape> made;
         for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
-            // TODO(#443 review, unresolved — must be fixed before this merges): before this
-            // change, a MakeSolid failure on the (only) shell was a hard failure (return
-            // nullptr for the whole call). Now, for multi-body input, it just drops this one
-            // body and keeps going — occtSolidBodiesToShape only returns null if EVERY body
-            // failed, so a caller can get back a silently partial compound missing a body,
-            // with no signal that it happened. That is the exact class of defect this PR
-            // exists to eliminate, reopened one layer down. Needs either a real error path
-            // (propagate the failure instead of swallowing it) or explicit, documented
-            // acceptance of partial results — not silence.
             BRepBuilderAPI_MakeSolid makeSolid(topoShell);
-            if (!makeSolid.IsDone()) continue;
-
-            TopoDS_Solid solid = makeSolid.Solid();
-            if (solid.IsNull()) continue;
+            TopoDS_Solid solid;
+            if (makeSolid.IsDone()) solid = makeSolid.Solid();
+            if (solid.IsNull()) {
+                made.push_back(topoShell);   // Kept, not dropped — see comment above.
+                continue;
+            }
 
             // Optionally fix the solid orientation
             ShapeFix_Solid fixer(solid);
@@ -3107,15 +3113,18 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef shel
         Handle(ShapeBuild_ReShape) context = new ShapeBuild_ReShape;
         std::vector<TopoDS_Shape> made;
         for (const TopoDS_Shell& topoShell : occtBodyBoundingShells(shell->shape)) {
-            // TODO(#443 review, unresolved — must be fixed before this merges): same silent
-            // partial-body drop as OCCTShapeCreateSolidFromShell above on a MakeSolid failure,
-            // see the comment there. Here it also means the returned history stays keyed to
-            // whichever bodies DID make it into `made`, with no way for the caller to tell a
-            // body silently failed rather than never having existed.
+            // Same MakeSolid IsDone()/IsNull() checks as OCCTShapeCreateSolidFromShell above,
+            // and the same finding applies: verified dead code (BRepLib_MakeSolid's single-shell
+            // constructor always Done()s, never a null Solid()), kept push-not-drop for the same
+            // belt-and-braces reason. A body that took this branch never reaches ShapeFix_Solid,
+            // so it contributes nothing to `context` — same as any body the loop never visits.
             BRepBuilderAPI_MakeSolid makeSolid(topoShell);
-            if (!makeSolid.IsDone()) continue;
-            TopoDS_Solid solid = makeSolid.Solid();
-            if (solid.IsNull()) continue;
+            TopoDS_Solid solid;
+            if (makeSolid.IsDone()) solid = makeSolid.Solid();
+            if (solid.IsNull()) {
+                made.push_back(topoShell);   // Kept, not dropped — see comment above.
+                continue;
+            }
 
             ShapeFix_Solid fixer(solid);
             fixer.SetContext(context);
