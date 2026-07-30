@@ -4,7 +4,8 @@ Patches in this directory are upstream-bound OCCT bug fixes we carry until they 
 release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/` prefixes) to
 `Libraries/occt-src` before every cmake build. A patch takes effect only when the xcframework is
 **rebuilt** from source — the binary shipped in `Libraries/OCCT.xcframework` does not yet include it
-until a rebuild + release.
+until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
+for what that takes.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 
@@ -363,6 +364,23 @@ See [`Scripts/repro/353-cdm-metadata-lookup-table/`](https://github.com/SecondMo
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0016-Resource_Manager-atomic-Debug-Storage_Schema-mutex-374.patch
+
+**Fixes the two upstream OCCT races behind [#374](https://github.com/SecondMouseAU/OCCTSwift/issues/374)**, found by the confirmation harness written for [#371](https://github.com/SecondMouseAU/OCCTSwift/issues/371), the bridge-side change that stopped every document sharing one `XCAFApp_Application::GetApplication()` singleton and gave each its own `TDocStd_Application`.
+
+1. **`Resource_Manager::Debug`** (`Resource_Manager.cxx`) is a file-scope `static bool` written on *every* construction, unsynchronized. Each fresh `TDocStd_Application`'s first `DefineFormat()` lazily constructs its own `Resource_Manager` via `Resources()`, and the per-instance lazy-init mutex added by `0012` only serializes repeat calls on the *same* instance, not first-construction across different instances built concurrently.
+2. **`Storage_Schema::ICurrentData()`** (`Storage_Schema.cxx`) is a function-local `static Handle(Storage_Data)` with no lock at all. `Write()` (the `SaveAs()` path) sets it for the duration of one store, while *any* `Storage_Schema` construction calls `Clear()` → `ICurrentData().Nullify()`, including the throwaway instances `PCDM_ReadWriter_1::ReadReferenceCounter`/`ReadReferences`/`ReadDocumentVersion` each build on **every** `Open()`, reached unconditionally through `CDF_Application::Retrieve` and not only for documents with cross-references. So an unrelated load nulls out another thread's in-flight save.
+
+Neither had ever appeared in this project's TSan gates: every earlier investigation shared one application instance, so `Resources()`'s lazy-init mutex accidentally serialized both down to "runs once, ever, per process". #371 is what first made them concurrent.
+
+**Fix:** `Debug` becomes `std::atomic<bool>`, a plain process-wide flag rather than per-instance intent, so atomic is sufficient (unlike `0011`/#341's `theAutoNaming`, which needed a per-instance redesign). `Storage_Schema` gains `ICurrentDataMutex()`, a function-local `static std::recursive_mutex&` mirroring `ICurrentData()`'s own accessor pattern, held across the constructor's `Clear()`, the whole body of `Write()` (one atomic session against the global rather than one lock per access), `BindType()`, `TypeBinding()`, `AddPersistent()`, `PersistentToAdd()`, `HasTypeBinding()` and `ISetCurrentData()`. Recursive because `Write()`'s critical section re-enters `BindType`/`AddPersistent`/`PersistentToAdd` on the same thread through per-type `Storage_CallBack::Write()` callbacks, which would deadlock a plain mutex. No public signature changes.
+
+**Validation:** the "unguarded" variant of #371's confirmation harness (private app per thread/round, no `ocafStoreMutexSim()`) reports 13 races + SIGABRT before the patch at 8×30, and 0 across 4 runs after (8×30, 8×50, 10×60, 8×40). Full `Scripts/tsan-stress.sh run` gate (10 scenarios) clean, no regression on #341/#344/#349/#353/#371's own scenarios.
+
+See [`Scripts/repro/374-resource-manager-storage-schema-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/374-resource-manager-storage-schema-race) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398) (repro, filed during #371) / [OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399) (fix). Both are still open as of 2026-07-30.
+
+**Retire** once the bundled OCCT includes this fix.
+
 ## 0017-null-reshape-context-ComposeShell-WireDivide-484.patch
 
 **Fixes two upstream OCCT crashes found while auditing the `ShapeFix_Face` call sites in [#484](https://github.com/SecondMouseAU/OCCTSwift/issues/484)** — the same defect class as `0005`/#317 (an unguarded null `ShapeBuild_ReShape` context dereference), in two classes that were never patched or filed.
@@ -375,8 +393,10 @@ Both are the odd ones out in their own package. `ShapeUpgrade_FaceDivide::Perfor
 
 **Validation** (fast path, no full rebuild — see the `#0001` entry above for the override-link technique): a 4-edge planar square face and an unbounded-cylinder face, run through both classes with no `SetContext()` call, SIGSEGV 100% of the time on stock `V8_0_0_p1` + patches `0001`–`0016` and complete normally after this patch. On the *with-context* path — the only one that worked before — the result is **byte-identical** before and after (BREP dump hash plus face/wire/edge/vertex counts compared for both surfaces and both classes), and the no-context path now produces that same result instead of crashing.
 
+**Confirmed against the real binary** ([#512](https://github.com/SecondMouseAU/OCCTSwift/issues/512)): `Libraries/OCCT.xcframework` has since been rebuilt from source with all 17 patches, and both reproducers were re-run against it with **no** override-linked TUs: the two `ctx=NO` cases that were `KILLED BY SIGNAL 11` now complete, and all four `ctx=yes` fingerprints are identical to the values recorded pre-rebuild in the reproducer's README. Full `swift test` (4642 tests / 1318 suites) clean.
+
 Both crashes were already closed **bridge-side**, before this patch existed: `OCCTShapeFixComposeShell` and `OCCTShapeUpgradeWireDivide` (`OCCTBridge_Healing.mm`) each call `SetContext(new ShapeBuild_ReShape())` with a comment naming the SIGSEGV. This patch fixes the kernel so those workarounds can eventually retire, and so the crash is closed for every other OCCT consumer following the documented `Init` + `Perform` usage.
 
-See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409) (repro) / [OCCT#1410](https://github.com/Open-Cascade-SAS/OCCT/pull/1410) (fix). Both defects are still present on upstream `master` (verified against `37dd5686` at filing time), and the PR branch's post-edit blobs hash identically to this patch's output, so the fix is the same on `master` as on our `V8_0_0_p1` pin.
+See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409) (repro) / [OCCT#1410](https://github.com/Open-Cascade-SAS/OCCT/pull/1410) (fix), both still open with the PR unmerged as of 2026-07-30. Both defects are still present on upstream `master` (verified against `37dd5686` at filing time), and the PR branch's post-edit blobs hash identically to this patch's output, so the fix is the same on `master` as on our `V8_0_0_p1` pin.
 
 **Retire** once the bundled OCCT includes this fix.

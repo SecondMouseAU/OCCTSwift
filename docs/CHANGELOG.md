@@ -1598,6 +1598,37 @@ their truncation contract again. This is the same defect and the same fix as
 unmodified bridge first: the count-agreement test failed at 100 versus 150, which is the property
 the truncation broke.
 
+### `OCCT.xcframework` rebuilt: the #484 null-context guard is now in the kernel binary (#512)
+
+A carried patch does nothing until the xcframework is rebuilt from source, so `0017` above was inert
+on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **17** carried patches:
+`ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and
+`ShapeUpgrade_WireDivide::Perform()` no longer SIGSEGV when the caller never set a
+`ShapeBuild_ReShape` context.
+
+**No API change and no behaviour change through this wrapper.** Both bridge call sites already set a
+context, so nothing here could reach the crash before or after; those workarounds stay in place, and
+retiring them is a later follow-up (the same PR1→PR2 pattern as #298/#341/#344/#349). What the
+rebuild buys is closing the crash for code that reaches those OCCT classes through a path this
+package does not control.
+
+Verified against the rebuilt binary with **no** override-linked TUs. The earlier #484 evidence was
+all override-linked, which proves the patch compiles and works, not that it shipped. Both `ctx=NO`
+cases in `repro_484_crash.mm` complete where they were killed by SIGSEGV before, and all four
+`ctx=yes` fingerprints in `repro_484_equivalence.mm` are unchanged (now recorded as reference values
+in [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context)).
+Full `swift test`: 4642 tests in 1318 suites, clean. `Scripts/tsan-stress.sh` was not run and is not
+required, since `0017` is a null-handle guard on a single-threaded path and touches no concurrency
+surface.
+
+`Package.swift`'s remote `url:`/`checksum:` pin and the kernel-patch list on the `## Current:` line
+above are the **release commit's** job, not this change's: until then a consumer resolving the remote
+URL still gets the previously released kernel, while this checkout and every sibling repo
+path-depending on its `Libraries/OCCT.xcframework` get the new one. `docs/guides/building-occt.md`
+gained a "Shipping a rebuild" section covering that sequence, which until now existed only as
+hand-written checklists in issues. Patch `0016` (#374) also gained the
+`Scripts/patches/README.md` entry it never got.
+
 ---
 
 ## Release History

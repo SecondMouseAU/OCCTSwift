@@ -292,10 +292,77 @@ Make executable:
 chmod +x Scripts/build-occt.sh
 ```
 
+## Shipping a rebuild
+
+A rebuild is normally triggered by a new patch in `Scripts/patches/`, and those are inert until the
+xcframework is rebuilt from source, so "patch merged" and "patch shipped" are two separate events
+(see `Scripts/patches/README.md`). The steps below are the second one.
+
+**1. Confirm the patch set the build actually used.** The script prints one line per patch
+(`applied` / `already applied` / `ERROR`); an `ERROR` aborts the build, and `already applied` is
+normal whenever `occt-src` was patched by an earlier run or an override-link probe. Before trusting
+it, check `occt-src` is *only* the pinned tag plus the carried patches, since a leftover diagnostic probe
+from an investigation would otherwise be compiled into a release binary:
+
+```bash
+git -C Libraries/occt-src status --porcelain          # every path must be one a patch touches
+for p in Scripts/patches/*.patch; do                 # absolute path: git -C resolves it relative to -C
+  git -C Libraries/occt-src apply --reverse --check "$(pwd)/$p" \
+    && echo "ok  $(basename "$p")" || echo "NOT APPLIED  $(basename "$p")"
+done
+```
+
+**2. Confirm the objects are genuinely newer than the patched sources.** Each slice's build dir is
+`rm -rf`'d and re-configured per run, so a normal run cannot go stale, but a *resumed* build can
+(`CMakeCache.txt` bakes in the configuring checkout's absolute path, and the script's `|| true`
+swallows the failure a mismatched path produces, leaving a fresh-timestamped but stale artifact).
+Never trust the exit code alone:
+
+```bash
+stat -f '%Sm %N' Libraries/occt-src/src/.../ThePatchedFile.cxx
+find Libraries/occt-build-macos -name 'ThePatchedFile.cxx.o' -exec stat -f '%Sm %N' {} \;
+```
+
+If a build is interrupted, resume the interrupted slice with `cmake --build <that build dir>`
+followed by `cmake --install <that build dir>` **from the same checkout that configured it**. Do
+not re-run `build-occt.sh`, which `rm -rf`s each slice's build dir before starting it.
+
+**3. Prove the fix reached the binary.** Run the patch's own reproducer against the rebuilt
+xcframework with **no** override-linked TUs, and re-check whatever "no behaviour change" evidence
+the patch's `Scripts/repro/<issue>/README.md` recorded. Then a full `swift test`.
+
+**4. Package and pin.** The zip is the release asset; its checksum is what SwiftPM verifies.
+
+```bash
+cd Libraries && rm -f OCCT.xcframework.zip
+zip -r -y -q OCCT.xcframework.zip OCCT.xcframework      # -y: keep symlinks as symlinks
+swift package compute-checksum OCCT.xcframework.zip     # or: shasum -a 256
+```
+
+Then, in the release commit:
+
+- `Package.swift`: bump **both** the OCCT `url:` (to the new tag) **and** `checksum:`, and extend
+  the carried-patch comment above them to name the new patch. Missing either half leaves
+  URL-resolving consumers on the old kernel while checkouts with a local `Libraries/` get the new
+  one, silently.
+- `docs/CHANGELOG.md`: add the new patch's issue number to the kernel-patch list on the
+  `## Current:` line.
+- Attach `OCCT.xcframework.zip` to the release for that tag, so the pinned `url:` resolves. The
+  Release-verification workflow (`.github/workflows/release.yml`) runs on release *publish* and
+  fails loudly on a 404 or checksum mismatch; re-run it via `workflow_dispatch` if the asset is
+  replaced after publishing.
+
+Between the rebuild and the release the two consumer paths diverge on purpose: this checkout and
+every sibling repo path-depending on its `Libraries/OCCT.xcframework` get the new kernel
+immediately, while anything resolving the remote `url:` stays on the previously released one.
+
 ## Alternative: Pre-built Binaries
 
 If you don't want to build OCCT yourself:
 
-1. **Open Cascade Commercial**: Contact sales@opencascade.com for pre-built iOS libraries
-2. **Community Builds**: Check OCCT forum for community-provided builds
-3. **Build Service**: Use GitHub Actions to build (see `.github/workflows/build-occt.yml`)
+1. **This package's own release asset**: the normal path, and the one that carries our patches.
+   `OCCT.xcframework.zip` is attached to each release that rebuilt the kernel, and `Package.swift`
+   resolves it by `url:`/`checksum:` automatically on any checkout with no local `Libraries/`. There
+   is no CI job that builds OCCT; the rebuild is the manual local run documented above.
+2. **Open Cascade Commercial**: Contact sales@opencascade.com for pre-built iOS libraries
+3. **Community Builds**: Check OCCT forum for community-provided builds

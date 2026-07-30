@@ -118,6 +118,31 @@ all counts match), and the four `ctx=NO` fingerprints — which SIGSEGV on stock
 their `ctx=yes` counterparts after the patch. The guard only fires when there was no context, and in
 that case it produces exactly what an explicitly-provided context produces.
 
+The `ctx=yes` fingerprints, captured against `V8_0_0_p1` + patches `0001`–`0016` before the
+xcframework was rebuilt (#512), are the reference values for any later rebuild:
+
+```
+WireDivide   planar       ctx=yes : type=5 n4=0 n5=1 n6=4 n7=8 brep=19494c8eaac44ef7 len=582
+WireDivide   cylindrical  ctx=yes : type=5 n4=0 n5=1 n6=4 n7=8 brep=ea26831beb4fa5fb len=667
+ComposeShell planar       ctx=yes : ok=1 type=4 n4=1 n5=1 n6=4 n7=8 brep=a06f56d38503cd48 len=752
+ComposeShell cylindrical  ctx=yes : ok=1 type=4 n4=1 n5=1 n6=4 n7=8 brep=aa5c2d38eac7d8b3 len=699
+```
+
+## Confirmed against the rebuilt kernel (#512)
+
+Everything above was measured with override-linked TUs. `Libraries/OCCT.xcframework` has since been
+rebuilt from source with all 17 carried patches (#512), so both reproducers now run against the real
+shipped binary, compiled exactly as the commands at the top of each section show, with **no**
+override-linked TUs:
+
+- `repro_484_crash.mm`: `ShapeUpgrade_WireDivide::Perform ctx=NO` and
+  `ShapeFix_ComposeShell::Perform ctx=NO` both print their normal result line where they were
+  `*** KILLED BY SIGNAL 11 ***` beforehand. The other six cases are unchanged.
+- `repro_484_equivalence.mm`: all four `ctx=yes` fingerprints are identical to the reference values
+  above, and all four `ctx=NO` fingerprints now complete and match their `ctx=yes` counterpart.
+
+Plus a full `swift test`: 4642 tests in 1318 suites, clean.
+
 ## Also checked (not defects)
 
 Both were candidates in the same audit and came back clean, so the patch deliberately does not touch
