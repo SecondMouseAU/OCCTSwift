@@ -1,9 +1,9 @@
 ---
 type: policy
 title: Issue labels and project-board tracking
-description: Every issue carries a type:* and priority:* label, enforced by CI; multi-phase initiatives get a dedicated project board. See Issue tracking.
+description: Every issue carries a type:* and priority:* label, enforced by CI; multi-phase initiatives get a dedicated project board kept current at each workflow step. See Issue tracking.
 tags: [policy, issues, labels, project-board, triage]
-timestamp: 2026-07-29
+timestamp: 2026-07-30
 ---
 
 # Issue labels and project-board tracking
@@ -17,6 +17,16 @@ GitHub Project scoped to that initiative's own issues, with a `Status` field mat
 workflow stages (Backlog, In Progress, PR Review, Code-Review, Ready, Done) rather than the generic
 Todo/In Progress/Done default: [OCCTSwift Refactor (#377)](https://github.com/orgs/SecondMouseAU/projects/2).
 `refactor` + `phase:*` labels identify which issues belong to it.
+
+**Update `Status` at the same points the workflow already visits**, not as a separate later pass:
+opening a PR moves the card to `PR Review`, a review landing moves it to `Code-Review`, a merge moves
+it to `Done`. The project's own Workflows panel automates the one transition GitHub can do for you
+("Item closed" / "Pull request merged" → `Done`); turn both on per board.
+
+**`Linked pull requests` will not populate for a PR based on anything but the repo's default branch**,
+including every `refactor/381-pass1b`-targeted PR in this project. That is GitHub platform behaviour,
+not a bug to chase; the issue's own manual close naming the PR (see the repo's release process) is
+the real source of truth for that link until the initiative's branch reaches `main`.
 
 For the full rule and rationale, follow the authoritative **Issue tracking** section in
 [OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).
