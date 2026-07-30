@@ -3474,8 +3474,14 @@ extension Shape {
     /// Each edge can have its own fillet radius, allowing for more control
     /// than applying a uniform fillet to all edges.
     ///
-    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs
-    /// - Returns: Filleted shape, or nil on failure
+    /// Every radius must be positive: one non-positive (or NaN) radius rejects the whole batch,
+    /// the same contract ``filleted(edges:radius:)`` and
+    /// ``filleted(edges:startRadius:endRadius:)`` apply to theirs. An out-of-range `edgeIndex` is
+    /// skipped, so the fillet is applied to whichever indices resolve on this shape.
+    ///
+    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs; each radius must be > 0
+    /// - Returns: Filleted shape, or nil on failure, including an empty array, a non-positive
+    ///   radius anywhere in the array, or no index resolving to an edge of this shape
     ///
     /// ## Example
     ///
@@ -3486,9 +3492,12 @@ extension Shape {
     ///     (1, 2.0),  // Edge 1 gets 2mm fillet
     ///     (2, 0.5)   // Edge 2 gets 0.5mm fillet
     /// ])
+    ///
+    /// // Rejected: a radius of zero is not a fillet, so the batch returns nil
+    /// let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
     /// ```
     public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape? {
-        guard !edgeRadii.isEmpty else { return nil }
+        guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
 
         var indices = edgeRadii.map { Int32($0.edgeIndex) }
         var radii = edgeRadii.map { $0.radius }
@@ -5300,10 +5309,12 @@ extension Shape {
     /// shape and a `ShapeHistoryRef` queryable for `Modified` / `Generated` /
     /// `IsDeleted` per input sub-shape (e.g. a filleted edge → multiple
     /// generated fillet faces).
+    ///
+    /// `radius` must be positive, matching ``filleted(edges:radius:)``.
     public func filletedWithFullHistory(radius: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
-        guard !edges.isEmpty else { return nil }
+        guard !edges.isEmpty, radius > 0 else { return nil }
         let edgeIndices = edges.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = edgeIndices.withUnsafeBufferPointer { buf in
@@ -5316,9 +5327,12 @@ extension Shape {
 
     /// Variable-radius fillet on a single edge: radius linearly varies from
     /// `startRadius` (at the edge's first parameter) to `endRadius` (at last).
+    ///
+    /// Both radii must be positive, matching ``filleted(edges:startRadius:endRadius:)``.
     public func filletedWithFullHistory(edge: Int, startRadius: Double, endRadius: Double)
         -> (result: Shape, history: ShapeHistoryRef)?
     {
+        guard startRadius > 0, endRadius > 0 else { return nil }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHistoryFromFilletEdgeVariable(handle, Int32(edge),
                                                                startRadius, endRadius,
@@ -11677,7 +11691,24 @@ public struct ApproxCurveResult {
 }
 
 extension Curve3D {
-    /// Approximate this curve as a BSpline with detailed result (error, status).
+    /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxCurve` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// curve; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
+    /// for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find out.
+    /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let fit = circle.approxWithDetails(tolerance: 1e-6)
+    /// if let bspline = fit.curve, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
+    /// }
+    /// ```
     public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
                                    maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
         let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
@@ -11696,9 +11727,33 @@ public struct ApproxSurfaceResult {
 }
 
 extension Surface {
-    /// Approximate this surface as a BSpline with detailed result (error, status).
-    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
-                                   vContinuity: ParametricContinuity = .c1,
+    /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxSurface` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// surface; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `surface` is populated, and OCCT documents it as true
+    /// even for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find
+    /// out. So a non-nil `surface` is not by itself a promise that `tolerance` was met; on a
+    /// surface where `maxDegree` cannot reach the tolerance (a torus at 1e-9, say) OCCT returns a
+    /// usable best effort with `isDone` false.
+    ///
+    /// The continuity defaults are C2, matching ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``.
+    /// Before #491 they were C1 here, so the two no-continuity-argument calls fitted to different
+    /// smoothness and returned different surfaces. An infinite/unbounded surface must be trimmed to
+    /// a finite parameter domain first (see ``Surface/trimmed(u1:u2:v1:v2:)``).
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let fit = sphere.approxWithDetails(tolerance: 1e-5)
+    /// if let bspline = fit.surface, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                                   vContinuity: ParametricContinuity = .c2,
                                    maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
         let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
                                               vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))

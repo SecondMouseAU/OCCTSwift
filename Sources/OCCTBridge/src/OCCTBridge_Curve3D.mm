@@ -743,26 +743,67 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves, int32_t co
     }
 }
 
+// Map a requested approximation continuity onto GeomAbs_Shape. Request orders count 0, 1, 2, 3
+// for C0..C3, which is NOT GeomAbs_Shape's own declared order (that interleaves G1/G2). Out-of-range
+// values fall back to C2, the value both approximation entry points default to.
+static GeomAbs_Shape intToContinuity(int32_t c) {
+    switch (c) {
+        case 0: return GeomAbs_C0;
+        case 1: return GeomAbs_C1;
+        case 2: return GeomAbs_C2;
+        case 3: return GeomAbs_C3;
+        default: return GeomAbs_C2;
+    }
+}
+
+// === #491: one GeomConvert_ApproxCurve run behind both curve approximation entry points ===
+//
+// OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
+// (Curve3D.approxWithDetails) are two views of the same approximation: the first returns the
+// fitted BSpline, the second returns it alongside the diagnostics OCCT already computed for it.
+// They were written independently and drifted on which completion accessor decides success —
+// IsDone() here, HasResult() there — so they run through this one helper instead.
+//
+// The shared gate is HasResult(). The header documents the two as different questions: IsDone() is
+// "the approximation has been done within required tolerance", HasResult() is "did come out with a
+// result that is not NECESSARILY within the required tolerance". In this kernel they cannot
+// actually disagree: GeomConvert_ApproxCurve copies both flags off AdvApprox_ApproxAFunction, whose
+// only HasResult-without-IsDone path is the ErrorCode = -1 assignment at
+// AdvApprox_ApproxAFunction.cxx:550 — commented out upstream ("// for now ErrorCode=-1;"). With
+// that line dead, ErrorCode is only ever 0 (both flags set) or 1 (neither), which is why gating on
+// IsDone() never actually rejected an over-tolerance fit: a circle fitted with one segment at
+// degree 3 against a 1e-9 tolerance reports maxError 5.1 and still reports IsDone.
+//
+// HasResult() is the right one to standardise on regardless. It is what OCCT's own curve conversion
+// entry points use (GeomConvert.cxx:345/441, GeomToIGES_GeomCurve.cxx:632,
+// GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
+// gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
+// isDone: false is the point of that API, so it cannot also be the reason to return nothing.
+static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c, double tolerance,
+                                             int32_t continuity, int32_t maxSegments,
+                                             int32_t maxDegree) {
+    OCCTApproxCurveResult result = {};
+    // Both the outer handle and the curve it wraps: a null Geom_Curve reaches GeomAdaptor_Curve,
+    // whose own Standard_NullObject precondition is compiled out of this Release kernel.
+    if (!c || c->curve.IsNull()) return result;
+    try {
+        GeomConvert_ApproxCurve approx(c->curve, tolerance, intToContinuity(continuity),
+                                        maxSegments, maxDegree);
+        result.isDone = approx.IsDone();
+        result.hasResult = approx.HasResult();
+        if (result.hasResult) {
+            result.maxError = approx.MaxError();
+            Handle(Geom_BSplineCurve) bspl = approx.Curve();
+            if (!bspl.IsNull()) result.curve = new OCCTCurve3D(bspl);
+        }
+    } catch (...) {}
+    return result;
+}
+
 OCCTCurve3DRef OCCTCurve3DApproximate(OCCTCurve3DRef c, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree) {
-    if (!c || c->curve.IsNull()) return nullptr;
-    try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-        }
-
-        GeomConvert_ApproxCurve approx(c->curve, tolerance, cont, maxSegments, maxDegree);
-        if (!approx.IsDone()) return nullptr;
-
-        return new OCCTCurve3D(approx.Curve());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtApproxCurve(c, tolerance, continuity, maxSegments, maxDegree).curve;
 }
 
 // Draw Methods
@@ -932,19 +973,25 @@ bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef c,
 #include <GeomGridEval_Curve.hxx>
 #include <GeomGridEval.hxx>
 
+// The canonical 3D-curve batch evaluators. Two later generations duplicated this job under
+// other names (v0.110's OCCTCurve3DEvalBatchD0/D1 with a hand-rolled per-point loop, v0.111's
+// OCCTGridEvalCurveD0/D1 with the same GeomGridEval_Curve calls as here); #486 removed both and
+// pointed their Swift spellings at these two.
+
 int32_t OCCTCurve3DEvaluateGrid(OCCTCurve3DRef curve, const double* params, int32_t paramCount,
                                  double* outXYZ) {
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt> results = evaluator.EvaluateGrid(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        // Defensive: bound the write by the caller's buffer as well as by what OCCT returned.
+        // Every evaluator in the pinned kernel returns exactly theParams.Length() or an empty
+        // array (empty only for a null curve or empty params, both rejected above), so neither
+        // direction is reachable today. Taking the min covers both anyway: a shorter result must
+        // not be read past its end, and a longer one must not be written past outXYZ's end.
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt& pt = results.Value(i + 1);
             outXYZ[i*3]   = pt.X();
@@ -962,14 +1009,10 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, in
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || !outDXDYDZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<GeomGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));  // see EvaluateGrid
         for (int32_t i = 0; i < n; i++) {
             const GeomGridEval::CurveD1& r = results.Value(i + 1);
             outXYZ[i*3]     = r.Point.X();
@@ -1607,39 +1650,14 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
 // MARK: - GeomConvert_ApproxCurve (v0.75)
 // --- GeomConvert_ApproxCurve ---
 
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
+// Both curve approximation entry points share occtApproxCurve, declared next to
+// OCCTCurve3DApproximate above — see the #491 note there for why the gate is HasResult().
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                   double tolerance,
                                                   int32_t continuity,
                                                   int32_t maxSegments,
                                                   int32_t maxDegree) {
-    OCCTApproxCurveResult result = {};
-    if (!curve) return result;
-    try {
-        GeomConvert_ApproxCurve approx(curve->curve, tolerance,
-                                        intToContinuity(continuity), maxSegments, maxDegree);
-        result.isDone = approx.IsDone();
-        result.hasResult = approx.HasResult();
-        if (result.hasResult) {
-            result.maxError = approx.MaxError();
-            Handle(Geom_BSplineCurve) bspl = approx.Curve();
-            if (!bspl.IsNull()) {
-                auto* ref = new OCCTCurve3D();
-                ref->curve = bspl;
-                result.curve = ref;
-            }
-        }
-    } catch (...) {}
-    return result;
+    return occtApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree);
 }
 
 // MARK: - GCPnts QuasiUniform / TangentialDeflection (v0.75)
@@ -4124,86 +4142,16 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef curve, double u,
         *d3x = r.D3.X(); *d3y = r.D3.Y(); *d3z = r.D3.Z();
     } catch (...) {}
 }
-// MARK: - Batch Curve Evaluation (v0.110.0)
-
-void OCCTCurve3DEvalBatchD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y(); zs[i] = p.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve3DEvalBatchD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs,
-                              double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y(); zs[i] = r.Point.Z();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y(); d1zs[i] = r.D1.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD0(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt2d p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD1(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys,
-                              double* d1xs, double* d1ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom2d_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y();
-        }
-    } catch (...) {}
-}
-// MARK: - GeomGridEval_Curve 3D (v0.111.0)
-
-void OCCTGridEvalCurveD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<gp_Pnt> results = eval.EvaluateGrid(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).X(); ys[i] = results(i+1).Y(); zs[i] = results(i+1).Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalCurveD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs,
-                           double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<GeomGridEval::CurveD1> results = eval.EvaluateGridD1(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).Point.X(); ys[i] = results(i+1).Point.Y(); zs[i] = results(i+1).Point.Z();
-            d1xs[i] = results(i+1).D1.X(); d1ys[i] = results(i+1).D1.Y(); d1zs[i] = results(i+1).D1.Z();
-        }
-    } catch (...) {}
-}
+// MARK: - Batch Curve Evaluation (v0.110.0 / v0.111.0)
+//
+// #486: six functions lived here. OCCTCurve3DEvalBatchD0/D1 and OCCTCurve2DEvalBatchD0/D1
+// (v0.110, a plain per-point Geom_Curve::EvalD0/EvalD1 loop that bypassed the batch evaluator
+// v0.29.0 was already using) and OCCTGridEvalCurveD0/D1 (v0.111, the same GeomGridEval_Curve
+// calls as OCCTCurve3DEvaluateGrid/D1 above, only writing per-axis planes instead of interleaved
+// triples). All duplicated OCCTCurve3DEvaluateGrid/D1 or OCCTCurve2DEvaluateGrid/D1 (the latter
+// pair in OCCTBridge_Geom2d.mm, where the 2D ones belonged all along; OCCTCurve2DEvalBatchD0/D1
+// were defined in this file despite operating on Curve2D). Removed; their Swift spellings now
+// forward to the v0.28.0/v0.29.0 family.
 
 // MARK: - v0.112: Curve3D extras + Extrema extras (LocateOnCurve/Surface)
 // --- Curve3D extras ---

@@ -5,13 +5,13 @@ parent: API Reference
 
 # Document — Math Solvers & Local Properties
 
-This page covers `Document.swift` lines 9930–11123: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, `GeomGridEval` batch evaluators, single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
+This page covers `Document.swift` lines 9930-11279: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, the deprecated `GeomGridEval` batch-evaluation spellings (#486), single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
 
 > See also the main **[Document](Document.md)** page for the `Document` class itself and the other chunk pages.
 
 ## Topics
 
-- [IntAna2d\_Conic — 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Curve3D Extensions](#grideval-curve3d-extensions) · [GridEval Curve2D Extensions](#grideval-curve2d-extensions) · [GridEval Surface Extensions](#grideval-surface-extensions) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
+- [IntAna2d\_Conic — 2D Conics](#intana2d_conic--2d-conics) · [BRepAlgo\_NormalProjection](#brepalgo_normalprojection) · [OSD\_Disk](#osd_disk) · [OSD\_SharedLibrary](#osd_sharedlibrary) · [Message\_Msg](#message_msg) · [Plate Constraint Extensions](#plate-constraint-extensions) · [Shape Topology Extras](#shape-topology-extras) · [Curve3D Extras](#curve3d-extras) · [Curve2D Extras](#curve2d-extras) · [Surface Extras](#surface-extras) · [Math Solvers](#math-solvers) · [PolynomialSolver Laguerre Extensions](#polynomialsolver-laguerre-extensions) · [BRepLProp Edge Extensions](#breplprop-edge-extensions) · [BRepLProp Face Extensions](#breplprop-face-extensions) · [GridEval Extensions, deprecated](#grideval-extensions-deprecated-486) · [Curve3D Evaluation](#curve3d-evaluation) · [Curve2D Evaluation](#curve2d-evaluation) · [Surface Evaluation](#surface-evaluation) · [math\_NewtonMinimum](#math_newtonminimum)
 
 ---
 
@@ -1176,102 +1176,37 @@ public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>?
 
 ---
 
-## GridEval Curve3D Extensions
+## GridEval Extensions, deprecated (#486)
 
-Extension on `Curve3D` for optimized batch evaluation using `GeomGridEval_Curve`. Preferred over calling `evalD0` / `evalD1` in a loop for large parameter sets.
+These six methods were a third spelling of batch evaluation, over a third generation of bridge
+functions (`OCCTGridEvalCurveD0`/`D1`, `OCCTGridEvalCurve2dD0`/`D1`, `OCCTGridEvalSurfaceD0`/`D1`)
+that called exactly the same OCCT evaluators as the v0.28.0/v0.29.0 ones already did. Worse, the
+Surface pair wrote the *opposite* UV layout from `OCCTSurfaceEvaluateGrid` while both header
+comments described their own layout as "row-major".
 
-### `Curve3D.gridEvalD0(params:)`
+**#486 removed that bridge generation** and deprecated these methods; each one now forwards to its
+canonical sibling. Two behaviour changes came with it: a failed evaluation returns an empty array
+instead of an array of zeroes, and the surface flat arrays are documented as U-major
+(`result[u * vParams.count + v]`) rather than as ambiguously "row-major".
 
-Batch-evaluate 3D curve positions at multiple parameters (D0).
-
-```swift
-public func gridEvalD0(params: [Double]) -> [SIMD3<Double>]
-```
-
-- **Returns:** Point for each input parameter, in the same order.
-- **OCCT:** `GeomGridEval_Curve` D0 via `OCCTGridEvalCurveD0`.
-- **Example:**
-  ```swift
-  let pts = myCurve.gridEvalD0(params: stride(from: 0, through: 1, by: 0.1).map { $0 })
-  ```
-
----
-
-### `Curve3D.gridEvalD1(params:)`
-
-Batch-evaluate 3D curve positions and first derivatives at multiple parameters.
+| Deprecated | Use instead |
+|---|---|
+| `Curve3D.gridEvalD0(params:)` | [`Curve3D.evaluateGrid(_:)`](Curve3D-Analysis.md) |
+| `Curve3D.gridEvalD1(params:)` | `Curve3D.evaluateGridD1(_:)` (labels the derivative `tangent`) |
+| `Curve2D.gridEvalD0(params:)` | `Curve2D.evaluateGrid(_:)` |
+| `Curve2D.gridEvalD1(params:)` | `Curve2D.evaluateGridD1(_:)` (labels the derivative `tangent`) |
+| `Surface.gridEvalD0(uParams:vParams:)` | [`Surface.evaluateGrid(uParameters:vParameters:)`](Surface-Analysis.md#evaluategriduparametersvparameters), returns a `SurfaceGrid` indexed `.at(u:v:)` |
+| `Surface.gridEvalD1(uParams:vParams:)` | [`Surface.evaluateGridD1(uParameters:vParameters:)`](Surface-Analysis.md#evaluategridd1uparametersvparameters), returns a `SurfaceGridD1` indexed `.at(u:v:)` |
 
 ```swift
-public func gridEvalD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)]
+// Before
+let pts = mySurface.gridEvalD0(uParams: us, vParams: vs)
+let p = pts[u * vs.count + v]
+
+// After
+let grid = mySurface.evaluateGrid(uParameters: us, vParameters: vs)
+let p = grid.at(u: u, v: v)
 ```
-
-- **Returns:** `(point, first derivative)` tuples in input order.
-- **OCCT:** `GeomGridEval_Curve` D1 via `OCCTGridEvalCurveD1`.
-
----
-
-## GridEval Curve2D Extensions
-
-Extension on `Curve2D` for optimized batch evaluation using `Geom2dGridEval_Curve`.
-
-### `Curve2D.gridEvalD0(params:)`
-
-Batch-evaluate 2D curve positions at multiple parameters.
-
-```swift
-public func gridEvalD0(params: [Double]) -> [SIMD2<Double>]
-```
-
-- **OCCT:** `Geom2dGridEval_Curve` D0 via `OCCTGridEvalCurve2dD0`.
-
----
-
-### `Curve2D.gridEvalD1(params:)`
-
-Batch-evaluate 2D curve positions and first derivatives.
-
-```swift
-public func gridEvalD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)]
-```
-
-- **OCCT:** `Geom2dGridEval_Curve` D1 via `OCCTGridEvalCurve2dD1`.
-
----
-
-## GridEval Surface Extensions
-
-Extension on `Surface` for optimized grid evaluation using `GeomGridEval_Surface`. Output is row-major with dimensions `[uParams.count × vParams.count]`.
-
-### `Surface.gridEvalD0(uParams:vParams:)`
-
-Batch-evaluate surface positions at a UV grid.
-
-```swift
-public func gridEvalD0(uParams: [Double], vParams: [Double]) -> [SIMD3<Double>]
-```
-
-- **Returns:** Row-major point array, length `uParams.count × vParams.count`.
-- **OCCT:** `GeomGridEval_Surface` D0 via `OCCTGridEvalSurfaceD0`.
-- **Example:**
-  ```swift
-  let us = [0.0, 0.5, 1.0]
-  let vs = [0.0, 0.5, 1.0]
-  let pts = mySurface.gridEvalD0(uParams: us, vParams: vs)
-  // pts[row * vs.count + col] = point at (us[row], vs[col])
-  ```
-
----
-
-### `Surface.gridEvalD1(uParams:vParams:)`
-
-Batch-evaluate surface positions and first partial derivatives at a UV grid.
-
-```swift
-public func gridEvalD1(uParams: [Double], vParams: [Double]) -> [(point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)]
-```
-
-- **Returns:** Row-major array of `(point, ∂/∂u, ∂/∂v)` tuples.
-- **OCCT:** `GeomGridEval_Surface` D1 via `OCCTGridEvalSurfaceD1`.
 
 ---
 
@@ -1331,27 +1266,21 @@ public func evalD3(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2
 
 ---
 
-### `Curve3D.evalBatchD0(params:)`
-
-Evaluate positions at multiple parameters (batch D0).
+### `Curve3D.evalBatchD0(params:)` / `evalBatchD1(params:)`, deprecated (#486)
 
 ```swift
 public func evalBatchD0(params: [Double]) -> [SIMD3<Double>]
-```
-
-- **OCCT:** `Geom_Curve::D0` (batch) via `OCCTCurve3DEvalBatchD0`.
-
----
-
-### `Curve3D.evalBatchD1(params:)`
-
-Evaluate positions and first derivatives at multiple parameters (batch D1).
-
-```swift
 public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)]
 ```
 
-- **OCCT:** `Geom_Curve::D1` (batch) via `OCCTCurve3DEvalBatchD1`.
+Use `Curve3D.evaluateGrid(_:)` / `evaluateGridD1(_:)`. These two called `Geom_Curve::EvalD0` /
+`EvalD1` once per parameter through `OCCTCurve3DEvalBatchD0`/`D1`, bypassing the batch
+`GeomGridEval_Curve` evaluator that `evaluateGrid` had already been using since v0.29.0. #486
+removed those bridge functions and pointed these methods at the batch path, so results can differ
+from the old per-point loop by ~1e-13 on a BSpline. `evaluateGridD1` labels the derivative
+`tangent`, not `d1`.
+
+- **OCCT:** `GeomGridEval_Curve::EvaluateGrid` / `EvaluateGridD1` via `OCCTCurve3DEvaluateGrid`/`D1`.
 
 ---
 
@@ -1395,27 +1324,19 @@ public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2
 
 ---
 
-### `Curve2D.evalBatchD0(params:)`
-
-Evaluate 2D positions at multiple parameters (batch D0).
+### `Curve2D.evalBatchD0(params:)` / `evalBatchD1(params:)`, deprecated (#486)
 
 ```swift
 public func evalBatchD0(params: [Double]) -> [SIMD2<Double>]
-```
-
-- **OCCT:** `Geom2d_Curve::D0` (batch) via `OCCTCurve2DEvalBatchD0`.
-
----
-
-### `Curve2D.evalBatchD1(params:)`
-
-Evaluate 2D positions and first derivatives at multiple parameters (batch D1).
-
-```swift
 public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)]
 ```
 
-- **OCCT:** `Geom2d_Curve::D1` (batch) via `OCCTCurve2DEvalBatchD1`.
+Use `Curve2D.evaluateGrid(_:)` / `evaluateGridD1(_:)`. Same story as the 3D pair above: a per-point
+`Geom2d_Curve::EvalD0`/`EvalD1` loop through `OCCTCurve2DEvalBatchD0`/`D1` (defined, oddly, in the
+*Curve3D* bridge file) that duplicated v0.28.0's already-batched `evaluateGrid`. #486 removed those
+bridge functions and pointed these methods at the batch path.
+
+- **OCCT:** `Geom2dGridEval_Curve::EvaluateGrid` / `EvaluateGridD1` via `OCCTCurve2DEvaluateGrid`/`D1`.
 
 ---
 
