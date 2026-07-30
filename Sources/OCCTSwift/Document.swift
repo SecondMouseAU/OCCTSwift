@@ -13807,12 +13807,35 @@ public enum UnitsConversion {
 
 extension Curve3D {
 
-    /// Get the curvature at a parameter value using LProp3d_CLProps.
+    /// The curvature of the curve at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/curvature(at:)`` — same OCCT computation, same tolerance. The two
+    /// used to disagree near a degeneracy, because this one asked at a 1000x tighter resolution
+    /// (#494).
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: Curvature (1/radius), `0` where the curve has no defined tangent, and
+    ///   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let k = circle.localCurvature(at: 0)   // 0.2, i.e. 1/5
+    /// ```
     public func localCurvature(at u: Double) -> Double {
         OCCTCurve3DLocalCurvature(handle, u)
     }
 
-    /// Get the tangent direction at a parameter value using LProp3d_CLProps.
+    /// The unit tangent direction at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/tangentDirection(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The unit tangent, or `nil` where every derivative up to order 3 is null.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let t = circle.localTangent(at: 0) { print(t) }   // (0, 1, 0)
+    /// ```
     public func localTangent(at u: Double) -> SIMD3<Double>? {
         var tx = 0.0, ty = 0.0, tz = 0.0
         var isDefined = false
@@ -13820,7 +13843,20 @@ extension Curve3D {
         return isDefined ? SIMD3(tx, ty, tz) : nil
     }
 
-    /// Get the normal direction at a parameter value using LProp3d_CLProps.
+    /// The principal normal direction at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/normal(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The normal, or `nil` where the curvature is zero (a straight stretch, or an
+    ///   inflection) or infinite (a cusp) — a normal needs a curvature to point away from.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let n = circle.localNormal(at: 0)                    // points at the centre
+    /// let straight = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
+    /// #expect(straight.localNormal(at: 0) == nil)          // no curvature, no normal
+    /// ```
     public func localNormal(at u: Double) -> SIMD3<Double>? {
         var nx = 0.0, ny = 0.0, nz = 0.0
         var isDefined = false
@@ -13828,7 +13864,19 @@ extension Curve3D {
         return isDefined ? SIMD3(nx, ny, nz) : nil
     }
 
-    /// Get the centre of curvature at a parameter value using LProp3d_CLProps.
+    /// The centre of the osculating circle at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/centerOfCurvature(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The centre of curvature, or `nil` where the curvature cannot be inverted into a
+    ///   radius: zero (straight or inflecting) or infinite (a cusp). Both cases used to return a
+    ///   point built from `NaN` and infinity rather than `nil` (#494).
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let c = circle.localCentreOfCurvature(at: 0)   // (1, 2, 0), the circle's own centre
+    /// ```
     public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>? {
         var cx = 0.0, cy = 0.0, cz = 0.0
         var isDefined = false
@@ -13849,7 +13897,30 @@ extension Surface {
         public let minCurvature: Double
     }
 
-    /// Get all curvatures at (u, v) using LProp3d_SLProps.
+    /// All four curvature scalars at a surface point, in one call.
+    ///
+    /// The same quantities ``Surface/curvatures(u:v:)``, ``Surface/gaussianCurvature(atU:v:)``,
+    /// ``Surface/meanCurvature(atU:v:)`` and ``Surface/principalCurvatures(atU:v:)`` report, and
+    /// now at the same tolerance — this used to ask at a 1000x tighter resolution, so it could
+    /// report curvature near a degeneracy that every one of those called undefined (#494).
+    ///
+    /// - Parameters:
+    ///   - u: Surface U parameter.
+    ///   - v: Surface V parameter.
+    /// - Returns: Gaussian, mean, max and min curvature, or `nil` where curvature is undefined —
+    ///   a cone's apex, a sphere's pole, or any point whose surface normal is not defined.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// if let c = sphere.localCurvatures(u: 0, v: 0.5) {
+    ///     print(c.gaussian)      // 1/R^2 = 0.01
+    ///     print(abs(c.mean))     // 1/R   = 0.1
+    /// }
+    ///
+    /// // A cone's apex has no defined curvature.
+    /// let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    /// #expect(cone.localCurvatures(u: 0, v: 0) == nil)
+    /// ```
     public func localCurvatures(u: Double, v: Double) -> LocalCurvatures? {
         var gaussian = 0.0, mean = 0.0, maxC = 0.0, minC = 0.0
         var isDefined = false
@@ -13864,8 +13935,38 @@ extension Surface {
         public let minDirection: SIMD3<Double>
     }
 
-    /// Get curvature directions at (u, v) using LProp3d_SLProps.
-    /// Returns nil for umbilic points (where curvature is constant).
+    /// The principal curvature directions at a surface point.
+    ///
+    /// Shares its tolerance with ``Surface/principalCurvatures(atU:v:)``, which reports the same
+    /// two directions alongside their curvatures; the two used to disagree about where curvature
+    /// exists at all (#494).
+    ///
+    /// - Parameters:
+    ///   - u: Surface U parameter.
+    ///   - v: Surface V parameter.
+    /// - Returns: The max- and min-curvature directions, or `nil` where curvature is undefined
+    ///   **or** the point is umbilic, since equal principal curvatures single out no pair of
+    ///   directions.
+    ///
+    /// Umbilic detection is OCCT's, and it is stricter than the geometry suggests: the two
+    /// principal curvatures must land within one ULP of each other. A plane qualifies (both are
+    /// exactly zero); an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`, which varies with radius and parameter. Treat a non-`nil`
+    /// result on a sphere as normal, not as a bug.
+    ///
+    /// ```swift
+    /// // A cylinder is not umbilic: one direction follows the axis, the other wraps around it.
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    /// if let d = cylinder.localCurvatureDirections(u: 0, v: 0) {
+    ///     print(d.maxDirection, d.minDirection)
+    /// }
+    ///
+    /// // A plane is umbilic everywhere, so it has directions nowhere — but its curvature is
+    /// // perfectly well defined (all four scalars are zero).
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// #expect(plane.localCurvatures(u: 1, v: 2) != nil)
+    /// #expect(plane.localCurvatureDirections(u: 1, v: 2) == nil)
+    /// ```
     public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirections? {
         var maxDx = 0.0, maxDy = 0.0, maxDz = 0.0
         var minDx = 0.0, minDy = 0.0, minDz = 0.0

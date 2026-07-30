@@ -8455,6 +8455,12 @@ typedef struct {
     double cx, cy, cz;       // center of curvature (0 if undefined)
     double curvature;        // curvature value
     bool tangentDefined;
+    // Whether nx/ny/nz and cx/cy/cz hold anything: the curvature has to be invertible into a
+    // radius, which rules out both zero (a straight stretch, or an inflection) and OCCT's
+    // RealLast() infinite-curvature sentinel at a cusp. Added in #494 so callers stop re-deriving
+    // it from `curvature` against a magic number of their own — the Swift wrapper used to test
+    // `curvature > 1e-10`, which was a copy of a bridge-side literal that no longer exists.
+    bool curvatureInvertible;
 } OCCTCurveLocalProps;
 
 OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param);

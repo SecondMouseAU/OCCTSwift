@@ -2971,7 +2971,7 @@ int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g, int32_t faceIndex,
                 double u = uMin + iu * uStep;
                 int32_t idx = iv * uSamples + iu;
 
-                GeomLProp_SLProps props(surfHandle, u, v, 2, Precision::Confusion());
+                GeomLProp_SLProps props = occtSurfaceLocalProps(surfHandle, u, v, 2);
 
                 // Position
                 gp_Pnt pnt = props.Value();

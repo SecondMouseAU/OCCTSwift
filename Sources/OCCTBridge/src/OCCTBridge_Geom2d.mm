@@ -5631,7 +5631,11 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
 double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
     if (!c || c->curve.IsNull()) return 0.0;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
+        // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
+        // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
+        // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
+        if (!props.IsTangentDefined()) return 0.0;
         return props.Curvature();
     } catch (...) {
         return 0.0;
@@ -5641,9 +5645,10 @@ double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
 bool OCCTCurve2DGetNormal(OCCTCurve2DRef c, double u, double* nx, double* ny) {
     if (!c || c->curve.IsNull() || !nx || !ny) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature as well as a straight stretch's zero (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Dir2d n;
         props.Normal(n);
         *nx = n.X(); *ny = n.Y();
@@ -5656,7 +5661,7 @@ bool OCCTCurve2DGetNormal(OCCTCurve2DRef c, double u, double* nx, double* ny) {
 bool OCCTCurve2DGetTangentDir(OCCTCurve2DRef c, double u, double* tx, double* ty) {
     if (!c || c->curve.IsNull() || !tx || !ty) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 1, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 1);
         if (!props.IsTangentDefined()) return false;
         gp_Dir2d t;
         props.Tangent(t);
@@ -5670,9 +5675,10 @@ bool OCCTCurve2DGetTangentDir(OCCTCurve2DRef c, double u, double* tx, double* ty
 bool OCCTCurve2DGetCenterOfCurvature(OCCTCurve2DRef c, double u, double* cx, double* cy) {
     if (!c || c->curve.IsNull() || !cx || !cy) return false;
     try {
-        GeomLProp_CLProps2d props(c->curve, u, 2, Precision::Confusion());
+        GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature, which used to reach CentreOfCurvature (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Pnt2d center;
         props.CentreOfCurvature(center);
         *cx = center.X(); *cy = center.Y();

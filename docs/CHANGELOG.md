@@ -807,6 +807,102 @@ has 24 edge *occurrences* over 12 edges and 48 vertex occurrences over 8 vertice
 already reported 12; and `Shape.faces()` (still an explorer walk, see #541) can hand back a face
 `face(at:)` cannot address, because their indices came from different enumerations.
 
+#### One tolerance behind every local-properties entry point, and a cusp that returned NaN (#494)
+
+`GeomLProp_SLProps`/`GeomLProp_CLProps`/`GeomLProp_CLProps2d` take a `Resolution` argument their own
+headers describe as "the linear tolerance (it is used to test if a vector is null)". It is not a
+comparison tolerance: it decides whether a derivative counts as null, and so whether the tangent,
+normal and curvature exist at all at a point. The bridge passed **three different values** across 28
+construction sites — `Precision::Confusion()` (`1e-7`) from the canonical `Surface`/`Curve3D`/`Face`/
+`Edge`/`Curve2D` entry points, `1e-10` from the `Local*` family, and `1e-6` from
+`OCCTGeomLProp{CL,SL}Props`. #405/PR #425 fixed this for three `Surface` entry points; its audit was
+Surface-only and never inventoried the `Local*` family or the `Curve3D` side, so the same defect
+survived in the siblings. All 28 now construct through shared helpers in `OCCTBridge_Internal.h`
+(`occtLocalPropsResolution`, `occtSurfaceLocalProps`, `occtCurveLocalProps`,
+`occtCurve2dLocalProps`), so the value is stated once and no site can drift again.
+
+Note the direction, which #405's own framing had backwards for this case: a *smaller* resolution is
+the more **permissive** one, because the null test is
+`derivative.SquareMagnitude() > resolution * resolution`. The `Local*` family's `1e-10` was three
+decades more willing to call a degenerate point well-conditioned than the canonical family, not less.
+
+Measured divergences, all now gone. On a cubic Bezier whose first two poles sit `1e-8` apart, at
+`u = 0`:
+
+- `Curve3D.localCurvature(at:)` returned `6.7e15` where `curvature(at:)` returned
+  `Double.greatestFiniteMagnitude` (OCCT's infinite-curvature sentinel) — 293 orders of magnitude
+  apart.
+- `localTangent(at:)` returned `(1, 0, 0)` where `tangentDirection(at:)` returned
+  `(0.707, 0.707, 0)`. Not a precision difference: the two resolutions disagree about which
+  derivative is the first significant one, and OCCT derives the tangent from that one, so the two
+  reported genuinely different directions.
+- `localNormal(at:)` returned a vector where `normal(at:)` returned `nil`.
+
+On a cone with `radius: 0` at `v = 1e-8`, `Surface.localCurvatures(u:v:)` reported a defined mean
+curvature of `-8.66e7` at a point `curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
+`meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` all reported undefined. Same for a sphere
+approaching its pole. `Shape.curveLocalProperties`/`surfaceLocalProperties` (the `1e-6` pair)
+disagreed with `Edge.curvature3D(at:)` and `Face`'s curvature entry points the same way.
+
+**A separate live defect found while probing those gates**, affecting the canonical family too:
+OCCT returns `RealLast()` from `Curvature()` to mean *infinite* curvature, at a cusp — where the
+first significant derivative has order 2, e.g. a Bezier whose first two poles coincide.
+`IsTangentDefined()` is still true there, and the sentinel trivially passes any "is the curvature
+big enough to invert" test, so it flowed straight into `CentreOfCurvature()`. That is worse than an
+exception: `LProp_CurveUtils::Curvature()` returns the sentinel *without* assigning the curvature
+field `ComputeCentreOfCurvature` then divides by, leaving it `0.0`, so the caller got
+`(nan, inf, nan)` reported as a successfully computed point. `Curve3D.centerOfCurvature(at:)`,
+`localCentreOfCurvature(at:)`, `Curve2D.centerOfCurvature(at:)`, `Edge.centerOfCurvature3D(at:)` and
+`Shape.curveLocalProperties` were all affected; each now returns `nil`/no centre, via a shared
+`occtCurveCurvatureIsInvertible` predicate that rejects the sentinel as well as a below-resolution
+curvature. `Normal()` was never exposed — it rejects the sentinel explicitly and raises.
+
+Also hardened while in these functions: the six `Local*` bridge entry points dereferenced their
+`Geom_Curve`/`Geom_Surface` handle without a null check their canonical siblings all make (an
+uncatchable SIGSEGV in this Release kernel, where OCCT's own precondition is compiled out), and
+three functions called `Curvature()` before establishing `IsTangentDefined()`, relying on a raise
+that goes through `LProp_NotDefined_Raise_if` — live in the bridge's own translation units, compiled
+out inside the OCCT build. Neither is reachable through today's Swift API; both are now consistent
+with the rest of the family.
+
+New `LocalPropsParityTests` (`Tests/OCCTAnalysisTests`, 11 tests) asserts definedness *and* value
+agreement between each entry point and its counterpart across well-conditioned points, the old
+`1e-10`-vs-`1e-7` window, and genuinely degenerate points, plus the cusp regression and a blanket
+"no local-properties entry point ever returns a non-finite number" sweep. Each was run against the
+pre-fix bridge to check it discriminates the fix rather than merely passing alongside it: 5 fail
+there (both `1e-10` window tests, the cusp regression, the non-finite sweep, and the cusped-edge
+test that covers the `1e-6` pair), and 6 pass both before and after as intended controls. The
+issue's own review of existing coverage was accurate — no test anywhere compared a `Local*`
+function against its sibling, and none drove a degenerate parameter through one.
+
+Two API additions fell out of writing those tests, both exposing state the bridge already had:
+`OCCTCurveLocalProps` gains `curvatureInvertible`, because `Shape.curveLocalProps(at:)` decided
+whether its `normal`/`centerOfCurvature` were filled in by re-testing `curvature > 1e-10` in
+Swift — a copy of a bridge-side literal that no longer exists, and one that would have gone stale
+in the other direction after this change. `SurfaceLocalProperties` gains `curvatureDefined`, which
+the bridge struct has always carried but the Swift wrapper dropped: its four curvature values are
+non-optional and all zero where curvature is undefined, so a caller had no way to tell a cone's
+apex from a flat point. Both are additive; neither struct has a public memberwise initializer.
+
+One documentation correction fell out of writing the parity tests, unrelated to the tolerance:
+`Surface.localCurvatureDirections(u:v:)` was documented as returning `nil` "for umbilic points
+(where curvature is constant)", which reads as covering a sphere. OCCT's umbilic test is
+`|maxCurv - minCurv| < Epsilon(maxCurv)` — one ULP, not a geometric tolerance. A plane always
+qualifies (both curvatures are exactly zero), but an analytically-umbilic sphere qualifies only
+where the two computed values round to the same `Double`: on a sphere of radius 3 it does at
+`v = 0`, `0.3`, `0.5` and `-0.7` and does not at `v = 1`, where they differ by exactly one ULP.
+Nothing changed here — `IsUmbilic()` takes no resolution — but the docs now say what it does, and
+the test asserts the asymmetry on a plane rather than on a sphere, where it would be flaky.
+
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild. Probes and full writeup at
+[`Scripts/repro/494-lprop-resolution/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/494-lprop-resolution).
+
+Not changed, and tracked separately as
+[#529](https://github.com/SecondMouseAU/OCCTSwift/issues/529): 19 `BRepLProp_SLProps`/
+`BRepLProp_CLProps` constructions still pass a literal `1e-6`. They are a different, adaptor-based
+class family asking the same question of a face rather than a surface, and several feed face
+orientation decisions rather than curvature reporting, so they need their own validation.
+
 ---
 
 ## Release History

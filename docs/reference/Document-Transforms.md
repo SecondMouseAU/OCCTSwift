@@ -919,6 +919,12 @@ public static func dumpLengthUnit(_ unit: OCCTLengthUnit) -> String?
 
 Extensions on `Curve3D` wrapping `LProp3d_CLProps` for local differential properties.
 
+These four are alternative spellings of `Curve3D.curvature(at:)`, `tangentDirection(at:)`,
+`normal(at:)` and `centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only
+in shape. They are guaranteed to agree with their counterparts for the same curve at the same
+parameter; before #494 they asked at a hardcoded `1e-10` resolution against the canonical family's
+`Precision::Confusion()` (`1e-7`), and the two disagreed near a degeneracy.
+
 ### `Curve3D.localCurvature(at:)`
 
 Curvature of the curve at a parameter value.
@@ -928,7 +934,9 @@ public func localCurvature(at u: Double) -> Double
 ```
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Signed curvature (1/radius).
+- **Returns:** Curvature (1/radius); `0` where the tangent is undefined, and
+  `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
+- **Equivalent to:** `Curve3D.curvature(at:)`.
 - **OCCT:** `OCCTCurve3DLocalCurvature` → `LProp3d_CLProps::Curvature`.
 
 ---
@@ -941,7 +949,8 @@ Tangent direction at a parameter value.
 public func localTangent(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Unit tangent vector, or `nil` if not defined (e.g. degenerate point).
+- **Returns:** Unit tangent vector, or `nil` where every derivative up to order 3 is null.
+- **Equivalent to:** `Curve3D.tangentDirection(at:)`.
 - **OCCT:** `OCCTCurve3DLocalTangent` → `LProp3d_CLProps::Tangent`.
 
 ---
@@ -954,7 +963,9 @@ Principal normal direction at a parameter value.
 public func localNormal(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Normal vector, or `nil` at inflection or zero-curvature points.
+- **Returns:** Normal vector, or `nil` where the curvature is zero (straight or inflecting) or
+  infinite (a cusp).
+- **Equivalent to:** `Curve3D.normal(at:)`.
 - **OCCT:** `OCCTCurve3DLocalNormal` → `LProp3d_CLProps::Normal`.
 
 ---
@@ -967,7 +978,10 @@ Centre of curvature at a parameter value.
 public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Centre of the osculating circle, or `nil` if not defined.
+- **Returns:** Centre of the osculating circle, or `nil` where the curvature cannot be inverted
+  into a radius: zero (straight or inflecting) or infinite (a cusp). Both used to return a point
+  built from `NaN` and infinity instead of `nil` (#494).
+- **Equivalent to:** `Curve3D.centerOfCurvature(at:)`.
 - **OCCT:** `OCCTCurve3DLocalCentreOfCurvature` → `LProp3d_CLProps::CentreOfCurvature`.
 
 ---
@@ -975,6 +989,13 @@ public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>?
 ## Surface LProp3d Extensions
 
 Extensions on `Surface` wrapping `LProp3d_SLProps` for local surface differential properties.
+
+Both report quantities `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
+`meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` also report, at the same tolerance since
+#494 — they previously asked at a hardcoded `1e-10` against those entry points'
+`Precision::Confusion()`, so they could report curvature at a point the rest called undefined. The
+one remaining asymmetry is by design: `localCurvatureDirections` also returns `nil` at umbilic
+points, where curvature is perfectly well defined but no principal direction is distinguished.
 
 ### `Surface.LocalCurvatures`
 
@@ -1000,7 +1021,10 @@ public func localCurvatures(u: Double, v: Double) -> LocalCurvatures?
 ```
 
 - **Parameters:** `u`, `v` — surface parameters.
-- **Returns:** Gaussian, mean, max and min curvatures, or `nil` if undefined.
+- **Returns:** Gaussian, mean, max and min curvatures, or `nil` where curvature is undefined — a
+  cone's apex, a sphere's pole, or any point with no defined surface normal.
+- **Agrees with:** `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
+  `meanCurvature(atU:v:)`, `principalCurvatures(atU:v:)`.
 - **OCCT:** `OCCTSurfaceLocalCurvatures` → `LProp3d_SLProps`.
 
 ---
@@ -1026,7 +1050,13 @@ Principal curvature directions at a surface point.
 public func localCurvatureDirections(u: Double, v: Double) -> CurvatureDirections?
 ```
 
-- **Returns:** Max and min curvature directions, or `nil` at umbilic points.
+- **Returns:** Max and min curvature directions, or `nil` where curvature is undefined **or** the
+  point is umbilic. OCCT's umbilic test is one ULP wide (`|maxCurv - minCurv| < Epsilon(maxCurv)`),
+  not a geometric tolerance: a plane always qualifies, but an analytically-umbilic sphere qualifies
+  only where the two computed curvatures round to the same `Double` — so a non-`nil` result on a
+  sphere is expected, not a defect.
+- **Agrees with:** `Surface.principalCurvatures(atU:v:)`, which returns the same two directions
+  alongside their curvatures (and does not reject umbilic points).
 - **OCCT:** `OCCTSurfaceLocalCurvatureDirections` → `LProp3d_SLProps`.
 
 ---

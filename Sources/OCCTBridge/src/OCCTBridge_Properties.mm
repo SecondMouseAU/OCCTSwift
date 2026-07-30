@@ -116,7 +116,7 @@ bool OCCTFaceGetNormalAtUV(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 1, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 1);
         if (!props.IsNormalDefined()) return false;
 
         gp_Dir normal = props.Normal();
@@ -141,7 +141,7 @@ bool OCCTFaceGetGaussianCurvature(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *curvature = props.GaussianCurvature();
@@ -159,7 +159,7 @@ bool OCCTFaceGetMeanCurvature(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *curvature = props.MeanCurvature();
@@ -180,7 +180,7 @@ bool OCCTFaceGetPrincipalCurvatures(OCCTFaceRef face, double u, double v,
         Handle(Geom_Surface) surface = BRep_Tool::Surface(face->face);
         if (surface.IsNull()) return false;
 
-        GeomLProp_SLProps props(surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
 
         *k1 = props.MinCurvature();
@@ -334,8 +334,7 @@ bool OCCTEdgeGetCurvature3D(OCCTEdgeRef edge, double param, double* curvature) {
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
         *curvature = props.Curvature();
@@ -354,8 +353,7 @@ bool OCCTEdgeGetTangent3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 1, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 1);
         if (!props.IsTangentDefined()) return false;
 
         gp_Dir dir;
@@ -378,8 +376,7 @@ bool OCCTEdgeGetNormal3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
         gp_Dir dir;
@@ -402,11 +399,12 @@ bool OCCTEdgeGetCenterOfCurvature3D(OCCTEdgeRef edge, double param,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, f, l);
         if (curve.IsNull()) return false;
 
-        GeomLProp_CLProps props(curve, 2, Precision::Confusion());
-        props.SetParameter(param);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         if (!props.IsTangentDefined()) return false;
 
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Also rejects a cusp's RealLast() curvature, which the previous magnitude-only test let
+        // through into a (nan, inf, nan) centre reported as success (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
 
         gp_Pnt center;
         props.CentreOfCurvature(center);
@@ -1040,18 +1038,29 @@ OCCTCurveLocalProps OCCTGeomLPropCLProps(OCCTShapeRef edgeShape, double param) {
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, f, l);
         if (curve.IsNull()) return result;
 
-        GeomLProp_CLProps props(curve, param, 2, 1e-6);
+        // Was its own 1e-6 resolution, the third value the bridge passed to a GeomLProp_* props
+        // (Precision::Confusion() from the canonical Curve3D/Surface entry points, 1e-10 from the
+        // Local* family) and the same one #405 removed from OCCTSurfaceCurvatures — so this
+        // reported a different answer than Edge.curvature3D(at:) for the same edge and parameter.
+        GeomLProp_CLProps props = occtCurveLocalProps(curve, param, 2);
         gp_Pnt pt = props.Value();
         result.px = pt.X(); result.py = pt.Y(); result.pz = pt.Z();
-        result.curvature = props.Curvature();
+        // Asked before Curvature(), which is only meaningful once the tangent is established; the
+        // old order relied on Curvature() raising, and it raises through
+        // LProp_NotDefined_Raise_if, which compiles out under No_Exception.
         result.tangentDefined = props.IsTangentDefined();
 
         if (result.tangentDefined) {
+            result.curvature = props.Curvature();
+
             gp_Dir tangent;
             props.Tangent(tangent);
             result.tx = tangent.X(); result.ty = tangent.Y(); result.tz = tangent.Z();
 
-            if (result.curvature > 1e-10) {
+            // Rejects a cusp's RealLast() curvature too: Normal() raises on it, but
+            // CentreOfCurvature() does not, and used to yield (nan, inf, nan) (#494).
+            result.curvatureInvertible = occtCurveCurvatureIsInvertible(result.curvature);
+            if (result.curvatureInvertible) {
                 gp_Dir normal;
                 props.Normal(normal);
                 result.nx = normal.X(); result.ny = normal.Y(); result.nz = normal.Z();
@@ -1075,7 +1084,10 @@ OCCTSurfaceLocalProps OCCTGeomLPropSLProps(OCCTShapeRef faceShape, double u, dou
         Handle(Geom_Surface) surf = BRep_Tool::Surface(face);
         if (surf.IsNull()) return result;
 
-        GeomLProp_SLProps props(surf, u, v, 2, 1e-6);
+        // Same 1e-6 drift as OCCTGeomLPropCLProps above: this disagreed with
+        // OCCTFaceGetGaussianCurvature/MeanCurvature/PrincipalCurvatures, which read the same
+        // quantities off the same surface through Precision::Confusion() props (#494).
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surf, u, v, 2);
         gp_Pnt pt = props.Value();
         result.px = pt.X(); result.py = pt.Y(); result.pz = pt.Z();
 

@@ -865,8 +865,7 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef c, double deflection,
 double OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u) {
     if (!c || c->curve.IsNull()) return 0.0;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return 0.0;
         return props.Curvature();
     } catch (...) {
@@ -878,8 +877,7 @@ bool OCCTCurve3DGetTangent(OCCTCurve3DRef c, double u,
                             double* tx, double* ty, double* tz) {
     if (!c || c->curve.IsNull() || !tx || !ty || !tz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 1, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 1);
         if (!props.IsTangentDefined()) return false;
         gp_Dir dir;
         props.Tangent(dir);
@@ -894,8 +892,7 @@ bool OCCTCurve3DGetNormal(OCCTCurve3DRef c, double u,
                            double* nx, double* ny, double* nz) {
     if (!c || c->curve.IsNull() || !nx || !ny || !nz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
         gp_Dir dir;
         props.Normal(dir);
@@ -910,10 +907,12 @@ bool OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef c, double u,
                                       double* cx, double* cy, double* cz) {
     if (!c || c->curve.IsNull() || !cx || !cy || !cz) return false;
     try {
-        GeomLProp_CLProps props(c->curve, 2, Precision::Confusion());
-        props.SetParameter(u);
+        GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
         if (!props.IsTangentDefined()) return false;
-        if (props.Curvature() < Precision::Confusion()) return false;
+        // Rejects a cusp's RealLast() curvature as well as a straight stretch's zero; the plain
+        // "is it big enough" test this used to make let the sentinel through, and OCCT then handed
+        // back (nan, inf, nan) as a successfully computed centre (#494).
+        if (!occtCurveCurvatureIsInvertible(props.Curvature())) return false;
         gp_Pnt center;
         props.CentreOfCurvature(center);
         *cx = center.X(); *cy = center.Y(); *cz = center.Z();
@@ -4739,9 +4738,23 @@ OCCTCurve3DRef _Nullable OCCTHelixApproxToBSpline(double t1, double t2, double p
 // gp_Ax3
 
 // MARK: - v0.116: Curve3D Local Curvature/Tangent/Normal/CentreOfCurvature
+//
+// The same four GeomLProp_CLProps quantities as OCCTCurve3DGetCurvature / GetTangent / GetNormal /
+// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All four
+// used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with their
+// canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose first
+// two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical props
+// returned RealLast(). They now build props through occtCurveLocalProps (#494).
 double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u) {
+    if (curve->curve.IsNull()) return 0.0;
     try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
+        // Curvature() reads derivatives IsTangentDefined() is what establishes as meaningful. It
+        // does raise LProp_NotDefined itself, but only through LProp_NotDefined_Raise_if, which
+        // compiles out under No_Exception — defined for the OCCT build, not for this one. Asking
+        // first, as the canonical sibling does, does not depend on which side of that macro the
+        // code lands on.
+        if (!props.IsTangentDefined()) return 0.0;
         return props.Curvature();
     } catch (...) { return 0.0; }
 }
@@ -4749,8 +4762,12 @@ double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u) {
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
                                double* _Nonnull tx, double* _Nonnull ty, double* _Nonnull tz,
                                bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *tx = 0; *ty = 0; *tz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 1, 1e-10);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 1);
         *isDefined = props.IsTangentDefined();
         if (*isDefined) {
             gp_Dir d;
@@ -4765,8 +4782,12 @@ void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
 void OCCTCurve3DLocalNormal(OCCTCurve3DRef _Nonnull curve, double u,
                               double* _Nonnull nx, double* _Nonnull ny, double* _Nonnull nz,
                               bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *nx = 0; *ny = 0; *nz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
         *isDefined = props.IsTangentDefined();
         if (*isDefined) {
             gp_Dir n;
@@ -4781,10 +4802,16 @@ void OCCTCurve3DLocalNormal(OCCTCurve3DRef _Nonnull curve, double u,
 void OCCTCurve3DLocalCentreOfCurvature(OCCTCurve3DRef _Nonnull curve, double u,
                                          double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz,
                                          bool* _Nonnull isDefined) {
+    if (curve->curve.IsNull()) {
+        *isDefined = false; *cx = 0; *cy = 0; *cz = 0;
+        return;
+    }
     try {
-        GeomLProp_CLProps props(curve->curve, u, 2, 1e-10);
-        double curv = props.Curvature();
-        if (curv > 1e-10 && props.IsTangentDefined()) {
+        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
+        // Two separate 1000x splits from the canonical sibling used to live on the next line: the
+        // props resolution (above) and this gate's own 1e-10 literal, which also let a cusp's
+        // RealLast() curvature through into a (nan, inf, nan) centre. Both now share one value.
+        if (props.IsTangentDefined() && occtCurveCurvatureIsInvertible(props.Curvature())) {
             gp_Pnt p;
             props.CentreOfCurvature(p);
             *cx = p.X(); *cy = p.Y(); *cz = p.Z();
