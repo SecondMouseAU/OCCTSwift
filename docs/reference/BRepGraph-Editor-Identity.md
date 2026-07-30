@@ -50,12 +50,21 @@ Pass the same index for `face1` and `face2` to set the seam continuity across a 
 - **Parameters:**
   - `edgeIndex` — per-kind edge index.
   - `face1`, `face2` — adjacent face indices (equal for seam).
-  - `continuity` — `GeomAbs_Shape` ordinal: 0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN.
-- **Returns:** `true` if written; `false` if the `LayerRegularity` layer is not registered in this graph.
+  - `continuity` — ignored; see the note below.
+- **Returns:** Always `false` on OCCT 8.0.0p1.
 - **OCCT:** `BRepGraph_LayerRegularity` (via `OCCTBRepGraphSetEdgeRegularity`).
+
+> **This setter does not work on the pinned kernel.** `BRepGraph_LayerRegularity` — the only write
+> path in the GA continuity model — does not compile in 8.0.0p1 and is absent from `libOCCT`, so the
+> bridge function is a stub that reports failure without reading `continuity` at all. It had shipped
+> that way silently since the GA upgrade: the one test covering it discarded the return value and
+> asserted nothing (fixed in #490, tracked for resolution in #513). To *read* continuity, use
+> `Shape.continuity(edge:face1:face2:)` or `Shape.maxContinuity(edge:)`, which go through the
+> shape-based `BRepLib`/`BRep_Tool` path and are unaffected.
 - **Example:**
   ```swift
-  let ok = graph.setEdgeRegularity(2, face1: 0, face2: 1, continuity: 2)  // C2 across faces 0 & 1
+  let ok = graph.setEdgeRegularity(2, face1: 0, face2: 1, continuity: 2)
+  #expect(ok == false)  // no write path in 8.0.0p1
   ```
 
 ---

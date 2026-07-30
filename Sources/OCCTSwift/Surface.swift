@@ -549,6 +549,10 @@ public final class Surface: @unchecked Sendable {
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
     /// ```
+    ///
+    /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///   surfaces here as `nil`.
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Surface? {
         guard let h = OCCTSurfaceApproximate(handle, tolerance, Int32(continuity),
@@ -1785,7 +1789,8 @@ extension Surface {
     /// Analyze and split a BSpline surface at continuity breaks.
     ///
     /// - Parameters:
-    ///   - criterion: Continuity level (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - criterion: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
+    ///     above asks for CN, i.e. split at every break)
     ///   - tolerance: Tolerance for continuity checking
     /// - Returns: Split analysis result
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> ContinuitySplitResult {
@@ -1834,7 +1839,10 @@ extension Surface {
     ///   - other: Second surface
     ///   - u2: U parameter on second surface
     ///   - v2: V parameter on second surface
-    ///   - order: Maximum continuity order to check (0=C0, 1=G1, 2=C1, 3=G2, 4=C2)
+    ///   - order: Continuity class to check, as a `GeomAbs_Shape` ordinal (0=C0, 1=G1, 2=C1,
+    ///     3=G2, 4=C2) — the same encoding `ContinuityAnalysis.status` reports back. C2 is the
+    ///     ceiling: `LocalAnalysis_*` implements no predicate above C2/G2, and asking for more
+    ///     leaves every predicate reporting true, so anything above 4 is read as 4.
     /// - Returns: Continuity analysis result, or nil on failure
     public func continuityWith(_ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double, order: Int = 4) -> ContinuityAnalysis? {
         var outStatus: Int32 = 0
@@ -2544,6 +2552,10 @@ extension Surface {
     ///   can oscillate/self-overlap in 3D and make downstream meshing (`BRepMesh`) never converge
     ///   (OCCTSwift #244). The clamp keeps the fit well-posed; pass a smaller `degMax` for an even
     ///   smoother result.
+    ///
+    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
+    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// request as an upper bound on what it will try to achieve.
     public static func fromPointGrid(points: [SIMD3<Double>], uCount: Int, vCount: Int,
                                      degMin: Int = 3, degMax: Int = 8,
                                      continuity: Int = 2, tolerance: Double = 1e-3) -> Surface? {

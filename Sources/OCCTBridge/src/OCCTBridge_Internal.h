@@ -308,19 +308,103 @@ std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape);
 // compound when there are several, a null shape when there are none.
 TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 
+// === #490: the three int -> GeomAbs_Shape continuity decoders ===
+//
+// Every bridge function that takes a continuity as an integer decodes it here. There used to be
+// one decoder per call site instead — seven independently-named statics (fourteen copies) plus
+// six more switches written inline in the function that needed them — and they disagreed, which
+// is not a hypothetical: #433 shipped a broken fill because one local copy mapped order 1 to
+// GeomAbs_C1 instead of GeomAbs_G1, and until #490 `bsplineRestriction` and
+// `bsplineRestrictionAdvanced` drove the identical OCCT operation off two different numberings.
+//
+// There are exactly three vocabularies, each named after the Swift enum that feeds it
+// (Sources/OCCTSwift/Continuity.swift), which is the whole point of the naming: a call site
+// picks its decoder by naming the contract its caller was typed against.
+//
+// All three saturate rather than fall back to a fixed value: an out-of-range integer decodes to
+// the nearest end of that vocabulary, so a larger number never yields a *weaker* continuity than
+// a smaller one. The old copies used three different out-of-range defaults (GeomAbs_CN,
+// GeomAbs_C2, GeomAbs_C1), so the same invalid input silently meant different things depending
+// only on which entry point received it.
+
+// `SurfaceContinuity` (0=G0, 1=G1, 2=G2): the geometric constraint order handed to a plate
+// solver. Saturates at GeomAbs_C1.
+//
+// BRepOffsetAPI_MakeFilling forwards the enum straight through to
+// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both reject
+// anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2 (ordinal 3) and
+// GeomAbs_C2 (ordinal 4) always throw, whatever BRepOffsetAPI_MakeFilling.hxx claims. #430/#434.
+inline GeomAbs_Shape occtGeomAbsFromSurfaceContinuity(int32_t order) {
+    if (order <= 0) return GeomAbs_C0;   // order 0 — position
+    if (order == 1) return GeomAbs_G1;   // order 1 — position + tangency
+    return GeomAbs_C1;                   // order 2 — position + tangency + curvature
+}
+
+// `ParametricContinuity` (0=C0, 1=C1, 2=C2, 3=C3): "make every piece at least Cn". Saturates at
+// GeomAbs_CN, which is the top of this same ladder (C0 < C1 < C2 < C3 < CN) rather than a
+// different kind of answer, and is what `Curve3D/Curve2D.splitByContinuity` has always
+// documented for criterion 4.
+//
+// What each consumer does with the strict end differs, and the decoder deliberately does not
+// paper over it — measured against the pinned kernel (Scripts/repro is not needed for this one;
+// the probe is reproduced in the #490 tests):
+//   - ShapeUpgrade_Split{Curve3d,Curve2d,Surface}Continuity::SetCriterion recognises C0/C1/C2/C3
+//     and CN; anything else falls to its own C1 default.
+//   - The GeomConvert/Geom2dConvert Approx* family accepts C0/C1/C2 only. AdvApprox throws
+//     Standard_ConstructionError for C3 and CN (and for G1/G2), which the bridge's catch(...)
+//     turns into a nullptr — so asking for more than C2 there fails the call outright.
+//   - ShapeCustom_BSplineRestriction likewise yields a null shape above C2.
+//   - GeomAPI_PointsToBSpline/Geom2dAPI_PointsToBSpline/GeomAPI_PointsToBSplineSurface accept
+//     every value without throwing.
+inline GeomAbs_Shape occtGeomAbsFromParametricContinuity(int32_t level) {
+    switch (level) {
+        case 0:  return GeomAbs_C0;
+        case 1:  return GeomAbs_C1;
+        case 2:  return GeomAbs_C2;
+        case 3:  return GeomAbs_C3;
+        default: return level < 0 ? GeomAbs_C0 : GeomAbs_CN;
+    }
+}
+
+// A GeomAbs_Shape class named by its own ordinal (0=C0, 1=G1, 2=C1, 3=G2, 4=C2), which is the
+// vocabulary the LocalAnalysis_* junction analysers speak in both directions — it is what they
+// are asked to check and what they report back as `ContinuityAnalysis.status`.
+//
+// Saturates at GeomAbs_C2 on purpose: LocalAnalysis_CurveContinuity/SurfaceContinuity implement
+// no predicate above C2/G2, and asking them for C3 or CN leaves every predicate reporting true
+// (measured), i.e. the analysis silently becomes meaningless. C2 is the strictest question these
+// two classes can actually answer.
+inline GeomAbs_Shape occtGeomAbsFromAnalysisOrder(int32_t order) {
+    switch (order) {
+        case 0:  return GeomAbs_C0;
+        case 1:  return GeomAbs_G1;
+        case 2:  return GeomAbs_C1;
+        case 3:  return GeomAbs_G2;
+        case 4:  return GeomAbs_C2;
+        default: return order < 0 ? GeomAbs_C0 : GeomAbs_C2;
+    }
+}
+
+// The inverse of occtGeomAbsFromAnalysisOrder, for reporting a measured class back to Swift.
+// Returns -1 for GeomAbs_C3/GeomAbs_CN: those are outside the analysers' vocabulary, so a
+// caller seeing -1 knows the status was not one of the five classes it can interpret.
+inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape) {
+    switch (shape) {
+        case GeomAbs_C0: return 0;
+        case GeomAbs_G1: return 1;
+        case GeomAbs_C1: return 2;
+        case GeomAbs_G2: return 3;
+        case GeomAbs_C2: return 4;
+        default:         return -1;
+    }
+}
+
 // === #430/#432/#434: surface-filling helpers ===
 //
 // Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm) and OCCTFilling*
 // (OCCTBridge_Modeling.mm). Both now build on BRepOffsetAPI_MakeFilling (#434 converged
 // OCCTFilling* off its own separate BRepFill_Filling onto the same class). Definitions live in
 // OCCTBridge_Healing.mm.
-
-// Map a plate constraint order (0=position, 1=tangency, 2=curvature) onto the GeomAbs_Shape
-// value BRepOffsetAPI_MakeFilling actually accepts. It forwards the enum straight through to
-// GeomPlate_CurveConstraint/BRepFill_CurveConstraint as an integer order, and both reject
-// anything outside [-1, 2]. So curvature is GeomAbs_C1 (ordinal 2); GeomAbs_G2 (ordinal 3) and
-// GeomAbs_C2 (ordinal 4) always throw, whatever BRepOffsetAPI_MakeFilling.hxx claims.
-GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity);
 
 // Construct a BRepOffsetAPI_MakeFilling, binding every argument to the parameter it names — the
 // pre-#431 code passed maxDegree/maxSegments/continuity into Degree/NbPtsOnCur/TolAng, which left

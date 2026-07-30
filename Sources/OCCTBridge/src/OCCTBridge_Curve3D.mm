@@ -743,19 +743,6 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves, int32_t co
     }
 }
 
-// Map a requested approximation continuity onto GeomAbs_Shape. Request orders count 0, 1, 2, 3
-// for C0..C3, which is NOT GeomAbs_Shape's own declared order (that interleaves G1/G2). Out-of-range
-// values fall back to C2, the value both approximation entry points default to.
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
 // === #491: one GeomConvert_ApproxCurve run behind both curve approximation entry points ===
 //
 // OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
@@ -779,6 +766,9 @@ static GeomAbs_Shape intToContinuity(int32_t c) {
 // GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
 // gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
 // isDone: false is the point of that API, so it cannot also be the reason to return nothing.
+//
+// Continuity decodes through the #490 shared occtGeomAbsFromParametricContinuity rather than a
+// local copy; this was the one call site that still had its own until the #491/#490 merge.
 static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c, double tolerance,
                                              int32_t continuity, int32_t maxSegments,
                                              int32_t maxDegree) {
@@ -787,7 +777,8 @@ static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c, double tolerance,
     // whose own Standard_NullObject precondition is compiled out of this Release kernel.
     if (!c || c->curve.IsNull()) return result;
     try {
-        GeomConvert_ApproxCurve approx(c->curve, tolerance, intToContinuity(continuity),
+        GeomConvert_ApproxCurve approx(c->curve, tolerance,
+                                        occtGeomAbsFromParametricContinuity(continuity),
                                         maxSegments, maxDegree);
         result.isDone = approx.IsDone();
         result.hasResult = approx.HasResult();
@@ -1579,27 +1570,9 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 // MARK: - LocalAnalysis_CurveContinuity (v0.67)
 // --- LocalAnalysis_CurveContinuity ---
 
-static GeomAbs_Shape orderToShape(int32_t order) {
-    switch (order) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_G1;
-        case 2: return GeomAbs_C1;
-        case 3: return GeomAbs_G2;
-        case 4: return GeomAbs_C2;
-        default: return GeomAbs_C2;
-    }
-}
-
-static int32_t shapeToOrder(GeomAbs_Shape shape) {
-    switch (shape) {
-        case GeomAbs_C0: return 0;
-        case GeomAbs_G1: return 1;
-        case GeomAbs_C1: return 2;
-        case GeomAbs_G2: return 3;
-        case GeomAbs_C2: return 4;
-        default: return -1;
-    }
-}
+// The order in and the status out are both GeomAbs_Shape ordinals; occtGeomAbsFromAnalysisOrder /
+// occtAnalysisOrderFromGeomAbs (OCCTBridge_Internal.h) are the shared pair. #490 retired the
+// local orderToShape/shapeToOrder copies here and the identical pair in OCCTBridge_Surface.mm.
 
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
@@ -1612,10 +1585,10 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, orderToShape(order));
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, occtGeomAbsFromAnalysisOrder(order));
         if (!cc.IsDone()) return false;
 
-        *outStatus = shapeToOrder(cc.ContinuityStatus());
+        *outStatus = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
         *outC0Value = cc.C0Value();
         *outG1Angle = cc.IsG1() ? cc.G1Angle() : -1.0;
         *outC1Angle = cc.IsC1() ? cc.C1Angle() : -1.0;
@@ -1634,7 +1607,7 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, orderToShape(order));
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, occtGeomAbsFromAnalysisOrder(order));
         if (!cc.IsDone()) return 0;
 
         int32_t flags = 0;
@@ -2140,23 +2113,13 @@ bool OCCTApproxSameParameter(OCCTCurve3DRef _Nonnull curve3dRef,
 #include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
 #include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
 
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
-
 int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef, int criterion, double tolerance,
                                  OCCTCurve3DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
         auto& curve = reinterpret_cast<OCCTCurve3D*>(curveRef)->curve;
         Handle(ShapeUpgrade_SplitCurve3dContinuity) splitter = new ShapeUpgrade_SplitCurve3dContinuity();
         splitter->Init(curve);
-        splitter->SetCriterion(continuityFromInt(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         auto curves = splitter->GetCurves();
@@ -4508,16 +4471,6 @@ OCCTCurve3DRef OCCTInterpolatePeriodic(const double* points, int32_t count) {
 }
 
 
-static GeomAbs_Shape mapContinuityV115(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
 OCCTCurve3DRef OCCTPointsToBSplineWithParams(const double* points, int32_t count,
                                                int32_t degMin, int32_t degMax,
                                                int32_t continuity, double tol) {
@@ -4527,7 +4480,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParams(const double* points, int32_t count
         for (int i = 0; i < count; i++) {
             pts.SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
         }
-        GeomAPI_PointsToBSpline approx(pts, degMin, degMax, mapContinuityV115(continuity), tol);
+        GeomAPI_PointsToBSpline approx(pts, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve3DRef)new OCCTCurve3D{approx.Curve()};
         }
@@ -4546,7 +4499,7 @@ OCCTCurve3DRef OCCTPointsToBSplineWithParameters(const double* points, const dou
             pts.SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
             prms.SetValue(i + 1, params[i]);
         }
-        GeomAPI_PointsToBSpline approx(pts, prms, degMin, degMax, mapContinuityV115(continuity), tol);
+        GeomAPI_PointsToBSpline approx(pts, prms, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve3DRef)new OCCTCurve3D{approx.Curve()};
         }

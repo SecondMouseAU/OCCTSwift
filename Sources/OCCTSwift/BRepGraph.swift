@@ -1750,8 +1750,16 @@ public final class BRepGraph: @unchecked Sendable {
     /// setter was removed — seam-pair-id is structural in GA (derived from two coedges on
     /// the same edge/face with opposite orientations).
     ///
-    /// - Parameter continuity: GeomAbs_Shape — 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
-    /// - Returns: `true` if written, `false` if the LayerRegularity layer is not registered.
+    /// - Important: This always returns `false` against OCCT 8.0.0p1 and `continuity` is not
+    ///   read at all. `BRepGraph_LayerRegularity` — the only write path in the GA continuity
+    ///   model — does not compile in p1 and is absent from `libOCCT`, so the bridge function is a
+    ///   stub that reports failure. There is no replacement writer; to *read* continuity, use
+    ///   ``Shape/continuity(edge:face1:face2:)`` or ``Shape/maxContinuity(edge:)``, both of which
+    ///   go through the shape-based `BRepLib`/`BRep_Tool` path and are unaffected. Tracked
+    ///   by #513.
+    ///
+    /// - Parameter continuity: Ignored (see above). Was documented as a GeomAbs_Shape value.
+    /// - Returns: Always `false` on OCCT 8.0.0p1.
     @discardableResult
     public func setEdgeRegularity(_ edgeIndex: Int, face1: Int, face2: Int, continuity: Int) -> Bool {
         OCCTBRepGraphSetEdgeRegularity(handle, Int32(edgeIndex), Int32(face1), Int32(face2), Int32(continuity)) != 0

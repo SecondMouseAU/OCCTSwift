@@ -15164,7 +15164,16 @@ extension FilletBuilder {
         OCCTFilletBuilderSetParams(handle, tang, tesp, t2d, tApp3d, tApp2d, fleche)
     }
 
-    /// Set fillet continuity: internalContinuity (0=C0, 1=C1, 2=C2), angularTolerance.
+    /// Set the internal continuity of the generated fillet surfaces.
+    ///
+    /// `internalContinuity` is a ``ParametricContinuity`` raw value; OCCT's own domain here is
+    /// "a continuity Ci (i=0, 1 or 2)", default C1. The bridge used to cast the integer straight
+    /// to `GeomAbs_Shape`, which made `1` mean G1 and `2` mean C1 — one class below what this
+    /// comment promised, from 1 up (#490).
+    ///
+    /// ```swift
+    /// builder.setContinuity(2, angularTolerance: 1e-4)  // C2 fillet surfaces
+    /// ```
     public func setContinuity(_ internalContinuity: Int, angularTolerance: Double) {
         OCCTFilletBuilderSetContinuity(handle, Int32(internalContinuity), angularTolerance)
     }

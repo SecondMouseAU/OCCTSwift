@@ -2763,16 +2763,7 @@ int OCCTGccAnaLin2d2TanCircPnt(double cx, double cy, double radius,
     }
 }
 
-// MARK: - ShapeUpgrade_SplitCurve2dContinuity (v0.77, with continuityFromInt helper)
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
+// MARK: - ShapeUpgrade_SplitCurve2dContinuity (v0.77)
 // MARK: - ShapeUpgrade_SplitCurve2dContinuity
 
 int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, double tolerance,
@@ -2781,7 +2772,7 @@ int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, 
         auto& curve = reinterpret_cast<OCCTCurve2D*>(curveRef)->curve;
         Handle(ShapeUpgrade_SplitCurve2dContinuity) splitter = new ShapeUpgrade_SplitCurve2dContinuity();
         splitter->Init(curve);
-        splitter->SetCriterion(continuityFromInt(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         auto curves = splitter->GetCurves();
@@ -4037,16 +4028,6 @@ OCCTCurve2DRef OCCTInterpolate2DPeriodic(const double* points, int32_t count) {
     return OCCTCurve2DInterpolate(points, count, true, 1e-6);
 }
 // --- GeomAPI_PointsToBSpline expansion ---
-// Helper: map continuity int → GeomAbs_Shape (duplicate of Curve3D's mapContinuityV115, ODR-safe)
-static GeomAbs_Shape mapContinuityV115(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
 
 OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points, int32_t count,
                                                   int32_t degMin, int32_t degMax,
@@ -4057,7 +4038,7 @@ OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points, int32_t cou
         for (int i = 0; i < count; i++) {
             pts.SetValue(i + 1, gp_Pnt2d(points[i*2], points[i*2+1]));
         }
-        Geom2dAPI_PointsToBSpline approx(pts, degMin, degMax, mapContinuityV115(continuity), tol);
+        Geom2dAPI_PointsToBSpline approx(pts, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTCurve2DRef)new OCCTCurve2D{approx.Curve()};
         }
@@ -5810,15 +5791,9 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-            default: cont = GeomAbs_C2; break;
-        }
-        Geom2dConvert_ApproxCurve approx(c->curve, tolerance, cont, maxSegments, maxDegree);
+        Geom2dConvert_ApproxCurve approx(c->curve, tolerance,
+                                         occtGeomAbsFromParametricContinuity(continuity),
+                                         maxSegments, maxDegree);
         if (!approx.HasResult()) return nullptr;
         Handle(Geom2d_BSplineCurve) result = approx.Curve();
         if (result.IsNull()) return nullptr;

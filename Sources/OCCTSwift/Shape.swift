@@ -7850,13 +7850,28 @@ extension Shape {
     ///
     /// Uses ShapeCustom::BSplineRestriction to approximate geometry with simpler BSplines.
     ///
+    /// ```swift
+    /// let simplified = solid.bsplineRestriction(
+    ///     tol3d: 0.001, tol2d: 0.001,
+    ///     maxDegree: 4, maxSegments: 50,
+    ///     continuity3d: .c2, continuity2d: .c2
+    /// )
+    /// ```
+    ///
+    /// ``Shape/bsplineRestrictionAdvanced(_:approxSurface:approxCurve3d:approxCurve2d:tol3d:tol2d:continuity3d:continuity2d:maxDegree:maxSegments:priorityDegree:convertRational:)``
+    /// drives the same operation with per-geometry-kind switches, and takes the same continuity
+    /// vocabulary — `ShapeCustom::BSplineRestriction` is itself a `ShapeCustom_BSplineRestriction`
+    /// run through `BRepTools_Modifier`, which is what the advanced entry point builds by hand.
+    ///
     /// - Parameters:
     ///   - tol3d: 3D tolerance (default: 0.01)
     ///   - tol2d: 2D tolerance (default: 0.01)
     ///   - maxDegree: Maximum BSpline degree (default: 8)
     ///   - maxSegments: Maximum number of segments (default: 100)
-    ///   - continuity3d: 3D continuity requirement (default: .c1)
-    ///   - continuity2d: 2D continuity requirement (default: .c1)
+    ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
+    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
+    ///     maximum.
+    ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
     /// - Returns: Simplified shape, or nil on failure
@@ -12411,7 +12426,15 @@ extension Curve3D {
 
 extension Curve3D {
     /// Split this 3D curve at continuity breaks.
-    /// Criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
+    ///
+    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
+    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
+    ///
+    /// ```swift
+    /// // A cubic interpolated BSpline is C2 at its interior knots, so .c3 is what splits it
+    /// let pieces = curve.splitByContinuity(criterion: 3)
+    /// ```
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D] {
         var refs = [OCCTCurve3DRef?](repeating: nil, count: 32)
         let n = refs.withUnsafeMutableBufferPointer { buf in
@@ -12427,7 +12450,10 @@ extension Curve3D {
 
 extension Curve2D {
     /// Split this 2D curve at continuity breaks.
-    /// Criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN.
+    ///
+    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
+    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
     public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D] {
         var refs = [OCCTCurve2DRef?](repeating: nil, count: 32)
         let n = refs.withUnsafeMutableBufferPointer { buf in
@@ -12504,14 +12530,67 @@ extension Shape {
     }
 
     /// Restrict BSpline degree and segments with full control (advanced version).
+    ///
+    /// Same operation as
+    /// ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// — both drive a `ShapeCustom_BSplineRestriction` through `BRepTools_Modifier` — with
+    /// switches for which geometry kinds to approximate.
+    ///
+    /// ```swift
+    /// // Surfaces only, leave the curves alone
+    /// let restricted = Shape.bsplineRestrictionAdvanced(
+    ///     solid,
+    ///     approxSurface: true, approxCurve3d: false, approxCurve2d: false,
+    ///     continuity3d: .c1, continuity2d: .c1
+    /// )
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
+    ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
+    ///     maximum — the same limit the non-advanced entry point has.
+    ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
+    /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(_ shape: Shape,
                                                     approxSurface: Bool = true,
                                                     approxCurve3d: Bool = true,
                                                     approxCurve2d: Bool = true,
                                                     tol3d: Double = 0.01,
                                                     tol2d: Double = 0.01,
-                                                    continuity3d: Int = 2,
-                                                    continuity2d: Int = 2,
+                                                    continuity3d: ParametricContinuity = .c1,
+                                                    continuity2d: ParametricContinuity = .c1,
+                                                    maxDegree: Int = 5,
+                                                    maxSegments: Int = 20,
+                                                    priorityDegree: Bool = true,
+                                                    convertRational: Bool = false) -> Shape? {
+        guard let ref = OCCTShapeBSplineRestrictionAdvanced(shape.handle,
+                                                              approxSurface, approxCurve3d, approxCurve2d,
+                                                              tol3d, tol2d,
+                                                              continuity3d.rawValue, continuity2d.rawValue,
+                                                              Int32(maxDegree), Int32(maxSegments),
+                                                              priorityDegree, convertRational) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Restrict BSpline degree and segments, taking the continuities as raw integers.
+    ///
+    /// The integers are now read as ``ParametricContinuity`` raw values (0=C0, 1=C1, 2=C2, 3=C3),
+    /// the same vocabulary
+    /// ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// has always used for the identical operation. They used to be read as `GeomAbs_Shape`
+    /// ordinals, where `1` meant G1 and `2` meant C1 — so the same number requested a different
+    /// continuity depending on which of the two entry points received it, and four of the seven
+    /// values that reading advertised (G1, G2, C3, CN) fail the whole call. Passing `2` now asks
+    /// for C2, as it reads. #490.
+    @available(*, deprecated, message: "Pass a ParametricContinuity. These integers are now read as ParametricContinuity raw values (2 = .c2), not GeomAbs_Shape ordinals (where 2 meant C1). See #490.")
+    public static func bsplineRestrictionAdvanced(_ shape: Shape,
+                                                    approxSurface: Bool = true,
+                                                    approxCurve3d: Bool = true,
+                                                    approxCurve2d: Bool = true,
+                                                    tol3d: Double = 0.01,
+                                                    tol2d: Double = 0.01,
+                                                    continuity3d: Int,
+                                                    continuity2d: Int,
                                                     maxDegree: Int = 5,
                                                     maxSegments: Int = 20,
                                                     priorityDegree: Bool = true,
@@ -12547,9 +12626,19 @@ extension Surface {
         public let vSplitCount: Int
     }
 
-    /// Split this surface by continuity criterion (ShapeUpgrade variant).
-    /// criterion: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN
-    /// Returns split counts for U and V directions.
+    /// Split this surface by continuity criterion, reporting U and V split counts.
+    ///
+    /// `criterion` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
+    /// above asks for CN). It used to be read as a `GeomAbs_Shape` ordinal here — 0=C0, 1=G1,
+    /// 2=C1, 3=G2, 4=C2 — even though ``Surface/splitByContinuity(criterion:tolerance:)`` wraps
+    /// the same `ShapeUpgrade_SplitSurfaceContinuity` and read the same integer as a parametric
+    /// continuity, so `criterion: 2` asked for C1 through one entry point and C2 through the
+    /// other. Both now agree. #490.
+    ///
+    /// ```swift
+    /// // Where does this surface drop below C2?
+    /// let split = bsplineSurface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
+    /// ```
     public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult? {
         var uCount: Int32 = 0
         var vCount: Int32 = 0
@@ -13850,7 +13939,11 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
         OCCTThruSectionsSetMaxDegree(ref, Int32(maxDeg))
     }
 
-    /// Set the continuity (0=C0, 1=C1, 2=C2).
+    /// Set the continuity criterion for the lofted surface.
+    ///
+    /// A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything above asks for CN).
+    /// `BRepOffsetAPI_ThruSections` accepts every value without failing. This used to read only
+    /// 0 and 1, mapping everything else to C2 (#490).
     public func setContinuity(_ continuity: Int) {
         OCCTThruSectionsSetContinuity(ref, Int32(continuity))
     }
