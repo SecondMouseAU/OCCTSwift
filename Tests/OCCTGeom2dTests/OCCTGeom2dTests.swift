@@ -245,6 +245,35 @@ struct Curve2DTests {
         #expect(points.count == 32)
     }
 
+    /// #501: `GCPnts_UniformAbscissa` sizes its own array at `nbPoints + 5` and can report more
+    /// points than were asked for: one more, on a 1e6 x 1e-3 ellipse, for 22 of the first 59
+    /// counts. `outXY` only holds `pointCount` pairs, so the surplus used to be written past its
+    /// end; the surplus point is the curve's end parameter, so it is the last slot that keeps it.
+    @Test("Uniform draw stays within the requested count on an overshooting ellipse")
+    func uniformDrawRespectsCount() {
+        guard let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3)
+        else {
+            Issue.record("could not build the high-aspect-ratio ellipse")
+            return
+        }
+        let endPoint = ellipse.point(at: ellipse.domain.upperBound)
+        for count in [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40] {
+            let points = ellipse.drawUniform(pointCount: count)
+            #expect(points.count == count)
+            if let last = points.last {
+                #expect(distance(last, endPoint) < 1e-6)
+            }
+        }
+    }
+
+    @Test("Uniform draw rejects counts below two")
+    func uniformDrawRejectsCountsBelowTwo() {
+        let circle = Curve2D.circle(center: .zero, radius: 5)!
+        for count in [0, 1] {
+            #expect(circle.drawUniform(pointCount: count).isEmpty)
+        }
+    }
+
     @Test("Deflection draw produces points")
     func deflectionDraw() {
         let circle = Curve2D.circle(center: .zero, radius: 5)!

@@ -12073,6 +12073,18 @@ extension Surface {
 
 extension Edge {
     /// Compute quasi-uniform parameter distribution on this edge.
+    ///
+    /// The first parameter is always the start of the edge and the last is always its end.
+    ///
+    /// ```swift
+    /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
+    ///     let params = edge.quasiUniformParameters(count: 10)
+    ///     #expect(params.count == 10)
+    /// }
+    /// ```
+    ///
+    /// - Parameter count: Desired number of sample points; must be at least 2, else empty.
+    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
         var params = [Double](repeating: 0, count: count)
         let n = OCCTGCPntsQuasiUniform(handle, Int32(count), &params, Int32(count))

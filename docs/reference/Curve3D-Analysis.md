@@ -496,11 +496,11 @@ Returns parameter values at quasi-uniform arc-length intervals.
 public func quasiUniformParameters(count: Int) -> [Double]
 ```
 
-Uses `GCPnts_QuasiUniformAbscissa` to space `count` parameters approximately evenly along the arc length of the curve. The result is suitable for passing to `evaluateGrid(_:)`.
+Uses `GCPnts_QuasiUniformAbscissa` to space `count` parameters approximately evenly along the arc length of the curve. The result is suitable for passing to `evaluateGrid(_:)`. The first parameter is always the start of the curve's domain and the last is always its end.
 
-- **Parameters:** `count` — desired number of sample parameters.
-- **Returns:** Array of parameter values of length up to `count`; empty on failure.
-- **OCCT:** `GCPnts_QuasiUniformAbscissa`.
+- **Parameters:** `count`, the desired number of sample parameters. Must be at least 2; below that the result is empty. OCCT documents the same precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so the bridge applies it (#501).
+- **Returns:** Array of parameter values of length up to `count`, never more; empty on failure.
+- **OCCT:** `GCPnts_QuasiUniformAbscissa`. It can compute one point beyond the request on a poorly-conditioned curve (measured on a 1e6 x 1e-3 ellipse); the surplus is dropped, but the curve's end parameter is kept in the last slot rather than truncated away.
 - **Example:**
   ```swift
   if let c = Curve3D.bspline(points: myPoints) {

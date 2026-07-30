@@ -658,6 +658,49 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
     return iu * vCount + iv;
 }
 
+// === #501: GCPnts arc-length samplers can return more points than were asked for ===
+//
+// GCPnts_UniformAbscissa::initialize sizes its own parameter array at `nbPoints + 5` and lets the
+// arc-length walk fill it as far as it runs, so NbPoints() is not bounded by the requested count.
+// GCPnts_QuasiUniformAbscissa inherits that for every curve which is neither Bezier nor BSpline,
+// because it forwards to GCPnts_UniformAbscissa for those.
+//
+// Measured on an ellipse with major radius 1e6 and minor radius 1e-3: the walk lands ~1.6e-8 in
+// parameter short of the end, which is far outside the sampler's own epsilon (Resolution(1e-7),
+// about 1e-13 there), so it takes one more step and snaps that step to the end parameter. 22 of 59
+// point counts overshoot by exactly one. Every bridge function here is handed a buffer sized from
+// the count the caller asked for, so writing NbPoints() values was a heap write past the end.
+// Scripts/repro/501-quasiuniform-buffer-overflow reproduces it against the shipped functions.
+//
+// Clamping alone is not enough: the surplus point *is* the curve's end parameter, so dropping the
+// tail drops the end of the curve. Keep the first `capacity - 1` samples and the sampler's own last
+// one, which is what OCCTGCPntsQuasiUniform (the only member of the family that already clamped)
+// was silently getting wrong.
+
+/// How many of a GCPnts sampler's `nbPoints` samples fit in a buffer of `capacity` slots.
+inline int32_t occtSamplerKept(int32_t nbPoints, int32_t capacity) {
+    return std::min(nbPoints, std::max(capacity, 0));
+}
+
+/// The 1-based sampler index feeding output slot `slot`, given `kept` of `nbPoints` samples fit.
+/// Identity while everything fits; otherwise the final slot takes the sampler's last point so a
+/// clamped distribution still spans the whole curve.
+inline int32_t occtSamplerIndex(int32_t slot, int32_t kept, int32_t nbPoints) {
+    return (slot == kept - 1) ? nbPoints : slot + 1;
+}
+
+/// The point-count precondition every GCPnts_UniformAbscissa / GCPnts_QuasiUniformAbscissa entry
+/// point has to apply itself. Both classes document (and `Raise_if`) `nbPoints >= 2`, but the
+/// pinned kernel is a Release build, where OCCT defines No_Exception and every `*_Raise_if`
+/// compiles to nothing (see #487). Below 2 the algorithms do not fail cleanly:
+/// GCPnts_QuasiUniformAbscissa(bezier_or_bspline, 0) builds an NCollection_HArray1 with the empty
+/// range (1, 0) and then writes element 1 of it, an out-of-bounds store that SIGSEGVs (measured on
+/// a 4-pole Bezier, an all-coincident-pole Bezier and an 8-point BSpline fit); on an ellipse the
+/// same call reports IsDone() with five points for a request of zero.
+inline bool occtValidSampleCount(int32_t nbPoints) {
+    return nbPoints >= 2;
+}
+
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
 //
 // Three bridge functions fillet a caller-supplied list of edge indices and differ only in what

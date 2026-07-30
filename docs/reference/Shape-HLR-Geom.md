@@ -1112,11 +1112,12 @@ Computes a quasi-uniform parameter distribution along an edge.
 public func quasiUniformParameters(count: Int) -> [Double]
 ```
 
-The returned parameters are distributed so that the chord lengths between consecutive curve points are approximately equal.
+The returned parameters are distributed so that the chord lengths between consecutive curve points are approximately equal. The first is always the start of the edge and the last is always its end.
 
-- **Parameters:** `count` — desired number of parameter values.
+- **Parameters:** `count`, the desired number of parameter values. Must be at least 2; below that the result is empty (#501).
 - **Returns:** Array of curve parameters of length ≤ `count`.
-- **OCCT:** `GCPnts_QuasiUniformAbscissa` via `OCCTGCPntsQuasiUniform`.
+- **OCCT:** `GCPnts_QuasiUniformAbscissa` via `OCCTGCPntsQuasiUniform`. It can compute one point beyond the request on a poorly-conditioned curve; the surplus is dropped and the edge's end parameter kept. Before #501 the surplus was dropped along with the end parameter, so the distribution stopped short of the edge.
+- **Curve3D equivalent:** `Curve3D.quasiUniformParameters(count:)`, which goes through `OCCTCurve3DQuasiUniformAbscissa`. A second Curve3D-based bridge function, `OCCTGCPntsQuasiUniformCurve`, duplicated it from v0.75 with no caller and was removed in #501.
 - **Example:**
   ```swift
   let params = edge.quasiUniformParameters(count: 20)

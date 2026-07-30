@@ -936,11 +936,11 @@ Discretizes the curve at uniform arc-length intervals.
 public func drawUniform(pointCount: Int) -> [SIMD3<Double>]
 ```
 
-All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature.
+All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature. The first point is always the start of the curve and the last is always its end.
 
-- **Parameters:** `pointCount` — desired number of output points.
-- **Returns:** Array of 3D points, or empty array on failure.
-- **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`.
+- **Parameters:** `pointCount`, the desired number of output points. Must be at least 2; below that the result is empty (#501).
+- **Returns:** Array of 3D points, never more than `pointCount`, or empty array on failure.
+- **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`. It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
   ```swift
   let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
