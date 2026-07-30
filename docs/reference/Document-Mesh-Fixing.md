@@ -2358,7 +2358,32 @@ Persistent free-bounds analysis wrapping `ShapeAnalysis_FreeBoundsProperties`.
 public final class FreeBoundsProperties: @unchecked Sendable
 ```
 
-Computes area, perimeter, ratio, and width for each free (open and closed) boundary loop in a shape.
+A free bound is a boundary contour of the shape: a chain of edges each used by exactly one face,
+closed into a loop where it can be. The analysis computes area, perimeter, aspect ratio, width and
+notch count for each one.
+
+The analysis runs once and every query is answered from that one result, which is the difference between
+this and `Shape`'s `freeBoundsAnalysis(tolerance:)` family, which analyses the shape again per
+call. Both have run on this one implementation since #504.
+
+The shape needs to be a compound or shell of faces: the search runs over its direct children, so a
+lone face reports no free bounds. In practice the sewing pass closes essentially every contour it
+finds, so `openCount` is usually 0.
+
+```swift
+// A box shell with one face removed: its free boundary is the square hole.
+let faces = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .face)
+let opened = Shape.compound(Array(faces.dropLast()))!
+
+let props = FreeBoundsProperties(shape: opened, tolerance: 1e-3)!
+print(props.closedCount, props.openCount, props.totalCount)   // 1 0 1
+
+for i in 0..<props.closedCount {
+    let bound = props.info(.closed, at: i)!
+    print(bound.area, bound.perimeter, bound.notchCount)      // 100.0 40.0 0
+    let wire = props.wire(.closed, at: i)
+}
+```
 
 ---
 
@@ -2370,6 +2395,9 @@ Create a free-bounds properties analyser.
 public init?(shape: Shape, tolerance: Double = 1e-7)
 ```
 
+- **Parameters:** `tolerance`, the sewing tolerance used to chain free edges into contours. 0 or below
+  selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
+  instead of from a sewing pass.
 - **Returns:** The analyser, or `nil` on failure.
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsCreate`).
 
@@ -2377,14 +2405,30 @@ public init?(shape: Shape, tolerance: Double = 1e-7)
 
 ### `FreeBoundsProperties.perform()`
 
-Perform the analysis.
+Run the analysis, if it has not already run, and report whether results are available.
 
 ```swift
 @discardableResult
 public func perform() -> Bool
 ```
 
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties::Perform`.
+Calling this is optional (every query below runs it on demand) and idempotent. Both matter:
+OCCT's own `Perform()` appends to its result sequences without clearing them, so calling it twice
+used to double every count (#504), and the accessors used to report 0 until it had been called.
+
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties::Perform`. Note that OCCT's return value is not a
+  success signal. It is `true` even for a shape with no free bounds and for one never loaded, so
+  this reports `IsLoaded()` instead.
+
+---
+
+### `FreeBoundsProperties.BoundKind`
+
+Which of the analysis' two result sequences a query addresses.
+
+```swift
+public enum BoundKind: Sendable { case closed, open }
+```
 
 ---
 
@@ -2408,9 +2452,57 @@ public var openCount: Int { get }
 
 ---
 
+### `FreeBoundsProperties.totalCount`
+
+Total number of free bounds, closed and open.
+
+```swift
+public var totalCount: Int { get }
+```
+
+---
+
+### `FreeBoundsProperties.info(_:at:)`
+
+Every property of one free bound (0-based index), or `nil` if the index is out of range.
+
+```swift
+public func info(_ kind: BoundKind, at index: Int) -> Shape.FreeBoundInfo?
+```
+
+`Shape.FreeBoundInfo` carries `area`, `perimeter`, `ratio`, `width` and `notchCount`. `ratio` is an
+aspect ratio: contour length over contour width, so 2 for a 20×10 bound, **not** `area / perimeter²`.
+OCCT solves it from the area and perimeter and leaves both `ratio` and `width` at 0 when that solve
+has no real root, which an exactly square bound hits by one ulp: 0 there means "not solvable", not
+"degenerate contour".
+
+```swift
+let props = FreeBoundsProperties(shape: twoStackedRects, tolerance: 0.01)!
+let bound = props.info(.closed, at: 0)!      // a 20x10 contour
+print(bound.ratio, bound.width)              // 2.0 10.0
+props.info(.closed, at: props.closedCount)   // nil, out of range
+```
+
+- **OCCT:** `ShapeAnalysis_FreeBoundData::Area`/`Perimeter`/`Ratio`/`Width`/`NbNotches`
+  (via `OCCTFreeBoundsPropsInfo`).
+
+---
+
+### `FreeBoundsProperties.wire(_:at:)`
+
+Contour wire of one free bound (0-based index), or `nil` if the index is out of range.
+
+```swift
+public func wire(_ kind: BoundKind, at index: Int) -> Shape?
+```
+
+- **OCCT:** `ShapeAnalysis_FreeBoundData::FreeBound` (via `OCCTFreeBoundsPropsWire`).
+
+---
+
 ### `FreeBoundsProperties.closedArea(at:)`
 
-Area enclosed by the `i`-th closed free bound (0-based).
+Area enclosed by the `i`-th closed free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func closedArea(at index: Int) -> Double
@@ -2420,7 +2512,7 @@ public func closedArea(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedPerimeter(at:)`
 
-Perimeter of the `i`-th closed free bound (0-based).
+Perimeter of the `i`-th closed free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func closedPerimeter(at index: Int) -> Double
@@ -2430,7 +2522,8 @@ public func closedPerimeter(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedRatio(at:)`
 
-Length-to-width ratio of the `i`-th closed free bound (0-based).
+Length-to-width aspect ratio of the `i`-th closed free bound (0-based), or 0 if the index is out of
+range. See `info(_:at:)`. 0 is also what OCCT reports for a bound whose ratio it cannot solve.
 
 ```swift
 public func closedRatio(at index: Int) -> Double
@@ -2440,7 +2533,8 @@ public func closedRatio(at index: Int) -> Double
 
 ### `FreeBoundsProperties.closedWidth(at:)`
 
-Width of the `i`-th closed free bound (0-based).
+Width of the `i`-th closed free bound (0-based), on the same "0 means unsolved" contract as
+`closedRatio(at:)`.
 
 ```swift
 public func closedWidth(at index: Int) -> Double
@@ -2460,7 +2554,7 @@ public func closedWire(at index: Int) -> Shape?
 
 ### `FreeBoundsProperties.openArea(at:)`
 
-Swept area of the `i`-th open free bound (0-based).
+Swept area of the `i`-th open free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func openArea(at index: Int) -> Double
@@ -2470,7 +2564,7 @@ public func openArea(at index: Int) -> Double
 
 ### `FreeBoundsProperties.openPerimeter(at:)`
 
-Length of the `i`-th open free bound (0-based).
+Length of the `i`-th open free bound (0-based), or 0 if the index is out of range.
 
 ```swift
 public func openPerimeter(at index: Int) -> Double
@@ -2490,8 +2584,7 @@ public func openWire(at index: Int) -> Shape?
   ```swift
   let shell = Shape.box(width: 10, height: 10, depth: 10)!  // closed — 0 free bounds
   if let fp = FreeBoundsProperties(shape: shell) {
-      _ = fp.perform()
-      print("closed:", fp.closedCount, "open:", fp.openCount)
+      print("closed:", fp.closedCount, "open:", fp.openCount)   // closed: 0 open: 0
   }
   ```
 

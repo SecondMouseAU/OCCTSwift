@@ -450,7 +450,11 @@
 // ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
 //                                        OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
 //                                        OCCTCurve3DIsPeriodicSA
-// ShapeAnalysis_FreeBoundsProperties  → OCCTShapeFreeBoundsAnalysis*
+// ShapeAnalysis_FreeBounds            → OCCTShapeFreeBounds, OCCTShapeFreeBoundsClosedCount,
+//                                        OCCTShapeFreeBoundsClosed, OCCTShapeFreeBoundsOpen
+// ShapeAnalysis_FreeBoundsProperties  → OCCTFreeBoundsProps* (one family since #504; the stateless
+//                                        OCCTFreeBounds* family was a second wrapping of the same
+//                                        class and is gone)
 // ShapeAnalysis_Surface               → OCCTSurfaceUVProject*
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
 // ShapeAnalysis_WireOrder             → OCCTWireAnalyze
@@ -6484,56 +6488,14 @@ OCCTShapeRef _Nullable OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
     int32_t continuity3d, int32_t continuity2d, bool degreePriority, bool rational);
 
 // --- ShapeAnalysis_FreeBoundsProperties ---
-
-/// Free bounds analysis result (summary)
-typedef struct {
-    int32_t totalFreeBounds;
-    int32_t closedFreeBounds;
-    int32_t openFreeBounds;
-} OCCTFreeBoundsResult;
-
-/// Analyze free bounds of a shape.
-/// @param shape Shape to analyze
-/// @param tolerance Sewing tolerance for finding free bounds
-/// @return Analysis result with bound counts
-OCCTFreeBoundsResult OCCTFreeBoundsAnalyze(OCCTShapeRef shape, double tolerance);
-
-/// Individual free bound properties
-typedef struct {
-    double area;
-    double perimeter;
-    double ratio;       // Area / (perimeter * perimeter)
-    double width;       // Average width
-    int32_t notchCount;
-} OCCTFreeBoundInfo;
-
-/// Get properties of a closed free bound.
-/// @param shape Shape previously analyzed
-/// @param tolerance Same tolerance used in analysis
-/// @param index 0-based index of the closed free bound
-/// @return Properties of the specified closed free bound
-OCCTFreeBoundInfo OCCTFreeBoundsGetClosedBoundInfo(OCCTShapeRef shape, double tolerance, int32_t index);
-
-/// Get properties of an open free bound.
-/// @param shape Shape previously analyzed
-/// @param tolerance Same tolerance used in analysis
-/// @param index 0-based index of the open free bound
-/// @return Properties of the specified open free bound
-OCCTFreeBoundInfo OCCTFreeBoundsGetOpenBoundInfo(OCCTShapeRef shape, double tolerance, int32_t index);
-
-/// Get the wire of a closed free bound as a shape.
-/// @param shape Shape previously analyzed
-/// @param tolerance Same tolerance used in analysis
-/// @param index 0-based index of the closed free bound
-/// @return Wire shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTFreeBoundsGetClosedBoundWire(OCCTShapeRef shape, double tolerance, int32_t index);
-
-/// Get the wire of an open free bound as a shape.
-/// @param shape Shape previously analyzed
-/// @param tolerance Same tolerance used in analysis
-/// @param index 0-based index of the open free bound
-/// @return Wire shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTFreeBoundsGetOpenBoundWire(OCCTShapeRef shape, double tolerance, int32_t index);
+//
+// OCCTFreeBoundsAnalyze, OCCTFreeBoundsGetClosedBoundInfo, OCCTFreeBoundsGetOpenBoundInfo,
+// OCCTFreeBoundsGetClosedBoundWire and OCCTFreeBoundsGetOpenBoundWire were declared here.
+// Each rebuilt a whole ShapeAnalysis_FreeBoundsProperties and re-ran Perform() from scratch,
+// so a per-bound report cost one full free-bound search per bound; each also took a 0-based
+// index while the later OCCTFreeBoundsProps* family, wrapping the identical OCCT class, took a
+// 1-based one. Removed by #504: the one family, and the two structs that were declared here,
+// are with the v0.114.0 block (search OCCTFreeBoundsPropsCreate).
 
 // --- ShapeAnalysis_Surface expansion ---
 
@@ -17137,48 +17099,78 @@ typedef struct {
 /// Get extended shape contents analysis.
 OCCTShapeContentsExtended OCCTShapeGetContentsExtended(OCCTShapeRef _Nonnull shape);
 
-// --- ShapeAnalysis_FreeBoundsProperties (handle-based) ---
+// --- ShapeAnalysis_FreeBoundsProperties ---
+//
+// The one wrapping of this class since #504, which removed the stateless OCCTFreeBounds* family
+// declared in the v0.49.0 block. Every index below is 0-based and range-checked here.
+//
+// A free bound is a boundary contour of the shape: a chain of edges each used by exactly one
+// face, closed into a loop where it can be. Contours that close are "closed" bounds, the rest
+// "open". Note that the sewing-based search backing this class closes essentially
+// everything it finds, so the open sequence is usually empty (#504).
 
 typedef struct OCCTFreeBoundsProps* OCCTFreeBoundsPropsRef;
 
-/// Create a FreeBoundsProperties analyzer.
+/// Which of an analysis' two result sequences an accessor addresses.
+typedef enum {
+    OCCTFreeBoundClosed = 0,
+    OCCTFreeBoundOpen = 1
+} OCCTFreeBoundKind;
+
+/// Free bounds analysis result (summary)
+typedef struct {
+    int32_t totalFreeBounds;    // closedFreeBounds + openFreeBounds, per OCCT's own NbFreeBounds()
+    int32_t closedFreeBounds;
+    int32_t openFreeBounds;
+} OCCTFreeBoundsResult;
+
+/// Individual free bound properties
+typedef struct {
+    double area;
+    double perimeter;
+    // Aspect ratio: contour length divided by contour width, so 1 for a square-ish bound and 10
+    // for a 100x10 one. NOT area/perimeter^2, which is what this field claimed before #504.
+    // OCCT solves it from area and perimeter and leaves BOTH this and width at 0 when that solve
+    // has no real root, which an exactly square bound hits by one ulp, since it sits precisely on
+    // the boundary of the two branches. 0 here means "not solvable", not "degenerate contour".
+    double ratio;
+    double width;       // Average width, on the same 0-means-unsolved contract as ratio
+    int32_t notchCount; // Narrow 'V'-like sub-contours found on this bound
+} OCCTFreeBoundInfo;
+
+/// Create a free bounds analyzer over a shape. The shape should be a compound or shell of faces;
+/// a lone face has no free bounds, because the search runs over the shape's direct children.
+/// @param tolerance Sewing tolerance used to chain free edges into contours. A tolerance of 0 (or
+///        below) selects a different algorithm inside OCCT: the free edges are taken from the
+///        shape's already-shared topology instead of from a sewing pass.
 OCCTFreeBoundsPropsRef _Nullable OCCTFreeBoundsPropsCreate(OCCTShapeRef _Nonnull shape, double tolerance);
 
-/// Release a FreeBoundsProperties analyzer.
+/// Release a free bounds analyzer.
 void OCCTFreeBoundsPropsRelease(OCCTFreeBoundsPropsRef _Nonnull props);
 
-/// Perform the analysis.
+/// Run the analysis, if it has not already run, and report whether results are available.
+///
+/// Idempotent: OCCT's own Perform() appends to its result sequences without clearing them, so
+/// calling it twice doubles every count (#504). Calling this is optional: the accessors below
+/// run it on demand.
 bool OCCTFreeBoundsPropsPerform(OCCTFreeBoundsPropsRef _Nonnull props);
 
-/// Number of closed free bounds.
-int32_t OCCTFreeBoundsPropsNbClosedFreeBounds(OCCTFreeBoundsPropsRef _Nonnull props);
+/// Number of closed, open and total free bounds.
+OCCTFreeBoundsResult OCCTFreeBoundsPropsCounts(OCCTFreeBoundsPropsRef _Nonnull props);
 
-/// Number of open free bounds.
-int32_t OCCTFreeBoundsPropsNbOpenFreeBounds(OCCTFreeBoundsPropsRef _Nonnull props);
+/// Get the properties of one free bound.
+/// @param kind Which sequence to index
+/// @param index 0-based index within that sequence
+/// @return true on success; false, with *outInfo untouched, when index is out of range
+bool OCCTFreeBoundsPropsInfo(OCCTFreeBoundsPropsRef _Nonnull props, OCCTFreeBoundKind kind,
+                             int32_t index, OCCTFreeBoundInfo* _Nonnull outInfo);
 
-/// Get area of closed free bound by 1-based index.
-double OCCTFreeBoundsPropsClosedArea(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get perimeter of closed free bound by 1-based index.
-double OCCTFreeBoundsPropsClosedPerimeter(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get ratio (length/width) of closed free bound by 1-based index.
-double OCCTFreeBoundsPropsClosedRatio(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get width of closed free bound by 1-based index.
-double OCCTFreeBoundsPropsClosedWidth(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get wire of closed free bound by 1-based index.
-OCCTShapeRef _Nullable OCCTFreeBoundsPropsClosedWire(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get area of open free bound by 1-based index.
-double OCCTFreeBoundsPropsOpenArea(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get perimeter of open free bound by 1-based index.
-double OCCTFreeBoundsPropsOpenPerimeter(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
-
-/// Get wire of open free bound by 1-based index.
-OCCTShapeRef _Nullable OCCTFreeBoundsPropsOpenWire(OCCTFreeBoundsPropsRef _Nonnull props, int32_t index);
+/// Get the contour wire of one free bound, as a shape.
+/// @param kind Which sequence to index
+/// @param index 0-based index within that sequence
+/// @return Wire shape, or NULL when index is out of range
+OCCTShapeRef _Nullable OCCTFreeBoundsPropsWire(OCCTFreeBoundsPropsRef _Nonnull props,
+                                               OCCTFreeBoundKind kind, int32_t index);
 
 // --- BRepBuilderAPI_MakeWire (incremental) ---
 
