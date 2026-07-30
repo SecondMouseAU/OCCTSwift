@@ -48,6 +48,14 @@ integer used to mean different things depending only on which entry point receiv
 analysis-order ceiling is measured, not arbitrary: asking `LocalAnalysis_*` for C3 or CN leaves
 every predicate reporting true, so C2 is the strictest question those classes can answer.
 
+One user-visible consequence beyond the three divergences, for callers passing a raw `Int` outside
+the documented range: that input used to land on whatever fallback the local copy happened to
+carry, which for most of them was a valid, working continuity (usually C2), so an out-of-contract
+call quietly succeeded. It now saturates to CN, and the `Approx*` consumers fail on CN, so
+`Curve3D/Curve2D/Surface.approximated(continuity: 99)` returns `nil` where it previously returned a
+C2 approximation. Deliberate — a request the operation cannot honour should not silently become a
+different request — and covered by test. Values inside each documented domain are unaffected.
+
 Also from this pass, all measured against the pinned kernel and now documented and tested rather
 than left to be rediscovered: the `GeomConvert`/`Geom2dConvert` `Approx*` family accepts C0/C1/C2
 only (`AdvApprox` throws above C2, surfacing as `nil`), while the `PointsToBSpline` family accepts

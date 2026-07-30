@@ -373,6 +373,7 @@ inline GeomAbs_Shape occtGeomAbsFromAnalysisOrder(int32_t order) {
         case 1:  return GeomAbs_G1;
         case 2:  return GeomAbs_C1;
         case 3:  return GeomAbs_G2;
+        case 4:  return GeomAbs_C2;
         default: return order < 0 ? GeomAbs_C0 : GeomAbs_C2;
     }
 }
