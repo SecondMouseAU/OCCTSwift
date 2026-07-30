@@ -15,6 +15,50 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: chore, every build of this package emitted an unhandled-file warning (#440)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`swift build` emitted `found 1 file(s) which are unhandled; explicitly declare them as resources or
+exclude from the target` on every build of this package.
+
+The file was `Tests/OCCTStressTests/Fixtures/unify-crash-mmd-kiha10-body5.brep`, the 600 KB
+mesh-sewn solid backing #348's null-pcurve regression test. It is read straight from the source tree
+via `#filePath`, never through `Bundle.module`, so it is neither a build input nor a resource to
+copy. `OCCTStressTests` now declares `exclude: ["Fixtures"]`, which is the accurate description of
+what it is. Declaring it as a resource instead would have embedded 600 KB in the test bundle that
+nothing reads.
+
+**Who saw it:** builds of this package as the *root* package, which means our own dev loop and CI,
+plus anyone who clones OCCTSwift and builds it directly. It did **not** reach downstream consumers.
+SwiftPM does not construct test targets for non-root packages, so a consumer's build never had a
+target that owned `Tests/` to diagnose. Measured on Swift 6.3.3 against a synthetic package: the
+same stray file warns while its package is the root, stays silent through a path-dependency
+consumer's `swift build` and `swift test`, and does propagate to that consumer once moved into a
+*source* target. #440 claimed the warning reached every downstream consumer; that part of the issue
+was wrong too, and the fix is worth having for the root-build noise alone.
+
+**Correcting #440's own diagnosis:** the issue attributed the warning to
+`Tests/occt_parallel_crash_portable.cpp` sitting unclaimed at the `Tests/` root. That file is not the
+cause and never was: no target declares `path: "Tests"`, so SwiftPM does not scan the directory root
+at all and never diagnosed it. Removing it changes nothing, and the warning names the `.brep` and
+only the `.brep`. The fixture predates the issue by five days, so the misattribution was present from
+filing.
+
+The move #440 also asked for was still worth doing on its own merit, since a reproducer does not
+belong in the package's test tree, but not to the suggested destination. That file is the
+[OCCT#1179](https://github.com/Open-Cascade-SAS/OCCT/issues/1179) parallel-crash sweep (11
+operation groups built around `Extrema_ExtElCS` and `ShapeUpgrade_FaceDivide`, committed April 2026,
+three months before #342, with one boolean group out of eleven), so filing it under
+`Scripts/repro/342-boolean-ops/` as "the same family of work" would have mislabelled it. It now has
+its own `Scripts/repro/occt1179-parallel-crash/`, with a README covering what it sweeps, why it is
+kept now that OCCT#1179 is fixed (our own [OCCT#1203](https://github.com/Open-Cascade-SAS/OCCT/pull/1203),
+shipped in `V8_0_0`), and what distinguishes it from its boolean-concurrency siblings: it is the only
+reproducer here driven by CI, on both Windows and macOS. The two paths in
+`.github/workflows/occt-parallel-crash-test.yml` follow it.
+
+No API change, no behaviour change, no kernel change.
+
 ### v1.17.0 (July 2026): pass 1a of the #377 duplication audit, and two source-breaking changes in a minor release
 
 **Read this before upgrading. Two changes in this release break source compatibility, which
