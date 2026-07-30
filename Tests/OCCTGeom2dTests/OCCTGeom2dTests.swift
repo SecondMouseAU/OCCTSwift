@@ -3633,10 +3633,11 @@ struct Curve2DBSplineExtrasTests {
 @Suite("Curve2D Continuity Queries v0.120.0")
 struct Curve2DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func segmentContinuityClass() {
         if let c = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // A trimmed 2D line reports its basis line's continuity, which is analytic.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 

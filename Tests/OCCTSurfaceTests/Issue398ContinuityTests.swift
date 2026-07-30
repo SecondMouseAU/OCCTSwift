@@ -36,7 +36,7 @@ struct Issue398ContinuityTests {
         // or vice versa. That cannot be asserted directly, but collapsing one into a typealias
         // of the other is the realistic way it would be lost, and this catches exactly that.
         #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ParametricContinuity.self))
-        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(Surface.Continuity.self))
+        #expect(ObjectIdentifier(SurfaceContinuity.self) != ObjectIdentifier(ContinuityClass.self))
         #expect(ObjectIdentifier(ParametricContinuity.self) != ObjectIdentifier(Shape.ContinuityLevel.self))
 
         // They agree on 0/1/2 numerically, which is precisely why the type distinction is
@@ -44,17 +44,20 @@ struct Issue398ContinuityTests {
         #expect(SurfaceContinuity.g1.rawValue == ParametricContinuity.c1.rawValue)
     }
 
-    @Test("Surface.Continuity still mirrors the real GeomAbs_Shape ordinals")
+    @Test("The result vocabulary still mirrors the real GeomAbs_Shape ordinals")
     func surfaceContinuityMirrorsGeomAbsShape() {
-        // Deliberately NOT folded into either shared enum: this one is a result type whose
-        // raw values are GeomAbs_Shape's own ordinals, which are not a 0/1/2 order at all.
-        #expect(Surface.Continuity.c0.rawValue == 0)
-        #expect(Surface.Continuity.g1.rawValue == 1)
-        #expect(Surface.Continuity.c1.rawValue == 2)
-        #expect(Surface.Continuity.g2.rawValue == 3)
-        #expect(Surface.Continuity.c2.rawValue == 4)
-        #expect(Surface.Continuity.c3.rawValue == 5)
-        #expect(Surface.Continuity.cN.rawValue == 6)
+        // Deliberately NOT folded into either shared *request* enum: this one is a result type
+        // whose raw values are GeomAbs_Shape's own ordinals, not a 0/1/2 order at all. #485
+        // renamed it from Surface.Continuity to the top-level ContinuityClass and extended it
+        // to Curve3D/Curve2D, which had no typed form; the raw values did not move. See
+        // Issue485SurfaceContinuityTests for the deprecated spelling and the measured values.
+        #expect(ContinuityClass.c0.rawValue == 0)
+        #expect(ContinuityClass.g1.rawValue == 1)
+        #expect(ContinuityClass.c1.rawValue == 2)
+        #expect(ContinuityClass.g2.rawValue == 3)
+        #expect(ContinuityClass.c2.rawValue == 4)
+        #expect(ContinuityClass.c3.rawValue == 5)
+        #expect(ContinuityClass.cN.rawValue == 6)
     }
 
     // MARK: - Source compatibility

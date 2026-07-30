@@ -3621,13 +3621,14 @@ struct SurfaceExtrasTests {
         }
     }
 
-    @Test func surfaceContinuityOrder() {
+    @Test func planeContinuityClass() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
                 if let surf = faces[0].extractFaceSurface() {
-                    // Plane is CN continuous
-                    #expect(surf.surfaceContinuityOrder >= 0)
+                    // Geom_Plane is analytic, so infinitely differentiable.
+                    #expect(surf.continuityClass == .cN)
+                    #expect(surf.continuityClass.satisfies(.c2))
                 }
             }
         }
