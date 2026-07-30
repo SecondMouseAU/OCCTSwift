@@ -95,7 +95,7 @@
 // --- BRepAlgoAPI ---
 // BRepAlgoAPI_Check                   → OCCTShapeBooleanCheck
 // BRepAlgoAPI_Common                  → OCCTShapeIntersect
-// BRepAlgoAPI_Cut                     → OCCTShapeSubtract
+// BRepAlgoAPI_Cut                     → OCCTShapeSubtract, OCCTShapeDrillHole
 // BRepAlgoAPI_Defeaturing             → OCCTShapeRemoveFeatures, OCCTShapeDefeature,
 //                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
 // BRepAlgoAPI_Fuse                    → OCCTShapeUnion
@@ -201,7 +201,7 @@
 // --- BRepPrimAPI ---
 // BRepPrimAPI_MakeBox                 → OCCTShapeCreateBox*
 // BRepPrimAPI_MakeCone                → OCCTShapeCreateCone
-// BRepPrimAPI_MakeCylinder            → OCCTShapeCreateCylinder*
+// BRepPrimAPI_MakeCylinder            → OCCTShapeCreateCylinder*, OCCTShapeDrillHole
 // BRepPrimAPI_MakeHalfSpace           → OCCTShapeCreateHalfSpace
 // BRepPrimAPI_MakePrism               → OCCTShapeCreateExtrusion
 // BRepPrimAPI_MakeRevol               → OCCTShapeCreateRevolve
@@ -1862,12 +1862,25 @@ OCCTShapeRef OCCTShapePrism(OCCTShapeRef shape, OCCTWireRef profile,
                             double dirX, double dirY, double dirZ,
                             double height, bool fuse);
 
-/// Drill a cylindrical hole into a shape
+/// Drill a cylindrical hole into a shape, by cutting a cylinder out of it.
+///
+/// The tool is a FINITE cylinder based at (posX, posY, posZ), running along the normalized
+/// direction for `depth` — or, when `depth <= 0`, for twice the shape's bounding-box diagonal, which
+/// is long enough to leave the far side of any shape it started outside of. Everything is subtracted
+/// with BRepAlgoAPI_Cut, so this works on solids, shells and faces alike, and a `depth` that
+/// overshoots the stock costs nothing.
+///
+/// This is NOT the same contract as OCCTBRepFeatCylindricalHole below, which is OCCT's dedicated
+/// feature-drilling operator. Neither subsumes the other (#496): choose this one when the hole
+/// starts where you say it starts, when the input is not a solid, or when an over-long depth should
+/// just drill through; choose the feature family when you need a solid's own faces to bound the
+/// hole, or a diagnosis of why the drill failed.
+///
 /// @param shape The shape to drill
 /// @param posX, posY, posZ Position of hole center on surface
-/// @param dirX, dirY, dirZ Drill direction (into the shape)
-/// @param radius Hole radius
-/// @param depth Hole depth (0 for through-hole)
+/// @param dirX, dirY, dirZ Drill direction (into the shape); any non-zero axis
+/// @param radius Hole radius; must exceed Precision::Confusion
+/// @param depth Hole depth (0 or less for a through-hole)
 /// @return Shape with hole, or NULL on failure
 OCCTShapeRef OCCTShapeDrillHole(OCCTShapeRef shape,
                                  double posX, double posY, double posZ,
@@ -9565,44 +9578,59 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(OCCTShapeRef _Nonnull sha
     OCCTShapeRef _Nullable * _Nullable * _Nonnull outLeft, int32_t* _Nonnull outLeftCount,
     OCCTShapeRef _Nullable * _Nullable * _Nonnull outRight, int32_t* _Nonnull outRightCount);
 
-// MARK: - BRepFeat_MakeCylindricalHole (v0.71.0)
+// MARK: - BRepFeat_MakeCylindricalHole (v0.71.0, unified #496)
 
-/// Drill a through cylindrical hole in a shape.
+/// How a BRepFeat_MakeCylindricalHole request bounds its hole. Mirrors Swift's
+/// Shape.CylindricalHoleExtent; the values are the wire contract, so do not renumber them.
+///
+/// The two `extentP*` parameters below are read per mode: unused by ThroughAll, UntilEnd and
+/// ThruNext, `extentP0` is the blind length, and `extentP0`/`extentP1` are the range's parameters.
+typedef enum {
+    /// Perform(R). An INFINITE cylinder along the axis, in BOTH directions. The axis origin
+    /// anchors the axis; it is not where the hole starts.
+    OCCTCylindricalHoleExtentThroughAll = 0,
+    /// PerformUntilEnd(R). Bounded by the stock's own first and last faces along the axis.
+    OCCTCylindricalHoleExtentUntilEnd = 1,
+    /// PerformThruNext(R). Stops at the next face after the origin.
+    OCCTCylindricalHoleExtentThruNext = 2,
+    /// PerformBlind(R, extentP0). Length measured from the axis origin. This is the only mode that
+    /// can report HoleTooLong, and it does so rather than drilling through when the length leaves
+    /// the stock.
+    OCCTCylindricalHoleExtentBlind = 3,
+    /// Perform(R, extentP0, extentP1). Bounded by two parameters on the axis.
+    OCCTCylindricalHoleExtentRange = 4,
+} OCCTCylindricalHoleExtentMode;
+
+/// Drill a cylindrical hole with BRepFeat_MakeCylindricalHole, OCCT's local-operation feature drill.
+///
+/// Wants a solid — a shell or a face is InvalidPlacement for every mode but ThroughAll. See
+/// OCCTShapeDrillHole above for the boolean-subtraction drill, which is a different contract rather
+/// than a lesser one (#496).
+///
 /// @param shape Input solid shape
 /// @param axisOriginX/Y/Z Axis origin
-/// @param axisDirX/Y/Z Axis direction
-/// @param radius Hole radius
+/// @param axisDirX/Y/Z Axis direction; any non-zero axis
+/// @param radius Hole radius; must exceed Precision::Confusion, below which OCCT reports success
+///        and removes no material
+/// @param extent One of OCCTCylindricalHoleExtentMode
+/// @param extentP0, extentP1 The extent's parameters, per the enum above
 /// @return Result shape with hole, or NULL on failure
 OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHole(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius);
+    double radius, int32_t extent, double extentP0, double extentP1);
 
-/// Drill a blind cylindrical hole in a shape.
-/// @param shape Input solid shape
-/// @param axisOriginX/Y/Z Axis origin
-/// @param axisDirX/Y/Z Axis direction
-/// @param radius Hole radius
-/// @param depth Hole depth
-/// @return Result shape with hole, or NULL on failure
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleBlind(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius, double depth);
-
-/// Drill a cylindrical hole through to the next face.
-/// @return Result shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleThruNext(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius);
-
-/// Get the status of the last cylindrical hole operation.
-/// @return 0 = NoError, 1 = InvalidPlacement, 2 = HoleTooLong
+/// Ask what OCCTBRepFeatCylindricalHole would report for this exact request, without building the
+/// result shape.
+///
+/// Takes the extent for a reason: the status depends on it. The same request can be NoError for
+/// ThroughAll and InvalidPlacement for ThruNext, and HoleTooLong exists only under Blind.
+///
+/// @return 0 = NoError, 1 = InvalidPlacement, 2 = HoleTooLong, 3 = Unknown
 int32_t OCCTBRepFeatCylindricalHoleStatus(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius);
+    double radius, int32_t extent, double extentP0, double extentP1);
 
 // MARK: - BRepFeat_Gluer (v0.71.0)
 

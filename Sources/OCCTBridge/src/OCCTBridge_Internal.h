@@ -53,11 +53,18 @@
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
-// The last five serve the shared algorithm helpers at the bottom of this header
-// (occtFillingAddConstraint, occtShapeFilletEdgeList, occtDefeaturePerform) rather than the
+// The rest serve the shared algorithm helpers at the bottom of this header
+// (occtFillingAddConstraint, occtShapeFilletEdgeList, occtDefeaturePerform,
+// occtBRepFeatCylindricalHole) rather than the
 // structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
+#include <BRepFeat_MakeCylindricalHole.hxx>
+#include <BRepFeat_Status.hxx>
+#include <Precision.hxx>
+#include <gp_Ax1.hxx>
+#include <gp_Dir.hxx>
+#include <gp_Pnt.hxx>
 #include <TopExp.hxx>
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -967,6 +974,134 @@ inline bool occtCurveCurvatureIsInvertible(double curvature) {
     return std::isfinite(curvature)
         && curvature != RealLast()
         && std::abs(curvature) > occtLocalPropsResolution();
+}
+
+// === #496: the drilling preconditions, and one BRepFeat_MakeCylindricalHole skeleton ===
+//
+// OCCTSwift drills round holes two ways, and the audit read the older one as a crude
+// reimplementation of the newer one, to be folded into it. Measuring both against the pinned kernel
+// (Scripts/repro/496-drill-hole-contracts/) says otherwise: they answer different questions, and
+// six of thirteen probed requests change answer under a delegation. The two that stay:
+//
+//   OCCTShapeDrillHole      cuts a FINITE cylinder that starts at `position` and runs `depth` along
+//                           `direction` (or a bounding-box-derived length when depth <= 0), with
+//                           BRepAlgoAPI_Cut. Works on any shape, overshoots harmlessly, and cannot
+//                           say why it failed.
+//   BRepFeat_MakeCylindricalHole  is OCCT's local-operation feature drill. Needs a solid, reports a
+//                           real BRepFeat_Status, and each of its five modes bounds the hole its own
+//                           way — none of which is "start at the origin and run for a length" except
+//                           PerformBlind, which then rejects a length that leaves the stock.
+//
+// So this section does not merge the two algorithms. It gives them the one thing they genuinely
+// should share — the preconditions on a drilling request — and collapses the feature family's five
+// modes and its status query onto one skeleton, since those really were five copies of one body.
+
+// Both families need a real axis. OCCTShapeDrillHole always checked this; the feature family
+// reached gp_Dir, threw Standard_ConstructionError ("input vector has zero norm") and swallowed it
+// in its own catch (...). Same answer today, by an accident that any narrowing of that catch would
+// have taken away. NaN fails this too, since every NaN comparison is false.
+inline bool occtValidDrillDirection(double dirX, double dirY, double dirZ) {
+    double sq = dirX * dirX + dirY * dirY + dirZ * dirZ;
+    return sq >= 1e-20;   // matches OCCTShapeDrillHole's historical 1e-10 on the magnitude
+}
+
+// Both families need a radius OCCT can actually build a cylinder from. Not just positive: the
+// pinned xcframework is a Release build, so OCCT's own Raise_if preconditions are compiled out by
+// No_Exception (#487) and nothing below the bridge rejects a degenerate one.
+//
+// Measured on that kernel: a radius of 0 — or any radius below Precision::Confusion, e.g. 1e-14 —
+// makes every BRepFeat_MakeCylindricalHole mode return BRepFeat_NoError and a shape identical to
+// the input: same volume, same six faces, no material removed. A drill that reports success and
+// removes nothing is the worst of the three possible answers. A negative radius throws, and both
+// families already turned that into a failure.
+inline bool occtValidDrillRadius(double radius) {
+    return radius > Precision::Confusion();
+}
+
+// The five ways BRepFeat_MakeCylindricalHole can bound a hole. Kept in one place because the Swift
+// CylindricalHoleExtent enum, the two bridge entry points and this skeleton all have to agree.
+enum OCCTCylindricalHoleExtent : int32_t {
+    OCCTCylindricalHoleThroughAll = 0,   // Perform(R)                — an INFINITE cylinder, both
+                                         //   ways along the axis; the origin anchors it, and is not
+                                         //   a starting point
+    OCCTCylindricalHoleUntilEnd   = 1,   // PerformUntilEnd(R)        — bounded by the stock's own
+                                         //   entry and exit faces
+    OCCTCylindricalHoleThruNext   = 2,   // PerformThruNext(R)        — stops at the next face
+    OCCTCylindricalHoleBlind      = 3,   // PerformBlind(R, length)   — `p0` is the length, measured
+                                         //   from the origin; HoleTooLong if it leaves the stock
+    OCCTCylindricalHoleRange      = 4,   // Perform(R, PFrom, PTo)    — `p0`/`p1` are parameters on
+                                         //   the axis
+};
+
+// The status vocabulary shared with Swift's Shape.CylindricalHoleStatus. Values are the wire
+// contract; do not renumber.
+enum OCCTCylindricalHoleStatus : int32_t {
+    OCCTCylindricalHoleNoError          = 0,
+    OCCTCylindricalHoleInvalidPlacement = 1,
+    OCCTCylindricalHoleHoleTooLong      = 2,
+    OCCTCylindricalHoleUnknown          = 3,
+};
+
+inline int32_t occtCylindricalHoleStatusCode(BRepFeat_Status status) {
+    switch (status) {
+        case BRepFeat_NoError:          return OCCTCylindricalHoleNoError;
+        case BRepFeat_InvalidPlacement: return OCCTCylindricalHoleInvalidPlacement;
+        case BRepFeat_HoleTooLong:      return OCCTCylindricalHoleHoleTooLong;
+        default:                        return OCCTCylindricalHoleUnknown;
+    }
+}
+
+// Init, run the requested mode, read Status(), and — only when `outShape` is given and the status
+// is clean — Build() and wrap the result. The whole body of what used to be four functions, three
+// of which differed by a single Perform* line and the fourth of which was the third with the Build
+// deleted.
+//
+// The status is always returned, which is the point: reporting it was the feature family's one real
+// advantage over the boolean drill, and only the ThroughAll mode had an entry point that surfaced
+// it. BRepFeat_HoleTooLong is written in exactly two places in the kernel
+// (BRepFeat_MakeCylindricalHole.cxx:526 and :667), both inside PerformBlind — so the Swift enum
+// carried a case that no public spelling could produce.
+//
+// A malformed request (no axis direction, a radius OCCT cannot build) is InvalidPlacement rather
+// than Unknown: the caller named a placement that cannot define a hole, which is actionable, where
+// Unknown means "OCCT raised something we do not recognise".
+inline int32_t occtBRepFeatCylindricalHole(OCCTShapeRef shape,
+                                           double originX, double originY, double originZ,
+                                           double dirX, double dirY, double dirZ,
+                                           double radius, int32_t extent,
+                                           double p0, double p1,
+                                           OCCTShapeRef* outShape) {
+    if (outShape) *outShape = nullptr;
+    if (!shape) return OCCTCylindricalHoleInvalidPlacement;
+    if (!occtValidDrillDirection(dirX, dirY, dirZ)) return OCCTCylindricalHoleInvalidPlacement;
+    if (!occtValidDrillRadius(radius)) return OCCTCylindricalHoleInvalidPlacement;
+
+    try {
+        gp_Ax1 axis(gp_Pnt(originX, originY, originZ), gp_Dir(dirX, dirY, dirZ));
+        BRepFeat_MakeCylindricalHole hole;
+        hole.Init(shape->shape, axis);
+
+        switch (extent) {
+            case OCCTCylindricalHoleUntilEnd: hole.PerformUntilEnd(radius);  break;
+            case OCCTCylindricalHoleThruNext: hole.PerformThruNext(radius);  break;
+            case OCCTCylindricalHoleBlind:    hole.PerformBlind(radius, p0); break;
+            case OCCTCylindricalHoleRange:    hole.Perform(radius, p0, p1);  break;
+            case OCCTCylindricalHoleThroughAll: hole.Perform(radius);        break;
+            default: return OCCTCylindricalHoleInvalidPlacement;
+        }
+
+        int32_t status = occtCylindricalHoleStatusCode(hole.Status());
+        if (!outShape || status != OCCTCylindricalHoleNoError) return status;
+
+        hole.Build();
+        TopoDS_Shape result = hole.Shape();
+        if (result.IsNull()) return OCCTCylindricalHoleUnknown;
+
+        *outShape = new OCCTShape(result);
+        return OCCTCylindricalHoleNoError;
+    } catch (...) {
+        return OCCTCylindricalHoleUnknown;
+    }
 }
 
 #endif /* OCCTBridge_Internal_h */
