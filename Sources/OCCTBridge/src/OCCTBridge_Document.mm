@@ -6100,7 +6100,8 @@ bool OCCTDocumentDataSetIsEmpty(OCCTDocumentRef doc, int64_t labelId) {
     } catch (...) { return true; }
 }
 
-// MARK: - v0.90: TDF_ChildIDIterator + TDocStd_PathParser + TFunction_DriverTable + TNaming_Scope/Translator + TDataXtd_Placement/Presentation + XCAFDoc_AssemblyIterator/DimTol
+// MARK: - v0.90: TDF_ChildIDIterator + TFunction_DriverTable + TNaming_Scope/Translator + TDataXtd_Placement/Presentation + XCAFDoc_AssemblyIterator/DimTol
+// (TDocStd_PathParser was wrapped here too until #499 folded it into the OSD_Path family in OCCTBridge_IO.mm)
 // MARK: - TDF_ChildIDIterator (v0.90.0)
 
 #include <TDF_ChildIDIterator.hxx>
@@ -6118,41 +6119,6 @@ int32_t OCCTDocumentChildIDCount(OCCTDocumentRef doc, int64_t labelId,
         }
         return count;
     } catch (...) { return 0; }
-}
-
-// MARK: - TDocStd_PathParser (v0.90.0)
-
-#include <TDocStd_PathParser.hxx>
-
-const char* OCCTPathParserTrek(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Trek());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-const char* OCCTPathParserName(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Name());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-const char* OCCTPathParserExtension(const char* path) {
-    try {
-        TCollection_ExtendedString epath(path);
-        TDocStd_PathParser parser(epath);
-        TCollection_AsciiString astr(parser.Extension());
-        return strdup(astr.ToCString());
-    } catch (...) { return nullptr; }
-}
-
-void OCCTPathParserFreeString(const char* str) {
-    if (str) free((void*)str);
 }
 
 // MARK: - TFunction_DriverTable (v0.90.0)

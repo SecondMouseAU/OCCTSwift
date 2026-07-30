@@ -427,6 +427,11 @@
 // NLPlate_HPG0G2Constraint            → OCCTNLPlateG0G2
 // NLPlate_HPG0G3Constraint            → OCCTNLPlateG0G3
 //
+// --- OSD ---
+// OSD_Environment                     → OCCTEnvironment*
+// OSD_Path                            → OCCTOSDPath* (the only path-parsing family; #499 deleted
+//                                       the TDocStd_PathParser one that duplicated it)
+//
 // --- Plate ---
 // Plate_Plate                         → OCCTPlate*
 // Plate_PinpointConstraint            → OCCTPlateLoadPinpoint
@@ -12753,23 +12758,6 @@ bool OCCTDocumentDataSetIsEmpty(OCCTDocumentRef _Nonnull doc, int64_t labelId);
 int32_t OCCTDocumentChildIDCount(OCCTDocumentRef _Nonnull doc, int64_t labelId,
                                   const char* _Nonnull guidString, bool allLevels);
 
-// MARK: - TDocStd_PathParser (v0.90.0)
-
-/// Parse a file path and return the directory (trek) component.
-/// Caller must free the returned string.
-const char* _Nullable OCCTPathParserTrek(const char* _Nonnull path);
-
-/// Parse a file path and return the filename (without extension).
-/// Caller must free the returned string.
-const char* _Nullable OCCTPathParserName(const char* _Nonnull path);
-
-/// Parse a file path and return the file extension.
-/// Caller must free the returned string.
-const char* _Nullable OCCTPathParserExtension(const char* _Nonnull path);
-
-/// Free a string returned by OCCTPathParser* functions.
-void OCCTPathParserFreeString(const char* _Nullable str);
-
 // MARK: - TFunction_DriverTable (v0.90.0)
 
 /// Check if a function driver with the given GUID is registered.
@@ -13526,14 +13514,22 @@ bool OCCTBRepAlgoImageIsImage(OCCTBRepAlgoImageRef _Nonnull img, OCCTShapeRef _N
 void OCCTBRepAlgoImageClear(OCCTBRepAlgoImageRef _Nonnull img);
 
 // MARK: - OSD_Path (v0.96.0)
+//
+// The single path-parsing family in the bridge. The TDocStd_PathParser family that used to sit
+// alongside it (OCCTPathParserTrek/Name/Extension, v0.90.0) was deleted in #499: it answered the
+// same questions in a different string format, and TDocStd_PathParser::Parse() is wrong outright
+// for an extension-less path, a dotfile inside a directory, and a dot in a directory name.
 
-/// Parse a path and return the filename (without extension). Caller must free.
+/// Parse a path and return the filename (without directory or extension). Caller must free.
 const char* _Nullable OCCTOSDPathName(const char* _Nonnull path);
 
-/// Parse a path and return the file extension (with dot). Caller must free.
+/// Parse a path and return the file extension, leading dot included ("/a/b.step" -> ".step").
+/// Caller must free.
 const char* _Nullable OCCTOSDPathExtension(const char* _Nonnull path);
 
-/// Parse a path and return the directory trek. Caller must free.
+/// Parse a path and return the directory in OCCT's *portable* trek syntax, where "/" becomes "|"
+/// and ".." becomes "^" ("/home/user/m.step" -> "|home|user|"). This is not a filesystem path;
+/// for that, use OCCTOSDPathFolderAndFile. Caller must free.
 const char* _Nullable OCCTOSDPathTrek(const char* _Nonnull path);
 
 /// Get the system name (full path). Caller must free.

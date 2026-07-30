@@ -903,6 +903,54 @@ Not changed, and tracked separately as
 class family asking the same question of a face rather than a surface, and several feed face
 orientation decisions rather than curvature reporting, so they need their own validation.
 
+#### One path parser, not two that disagree on what an extension is (#499)
+
+`PathParser` wrapped `TDocStd_PathParser` and `OSDPath` wrapped `OSD_Path`: two OCCT classes
+answering the same questions behind identically-named Swift methods, each with its own test pinning
+its own format and neither comparing itself to the other. `PathParser` now forwards to `OSDPath`,
+whose bridge family is the single path-parsing implementation; `TDocStd_PathParser` is no longer
+wrapped, and its four bridge functions are deleted.
+
+**Silent behaviour change, in two places**, prompted by a deprecation warning at every call site
+rather than a compile error. [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499)
+records the exception:
+
+```swift
+PathParser.fileExtension("model.step")     // was "step"        now ".step"
+PathParser.trek("/home/user/model.step")   // was "/home/user"  now "/home/user/"
+```
+
+The formats were the *reported* divergence. Measuring both classes across 19 inputs
+([`Scripts/repro/499-path-parsing-divergence/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/499-path-parsing-divergence))
+found four cases where `TDocStd_PathParser` was not differently formatted but wrong, all of which
+the forwarding fixes:
+
+| input | `PathParser`, before | now (= `OSDPath`) |
+|---|---|---|
+| `/home/user/model` | name `""`, directory `""` (`Parse()` returns early when there is no dot) | name `"model"`, directory `"/home/user/"` |
+| `/home/user/.config` | `nil` from every accessor (`Split` past the end of the string, caught by the bridge) | ext `".config"`, directory `"/home/user/"` |
+| `/home/a.b/model` | name `"a"`, ext `"b/model"` (the last dot anywhere wins, separators ignored) | name `"model"`, ext `""` |
+| `/home/üser/mødel.step` | name `"mÃ¸del"` | name `"mødel"` |
+
+The issue predicted the opposite of that last row: that `OSD_Path`'s documented
+`ConstructionError` for characters outside `' '...'~'` would make every `OSDPath` method return
+`nil` for a non-ASCII path, while `TDocStd_PathParser`'s `TCollection_ExtendedString` handled it.
+`OSD_Path.cxx` never throws that error (the header documents a constraint the implementation does
+not enforce), and the mangling was on the `TDocStd_PathParser` side, in the bridge:
+`TCollection_ExtendedString(const char*)` defaults to `theIsMultiByte = false`, so UTF-8 input was
+read one byte per character and re-encoded on the way out.
+
+**`OSDPath.trek(_:)` is not a filesystem path.** `OSD_Path::Trek()` returns OCCT's portable
+directory syntax, where `/` becomes `|` and `..` becomes `^`. `/home/user/m.step` gives
+`"|home|user|"`, and `../up/f.txt` gives `"^|up|"`. The Swift doc comment said only "Get the
+directory trek from a path", and the method had no test of any kind. It now says what it returns and
+points at the new **`OSDPath.folder(_:)`**, which gives the real directory (`"/home/user/"`) and is
+what `PathParser.trek` forwards to. `folder`/`file` recompose to the input; `trek` never could.
+
+Also: `OSD_Path` and `OSD_Environment` gained the cross-reference index entries neither ever had,
+and the four `OCCTOSDPath*` string accessors, four copies of construct-read-`strdup`, share one
+helper.
+
 ---
 
 ## Release History

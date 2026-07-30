@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with two recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, and [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with three recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, and [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build.
 
 ## Rules
 
@@ -64,6 +64,22 @@ It is a compile error at every call site, never silent. The exception was taken 
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
 
 Also in #495, and *not* breaking: `continuityWith`'s `order:` parameter and `Shape.continuityOfFaces` both changed type, and both kept a deprecated overload with the old signature.
+
+#### Recorded exception: Unreleased, `PathParser` forwards to `OSDPath` (#499)
+
+**Two behaviour changes, and unlike the two exceptions above these are *not* compile errors.** Recorded here before the tag is cut:
+
+| Break | Issue | What a caller does |
+|---|---|---|
+| `PathParser.fileExtension(_:)` returns `".step"`, not `"step"` | #499 | Drop the caller's own dot, or strip the leading `.` |
+| `PathParser.trek(_:)` returns `"/home/user/"`, not `"/home/user"` | #499 | Nothing, if the result is joined with a separator; otherwise trim the trailing `/` |
+
+Both spellings still compile and still return a value; the deprecation attribute on each method raises a warning at every call site naming the exact format change, and `renamed:` points at the `OSDPath` method that now does the work. The exception was taken because:
+
+- The disagreement *is* the bug. `PathParser.fileExtension` and `OSDPath.fileExtension` answered the same question in two formats, each pinned by its own test, neither compared to the other. Keeping both formats (by having `PathParser` strip what `OSDPath` returns) would have deduplicated the implementation while preserving the divergence the issue was filed about.
+- The same forwarding fixes four cases where `TDocStd_PathParser` was wrong rather than differently formatted: an extension-less path parsed to an empty name *and* empty directory, a dotfile inside a directory returned `nil` from every accessor, a dot in a directory name was read as the file's extension, and non-ASCII paths came back mangled. Those four are ordinary PATCH-class fixes ("a method that returned `nil` when it shouldn't"); only the two formats above are a break.
+- A warning, not an error, is the weaker prompt, stated plainly here rather than claimed otherwise. It is what the API allows: Swift cannot overload on return *value*, only on type, so there is no spelling in which the old format survives alongside the new one.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
 
 ### MINOR — `x.y.0`
 
