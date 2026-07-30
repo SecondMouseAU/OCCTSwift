@@ -1706,8 +1706,8 @@ public static func edge2dFullCircle(center: SIMD2<Double>, direction: SIMD2<Doub
                                      radius: Double) -> Shape?
 ```
 
-- **Parameters:** `center` — circle center in 2D; `direction` — X-axis direction; `radius` — radius.
-- **Returns:** A `Shape` wrapping a closed `TopoDS_Edge` in 2D, or `nil` on failure.
+- **Parameters:** `center`: circle center in 2D; `direction`: X-axis direction; `radius`: radius, must be greater than zero.
+- **Returns:** A `Shape` wrapping a closed `TopoDS_Edge` in 2D, or `nil` on failure or a degenerate radius.
 - **OCCT:** `BRepLib_MakeEdge2d` (circle overload)
 - **Example:**
   ```swift
@@ -1725,8 +1725,8 @@ public static func edge2dEllipse(center: SIMD2<Double>, direction: SIMD2<Double>
                                   majorRadius: Double, minorRadius: Double) -> Shape?
 ```
 
-- **Parameters:** `center` — center in 2D; `direction` — major-axis direction; `majorRadius`, `minorRadius` — semi-axes.
-- **Returns:** A closed 2D edge, or `nil` on failure.
+- **Parameters:** `center`: center in 2D; `direction`: major-axis direction; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius`. Equal radii are a circle and are valid.
+- **Returns:** A closed 2D edge, or `nil` on failure or a degenerate ellipse. `BRepLib_MakeEdge2d` itself reports `IsDone()` for one: a zero-radius ellipse builds a zero-length edge with both vertices at the centre, and a zero minor radius builds a segment doubled back along the major axis (#514).
 - **OCCT:** `BRepLib_MakeEdge2d` (ellipse overload)
 - **Example:**
   ```swift
@@ -1746,8 +1746,8 @@ public static func edge2dEllipseArc(center: SIMD2<Double>, direction: SIMD2<Doub
                                      u1: Double, u2: Double) -> Shape?
 ```
 
-- **Parameters:** `center`, `direction`, `majorRadius`, `minorRadius` — ellipse definition; `u1`, `u2` — parameter range (radians).
-- **Returns:** A 2D edge arc, or `nil` on failure.
+- **Parameters:** `center`, `direction`, `majorRadius`, `minorRadius`: ellipse definition, both radii greater than zero with `minorRadius <= majorRadius`; `u1`, `u2`: parameter range (radians).
+- **Returns:** A 2D edge arc, or `nil` on failure or a degenerate ellipse.
 - **OCCT:** `BRepLib_MakeEdge2d` (ellipse-arc overload)
 - **Example:**
   ```swift

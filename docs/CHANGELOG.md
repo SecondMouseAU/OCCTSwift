@@ -144,6 +144,68 @@ all. They assert measured geometry rather than non-nil, and were verified to fai
 defects — a flipped parallel-offset sign, and swapped `S1`/`S2` apex points. No public Swift API
 changed; `OCCTBridge` is not an SPM product, so the C-layer rename reaches no consumer.
 
+#### The nine 2D conic sites that took a dimension and never checked it (#514)
+
+Split out of #487, which fixed the three `gce_Make*2d` factories and converged the four conic
+dimension predicates onto one definition. The rest of the 2D family builds a conic from
+caller-supplied dimensions at nine more places, and none of them checked. All nine now use the
+same shared predicates: `occtValidCircleRadius`, `occtValidEllipseRadii`, `occtValidHyperbolaRadii`,
+`occtValidParabolaFocal`.
+
+**The gap was the zero boundary specifically, not "no precondition at all".** The issue's premise
+was that `gp_Elips2d`'s own `Standard_ConstructionError_Raise_if` is compiled out. That is true of a
+call made from **inside** OCCT, where `No_Exception` is defined, and it is what #487 measured for
+`gce_MakeElips2d`. These nine sites construct the `gp_*2d` themselves, in a bridge translation unit,
+where the constructor is `constexpr` in the header and the check does run: `gp_Elips2d(ax, 5, -3)`,
+`(3, 5)` and `gp_Parab2d(ax, -2)` all raise today and are already caught. What the check never
+covered is zero, which every downstream algorithm then accepts:
+
+| construction | measured result on the degenerate input |
+|---|---|
+| `Convert_EllipseToBSplineCurve`, radii `(0, 0)` | 5 poles, degree 2, evaluates to the centre at every parameter |
+| `Convert_EllipseToBSplineCurve`, radii `(5, 0)` | collapses onto the major axis: `(5,0) → (0,0) → (-5,0)` |
+| `Convert_HyperbolaToBSplineCurve`, radii `(5, 0)` | a straight ray |
+| `Convert_ParabolaToBSplineCurve`, focal `0` | 3 poles, degree 2, **every pole NaN** |
+| `BRepLib_MakeEdge2d`, ellipse `(0, 0)` | `IsDone()`, zero-length edge, both vertices at the centre |
+| `BRepLib_MakeEdge2d`, ellipse `(5, 0)` | `IsDone()`, a segment doubled back along the major axis |
+| `IntAna2d_Conic`, ellipse `(0, 0)` | all six coefficients 0 |
+
+**`Conic2D` gains a way to say the conic does not exist.** All-zero coefficients cannot carry it:
+the equation `0 = 0` holds at every point of the plane, so they read as a conic, and they were also
+what the `catch` block already wrote. The three bridge functions return `bool`; in Swift there are
+three new factories that return `Conic2D?`:
+
+```swift
+// new
+if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+                           majorRadius: 5, minorRadius: 3) { … }
+
+// old spelling, still compiles, now deprecated
+let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
+                            majorRadius: 5, minorRadius: 3)
+```
+
+`fromCircle` / `fromLine` / `fromEllipse` are `@available(*, deprecated, renamed:)` and forward,
+returning the all-zero struct where the new spelling returns `nil`. **Not a breaking change**: no
+existing call site has to move, and no signature changed.
+
+`Conic2D`'s documented equation was wrong. It named `a·x² + b·x·y + c·y² + d·x + e·y + f = 0`;
+OCCT's `IntAna2d_Conic::Coefficients` returns `a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`, so `b`
+is the `y²` term and `c` the cross term, and the cross and linear terms carry a factor of 2. A
+caller who built a conic from the documented order got a different curve. The values themselves
+never changed; a regression test now pins the order against a radius-5 circle (`1, 1, 0, 0, 0, -25`).
+
+Scope: the three circle siblings sitting in the same three code blocks
+(`OCCTMakeEdge2dFullCircle`, `OCCTConvertCircleToBSpline2D`, `OCCTConic2dFromCircle`) are included,
+along with `OCCTConic2dLineCircleIntersect`, which shares the same `gp_Circ2d` construction and
+would otherwise have been the one entry point in its own block still accepting radius 0. The ~25
+remaining 2D circle sites are `Geom2dGcc` tangency-solver *inputs*, a different question, filed
+separately. The 3D equivalents are unsurveyed, as #514 noted.
+
+18 tests in `Tests/OCCTGeom2dTests/Issue514Conic2dDegenerateTests.swift`. They were run against a
+build with every guard stripped back out: the 10 rejection tests fail, and the 8 that pin valid
+input (including "a hyperbola may have minor > major" and the coefficient order) still pass.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each

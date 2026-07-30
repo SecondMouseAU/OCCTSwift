@@ -18,12 +18,12 @@ This page covers `Document.swift` lines 9930-11279: 2D conic utilities, normal p
 ## IntAna2d\_Conic — 2D Conics
 
 `Conic2D` is a value type holding the six implicit coefficients of a 2D conic
-`A·x² + B·x·y + C·y² + D·x + E·y + F = 0`, plus static factories and a line-circle
+`a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`, plus static factories and a line-circle
 intersection query. Wraps `IntAna2d_Conic` / `IntAna2d_AnaIntersection`.
 
 ### `Conic2D`
 
-Coefficients of a 2D implicit conic `A·x² + B·x·y + C·y² + D·x + E·y + F = 0`.
+Coefficients of a 2D implicit conic `a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`.
 
 ```swift
 public struct Conic2D: Sendable {
@@ -31,68 +31,105 @@ public struct Conic2D: Sendable {
 }
 ```
 
----
+The coefficients are OCCT's, in OCCT's order: the conic is the point set satisfying
 
-### `Conic2D.fromCircle(center:direction:radius:)`
-
-Create `Conic2D` coefficients from a 2D circle.
-
-```swift
-public static func fromCircle(
-    center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
-) -> Conic2D
+```
+a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0
 ```
 
-- **Parameters:** `center` — circle centre; `direction` — local X axis direction; `radius` — circle radius.
-- **Returns:** `Conic2D` with the six implicit coefficients.
+`b` is the `y²` coefficient and `c` the `x·y` one, and the cross and linear terms carry a factor
+of 2. (Through v1.17.0 the doc comment named `a·x² + b·x·y + c·y² + d·x + e·y + f = 0`, which swaps
+the roles of `b` and `c` and drops the factor; the values themselves never changed. #514)
+
+Every factory returns `nil` rather than a conic when a dimension is degenerate. There is no
+in-band way to say it: all-zero coefficients are the equation `0 = 0`, which holds at every point
+of the plane, so they read as a conic rather than as no answer.
+
+---
+
+### `Conic2D.circle(center:direction:radius:)`
+
+The implicit conic of a 2D circle.
+
+```swift
+public static func circle(
+    center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
+) -> Conic2D?
+```
+
+- **Parameters:** `center`: circle centre; `direction`: local X axis direction, must be non-zero; `radius`: circle radius, must be greater than zero.
+- **Returns:** the six implicit coefficients, or `nil` when a dimension is degenerate.
 - **OCCT:** `IntAna2d_Conic` (circle constructor) via `OCCTConic2dFromCircle`.
 - **Example:**
   ```swift
-  let c = Conic2D.fromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 3)
-  // c.a == 1, c.c == 1, c.f == -9  (approximate unit-circle form scaled by r²)
+  if let c = Conic2D.circle(center: SIMD2(0, 0), direction: SIMD2(1, 0), radius: 3) {
+      print(c.a, c.b, c.f)   // 1.0 1.0 -9.0   (x² + y² - 9 = 0)
+  }
   ```
 
 ---
 
-### `Conic2D.fromLine(point:direction:)`
+### `Conic2D.line(point:direction:)`
 
-Create `Conic2D` coefficients from a 2D line.
+The implicit conic of a 2D line.
 
 ```swift
-public static func fromLine(
+public static func line(
     point: SIMD2<Double>, direction: SIMD2<Double>
-) -> Conic2D
+) -> Conic2D?
 ```
 
-- **Parameters:** `point` — any point on the line; `direction` — line direction vector.
-- **Returns:** `Conic2D` whose non-zero linear coefficients describe the line.
+- **Parameters:** `point`: any point on the line; `direction`: line direction vector, must be non-zero.
+- **Returns:** the coefficients, whose non-zero linear terms describe the line, or `nil` for a zero direction.
 - **OCCT:** `IntAna2d_Conic` (line constructor) via `OCCTConic2dFromLine`.
 - **Example:**
   ```swift
-  let l = Conic2D.fromLine(point: .zero, direction: SIMD2(1, 0))
+  if let l = Conic2D.line(point: .zero, direction: SIMD2(1, 0)) {
+      print(l.e)   // non-zero: the y term of the line y = 0
+  }
   ```
 
 ---
 
-### `Conic2D.fromEllipse(center:direction:majorRadius:minorRadius:)`
+### `Conic2D.ellipse(center:direction:majorRadius:minorRadius:)`
 
-Create `Conic2D` coefficients from a 2D ellipse.
+The implicit conic of a 2D ellipse.
 
 ```swift
-public static func fromEllipse(
+public static func ellipse(
     center: SIMD2<Double>, direction: SIMD2<Double>,
     majorRadius: Double, minorRadius: Double
-) -> Conic2D
+) -> Conic2D?
 ```
 
-- **Parameters:** `center` — ellipse centre; `direction` — local X axis; `majorRadius` / `minorRadius` — semi-axes.
-- **Returns:** `Conic2D` with the six implicit conic coefficients.
+- **Parameters:** `center`: ellipse centre; `direction`: local X axis, must be non-zero; `majorRadius` / `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius`. Equal radii are a circle and are valid.
+- **Returns:** the six implicit conic coefficients, or `nil` when a dimension is degenerate.
 - **OCCT:** `IntAna2d_Conic` (ellipse constructor) via `OCCTConic2dFromEllipse`.
 - **Example:**
   ```swift
-  let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
-                               majorRadius: 5, minorRadius: 3)
+  if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+                             majorRadius: 5, minorRadius: 3) {
+      print(e.a, e.b, e.f)   // 0.04 0.111… -1.0   (x²/25 + y²/9 - 1 = 0)
+  }
   ```
+
+---
+
+### Deprecated: `Conic2D.fromCircle` / `fromLine` / `fromEllipse`
+
+The three original spellings return a non-optional `Conic2D`, so their only way to report a
+degenerate input is the all-zero struct, which describes no conic. They remain, deprecated,
+forwarding to the factories above and returning all zeros where those return `nil`.
+
+```swift
+// before
+let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
+                            majorRadius: 5, minorRadius: 3)
+
+// after
+if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+                           majorRadius: 5, minorRadius: 3) { … }
+```
 
 ---
 
@@ -107,6 +144,7 @@ public static func lineCircleIntersection(
 ) -> [SIMD2<Double>]
 ```
 
+- **Parameters:** `radius` must be greater than zero. Intersecting against a radius-0 circle is a point-on-line test, not an intersection, and returns an empty array.
 - **Returns:** 0, 1, or 2 intersection points. Empty array when the line misses the circle.
 - **OCCT:** `IntAna2d_AnaIntersection` via `OCCTConic2dLineCircleIntersect`.
 - **Example:**
