@@ -46,7 +46,8 @@ wherever the range is not an ordinary in-domain interval. Measured against the p
 
 So the "dead copy" still extrapolated a BSpline's polynomial past its knots, the behaviour #477
 removed from every reachable path, and still read a reversed range as zero length. One rewire or one
-copy-paste and both defects were back, with no test anywhere to catch it.
+copy-paste and both defects were back, with no test anywhere to catch it. Probe and full figures at
+[`Scripts/repro/506-arclength-adaptor-divergence/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/506-arclength-adaptor-divergence).
 
 New suite `Issue506ArcLengthBridgeContractTests` (`OCCTCurveTests`) pins the surviving behaviour on
 exactly the four ranges where the forms diverge, with the clamping assertions checked against a
