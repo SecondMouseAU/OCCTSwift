@@ -141,7 +141,7 @@ override-linked TUs:
 - `repro_484_equivalence.mm`: all four `ctx=yes` fingerprints are identical to the reference values
   above, and all four `ctx=NO` fingerprints now complete and match their `ctx=yes` counterpart.
 
-Plus a full `swift test`: 4666 tests in 1322 suites, clean.
+Plus a full `swift test`: 4842 tests in 1346 suites, clean.
 
 ## Also checked (not defects)
 

@@ -1601,7 +1601,7 @@ the truncation broke.
 ### `OCCT.xcframework` rebuilt: the #484 null-context guard is now in the kernel binary (#512)
 
 A carried patch does nothing until the xcframework is rebuilt from source, so `0017` above was inert
-on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **17** carried patches:
+on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **18** carried patches:
 `ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and
 `ShapeUpgrade_WireDivide::Perform()` no longer SIGSEGV when the caller never set a
 `ShapeBuild_ReShape` context.
@@ -1617,7 +1617,7 @@ all override-linked, which proves the patch compiles and works, not that it ship
 cases in `repro_484_crash.mm` complete where they were killed by SIGSEGV before, and all four
 `ctx=yes` fingerprints in `repro_484_equivalence.mm` are unchanged (now recorded as reference values
 in [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context)).
-Full `swift test`: 4666 tests in 1322 suites, clean. `0017` itself needs no ThreadSanitizer gate,
+Full `swift test`: 4842 tests in 1346 suites, clean. `0017` itself needs no ThreadSanitizer gate,
 being a null-handle guard on a single-threaded path, but the gate did run for the `0016` redesign
 below, which ships in the same rebuild.
 
@@ -1627,7 +1627,8 @@ URL still gets the previously released kernel, while this checkout and every sib
 path-depending on its `Libraries/OCCT.xcframework` get the new one. `docs/guides/building-occt.md`
 gained a "Shipping a rebuild" section covering that sequence, which until now existed only as
 hand-written checklists in issues. Patch `0016` (#374) also gained the
-`Scripts/patches/README.md` entry it never got.
+`Scripts/patches/README.md` entry it never got. The rebuild carries `0018` (#555) as well, added
+after this entry was first written.
 
 ### `Storage_Schema`'s scratch state becomes a member instead of a guarded global (#518)
 
@@ -1658,8 +1659,44 @@ No OCCTSwift API or behaviour change, and the patch number stays `0016` (a corre
 new fix), renamed to `...-Storage_Schema-per-instance-374.patch`. Verified with the same #374
 ThreadSanitizer harness the mutex version was verified against: 0 races and 0 save/load/verify
 failures at 8×50, 8×30 and 10×60, plus the full `Scripts/tsan-stress.sh run` gate (10 scenarios)
-clean. Ships in the same rebuild as #512 above. OCCT#1399 still carries the mutex version; updating
-it is the remaining half of #518.
+clean. Ships in the same rebuild as #512 above. OCCT#1399 has since been updated to this design and
+is green on all 17 upstream CI jobs.
+
+### Two `GCPnts` point-count defects patched in the kernel (#555)
+
+New carried patch `0018`, in the arc-length samplers behind `Curve3D.quasiUniformParameters(count:)`,
+`Curve3D.drawUniform(pointCount:)`, `Curve2D.drawUniform(pointCount:)`, `Shape.uniformAbscissa` and
+the `sampleUniform(count:)` family.
+
+**`NbPoints()` was not bounded by the requested count.** `GCPnts_UniformAbscissa` sizes its parameter
+array at `theNbPoints + 5` and walks until it reaches the end parameter or runs out of room, so a
+caller sizing its own buffer from the request could be handed more points than it asked for.
+`GCPnts_QuasiUniformAbscissa` inherited this for every curve that is neither Bezier nor BSpline. The
+cause is a tolerance mismatch: the walk terminates on a parametric epsilon derived from the curve's
+*largest* derivative, which on an ellipse with major radius 1e6 and minor radius 1e-3 is about nine
+orders of magnitude too tight at the end, so the walk stops 1.557e-08 short, takes one more step and
+appends what is measurably a duplicate point (1.175e-10 away in 3D). `Perform` now also accepts a
+point that coincides with the end in 3D within the caller's tolerance. Clamping the count instead
+would have dropped the exact end parameter and left the distribution stopping short of the curve.
+
+**A point count below 2 stored out of bounds.** Both classes document `theNbPoints >= 2` and enforce
+it with `Standard_ConstructionError_Raise_if`, which compiles to nothing in the shipped Release
+kernel (#487). `GCPnts_QuasiUniformAbscissa`'s Bezier/BSpline branch then allocated an empty array
+and unconditionally stored into index 1 of it: an uncatchable SIGSEGV, the same class as #263, #310,
+#317 and #318. Both classes now leave the object not done for such a count, so a request for zero
+points is answered with nothing rather than with a crash or with five parameters.
+
+`Shape.uniformAbscissa(pointCount:)` and friends already rejected degenerate counts bridge-side after
+#501, and the buffer overflow was closed there too, so **no OCCTSwift API changes behaviour here**.
+What the patch buys is closing both for code that reaches those OCCT classes through a path this
+package does not control.
+
+Measured across 17 curve types and counts 2 to 200 (6766 configurations): **232 lines change and they
+are exactly the 232 that were over-requesting**, every other line byte-identical, and the last
+parameter still exactly the end on the changed ones. Reproducers, including the trap that a repro
+built without `-DNo_Exception` measures a kernel nobody ships:
+[`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract).
+Not yet filed upstream.
 
 ---
 
