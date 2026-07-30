@@ -155,6 +155,40 @@ struct Issue496CylindricalHoleTests {
         }
     }
 
+    /// `statusAgreesWithItsOwnDrill` above only checks "comfortably fits" and "comfortably too
+    /// long" `.blind` depths. The two `HoleTooLong` checks are independent computations —
+    /// `PerformBlind`'s own a priori check (`BRepFeat_MakeCylindricalHole.cxx:526`) compares
+    /// `LocOpe_CurveShapeIntersector`'s parametric intersection distance against the requested
+    /// depth, *before* any cut is made; `Validate()`'s post-hoc check (`:667`) inspects whether the
+    /// tool's own top face survives as a face of the actual `BOPAlgo_BOP`-produced result,
+    /// *after* the cut. The status query (`occtBRepFeatCylindricalHole` with `outShape == nullptr`)
+    /// returns before `Build()` ever runs, so it can only ever observe the first of the two — if
+    /// they disagreed right at the exit face, `cylindricalHoleStatus` could report `.noError` for a
+    /// depth that `cylindricalHole(...)` then refuses, breaking the "if and only if" its own doc
+    /// comment promises.
+    ///
+    /// The plate's exit face along this axis sits at exactly `depth == 21` (origin z=11, bottom
+    /// face z=-10), so this sweeps depths tight around that single point — the only place such a
+    /// disagreement could show up.
+    @Test("Status and drill agree at the exact HoleTooLong boundary")
+    func statusAgreesWithDrillAtTheHoleTooLongBoundary() {
+        guard let box = plate() else { #expect(Bool(false), "box"); return }
+        let origin = SIMD3<Double>(0, 0, 11)
+        let axis = SIMD3<Double>(0, 0, -1)
+        let exitDepth = 21.0   // origin z=11, bottom face z=-10: exactly the exit face
+
+        for depth in [exitDepth - 1e-3, exitDepth - 1e-6, exitDepth - 1e-9,
+                      exitDepth, exitDepth + 1e-9, exitDepth + 1e-6, exitDepth + 1e-3] {
+            let extent = Shape.CylindricalHoleExtent.blind(depth: depth)
+            let status = box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
+                                                    radius: 5, extent: extent)
+            let drilled = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+                                              radius: 5, extent: extent)
+            #expect((status == .noError) == (drilled != nil),
+                    "depth \(depth): status \(status) but drill \(drilled == nil ? "failed" : "succeeded")")
+        }
+    }
+
     // MARK: - The shared direction precondition
 
     /// Both families reject a zero-length direction. The boolean path always did, by an explicit
