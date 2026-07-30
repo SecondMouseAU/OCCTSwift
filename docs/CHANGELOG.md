@@ -1153,6 +1153,72 @@ only ever see `PerformBlind`'s a priori `HoleTooLong` check, never `Validate()`'
 two are independent computations that could in principle disagree right at the boundary. Measured:
 they agree, closing the gap rather than finding a live divergence.
 
+#### `FilletBuilder`'s three radius laws are keyed by an edge, and now check that they are (#505)
+
+**Behaviour change, and it is a bug fix.** `FilletBuilder.getBounds(contour:edge:)`,
+`getLaw(contour:edge:)` and `setLaw(contour:edge:law:)` used to answer about a `(contour, edge)` pair
+that names nothing: a contour index of `0`, an edge from a *different* contour, an edge in no
+contour at all. They now return `nil` / `false` for those.
+
+**Not source-breaking.** `getBounds` and `getLaw` gain an `edge: Edge` spelling, and the `edge: Shape`
+one they had is deprecated and forwards to it.
+
+The audit finding was a type inconsistency: `OCCTFilletBuilderSetLaw` took an `OCCTEdgeRef` while its
+two siblings took an `OCCTShapeRef`, so two of the three had to downcast with `TopoDS::Edge` while the
+third did not, and a caller holding an `Edge` (the type `addEdge`, `removeEdge`, `setRadius` and
+`contour(for:)` all take) had to convert it to a `Shape` to read a law and hand back the original to
+write one. The pre-existing test carried the round trip and a comment about it. All three OCCT
+functions take a `const TopoDS_Edge&`, so `SetLaw` was the one that had it right and the framing of
+the finding (four functions in the doc group agree, `SetLaw` is the outlier) counted the wrong
+majority: `Generated`/`Modified`/`IsDeleted` sit in the same group and genuinely take a
+`const TopoDS_Shape&`, since any sub-shape can be asked about. They keep `OCCTShapeRef`.
+
+Making the three identical is what surfaced the real defect. They all resolve the edge through
+`ChFiDS_FilSpine::ChangeLaw(E)`, which asks `ChFiDS_Spine::Index(E)` for the edge's position in the
+contour's spine, gets `0` for an edge that spine does not hold, and uses it anyway:
+`ElSpine(0)` → `FirstParameter(0)` → `abscissa->Value(0 - 1)`. That read has no live bounds check,
+because OCCT's `*_Raise_if` macros are compiled out of the pinned Release build, and neither does
+`ChFi3d_FilBuilder`'s own `Value(IC)`. Measured on a 10×10×10 box
+([`Scripts/repro/505-filletbuilder-edge-type/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/505-filletbuilder-edge-type)):
+
+```swift
+// Two contours. Before #505, every one of these answered, and reported success.
+builder.getBounds(contour: 1, edge: edgeOfContour2)   // (-5, 15) and contour 1's law
+builder.getBounds(contour: 1, edge: edgeInNoContour)  // (-5, 15), same
+builder.getBounds(contour: 0, edge: edgeOfContour1)   // (-5, 15), same
+builder.setLaw(contour: 1, edge: edgeInNoContour, law: law)   // true, and it overwrote contour 1's law
+
+// After: nil, nil, nil, false.
+```
+
+Only the low side of the contour range leaked, since OCCT does check `IC <= NbElements()`, so `2` and `99`
+already returned `false`. `Contour(E)` is the same `IsSame` walk over the same spines that `Index(E)`
+is about to do, so it decides exactly this question, and `Add()` rather than `Build()` populates it,
+which makes it valid before a build as well as after. One helper,
+`occtFilletContourHoldsEdge`, applies it to all three.
+
+Three things the same measurements pin, now documented on the API for the first time:
+
+- **A constant-radius contour has no law.** OCCT throws "no law on constant edges" rather than
+  handing back a flat one, so all three report no law. The old test's comment called this a "crash";
+  it is a `Standard_DomainError`, and the bridge's `catch (...)` already turned it into `nil`.
+- **The law needs a spine split.** Before `build()` there is nothing to read, and
+  `simulate(contour:)` is the other way to get one. After it the range is the spine's own `[0, 10]`
+  rather than the post-build `[-5, 15]`, which runs past both ends of the edge.
+- **`setLaw` does not reach the geometry.** `getLaw` reads the new law back, but a `build()` after it
+  reports `IsDone() == 1` and hands back the *unfilleted* input shape, and setting the law before the
+  first build (via `simulate`) then building produces the volume the original `addEdge` radii give,
+  not the one the new law asks for. Upstream behaviour; the doc comment says so.
+
+`setLaw` had no test at all before this: the one function of the three whose type was right was also
+the uncovered one. `Issue505FilletBuilderEdgeTypeTests` (`Tests/OCCTModelingTests`) covers all three
+through a single `Edge` value, the round trip that used to need a conversion each way. Run with the
+guard removed, the suite fails every time, but with 11 to 18 recorded issues across five runs: the
+unguarded answer is whatever the out-of-bounds read finds, so it is another contour's law on one run
+and a "no law on constant edges" throw on the next.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
 ---
 
 ## Release History

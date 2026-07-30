@@ -9285,21 +9285,29 @@ bool OCCTDocumentShapeToolIsSimpleShape(OCCTDocumentRef doc, int64_t labelId) {
     } catch (...) { return false; }
 }
 
+// The three edge-keyed radius laws. All three take the same (contour index, edge) pair, all three
+// hand it to an OCCT function declared as (const Standard_Integer, const TopoDS_Edge&), and all
+// three have to reject a pair OCCT itself will use out of range: see occtFilletContourHoldsEdge in
+// OCCTBridge_Internal.h for the measurements. GetBounds and GetLaw used to take an OCCTShapeRef and
+// downcast it with TopoDS::Edge, which cost them a throw-on-non-edge that the caller could only
+// discover at runtime, and left every caller holding an Edge (the type addEdge, removeEdge,
+// setRadius and contour all take) converting it to a Shape and back (#505).
+
 bool OCCTFilletBuilderGetBounds(OCCTFilletBuilderRef builder, int32_t contourIndex,
-                                 OCCTShapeRef edge, double* outFirst, double* outLast) {
+                                 OCCTEdgeRef edge, double* outFirst, double* outLast) {
     if (!builder || !edge || !outFirst || !outLast) return false;
     try {
-        TopoDS_Edge e = TopoDS::Edge(edge->shape);
-        return builder->fillet.GetBounds(contourIndex, e, *outFirst, *outLast);
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return false;
+        return builder->fillet.GetBounds(contourIndex, edge->edge, *outFirst, *outLast);
     } catch (...) { return false; }
 }
 
 OCCTLawFunctionRef OCCTFilletBuilderGetLaw(OCCTFilletBuilderRef builder, int32_t contourIndex,
-                                            OCCTShapeRef edge) {
+                                            OCCTEdgeRef edge) {
     if (!builder || !edge) return nullptr;
     try {
-        TopoDS_Edge e = TopoDS::Edge(edge->shape);
-        Handle(Law_Function) law = builder->fillet.GetLaw(contourIndex, e);
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return nullptr;
+        Handle(Law_Function) law = builder->fillet.GetLaw(contourIndex, edge->edge);
         if (law.IsNull()) return nullptr;
         return new OCCTLawFunction(law);
     } catch (...) { return nullptr; }
@@ -9309,6 +9317,7 @@ bool OCCTFilletBuilderSetLaw(OCCTFilletBuilderRef builder, int32_t contourIndex,
                               OCCTEdgeRef edge, OCCTLawFunctionRef law) {
     if (!builder || !edge || !law) return false;
     try {
+        if (!occtFilletContourHoldsEdge(builder->fillet, contourIndex, edge->edge)) return false;
         builder->fillet.SetLaw(contourIndex, edge->edge, law->law);
         return true;
     } catch (...) { return false; }

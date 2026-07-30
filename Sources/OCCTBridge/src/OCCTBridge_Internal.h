@@ -800,6 +800,33 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
     }
 }
 
+// === #505: the precondition BRepFilletAPI_MakeFillet's edge-keyed radius laws never check ===
+//
+// GetBounds, GetLaw and SetLaw each take a (contour index, TopoDS_Edge) pair and each resolve it
+// through ChFiDS_FilSpine::ChangeLaw(E), which asks ChFiDS_Spine::Index(E) where the edge sits in
+// that contour's spine. Index returns 0 for an edge the spine does not hold, and ChangeLaw then uses
+// it anyway: ElSpine(0) -> FirstParameter(0) -> abscissa->Value(-1). Neither that access nor
+// ChFi3d_FilBuilder's own Value(IC) has a live bounds check, because OCCT's *_Raise_if macros are
+// compiled out of the pinned Release build. So nothing anywhere rejects the request; it just answers
+// about whatever the out-of-range index lands on. Measured on a 10x10x10 box
+// (Scripts/repro/505-filletbuilder-edge-type/):
+//
+//   - Two contours, GetBounds(1, edgeOfContour2): returns true, with contour 1's bounds and contour
+//     1's law. The edge argument stops mattering the moment Index() answers 0.
+//   - GetBounds(1, edgeInNoContour): same, true with contour 1's law.
+//   - SetLaw(1, edgeInNoContour, law): overwrites contour 1's law and reports nothing.
+//   - GetBounds(0, e) and GetBounds(-1, e): true, again with contour 1's answer. The upper bound is
+//     checked upstream (IC <= NbElements()), so 2 and 99 do return false; only the low side leaks.
+//
+// Contour(E) is the same TopoDS_Shape::IsSame walk over the same spines that Index(E) is about to
+// do, so it decides exactly this question, and it is populated by Add() rather than by Build(),
+// which means it is equally valid before and after the fillet is built.
+inline bool occtFilletContourHoldsEdge(const BRepFilletAPI_MakeFillet& fillet,
+                                       int32_t contourIndex, const TopoDS_Edge& edge) {
+    if (contourIndex < 1 || contourIndex > fillet.NbContours()) return false;
+    return fillet.Contour(edge) == contourIndex;
+}
+
 // === #492: one analytical-conversion path per GeomConvert converter class ===
 //
 // GeomConvert_CurveToAnaCurve and GeomConvert_SurfToAnaSurf each had two independently-grown
