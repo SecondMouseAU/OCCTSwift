@@ -3776,23 +3776,26 @@ struct TDFChildIDIteratorTests {
     }
 }
 
+/// `PathParser` stopped wrapping `TDocStd_PathParser` in #499 and now forwards to `OSDPath`.
+/// These pin the forwarding; the shared contract itself lives in `PathParsingContractTests`
+/// (`OCCTFoundationTests`).
 @Suite("TDocStd PathParser Tests")
 struct TDocStdPathParserTests {
 
+    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
     @Test func parsePath() {
-        let trek = PathParser.trek("/home/user/docs/model.step")
-        #expect(trek != nil)
-        if let trek { #expect(trek.contains("home")) }
+        #expect(PathParser.trek("/home/user/docs/model.step") == "/home/user/docs/")
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
     @Test func parseName() {
-        let name = PathParser.name("model.step")
-        #expect(name == "model")
+        #expect(PathParser.name("model.step") == "model")
     }
 
+    /// The forwarded extension keeps its leading dot; this used to assert `"step"`.
+    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
     @Test func parseExtension() {
-        let ext = PathParser.fileExtension("model.step")
-        #expect(ext == "step")
+        #expect(PathParser.fileExtension("model.step") == ".step")
     }
 }
 

@@ -1968,41 +1968,44 @@ void OCCTEnvironmentFreeString(const char* str) {
 
 #include <OSD_Path.hxx>
 
-const char* OCCTOSDPathName(const char* path) {
+// Every OCCTOSDPath* string accessor differs only in which component it reads back, so they share
+// one construction, one strdup and one failure outcome (nullptr). #499 folded the parallel
+// TDocStd_PathParser family into this one; OSD_Path is the workhorse the rest of the bridge already
+// uses, and it parses the cases TDocStd_PathParser::Parse() got wrong (extension-less paths,
+// dotfiles inside a directory, a dot in a directory name).
+namespace {
+enum class OSDPathComponent { Name, Extension, Trek, SystemName };
+
+const char* osdPathComponent(const char* path, OSDPathComponent which) {
     try {
         TCollection_AsciiString apath(path);
         OSD_Path p(apath);
-        TCollection_AsciiString name = p.Name();
-        return strdup(name.ToCString());
+        TCollection_AsciiString result;
+        switch (which) {
+            case OSDPathComponent::Name:       result = p.Name(); break;
+            case OSDPathComponent::Extension:  result = p.Extension(); break;
+            case OSDPathComponent::Trek:       result = p.Trek(); break;
+            case OSDPathComponent::SystemName: p.SystemName(result); break;
+        }
+        return strdup(result.ToCString());
     } catch (...) { return nullptr; }
+}
+}  // namespace
+
+const char* OCCTOSDPathName(const char* path) {
+    return osdPathComponent(path, OSDPathComponent::Name);
 }
 
 const char* OCCTOSDPathExtension(const char* path) {
-    try {
-        TCollection_AsciiString apath(path);
-        OSD_Path p(apath);
-        TCollection_AsciiString ext = p.Extension();
-        return strdup(ext.ToCString());
-    } catch (...) { return nullptr; }
+    return osdPathComponent(path, OSDPathComponent::Extension);
 }
 
 const char* OCCTOSDPathTrek(const char* path) {
-    try {
-        TCollection_AsciiString apath(path);
-        OSD_Path p(apath);
-        TCollection_AsciiString trek = p.Trek();
-        return strdup(trek.ToCString());
-    } catch (...) { return nullptr; }
+    return osdPathComponent(path, OSDPathComponent::Trek);
 }
 
 const char* OCCTOSDPathSystemName(const char* path) {
-    try {
-        TCollection_AsciiString apath(path);
-        OSD_Path p(apath);
-        TCollection_AsciiString sysName;
-        p.SystemName(sysName);
-        return strdup(sysName.ToCString());
-    } catch (...) { return nullptr; }
+    return osdPathComponent(path, OSDPathComponent::SystemName);
 }
 
 void OCCTOSDPathFolderAndFile(const char* path, const char** outFolder, const char** outFile) {

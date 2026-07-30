@@ -263,7 +263,7 @@ a map of the major areas, and the `Total` as the count.
 | **TDF_AttributeIterator** | 1 | attributeCount |
 | **TDF_DataSet** | 1 | dataSetIsEmpty |
 | **TDF_ChildIDIterator** | 1 | childIDCount |
-| **TDocStd_PathParser** | 3 | trek, name, fileExtension |
+| **TDocStd_PathParser** | 3 | trek, name, fileExtension (all deprecated #499; `PathParser` now forwards to `OSDPath`; `TDocStd_PathParser` is no longer wrapped) |
 | **TFunction_DriverTable** | 2 | hasDriver, clear |
 | **TNaming_Scope** | 6 | valid, validChildren, isValid, unvalid, clear, validCount |
 | **TNaming_Translator** | 2 | translatorCopy, isSame |
@@ -305,7 +305,7 @@ a map of the major areas, and the `Total` as the count.
 | **ShapeFix_IntersectionTool** | 1 | fixIntersectingWires |
 | **XCAFDoc_AssemblyItemRef** | 7 | setAssemblyItemRef, assemblyItemRefPath, setSubshape, getSubshape, hasExtra, clearExtra, isOrphan |
 | **BRepAlgo_Image** | 5 | create, setRoot, bind, hasImage, isImage, clear |
-| **OSD_Path** | 9 | name, fileExtension, trek, systemName, folderAndFile, isValid, isUnixPath, isRelative, isAbsolute |
+| **OSD_Path** | 10 | name, fileExtension, trek, systemName, folderAndFile, folder, isValid, isUnixPath, isRelative, isAbsolute |
 | **BRepClass_FClassifier** | 1 | classifyPoint2D |
 | **BRepAlgo_Loop** | 1 | buildLoops |
 | **Bnd_BoundSortBox** | 2 | create, compare |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,287** | |
+| **Total** | **4,288** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
