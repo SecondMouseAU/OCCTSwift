@@ -322,65 +322,32 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType) 
 
 // MARK: - Advanced Modeling (v0.8.0)
 
+// The three edge-list fillet entry points share occtShapeFilletEdgeList (OCCTBridge_Internal.h)
+// and supply only their own radius law; OCCTShapeBlendEdges, the per-edge one, lives in
+// OCCTBridge_Healing.mm. See that helper for why the radius precondition is the bridge's. #489
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
                                    int32_t edgeCount, double radius) {
-    if (!shape || !edgeIndices || edgeCount <= 0 || radius <= 0) return nullptr;
+    if (!occtValidFilletRadius(radius)) return nullptr;
 
-    try {
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Build edge index map for lookup
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < edgeMap.Extent()) {
-                TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));  // OCCT is 1-based
-                fillet.Add(radius, edge);
-            }
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        return new OCCTShape(fillet.Shape());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
+                                   [radius](BRepFilletAPI_MakeFillet& fillet,
+                                            const TopoDS_Edge& edge, int32_t) {
+        fillet.Add(radius, edge);
+    });
 }
 
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
                                          int32_t edgeCount, double startRadius, double endRadius) {
-    if (!shape || !edgeIndices || edgeCount <= 0) return nullptr;
-    if (startRadius <= 0 || endRadius <= 0) return nullptr;
+    if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius)) return nullptr;
 
-    try {
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Build edge index map for lookup
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < edgeMap.Extent()) {
-                TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));  // OCCT is 1-based
-                // Add edge with variable radius
-                fillet.Add(edge);
-                // Set radius variation along the edge
-                int contourIndex = fillet.NbContours();
-                fillet.SetRadius(startRadius, endRadius, contourIndex, 1);
-            }
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        return new OCCTShape(fillet.Shape());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
+                                   [startRadius, endRadius](BRepFilletAPI_MakeFillet& fillet,
+                                                            const TopoDS_Edge& edge, int32_t) {
+        // The radius-law overload takes no radius: add the edge as its own contour first, then
+        // vary the radius across that contour.
+        fillet.Add(edge);
+        fillet.SetRadius(startRadius, endRadius, fillet.NbContours(), 1);
+    });
 }
 
 OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount,
@@ -1921,16 +1888,17 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
                                                        double radius,
                                                        OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
+    // Same family as OCCTShapeFilletEdges, so the same precondition and the same edge loop; it
+    // cannot use occtShapeFilletEdgeList itself because the builder outlives the call. #489
+    if (!occtValidFilletRadius(radius)) return nullptr;
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i] + 1; // 0-based to 1-based
-            if (idx < 1 || idx > edgeMap.Extent()) continue;
-            op->Add(radius, TopoDS::Edge(edgeMap(idx)));
-        }
+        occtFilletAddEdges(*op, shape->shape, edgeIndices, count,
+                           [radius](BRepFilletAPI_MakeFillet& fillet,
+                                    const TopoDS_Edge& edge, int32_t) {
+            fillet.Add(radius, edge);
+        });
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -1945,6 +1913,8 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
                                                               double startRadius, double endRadius,
                                                               OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
+    // The single-edge sibling of OCCTShapeFilletEdgesLinear, and the same precondition. #489
+    if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius)) return nullptr;
     if (!shape) return nullptr;
     try {
         TopTools_IndexedMapOfShape edgeMap;

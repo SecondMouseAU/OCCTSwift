@@ -123,7 +123,7 @@
 //
 // --- BRepFilletAPI ---
 // BRepFilletAPI_MakeChamfer           → OCCTShapeChamfer*
-// BRepFilletAPI_MakeFillet            → OCCTShapeFillet*
+// BRepFilletAPI_MakeFillet            → OCCTShapeFillet*, OCCTShapeBlendEdges, OCCTShapeFuseAndBlend, OCCTShapeCutAndBlend, OCCTFilletBuilder*
 // BRepFilletAPI_MakeFillet2d          → OCCTShapeFillet2D*, OCCTShapeChamfer2D*
 //
 // --- BRepGProp ---
@@ -1497,20 +1497,26 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 // MARK: - Advanced Modeling (v0.8.0)
 
 /// Fillet specific edges with uniform radius
+///
+/// One of three entry points sharing occtShapeFilletEdgeList (OCCTBridge_Internal.h) with
+/// OCCTShapeFilletEdgesLinear and OCCTShapeBlendEdges: same edge map, same 0-based index bounds
+/// check (an out-of-range index is skipped), same positive-radius precondition. #489
 /// @param shape The shape to fillet
 /// @param edgeIndices Array of edge indices (0-based)
 /// @param edgeCount Number of edges to fillet
-/// @param radius Fillet radius
+/// @param radius Fillet radius; must be > 0, or the call fails without touching OCCT
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
                                    int32_t edgeCount, double radius);
 
 /// Fillet specific edges with linear radius interpolation
+///
+/// Shares occtShapeFilletEdgeList with OCCTShapeFilletEdges and OCCTShapeBlendEdges. #489
 /// @param shape The shape to fillet
 /// @param edgeIndices Array of edge indices (0-based)
 /// @param edgeCount Number of edges to fillet
-/// @param startRadius Radius at start of each edge
-/// @param endRadius Radius at end of each edge
+/// @param startRadius Radius at start of each edge; must be > 0
+/// @param endRadius Radius at end of each edge; must be > 0
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
                                          int32_t edgeCount, double startRadius, double endRadius);
@@ -2248,9 +2254,14 @@ OCCTWireRef OCCTWireChamfer2D(OCCTWireRef wire, int32_t vertexIndex, double dist
 OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance);
 
 /// Blend multiple edges with individual radii
+///
+/// The per-edge member of the occtShapeFilletEdgeList family (OCCTBridge_Internal.h), alongside
+/// OCCTShapeFilletEdges and OCCTShapeFilletEdgesLinear. Implemented in OCCTBridge_Healing.mm
+/// while the other two are in OCCTBridge_Modeling.mm, which is how it came to be the one without
+/// a radius precondition. #489
 /// @param shape The shape to blend
-/// @param edgeIndices Array of edge indices
-/// @param radii Array of radii (one per edge)
+/// @param edgeIndices Array of edge indices (0-based; an out-of-range index is skipped)
+/// @param radii Array of radii (one per edge); every element must be > 0, or the whole call fails
 /// @param count Number of edges
 /// @return Blended shape, or NULL on failure
 OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
@@ -4855,6 +4866,9 @@ int32_t OCCTShapeCompoundChildren(OCCTShapeRef _Nonnull compound,
 // MARK: - Tier 2 modification ops with full per-input history (issue #165)
 
 /// Uniform-radius fillet on the given edges, with retained history.
+///
+/// `radius` must be > 0, and the edge loop is occtFilletAddEdges (OCCTBridge_Internal.h), shared
+/// with OCCTShapeFilletEdges: 0-based indices, an out-of-range one skipped. #489
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromFilletEdges(OCCTShapeRef _Nonnull shape,
                                                                   const int32_t* _Nonnull edgeIndices,
                                                                   int32_t count,
@@ -4863,6 +4877,8 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromFilletEdges(OCCTShapeRef _No
 
 /// Variable-radius fillet on a single edge (start radius linearly varies to end radius
 /// along the edge's parameter range), with retained history.
+///
+/// Both radii must be > 0, matching OCCTShapeFilletEdgesLinear. #489
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef _Nonnull shape,
                                                                          int32_t edgeIndex,
                                                                          double startRadius, double endRadius,

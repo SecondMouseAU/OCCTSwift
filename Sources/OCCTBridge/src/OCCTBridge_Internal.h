@@ -53,7 +53,13 @@
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
+// The last four serve the shared algorithm helpers at the bottom of this header
+// (occtFillingAddConstraint, occtShapeFilletEdgeList) rather than the structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
+#include <BRepFilletAPI_MakeFillet.hxx>
+#include <TopExp.hxx>
+#include <TopoDS.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
 
 // === Foundation struct definitions ===
 
@@ -483,6 +489,105 @@ inline NCollection_Array1<double> occtGridEvalParams(const double* params, int32
 /// re-spelled in prose at each call site.
 inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
     return iu * vCount + iv;
+}
+
+// === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
+//
+// Three bridge functions fillet a caller-supplied list of edge indices and differ only in what
+// radius each of those edges gets: OCCTShapeFilletEdges (one radius for the whole list) and
+// OCCTShapeFilletEdgesLinear (a start and an end radius, applied per edge) in
+// OCCTBridge_Modeling.mm, and OCCTShapeBlendEdges (one radius per edge) in OCCTBridge_Healing.mm.
+// Everything either side of the per-edge Add (the null/count guard, the TopExp::MapShapes edge
+// map, the 0-based-to-1-based index translation and its bounds check, Build/IsDone/Shape, and the
+// catch(...) that turns any OCCT failure into nullptr) was written out three times.
+//
+// That is how the radius precondition came to be missing from one of them. Both fillet* functions
+// reject a non-positive radius before OCCT is touched; the blend function checked only that the
+// radii pointer was non-null, and never looked at a single element. Copies do not propagate a
+// guard added to one of them, which is the whole argument for one skeleton: the next piece of
+// hardening this family needs lands in one place, on all three call sites at once.
+//
+// The precondition belongs here in the bridge, for the same reason the conic predicates above do:
+// the pinned OCCT.xcframework is a Release build, so OCCT's own *_Raise_if preconditions are
+// compiled out by No_Exception and nothing inside the library will reject the value for us.
+// Measured against that kernel (Scripts/repro/489-fillet-radius-validation/):
+// BRepFilletAPI_MakeFillet::Add(r, edge) with r of 0, a negative r, or NaN neither throws nor
+// yields a wrong shape. It fails IsDone(), so wherever the bad radius did reach OCCT the result
+// was already nullptr. The case that escaped was a bad radius paired with an out-of-range edge
+// index: the bounds check dropped the pair, and the batch then built from the remaining edges and
+// reported success for a request that was never fully honoured.
+
+// A fillet radius has to be positive. Zero and negative both fail BRepFilletAPI_MakeFillet's own
+// Build(), so this rejects them before that work is done rather than after; NaN fails the same
+// comparison, since NaN > 0 is false.
+inline bool occtValidFilletRadius(double radius) {
+    return radius > 0;
+}
+
+// Every radius in a per-edge radius array, checked up front. One bad element rejects the whole
+// batch, matching the uniform-radius entry point: it rejects its single radius before looking at
+// any index, so a per-edge list cannot make its own validity depend on which indices resolve.
+inline bool occtValidFilletRadii(const double* radii, int32_t count) {
+    if (!radii || count < 1) return false;
+    for (int32_t i = 0; i < count; i++) {
+        if (!occtValidFilletRadius(radii[i])) return false;
+    }
+    return true;
+}
+
+// Add the edges named by `edgeIndices` (0-based, indexing `shape`'s own TopExp edge map) to
+// `fillet`, through whichever Add overload the caller's radius law needs.
+//
+// `addEdge(fillet, edge, entry)` is the only part that varies between the callers: `entry` is the
+// index into the caller's own arrays, so a per-edge radius list can read its own element. It is
+// called only for indices that resolve to a real edge.
+//
+// An out-of-range index is skipped rather than rejected, which is the behaviour every caller had
+// before they shared this loop. When that leaves no contour at all, the subsequent Build() throws
+// "There are no suitable edges for chamfer or fillet", so a caller's catch(...) still reports
+// failure; nothing here has to detect the empty case itself.
+//
+// Not folded into occtShapeFilletEdgeList below because OCCTShapeHistoryFromFilletEdges has to
+// keep its builder alive past the call, to hand back a BRepTools_History over it.
+//
+// Radius validation is the caller's, since the shapes it takes (one scalar, two scalars, an array,
+// a (parameter, radius) point list) have nothing in common but occtValidFilletRadius above.
+template <class AddEdge>
+void occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
+                        const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
+    TopTools_IndexedMapOfShape edgeMap;
+    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
+
+    for (int32_t i = 0; i < edgeCount; i++) {
+        int32_t idx = edgeIndices[i];
+        if (idx < 0 || idx >= edgeMap.Extent()) continue;
+        addEdge(fillet, TopoDS::Edge(edgeMap(idx + 1)), i);  // OCCT's map is 1-based
+    }
+}
+
+// occtFilletAddEdges plus the build-and-wrap half: the guard, the perform/check/result triad, and
+// the catch(...) that turns any OCCT failure into nullptr. This is the whole body of the three
+// edge-list fillet entry points bar their radius law.
+template <class AddEdge>
+OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
+                                     const int32_t* edgeIndices, int32_t edgeCount,
+                                     AddEdge addEdge) {
+    if (!shape || !edgeIndices || edgeCount < 1) return nullptr;
+
+    try {
+        BRepFilletAPI_MakeFillet fillet(shape->shape);
+        occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge);
+
+        fillet.Build();
+        if (!fillet.IsDone()) return nullptr;
+
+        TopoDS_Shape result = fillet.Shape();
+        if (result.IsNull()) return nullptr;
+
+        return new OCCTShape(result);
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 #endif /* OCCTBridge_Internal_h */

@@ -264,6 +264,67 @@ down-casts its inputs to `Geom_BezierCurve` and returns `nullptr` for anything e
 `nil` back and skipped its entire body through `if let` without ever calling `translate`. It now uses
 real Bezier boundaries and asserts the surface actually moved.
 
+#### One skeleton behind the three edge-list fillet entry points, and the radius precondition one of them never had (#489)
+
+**Behaviour change, one call shape.** `Shape.blendedEdges(_:)` now returns `nil` when any radius in
+the batch is non-positive or NaN, which is the contract `filleted(edges:radius:)` and
+`filleted(edges:startRadius:endRadius:)` already applied to theirs:
+
+| call | before | now |
+|---|---|---|
+| `blendedEdges([(0, 2.0), (99999, -5.0)])` | shape filleted on edge 0 only, reported as success | `nil` |
+| `blendedEdges([(0, 0.0)])` | `nil` | `nil` |
+| `blendedEdges([(0, -5.0)])` | `nil` | `nil` |
+| `blendedEdges([(0, 2.0), (1, 0.0)])` | `nil` | `nil` |
+
+Only the first row changes, and measuring that is what narrowed the finding: a non-positive radius
+that reached OCCT was already reported as failure, because `BRepFilletAPI_MakeFillet::Add(r, edge)`
+with `r` of 0, a negative `r`, or NaN does not throw and does not build a wrong shape, it fails
+`IsDone()` (ground truth in
+[`Scripts/repro/489-fillet-radius-validation/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/489-fillet-radius-validation)).
+The case that escaped was a bad radius paired with an out-of-range edge index: the bounds check
+dropped the pair before the radius was ever used, so the batch built from the remaining edges and
+reported success for a request that was never fully honoured. Valid input is unaffected, pinned by a
+test that a uniform per-edge radius list produces the same volume as the uniform entry point. An
+out-of-range index with a valid radius is still skipped, unchanged.
+
+`OCCTShapeFilletEdges` and `OCCTShapeFilletEdgesLinear` (`OCCTBridge_Modeling.mm`) and
+`OCCTShapeBlendEdges` (`OCCTBridge_Healing.mm`) were three hand-maintained copies of one loop:
+same `TopExp::MapShapes` edge map, same 0-based index bounds check, same `Build`/`IsDone`/`Shape`
+triad, same `catch (...)`, differing only in the radius each edge gets. That is how the guard came to
+exist in two of them and not the third. All three now share `occtShapeFilletEdgeList` and the
+`occtValidFilletRadius` / `occtValidFilletRadii` predicates in `OCCTBridge_Internal.h`, so the next
+piece of hardening this family needs lands once. `OCCTShapeFilletEdges` also picks up the null-result
+check the blend function already had.
+
+A fourth copy of the same loop turned up in `OCCTShapeHistoryFromFilletEdges`, which the finding did
+not name: it cannot use the full skeleton, because it keeps its builder alive to hand back a
+`BRepTools_History` over it, so the loop is split out as `occtFilletAddEdges` and shared at that
+level. It had no radius precondition either, nor does its single-edge sibling
+`OCCTShapeHistoryFromFilletEdgeVariable`; both now apply the same one, as do their Swift wrappers
+`Shape.filletedWithFullHistory(radius:edges:)` and
+`Shape.filletedWithFullHistory(edge:startRadius:endRadius:)`. No observable change for either: both
+take a single radius (or radius pair) that is either valid or rejected outright, with no per-element
+pairing for an index skip to hide.
+
+Bridge-only: no kernel patch, no xcframework rebuild, nothing filed upstream, since `Add()` reporting
+failure through `IsDone()` is OCCT's documented `BRepBuilderAPI_MakeShape` contract.
+
+The cross-reference index entry for `BRepFilletAPI_MakeFillet` named only the `OCCTShapeFillet*`
+prefix, so four of its call sites were unreachable from the index: `OCCTShapeBlendEdges` (the one this
+issue is about), `OCCTShapeFuseAndBlend`, `OCCTShapeCutAndBlend` and the `OCCTFilletBuilder*` family.
+That is the #484 failure mode again, an audit by symbol name finding fewer sites than exist, and it is
+how this family's copies stayed out of view. The entry now names all of them;
+`Scripts/check-bridge-index.py` still reports the same 139 pre-existing stale entries (#510), none of
+them new.
+
+Two family-level inconsistencies were found and deliberately left alone, filed as #520: the other two
+`BRepFilletAPI_MakeFillet` edge-list functions disagree with these three about what an edge index
+means and what an invalid one does. `OCCTShapeFilletEvolving` takes 1-based indices (documented as
+such on `EvolvingFilletEdge.edgeIndex`) and rejects an out-of-range one, and
+`OCCTShapeFilletVariable` takes a 0-based index and also rejects. Reconciling them changes public
+API behaviour and needs its own decision, not a drive-by in a dedup fix.
+
 ---
 
 ## Release History
