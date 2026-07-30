@@ -837,4 +837,57 @@ inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, do
     }
 }
 
+// === #502: one sub-shape enumeration ===
+//
+// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
+// primitives that answer differently:
+//
+//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
+//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
+//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
+//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
+//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
+//
+// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
+// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
+// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
+// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
+// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
+// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
+// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
+// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
+// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
+// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
+//
+// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
+// is the answer all of it gives now. What made the choice cheap is that the two primitives
+// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
+// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
+// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
+
+/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
+/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
+/// TShape and location, orientation ignored). Returns the number of entries.
+///
+/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
+/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
+/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
+/// SOLID answers 1.
+inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
+                                TopTools_IndexedMapOfShape& outMap) {
+    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
+    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
+    return outMap.Extent();
+}
+
+/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
+/// the index is negative or past the end. Callers that want the whole set should map once and
+/// read the map, rather than calling this in a loop.
+inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
+    if (index < 0) return TopoDS_Shape();
+    TopTools_IndexedMapOfShape map;
+    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
 #endif /* OCCTBridge_Internal_h */

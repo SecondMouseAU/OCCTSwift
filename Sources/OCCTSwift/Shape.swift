@@ -2077,18 +2077,49 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Sub-Shape Extraction
 
-    /// Get the number of sub-shapes of a given topological type.
+    /// The number of **distinct** sub-shapes of a given topological type.
+    ///
+    /// This is the one sub-shape enumeration: ``solids``, ``shells``, ``wires``, ``faceCount``,
+    /// ``edgeCount`` and ``vertexCount`` all read the same one, so their answers agree with this
+    /// one by construction (#502).
+    ///
+    /// "Distinct" is `TopExp::MapShapes` over `TopoDS_Shape::IsSame`: same underlying geometry
+    /// *and* same placement, orientation ignored. Two consequences worth knowing:
+    ///
+    /// - A sub-shape reachable from more than one parent counts **once**. A box's 12 edges are
+    ///   each shared by two faces, so the count is 12, not the 24 edge-in-face occurrences a raw
+    ///   `TopExp_Explorer` walk yields.
+    /// - Two *placements* of one body count **twice**, because the location is part of the
+    ///   comparison. Instanced assemblies are not collapsed.
+    ///
+    /// A shape is its own sub-shape when it is of the requested type, so a solid reports one solid.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.subShapeCount(ofType: .face))    // 6
+    /// print(box.subShapeCount(ofType: .edge))    // 12
+    /// print(box.subShapeCount(ofType: .vertex))  // 8
+    /// print(box.subShapeCount(ofType: .solid))   // 1, the box itself
+    ///
+    /// // One body compounded with itself is one solid; two placements of it are two.
+    /// print(Shape.compound([box, box])!.subShapeCount(ofType: .solid))                       // 1
+    /// print(Shape.compound([box, box.translated(by: SIMD3(50, 0, 0))!])!
+    ///     .subShapeCount(ofType: .solid))                                                    // 2
+    /// ```
     ///
     /// - Parameter type: The topological type to count (e.g., `.face`, `.edge`, `.vertex`)
-    /// - Returns: Number of sub-shapes of that type
+    /// - Returns: Number of distinct sub-shapes of that type; 0 for `.unknown`
     public func subShapeCount(ofType type: ShapeType) -> Int {
         Int(OCCTShapeGetSubShapeCount(handle, Int32(type.rawValue)))
     }
 
-    /// Get a sub-shape by type and 0-based index.
+    /// A sub-shape by type and 0-based index, in the order ``subShapes(ofType:)`` returns.
     ///
-    /// Uses `TopExp::MapShapes` to enumerate sub-shapes of the given type,
-    /// then returns the one at the specified index as a `Shape` handle.
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.subShape(type: .face, index: 0)?.shapeType ?? .unknown)  // Face
+    /// print(box.subShape(type: .face, index: 6) == nil)                  // true, only 6 faces
+    /// ```
     ///
     /// - Parameters:
     ///   - type: The topological type (e.g., `.face`, `.edge`, `.vertex`)
@@ -2101,13 +2132,26 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: ref)
     }
 
-    /// Get all sub-shapes of a given topological type.
+    /// All **distinct** sub-shapes of a given topological type, in enumeration order.
+    ///
+    /// One walk to size the buffer and one to fill it, so this is much cheaper than reading
+    /// ``subShape(type:index:)`` in a loop, which re-walks the shape once per element. See
+    /// ``subShapeCount(ofType:)`` for what "distinct" excludes.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.subShapes(ofType: .face).count)   // 6
+    /// print(box.subShapes(ofType: .edge).count)   // 12
+    /// ```
     ///
     /// - Parameter type: The topological type (e.g., `.face`, `.edge`, `.vertex`)
     /// - Returns: Array of sub-shapes
     public func subShapes(ofType type: ShapeType) -> [Shape] {
-        let count = subShapeCount(ofType: type)
-        return (0..<count).compactMap { subShape(type: type, index: $0) }
+        let count = Int32(subShapeCount(ofType: type))
+        guard count > 0 else { return [] }
+        var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
+        let written = OCCTShapeGetSubShapes(handle, Int32(type.rawValue), &handles, count)
+        return handles.prefix(Int(written)).compactMap { h in h.map { Shape(handle: $0) } }
     }
 
     // MARK: - Bounds
@@ -5790,21 +5834,42 @@ extension Shape {
 
 extension Shape {
     /// Number of solid sub-shapes.
-    public var solidCount: Int { Int(OCCTShapeGetSolidCount(handle)) }
+    ///
+    /// A named spelling of `subShapeCount(ofType: .solid)`, reading the same enumeration, so
+    /// "distinct solid" means what it does there: one body reachable from two parents counts once,
+    /// two *placements* of it count twice. (#502)
+    ///
+    /// ```swift
+    /// let a = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(origin: SIMD3(50, 0, 0), width: 10, height: 10, depth: 10)!
+    /// print(Shape.compound([a, b])!.solidCount)   // 2
+    /// print(a.solidCount)                         // 1, a solid is its own sub-shape
+    /// ```
+    public var solidCount: Int { subShapeCount(ofType: .solid) }
 
-    /// Extract all solid sub-shapes.
-    public var solids: [Shape] {
-        let count = OCCTShapeGetSolidCount(handle)
-        guard count > 0 else { return [] }
-        var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
-        let actual = OCCTShapeGetSolids(handle, &handles, count)
-        return handles.prefix(Int(actual)).compactMap { h in
-            h.map { Shape(handle: $0) }
-        }
-    }
+    /// Extract all solid sub-shapes, in enumeration order.
+    ///
+    /// ```swift
+    /// let part = Shape.compound([
+    ///     Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!,
+    ///     Shape.box(origin: SIMD3(50, 0, 0), width: 4, height: 4, depth: 4)!,
+    /// ])!
+    /// print(part.solids.count)                       // 2
+    /// print(part.solids.map(\.volume))               // [1000.0, 64.0]
+    /// ```
+    public var solids: [Shape] { subShapes(ofType: .solid) }
 
     /// Number of shell sub-shapes.
-    public var shellCount: Int { Int(OCCTShapeGetShellCount(handle)) }
+    ///
+    /// A named spelling of `subShapeCount(ofType: .shell)`. A shell reused by two solids (the
+    /// shape `solidFromShells` produces when handed the same shell twice) is one shell. (#502)
+    ///
+    /// ```swift
+    /// let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
+    ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
+    /// print(hollow.shellCount)   // 2, the outer boundary and the cavity
+    /// ```
+    public var shellCount: Int { subShapeCount(ofType: .shell) }
 
     /// The **outer shell** of this solid (`BRepClass3d::OuterShell`).
     ///
@@ -5878,30 +5943,37 @@ extension Shape {
         return handles.prefix(Int(actual)).compactMap { h in h.map { Shape(handle: $0) } }
     }
 
-    /// Extract all shell sub-shapes.
-    public var shells: [Shape] {
-        let count = OCCTShapeGetShellCount(handle)
-        guard count > 0 else { return [] }
-        var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
-        let actual = OCCTShapeGetShells(handle, &handles, count)
-        return handles.prefix(Int(actual)).compactMap { h in
-            h.map { Shape(handle: $0) }
-        }
-    }
+    /// Extract all shell sub-shapes, in enumeration order.
+    ///
+    /// ```swift
+    /// let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
+    ///     .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
+    /// print(hollow.shells.count)   // 2
+    /// ```
+    ///
+    /// To tell the boundary from the cavities, use ``outerShell`` / ``innerShells`` instead;
+    /// this is the plain enumeration and puts no meaning on the order.
+    public var shells: [Shape] { subShapes(ofType: .shell) }
 
     /// Number of wire sub-shapes.
-    public var wireCount: Int { Int(OCCTShapeGetWireCount(handle)) }
+    ///
+    /// A named spelling of `subShapeCount(ofType: .wire)`. A wire used to build two faces counts
+    /// once, since it is one wire seen from two parents. (#502)
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 5, depth: 3)!
+    /// print(box.wireCount)   // 6, one boundary wire per face
+    /// ```
+    public var wireCount: Int { subShapeCount(ofType: .wire) }
 
-    /// Extract all wire sub-shapes.
-    public var wires: [Shape] {
-        let count = OCCTShapeGetWireCount(handle)
-        guard count > 0 else { return [] }
-        var handles = [OCCTShapeRef?](repeating: nil, count: Int(count))
-        let actual = OCCTShapeGetWires(handle, &handles, count)
-        return handles.prefix(Int(actual)).compactMap { h in
-            h.map { Shape(handle: $0) }
-        }
-    }
+    /// Extract all wire sub-shapes, in enumeration order.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 5, depth: 3)!
+    /// print(box.wires.count)                       // 6
+    /// print(box.wires.compactMap(Wire.init).count)  // 6, as typed Wire objects
+    /// ```
+    public var wires: [Shape] { subShapes(ofType: .wire) }
 }
 
 // MARK: - Fuse and Blend (v0.38.0)

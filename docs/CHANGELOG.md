@@ -766,6 +766,47 @@ actually works: an edge carrying only a pcurve on a cylinder. Run against the un
 the default-value and cross-wrapper-agreement tests fail there, so they cover the defect rather
 than describing it.
 
+#### One sub-shape enumeration, not one per accessor (#502)
+
+`Shape.solids`/`solidCount`, `shells`/`shellCount` and `wires`/`wireCount` walked a bare
+`TopExp_Explorer`, which yields one entry per **occurrence** in the topology tree.
+`subShapes(ofType:)`/`subShapeCount(ofType:)`, along with `faceCount`, `edgeCount`, `vertexCount`,
+`uniqueSubShapeCount(ofType:)` and the `face(at:)`/`edge(at:)` indexed accessors, built a
+`TopTools_IndexedMapOfShape` through `TopExp::MapShapes`, which keeps one entry per **distinct**
+sub-shape. Two answers to one question, in two hand-written traversals, with no test anywhere
+comparing them.
+
+The two are not independent primitives: `TopExp::MapShapes(S, T, M)` *is* a `TopExp_Explorer` walk
+piped into the map (`TopExp.cxx:34-45`), so the deduplicated sequence is the explorer's sequence
+with later repeats removed: same order, no index moved. Every sub-shape accessor in the bridge now
+reads one enumeration (`occtMapSubShapes`), and the six `TopExp_Explorer` entry points behind the
+typed accessors are gone, along with a seventh (`OCCTShapeGetEdgeCount`) that had no caller and
+disagreed with `OCCTShapeGetTotalEdgeCount` two declarations away.
+
+**Behaviour change, in the deduplicating direction.** `solidCount`/`shellCount`/`wireCount` and
+`solids`/`shells`/`wires` now count distinct sub-shapes. Measured against the pinned kernel
+([`Scripts/repro/502-subshape-traversal-dedup/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/502-subshape-traversal-dedup)),
+the old and new answers are identical for every ordinary shape tried (the primitives, a hollow
+solid's two shells, two distinct bodies, two *placements* of one body, a sewn stack, a compsolid),
+and differ only where one sub-shape is reachable from two parents:
+
+| shape | before | after |
+|---|---|---|
+| `Shape.compound([box, box])` (the same `Shape` twice) | 2 solids | 1 solid |
+| the same shell handed to two `solidFromShells` calls | 2 shells | 1 shell |
+| one wire used to build two faces | 2 wires | 1 wire |
+| a face and its own reverse in one shell | 2 faces | 1 face |
+
+Deduplication is by `TopoDS_Shape::IsSame`, which compares the **location** as well as the
+geometry, so two placements of one body are still two solids and instanced assemblies are not
+collapsed. It ignores orientation, so a sub-shape embedded forward in one parent and reversed in
+another is one sub-shape.
+
+Two illustrations of why this is the answer the whole API should have been giving: a plain 10mm box
+has 24 edge *occurrences* over 12 edges and 48 vertex occurrences over 8 vertices, and `edgeCount`
+already reported 12; and `Shape.faces()` (still an explorer walk, see #541) can hand back a face
+`face(at:)` cannot address, because their indices came from different enumerations.
+
 ---
 
 ## Release History

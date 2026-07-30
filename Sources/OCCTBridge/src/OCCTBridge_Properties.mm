@@ -1861,32 +1861,22 @@ bool OCCTShapeIntersects(OCCTShapeRef shape1, OCCTShapeRef shape2, double tolera
     }
 }
 
-int32_t OCCTShapeGetVertexCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
+// The three vertex accessors below read the shared sub-shape enumeration (occtMapSubShapes,
+// OCCTBridge_Internal.h), so "a vertex" here means what it means everywhere else in the bridge:
+// one entry per distinct vertex, not one per occurrence in the topology tree (#502).
 
-    try {
-        // Use IndexedMapOfShape for unique vertices
-        TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
-        return vertexMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+int32_t OCCTShapeGetVertexCount(OCCTShapeRef shape) {
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_VERTEX);
 }
 
 bool OCCTShapeGetVertexAt(OCCTShapeRef shape, int32_t index, double* outX, double* outY, double* outZ) {
-    if (!shape || !outX || !outY || !outZ || index < 0) return false;
+    if (!shape || !outX || !outY || !outZ) return false;
 
     try {
-        // Use IndexedMapOfShape for unique vertices
-        TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
+        TopoDS_Shape vertex = occtSubShapeAt(shape->shape, TopAbs_VERTEX, index);
+        if (vertex.IsNull()) return false;
 
-        // IndexedMapOfShape uses 1-based indexing
-        if (index >= vertexMap.Extent()) return false;
-
-        TopoDS_Vertex vertex = TopoDS::Vertex(vertexMap(index + 1));
-        gp_Pnt point = BRep_Tool::Pnt(vertex);
+        gp_Pnt point = BRep_Tool::Pnt(TopoDS::Vertex(vertex));
         *outX = point.X();
         *outY = point.Y();
         *outZ = point.Z();
@@ -1900,15 +1890,10 @@ int32_t OCCTShapeGetVertices(OCCTShapeRef shape, double* outVertices) {
     if (!shape || !outVertices) return 0;
 
     try {
-        // Use IndexedMapOfShape for unique vertices
         TopTools_IndexedMapOfShape vertexMap;
-        TopExp::MapShapes(shape->shape, TopAbs_VERTEX, vertexMap);
-
-        int32_t count = vertexMap.Extent();
+        int32_t count = occtMapSubShapes(shape->shape, TopAbs_VERTEX, vertexMap);
         for (int32_t i = 0; i < count; i++) {
-            // IndexedMapOfShape uses 1-based indexing
-            TopoDS_Vertex vertex = TopoDS::Vertex(vertexMap(i + 1));
-            gp_Pnt point = BRep_Tool::Pnt(vertex);
+            gp_Pnt point = BRep_Tool::Pnt(TopoDS::Vertex(vertexMap(i + 1)));  // 1-based
 
             outVertices[i * 3] = point.X();
             outVertices[i * 3 + 1] = point.Y();

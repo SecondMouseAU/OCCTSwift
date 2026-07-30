@@ -10754,18 +10754,6 @@ OCCTShapeRef OCCTShapeSliceAtZ(OCCTShapeRef shape, double z) {
     }
 }
 
-int32_t OCCTShapeGetEdgeCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-
-    int32_t count = 0;
-    TopExp_Explorer explorer(shape->shape, TopAbs_EDGE);
-    while (explorer.More()) {
-        count++;
-        explorer.Next();
-    }
-    return count;
-}
-
 int32_t OCCTShapeGetEdgePoints(OCCTShapeRef shape, int32_t edgeIndex, double* outPoints, int32_t maxPoints) {
     if (!shape || !outPoints || maxPoints < 2 || edgeIndex < 0) return 0;
 

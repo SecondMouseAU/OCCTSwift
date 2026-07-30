@@ -15,36 +15,46 @@ This page covers the measurement, decomposition, healing, and local-operation AP
 
 ## Sub-Shape Extraction (v0.38.0)
 
+Every accessor in this section, plus `subShapeCount(ofType:)`, `subShapes(ofType:)`, `faceCount`,
+`edgeCount` and `vertexCount` elsewhere, reads **one** enumeration: `TopExp::MapShapes` into a
+`TopTools_IndexedMapOfShape`, in `TopExp_Explorer` order, one entry per **distinct** sub-shape.
+"Distinct" is `TopoDS_Shape::IsSame`: same underlying geometry *and* same placement, orientation
+ignored. So a sub-shape reachable from two parents is counted once, while two *placements* of one
+body are counted twice (instanced assemblies are not collapsed). A shape is its own sub-shape when
+it is of the requested type. (#502)
+
 ### `solidCount`
 
-Number of solid sub-shapes in this shape.
+Number of distinct solid sub-shapes in this shape.
 
 ```swift
 public var solidCount: Int { get }
 ```
 
-- **OCCT:** `BRep_Builder` / `TopExp_Explorer` (via `OCCTShapeGetSolidCount`).
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_SOLID` (via `OCCTShapeGetSubShapeCount`).
 - **Example:**
   ```swift
-  let box = Shape.box(dx: 10, dy: 10, dz: 10)!
-  print(box.solidCount)  // 1
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.solidCount)                             // 1, a solid is its own sub-shape
+  print(Shape.compound([box, box])!.solidCount)     // 1, one body, listed twice
+  print(Shape.compound([box, box.translated(by: SIMD3(50, 0, 0))!])!.solidCount)  // 2
   ```
 
 ---
 
 ### `solids`
 
-Extract all solid sub-shapes.
+Extract all distinct solid sub-shapes, in enumeration order.
 
 ```swift
 public var solids: [Shape] { get }
 ```
 
 - **Returns:** Array of solid sub-shapes; empty if none.
-- **OCCT:** `TopExp_Explorer` with `TopAbs_SOLID`.
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_SOLID`.
 - **Example:**
   ```swift
-  let compound = Shape.compound([box1, box2])
+  let compound = Shape.compound([box1, box2])!
   let all = compound.solids  // [box1, box2]
   ```
 
@@ -52,13 +62,19 @@ public var solids: [Shape] { get }
 
 ### `shellCount`
 
-Number of shell sub-shapes.
+Number of distinct shell sub-shapes. A shell reused by two solids counts once.
 
 ```swift
 public var shellCount: Int { get }
 ```
 
-- **OCCT:** `OCCTShapeGetShellCount`.
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_SHELL`.
+- **Example:**
+  ```swift
+  let hollow = Shape.box(origin: .zero, width: 20, height: 20, depth: 20)!
+      .subtracting(Shape.box(origin: SIMD3(6, 6, 6), width: 8, height: 8, depth: 8)!)!
+  print(hollow.shellCount)  // 2, the outer boundary and the cavity
+  ```
 
 ---
 
@@ -143,33 +159,44 @@ Extract all shell sub-shapes.
 public var shells: [Shape] { get }
 ```
 
-- **Returns:** Array of all shell sub-shapes (inner and outer).
-- **OCCT:** `TopExp_Explorer` with `TopAbs_SHELL` (via `OCCTShapeGetShells`).
+- **Returns:** Array of all shell sub-shapes (inner and outer), in enumeration order.
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_SHELL`. Use `outerShell` / `innerShells` to tell the
+  boundary from the cavities; this accessor puts no meaning on the order.
 
 ---
 
 ### `wireCount`
 
-Number of wire sub-shapes.
+Number of distinct wire sub-shapes. A wire used to build two faces counts once.
 
 ```swift
 public var wireCount: Int { get }
 ```
 
-- **OCCT:** `OCCTShapeGetWireCount`.
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_WIRE`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 5, depth: 3)!
+  print(box.wireCount)  // 6, one boundary wire per face
+  ```
 
 ---
 
 ### `wires`
 
-Extract all wire sub-shapes.
+Extract all distinct wire sub-shapes, in enumeration order.
 
 ```swift
 public var wires: [Shape] { get }
 ```
 
 - **Returns:** Array of wire sub-shapes; empty if none.
-- **OCCT:** `TopExp_Explorer` with `TopAbs_WIRE` (via `OCCTShapeGetWires`).
+- **OCCT:** `TopExp::MapShapes` with `TopAbs_WIRE`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 5, depth: 3)!
+  print(box.wires.compactMap(Wire.init).count)  // 6, as typed Wire objects
+  ```
 
 ---
 
