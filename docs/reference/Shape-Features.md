@@ -203,8 +203,21 @@ public func drilled(at position: SIMD3<Double>, direction: SIMD3<Double>,
 
 The bore is cut **along `direction`** — any axis, not just Z. `direction` is normalized internally; a zero/degenerate direction returns `nil`.
 
-- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius; `depth` — hole depth, or `0` for through-hole.
-- **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction`).
+The cutting cylinder **starts at `position`** and runs `depth` along `direction`. So an entry point inside the shape drills only forward from there, a `depth` that overshoots the far face costs nothing, and the input can be a shell or a face as readily as a solid.
+
+`radius` must exceed `Precision::Confusion` (1e-7). Below that, OCCT cuts nothing and reports success (#496), so the bridge rejects it.
+
+#### Or the feature drill
+
+[`cylindricalHole(axisOrigin:axisDirection:radius:extent:)`](Shape-Builders-2.md#cylindricalholeaxisoriginaxisdirectionradiusextent) wraps `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is **not a better version of this method** — #496 measured six requests where the two disagree, and neither subsumes the other:
+
+| reach for | when |
+|---|---|
+| `drilled(at:…)` | the hole starts where you say it starts; the input is not a solid; an over-long `depth` should simply drill through |
+| `cylindricalHole(…extent:)` | the **solid's own faces** should bound the hole (`.untilEnd`, `.thruNext`); you need a diagnosis of *why* a drill is impossible |
+
+- **Parameters:** `position` — hole-centre point on the entry face; `direction` — drill direction (into the shape), any non-zero axis; `radius` — hole radius, above `Precision::Confusion`; `depth` — hole depth, or `0` for through-hole.
+- **Returns:** Shape with drilled hole, or `nil` on failure (including a zero-length `direction` or a degenerate `radius`).
 - **OCCT:** `BRepPrimAPI_MakeCylinder` (oriented via `gp_Ax2(position, direction)`) + `BRepAlgoAPI_Cut` (internal cylinder cutter).
 - **Example:**
   ```swift

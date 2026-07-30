@@ -3316,12 +3316,16 @@ OCCTShapeRef OCCTShapeDrillHole(OCCTShapeRef shape,
                                  double posX, double posY, double posZ,
                                  double dirX, double dirY, double dirZ,
                                  double radius, double depth) {
-    if (!shape || radius <= 0) return nullptr;
+    // The drilling preconditions live in OCCTBridge_Internal.h so that this function and the
+    // BRepFeat_MakeCylindricalHole family cannot drift apart on what a drillable request is (#496).
+    // The radius bound is what changed here: `radius > 0` let a sub-Precision::Confusion radius
+    // through to a cut that removed nothing and reported success.
+    if (!shape) return nullptr;
+    if (!occtValidDrillDirection(dirX, dirY, dirZ)) return nullptr;
+    if (!occtValidDrillRadius(radius)) return nullptr;
 
     try {
         gp_Vec direction(dirX, dirY, dirZ);
-        double dirLen = direction.Magnitude();
-        if (dirLen < 1e-10) return nullptr;
         direction.Normalize();
 
         // Determine depth - if depth is 0 or negative, make it through the shape
@@ -6430,76 +6434,29 @@ OCCTShapeRef _Nullable OCCTBRepFeatSplitShapeWithSides(OCCTShapeRef _Nonnull sha
 }
 
 // --- BRepFeat_MakeCylindricalHole ---
+//
+// Both entry points are the same call into occtBRepFeatCylindricalHole (OCCTBridge_Internal.h),
+// which holds the Init/Perform*/Status/Build body all five modes share, plus the drilling
+// preconditions this family used to leave entirely to OCCT. See #496.
 
 OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHole(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.Perform(radius);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
-}
-
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleBlind(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius, double depth) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.PerformBlind(radius, depth);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
-}
-
-OCCTShapeRef _Nullable OCCTBRepFeatCylindricalHoleThruNext(OCCTShapeRef _Nonnull shape,
-    double axisOriginX, double axisOriginY, double axisOriginZ,
-    double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.PerformThruNext(radius);
-        if (hole.Status() != BRepFeat_NoError) return nullptr;
-        hole.Build();
-        if (hole.Shape().IsNull()) return nullptr;
-        return new OCCTShape(hole.Shape());
-    } catch (...) { return nullptr; }
+    double radius, int32_t extent, double extentP0, double extentP1) {
+    OCCTShapeRef result = nullptr;
+    occtBRepFeatCylindricalHole(shape, axisOriginX, axisOriginY, axisOriginZ,
+                                axisDirX, axisDirY, axisDirZ,
+                                radius, extent, extentP0, extentP1, &result);
+    return result;
 }
 
 int32_t OCCTBRepFeatCylindricalHoleStatus(OCCTShapeRef _Nonnull shape,
     double axisOriginX, double axisOriginY, double axisOriginZ,
     double axisDirX, double axisDirY, double axisDirZ,
-    double radius) {
-    try {
-        gp_Ax1 axis(gp_Pnt(axisOriginX, axisOriginY, axisOriginZ),
-                     gp_Dir(axisDirX, axisDirY, axisDirZ));
-        BRepFeat_MakeCylindricalHole hole;
-        hole.Init(shape->shape, axis);
-        hole.Perform(radius);
-        BRepFeat_Status status = hole.Status();
-        switch (status) {
-            case BRepFeat_NoError: return 0;
-            case BRepFeat_InvalidPlacement: return 1;
-            case BRepFeat_HoleTooLong: return 2;
-            default: return 3;
-        }
-    } catch (...) { return 3; }
+    double radius, int32_t extent, double extentP0, double extentP1) {
+    return occtBRepFeatCylindricalHole(shape, axisOriginX, axisOriginY, axisOriginZ,
+                                       axisDirX, axisDirY, axisDirZ,
+                                       radius, extent, extentP0, extentP1, nullptr);
 }
 
 // --- BRepFeat_Gluer ---

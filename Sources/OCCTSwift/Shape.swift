@@ -1692,18 +1692,37 @@ public final class Shape: @unchecked Sendable {
         withPrism(profile: profile, direction: direction, height: depth, fuse: false)
     }
 
-    /// Drill a cylindrical hole into the shape
+    /// Drill a cylindrical hole into the shape, by subtracting a cylinder from it.
     ///
     /// The bore is cut **along `direction`** — any axis, not just Z. The direction is
     /// normalized internally; a zero-length direction returns `nil`.
     ///
+    /// The tool is a finite cylinder that **starts at `position`** and runs `depth` along
+    /// `direction`; `depth <= 0` substitutes a length derived from the shape's bounding box, long
+    /// enough to leave the far side. So a `depth` that overshoots the stock costs nothing, an entry
+    /// point inside the shape drills only forward from there, and the input can be a shell or a face
+    /// as readily as a solid.
+    ///
+    /// ## Or the feature drill
+    ///
+    /// ``cylindricalHole(axisOrigin:axisDirection:radius:extent:)`` wraps
+    /// `BRepFeat_MakeCylindricalHole`, OCCT's dedicated feature-drilling operator. It is not a
+    /// better version of this method — it answers a different question, and #496 measured six
+    /// requests where the two disagree. Reach for it when you want the **solid's own faces** to
+    /// bound the hole (``CylindricalHoleExtent/untilEnd``, ``CylindricalHoleExtent/thruNext``) or a
+    /// diagnosis of *why* a drill is impossible (``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)``).
+    /// Stay here when the hole starts where you say it starts, when the input is not a solid, or
+    /// when an over-long depth should simply drill through.
+    ///
     /// - Parameters:
     ///   - position: Position of hole center on the entry surface
     ///   - direction: Drill direction (into the shape); any non-zero axis
-    ///   - radius: Hole radius
-    ///   - depth: Hole depth (0 for through-hole)
+    ///   - radius: Hole radius; must exceed `Precision::Confusion` (1e-7), below which OCCT cuts
+    ///     nothing and reports success
+    ///   - depth: Hole depth (0 or less for a through-hole)
     ///
-    /// - Returns: Shape with drilled hole, or nil on failure (including a zero-length direction)
+    /// - Returns: Shape with drilled hole, or nil on failure (including a zero-length direction or
+    ///   a degenerate radius)
     ///
     /// ## Example
     ///
@@ -10895,27 +10914,180 @@ extension Shape {
         return SplitShapeResult(shape: Shape(handle: ref), leftFaces: leftShapes, rightFaces: rightShapes)
     }
 
-    // MARK: - BRepFeat_MakeCylindricalHole (v0.71.0)
+    // MARK: - BRepFeat_MakeCylindricalHole (v0.71.0, unified #496)
+
+    /// How a feature-drilled hole is bounded.
+    ///
+    /// `BRepFeat_MakeCylindricalHole` offers five ways to say where the hole stops, and they are
+    /// not interchangeable. In particular ``throughAll`` does not start at the axis origin, and
+    /// ``blind(depth:)`` will not drill past the far face — see each case.
+    ///
+    /// ```swift
+    /// let plate = Shape.box(width: 50, height: 50, depth: 20)!
+    /// let origin = SIMD3<Double>(0, 0, 15)     // 5mm above the top face
+    /// let axis = SIMD3<Double>(0, 0, -1)
+    ///
+    /// // Bounded by the plate's own entry and exit faces:
+    /// let through = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+    ///                                     radius: 5, extent: .untilEnd)
+    ///
+    /// // A 6mm-deep blind hole, measured from the origin — so 1mm into the plate:
+    /// let blind = plate.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+    ///                                   radius: 5, extent: .blind(depth: 6))
+    /// ```
+    public enum CylindricalHoleExtent: Sendable, Equatable {
+        /// `Perform(R)` — an **infinite** cylinder, extending both ways along the axis.
+        ///
+        /// The axis origin anchors the axis; it is not where the hole starts. Drilling "down" from
+        /// a point inside a solid removes the material above it too. This is the one extent that
+        /// tolerates a non-solid input.
+        case throughAll
+        /// `PerformUntilEnd(R)` — bounded by the stock's own first and last faces along the axis.
+        ///
+        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting.
+        ///
+        /// - Warning: On input with more than one body on the axis (a compound, a multi-solid),
+        ///   OCCT keeps a single part of its cutting tool and can end up removing **no material at
+        ///   all** while still reporting ``CylindricalHoleStatus/noError``. Use ``throughAll`` or
+        ///   ``Shape/drilled(at:direction:radius:depth:)`` for a stack. Tracked as #532.
+        case untilEnd
+        /// `PerformThruNext(R)` — stops at the next face after the origin.
+        case thruNext
+        /// `PerformBlind(R, depth)` — a partial-depth hole, `depth` measured from the axis origin.
+        ///
+        /// The only extent that can report ``CylindricalHoleStatus/holeTooLong``: a depth that
+        /// would leave the far side of the stock is refused rather than drilled through. Use
+        /// ``untilEnd`` or ``Shape/drilled(at:direction:radius:depth:)`` if overshooting should
+        /// simply drill through.
+        case blind(depth: Double)
+        /// `Perform(R, PFrom, PTo)` — the hole bounded by the entry/exit face pair that the
+        /// parameter window `from...to` selects. Parameters are measured from the axis origin, in
+        /// units of the (normalized) direction.
+        ///
+        /// The window **chooses a face pair; it does not trim the cut**. A window lying strictly
+        /// inside one body still drills all the way through that body, and a window that names no
+        /// face pair — the gap between two plates, say — is ``CylindricalHoleStatus/invalidPlacement``.
+        /// Its use is picking *which* body to drill in a stack.
+        ///
+        /// - Warning: A window spanning more than one body hits the same OCCT behaviour as
+        ///   ``untilEnd``: ``CylindricalHoleStatus/noError``, and no material removed (#532).
+        case range(from: Double, to: Double)
+
+        /// The (mode, p0, p1) triple the bridge reads.
+        var bridgeParameters: (mode: Int32, p0: Double, p1: Double) {
+            switch self {
+            case .throughAll:              return (0, 0, 0)
+            case .untilEnd:                return (1, 0, 0)
+            case .thruNext:                return (2, 0, 0)
+            case .blind(let depth):        return (3, depth, 0)
+            case .range(let from, let to): return (4, from, to)
+            }
+        }
+    }
+
+    /// Status result for cylindrical hole operations.
+    public enum CylindricalHoleStatus: Int32, Sendable {
+        /// The request is drillable.
+        case noError = 0
+        /// The axis does not meet the shape in a way this extent can use — including a request with
+        /// no direction, or a radius at or below `Precision::Confusion`.
+        case invalidPlacement = 1
+        /// A ``CylindricalHoleExtent/blind(depth:)`` depth that would leave the stock. Only that
+        /// extent produces this.
+        case holeTooLong = 2
+        /// OCCT raised something the bridge does not recognise.
+        case unknown = 3
+    }
+
+    /// Drill a cylindrical hole with `BRepFeat_MakeCylindricalHole`, OCCT's feature-drilling
+    /// operator, bounded by `extent`.
+    ///
+    /// Wants a solid: every extent but ``CylindricalHoleExtent/throughAll`` reports
+    /// ``CylindricalHoleStatus/invalidPlacement`` for a shell or a face. For the
+    /// boolean-subtraction drill — which starts exactly where you tell it to, accepts any shape,
+    /// and treats an over-long depth as a through hole — see
+    /// ``drilled(at:direction:radius:depth:)``. Neither subsumes the other (#496).
+    ///
+    /// Ask ``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)`` first when you want to
+    /// know *why* a request is not drillable; `nil` here collapses every reason into one.
+    ///
+    /// - Parameters:
+    ///   - axisOrigin: Origin point of the hole axis.
+    ///   - axisDirection: Direction of the hole axis; any non-zero vector.
+    ///   - radius: Hole radius; must exceed `Precision::Confusion` (1e-7).
+    ///   - extent: Where the hole stops.
+    /// - Returns: Shape with hole, or nil on failure.
+    ///
+    /// ```swift
+    /// let plate = Shape.box(width: 50, height: 50, depth: 20)!
+    /// let bored = plate.cylindricalHole(axisOrigin: SIMD3(0, 0, 15),
+    ///                                   axisDirection: SIMD3(0, 0, -1),
+    ///                                   radius: 5, extent: .untilEnd)
+    /// ```
+    public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                                radius: Double, extent: CylindricalHoleExtent) -> Shape? {
+        let (mode, p0, p1) = extent.bridgeParameters
+        guard let ref = OCCTBRepFeatCylindricalHole(handle,
+            axisOrigin.x, axisOrigin.y, axisOrigin.z,
+            axisDirection.x, axisDirection.y, axisDirection.z,
+            radius, mode, p0, p1) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Ask what ``cylindricalHole(axisOrigin:axisDirection:radius:extent:)`` would report for this
+    /// exact request, without building the result.
+    ///
+    /// The extent is part of the question, because the answer depends on it: a radius wider than
+    /// the whole solid is ``CylindricalHoleStatus/noError`` for ``CylindricalHoleExtent/throughAll``
+    /// and ``CylindricalHoleStatus/invalidPlacement`` for ``CylindricalHoleExtent/thruNext``, and
+    /// ``CylindricalHoleStatus/holeTooLong`` exists only under ``CylindricalHoleExtent/blind(depth:)``.
+    ///
+    /// - Returns: The status the matching drill would produce. ``CylindricalHoleStatus/noError`` if
+    ///   and only if that drill would return a shape.
+    ///
+    /// ```swift
+    /// let plate = Shape.box(width: 50, height: 50, depth: 20)!
+    /// let origin = SIMD3<Double>(0, 0, 11), axis = SIMD3<Double>(0, 0, -1)
+    /// if plate.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
+    ///                                radius: 5, extent: .blind(depth: 100)) == .holeTooLong {
+    ///     // ... too deep for this stock; drill it through instead
+    /// }
+    /// ```
+    public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>,
+                                      radius: Double,
+                                      extent: CylindricalHoleExtent) -> CylindricalHoleStatus {
+        let (mode, p0, p1) = extent.bridgeParameters
+        let raw = OCCTBRepFeatCylindricalHoleStatus(handle,
+            axisOrigin.x, axisOrigin.y, axisOrigin.z,
+            axisDirection.x, axisDirection.y, axisDirection.z,
+            radius, mode, p0, p1)
+        return CylindricalHoleStatus(rawValue: raw) ?? .unknown
+    }
 
     /// Drill a through cylindrical hole in this shape.
     ///
-    /// Uses BRepFeat_MakeCylindricalHole::Perform to create a through-all hole.
+    /// Uses `BRepFeat_MakeCylindricalHole::Perform`, whose cylinder is **infinite in both
+    /// directions**: the axis origin anchors the axis rather than starting the hole. For a hole
+    /// bounded by the stock's own faces, prefer
+    /// ``cylindricalHole(axisOrigin:axisDirection:radius:extent:)`` with
+    /// ``CylindricalHoleExtent/untilEnd``.
+    ///
     /// - Parameters:
     ///   - axisOrigin: Origin point of the hole axis.
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
     /// - Returns: Shape with hole, or nil on failure.
     public func cylindricalHole(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape? {
-        guard let ref = OCCTBRepFeatCylindricalHole(handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            radius) else { return nil }
-        return Shape(handle: ref)
+        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                        radius: radius, extent: .throughAll)
     }
 
     /// Drill a blind cylindrical hole in this shape.
     ///
-    /// Uses BRepFeat_MakeCylindricalHole::PerformBlind for a partial-depth hole.
+    /// Uses `BRepFeat_MakeCylindricalHole::PerformBlind` for a partial-depth hole, `depth` measured
+    /// from the axis origin. A depth that would leave the far side of the stock is refused, not
+    /// drilled through — see ``CylindricalHoleStatus/holeTooLong``.
+    ///
     /// - Parameters:
     ///   - axisOrigin: Origin point of the hole axis.
     ///   - axisDirection: Direction of the hole axis.
@@ -10923,50 +11095,38 @@ extension Shape {
     ///   - depth: Hole depth.
     /// - Returns: Shape with hole, or nil on failure.
     public func cylindricalHoleBlind(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double, depth: Double) -> Shape? {
-        guard let ref = OCCTBRepFeatCylindricalHoleBlind(handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            radius, depth) else { return nil }
-        return Shape(handle: ref)
+        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                        radius: radius, extent: .blind(depth: depth))
     }
 
     /// Drill a cylindrical hole through to the next face.
     ///
-    /// Uses BRepFeat_MakeCylindricalHole::PerformThruNext.
+    /// Uses `BRepFeat_MakeCylindricalHole::PerformThruNext`.
     /// - Parameters:
     ///   - axisOrigin: Origin point of the hole axis.
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
     /// - Returns: Shape with hole, or nil on failure.
     public func cylindricalHoleThruNext(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> Shape? {
-        guard let ref = OCCTBRepFeatCylindricalHoleThruNext(handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            radius) else { return nil }
-        return Shape(handle: ref)
+        cylindricalHole(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                        radius: radius, extent: .thruNext)
     }
 
-    /// Status result for cylindrical hole operations.
-    public enum CylindricalHoleStatus: Int32, Sendable {
-        case noError = 0
-        case invalidPlacement = 1
-        case holeTooLong = 2
-        case unknown = 3
-    }
-
-    /// Check the status of a cylindrical hole operation without modifying the shape.
+    /// Check the status of a through-all cylindrical hole operation without modifying the shape.
+    ///
+    /// Answers for ``CylindricalHoleExtent/throughAll`` only. Pass the extent you are actually about
+    /// to drill to ``cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)`` — this
+    /// spelling reports `.noError` for requests that ``cylindricalHoleThruNext(axisOrigin:axisDirection:radius:)``
+    /// and ``cylindricalHoleBlind(axisOrigin:axisDirection:radius:depth:)`` then refuse.
     ///
     /// - Parameters:
     ///   - axisOrigin: Origin point of the hole axis.
     ///   - axisDirection: Direction of the hole axis.
     ///   - radius: Hole radius.
-    /// - Returns: Status indicating whether the hole can be drilled.
+    /// - Returns: Status indicating whether the through-all hole can be drilled.
     public func cylindricalHoleStatus(axisOrigin: SIMD3<Double>, axisDirection: SIMD3<Double>, radius: Double) -> CylindricalHoleStatus {
-        let raw = OCCTBRepFeatCylindricalHoleStatus(handle,
-            axisOrigin.x, axisOrigin.y, axisOrigin.z,
-            axisDirection.x, axisDirection.y, axisDirection.z,
-            radius)
-        return CylindricalHoleStatus(rawValue: raw) ?? .unknown
+        cylindricalHoleStatus(axisOrigin: axisOrigin, axisDirection: axisDirection,
+                              radius: radius, extent: .throughAll)
     }
 
     // MARK: - BRepFeat_Gluer (v0.71.0)

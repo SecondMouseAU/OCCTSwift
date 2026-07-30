@@ -951,6 +951,80 @@ Also: `OSD_Path` and `OSD_Environment` gained the cross-reference index entries 
 and the four `OCCTOSDPath*` string accessors, four copies of construct-read-`strdup`, share one
 helper.
 
+#### One skeleton behind the cylindrical-hole family, one set of drilling preconditions — and the two drills kept apart on purpose (#496)
+
+The audit read `Shape.drilled(at:direction:radius:depth:)` (`BRepPrimAPI_MakeCylinder` +
+`BRepAlgoAPI_Cut`, with a bounding-box-diagonal length for through holes) as a cruder
+reimplementation of the `BRepFeat_MakeCylindricalHole` family, and proposed folding the first into
+the second. **Measuring both against the pinned kernel says that would not be a refactor**
+([`Scripts/repro/496-drill-hole-contracts/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/496-drill-hole-contracts)):
+six of thirteen probed requests change answer, all in the direction of losing work that currently
+succeeds.
+
+- **`Perform` is an *infinite* cylinder, both ways along the axis.** The origin anchors the axis; it
+  is not where the hole starts. Drilling "down" from a plate's own midplane, the boolean path removes
+  the 10mm below the origin and `Perform` removes all 20.
+- **`PerformUntilEnd` is not forward-only either**, despite documenting itself as "every hole located
+  after the origin". It uses `LocalizeAfter(0.)` only to pick the starting intersection and then
+  resets backwards to the entry face.
+- **`PerformBlind` refuses a depth that leaves the stock** (`BRepFeat_HoleTooLong`) where the boolean
+  path treats the overshoot as harmless and drills through. Passing a depth comfortably past the far
+  face is a normal way to drill through without computing the thickness.
+- **The feature drill wants a solid.** A shell or a face is `InvalidPlacement` for every mode but
+  `Perform`.
+
+So the two stay. What they now share is the one thing they genuinely should — the preconditions on a
+drilling request — and `drilled`'s documentation says plainly which to reach for and why.
+
+**The precondition that was missing from both.** `OCCTShapeDrillHole` guarded `radius <= 0`; the
+feature family guarded nothing. Neither caught a *positive but sub-tolerance* radius, and the kernel
+is a Release build, so its own `*_Raise_if` checks are compiled out by `No_Exception` (#487). Measured:
+a radius of 0 or 1e-14 makes every `BRepFeat_MakeCylindricalHole` mode report `BRepFeat_NoError` and
+return a shape identical to the input — same volume, same six faces, no material removed. Both
+families now share `occtValidDrillRadius` (must exceed `Precision::Confusion`) and
+`occtValidDrillDirection`; the latter is the guard #496 flagged, which the feature family had only by
+accident, via `gp_Dir`'s throw landing in its own `catch (...)`.
+
+**Four bodies to one.** The four `OCCTBRepFeatCylindricalHole*` functions were the same
+Init/Perform\*/Status/Build body four times, three differing by a single `Perform*` line and the
+fourth being the third with the `Build` deleted. They are now one `occtBRepFeatCylindricalHole`
+skeleton in `OCCTBridge_Internal.h` behind two bridge entry points (6 → 2 C functions), which is also
+what makes the status honest.
+
+**New: `Shape.CylindricalHoleExtent`, and a status query that answers about the extent you asked
+for.** `cylindricalHoleStatus` wrapped `Perform` no matter what the caller was about to drill, so it
+was a false green: a radius wider than the whole solid is `.noError` for through-all and
+`.invalidPlacement` for thru-next. And `BRepFeat_HoleTooLong` is written in exactly two places in the
+kernel, both inside `PerformBlind` — so `.holeTooLong` was a Swift enum case **no public spelling
+could produce**. `cylindricalHole(axisOrigin:axisDirection:radius:extent:)` and
+`cylindricalHoleStatus(axisOrigin:axisDirection:radius:extent:)` take the extent; status is
+`.noError` if and only if the matching drill returns a shape.
+
+The extent enum also fills the two unwrapped modes: `.untilEnd` (`PerformUntilEnd` — the
+stock-bounded through hole callers reach for `.throughAll` expecting) and `.range(from:to:)` (the
+ranged `Perform`). The four v0.71.0 methods are unchanged in behaviour and now forward onto the
+unified spelling; no existing call site needs editing.
+
+**A wrong answer found and documented, not fixed.** `PerformUntilEnd` and the ranged `Perform` both
+end in an `nbparts >= 2` branch that keeps exactly one part of the cutting tool. Across a stack of two
+solids the kept part can be one that intersects nothing, and the operation then reports
+`BRepFeat_NoError` while removing **no material at all**, having only imprinted the cylinder's faces.
+`Perform` and the boolean drill both cut every body. This is kernel behaviour and out of scope here,
+filed as #532; it carries a `- Warning:` on both extents and is pinned by a test so a kernel bump is
+noticed. The
+ranged overload's parameters were also measured rather than assumed: the window selects **which
+entry/exit face pair** bounds the hole, it does not trim the cut, so a window strictly inside one body
+still drills through all of it.
+
+`Issue496CylindricalHoleTests` (`Tests/OCCTModelingTests`), 13 tests. Seven were run against the
+unmodified bridge first (the #489 lesson) and five of those already passed — the divergences the fix
+documents rather than repairs. Both repairs were confirmed by injecting the old behaviour back and
+watching the suite fail. A thirteenth, added during review, sweeps blind depths tight around the
+plate's exact exit-face parameter: the status query short-circuits before `Build()` runs, so it can
+only ever see `PerformBlind`'s a priori `HoleTooLong` check, never `Validate()`'s post-hoc one — the
+two are independent computations that could in principle disagree right at the boundary. Measured:
+they agree, closing the gap rather than finding a live divergence.
+
 ---
 
 ## Release History
