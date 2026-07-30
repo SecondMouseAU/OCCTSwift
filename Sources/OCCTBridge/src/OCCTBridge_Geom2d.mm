@@ -102,14 +102,11 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 
-// Radius precondition for the 2D circle factories. Curve2D builds a circle from a centre and a
-// radius through two entry points — OCCTCurve2DCreateCircle (direct Geom2d_Circle construction)
-// and OCCTGceMakeCirc2dFromCenterRadius (gce_MakeCirc2d) — and gce_MakeCirc2d accepts
-// Radius >= 0, so before #411 the gce path returned a live, degenerate zero-radius circle where
-// the direct path returned null for the identical input. One definition, both entry points.
-static inline bool occtValidCircle2dRadius(double radius) {
-    return radius > 0;
-}
+// The conic dimension preconditions this file's factories share with Curve3D's
+// (occtValidCircleRadius, occtValidEllipseRadii, occtValidHyperbolaRadii, occtValidParabolaFocal)
+// live in OCCTBridge_Internal.h. #411 introduced a 2D-suffixed copy of the circle one here, which
+// is how the 2D ellipse/hyperbola/parabola factories ended up skipped by both #411 and #399's
+// otherwise-identical pass over the 3D side; #487 converged them.
 
 // One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
 // solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and OCCTPoint2DDistanceToCurve.
@@ -2883,7 +2880,7 @@ OCCTExtremaLocateExtCC2dResult OCCTExtremaLocateExtCC2d(OCCTCurve2DRef curve1, d
 // MARK: - gce_Make Circ2d / Lin2d / Elips2d / Hypr2d / Parab2d (v0.80)
 OCCTCurve2DRef _Nullable OCCTGceMakeCirc2dFromCenterRadius(double cx, double cy, double radius) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gce_MakeCirc2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
         Handle(Geom2d_Circle) circ = new Geom2d_Circle(mc.Value());
@@ -2925,6 +2922,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeElips2d(double cx, double cy,
                                              double dirX, double dirY,
                                              double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeElips2d me(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
         Handle(Geom2d_Ellipse) elips = new Geom2d_Ellipse(me.Value());
@@ -2936,6 +2934,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeHypr2d(double cx, double cy,
                                              double dirX, double dirY,
                                              double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gce_MakeHypr2d mh(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), majorRadius, minorRadius, true);
         if (!mh.IsDone()) return nullptr;
         Handle(Geom2d_Hyperbola) hypr = new Geom2d_Hyperbola(mh.Value());
@@ -2947,6 +2946,7 @@ OCCTCurve2DRef _Nullable OCCTGceMakeParab2d(double cx, double cy,
                                               double dirX, double dirY,
                                               double focal) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gce_MakeParab2d mp(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dirX, dirY)), focal);
         if (!mp.IsDone()) return nullptr;
         Handle(Geom2d_Parabola) parab = new Geom2d_Parabola(mp.Value());
@@ -5009,7 +5009,7 @@ OCCTCurve2DRef OCCTCurve2DCreateSegment(double p1x, double p1y, double p2x, doub
 
 OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5022,7 +5022,7 @@ OCCTCurve2DRef OCCTCurve2DCreateCircle(double cx, double cy, double radius) {
 OCCTCurve2DRef OCCTCurve2DCreateArcOfCircle(double cx, double cy, double radius,
                                             double startAngle, double endAngle) {
     try {
-        if (!occtValidCircle2dRadius(radius)) return nullptr;
+        if (!occtValidCircleRadius(radius)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Ax2d axis(center, gp_Dir2d(1, 0));
         Handle(Geom2d_Circle) circle = new Geom2d_Circle(axis, radius);
@@ -5051,7 +5051,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcThrough(double p1x, double p1y,
 OCCTCurve2DRef OCCTCurve2DCreateEllipse(double cx, double cy,
                                         double majorR, double minorR, double rotation) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5067,7 +5067,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfEllipse(double cx, double cy,
                                              double rotation,
                                              double startAngle, double endAngle) {
     try {
-        if (majorR <= 0 || minorR <= 0 || minorR > majorR) return nullptr;
+        if (!occtValidEllipseRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5082,7 +5082,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfEllipse(double cx, double cy,
 OCCTCurve2DRef OCCTCurve2DCreateParabola(double fx, double fy,
                                          double dx, double dy, double focal) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Pnt2d mirrorP(fx - dx * focal, fy - dy * focal);
         gp_Dir2d dir(dx, dy);
         gp_Ax2d axis(mirrorP, dir);
@@ -5097,7 +5097,7 @@ OCCTCurve2DRef OCCTCurve2DCreateHyperbola(double cx, double cy,
                                           double majorR, double minorR,
                                           double rotation) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5798,7 +5798,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfHyperbola(double cx, double cy,
                                                double rotation,
                                                double startAngle, double endAngle) {
     try {
-        if (majorR <= 0 || minorR <= 0) return nullptr;
+        if (!occtValidHyperbolaRadii(majorR, minorR)) return nullptr;
         gp_Pnt2d center(cx, cy);
         gp_Dir2d majorDir(cos(rotation), sin(rotation));
         gp_Ax22d axes(center, majorDir);
@@ -5814,7 +5814,7 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx, double fy,
                                               double dx, double dy, double focal,
                                               double startParam, double endParam) {
     try {
-        if (focal <= 0) return nullptr;
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Pnt2d mirrorP(fx - dx * focal, fy - dy * focal);
         gp_Dir2d dir(dx, dy);
         gp_Ax2d axis(mirrorP, dir);

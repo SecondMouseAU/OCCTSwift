@@ -1209,9 +1209,10 @@ public static func ellipseFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center point; `direction` — unit direction of the major axis; `majorRadius`/`minorRadius` — semi-axes.
-- **Returns:** `Curve2D` (ellipse), or `nil` if radii are non-positive.
+- **Parameters:** `center` — center point; `direction` — unit direction of the major axis; `majorRadius`/`minorRadius` — semi-axes (both must be > 0, and `minorRadius` no larger than `majorRadius`).
+- **Returns:** `Curve2D` (ellipse), or `nil` if either radius is non-positive or `minorRadius` exceeds `majorRadius`.
 - **OCCT:** `gce_MakeElips2d`.
+- **Note:** Geometrically identical to [`ellipse(center:majorRadius:minorRadius:rotation:)`](Curve2D.md), which takes the major-axis direction as a rotation angle, and since #487 enforces the same radius precondition. This page documented the rejection before #487, but only the direct factory performed it: `gce_MakeElips2d` accepted zero radii and, for `majorRadius: 5, minorRadius: -3`, returned an ellipse reporting a minor radius of -3. Equal radii remain valid.
 - **Example:**
   ```swift
   if let e = Curve2D.ellipseFromCenterDir(
@@ -1219,6 +1220,9 @@ public static func ellipseFromCenterDir(
       majorRadius: 5, minorRadius: 3) {
       print(e.ellipseProperties.majorRadius)
   }
+  // Degenerate dimensions are rejected, matching the direct factory.
+  Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+                               majorRadius: 0, minorRadius: 0)  // nil
   ```
 
 ---
@@ -1234,9 +1238,10 @@ public static func hyperbolaFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — center; `direction` — unit direction of the real axis; `majorRadius`/`minorRadius` — real and imaginary semi-axes.
-- **Returns:** `Curve2D` (hyperbola), or `nil` on failure.
+- **Parameters:** `center` — center; `direction` — unit direction of the real axis; `majorRadius`/`minorRadius` — real and imaginary semi-axes (both must be > 0, in either order).
+- **Returns:** `Curve2D` (hyperbola), or `nil` if either radius is non-positive.
 - **OCCT:** `gce_MakeHypr2d`.
+- **Note:** Geometrically identical to [`hyperbola(center:majorRadius:minorRadius:rotation:)`](Curve2D.md), which takes the real-axis direction as a rotation angle, and since #487 enforces the same radius precondition. OCCT itself accepts zero radii through both routes, so the rejection is the bridge's contract, not OCCT's. Unlike an ellipse, a hyperbola puts no ordering on its radii: a minor radius larger than the major is an ordinary hyperbola and is accepted.
 - **Example:**
   ```swift
   if let h = Curve2D.hyperbolaFromCenterDir(
@@ -1244,6 +1249,9 @@ public static func hyperbolaFromCenterDir(
       majorRadius: 4, minorRadius: 3) {
       print(h.hyperbolaProperties.eccentricity)
   }
+  // Degenerate dimensions are rejected, matching the direct factory.
+  Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+                                 majorRadius: 6, minorRadius: 0)  // nil
   ```
 
 ---
@@ -1259,15 +1267,18 @@ public static func parabolaFromCenterDir(
 ) -> Curve2D?
 ```
 
-- **Parameters:** `center` — vertex of the parabola; `direction` — axis direction; `focal` — focal distance.
-- **Returns:** `Curve2D` (parabola), or `nil` on failure.
+- **Parameters:** `center` — vertex of the parabola; `direction` — axis direction; `focal` — focal distance (must be > 0).
+- **Returns:** `Curve2D` (parabola), or `nil` if `focal ≤ 0`.
 - **OCCT:** `gce_MakeParab2d`.
+- **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + direction * focal`, and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
 - **Example:**
   ```swift
   if let p = Curve2D.parabolaFromCenterDir(
       center: .zero, direction: SIMD2(1, 0), focal: 2) {
       print(p.parabolaProperties.focal)  // 2.0
   }
+  // A zero focal length is a line, not a parabola.
+  Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 0)  // nil
   ```
 
 ---
