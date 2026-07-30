@@ -206,6 +206,70 @@ separately. The 3D equivalents are unsurveyed, as #514 noted.
 build with every guard stripped back out: the 10 rejection tests fail, and the 8 that pin valid
 input (including "a hyperbola may have minor > major" and the coefficient order) still pass.
 
+#### The null-handle guard, swept across the whole geometry-wrapper surface (#478)
+
+#416 added the missing `IsNull()` guard to `OCCTCurve3DTransform` and #488 to
+`OCCTSurfaceTransform`; #478 asked whether the same shape existed elsewhere rather than fixing a
+third site alone. It did, in **14 bridge functions**, found by walking every function that takes an
+`OCCTCurve3DRef` / `OCCTCurve2DRef` / `OCCTSurfaceRef` and dereferences the handle it carries:
+
+| file | functions |
+|---|---|
+| `OCCTBridge_Curve3D.mm` | `StartPoint`, `EndPoint`, `Reverse`, `Copy`, `Period`, `FirstParameter`, `LastParameter` |
+| `OCCTBridge_Geom2d.mm` | `Reverse`, `Copy`, `Transform` |
+| `OCCTBridge_Surface.mm` | `Bounds`, `Copy`, `UPeriod`, `VPeriod` |
+
+Each checked the wrapper pointer and then dereferenced the `Handle` inside it. Their own siblings,
+in the same files, check both. `OCCTCurve3DStartPoint` and `OCCTCurve3DEndPoint` had no guard at
+all, not even the wrapper. All 14 now open with `if (!x || x->handle.IsNull())`. These are
+uncatchable: the enclosing `catch (...)` cannot intercept a signal, and the kernel's own
+`Standard_NullObject` preconditions are compiled out of this `No_Exception` build.
+
+**Still latent, and now measured rather than assumed.** All **228** sites that bind a handle into an
+`OCCTCurve3D` / `OCCTCurve2D` / `OCCTSurface` wrapper were classified:
+
+| how the handle is obtained | sites |
+|---|---|
+| a local the same function already `IsNull()`-checked | 97 |
+| a maker result behind `IsDone()` | 58 |
+| `new Geom_*` / `new GeomEval_*` / `new Bisector_*` (never null) | 50 |
+| a `Copy()` / `Reversed()` down-cast | 18 |
+| OCCT contract, built from an input already checked | 5 |
+
+The last five are `GeomConvert_BSplineCurveToBezierCurve::Arc` (twice),
+`GeomConvert_CompCurveToBSplineCurve::BSplineCurve`, `Geom2dConvert_ApproxArcsSegments::GetResult`
+and `Geom_TrimmedCurve::BasisCurve`: each is constructed from a handle the caller checked, so none
+can return null there, but that rests on the class's contract rather than a check at the site. No
+bridge call hands back a wrapper carrying a null handle, so nothing here closes a reachable crash.
+The cost asymmetry is the argument: one condition against a SIGSEGV.
+
+The sweep also found a **second, larger class it does not fix**: 49 functions guard the wrapper and
+then pass the unchecked handle to an OCCT API that dereferences it internally, 28 of them without
+even the wrapper check (`Geom2dAdaptor_Curve adaptor(c->curve)`, `new Geom_TrimmedCurve(basis->curve,
+...)`, and so on). Same crash, one hop further out, equally latent. Filed separately rather than
+folded in here.
+
+**Curve2D's two transform families now share one `buildTrsf2D`**, which is why its dispatcher had
+drifted in the first place. It was the last of the three geometry types still duplicating the
+construction, after `Curve3D` (#416) and `Surface` (#488). The five immutable functions
+(`OCCTCurve2DTranslate`, `Rotate`, `Scale`, `MirrorAxis`, `MirrorPoint`) reached it through
+`Geom2d_Geometry`'s per-operation convenience methods while the in-place `OCCTCurve2DTransform`
+built its own `gp_Trsf2d`, composing the scale case by hand as
+`SetScaleFactor(S)` + `SetTranslationPart(C * (1 - S))` where the other family used
+`gp_Trsf2d::SetScale(C, S)`. Verified equivalent before switching, over factors
+`{2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9}` against three centres including `(1e6, 1e-6)`: identical
+scale factor, identical translation part, identical transformed coordinates, to the bit. They
+disagree only on the internal `gp_TrsfForm` tag at `S = 1` and `S = -1`, which is a dispatch hint,
+not a result.
+
+Two new suites in `Tests/OCCTGeom2dTests`, because one is not enough. `Issue478Curve2DTransform`
+`ParityTests` holds the two families together across all five kinds, on a segment and on a Bezier.
+`Issue478Curve2DTransformGeometryTests` checks each transform against coordinates computed in
+Swift, with no bridge call in the expectation. Both were run against injected defects: a
+one-family drift fails the parity suite, while a defect inside the shared `buildTrsf2D` moves both
+families identically and leaves the parity suite entirely green, failing only the geometry suite.
+A parity assertion stops being evidence the moment the thing it compares becomes shared.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each

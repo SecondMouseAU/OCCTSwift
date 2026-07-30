@@ -3927,7 +3927,7 @@ int32_t OCCTConic2dLineCircleIntersect(double lpx, double lpy, double ldx, doubl
 // MARK: - Curve2D Extras (v0.109.0)
 
 bool OCCTCurve2DReverse(OCCTCurve2DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;   // #478
     try {
         curve->curve->Reverse();
         return true;
@@ -3935,7 +3935,7 @@ bool OCCTCurve2DReverse(OCCTCurve2DRef curve) {
 }
 
 OCCTCurve2DRef OCCTCurve2DCopy(OCCTCurve2DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;  // #478
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(curve->curve->Copy());
         if (copy.IsNull()) return nullptr;
@@ -4717,31 +4717,55 @@ bool OCCTCurve2DBezierReverse(OCCTCurve2DRef curve) {
         return true;
     } catch (...) { return false; }
 }
+// === #478: one gp_Trsf2d builder behind both Curve2D transform families ===
+//
+// Curve2D has the same two-family shape as Curve3D (#416) and Surface (#488): an in-place
+// mutating dispatcher (OCCTCurve2DTransform, taking a transformType selector) and an immutable
+// OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
+// copy. Both build the same five transformations; each family built them its own way, so the
+// two could drift, and had already drifted on the null guard below. They share this builder now,
+// mirroring buildTrsf3D in OCCTBridge_Curve3D.mm / OCCTBridge_Surface.mm.
+//
+// The scale case is the only one whose construction changes. The dispatcher used to compose it
+// by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
+// what the immutable family reached through Geom2d_Geometry::Scale, and what buildTrsf3D uses.
+// Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
+// centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
+// transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at
+// S = 1 (gp_Scale vs gp_Identity) and S = -1 (gp_Scale vs gp_PntMirror), which is a dispatch hint,
+// not a result: transforming a real BSpline curve through both gives identical poles.
+static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type,
+                         double p1, double p2, double p3, double p4) {
+    switch (type) {
+        case 0: // translation (dx, dy)
+            trsf.SetTranslation(gp_Vec2d(p1, p2));
+            return true;
+        case 1: // rotation (cx, cy, angle)
+            trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
+            return true;
+        case 2: // scale (cx, cy, factor)
+            trsf.SetScale(gp_Pnt2d(p1, p2), p3);
+            return true;
+        case 3: // mirror point (px, py)
+            trsf.SetMirror(gp_Pnt2d(p1, p2));
+            return true;
+        case 4: // mirror axis (ox, oy, dx, dy)
+            trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
+            return true;
+        default:
+            return false;
+    }
+}
+
 bool OCCTCurve2DTransform(OCCTCurve2DRef curve, int32_t transformType,
                            double p1, double p2, double p3, double p4, double p5) {
-    if (!curve) return false;
+    // #478: the handle as well as the wrapper. Geom2d_Curve::Transform is a kernel virtual, so
+    // its Standard_NullObject precondition is compiled out of this No_Exception build and a null
+    // handle is a raw dereference; the enclosing catch cannot intercept the resulting signal.
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         gp_Trsf2d trsf;
-        switch (transformType) {
-            case 0: // translation (dx, dy)
-                trsf.SetTranslation(gp_Vec2d(p1, p2));
-                break;
-            case 1: // rotation (cx, cy, angle)
-                trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
-                break;
-            case 2: // scale (cx, cy, factor)
-                trsf.SetScaleFactor(p3);
-                trsf.SetTranslationPart(gp_Vec2d(p1 * (1.0 - p3), p2 * (1.0 - p3)));
-                break;
-            case 3: // mirror point (px, py)
-                trsf.SetMirror(gp_Pnt2d(p1, p2));
-                break;
-            case 4: // mirror axis (ox, oy, dx, dy)
-                trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
-                break;
-            default:
-                return false;
-        }
+        if (!buildTrsf2D(trsf, transformType, p1, p2, p3, p4)) return false;
         curve->curve->Transform(trsf);
         return true;
     } catch (...) { return false; }
@@ -5356,12 +5380,17 @@ OCCTCurve2DRef OCCTCurve2DReversed(OCCTCurve2DRef c) {
     }
 }
 
+// #478: the five immutable transforms share buildTrsf2D with the in-place
+// OCCTCurve2DTransform dispatcher (defined above) rather than each building its own
+// transformation, so the two families cannot drift apart on the transform math.
+
 OCCTCurve2DRef OCCTCurve2DTranslate(OCCTCurve2DRef c, double dx, double dy) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Vec2d v(dx, dy);
-        copy->Translate(v);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 0, dx, dy, 0, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5372,8 +5401,9 @@ OCCTCurve2DRef OCCTCurve2DRotate(OCCTCurve2DRef c, double cx, double cy, double 
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d center(cx, cy);
-        copy->Rotate(center, angle);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 1, cx, cy, angle, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5384,8 +5414,9 @@ OCCTCurve2DRef OCCTCurve2DScale(OCCTCurve2DRef c, double cx, double cy, double f
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d center(cx, cy);
-        copy->Scale(center, factor);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 2, cx, cy, factor, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5397,8 +5428,9 @@ OCCTCurve2DRef OCCTCurve2DMirrorAxis(OCCTCurve2DRef c, double px, double py,
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Ax2d axis(gp_Pnt2d(px, py), gp_Dir2d(dx, dy));
-        copy->Mirror(axis);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 4, px, py, dx, dy)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;
@@ -5409,8 +5441,9 @@ OCCTCurve2DRef OCCTCurve2DMirrorPoint(OCCTCurve2DRef c, double px, double py) {
     if (!c || c->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Curve) copy = Handle(Geom2d_Curve)::DownCast(c->curve->Copy());
-        gp_Pnt2d pt(px, py);
-        copy->Mirror(pt);
+        gp_Trsf2d trsf;
+        if (!buildTrsf2D(trsf, 3, px, py, 0, 0)) return nullptr;
+        copy->Transform(trsf);
         return new OCCTCurve2D(copy);
     } catch (...) {
         return nullptr;

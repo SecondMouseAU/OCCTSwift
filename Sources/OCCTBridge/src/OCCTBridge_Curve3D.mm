@@ -2814,6 +2814,10 @@ OCCTCurve3DRef OCCTCurve3DTrimmed(OCCTCurve3DRef basisCurve, double u1, double u
 }
 
 void OCCTCurve3DStartPoint(OCCTCurve3DRef curve, double* x, double* y, double* z) {
+    // #478: these two were the only pair in the family with no guard at all, not even the
+    // wrapper pointer. Zero out first so the guarded exit matches the catch below.
+    *x = 0; *y = 0; *z = 0;
+    if (!curve || curve->curve.IsNull()) return;
     try {
         gp_Pnt p = curve->curve->Value(curve->curve->FirstParameter());
         *x = p.X(); *y = p.Y(); *z = p.Z();
@@ -2821,6 +2825,8 @@ void OCCTCurve3DStartPoint(OCCTCurve3DRef curve, double* x, double* y, double* z
 }
 
 void OCCTCurve3DEndPoint(OCCTCurve3DRef curve, double* x, double* y, double* z) {
+    *x = 0; *y = 0; *z = 0;   // #478, as above
+    if (!curve || curve->curve.IsNull()) return;
     try {
         gp_Pnt p = curve->curve->Value(curve->curve->LastParameter());
         *x = p.X(); *y = p.Y(); *z = p.Z();
@@ -4048,7 +4054,7 @@ int32_t OCCTExtremaExtPElCParab(double px, double py, double pz,
 // MARK: - Curve3D Extras (v0.109.0)
 
 bool OCCTCurve3DReverse(OCCTCurve3DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;   // #478
     try {
         curve->curve->Reverse();
         return true;
@@ -4056,7 +4062,7 @@ bool OCCTCurve3DReverse(OCCTCurve3DRef curve) {
 }
 
 OCCTCurve3DRef OCCTCurve3DCopy(OCCTCurve3DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;  // #478
     try {
         Handle(Geom_Curve) copy = Handle(Geom_Curve)::DownCast(curve->curve->Copy());
         if (copy.IsNull()) return nullptr;
@@ -4937,7 +4943,7 @@ bool OCCTCurve3DBSplineMovePointAndTangent(OCCTCurve3DRef curve, double u,
 // --- Curve3D queries ---
 
 double OCCTCurve3DPeriod(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try {
         if (!curve->curve->IsPeriodic()) return 0.0;
         return curve->curve->Period();
@@ -4945,12 +4951,12 @@ double OCCTCurve3DPeriod(OCCTCurve3DRef curve) {
 }
 
 double OCCTCurve3DFirstParameter(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try { return curve->curve->FirstParameter(); } catch (...) { return 0.0; }
 }
 
 double OCCTCurve3DLastParameter(OCCTCurve3DRef curve) {
-    if (!curve) return 0.0;
+    if (!curve || curve->curve.IsNull()) return 0.0;   // #478
     try { return curve->curve->LastParameter(); } catch (...) { return 0.0; }
 }
 // --- Geom_BezierCurve completions ---
