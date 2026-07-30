@@ -1617,9 +1617,9 @@ all override-linked, which proves the patch compiles and works, not that it ship
 cases in `repro_484_crash.mm` complete where they were killed by SIGSEGV before, and all four
 `ctx=yes` fingerprints in `repro_484_equivalence.mm` are unchanged (now recorded as reference values
 in [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context)).
-Full `swift test`: 4642 tests in 1318 suites, clean. `Scripts/tsan-stress.sh` was not run and is not
-required, since `0017` is a null-handle guard on a single-threaded path and touches no concurrency
-surface.
+Full `swift test`: 4666 tests in 1322 suites, clean. `0017` itself needs no ThreadSanitizer gate,
+being a null-handle guard on a single-threaded path, but the gate did run for the `0016` redesign
+below, which ships in the same rebuild.
 
 `Package.swift`'s remote `url:`/`checksum:` pin and the kernel-patch list on the `## Current:` line
 above are the **release commit's** job, not this change's: until then a consumer resolving the remote
@@ -1628,6 +1628,38 @@ path-depending on its `Libraries/OCCT.xcframework` get the new one. `docs/guides
 gained a "Shipping a rebuild" section covering that sequence, which until now existed only as
 hand-written checklists in issues. Patch `0016` (#374) also gained the
 `Scripts/patches/README.md` entry it never got.
+
+### `Storage_Schema`'s scratch state becomes a member instead of a guarded global (#518)
+
+Patch `0016` (#374) fixed two kernel races: `Resource_Manager::Debug` became `std::atomic<bool>`, and
+`Storage_Schema::ICurrentData()`, a function-local `static Handle(Storage_Data)` shared by every
+`Storage_Schema` in the process, was guarded by a new recursive mutex held across `Write()` and every
+internal accessor. Reviewing our upstream PR
+[OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399#issuecomment-5112586065), maintainer
+gkv311 pointed out the second half should not need a lock at all: the handle can just be a
+`mutable Handle(Storage_Data)` field on the class.
+
+That holds up. **Every** `Storage_Schema` in the kernel is constructed locally by its caller and used
+only there (`PCDM_StorageDriver::Write`, and `PCDM_ReadWriter_1` at three sites); none is cached or
+shared, and `Storage_CallBack::Add`/`Write`/`Read` all take the driving schema as an argument, so
+every callback re-entry lands back on the same instance. The state was per-instance data
+masquerading as a global. `0016` now deletes the static and the mutex in favour of the field, and
+also drops the `static` from `AddPersistent()`'s `TCollection_AsciiString aTypeName` scratch
+variable, a smaller hazard in the same class that the mutex had covered incidentally. Both
+`ICurrentData()` and `ISetCurrentData()` were private with no callers outside the class, so nothing
+observable changes.
+
+Same correction, and the same lesson, as #341 to #363: a lock is the right tool only when the state
+is genuinely one shared resource. It is also strictly stronger on the failure #374 reported, since a
+throwaway schema built during an unrelated `Open()` can no longer reach an in-flight `Write()`'s data
+at all, where the mutex only stopped it from being a data race.
+
+No OCCTSwift API or behaviour change, and the patch number stays `0016` (a corrected design, not a
+new fix), renamed to `...-Storage_Schema-per-instance-374.patch`. Verified with the same #374
+ThreadSanitizer harness the mutex version was verified against: 0 races and 0 save/load/verify
+failures at 8×50, 8×30 and 10×60, plus the full `Scripts/tsan-stress.sh run` gate (10 scenarios)
+clean. Ships in the same rebuild as #512 above. OCCT#1399 still carries the mutex version; updating
+it is the remaining half of #518.
 
 ---
 
