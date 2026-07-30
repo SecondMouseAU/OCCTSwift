@@ -936,11 +936,23 @@ aliases the input.
 | `shape.copy(copyGeometry:copyMesh:)` | `BRepBuilderAPI_Copy` |
 
 #### Sub-Shape Extraction (v0.38.0)
+
+One enumeration behind all of these: `TopExp::MapShapes` into a `TopTools_IndexedMapOfShape`, in
+`TopExp_Explorer` order, one entry per **distinct** sub-shape (`TopoDS_Shape::IsSame`: same
+geometry *and* placement, orientation ignored). A sub-shape reachable from two parents appears
+once; two placements of one body appear twice. (#502)
+
 | Swift API | OCCT Class |
 |-----------|------------|
-| `shape.solids` / `shape.solidCount` | `TopExp_Explorer(TopAbs_SOLID)` |
-| `shape.shells` / `shape.shellCount` | `TopExp_Explorer(TopAbs_SHELL)` |
-| `shape.wires` / `shape.wireCount` | `TopExp_Explorer(TopAbs_WIRE)` |
+| `shape.subShapeCount(ofType:)` / `shape.uniqueSubShapeCount(ofType:)` | `TopExp::MapShapes` |
+| `shape.subShape(type:index:)` / `shape.subShapes(ofType:)` | `TopExp::MapShapes` |
+| `shape.solids` / `shape.solidCount` | `TopExp::MapShapes(TopAbs_SOLID)` |
+| `shape.shells` / `shape.shellCount` | `TopExp::MapShapes(TopAbs_SHELL)` |
+| `shape.wires` / `shape.wireCount` | `TopExp::MapShapes(TopAbs_WIRE)` |
+| `shape.faceCount` / `shape.face(at:)` | `TopExp::MapShapes(TopAbs_FACE)` |
+| `shape.edgeCount` / `shape.edge(at:)` / `shape.edges()` | `TopExp::MapShapes(TopAbs_EDGE)` |
+| `shape.vertexCount` / `shape.vertices()` | `TopExp::MapShapes(TopAbs_VERTEX)` |
+| `shape.faces()` | `TopExp_Explorer(TopAbs_FACE)`: occurrences, not distinct faces (#541) |
 
 #### Shell Decomposition (outer body vs. cavities)
 | Swift API | OCCT Class |

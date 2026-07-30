@@ -515,21 +515,32 @@ public struct ImportResult: Sendable {
 
 ## Sub-Shape Extraction
 
+This is the one sub-shape enumeration in the API. `solids`/`shells`/`wires`, `faceCount`,
+`edgeCount`, `vertexCount`, `face(at:)`, `edge(at:)` and `uniqueSubShapeCount(ofType:)` all read it,
+so their answers agree with these by construction (#502). Each entry is a **distinct** sub-shape,
+meaning `TopoDS_Shape::IsSame`: same underlying geometry *and* same placement, orientation ignored.
+
 ### `subShapeCount(ofType:)`
 
-Returns the number of sub-shapes of a given topological type.
+Returns the number of distinct sub-shapes of a given topological type.
 
 ```swift
 public func subShapeCount(ofType type: ShapeType) -> Int
 ```
 
 - **Parameters:** `type` — the topological type to count (e.g. `.face`, `.edge`, `.vertex`).
-- **Returns:** Count of sub-shapes of that type.
+- **Returns:** Count of distinct sub-shapes of that type; `0` for `.unknown`.
 - **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapeCount`).
+- **Note:** A sub-shape reachable from more than one parent counts once: a box has 12 edges, not
+  the 24 edge-in-face occurrences a raw `TopExp_Explorer` walk yields. Two *placements* of one body
+  count twice, since the location is part of the comparison.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
-  print(box.subShapeCount(ofType: .face))  // 6
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.subShapeCount(ofType: .face))    // 6
+  print(box.subShapeCount(ofType: .edge))    // 12
+  print(box.subShapeCount(ofType: .vertex))  // 8
+  print(box.subShapeCount(ofType: .solid))   // 1, the box itself
   ```
 
 ---
@@ -553,15 +564,22 @@ Uses `TopExp::MapShapes` to enumerate sub-shapes of the given type.
 
 ### `subShapes(ofType:)`
 
-Returns all sub-shapes of a given topological type as an array.
+Returns all distinct sub-shapes of a given topological type as an array, in enumeration order.
 
 ```swift
 public func subShapes(ofType type: ShapeType) -> [Shape]
 ```
 
 - **Parameters:** `type` — topological type.
-- **Returns:** Array of all sub-shapes of that type (may be empty).
-- **OCCT:** Calls `subShapeCount` + `subShape(type:index:)` iteratively.
+- **Returns:** Array of all distinct sub-shapes of that type (may be empty).
+- **OCCT:** `TopExp::MapShapes` (via `OCCTShapeGetSubShapes`): one walk to size the buffer and one
+  to fill it, rather than one per element as reading `subShape(type:index:)` in a loop would cost.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.subShapes(ofType: .face).count)  // 6
+  print(box.subShapes(ofType: .edge).count)  // 12
+  ```
 
 ---
 

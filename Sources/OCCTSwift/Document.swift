@@ -12812,19 +12812,34 @@ extension Shape {
 }
 
 // --- Unique sub-shape counts ---
+//
+// Older spellings of the counts on `subShapeCount(ofType:)`, kept because they are public. The
+// "unique" in the name is not a distinction: every sub-shape count in this API reads the one
+// deduplicated enumeration, so these agree with `edgeCount`, `faceCount`, `vertexCount` and
+// `subShapeCount(ofType:)` by construction rather than by coincidence. (#502)
 
 extension Shape {
 
-    /// Number of unique edges in this shape.
+    /// Number of unique edges in this shape. Same value as ``edgeCount``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.uniqueEdgeCount == box.edgeCount)   // true, 12 either way
+    /// ```
     public var uniqueEdgeCount: Int { Int(OCCTShapeUniqueEdgeCount(handle)) }
 
-    /// Number of unique faces in this shape.
+    /// Number of unique faces in this shape. Same value as ``faceCount``.
     public var uniqueFaceCount: Int { Int(OCCTShapeUniqueFaceCount(handle)) }
 
-    /// Number of unique vertices in this shape.
+    /// Number of unique vertices in this shape. Same value as ``vertexCount``.
     public var uniqueVertexCount: Int { Int(OCCTShapeUniqueVertexCount(handle)) }
 
-    /// Count unique sub-shapes of a specific type.
+    /// Count unique sub-shapes of a specific type. Same value as ``subShapeCount(ofType:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.uniqueSubShapeCount(ofType: .wire))   // 6
+    /// ```
     public func uniqueSubShapeCount(ofType type: ShapeType) -> Int {
         Int(OCCTShapeUniqueSubShapeCount(handle, Int32(type.rawValue)))
     }

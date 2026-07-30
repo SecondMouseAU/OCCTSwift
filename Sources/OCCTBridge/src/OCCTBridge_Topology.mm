@@ -543,63 +543,7 @@ OCCTShapeRef OCCTShapeCopy(OCCTShapeRef shape, bool copyGeom, bool copyMesh) {
     }
 }
 
-// MARK: - Sub-Shape Extraction (v0.38.0)
-
-#include <TopExp_Explorer.hxx>
-
-int32_t OCCTShapeGetSolidCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetSolids(OCCTShapeRef shape, OCCTShapeRef* outSolids, int32_t maxCount) {
-    if (!shape || !outSolids || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More() && count < maxCount; exp.Next()) {
-        outSolids[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetShellCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount) {
-    if (!shape || !outShells || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_SHELL); exp.More() && count < maxCount; exp.Next()) {
-        outShells[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetWireCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_WIRE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeGetWires(OCCTShapeRef shape, OCCTShapeRef* outWires, int32_t maxCount) {
-    if (!shape || !outWires || maxCount <= 0) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_WIRE); exp.More() && count < maxCount; exp.Next()) {
-        outWires[count++] = new OCCTShape(exp.Current());
-    }
-    return count;
-}
+#include <TopExp_Explorer.hxx>   // still used by the shell-classification and traversal helpers below
 
 // MARK: - Memory Management
 
@@ -997,25 +941,42 @@ bool OCCTShapeFindPlane(OCCTShapeRef shape, double tolerance,
     }
 }
 // MARK: - Sub-Shape Extraction (fixes #36)
+//
+// The only sub-shape enumeration in the bridge; see occtMapSubShapes in OCCTBridge_Internal.h for
+// what it counts and why the TopExp_Explorer spellings that used to sit alongside it are gone (#502).
 
 int32_t OCCTShapeGetSubShapeCount(OCCTShapeRef shape, int32_t type) {
     if (!shape) return 0;
     try {
         TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, static_cast<TopAbs_ShapeEnum>(type), map);
-        return map.Extent();
+        return occtMapSubShapes(shape->shape, type, map);
+    } catch (...) {
+        return 0;
+    }
+}
+
+int32_t OCCTShapeGetSubShapes(OCCTShapeRef shape, int32_t type,
+                              OCCTShapeRef* outSubShapes, int32_t maxCount) {
+    if (!shape || !outSubShapes || maxCount <= 0) return 0;
+    try {
+        TopTools_IndexedMapOfShape map;
+        int32_t total = occtMapSubShapes(shape->shape, type, map);
+        int32_t count = total < maxCount ? total : maxCount;
+        for (int32_t i = 0; i < count; i++) {
+            outSubShapes[i] = new OCCTShape(map(i + 1));  // OCCT's indexed maps are 1-based
+        }
+        return count;
     } catch (...) {
         return 0;
     }
 }
 
 OCCTShapeRef OCCTShapeGetSubShapeByTypeIndex(OCCTShapeRef shape, int32_t type, int32_t index) {
-    if (!shape || index < 0) return nullptr;
+    if (!shape) return nullptr;
     try {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, static_cast<TopAbs_ShapeEnum>(type), map);
-        if (index >= map.Extent()) return nullptr;
-        return new OCCTShape(map(index + 1)); // OCCT uses 1-based indexing
+        TopoDS_Shape sub = occtSubShapeAt(shape->shape, type, index);
+        if (sub.IsNull()) return nullptr;
+        return new OCCTShape(sub);
     } catch (...) {
         return nullptr;
     }
@@ -3095,13 +3056,10 @@ bool OCCTShapeIsClosed(OCCTShapeRef shape) {
 
 #include <TopTools_IndexedMapOfShape.hxx>
 
+// A second spelling of OCCTShapeGetSubShapeCount, kept for its Swift callers; the count itself is
+// computed in exactly one place (#502).
 int32_t OCCTShapeUniqueSubShapeCount(OCCTShapeRef shape, int32_t type) {
-    if (!shape) return 0;
-    try {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(shape->shape, (TopAbs_ShapeEnum)type, map);
-        return (int32_t)map.Extent();
-    } catch (...) { return 0; }
+    return OCCTShapeGetSubShapeCount(shape, type);
 }
 // --- Convenience unique counts ---
 
@@ -4218,28 +4176,16 @@ OCCTShapeRef OCCTShapeFromEdge(OCCTEdgeRef edgeRef) {
 // MARK: - Face Index Access (Issue #13)
 
 int32_t OCCTShapeGetFaceCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    
-    try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        return faceMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_FACE);
 }
 
 OCCTFaceRef OCCTShapeGetFaceAtIndex(OCCTShapeRef shape, int32_t index) {
-    if (!shape || index < 0) return nullptr;
-    
+    if (!shape) return nullptr;
+
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        
-        if (index >= faceMap.Extent()) return nullptr;
-        
-        TopoDS_Face face = TopoDS::Face(faceMap(index + 1));  // OCCT is 1-based
-        return new OCCTFace(face);
+        TopoDS_Shape face = occtSubShapeAt(shape->shape, TopAbs_FACE, index);
+        if (face.IsNull()) return nullptr;
+        return new OCCTFace(TopoDS::Face(face));
     } catch (...) {
         return nullptr;
     }
@@ -4248,28 +4194,16 @@ OCCTFaceRef OCCTShapeGetFaceAtIndex(OCCTShapeRef shape, int32_t index) {
 // MARK: - Edge Access (Issue #14)
 
 int32_t OCCTShapeGetTotalEdgeCount(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    
-    try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-        return edgeMap.Extent();
-    } catch (...) {
-        return 0;
-    }
+    return OCCTShapeGetSubShapeCount(shape, TopAbs_EDGE);
 }
 
 OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index) {
-    if (!shape || index < 0) return nullptr;
-    
+    if (!shape) return nullptr;
+
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-        
-        if (index >= edgeMap.Extent()) return nullptr;
-        
-        TopoDS_Edge edge = TopoDS::Edge(edgeMap(index + 1));  // OCCT is 1-based
-        return new OCCTEdge(edge);
+        TopoDS_Shape edge = occtSubShapeAt(shape->shape, TopAbs_EDGE, index);
+        if (edge.IsNull()) return nullptr;
+        return new OCCTEdge(TopoDS::Edge(edge));
     } catch (...) {
         return nullptr;
     }

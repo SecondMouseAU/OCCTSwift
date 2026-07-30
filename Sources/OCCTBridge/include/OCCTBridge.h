@@ -1128,7 +1128,8 @@ void OCCTShapeGetBounds(OCCTShapeRef shape, double* minX, double* minY, double* 
 // MARK: - Slicing
 
 OCCTShapeRef OCCTShapeSliceAtZ(OCCTShapeRef shape, double z);
-int32_t OCCTShapeGetEdgeCount(OCCTShapeRef shape);
+// OCCTShapeGetEdgeCount is gone: it was a TopExp_Explorer occurrence count with no caller, and it
+// disagreed with OCCTShapeGetTotalEdgeCount (24 vs 12 on a plain box). Use that one. #502
 int32_t OCCTShapeGetEdgePoints(OCCTShapeRef shape, int32_t edgeIndex, double* outPoints, int32_t maxPoints);
 int32_t OCCTShapeGetContourPoints(OCCTShapeRef shape, double* outPoints, int32_t maxPoints);
 
@@ -5116,20 +5117,13 @@ void OCCTOrientedBoundingBoxCorners(const OCCTOrientedBoundingBox* result, doubl
 OCCTShapeRef OCCTShapeCopy(OCCTShapeRef shape, bool copyGeom, bool copyMesh);
 
 
-// MARK: - Sub-Shape Extraction (v0.38.0)
-
-/// Get the number of solid sub-shapes in a shape.
-int32_t OCCTShapeGetSolidCount(OCCTShapeRef shape);
-
-/// Get solid sub-shapes from a shape.
-/// @param shape The shape to explore
-/// @param outSolids Output array for solid shape references
-/// @param maxCount Maximum number of solids to return
-/// @return Number of solids actually returned
-int32_t OCCTShapeGetSolids(OCCTShapeRef shape, OCCTShapeRef* outSolids, int32_t maxCount);
-
-/// Get the number of shell sub-shapes in a shape.
-int32_t OCCTShapeGetShellCount(OCCTShapeRef shape);
+// MARK: - Outer / Inner Shells (v0.38.0)
+//
+// Solid, shell and wire sub-shapes are no longer extracted here: OCCTShapeGetSolidCount/GetSolids,
+// GetShellCount/GetShells and GetWireCount/GetWires each walked a bare TopExp_Explorer, which
+// counts occurrences rather than distinct sub-shapes and so disagreed with the generic
+// OCCTShapeGetSubShapeCount/GetSubShapes/GetSubShapeByTypeIndex below on any shape whose
+// sub-shape is reachable from two parents. Use the generic family with type 2/3/5. #502
 
 /// Outer shell of a solid (BRepClass3d::OuterShell); NULL if not a solid / no shell.
 /// A container (compound/compsolid) is accepted only when it holds exactly ONE solid — with two
@@ -5148,23 +5142,6 @@ int32_t OCCTShapeOuterShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_
 /// (pass outShells=NULL to query the count). Same single-solid rule as OCCTShapeOuterShell:
 /// 0 for a container holding two or more solids. #212, #439
 int32_t OCCTShapeInnerShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
-
-/// Get shell sub-shapes from a shape.
-/// @param shape The shape to explore
-/// @param outShells Output array for shell shape references
-/// @param maxCount Maximum number of shells to return
-/// @return Number of shells actually returned
-int32_t OCCTShapeGetShells(OCCTShapeRef shape, OCCTShapeRef* outShells, int32_t maxCount);
-
-/// Get the number of wire sub-shapes in a shape.
-int32_t OCCTShapeGetWireCount(OCCTShapeRef shape);
-
-/// Get wire sub-shapes from a shape.
-/// @param shape The shape to explore
-/// @param outWires Output array for wire shape references (wrapped as OCCTShapeRef)
-/// @param maxCount Maximum number of wires to return
-/// @return Number of wires actually returned
-int32_t OCCTShapeGetWires(OCCTShapeRef shape, OCCTShapeRef* outWires, int32_t maxCount);
 
 
 // MARK: - Fuse and Blend (v0.38.0)
@@ -5533,12 +5510,29 @@ bool OCCTAnalyzePointCloud(const double* coords, int32_t pointCount,
                             double tolerance, OCCTPointCloudGeometry* outResult);
 
 // MARK: - Sub-Shape Extraction (fixes #36)
+//
+// The bridge's ONE sub-shape enumeration, for every topological type. Each entry is a distinct
+// sub-shape (TopoDS_Shape::IsSame: same TShape and location, orientation ignored), in
+// TopExp_Explorer order; a sub-shape reachable from two parents appears once, at the position of
+// its first visit. A shape is its own sub-shape when it is of the requested type. The fixed-type
+// counts elsewhere in this header (OCCTShapeGetFaceCount, OCCTShapeGetTotalEdgeCount,
+// OCCTShapeGetVertexCount, OCCTShapeUniqueSubShapeCount and its edge/face/vertex convenience
+// forms) all read this same enumeration. #502
 
 /// Count sub-shapes of a given topological type
 /// @param shape The parent shape
-/// @param type TopAbs_ShapeEnum value (0=COMPOUND..7=VERTEX)
-/// @return Number of sub-shapes of that type
+/// @param type TopAbs_ShapeEnum value (0=COMPOUND..7=VERTEX); out of range counts 0
+/// @return Number of distinct sub-shapes of that type
 int32_t OCCTShapeGetSubShapeCount(OCCTShapeRef shape, int32_t type);
+
+/// Get sub-shapes of a given topological type, in enumeration order
+/// @param shape The parent shape
+/// @param type TopAbs_ShapeEnum value (0=COMPOUND..7=VERTEX)
+/// @param outSubShapes Output array, caller-allocated (size it with OCCTShapeGetSubShapeCount)
+/// @param maxCount Capacity of outSubShapes
+/// @return Number of sub-shapes actually written
+int32_t OCCTShapeGetSubShapes(OCCTShapeRef shape, int32_t type,
+                              OCCTShapeRef* outSubShapes, int32_t maxCount);
 
 /// Get a sub-shape by type and 0-based index
 /// @param shape The parent shape

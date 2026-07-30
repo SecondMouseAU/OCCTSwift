@@ -278,7 +278,10 @@ struct Issue442FixSolidMultiBody {
             Issue.record("could not build the duplicated-shell compound")
             return
         }
-        #expect(duped.shells.count == 2)
+        // Two children, one shell: the compound holds the same shell twice, and the sub-shape
+        // enumeration counts distinct shells, not occurrences (#502).
+        #expect(duped.nbChildren == 2)
+        #expect(duped.shells.count == 1)
 
         guard let solid = duped.solidFromShellFixed() else {
             Issue.record("solidFromShellFixed returned nil for a duplicated shell")
