@@ -20,7 +20,7 @@ public struct SurfaceGrid: Sendable {
     public let uCount: Int
     /// Number of samples in the V direction.
     public let vCount: Int
-    /// Flat storage, U-major: `points[u * vCount + v]`.
+    /// Flat storage, U-major: `points[surfaceGridIndex(u:v:vCount:)]`.
     private let points: [SIMD3<Double>]
 
     init(uCount: Int, vCount: Int, points: [SIMD3<Double>]) {
@@ -38,7 +38,63 @@ public struct SurfaceGrid: Sendable {
     public func at(u: Int, v: Int) -> SIMD3<Double> {
         precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
                       "SurfaceGrid.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
-        return points[u * vCount + v]
+        return points[surfaceGridIndex(u: u, v: v, vCount: vCount)]
+    }
+}
+
+/// The one definition of a UV grid's flat storage index: **U-major**, u varying slowest.
+///
+/// Shared by ``SurfaceGrid`` and ``SurfaceGridD1``, and mirroring the bridge's own
+/// `occtSurfaceGridIndex` so the Swift and C sides of the same buffer cannot disagree. #486:
+/// two bridge functions once wrote opposite layouts, each header calling its own "row-major",
+/// a phrase that says nothing about a UV grid, where either parameter can be the row.
+@inline(__always)
+internal func surfaceGridIndex(u: Int, v: Int, vCount: Int) -> Int {
+    u * vCount + v
+}
+
+/// A 2D grid of points and first partial derivatives sampled over a surface's UV parameter space.
+///
+/// The D1 counterpart of ``SurfaceGrid``, returned by
+/// ``Surface/evaluateGridD1(uParameters:vParameters:)``. Indexing is `.at(u:v:)` for the same
+/// reason: a flat `[(point:, d1u:, d1v:)]` array leaves the caller guessing whether u or v runs
+/// fastest.
+///
+/// ```swift
+/// let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
+/// let sample = grid.at(u: 2, v: 0)
+/// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+/// ```
+public struct SurfaceGridD1: Sendable {
+    /// Number of samples in the U direction.
+    public let uCount: Int
+    /// Number of samples in the V direction.
+    public let vCount: Int
+    /// Flat storage, U-major: `points[surfaceGridIndex(u:v:vCount:)]`.
+    private let points: [SIMD3<Double>]
+    private let d1u: [SIMD3<Double>]
+    private let d1v: [SIMD3<Double>]
+
+    init(uCount: Int, vCount: Int,
+         points: [SIMD3<Double>], d1u: [SIMD3<Double>], d1v: [SIMD3<Double>]) {
+        self.uCount = uCount
+        self.vCount = vCount
+        self.points = points
+        self.d1u = d1u
+        self.d1v = d1v
+    }
+
+    static let empty = SurfaceGridD1(uCount: 0, vCount: 0, points: [], d1u: [], d1v: [])
+
+    /// Whether this grid has no samples (returned when evaluation fails).
+    public var isEmpty: Bool { points.isEmpty }
+
+    /// Point and first partial derivatives at the given U/V grid index.
+    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>) {
+        precondition(u >= 0 && u < uCount && v >= 0 && v < vCount,
+                      "SurfaceGridD1.at(u: \(u), v: \(v)) out of range (uCount: \(uCount), vCount: \(vCount))")
+        let i = surfaceGridIndex(u: u, v: v, vCount: vCount)
+        return (point: points[i], d1u: d1u[i], d1v: d1v[i])
     }
 }
 
@@ -908,16 +964,47 @@ extension Surface {
                                              &outXYZ))
         guard n == total else { return .empty }
 
-        // Bridge buffer is V-major (v varies slowest, per OCCTSurfaceEvaluateGrid's own doc
-        // comment); SurfaceGrid's storage is U-major, so transpose while unpacking.
-        var points = [SIMD3<Double>](repeating: SIMD3(0, 0, 0), count: total)
-        for v in 0..<vCount {
-            for u in 0..<uCount {
-                let bridgeIdx = (v * uCount + u) * 3
-                points[u * vCount + v] = SIMD3(outXYZ[bridgeIdx], outXYZ[bridgeIdx + 1], outXYZ[bridgeIdx + 2])
-            }
-        }
+        // Bridge buffer is U-major, matching SurfaceGrid's storage, so no transpose. It was
+        // V-major until #486 settled every surface grid producer on one layout.
+        let points: [SIMD3<Double>] = unpackSIMD3(outXYZ, count: total)
         return SurfaceGrid(uCount: uCount, vCount: vCount, points: points)
+    }
+
+    /// Evaluate the surface and its first partial derivatives at a UV grid in one call.
+    ///
+    /// The D1 counterpart of ``evaluateGrid(uParameters:vParameters:)``, using OCCT's batch
+    /// `GeomGridEval_Surface` evaluator rather than one `D1` call per sample.
+    ///
+    /// - Parameters:
+    ///   - uParameters: Array of U parameter values
+    ///   - vParameters: Array of V parameter values
+    /// - Returns: A ``SurfaceGridD1`` indexed `.at(u:v:)`, or an empty grid if either input is
+    ///   empty or the evaluation fails.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// let grid = sphere.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
+    /// let sample = grid.at(u: 1, v: 0)
+    /// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+    /// ```
+    public func evaluateGridD1(uParameters: [Double], vParameters: [Double]) -> SurfaceGridD1 {
+        guard !uParameters.isEmpty, !vParameters.isEmpty else { return .empty }
+        let uCount = uParameters.count
+        let vCount = vParameters.count
+        let total = uCount * vCount
+        var outXYZ = [Double](repeating: 0, count: total * 3)
+        var outD1U = [Double](repeating: 0, count: total * 3)
+        var outD1V = [Double](repeating: 0, count: total * 3)
+        let n = Int(OCCTSurfaceEvaluateGridD1(handle,
+                                               uParameters, Int32(uCount),
+                                               vParameters, Int32(vCount),
+                                               &outXYZ, &outD1U, &outD1V))
+        guard n == total else { return .empty }
+
+        return SurfaceGridD1(uCount: uCount, vCount: vCount,
+                             points: unpackSIMD3(outXYZ, count: total),
+                             d1u: unpackSIMD3(outD1U, count: total),
+                             d1v: unpackSIMD3(outD1V, count: total))
     }
 }
 

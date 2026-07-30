@@ -709,7 +709,7 @@ sampling a parameter grid.
 - **Parameters:** `uParameters` — array of U parameter values; `vParameters` — array of V parameter values.
 - **Returns:** A `SurfaceGrid` of size `uParameters.count × vParameters.count`, or an empty grid if
   either input is empty or the evaluated count mismatches.
-- **OCCT:** `Geom_Surface::D0` called per grid point via the bridge buffer.
+- **OCCT:** `GeomGridEval_Surface::EvaluateGrid` via `OCCTSurfaceEvaluateGrid`.
 - **Example:**
   ```swift
   if let srf = Surface.sphere(radius: 5) {
@@ -720,3 +720,34 @@ sampling a parameter grid.
   }
   ```
 - **Note:** Result is empty (not a partial result) if the internal buffer fill count does not match `uParameters.count × vParameters.count`.
+
+---
+
+### `evaluateGridD1(uParameters:vParameters:)`
+
+Evaluates the surface *and its first partial derivatives* at a grid of UV parameters in a single
+call, the D1 counterpart of `evaluateGrid`, using the same batch `GeomGridEval_Surface` evaluator
+rather than one `evalD1(u:v:)` call per sample.
+
+```swift
+public func evaluateGridD1(uParameters: [Double], vParameters: [Double]) -> SurfaceGridD1
+```
+
+Returns a `SurfaceGridD1` (see [Surface.md](Surface.md#surfacegridd1)) indexed `.at(u:v:)`. Added
+by [#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486), which finished for the D1 path
+what #404 had done for D0: the deprecated `gridEvalD1(uParams:vParams:)` returned a flat
+`[(point:, d1u:, d1v:)]` array with no stated major order, over a bridge function whose D0 sibling
+disagreed with `evaluateGrid` about exactly that.
+
+- **Parameters:** `uParameters`: array of U parameter values; `vParameters`: array of V parameter values.
+- **Returns:** A `SurfaceGridD1` of size `uParameters.count × vParameters.count`, or an empty grid
+  if either input is empty or the evaluation fails.
+- **OCCT:** `GeomGridEval_Surface::EvaluateGridD1` via `OCCTSurfaceEvaluateGridD1`.
+- **Example:**
+  ```swift
+  if let srf = Surface.sphere(radius: 5) {
+      let grid = srf.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
+      let sample = grid.at(u: 1, v: 0)
+      let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+  }
+  ```

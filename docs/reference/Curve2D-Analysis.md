@@ -432,11 +432,14 @@ Evaluates the curve at multiple parameter values in a single call.
 public func evaluateGrid(_ parameters: [Double]) -> [SIMD2<Double>]
 ```
 
-Uses OCCT's optimised grid evaluator; faster than calling `point(at:)` repeatedly for dense sampling.
+Uses OCCT's optimised grid evaluator; faster than calling `point(at:)` repeatedly for dense
+sampling. This is the canonical batch spelling; `evalBatchD0(params:)` and `gridEvalD0(params:)` are
+deprecated aliases that forward here
+([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
 
 - **Parameters:** `parameters` — array of parameter values.
 - **Returns:** Array of 2D points corresponding to each parameter; empty if `parameters` is empty.
-- **OCCT:** `Geom2dAdaptor_Curve::Value` via bridge buffer.
+- **OCCT:** `Geom2dGridEval_Curve::EvaluateGrid` via `OCCTCurve2DEvaluateGrid`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
@@ -457,7 +460,7 @@ public func evaluateGridD1(_ parameters: [Double]) -> [(point: SIMD2<Double>, ta
 
 - **Parameters:** `parameters` — array of parameter values.
 - **Returns:** Array of `(point, tangent)` tuples; empty if `parameters` is empty.
-- **OCCT:** `Geom2dAdaptor_Curve::D1` via bridge buffer.
+- **OCCT:** `Geom2dGridEval_Curve::EvaluateGridD1` via `OCCTCurve2DEvaluateGridD1`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {

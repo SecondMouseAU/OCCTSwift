@@ -30,6 +30,7 @@
 // header is intentionally not the kitchen sink.
 
 #include <Standard.hxx>
+#include <NCollection_Array1.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopoDS_Edge.hxx>
@@ -453,6 +454,35 @@ inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
 // axis of symmetry, which is gp_Parab2d's documented behaviour, not an error it reports.
 inline bool occtValidParabolaFocal(double focal) {
     return focal > 0;
+}
+
+// === #486: shared batch grid-evaluation packing/unpacking ===
+//
+// Curve3D, Curve2D and Surface each grew three generations of "evaluate at N parameters"
+// bridge functions (v0.28/v0.29, v0.110, v0.111) that each hand-rolled their own parameter
+// pack loop and their own result unpack loop. With nothing shared, the two Surface entry
+// points drifted onto opposite grid layouts: OCCTSurfaceEvaluateGrid wrote v-major while
+// OCCTGridEvalSurfaceD0 wrote u-major, and both header comments called their own layout
+// "row-major". The duplicate spellings are gone; these helpers are what stops a future
+// second spelling from re-deriving (and re-diverging on) the same two loops.
+
+/// Copy a caller's parameter array into the 1-based NCollection_Array1 that every
+/// GeomGridEval_* / Geom2dGridEval_* evaluator takes.
+inline NCollection_Array1<double> occtGridEvalParams(const double* params, int32_t count) {
+    NCollection_Array1<double> arr(1, count);
+    for (int32_t i = 0; i < count; i++) {
+        arr.SetValue(i + 1, params[i]);
+    }
+    return arr;
+}
+
+/// THE definition of OCCTSwift's surface-grid buffer layout: **U-major**, u varying slowest and
+/// v fastest. Shared by OCCTSurfaceEvaluateGrid, OCCTSurfaceEvaluateGridD1, OCCTSurfaceDrawMesh
+/// and the Swift SurfaceGrid/SurfaceGridD1 types (#404). "Row-major" is ambiguous for a UV grid,
+/// since either parameter can be the row, so the index lives here in code instead of being
+/// re-spelled in prose at each call site.
+inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
+    return iu * vCount + iv;
 }
 
 #endif /* OCCTBridge_Internal_h */
