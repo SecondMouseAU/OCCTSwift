@@ -251,27 +251,14 @@ void OCCTCurve3DD2(OCCTCurve3DRef c, double u,
 
 // Primitive Curves
 
-// Conic dimension preconditions, shared by the two factory families that build the
-// same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
+// Conic dimension preconditions (occtValidCircleRadius, occtValidEllipseRadii,
+// occtValidHyperbolaRadii, occtValidParabolaFocal) are shared by the two factory families that
+// build the same four curve types: OCCTCurve3DCreate{Circle,Ellipse,Parabola,Hyperbola} (direct
 // Geom_* construction) and OCCTGceMake{CircFromCenterNormal,Elips,Hypr,Parab} (gce_Make*
-// construction). The gce_Make* algorithms only reject strictly-negative dimensions, so
-// before #399 they silently produced degenerate zero-radius/zero-focal curves where the
-// direct family returned null for the identical input. One definition, both families.
-static inline bool occtValidCircleRadius(double radius) {
-    return radius > 0;
-}
-
-static inline bool occtValidEllipseRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0 && minorR <= majorR;
-}
-
-static inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
-    return majorR > 0 && minorR > 0;
-}
-
-static inline bool occtValidParabolaFocal(double focal) {
-    return focal > 0;
-}
+// construction). #399 defined them here; #487 moved them to OCCTBridge_Internal.h once the 2D
+// factories in OCCTBridge_Geom2d.mm turned out to need the same four predicates, and its own
+// copy of one of them had already drifted out of reach of two of the passes that should have
+// applied it.
 
 OCCTCurve3DRef OCCTCurve3DCreateLine(double px, double py, double pz,
                                       double dx, double dy, double dz) {

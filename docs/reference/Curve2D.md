@@ -304,12 +304,14 @@ public static func ellipse(center: SIMD2<Double>, majorRadius: Double,
                            minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — ellipse centre; `majorRadius` — semi-major axis (must be ≥ `minorRadius`); `minorRadius` — semi-minor axis; `rotation` — rotation of the major axis from the X axis in radians (default 0).
-- **Returns:** Full ellipse curve, or `nil` on failure.
+- **Parameters:** `center` — ellipse centre; `majorRadius` — semi-major axis (must be > 0 and ≥ `minorRadius`); `minorRadius` — semi-minor axis (must be > 0); `rotation` — rotation of the major axis from the X axis in radians (default 0).
+- **Returns:** Full ellipse curve, or `nil` if either radius is ≤ 0 or `minorRadius` exceeds `majorRadius`. Equal radii are valid.
 - **OCCT:** `Geom2d_Ellipse(gp_Elips2d(...))`.
+- **See also:** [`ellipseFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical ellipse through OCCT's `gce_MakeElips2d` algorithm and enforces the same radius contract (#487).
 - **Example:**
   ```swift
   let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!
+  Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 10)  // nil, minor exceeds major
   ```
 
 ---
@@ -347,9 +349,11 @@ public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
 - **Parameters:** `focus` — focus point; `direction` — axis direction from vertex toward focus; `focalLength` — distance from vertex to focus (must be > 0).
 - **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0`.
 - **OCCT:** `Geom2d_Parabola(gp_Parab2d(...))`.
+- **See also:** [`parabolaFromCenterDir(center:direction:focal:)`](Curve2D-Analysis.md) places the same curve through OCCT's `gce_MakeParab2d` algorithm, taking the vertex rather than the focus, and enforces the same focal-length contract (#487).
 - **Example:**
   ```swift
   let par = Curve2D.parabola(focus: SIMD2(0, 2), direction: SIMD2(0, 1), focalLength: 2)
+  Curve2D.parabola(focus: .zero, direction: SIMD2(0, 1), focalLength: 0)  // nil, a line
   ```
 
 ---
@@ -363,12 +367,14 @@ public static func hyperbola(center: SIMD2<Double>, majorRadius: Double,
                              minorRadius: Double, rotation: Double = 0) -> Curve2D?
 ```
 
-- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0); `rotation` — major-axis rotation in radians (default 0).
-- **Returns:** Hyperbola curve, or `nil` on failure.
+- **Parameters:** `center` — hyperbola centre; `majorRadius` — real semi-axis; `minorRadius` — imaginary semi-axis (both must be > 0, in either order); `rotation` — major-axis rotation in radians (default 0).
+- **Returns:** Hyperbola curve, or `nil` if either radius is ≤ 0. Unlike an ellipse, a minor radius larger than the major is valid.
 - **OCCT:** `Geom2d_Hyperbola(gp_Hypr2d(...))`.
+- **See also:** [`hyperbolaFromCenterDir(center:direction:majorRadius:minorRadius:)`](Curve2D-Analysis.md) builds the identical hyperbola through OCCT's `gce_MakeHypr2d` algorithm and enforces the same radius contract (#487).
 - **Example:**
   ```swift
   let hyp = Curve2D.hyperbola(center: .zero, majorRadius: 3, minorRadius: 2)
+  Curve2D.hyperbola(center: .zero, majorRadius: 2, minorRadius: 3)  // valid, not inverted
   ```
 
 ---
