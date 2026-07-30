@@ -423,8 +423,8 @@
 //
 // --- ShapeFix ---
 // ShapeFix_Edge                       → OCCTShapeFixEdge*
-// ShapeFix_Face                       → OCCTShapeFixFace
-// ShapeFix_FaceConnect                → OCCTShapeFixConnect*
+// ShapeFix_Face                       → OCCTFaceFix, OCCTFaceFixer*, OCCTShapeCreateFaceFromSurfaceWire, OCCTShapeCreateFaceFromSurfaceWireWithHoles
+// ShapeFix_FaceConnect                → OCCTShapeFixFaceConnect
 // ShapeFix_FixSmallFace               → OCCTShapeFixSmallFaces
 // ShapeFix_FixSmallSolid              → OCCTShapeFixSmallSolid*
 // ShapeFix_Shape                      → OCCTShapeFix, OCCTShapeFixed*

@@ -3304,6 +3304,11 @@ extension Face {
 
     /// Fix face problems such as incorrect wire orientation, missing seams, and surface parameters.
     ///
+    /// The underlying `ShapeFix_Face` is given a `ShapeBuild_ReShape` context up front (#484), so
+    /// the fixes that record replacements — a missing seam, or the degenerate apex edge a wire
+    /// belting a cone's full period needs — actually apply. Without one they silently no-op and the
+    /// face comes back unhealed.
+    ///
     /// - Parameter tolerance: Tolerance for fixing operations
     /// - Returns: Fixed face as a shape, or nil on failure
     ///
@@ -7499,10 +7504,28 @@ extension Shape {
 
     // MARK: - ShapeFix_FaceConnect
 
-    /// Connect adjacent faces in this shape's shell.
+    /// Connect adjacent faces in **every** shell of this shape (`ShapeFix_FaceConnect`).
     ///
-    /// - Parameter tolerance: Connection tolerance
-    /// - Returns: Fixed shape with connected faces, or nil on failure
+    /// A shape with several shells — a compound of two solids, say — has each shell connected
+    /// independently and the results reassembled: one shell in, one shell out; several in, a
+    /// compound out. Before #484 only the first shell an explorer yielded was processed and the
+    /// rest were silently dropped.
+    ///
+    /// - Parameter tolerance: Connection tolerance.
+    /// - Returns: The shape with connected faces, or nil when the input has no shell at all, or
+    ///   when no shell could be connected.
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // A compound of two disjoint boxes keeps both shells (12 faces, not 6)
+    /// let a = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let b = Shape.box(width: 6, height: 6, depth: 6)!.translated(by: SIMD3(40, 0, 0))!
+    /// let compound = Shape.compound([a, b])!
+    /// if let connected = compound.connectedFaces(tolerance: 1e-4) {
+    ///     print(connected.faces().count)   // 12
+    /// }
+    /// ```
     public func connectedFaces(tolerance: Double = 1e-4) -> Shape? {
         guard let ref = OCCTShapeFixFaceConnect(handle, tolerance) else { return nil }
         return Shape(handle: ref)

@@ -15,10 +15,59 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
-Pass 1b of the [#377](https://github.com/SecondMouseAU/OCCTSwift/issues/377) duplication audit
-([#381](https://github.com/SecondMouseAU/OCCTSwift/issues/381)).
+### Pass 1b of the #377 duplication audit
 
-### One result vocabulary for measured continuity, not three encodings (#485)
+#### Two upstream OCCT null-context SIGSEGVs, patched and filed (#484)
+
+Auditing every `ShapeFix_Face` call site turned up two unpatched, never-filed crashes of the same
+class as #317: `ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and
+`ShapeUpgrade_WireDivide::Perform()` dereference their `ShapeBuild_ReShape` context
+unconditionally, and that context is null unless the caller made an optional `SetContext()` call. A
+plain 4-edge planar square face crashes both classes 100% of the time. Both are the odd ones out in
+their own package: `ShapeUpgrade_FaceDivide::Perform()`, their only in-kernel driver, self-creates a
+context and hands it down, and nine other healing classes carry the same guard.
+
+Carried as `Scripts/patches/0017-*` and filed upstream as
+[OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409) (repro) /
+[OCCT#1410](https://github.com/Open-Cascade-SAS/OCCT/pull/1410) (fix). Verified via the override-link
+technique: both no-context cases SIGSEGV before and complete after, and the with-context path is
+byte-identical before and after (BREP dump hash plus topology counts, planar and cylindrical). Takes
+effect at the next xcframework rebuild; nothing regresses in the interim because the bridge already
+sets a context at both call sites. Reproducer and writeup:
+[`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context).
+
+#### `Face.fixed(tolerance:)` now heals what it claims to (#484)
+
+`OCCTFaceFix` was the fourth `ShapeFix_Face` construction in the bridge and the only one the #317
+pass missed — it built a bare fixer with no context, so the fixes that record replacements silently
+did nothing (and on any kernel without `Scripts/patches/0005` it was exposed to the #317 null-deref).
+On the raw #317 shape, no context yields a `BRepCheck`-invalid face with no apex edge; with a context
+it is valid. Well-formed faces are unaffected.
+
+#### `Shape.connectedFaces(tolerance:)`: every shell, not just the first (#484)
+
+The function had **zero** test coverage repo-wide. Writing it surfaced a first-of-N defect of the
+#439/#442/#443 family: only the first shell an explorer yielded was connected and the rest were
+dropped, so a compound of two boxes came back with 6 faces instead of 12. Every shell is now
+processed and the results reassembled through the shared `occtSolidBodiesToShape` helper — a
+single-shell input still returns a bare shell, and the nil-on-failure contract is unchanged.
+
+#### Two stale cross-reference index entries corrected (#484)
+
+`OCCTBridge.h`'s index mapped `ShapeFix_Face → OCCTShapeFixFace` and
+`ShapeFix_FaceConnect → OCCTShapeFixConnect*`. Neither symbol exists anywhere in the codebase, so
+anyone using the index to find every `ShapeFix_Face` call site for a #317-class re-audit got zero
+hits — which is how the unpatched fourth site above went unnoticed. They now name the real symbols:
+`OCCTFaceFix`, `OCCTFaceFixer*` and the two `OCCTShapeCreateFaceFromSurfaceWire*` functions; and
+`OCCTShapeFixFaceConnect`, a single function rather than a family.
+
+New `Scripts/check-bridge-index.py` checks every index entry against the real symbols and exits 1 on
+any mismatch. Its first run showed the two #484 entries are not isolated: **139 of the index's 418
+symbol references name symbols that exist nowhere in `Sources/`**. Filed as #510 rather than fixed
+here — each stale entry needs its real call site identified, and inventing a plausible name for a
+class that has no wrap would be worse than leaving the entry visibly broken.
+
+#### One result vocabulary for measured continuity, not three encodings (#485)
 
 `OCCTCurve3DContinuity` / `OCCTCurve2DContinuity` / `OCCTSurfaceContinuity` and their
 `*GetContinuity` siblings wrapped the identical `Geom*::Continuity()` call but reported it
