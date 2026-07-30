@@ -1338,14 +1338,14 @@ public func isBooleanValidWith(
 
 ### `Shape.defeature(faces:)`
 
-Remove feature faces (fillets, holes, pockets) from a solid shape.
+Remove feature faces (fillets, holes, pockets) from a solid shape. The canonical defeaturing call.
 
 ```swift
 public func defeature(faces: [Shape]) -> Shape?
 ```
 
 - **Parameters:** `faces` — the face shapes to remove as features.
-- **Returns:** Defeatured shape, or `nil` on failure.
+- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty.
 - **OCCT:** `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`.
 - **Example:**
   ```swift
@@ -1353,6 +1353,20 @@ public func defeature(faces: [Shape]) -> Shape?
       // fillets removed
   }
   ```
+
+**The rest of the family.** Four Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
+operation, over one shared bridge path (#497):
+
+| Call | Addresses faces as | Notes |
+|------|--------------------|-------|
+| `defeature(faces:)` | `[Shape]` | this one |
+| [`withoutFeatures(faces:)`](Shape-Features.md#withoutfeaturesfaces) | `[Face]` (by index) | same operation |
+| `defeaturedWithFullHistory(faces:)` | `[Int]` (indices) | also returns the removal history |
+| [`withoutSmallFaces(minArea:)`](Shape-Features.md) | picks its own | every face below an area threshold |
+
+`defeature(faces:tolerance:)` is deprecated and forwards here: `BRepAlgoAPI_Defeaturing` has no
+fuzzy tolerance to set, and never had — see
+[`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert).
 
 ---
 

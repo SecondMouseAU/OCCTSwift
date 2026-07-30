@@ -2710,8 +2710,24 @@ extension Shape {
     /// gaps by extending adjacent faces. Useful for simplifying geometry for
     /// analysis or removing small features.
     ///
+    /// `defeature(faces:)` is the same operation addressing its faces as shapes rather than by
+    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let filleted = box.filleted(radius: 2.0)!
+    ///
+    /// // Faces past the box's own six were added by the fillet.
+    /// let filletFaces = Array(filleted.faces().dropFirst(6).prefix(1))
+    /// if let plain = filleted.withoutFeatures(faces: filletFaces) {
+    ///     print(plain.volume ?? 0)   // back to 8000.0, the unfilleted box
+    /// }
+    /// ```
+    ///
     /// - Parameter faces: Faces to remove (must have valid indices from this shape)
-    /// - Returns: Shape with features removed, or nil on failure
+    /// - Returns: Shape with features removed, or nil on failure — including when a face's index
+    ///   does not belong to this shape. Such an index used to be skipped, which returned a shape
+    ///   that still carried the feature and looked no different from a successful removal (#497).
     public func withoutFeatures(faces: [Face]) -> Shape? {
         guard !faces.isEmpty else { return nil }
 
@@ -13719,13 +13735,31 @@ extension Shape {
                                      hasDeleted: hasDel, hasModified: hasMod, hasGenerated: hasGen)
     }
 
-    /// Remove faces from a shape with fuzzy tolerance (defeaturing).
-    public func defeature(faces: [Shape], tolerance: Double = 0) -> Shape? {
-        let faceRefs = faces.map { $0.handle as OCCTShapeRef }
-        guard let ref = faceRefs.withUnsafeBufferPointer({ buf in
-            OCCTDefeatureWithTolerance(handle, buf.baseAddress!, Int32(faces.count), tolerance)
-        }) else { return nil }
-        return Shape(handle: ref)
+    /// Remove faces from a shape, ignoring `tolerance` (defeaturing).
+    ///
+    /// `BRepAlgoAPI_Defeaturing` has no fuzzy tolerance to set. Its `Build()` hands the input
+    /// shape, the faces to remove, the history flag and the parallel flag to the
+    /// `BOPAlgo_RemoveFeatures` that does the work, and nothing else — the fuzzy value inherited
+    /// from `BOPAlgo_Options` is stored and never read, which its own header states outright
+    /// ("the other options of the base class are not supported here and will have no effect").
+    /// So this has always returned exactly what `defeature(faces:)` returns, at every tolerance.
+    ///
+    /// Call ``defeature(faces:)`` instead. Nothing about the result changes.
+    ///
+    /// ```swift
+    /// // Before: the tolerance argument was silently discarded.
+    /// let old = shape.defeature(faces: filletFaces, tolerance: 0.01)
+    /// // After: same shape, no false promise.
+    /// let new = shape.defeature(faces: filletFaces)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - faces: The faces to remove, as shapes belonging to this shape.
+    ///   - tolerance: Ignored. Kept so existing call sites still compile.
+    /// - Returns: The defeatured shape, or `nil` on failure.
+    @available(*, deprecated, message: "tolerance is ignored — BRepAlgoAPI_Defeaturing has no fuzzy value. Use defeature(faces:).")
+    public func defeature(faces: [Shape], tolerance: Double) -> Shape? {
+        defeature(faces: faces)
     }
 
     // --- Triangulation queries ---

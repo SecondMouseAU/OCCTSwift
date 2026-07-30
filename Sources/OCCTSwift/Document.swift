@@ -14004,6 +14004,29 @@ extension Shape {
 
 extension Shape {
     /// Remove feature faces from a solid shape (e.g., fillets, holes).
+    ///
+    /// The canonical defeaturing call. `withoutFeatures(faces:)` is the same operation addressing
+    /// its faces by index instead of by shape, and `defeaturedWithFullHistory(faces:)` is the same
+    /// operation again with the removal history retained; all three run one shared
+    /// `BRepAlgoAPI_Defeaturing` path in the bridge.
+    ///
+    /// Returns `nil` when `faces` is empty, and when the operation itself fails — defeaturing
+    /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
+    /// not necessarily a caller error.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let filleted = box.filleted(radius: 2.0)!
+    ///
+    /// // The fillet added faces beyond the box's own six; remove one of them again.
+    /// let filletFaces = Array(filleted.subShapes(ofType: .face).dropFirst(6).prefix(1))
+    /// if let plain = filleted.defeature(faces: filletFaces) {
+    ///     print(plain.volume ?? 0)   // back to 8000.0, the unfilleted box
+    /// }
+    /// ```
+    ///
+    /// - Parameter faces: The faces to remove, as shapes belonging to this shape.
+    /// - Returns: The defeatured shape, or `nil` on failure.
     public func defeature(faces: [Shape]) -> Shape? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
         return faceHandles.withUnsafeBufferPointer { buf -> Shape? in

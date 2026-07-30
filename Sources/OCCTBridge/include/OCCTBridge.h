@@ -96,7 +96,8 @@
 // BRepAlgoAPI_Check                   → OCCTShapeBooleanCheck
 // BRepAlgoAPI_Common                  → OCCTShapeIntersect
 // BRepAlgoAPI_Cut                     → OCCTShapeSubtract
-// BRepAlgoAPI_Defeaturing             → OCCTShapeRemoveFeatures
+// BRepAlgoAPI_Defeaturing             → OCCTShapeRemoveFeatures, OCCTShapeDefeature,
+//                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
 // BRepAlgoAPI_Fuse                    → OCCTShapeUnion
 // BRepAlgoAPI_Section                 → OCCTShapeSection, OCCTShapeSliceAtZ, OCCTSectionBuilder*
 // BRepAlgoAPI_Splitter                → OCCTShapeSplit
@@ -1567,11 +1568,15 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
                             double planeX, double planeY, double planeZ,
                             double planeNx, double planeNy, double planeNz);
 
-/// Remove features (faces) from shape using defeaturing
+/// Remove features (faces) from shape using defeaturing (BRepAlgoAPI_Defeaturing).
+/// The shape-addressed form is OCCTShapeDefeature; for the same operation with history see
+/// OCCTShapeHistoryFromDefeature. All of them share one skeleton — see the defeaturing block in
+/// OCCTBridge_Internal.h. #497
 /// @param shape The shape to modify
-/// @param faceIndices Array of face indices to remove (0-based)
+/// @param faceIndices Array of face indices to remove (0-based, into the shape's own face map)
 /// @param faceCount Number of faces to remove
-/// @return Shape with features removed, or NULL on failure
+/// @return Shape with features removed, or NULL on failure — including when faceCount is 0 or an
+///         index is out of range, which since #497 fails the call rather than being skipped
 OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount);
 
 /// Pipe sweep mode for advanced sweeps
@@ -1987,10 +1992,14 @@ OCCTShapeRef OCCTShapeUnifySameDomain(OCCTShapeRef shape,
                                        bool unifyEdges, bool unifyFaces,
                                        bool concatBSplines);
 
-/// Remove internal wires (holes) smaller than area threshold
+/// Remove faces smaller than an area threshold, by defeaturing (BRepAlgoAPI_Defeaturing).
+/// Picks the faces itself rather than taking a list, but is otherwise the same operation as
+/// OCCTShapeRemoveFeatures / OCCTShapeDefeature. (It removes faces, not "internal wires (holes)"
+/// as this comment claimed before #497.)
 /// @param shape The shape to clean
-/// @param minArea Minimum area threshold for holes
-/// @return Cleaned shape, or NULL on failure
+/// @param minArea Minimum face area to keep
+/// @return Cleaned shape — the input unchanged when no face is below the threshold — or NULL on
+///         failure
 OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea);
 
 /// Simplify shape by removing small features
@@ -4922,6 +4931,8 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromShell(OCCTShapeRef _Nonnull 
                                                             OCCTShapeRef _Nullable * _Nullable outResult);
 
 /// Defeature: remove given faces by smoothing surrounding topology, with retained history.
+/// The same BRepAlgoAPI_Defeaturing operation as OCCTShapeRemoveFeatures / OCCTShapeDefeature,
+/// keeping the builder alive to answer history queries. #497
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromDefeature(OCCTShapeRef _Nonnull shape,
                                                                 const int32_t* _Nonnull faceIndices,
                                                                 int32_t faceCount,
@@ -17417,11 +17428,9 @@ OCCTShapeRef _Nullable OCCTBooleanCutWithHistory(OCCTShapeRef _Nonnull s1, OCCTS
                                                     bool* _Nonnull hasModified,
                                                     bool* _Nonnull hasGenerated);
 
-/// Defeature (remove faces) with fuzzy tolerance.
-OCCTShapeRef _Nullable OCCTDefeatureWithTolerance(OCCTShapeRef _Nonnull shape,
-                                                    const OCCTShapeRef _Nonnull * _Nonnull facesToRemove,
-                                                    int32_t count, double fuzzyTol);
-
+// OCCTDefeatureWithTolerance was declared here. BRepAlgoAPI_Defeaturing has no fuzzy tolerance to
+// set — Build() forwards neither the value nor anything else from BOPAlgo_Options to the algorithm
+// that does the work — so it was OCCTShapeDefeature under another name. #497
 // --- BRepOffsetAPI_ThruSections builder ---
 
 typedef void* OCCTThruSectionsRef;
@@ -18087,7 +18096,11 @@ bool OCCTShapeBooleanCheckPair(OCCTShapeRef _Nonnull shape1, OCCTShapeRef _Nonnu
 
 // MARK: - BRepAlgoAPI_Defeaturing (v0.118.0)
 
-/// Remove faces (features) from a solid shape. facesArray contains face shapes to remove.
+/// Remove faces (features) from a solid shape, addressing the faces as shapes.
+/// Fails (NULL) on an empty request or a null face, rather than removing a subset of what was
+/// asked for. The index-addressed form is OCCTShapeRemoveFeatures; for the same operation with
+/// history see OCCTShapeHistoryFromDefeature. All of them share one skeleton — see the
+/// defeaturing block in OCCTBridge_Internal.h. #497
 OCCTShapeRef _Nullable OCCTShapeDefeature(OCCTShapeRef _Nonnull shape,
                                            const OCCTShapeRef _Nonnull * _Nonnull faces, int32_t faceCount);
 

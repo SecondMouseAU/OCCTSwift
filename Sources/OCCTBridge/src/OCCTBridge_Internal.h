@@ -53,13 +53,15 @@
 #include <XCAFDoc_VisMaterialTool.hxx>
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
-// The last four serve the shared algorithm helpers at the bottom of this header
-// (occtFillingAddConstraint, occtShapeFilletEdgeList) rather than the structs above.
+// The last five serve the shared algorithm helpers at the bottom of this header
+// (occtFillingAddConstraint, occtShapeFilletEdgeList, occtDefeaturePerform) rather than the
+// structs above.
 #include <BRepOffsetAPI_MakeFilling.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <TopExp.hxx>
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
+#include <TopTools_ListOfShape.hxx>
 
 // === Foundation struct definitions ===
 
@@ -491,6 +493,49 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               OCCTFillingSupport kind,
                               GeomAbs_Shape order,
                               bool isBound);
+
+// === #497: one BRepAlgoAPI_Defeaturing skeleton ===
+//
+// Four entry points remove faces with BRepAlgoAPI_Defeaturing: OCCTShapeRemoveFeatures and
+// OCCTShapeDefeature (the plain index- and shape-addressed forms), OCCTShapeHistoryFromDefeature
+// (same operation, keeping the builder alive for its history), and OCCTShapeRemoveSmallFaces
+// (OCCTBridge_Healing.mm, which picks the faces itself by area). They had four independent copies
+// of the same SetShape/AddFaceToRemove/Build/IsDone sequence, and the copies had drifted apart on
+// every precondition: one silently skipped an out-of-range face index while another failed the
+// call, one dereferenced its faces array without a null check, and only two of them checked the
+// result shape for null. Definitions live in OCCTBridge_Modeling.mm.
+//
+// A fifth wrapper, OCCTDefeatureWithTolerance, was deleted rather than folded in. It differed from
+// OCCTShapeDefeature only by calling SetFuzzyValue, and that call does nothing:
+// BRepAlgoAPI_Defeaturing::Build forwards exactly myInputShape, myFacesToRemove, myFillHistory and
+// myRunParallel to the BOPAlgo_RemoveFeatures that does the work, so the fuzzy value inherited from
+// BOPAlgo_Options is stored and never read — as BRepAlgoAPI_Defeaturing.hxx says outright ("the
+// other options of the base class are not supported here and will have no effect"). Measured, not
+// assumed: identical BREP output for fuzzy values from 1e-7 to 100 on a 10mm box, against a
+// BRepAlgoAPI_Cut control that those same magnitudes visibly wreck. See
+// Scripts/repro/497-defeaturing-fuzzy-inert/.
+class BRepAlgoAPI_Defeaturing;
+
+// Resolve caller-supplied face indices — 0-based, into the shape's own TopExp face map — to the
+// faces themselves. Returns false, adding nothing, when the request is empty or names an index the
+// shape does not have. Failing an out-of-range index is the contract the majority of the callers
+// already had: quietly dropping it (the pre-#497 OCCTShapeRemoveFeatures behaviour) hands back a
+// shape that still carries the feature the caller asked to remove, with nothing to distinguish it
+// from a successful removal.
+bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceIndices,
+                                 int32_t faceCount, TopTools_ListOfShape& outFaces);
+
+// The same resolution for faces addressed as shape handles. Returns false when the request is
+// empty, the array itself is null, or any element is null — a null element used to be dereferenced
+// unchecked by OCCTShapeDefeature, which no try/catch could have saved.
+bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
+                                    TopTools_ListOfShape& outFaces);
+
+// Run `defeaturing` over `shape`, removing `facesToRemove`. The builder is the caller's, because
+// OCCTShapeHistoryFromDefeature has to outlive this call to read its history. Returns false unless
+// the operation is done AND produced a non-null shape.
+bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
+                          const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult);
 
 // === #403: shared BSpline knot-split-to-parameter conversion ===
 //

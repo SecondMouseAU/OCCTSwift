@@ -388,29 +388,63 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
     }
 }
 
+// MARK: - Defeaturing (BRepAlgoAPI_Defeaturing)
+
+// The shared skeleton behind every defeaturing entry point, here and in OCCTBridge_Healing.mm.
+// See OCCTBridge_Internal.h for what the four copies this replaces disagreed about, and for why
+// the fuzzy-tolerance wrapper that used to be the fifth is gone rather than folded in. #497
+
+bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceIndices,
+                                 int32_t faceCount, TopTools_ListOfShape& outFaces) {
+    if (faceIndices == nullptr || faceCount < 1) return false;
+
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
+
+    for (int32_t i = 0; i < faceCount; i++) {
+        int32_t idx = faceIndices[i];
+        if (idx < 0 || idx >= faceMap.Extent()) return false;
+        outFaces.Append(faceMap(idx + 1));
+    }
+    return true;
+}
+
+bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
+                                    TopTools_ListOfShape& outFaces) {
+    if (faces == nullptr || faceCount < 1) return false;
+
+    for (int32_t i = 0; i < faceCount; i++) {
+        if (faces[i] == nullptr) return false;
+        outFaces.Append(faces[i]->shape);
+    }
+    return true;
+}
+
+bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
+                          const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult) {
+    defeaturing.SetShape(shape);
+    defeaturing.AddFacesToRemove(facesToRemove);
+    defeaturing.Build();
+    if (!defeaturing.IsDone()) return false;
+
+    outResult = defeaturing.Shape();
+    return !outResult.IsNull();
+}
+
 OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount) {
-    if (!shape || !faceIndices || faceCount <= 0) return nullptr;
+    if (!shape) return nullptr;
 
     try {
-        BRepAlgoAPI_Defeaturing defeature;
-        defeature.SetShape(shape->shape);
-
-        // Build face index map
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                TopoDS_Face face = TopoDS::Face(faceMap(idx + 1));
-                defeature.AddFaceToRemove(face);
-            }
+        TopTools_ListOfShape facesToRemove;
+        if (!occtDefeaturingFacesByIndex(shape->shape, faceIndices, faceCount, facesToRemove)) {
+            return nullptr;
         }
 
-        defeature.Build();
-        if (!defeature.IsDone()) return nullptr;
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
 
-        return new OCCTShape(defeature.Shape());
+        return new OCCTShape(result);
     } catch (...) {
         return nullptr;
     }
@@ -1993,23 +2027,17 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromDefeature(OCCTShapeRef shape,
                                                      const int32_t* faceIndices, int32_t faceCount,
                                                      OCCTShapeRef* outResult) {
     if (outResult) *outResult = nullptr;
-    if (!shape || !faceIndices || faceCount < 1) return nullptr;
+    if (!shape) return nullptr;
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
         TopTools_ListOfShape facesToRemove;
-        for (int32_t i = 0; i < faceCount; ++i) {
-            int32_t idx = faceIndices[i] + 1;
-            if (idx < 1 || idx > faceMap.Extent()) return nullptr;
-            facesToRemove.Append(faceMap(idx));
+        if (!occtDefeaturingFacesByIndex(shape->shape, faceIndices, faceCount, facesToRemove)) {
+            return nullptr;
         }
+        // The builder outlives this call — OCCTBooleanHistory reads its history — so it is held by
+        // pointer here rather than on the stack, but it is the same skeleton. #497
         std::unique_ptr<BRepAlgoAPI_Defeaturing> op(new BRepAlgoAPI_Defeaturing());
-        op->SetShape(shape->shape);
-        op->AddFacesToRemove(facesToRemove);
-        op->Build();
-        if (!op->IsDone()) return nullptr;
-        TopoDS_Shape result = op->Shape();
-        if (result.IsNull()) return nullptr;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(*op, shape->shape, facesToRemove, result)) return nullptr;
         if (outResult) *outResult = new OCCTShape(result);
         return new OCCTBooleanHistory(std::move(op), occtArgList(shape->shape));
     } catch (...) { return nullptr; }
@@ -8711,23 +8739,9 @@ OCCTShapeRef OCCTBooleanCutWithHistory(OCCTShapeRef s1, OCCTShapeRef s2, double 
     } catch (...) { return nullptr; }
 }
 
-OCCTShapeRef OCCTDefeatureWithTolerance(OCCTShapeRef shape, const OCCTShapeRef* facesToRemove,
-                                          int32_t count, double fuzzyTol) {
-    if (!shape || !facesToRemove || count < 1) return nullptr;
-    try {
-        BRepAlgoAPI_Defeaturing def;
-        def.SetShape(shape->shape);
-        for (int i = 0; i < count; i++) {
-            if (facesToRemove[i]) def.AddFaceToRemove(facesToRemove[i]->shape);
-        }
-        if (fuzzyTol > 0) def.SetFuzzyValue(fuzzyTol);
-        def.Build();
-        if (def.IsDone()) {
-            return new OCCTShape{def.Shape()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
-}
+// OCCTDefeatureWithTolerance lived here. It was OCCTShapeDefeature plus a SetFuzzyValue call that
+// BRepAlgoAPI_Defeaturing never reads, so it removed exactly the same faces the same way; both
+// Swift spellings now reach OCCTShapeDefeature. See OCCTBridge_Internal.h's defeaturing block. #497
 // --- ThruSections builder ---
 
 struct OCCTThruSections {
@@ -8931,23 +8945,20 @@ OCCTShapeRef OCCTUnifySameDomainShape(OCCTUnifySameDomainRef ref) {
 }
 
 // MARK: - v0.118: Defeature + Sewing nbMultipleEdges
+// The shape-addressed defeaturing entry point, and since #497 the only one: it absorbed
+// OCCTDefeatureWithTolerance, whose fuzzy tolerance BRepAlgoAPI_Defeaturing discards.
 OCCTShapeRef OCCTShapeDefeature(OCCTShapeRef shape,
                                  const OCCTShapeRef* faces, int32_t faceCount) {
+    if (!shape) return nullptr;
     try {
-        auto* s = static_cast<OCCTShape*>(shape);
-        BRepAlgoAPI_Defeaturing df;
-        df.SetShape(s->shape);
-        for (int32_t i = 0; i < faceCount; i++) {
-            auto* f = static_cast<OCCTShape*>(faces[i]);
-            df.AddFaceToRemove(f->shape);
-        }
-        df.Build();
-        if (df.IsDone() && !df.Shape().IsNull()) {
-            auto* result = new OCCTShape();
-            result->shape = df.Shape();
-            return result;
-        }
-        return nullptr;
+        TopTools_ListOfShape facesToRemove;
+        if (!occtDefeaturingFacesFromShapes(faces, faceCount, facesToRemove)) return nullptr;
+
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
+
+        return new OCCTShape(result);
     } catch (...) { return nullptr; }
 }
 
