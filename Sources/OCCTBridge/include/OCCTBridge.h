@@ -16,6 +16,26 @@
 
 #import <Foundation/Foundation.h>
 
+// MARK: - Continuity vocabularies
+//
+// Continuity crosses this boundary as a plain integer, and there are exactly three vocabularies
+// it can be speaking. Every declaration below that takes one names which (#490); the decoders
+// live in one place, OCCTBridge_Internal.h, so a value cannot mean different things in different
+// functions the way it did before #490 (see #433 for the bug that shipped from exactly that).
+//
+//   Surface continuity — geometric constraint order handed to a plate solver.
+//     0=G0, 1=G1, 2=G2. Swift: `SurfaceContinuity`. Saturates at 2.
+//
+//   Parametric continuity — "make every piece at least Cn".
+//     0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN, the top of the same ladder.
+//     Swift: `ParametricContinuity`. Not every consumer accepts the strict end: the
+//     GeomConvert/Geom2dConvert Approx* family and ShapeCustom_BSplineRestriction fail the call
+//     above C2, while the Split*Continuity and PointsToBSpline families take the whole range.
+//
+//   Analysis order — a GeomAbs_Shape class named by its own ordinal.
+//     0=C0, 1=G1, 2=C1, 3=G2, 4=C2. Used in both directions by the LocalAnalysis_* junction
+//     analysers. Saturates at 4: those classes implement no predicate above C2/G2.
+//
 // MARK: - OCCT Class Cross-Reference Index
 //
 // Maps OCCT C++ classes to their OCCTBridge function names.
@@ -10423,6 +10443,10 @@ OCCTShapeRef _Nullable OCCTShapeCopyModification(OCCTShapeRef _Nonnull shapeRef,
 // MARK: - ShapeCustom_BSplineRestriction (advanced)
 
 /// Restrict BSpline degree and segments with full control over parameters.
+/// continuity3d/continuity2d: parametric continuity, same as OCCTShapeCustomBSplineRestriction —
+/// both drive a ShapeCustom_BSplineRestriction through BRepTools_Modifier, and before #490 this
+/// one read the value as a GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the
+/// top of this header. Above C2 the operation yields a null shape.
 /// Returns modified shape, or NULL on failure.
 OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull shapeRef,
                                                              bool approxSurface, bool approxCurve3d, bool approxCurve2d,
@@ -10442,7 +10466,9 @@ OCCTShapeRef _Nullable OCCTShapeConvertToBSplineAdvanced(OCCTShapeRef _Nonnull s
 // MARK: - ShapeUpgrade_SplitSurfaceContinuity
 
 /// Split a surface by continuity criterion.
-/// criterion: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN
+/// criterion: parametric continuity, same as OCCTSurfaceSplitByContinuity — both wrap
+/// ShapeUpgrade_SplitSurfaceContinuity, and before #490 this one read the value as a
+/// GeomAbs_Shape ordinal instead. See "Continuity vocabularies" at the top of this header.
 /// Returns number of U split values (0 on failure).
 int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
                                  int criterion, double tolerance,
@@ -17259,7 +17285,7 @@ OCCTCurve2DRef _Nullable OCCTInterpolate2DPeriodic(const double* _Nonnull points
 // --- GeomAPI_PointsToBSpline expansion ---
 
 /// Approximate 3D BSpline through points with degree and continuity control.
-/// continuity: 0=C0, 1=C1, 2=C2, 3=C3
+/// continuity: parametric continuity — see "Continuity vocabularies" at the top of this header.
 OCCTCurve3DRef _Nullable OCCTPointsToBSplineWithParams(const double* _Nonnull points, int32_t count,
                                                          int32_t degMin, int32_t degMax,
                                                          int32_t continuity, double tol);
@@ -17339,7 +17365,8 @@ void OCCTThruSectionsSetSmoothing(OCCTThruSectionsRef _Nonnull ts, bool smoothin
 /// Set maximum BSpline degree.
 void OCCTThruSectionsSetMaxDegree(OCCTThruSectionsRef _Nonnull ts, int32_t maxDeg);
 
-/// Set continuity (0=C0, 1=C1, 2=C2).
+/// Set continuity: parametric continuity — see "Continuity vocabularies" at the top of this
+/// header. Before #490 only 0 and 1 were read; everything else meant C2.
 void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef _Nonnull ts, int32_t continuity);
 
 /// Build the ThruSections shape. Returns true if successful.

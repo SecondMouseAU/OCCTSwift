@@ -40,21 +40,6 @@
 #include <TCollection_AsciiString.hxx>
 #include <GeomAbs_Shape.hxx>
 
-// === Local static helper duplicated from OCCTBridge.mm ===
-//
-// `static` ensures internal linkage so the symbol doesn't conflict with the
-// canonical definition over there. The function bodies are identical.
-
-static GeomAbs_Shape continuityFromInt(int val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_CN;
-    }
-}
-
 
 // === Extracted BRepGraph block ===
 //
@@ -2637,9 +2622,11 @@ void OCCTBRepGraphSetCoEdgeUVBox(OCCTBRepGraphRef, int32_t, double, double, doub
 
 // OCCT 8.0.0p1: edge regularity would live in BRepGraph_LayerRegularity, but that class is broken in
 // p1 (uncompilable header / absent from libOCCT — see the include note near the top of this file), so
-// there is no working write path. Report failure. continuityFromInt() is kept for the cut-path wrappers.
+// there is no working write path. Every call reports failure and the continuity argument is not read
+// at all. #490 deleted the local int -> GeomAbs_Shape copy that used to sit at the top of this file
+// purely so this body could take its address to silence an unused-static warning; the comment
+// claiming it was "kept for the cut-path wrappers" was false — nothing else ever called it.
 int32_t OCCTBRepGraphSetEdgeRegularity(OCCTBRepGraphRef, int32_t, int32_t, int32_t, int32_t) {
-    (void)&continuityFromInt;
     return 0;
 }
 

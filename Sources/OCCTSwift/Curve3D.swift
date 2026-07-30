@@ -506,6 +506,10 @@ public final class Curve3D: @unchecked Sendable {
     /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
+    ///
+    /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///   surfaces here as `nil`.
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D? {
         guard let h = OCCTCurve3DApproximate(handle, tolerance, Int32(continuity),
@@ -1140,7 +1144,10 @@ extension Curve3D {
     ///   - u1: Parameter on this curve
     ///   - other: Second curve
     ///   - u2: Parameter on second curve
-    ///   - order: Maximum continuity order to check (0=C0, 1=G1, 2=C1, 3=G2, 4=C2)
+    ///   - order: Continuity class to check, as a `GeomAbs_Shape` ordinal (0=C0, 1=G1, 2=C1,
+    ///     3=G2, 4=C2) — the same encoding `ContinuityAnalysis.status` reports back. C2 is the
+    ///     ceiling: `LocalAnalysis_*` implements no predicate above C2/G2, and asking for more
+    ///     leaves every predicate reporting true, so anything above 4 is read as 4.
     /// - Returns: Continuity analysis result, or nil on failure
     public func continuityWith(_ other: Curve3D, u1: Double, u2: Double, order: Int = 4) -> ContinuityAnalysis? {
         var outStatus: Int32 = 0
@@ -1697,6 +1704,10 @@ extension Curve3D {
     }
 
     /// Approximate a 3D BSpline through points with degree and continuity control.
+    ///
+    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
+    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// request as an upper bound on what it will try to achieve.
     public static func approximate(points: [SIMD3<Double>],
                                    degMin: Int = 3, degMax: Int = 8,
                                    continuity: Int = 2, tolerance: Double = 1e-3) -> Curve3D? {

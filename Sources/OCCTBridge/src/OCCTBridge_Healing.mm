@@ -746,19 +746,11 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
 
 // MARK: - Surface filling (#430/#434)
 //
-// occtFillingContinuityToGeomAbs / occtFillingSupportFaceFromPCurve / occtFillingAddConstraint /
-// occtFillingMakeBuilder are shared with OCCTBridge_Modeling.mm's OCCTFilling* family —
-// declared, and documented at length, in OCCTBridge_Internal.h. The OCCTShapeFill* helpers
-// below are local to this file.
-
-GeomAbs_Shape occtFillingContinuityToGeomAbs(int32_t continuity) {
-    switch (continuity) {
-        case 0:  return GeomAbs_C0;  // order 0 — position
-        case 1:  return GeomAbs_G1;  // order 1 — position + tangency
-        case 2:  return GeomAbs_C1;  // order 2 — position + tangency + curvature
-        default: return GeomAbs_C0;
-    }
-}
+// occtFillingSupportFaceFromPCurve / occtFillingAddConstraint / occtFillingMakeBuilder are
+// shared with OCCTBridge_Modeling.mm's OCCTFilling* family — declared, and documented at length,
+// in OCCTBridge_Internal.h, alongside occtGeomAbsFromSurfaceContinuity, the continuity decoder
+// this family uses (#490 renamed it from occtFillingContinuityToGeomAbs and moved it next to its
+// two siblings). The OCCTShapeFill* helpers below are local to this file.
 
 bool occtFillingSupportFaceFromPCurve(const TopoDS_Edge& edge, TopoDS_Face& outFace) {
     Handle(Geom2d_Curve) pcurve;
@@ -866,7 +858,7 @@ OCCTShapeRef OCCTShapeFill(const OCCTWireRef* boundaries, int32_t wireCount,
 
     try {
         BRepOffsetAPI_MakeFilling filling = OCCTShapeFillMakeBuilder(params);
-        const GeomAbs_Shape order = occtFillingContinuityToGeomAbs(params.continuity);
+        const GeomAbs_Shape order = occtGeomAbsFromSurfaceContinuity(params.continuity);
 
         std::vector<TopoDS_Edge> edges;
         OCCTShapeFillCollectEdges(boundaries, wireCount, edges);
@@ -890,7 +882,7 @@ OCCTShapeRef OCCTShapeFillWithSupport(const OCCTWireRef* boundaries, int32_t wir
 
     try {
         BRepOffsetAPI_MakeFilling filling = OCCTShapeFillMakeBuilder(params);
-        const GeomAbs_Shape order = occtFillingContinuityToGeomAbs(params.continuity);
+        const GeomAbs_Shape order = occtGeomAbsFromSurfaceContinuity(params.continuity);
 
         std::vector<TopoDS_Edge> edges;
         OCCTShapeFillCollectEdges(boundaries, wireCount, edges);
@@ -943,7 +935,7 @@ OCCTShapeRef OCCTShapeFillConstraints(const OCCTFillConstraint* constraints, int
             if (!occtFillingAddConstraint(filling, c.edge->edge, support,
                                           c.support ? OCCTFillingSupport::Nominated
                                                     : OCCTFillingSupport::Inferred,
-                                          occtFillingContinuityToGeomAbs(c.continuity),
+                                          occtGeomAbsFromSurfaceContinuity(c.continuity),
                                           c.isBound != 0)) {
                 return nullptr;
             }
@@ -1156,15 +1148,7 @@ OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity) {
     if (!shape) return nullptr;
 
     try {
-        // Map continuity: 0=C0, 1=C1, 2=C2, 3=C3
-        GeomAbs_Shape cont;
-        switch (continuity) {
-            case 0:  cont = GeomAbs_C0; break;
-            case 1:  cont = GeomAbs_C1; break;
-            case 2:  cont = GeomAbs_C2; break;
-            case 3:  cont = GeomAbs_C3; break;
-            default: cont = GeomAbs_C1; break;
-        }
+        const GeomAbs_Shape cont = occtGeomAbsFromParametricContinuity(continuity);
 
         ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
         divider.SetBoundaryCriterion(cont);
@@ -2283,17 +2267,16 @@ OCCTShapeRef OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int32_t bounda
     try {
         ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
 
-        GeomAbs_Shape criterion;
-        switch (boundaryCriterion) {
-            case 0: criterion = GeomAbs_C0; break;
-            case 1: criterion = GeomAbs_C1; break;
-            case 2: criterion = GeomAbs_C2; break;
-            case 3: criterion = GeomAbs_C3; break;
-            case 4: criterion = GeomAbs_CN; break;
-            case 5: criterion = GeomAbs_G1; break;
-            case 6: criterion = GeomAbs_G2; break;
-            default: criterion = GeomAbs_C1; break;
-        }
+        // Shape.ContinuityLevel is ParametricContinuity's ladder (0=C0 .. 3=C3, 4=CN, which is
+        // where occtGeomAbsFromParametricContinuity saturates anyway) with the two geometric
+        // classes tacked on at 5 and 6. Those two are the only values here that are not the
+        // shared parametric decoding — and they are also the two ShapeUpgrade_Split*Continuity::
+        // SetCriterion does not recognise at all, so OCCT quietly substitutes its own C1 default
+        // for them. Kept because the public enum has always advertised them. #490.
+        const GeomAbs_Shape criterion =
+            boundaryCriterion == 5 ? GeomAbs_G1 :
+            boundaryCriterion == 6 ? GeomAbs_G2 :
+            occtGeomAbsFromParametricContinuity(boundaryCriterion);
 
         divider.SetBoundaryCriterion(criterion);
         divider.SetTolerance(tolerance);
@@ -2354,16 +2337,6 @@ OCCTShapeRef OCCTShapeCustomDirectFaces(OCCTShapeRef shape) {
     }
 }
 
-static GeomAbs_Shape mapContinuity(int32_t val) {
-    switch (val) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C1;
-    }
-}
-
 OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
     double tol3d, double tol2d, int32_t maxDegree, int32_t maxSegments,
     int32_t continuity3d, int32_t continuity2d, bool degreePriority, bool rational) {
@@ -2372,7 +2345,8 @@ OCCTShapeRef OCCTShapeCustomBSplineRestriction(OCCTShapeRef shape,
         Handle(ShapeCustom_RestrictionParameters) params = new ShapeCustom_RestrictionParameters();
         TopoDS_Shape result = ShapeCustom::BSplineRestriction(
             shape->shape, tol3d, tol2d, maxDegree, maxSegments,
-            mapContinuity(continuity3d), mapContinuity(continuity2d),
+            occtGeomAbsFromParametricContinuity(continuity3d),
+            occtGeomAbsFromParametricContinuity(continuity2d),
             degreePriority, rational, params);
         if (result.IsNull()) return nullptr;
         return new OCCTShape(result);
@@ -3105,21 +3079,20 @@ OCCTValidateEdgeResult OCCTValidateEdge(OCCTEdgeRef _Nonnull edge, OCCTFaceRef _
     return result;
 }
 
-// MARK: - ShapeCustom_BSplineRestriction + ConvertToBSpline (v0.78, with continuityFromInt78 helper)
+// MARK: - ShapeCustom_BSplineRestriction + ConvertToBSpline (v0.78)
 // MARK: - ShapeCustom_BSplineRestriction
 
-static GeomAbs_Shape continuityFromInt78(int c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_G1;
-        case 2: return GeomAbs_C1;
-        case 3: return GeomAbs_G2;
-        case 4: return GeomAbs_C2;
-        case 5: return GeomAbs_C3;
-        case 6: return GeomAbs_CN;
-        default: return GeomAbs_C1;
-    }
-}
+// #490: this function and OCCTSplitSurfaceContinuity below used to read their continuity as a
+// GeomAbs_Shape ordinal (a local continuityFromInt78 helper: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3,
+// 6=CN) while the sibling entry point for the very same OCCT operation read it as a required
+// parametric continuity. OCCTShapeCustomBSplineRestriction drives ShapeCustom::BSplineRestriction,
+// which is itself just a ShapeCustom_BSplineRestriction run through BRepTools_Modifier — exactly
+// what OCCTShapeBSplineRestrictionAdvanced constructs by hand — and OCCTSurfaceSplitByContinuity
+// wraps the same ShapeUpgrade_SplitSurfaceContinuity as OCCTSplitSurfaceContinuity. So the same
+// integer meant two different continuities in each pair. Both now decode as
+// ParametricContinuity, and the ordinal reading is gone: of the seven values it advertised, only
+// 0/2/4 ever worked here anyway (measured — ShapeCustom_BSplineRestriction returns a null shape
+// for G1, G2, C3 and CN).
 
 OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull shapeRef,
                                                              bool approxSurface, bool approxCurve3d, bool approxCurve2d,
@@ -3132,7 +3105,8 @@ OCCTShapeRef _Nullable OCCTShapeBSplineRestrictionAdvanced(OCCTShapeRef _Nonnull
         Handle(ShapeCustom_BSplineRestriction) mod = new ShapeCustom_BSplineRestriction(
             approxSurface, approxCurve3d, approxCurve2d,
             tol3d, tol2d,
-            continuityFromInt78(continuity3d), continuityFromInt78(continuity2d),
+            occtGeomAbsFromParametricContinuity(continuity3d),
+            occtGeomAbsFromParametricContinuity(continuity2d),
             maxDegree, maxSegments,
             priorityDegree, convertRational);
         BRepTools_Modifier modifier(shape, mod);
@@ -3177,7 +3151,7 @@ int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
         auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
         Handle(ShapeUpgrade_SplitSurfaceContinuity) splitter = new ShapeUpgrade_SplitSurfaceContinuity();
         splitter->Init(surface);
-        splitter->SetCriterion(continuityFromInt78(criterion));
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform(true);
         int uCount = splitter->USplitValues()->Length();

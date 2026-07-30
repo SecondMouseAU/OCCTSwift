@@ -1526,7 +1526,11 @@ struct SplitSurfaceTests {
     func splitSurfaceByContinuity() {
         if let surf = Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 10) {
             if let bsp = surf.toBSpline() {
-                let result = bsp.splitSurfaceByContinuity(criterion: 4, tolerance: 1e-6)
+                // criterion is a ParametricContinuity raw value: 2 = C2. It used to be read
+                // here as a GeomAbs_Shape ordinal, where 4 meant C2 and 2 meant C1 — see
+                // Issue490ContinuityDecoderTests for the cross-check against the sibling entry
+                // point that always read it the other way. #490.
+                let result = bsp.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
                 // May or may not split, just verify no crash
                 if let r = result {
                     #expect(r.uSplitCount >= 2)

@@ -17,6 +17,48 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### One continuity decoder per vocabulary, not nineteen (#490)
+
+Continuity reached OCCT as a plain integer through 19 separate decoders: seven independently-named
+`static` helpers (14 copies across five `.mm` files), six switches written inline in the function
+that needed them, and one dead copy kept alive only so a stub could take its address to silence an
+unused-static warning. They disagreed, and not hypothetically — #433 already shipped a broken fill
+from exactly this, and two more pairs were still live:
+
+- **`Shape.bsplineRestrictionAdvanced` vs `Shape.bsplineRestriction`.** Both drive a
+  `ShapeCustom_BSplineRestriction` through `BRepTools_Modifier` (the static
+  `ShapeCustom::BSplineRestriction` the plain entry point calls is itself just that), but the
+  advanced one read its argument as a `GeomAbs_Shape` ordinal, so `2` asked for C1 where its
+  sibling asked for C2. Worse than a mismatch: of the seven values that reading advertised, only
+  0, 2 and 4 ever worked — `ShapeCustom_BSplineRestriction` returns a null shape for G1, G2, C3 and
+  CN, so `continuity3d: 1` silently failed every call. The parameters are now
+  `ParametricContinuity`, matching the sibling exactly, with a deprecated `Int` overload that
+  decodes the same way and says so.
+- **`Surface.splitSurfaceByContinuity` vs `Surface.splitByContinuity`** (found while auditing this
+  issue, not named in it). Both wrap `ShapeUpgrade_SplitSurfaceContinuity`; `criterion: 2` asked
+  one for C1 and the other for C2, an observable difference in the returned split counts.
+
+There are exactly three vocabularies, each now decoded in exactly one place
+(`OCCTBridge_Internal.h`) and named after the Swift enum that feeds it: `SurfaceContinuity`
+(geometric constraint order, 0=G0/1=G1/2=G2), `ParametricContinuity` (0=C0…3=C3) and the analysis
+order the `LocalAnalysis_*` junction analysers speak in both directions (a `GeomAbs_Shape` ordinal,
+0=C0/1=G1/2=C1/3=G2/4=C2). All three saturate at the top of their own vocabulary, replacing three
+different out-of-range fallbacks (`GeomAbs_CN`, `GeomAbs_C2`, `GeomAbs_C1`) — the same invalid
+integer used to mean different things depending only on which entry point received it. The
+analysis-order ceiling is measured, not arbitrary: asking `LocalAnalysis_*` for C3 or CN leaves
+every predicate reporting true, so C2 is the strictest question those classes can answer.
+
+Also from this pass, all measured against the pinned kernel and now documented and tested rather
+than left to be rediscovered: the `GeomConvert`/`Geom2dConvert` `Approx*` family accepts C0/C1/C2
+only (`AdvApprox` throws above C2, surfacing as `nil`), while the `PointsToBSpline` family accepts
+the whole ladder without failing; `Curve3D.approximate(points:)`'s reference page documented the
+wrong vocabulary entirely (the analysis order, which that call has never used); and
+`BRepGraph.setEdgeRegularity` is a stub that always returns `false` and never reads its continuity
+argument — its only test discarded the result and asserted nothing, so that had gone unnoticed since
+the OCCT 8.0.0 GA upgrade. Now asserted, documented, and tracked for resolution in #513.
+
+Bridge-only plus doc/signature changes: no kernel patch, no `OCCT.xcframework` rebuild.
+
 #### Two upstream OCCT null-context SIGSEGVs, patched and filed (#484)
 
 Auditing every `ShapeFix_Face` call site turned up two unpatched, never-filed crashes of the same

@@ -298,9 +298,9 @@ public static func approximate(
 ) -> Curve3D?
 ```
 
-Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=G1, 2=C1.
+Unlike `interpolate`, the curve does not pass exactly through every point; it minimises deviation within `tolerance`. `continuity` is a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3. (It was documented here as `0=C0, 1=G1, 2=C1` — the analysis-order vocabulary, which this call has never used; corrected in #490.) `GeomAPI_PointsToBSpline` treats the value as an upper bound and accepts the whole range without failing.
 
-- **Parameters:** `points` — data points (minimum 2); `degMin` — minimum polynomial degree; `degMax` — maximum polynomial degree; `continuity` — minimum continuity order (0=C0, 1=G1, 2=C1); `tolerance` — maximum allowed deviation.
+- **Parameters:** `points` — data points (minimum 2); `degMin` — minimum polynomial degree; `degMax` — maximum polynomial degree; `continuity` — minimum continuity order (0=C0, 1=C1, 2=C2, 3=C3); `tolerance` — maximum allowed deviation.
 - **Returns:** Approximating BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_PointsToBSpline(pts, degMin, degMax, continuity, tolerance)`.
 - **Example:**

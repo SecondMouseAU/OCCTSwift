@@ -618,7 +618,9 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - tolerance: Maximum approximation error, applied over the whole curve
-    ///   - continuity: Desired continuity (0=C0, 1=C1, 2=C2, 3=C3)
+    ///   - continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
+    ///     approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
+    ///     surfaces here as `nil`.
     ///   - maxSegments: Maximum number of B-spline segments
     ///   - maxDegree: Maximum polynomial degree
     ///
@@ -2445,6 +2447,10 @@ extension Curve2D {
     }
 
     /// Approximate a 2D BSpline through points with degree and continuity control.
+    ///
+    /// `continuity` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3). Unlike the
+    /// `approximated` family, the fitter accepts every value without failing — it treats the
+    /// request as an upper bound on what it will try to achieve.
     public static func approximate(points: [SIMD2<Double>],
                                    degMin: Int = 3, degMax: Int = 8,
                                    continuity: Int = 2, tolerance: Double = 1e-3) -> Curve2D? {

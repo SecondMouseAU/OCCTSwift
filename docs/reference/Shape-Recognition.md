@@ -665,7 +665,7 @@ Splits this 3D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D]
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
 - **Returns:** Array of `Curve3D` segments; may be a single-element array if no breaks are found.
 - **OCCT:** `ShapeUpgrade_SplitCurve3dContinuity` via `OCCTSplitCurve3dContinuity`.
 - **Example:**
@@ -683,7 +683,7 @@ Splits this 2D curve at continuity breaks.
 public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D]
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=C1, 2=C2, 3=C3, 4=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, and anything above asks for CN (split at every break); `tolerance` — geometric tolerance.
 - **Returns:** Array of `Curve2D` segments.
 - **OCCT:** `ShapeUpgrade_SplitCurve2dContinuity` via `OCCTSplitCurve2dContinuity`.
 
@@ -801,17 +801,17 @@ public static func bsplineRestrictionAdvanced(_ shape: Shape,
                                                 approxCurve2d: Bool = true,
                                                 tol3d: Double = 0.01,
                                                 tol2d: Double = 0.01,
-                                                continuity3d: Int = 2,
-                                                continuity2d: Int = 2,
+                                                continuity3d: ParametricContinuity = .c1,
+                                                continuity2d: ParametricContinuity = .c1,
                                                 maxDegree: Int = 5,
                                                 maxSegments: Int = 20,
                                                 priorityDegree: Bool = true,
                                                 convertRational: Bool = false) -> Shape?
 ```
 
-- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d` — which geometry types to process; `tol3d`/`tol2d` — tolerances; `continuity3d`/`continuity2d` — required continuity (0=C0…6=CN); `maxDegree` — maximum polynomial degree; `maxSegments` — maximum segment count; `priorityDegree` — `true` = reduce degree first, `false` = reduce segments first; `convertRational` — convert rational BSplines to non-rational.
+- **Parameters:** `approxSurface`/`approxCurve3d`/`approxCurve2d` — which geometry types to process; `tol3d`/`tol2d` — tolerances; `continuity3d`/`continuity2d` — required continuity, `.c2` being the practical maximum (`.c3` fails the whole call); `maxDegree` — maximum polynomial degree; `maxSegments` — maximum segment count; `priorityDegree` — `true` = reduce degree first, `false` = reduce segments first; `convertRational` — convert rational BSplines to non-rational.
 - **Returns:** Restricted shape, or `nil` on failure.
-- **OCCT:** `ShapeUpgrade_ConvertSurfaceToBSplineSurface` / `ShapeUpgrade_BSplineRestriction` via `OCCTShapeBSplineRestrictionAdvanced`.
+- **OCCT:** `ShapeCustom_BSplineRestriction` driven through `BRepTools_Modifier` via `OCCTShapeBSplineRestrictionAdvanced` — the same mechanism `Shape.bsplineRestriction(...)` reaches through the static `ShapeCustom::BSplineRestriction` helper, and since #490 both read the continuity the same way. This entry point used to read it as a `GeomAbs_Shape` ordinal (`1`=G1, `2`=C1), so the same integer asked for a different continuity through each, and four of the seven values that reading offered failed the whole call. A deprecated `Int` overload remains for source compatibility; it now decodes as `ParametricContinuity` too.
 
 ---
 
@@ -858,9 +858,9 @@ Splits this surface at continuity breaks.
 public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult?
 ```
 
-- **Parameters:** `criterion` — continuity criterion: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN; `tolerance` — geometric tolerance.
+- **Parameters:** `criterion` — a `ParametricContinuity` raw value: 0=C0, 1=C1, 2=C2, 3=C3, above asks for CN; `tolerance` — geometric tolerance.
 - **Returns:** `SplitResult` with U and V split counts, or `nil` if no splits are found.
-- **OCCT:** `ShapeUpgrade_SplitSurface` / continuity variant via `OCCTSplitSurfaceContinuity`.
+- **OCCT:** `ShapeUpgrade_SplitSurfaceContinuity` via `OCCTSplitSurfaceContinuity` — the same class `Surface.splitByContinuity(criterion:tolerance:)` wraps. Before #490 this entry point read `criterion` as a `GeomAbs_Shape` ordinal while its sibling read it as a parametric continuity, so `criterion: 2` asked for C1 through one and C2 through the other.
 
 ---
 

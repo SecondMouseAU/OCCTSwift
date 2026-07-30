@@ -721,7 +721,7 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
 
 - **Parameters:**
   - `tolerance` — maximum approximation deviation.
-  - `continuity` — desired continuity order (0=C0, 1=C1, 2=C2).
+  - `continuity` — desired continuity order, a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2). C2 is the ceiling: `AdvApprox` throws for C3 and above, which surfaces as `nil`.
   - `maxSegments` — maximum number of BSpline segments.
   - `maxDegree` — maximum polynomial degree.
 - **Returns:** Approximated BSpline surface, or `nil` on failure.
@@ -1292,7 +1292,7 @@ Points must be in row-major order: `point[v * uCount + u]`. Uses `GeomAPI_Points
   - `vCount` — number of points in V direction.
   - `degMin` — minimum BSpline degree (default 3).
   - `degMax` — maximum BSpline degree (default 8).
-  - `continuity` — desired continuity (0=C0, 1=C1, 2=C2; default 2).
+  - `continuity` — desired continuity, a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2, 3=C3; default 2). Unlike `approximated(...)`, the point fitter accepts the whole range without failing.
   - `tolerance` — approximation tolerance.
 - **Returns:** Fitted BSpline surface, or `nil` if `points.count ≠ uCount * vCount` or fitting fails.
 - **OCCT:** `GeomAPI_PointsToBSplineSurface`.

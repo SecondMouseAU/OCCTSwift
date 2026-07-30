@@ -3848,8 +3848,14 @@ struct EditorViewV162Tests {
                 // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
                 // SetSeamPairId with EdgeOps::SetRegularity — continuity now lives on
                 // (edge, face1, face2). face1 == face2 expresses seam continuity.
-                _ = graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) // C1 across faces 0,1
-                _ = graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) // seam C0
+                //
+                // That write path does not exist in 8.0.0p1: BRepGraph_LayerRegularity does not
+                // compile and is absent from libOCCT, so the bridge function is a stub that
+                // reports failure and never reads the continuity argument. Assert that, rather
+                // than discarding the result — this test had shipped since the GA upgrade with
+                // `_ =` on both calls and no expectation, so nothing noticed. #490/#513.
+                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false)
+                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) == false)
             }
         }
     }

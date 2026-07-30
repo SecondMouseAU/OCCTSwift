@@ -606,13 +606,7 @@ OCCTSurfaceRef OCCTSurfaceApproximate(OCCTSurfaceRef s, double tolerance,
                                        int32_t maxDegree) {
     if (!s || s->surface.IsNull()) return nullptr;
     try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-        }
+        const GeomAbs_Shape cont = occtGeomAbsFromParametricContinuity(continuity);
         GeomConvert_ApproxSurface approx(s->surface, tolerance,
                                           cont, cont, maxDegree, maxDegree, maxSegments, 0);
         if (!approx.HasResult()) return nullptr;
@@ -1824,11 +1818,7 @@ OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef sur
 
         Handle(ShapeUpgrade_SplitSurfaceContinuity) splitter = new ShapeUpgrade_SplitSurfaceContinuity();
         splitter->Init(bsurf);
-        GeomAbs_Shape cont = GeomAbs_C0;
-        if (criterion == 1) cont = GeomAbs_C1;
-        else if (criterion == 2) cont = GeomAbs_C2;
-        else if (criterion >= 3) cont = GeomAbs_C3;
-        splitter->SetCriterion(cont);
+        splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
         splitter->SetTolerance(tolerance);
         splitter->Perform();
 
@@ -2383,27 +2373,8 @@ OCCTShapeRef _Nullable OCCTAdaptor3dIsoCurveEdge(OCCTShapeRef faceShape, int iso
 }
 
 // MARK: - LocalAnalysis_SurfaceContinuity (v0.67)
-static GeomAbs_Shape orderToShape(int32_t order) {
-    switch (order) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_G1;
-        case 2: return GeomAbs_C1;
-        case 3: return GeomAbs_G2;
-        case 4: return GeomAbs_C2;
-        default: return GeomAbs_C2;
-    }
-}
-
-static int32_t shapeToOrder(GeomAbs_Shape shape) {
-    switch (shape) {
-        case GeomAbs_C0: return 0;
-        case GeomAbs_G1: return 1;
-        case GeomAbs_C1: return 2;
-        case GeomAbs_G2: return 3;
-        case GeomAbs_C2: return 4;
-        default: return -1;
-    }
-}
+// Order in / status out are GeomAbs_Shape ordinals — the same shared pair the curve analyser in
+// OCCTBridge_Curve3D.mm uses; see occtGeomAbsFromAnalysisOrder in OCCTBridge_Internal.h (#490).
 
 // --- LocalAnalysis_SurfaceContinuity ---
 
@@ -2417,10 +2388,10 @@ bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1, double
         auto s2 = (OCCTSurface*)surface2;
 
         LocalAnalysis_SurfaceContinuity sc(s1->surface, u1, v1, s2->surface, u2, v2,
-                                            orderToShape(order));
+                                            occtGeomAbsFromAnalysisOrder(order));
         if (!sc.IsDone()) return false;
 
-        *outStatus = shapeToOrder(sc.ContinuityStatus());
+        *outStatus = occtAnalysisOrderFromGeomAbs(sc.ContinuityStatus());
         *outC0Value = sc.C0Value();
         *outG1Angle = sc.IsG1() ? sc.G1Angle() : -1.0;
         *outC1UAngle = sc.IsC1() ? sc.C1UAngle() : -1.0;
@@ -2436,7 +2407,7 @@ int32_t OCCTLocalAnalysisSurfaceContinuityFlags(OCCTSurfaceRef _Nonnull surface1
         auto s2 = (OCCTSurface*)surface2;
 
         LocalAnalysis_SurfaceContinuity sc(s1->surface, u1, v1, s2->surface, u2, v2,
-                                            orderToShape(order));
+                                            occtGeomAbsFromAnalysisOrder(order));
         if (!sc.IsDone()) return 0;
 
         int32_t flags = 0;
@@ -2719,15 +2690,6 @@ double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface) {
 }
 
 // MARK: - GeomConvert_ApproxSurface (v0.75)
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
 
 // --- GeomConvert_ApproxSurface ---
 
@@ -2741,8 +2703,8 @@ OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull sur
     if (!surface) return result;
     try {
         GeomConvert_ApproxSurface approx(surface->surface, tolerance,
-                                          intToContinuity(uContinuity),
-                                          intToContinuity(vContinuity),
+                                          occtGeomAbsFromParametricContinuity(uContinuity),
+                                          occtGeomAbsFromParametricContinuity(vContinuity),
                                           maxDegree, maxDegree, maxSegments, 1);
         result.isDone = approx.IsDone();
         result.hasResult = approx.HasResult();
@@ -5036,17 +4998,6 @@ void OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
 
 // MARK: - v0.115: PointsToSurfaceBSpline (re-routed from Curve3D)
 
-// Helper duplicate of mapContinuityV115
-static GeomAbs_Shape mapContinuityV115(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
 OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points, int32_t uCount, int32_t vCount,
                                             int32_t degMin, int32_t degMax,
                                             int32_t continuity, double tol) {
@@ -5059,7 +5010,7 @@ OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points, int32_t uCount, 
                 pts.SetValue(u + 1, v + 1, gp_Pnt(points[idx], points[idx+1], points[idx+2]));
             }
         }
-        GeomAPI_PointsToBSplineSurface approx(pts, degMin, degMax, mapContinuityV115(continuity), tol);
+        GeomAPI_PointsToBSplineSurface approx(pts, degMin, degMax, occtGeomAbsFromParametricContinuity(continuity), tol);
         if (approx.IsDone()) {
             return (OCCTSurfaceRef)new OCCTSurface{approx.Surface()};
         }

@@ -4426,7 +4426,7 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
 // #432/#433: route through occtFillingAddConstraint rather than calling the face-less
 // BRepOffsetAPI_MakeFilling::Add(edge, order) overload directly, which SIGSEGVs on any curved
 // boundary edge for continuity above C0 (see OCCTBridge_Internal.h and issue #430 for the
-// mechanism); and use occtFillingContinuityToGeomAbs for the order mapping rather than a local
+// mechanism); and use occtGeomAbsFromSurfaceContinuity for the order mapping rather than a local
 // copy — the local one that used to be here mapped order 1 to GeomAbs_C1 (curvature) instead of
 // GeomAbs_G1 (tangency) and order 2 to GeomAbs_C2 (ordinal 4, rejected outright), failing the
 // whole fill (#433). Note Add() only appends and never validates the order itself, so returning
@@ -4437,7 +4437,7 @@ bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t contin
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
-                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/true);
+                                 occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/true);
         return true;
     } catch (...) {
         return false;
@@ -4449,7 +4449,7 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
-                                 occtFillingContinuityToGeomAbs(continuity), /*isBound=*/false);
+                                 occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/false);
         return true;
     } catch (...) {
         return false;
@@ -4469,7 +4469,7 @@ bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
         return occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
                                         support ? OCCTFillingSupport::Nominated
                                                 : OCCTFillingSupport::Inferred,
-                                        occtFillingContinuityToGeomAbs(continuity),
+                                        occtGeomAbsFromSurfaceContinuity(continuity),
                                         /*isBound=*/true);
     } catch (...) {
         return false;
@@ -8813,11 +8813,7 @@ void OCCTThruSectionsSetContinuity(OCCTThruSectionsRef ref, int32_t continuity) 
     auto ts = (OCCTThruSections*)ref;
     if (!ts) return;
     ts->builder->SetCriteriumWeight(1.0, 1.0, 1.0); // ensure defaults
-    // Map 0=C0, 1=C1, 2=C2
-    GeomAbs_Shape cont = GeomAbs_C2;
-    if (continuity == 0) cont = GeomAbs_C0;
-    else if (continuity == 1) cont = GeomAbs_C1;
-    ts->builder->SetContinuity(cont);
+    ts->builder->SetContinuity(occtGeomAbsFromParametricContinuity(continuity));
 }
 
 bool OCCTThruSectionsBuild(OCCTThruSectionsRef ref) {
@@ -9415,11 +9411,17 @@ void OCCTFilletBuilderSetParams(OCCTFilletBuilderRef builder,
     } catch (...) {}
 }
 
+// #490: this was the one request-side site that decoded nothing at all — a raw cast, which made the
+// argument a GeomAbs_Shape ordinal (1 = G1, 2 = C1) while the Swift entry point documented the
+// parametric ladder (0=C0, 1=C1, 2=C2), so every value from 1 up asked for one class less than the
+// caller read. BRepFilletAPI_MakeFillet.hxx agrees the domain is "an continuity Ci (i=0,1 or 2)".
+// Flagged in #513's census; fixed here because it is the same defect this issue is about.
 void OCCTFilletBuilderSetContinuity(OCCTFilletBuilderRef builder,
                                      int32_t internalContinuity, double angularTolerance) {
     if (!builder) return;
     try {
-        builder->fillet.SetContinuity((GeomAbs_Shape)internalContinuity, angularTolerance);
+        builder->fillet.SetContinuity(occtGeomAbsFromParametricContinuity(internalContinuity),
+                                      angularTolerance);
     } catch (...) {}
 }
 
