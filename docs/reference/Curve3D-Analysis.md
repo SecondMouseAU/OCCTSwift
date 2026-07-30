@@ -140,7 +140,8 @@ Struct returned by `continuityWith(_:u1:u2:order:)`.
 
 ```swift
 public struct ContinuityAnalysis: Sendable {
-    public let status: Int
+    public let order: ContinuityClass
+    public let measured: Set<ContinuityClass>
     public let c0Value: Double
     public let g1Angle: Double
     public let c1Angle: Double
@@ -150,22 +151,27 @@ public struct ContinuityAnalysis: Sendable {
     public let g2Angle: Double
     public let g2CurvatureVariation: Double
     public let flags: Int
-    public var isC0: Bool { flags & 1  != 0 }
-    public var isG1: Bool { flags & 2  != 0 }
-    public var isC1: Bool { flags & 4  != 0 }
-    public var isG2: Bool { flags & 8  != 0 }
-    public var isC2: Bool { flags & 16 != 0 }
+    public func holds(_ continuity: ContinuityClass) -> Bool?
+    public var isC0: Bool? { holds(.c0) }
+    public var isG1: Bool? { holds(.g1) }
+    public var isC1: Bool? { holds(.c1) }
+    public var isG2: Bool? { holds(.g2) }
+    public var isC2: Bool? { holds(.c2) }
 }
 ```
 
-- `status` — raw `GeomAbs_Shape` continuity code (0=C0, 1=G1, 2=C1, 3=G2, 4=C2).
+- `order` — the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_CurveContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+- `measured` — the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
 - `c0Value` — positional gap distance at the junction.
-- `g1Angle` — angle between tangent directions (radians).
-- `c1Angle` / `c1Ratio` — angle and magnitude ratio between first derivatives.
-- `c2Angle` / `c2Ratio` — angle and magnitude ratio between second derivatives.
-- `g2Angle` — angle between osculating planes.
-- `g2CurvatureVariation` — curvature variation at the junction.
-- `flags` — bitmask encoding continuity levels; decoded by computed boolean helpers `isC0` … `isC2`.
+- `g1Angle` — angle between tangent directions (radians), or `-1` if G1 was not measured or does not hold.
+- `c1Angle` / `c1Ratio` — angle and magnitude ratio between first derivatives, or `-1`.
+- `c2Angle` / `c2Ratio` — angle and magnitude ratio between second derivatives, or `-1`.
+- `g2Angle` — angle between osculating planes, or `-1`.
+- `g2CurvatureVariation` — curvature variation at the junction, or `-1`.
+- `flags` — bitmask (bit 0 = C0 … bit 4 = C2), masked to `measured`.
+- `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
+
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° corner analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
 
 ---
 
@@ -174,18 +180,23 @@ public struct ContinuityAnalysis: Sendable {
 Analyses the continuity between this curve at parameter `u1` and another curve at parameter `u2`.
 
 ```swift
-public func continuityWith(_ other: Curve3D, u1: Double, u2: Double, order: Int = 4) -> ContinuityAnalysis?
+public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
+                           order: ContinuityClass = .c2) -> ContinuityAnalysis?
 ```
 
-`order` controls the maximum continuity level tested: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2 (default). Use at shared endpoints when assembling curves that are expected to meet smoothly.
+`order` **selects** the analysis rather than capping it — see `measured` above. `.c2` is the strictest class `LocalAnalysis_CurveContinuity` implements, so `.c3` and `.cN` saturate to it.
 
-- **Parameters:** `other` — the second curve; `u1` — parameter on this curve; `u2` — parameter on `other`; `order` — highest order to test (0–4, default 4).
-- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_CurveContinuity` fails (e.g. degenerate tangent, invalid order).
+- **Parameters:** `other` — the second curve; `u1` — parameter on this curve; `u2` — parameter on `other`; `order` — the class to measure (default `.c2`).
+- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_CurveContinuity` fails.
 - **OCCT:** `LocalAnalysis_CurveContinuity`.
+- **Note:** the `.c2` and `.g2` branches need a non-zero second derivative on both curves, so a straight line cannot be analysed above `.c1`/`.g1`.
 - **Example:**
   ```swift
-  if let ca = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-      print(ca.isG1, ca.g1Angle)
+  // Tangency is its own question: the .c2 default never computes G1.
+  if let ca = c1.continuityWith(c2, u1: c1.domain.upperBound,
+                                u2: c2.domain.lowerBound, order: .g1) {
+      print(ca.holds(.g1), ca.g1Angle)
+      print(ca.holds(.c1))            // nil — .g1 does not measure C1
   }
   ```
 

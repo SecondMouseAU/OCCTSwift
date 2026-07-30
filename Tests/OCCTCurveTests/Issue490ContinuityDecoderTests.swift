@@ -81,18 +81,18 @@ struct Issue490CurveContinuityTests {
         else { return }
 
         let atC2 = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                                  u2: c2.domain.lowerBound, order: 4))
+                                                  u2: c2.domain.lowerBound, order: .c2))
         // LocalAnalysis_CurveContinuity implements no predicate above C2/G2: asking for C3 or CN
         // leaves every predicate reporting true, i.e. the analysis becomes meaningless. So the
         // shared decoder reads anything above 4 as 4 instead of passing it through.
         let beyond = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
-                                                    u2: c2.domain.lowerBound, order: 9))
-        #expect(atC2.status == beyond.status)
+                                                    u2: c2.domain.lowerBound, order: .cN))
+        #expect(atC2.order == beyond.order)
+        #expect(atC2.measured == beyond.measured)
         #expect(atC2.flags == beyond.flags)
 
-        // The status comes back in the same ordinal vocabulary the order went in as.
-        #expect(atC2.status >= 0)
-        #expect(atC2.status <= 4)
+        // The effective order comes back in the same ordinal vocabulary the request went in as.
+        #expect(atC2.order == .c2)
     }
 
     @Test("each analysis order below the ceiling asks a different question")
@@ -101,13 +101,15 @@ struct Issue490CurveContinuityTests {
               let c2 = Curve3D.fit(points: [SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)])
         else { return }
 
-        // 0=C0, 1=G1, 2=C1, 3=G2, 4=C2 — the GeomAbs_Shape ordinals, which is what makes the
-        // reported status directly comparable to the requested order.
-        for order in 0...4 {
+        // The order is echoed back verbatim, so what makes each one a *different question* is the
+        // set of classes it measures — see Issue495CurveAnalysisOrderTests for that half.
+        for order in [ContinuityClass.c0, .g1, .c1, .g2, .c2] {
             let analysis = try #require(c1.continuityWith(c2, u1: c1.domain.upperBound,
                                                           u2: c2.domain.lowerBound, order: order))
-            #expect(analysis.status == order,
+            #expect(analysis.order == order,
                     "order \(order) should be reported back in the same encoding")
+            #expect(analysis.measured.contains(order),
+                    "the requested class is always among the measured ones")
         }
     }
 }

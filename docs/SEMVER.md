@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with one recorded exception: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with two recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, and [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one.
 
 ## Rules
 
@@ -47,6 +47,23 @@ Both are compile errors, never silent. The decision was to take the exception ra
 - Both are named at the top of [`CHANGELOG.md`](CHANGELOG.md)'s v1.17.0 entry with before/after code, and in the GitHub release notes.
 
 This exception does not amend the rule. A breaking change still triggers a major bump by default; taking an exception requires the same treatment given here, which is naming every break with a migration, in the release notes and in this file, before the tag is cut.
+
+#### Recorded exception: Unreleased — junction-analysis flags become optional (#495)
+
+**One source break, taken under the same terms as v1.17.0 above and recorded here before the tag is cut:**
+
+| Break | Issue | What a caller does |
+|---|---|---|
+| `Curve3D.ContinuityAnalysis` / `Surface.ContinuityAnalysis` expose `isC0`/`isG1`/`isC1`/`isG2`/`isC2` as `Bool?`, not `Bool` | #495 | Compare explicitly (`if a.isG1 == true`), or use `holds(_:)`. Then check the *order*: the value was only ever meaningful for the classes that order measured, and `nil` is now how the API says so |
+
+It is a compile error at every call site, never silent. The exception was taken because:
+
+- It cannot be shimmed. Swift does not overload a property on its type, so the old `Bool` spelling cannot coexist with the new one under the same name — the alternative was leaving five public properties that report `true` for a class nothing measured (a sharp 90° corner reported `isC2 == true`), which is a silent wrong answer, exactly what a SemVer promise is not meant to protect.
+- The compile error is the migration prompt. A caller reading `isG1` at the default `.c2` order was reading an uninitialised member; being made to write `== true` is the moment they find out the order has to ask for G1.
+- The major version stays reserved for OCCT 9.0.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
+
+Also in #495, and *not* breaking: `continuityWith`'s `order:` parameter and `Shape.continuityOfFaces` both changed type, and both kept a deprecated overload with the old signature.
 
 ### MINOR — `x.y.0`
 
