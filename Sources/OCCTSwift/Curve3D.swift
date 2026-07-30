@@ -738,16 +738,26 @@ extension Curve3D {
         return d >= 0 ? d : nil
     }
 
-    /// Convert this freeform curve to an analytical curve if possible.
+    /// Convert this curve to an analytical curve if possible.
     ///
-    /// Recognizes if the curve is actually a line, circle, or ellipse
-    /// within the given tolerance and returns the analytical representation.
+    /// Recognizes if the curve is actually a line, circle, or ellipse within the given tolerance
+    /// and returns the analytical representation. A curve that is already analytical converts to an
+    /// equal, independent curve rather than being rejected.
+    ///
+    /// Examines the curve's whole domain. Use ``toAnalytical(tolerance:first:last:)`` to examine a
+    /// sub-range, or ``toAnalyticalWithGap(tolerance:)`` to also get the deviation.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+    ///     print(analytical.curveKind)   // .circle
+    /// }
+    /// ```
     ///
     /// - Parameter tolerance: Recognition tolerance
     /// - Returns: The analytical curve, or nil if not recognizable
     public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D? {
-        guard let h = OCCTCurve3DToAnalytical(handle, tolerance) else { return nil }
-        return Curve3D(handle: h)
+        toAnalyticalWithGap(tolerance: tolerance)?.curve
     }
 
     // MARK: - Quasi-Uniform Sampling (v0.31.0)

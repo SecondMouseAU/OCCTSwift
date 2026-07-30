@@ -896,6 +896,15 @@ public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult?
 
 Types and extensions for recognising and converting geometry to analytical (canonical) forms.
 
+Every spelling below reaches one bridge entry point per OCCT converter class, and they share one
+contract (#492):
+
+- **An already-analytical input converts.** A circle recognised as a circle is a success, not a
+  rejection, and reports `gap == 0` exactly. That is how you tell it apart from a fit.
+- **The result is independent of the input.** No returned curve or surface shares state with the
+  geometry it was recognised from, so an in-place transform on one never moves the other.
+- **Failure is one outcome.** An unrecognisable input, and bounds OCCT rejects, both return `nil`.
+
 ### `CurveToAnalyticalResult`
 
 Result of converting a 3D curve to its analytical form.
@@ -910,12 +919,61 @@ public struct CurveToAnalyticalResult: Sendable {
 ```
 
 `gap` is the maximum deviation between the original and the recognized analytical curve.
+`newFirst`/`newLast` are expressed in the **recognised** curve's own parameterisation, not the
+input's: a BSpline circle examined over `[π/2, 3π/2]` reports a range starting at 0 on the
+`Geom_Circle` it returns.
+
+---
+
+### `Curve3D.toAnalytical(tolerance:)`
+
+Attempts to convert this curve to an analytical form over its whole domain.
+
+```swift
+public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D?
+```
+
+- **Parameters:** `tolerance` — recognition tolerance.
+- **Returns:** The recognised curve, or `nil` if no analytical form is recognised.
+- **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
+- **Example:**
+  ```swift
+  let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+  if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+      print(analytical.curveKind)   // .circle
+  }
+  ```
+
+---
+
+### `Curve3D.toAnalyticalWithGap(tolerance:)`
+
+Attempts to convert this curve to an analytical form over its whole domain, reporting the deviation.
+The full-range spelling of `toAnalytical(tolerance:first:last:)`, and the curve counterpart of
+`Surface.toAnalyticalWithGap(tolerance:)`.
+
+```swift
+public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult?
+```
+
+- **Parameters:** `tolerance` — recognition tolerance.
+- **Returns:** `CurveToAnalyticalResult` with the recognised curve, its range and the gap, or `nil`.
+- **OCCT:** `GeomConvert_CurveToAnaCurve` via `OCCTGeomConvertCurveToAnalytical`.
+- **Example:**
+  ```swift
+  let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+  if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+      print(r.gap)   // how far the BSpline strayed from the circle
+  }
+  ```
 
 ---
 
 ### `Curve3D.toAnalytical(tolerance:first:last:)`
 
-Attempts to convert this curve to an analytical form (line, circle, ellipse, etc.).
+Attempts to convert this curve to an analytical form (line, circle, ellipse, etc.) over a chosen
+parameter range, so a curve that is a circle along part of its domain can be recognised there even
+when the whole domain is not.
 
 ```swift
 public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult?
@@ -998,8 +1056,17 @@ public func toAnalyticalWithGap(tolerance: Double,
 ```
 
 - **Parameters:** `tolerance` — recognition tolerance; `uMin`, `uMax`, `vMin`, `vMax` — UV parameter bounds to consider.
-- **Returns:** `SurfaceToAnalyticalResult`, or `nil` on failure.
+- **Returns:** `SurfaceToAnalyticalResult`, or `nil` on failure. Inverted bounds (`uMin > uMax`) are rejected rather than normalised.
 - **OCCT:** `GeomConvert_SurfToAnaSurf` (bounded variant) via `OCCTGeomConvertSurfToAnalyticalBounded`.
+- **Example:**
+  ```swift
+  let d = bsplineSurface.domain
+  if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+                                                uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+                                                vMin: d.vMin, vMax: d.vMax) {
+      print(r.surface.surfaceKind)
+  }
+  ```
 
 ---
 

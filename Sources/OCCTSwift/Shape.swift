@@ -12581,14 +12581,39 @@ extension Surface {
 
 /// Result of converting a curve to its analytical form.
 public struct CurveToAnalyticalResult: Sendable {
+    /// The recognized curve. Independent of the curve it was recognized from.
     public let curve: Curve3D
+    /// Range start, expressed in `curve`'s own parameterization — not the input's.
     public let newFirst: Double
+    /// Range end, expressed in `curve`'s own parameterization — not the input's.
     public let newLast: Double
+    /// Maximum deviation from the input curve. Exactly `0` when the input was already analytical.
     public let gap: Double
 }
 
 extension Curve3D {
     /// Attempt to convert this curve to an analytical form (line, circle, ellipse).
+    ///
+    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its
+    /// domain can be recognized there even when the whole domain is not. The result carries the
+    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
+    /// reports a range starting at 0 on the `Geom_Circle` it returns.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// let domain = bspline.domain
+    /// if let r = bspline.toAnalytical(tolerance: 1e-4,
+    ///                                 first: domain.lowerBound,
+    ///                                 last: domain.upperBound) {
+    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - first: Start of the parameter range to examine.
+    ///   - last: End of the parameter range to examine.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
     public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult? {
         let result = OCCTGeomConvertCurveToAnalytical(handle, tolerance, first, last)
         guard result.success, let curveRef = result.curve else { return nil }
@@ -12598,6 +12623,28 @@ extension Curve3D {
             newLast: result.newLast,
             gap: result.gap
         )
+    }
+
+    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the
+    /// deviation.
+    ///
+    /// The full-range spelling of ``toAnalytical(tolerance:first:last:)``, and the curve counterpart
+    /// of ``Surface/toAnalyticalWithGap(tolerance:)``.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.gap)   // how far the BSpline strayed from the circle
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult? {
+        let domain = self.domain
+        return toAnalytical(tolerance: tolerance,
+                            first: domain.lowerBound,
+                            last: domain.upperBound)
     }
 
     /// Check if a set of 3D points are collinear within tolerance.
@@ -12617,19 +12664,56 @@ extension Curve3D {
 
 /// Result of converting a surface to its analytical form.
 public struct SurfaceToAnalyticalResult: Sendable {
+    /// The recognized surface. Independent of the surface it was recognized from.
     public let surface: Surface
+    /// Maximum deviation from the input surface. Exactly `0` when the input was already analytical.
     public let gap: Double
 }
 
 extension Surface {
-    /// Attempt to convert this surface to an analytical form with detailed result.
+    /// Attempt to convert this surface to an analytical form, reporting the deviation.
+    ///
+    /// The detailed spelling of ``Surface/toAnalytical(tolerance:)``: same recognition, same
+    /// success and failure cases, plus the gap.
+    ///
+    /// ```swift
+    /// let bspline = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(u1: 0, u2: .pi, v1: -5, v2: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.surface.surfaceKind, r.gap)   // .cylinder, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
     public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult? {
         let result = OCCTGeomConvertSurfToAnalytical(handle, tolerance)
         guard result.success, let surfRef = result.surface else { return nil }
         return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
     }
 
-    /// Attempt to convert this surface to analytical form within UV bounds.
+    /// Attempt to convert a UV sub-patch of this surface to an analytical form.
+    ///
+    /// Fits only `[uMin, uMax] × [vMin, vMax]`, so a surface that is a cylinder over part of its
+    /// domain can be recognized there even when the whole domain is not. Inverted bounds
+    /// (`uMin > uMax`) are rejected rather than normalized.
+    ///
+    /// ```swift
+    /// let d = bsplineSurface.domain
+    /// if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+    ///                                               uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+    ///                                               vMin: d.vMin, vMax: d.vMax) {
+    ///     print(r.surface.surfaceKind)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - uMin: Lower U bound of the patch to fit.
+    ///   - uMax: Upper U bound of the patch to fit.
+    ///   - vMin: Lower V bound of the patch to fit.
+    ///   - vMax: Upper V bound of the patch to fit.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
     public func toAnalyticalWithGap(tolerance: Double,
                                       uMin: Double, uMax: Double,
                                       vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {

@@ -590,4 +590,96 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
     }
 }
 
+// === #492: one analytical-conversion path per GeomConvert converter class ===
+//
+// GeomConvert_CurveToAnaCurve and GeomConvert_SurfToAnaSurf each had two independently-grown
+// wrapper families (v0.30.0 and v0.78) that made the identical OCCT call and then disagreed about
+// what to do with the answer: the older curve wrapper hardcoded the curve's own parameter range and
+// discarded newFirst/newLast/Gap(), and the older surface wrapper carried an "already analytical"
+// guard its younger sibling never grew. These two helpers are the single path all of them now take.
+//
+// The contract both entry points guarantee, and neither guaranteed before:
+//
+//   1. Success yields a NEW object that shares no state with the input. This is not decoration.
+//      GeomConvert_CurveToAnaCurve::ConvertToAnalytical hands back the *input handle itself* when
+//      the curve is already analytical -- ComputeLine and ComputeCircle both down-cast the input and
+//      return it (GeomConvert_CurveToAnaCurve.cxx:186, :296) -- and for a Geom_TrimmedCurve it
+//      returns the basis curve the trim still holds. Both wrappers then handed that shared curve to
+//      Swift as a separate Curve3D, so an in-place transform on the "converted" curve moved the
+//      original too. Measured, not theorised: translating the result of
+//      Curve3D.circle(...).toAnalytical() by 100 moved the source circle by exactly 100.
+//
+//      GeomConvert_SurfToAnaSurf never does this -- every branch allocates
+//      (GeomConvert_SurfToAnaSurf.cxx:791-807 for already-analytical input, and every newSurf[]
+//      assignment elsewhere), so the old same-handle guard was dead code against this kernel. It is
+//      still copied here, because "the current kernel happens to allocate" is exactly the assumption
+//      that let the two families drift apart in the first place. Both results are tiny analytic
+//      objects (line/circle/ellipse; plane/cylinder/cone/sphere/torus), so the copy is free.
+//
+//   2. Failure is one outcome, not three. A null input, an unrecognisable input and a thrown
+//      Standard_Failure (the bounded surface overload throws Geom_BSplineSurface::Segment on
+//      inverted UV bounds) all return false, leaving the out-parameters untouched.
+//
+// "Already analytical" is a success, not a rejection, on both sides -- a circle IS its analytical
+// form. Gap() reports 0 exactly for those, which is how a caller tells them apart.
+
+#include <GeomConvert_CurveToAnaCurve.hxx>
+#include <GeomConvert_SurfToAnaSurf.hxx>
+
+// Recognise `curve` over [first, last] as a line, circle or ellipse.
+//
+// outFirst/outLast come back in the RECOGNISED curve's own parameterisation, which is not the
+// input's: a BSpline circle asked about [pi/2, 3pi/2] reports [0, 3.06] on the Geom_Circle it
+// returns. Trimmed curves are unwrapped to their basis curve before recognition.
+inline bool occtCurveToAnalytical(const occ::handle<Geom_Curve>& curve, double tolerance,
+                                  double first, double last,
+                                  occ::handle<Geom_Curve>& outCurve,
+                                  double& outFirst, double& outLast, double& outGap) {
+    if (curve.IsNull()) return false;
+    try {
+        GeomConvert_CurveToAnaCurve converter(curve);
+        occ::handle<Geom_Curve> result;
+        double newFirst = first, newLast = last;
+        if (!converter.ConvertToAnalytical(tolerance, result, first, last, newFirst, newLast)) {
+            return false;
+        }
+        if (result.IsNull()) return false;
+        occ::handle<Geom_Curve> detached = occ::handle<Geom_Curve>::DownCast(result->Copy());
+        if (detached.IsNull()) return false;
+        outCurve = detached;
+        outFirst = newFirst;
+        outLast = newLast;
+        outGap = converter.Gap();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+// Recognise `surface` as a plane, cylinder, cone, sphere or torus.
+//
+// uvBounds is either null, for the whole surface, or four doubles {uMin, uMax, vMin, vMax}
+// selecting the sub-patch to fit. Those are the two ConvertToAnalytical overloads; nothing else
+// differs between them.
+inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, double tolerance,
+                                    const double* uvBounds,
+                                    occ::handle<Geom_Surface>& outSurface, double& outGap) {
+    if (surface.IsNull()) return false;
+    try {
+        GeomConvert_SurfToAnaSurf converter(surface);
+        occ::handle<Geom_Surface> result =
+            uvBounds ? converter.ConvertToAnalytical(tolerance, uvBounds[0], uvBounds[1],
+                                                     uvBounds[2], uvBounds[3])
+                     : converter.ConvertToAnalytical(tolerance);
+        if (result.IsNull()) return false;
+        occ::handle<Geom_Surface> detached = occ::handle<Geom_Surface>::DownCast(result->Copy());
+        if (detached.IsNull()) return false;
+        outSurface = detached;
+        outGap = converter.Gap();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 #endif /* OCCTBridge_Internal_h */

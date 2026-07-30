@@ -1144,24 +1144,6 @@ double OCCTCurve3DDistanceToSurface(OCCTCurve3DRef curve, OCCTSurfaceRef surface
     }
 }
 
-// MARK: - Surface to Analytical (v0.30.0)
-
-#include <GeomConvert_SurfToAnaSurf.hxx>
-
-OCCTSurfaceRef OCCTSurfaceToAnalytical(OCCTSurfaceRef surface, double tolerance) {
-    if (!surface || surface->surface.IsNull()) return nullptr;
-    try {
-        GeomConvert_SurfToAnaSurf converter(surface->surface);
-        Handle(Geom_Surface) result = converter.ConvertToAnalytical(tolerance);
-        if (result.IsNull()) return nullptr;
-        // If the result is the same handle, it was already analytical or couldn't convert
-        if (result == surface->surface) return nullptr;
-        return new OCCTSurface(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
 // MARK: - Canonical Recognition (v0.30.0)
 
 #include <ShapeAnalysis_CanonicalRecognition.hxx>
@@ -2880,40 +2862,33 @@ bool OCCTGeomLibPlanarSurfacePlane(OCCTSurfaceRef _Nonnull surfRef, double toler
     }
 }
 
-// MARK: - GeomConvert_SurfToAnaSurf (v0.78)
 // MARK: - GeomConvert_SurfToAnaSurf
 
-OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalytical(OCCTSurfaceRef _Nonnull surfaceRef, double tolerance) {
+// Package one occtSurfaceToAnalytical answer as the C result both entry points return.
+static OCCTSurfToAnaSurfResult occtSurfToAnaSurfResult(OCCTSurfaceRef _Nullable surfaceRef,
+                                                       double tolerance, const double* uvBounds) {
     OCCTSurfToAnaSurfResult result = {nullptr, 0, false};
-    try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
-        GeomConvert_SurfToAnaSurf converter(surface);
-        Handle(Geom_Surface) resSurf = converter.ConvertToAnalytical(tolerance);
-        if (!resSurf.IsNull()) {
-            result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
+    if (!surfaceRef) return result;
+    Handle(Geom_Surface) resSurf;
+    if (!occtSurfaceToAnalytical(reinterpret_cast<OCCTSurface*>(surfaceRef)->surface, tolerance,
+                                 uvBounds, resSurf, result.gap)) {
+        return result;
+    }
+    result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
+    result.success = true;
     return result;
+}
+
+OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalytical(OCCTSurfaceRef _Nonnull surfaceRef, double tolerance) {
+    return occtSurfToAnaSurfResult(surfaceRef, tolerance, nullptr);
 }
 
 OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalyticalBounded(OCCTSurfaceRef _Nonnull surfaceRef,
                                                                   double tolerance,
                                                                   double uMin, double uMax,
                                                                   double vMin, double vMax) {
-    OCCTSurfToAnaSurfResult result = {nullptr, 0, false};
-    try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
-        GeomConvert_SurfToAnaSurf converter(surface);
-        Handle(Geom_Surface) resSurf = converter.ConvertToAnalytical(tolerance, uMin, uMax, vMin, vMax);
-        if (!resSurf.IsNull()) {
-            result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
-    return result;
+    const double uvBounds[4] = {uMin, uMax, vMin, vMax};
+    return occtSurfToAnaSurfResult(surfaceRef, tolerance, uvBounds);
 }
 
 bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef) {

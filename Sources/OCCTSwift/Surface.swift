@@ -1035,16 +1035,26 @@ extension Surface {
         }
     }
 
-    /// Convert this freeform surface to an analytical surface if possible.
+    /// Convert this surface to an analytical surface if possible.
     ///
-    /// Recognizes if the surface is actually a plane, cylinder, cone,
-    /// sphere, or torus within the given tolerance.
+    /// Recognizes if the surface is actually a plane, cylinder, cone, sphere, or torus within the
+    /// given tolerance. A surface that is already analytical converts to an equal, independent
+    /// surface rather than being rejected.
+    ///
+    /// Use ``toAnalyticalWithGap(tolerance:)`` to also get the deviation, or
+    /// ``toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)`` to fit only a sub-patch.
+    ///
+    /// ```swift
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    /// if let analytical = cylinder.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+    ///     print(analytical.surfaceKind)   // .cylinder
+    /// }
+    /// ```
     ///
     /// - Parameter tolerance: Recognition tolerance
     /// - Returns: The analytical surface, or nil if not recognizable
     public func toAnalytical(tolerance: Double = 1e-4) -> Surface? {
-        guard let h = OCCTSurfaceToAnalytical(handle, tolerance) else { return nil }
-        return Surface(handle: h)
+        toAnalyticalWithGap(tolerance: tolerance)?.surface
     }
 }
 

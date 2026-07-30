@@ -67,6 +67,45 @@ symbol references name symbols that exist nowhere in `Sources/`**. Filed as #510
 here — each stale entry needs its real call site identified, and inventing a plausible name for a
 class that has no wrap would be worse than leaving the entry visibly broken.
 
+#### Analytical conversion: one path per converter class, and the result no longer aliases its input (#492)
+
+`GeomConvert_CurveToAnaCurve` and `GeomConvert_SurfToAnaSurf` each had two wrapper families, added
+eight releases apart, making the identical OCCT call and then disagreeing about the answer. The
+v0.30.0 curve wrapper hardcoded the curve's own parameter range and discarded `newFirst`/`newLast`/
+`Gap()`; the v0.30.0 surface wrapper carried an "already analytical" guard its v0.78 sibling never
+grew. Five bridge functions now reach two shared helpers, `occtCurveToAnalytical` and
+`occtSurfaceToAnalytical` (`OCCTBridge_Internal.h`), and `OCCTCurve3DToAnalytical` /
+`OCCTSurfaceToAnalytical` are gone.
+
+**The behaviour fix, which the issue did not predict.** Probing both converters against the pinned
+kernel showed they do opposite things with an already-analytical input, and only one wrapper family
+had been written for either. `GeomConvert_SurfToAnaSurf` always allocates
+(`GeomConvert_SurfToAnaSurf.cxx:791-807`), so the surface guard was dead code. But
+`GeomConvert_CurveToAnaCurve` returns **the input handle itself** — `ComputeLine` and `ComputeCircle`
+down-cast the input and return it — and for a `Geom_TrimmedCurve` it returns the basis curve the trim
+still holds. Both curve wrappers handed that shared curve to Swift as a separate `Curve3D`, so the
+two aliased one `Geom_Curve` and `Curve3D.translate` is in-place: translating the result of
+`Curve3D.circle(...).toAnalytical()` by 100 moved the source circle by exactly 100. Both helpers now
+detach the result with `Copy()`, so the guarantee holds for both classes rather than depending on
+which branch of which kernel version happens to allocate. The results are line/circle/ellipse and
+plane/cylinder/cone/sphere/torus, so the copy costs nothing.
+
+The contract is now stated once and identical on both sides: an already-analytical input **converts**
+(`gap == 0` exactly) rather than being rejected, the result is independent of the input, and null
+input, unrecognisable input and OCCT's own throw (the bounded overload raises
+`Geom_BSplineSurface::Segment` on inverted UV bounds) are one failure outcome.
+
+New: `Curve3D.toAnalyticalWithGap(tolerance:)`, the full-range curve spelling that reports the gap —
+the counterpart of `Surface.toAnalyticalWithGap(tolerance:)`, previously missing, which is why
+getting a curve's gap meant switching wrapper families. No other public Swift signature changed.
+
+New `AnalyticalConversionContractTests` (`Tests/OCCTCurveTests`) pins all of it: 12 tests, of which
+the two aliasing cases fail by exactly 100.0 against the pre-#492 bridge. It also gives
+`toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)` its first coverage of any kind. Probe and
+writeup: [`Scripts/repro/492-analytical-conversion/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/492-analytical-conversion).
+`GeomConvert_CurveToAnaCurve` and `GeomConvert_SurfToAnaSurf` also gained the cross-reference index
+entries they never had.
+
 #### The 2D conic factories reject degenerate dimensions, like their siblings already did (#487)
 
 **Behaviour change.** `Curve2D.ellipseFromCenterDir`, `Curve2D.hyperbolaFromCenterDir` and
