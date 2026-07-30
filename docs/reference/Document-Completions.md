@@ -444,23 +444,29 @@ public func updateDeflection()
 
 ---
 
-### `Shape.continuityOfFaces(edge:face1:face2:tolerance:)`
+### `Shape.continuityClassOfFaces(edge:face1:face2:tolerance:)`
 
 Get the geometric continuity of the surface across an edge shared by two faces.
 
 ```swift
-public static func continuityOfFaces(edge: Shape, face1: Shape, face2: Shape,
-                                      tolerance: Double = 1e-6) -> Int
+public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shape,
+                                          tolerance: Double = 1e-6) -> ContinuityClass?
 ```
 
 - **Parameters:** `edge` — the shared edge; `face1`, `face2` — the two faces; `tolerance` — comparison tolerance.
-- **Returns:** `GeomAbs_Shape` integer: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=CN, -1=error.
+- **Returns:** the measured `ContinuityClass`, or `nil` on failure (null handle, or OCCT throwing).
 - **OCCT:** `BRepLib::ContinuityOfFaces`.
+- **Domain:** six of the seven classes are reachable — `.c0` for a sharp join, `.g1` for a fillet's tangent join, and `.cN` for a seam on an elementary surface (or any elementary pair measuring C2, which OCCT promotes). `.c3` is never returned.
 - **Example:**
   ```swift
-  let c = Shape.continuityOfFaces(edge: e, face1: f1, face2: f2)
-  // c == 2 means C1 continuity
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let faces = box.subShapes(ofType: .face), edges = box.subShapes(ofType: .edge)
+  Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
   ```
+
+> **Deprecated:** `continuityOfFaces(edge:face1:face2:tolerance:) -> Int` returns the same
+> measurement as a raw ordinal. Its doc comment claimed `5=CN`, which is wrong twice over — CN is
+> ordinal 6, and 5 (C3) is a value this function cannot return. #495.
 
 ---
 

@@ -18,10 +18,11 @@
 
 // MARK: - Continuity vocabularies
 //
-// Continuity crosses this boundary as a plain integer, and there are exactly three vocabularies
-// it can be speaking. Every declaration below that takes one names which (#490); the decoders
-// live in one place, OCCTBridge_Internal.h, so a value cannot mean different things in different
-// functions the way it did before #490 (see #433 for the bug that shipped from exactly that).
+// Continuity crosses this boundary as a plain integer, and there are exactly three request
+// vocabularies it can be speaking, plus one it is reported back in. Every declaration below that
+// takes or returns one names which (#490/#495); the decoders live in one place,
+// OCCTBridge_Internal.h, so a value cannot mean different things in different functions the way
+// it did before #490 (see #433 for the bug that shipped from exactly that).
 //
 //   Surface continuity — geometric constraint order handed to a plate solver.
 //     0=G0, 1=G1, 2=G2. Swift: `SurfaceContinuity`. Saturates at 2.
@@ -33,8 +34,17 @@
 //     above C2, while the Split*Continuity and PointsToBSpline families take the whole range.
 //
 //   Analysis order — a GeomAbs_Shape class named by its own ordinal.
-//     0=C0, 1=G1, 2=C1, 3=G2, 4=C2. Used in both directions by the LocalAnalysis_* junction
-//     analysers. Saturates at 4: those classes implement no predicate above C2/G2.
+//     0=C0, 1=G1, 2=C1, 3=G2, 4=C2. What the LocalAnalysis_* junction analysers are asked to
+//     check. Saturates at 4: those classes implement no predicate above C2/G2. It selects the
+//     analysis, it is not just a ceiling — each order computes only its own branch (C0; C0+G1;
+//     C0+C1; C0+G1+G2; C0+C1+C2), so a class the order does not cover is never measured and its
+//     predicate answers true from an uninitialised member. occtAnalysisMeasuredMask names the
+//     covered set and the *Flags functions report it. #495.
+//
+//   Measured class — a GeomAbs_Shape ordinal reported back as a *result*, 0=C0, 1=G1, 2=C1,
+//     3=G2, 4=C2, 5=C3, 6=CN. Swift: `ContinuityClass`. The full seven-value form, unlike the
+//     analysis order above, which shares the numbering but stops at 4. Spoken by
+//     OCCTCurve3D/2D/SurfaceGetContinuity (#485) and OCCTBRepLibContinuityOfFaces.
 //
 // MARK: - OCCT Class Cross-Reference Index
 //
@@ -8951,16 +8961,21 @@ OCCTCurve2DRef _Nullable OCCTFairCurveMinimalVariation(double p1x, double p1y, d
 /// @param u1 Parameter on first curve
 /// @param curve2 Second curve
 /// @param u2 Parameter on second curve
-/// @param order Requested analysis order: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2
-/// @param outStatus Output: continuity status (0=C0, 1=G1, 2=C1, 3=G2, 4=C2)
+/// @param order Analysis order — see "Continuity vocabularies" at the top of this header.
+///   Selects which predicates get computed, so it is not merely a strictness ceiling: an order
+///   the caller does not ask for is never measured (#495).
+/// @param outStatus Output: the *effective* analysis order, i.e. `order` after saturation.
+///   `LocalAnalysis_*::ContinuityStatus()` returns the order it was constructed with verbatim,
+///   so this is the request echoed back and never a measurement — the measurement is the flags
+///   bitmask below.
 /// @param outC0Value Output: C0 distance
-/// @param outG1Angle Output: G1 angle (radians)
-/// @param outC1Angle Output: C1 angle
-/// @param outC1Ratio Output: C1 ratio
-/// @param outC2Angle Output: C2 angle
-/// @param outC2Ratio Output: C2 ratio
-/// @param outG2Angle Output: G2 angle
-/// @param outG2CurvatureVariation Output: G2 curvature variation
+/// @param outG1Angle Output: G1 angle (radians), or -1 if not measured at this order or not met
+/// @param outC1Angle Output: C1 angle, or -1
+/// @param outC1Ratio Output: C1 ratio, or -1
+/// @param outC2Angle Output: C2 angle, or -1
+/// @param outC2Ratio Output: C2 ratio, or -1
+/// @param outG2Angle Output: G2 angle, or -1
+/// @param outG2CurvatureVariation Output: G2 curvature variation, or -1
 /// @return true if analysis succeeded
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
@@ -8971,9 +8986,15 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     double* _Nonnull outG2Angle, double* _Nonnull outG2CurvatureVariation);
 
 /// Check boolean continuity flags for curve continuity analysis.
-/// @return Bitmask: bit 0=IsC0, bit 1=IsG1, bit 2=IsC1, bit 3=IsG2, bit 4=IsC2
+/// @param outMeasured Output: bitmask of the classes this order actually measured. Only the
+///   requested order's branch is computed; an unmeasured predicate reads a zero-initialised
+///   member and answers true regardless of the geometry, so the returned flags are masked to
+///   this set and a caller must consult it to tell "false" from "never asked" (#495).
+/// @return Bitmask: bit 0=IsC0, bit 1=IsG1, bit 2=IsC1, bit 3=IsG2, bit 4=IsC2, masked to
+///   `outMeasured`
 int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, double u1,
-    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order);
+    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
+    int32_t* _Nonnull outMeasured);
 
 // --- LocalAnalysis_SurfaceContinuity ---
 
@@ -8984,12 +9005,14 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
 /// @param surface2 Second surface
 /// @param u2 U parameter on second surface
 /// @param v2 V parameter on second surface
-/// @param order Requested analysis order: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2
-/// @param outStatus Output: continuity status
+/// @param order Analysis order — same vocabulary and same measured-set semantics as
+///   OCCTLocalAnalysisCurveContinuity above.
+/// @param outStatus Output: the *effective* analysis order (the request after saturation, echoed
+///   back by `ContinuityStatus()`), never a measurement.
 /// @param outC0Value Output: C0 distance
-/// @param outG1Angle Output: G1 angle
-/// @param outC1UAngle Output: C1 U angle
-/// @param outC1VAngle Output: C1 V angle
+/// @param outG1Angle Output: G1 angle, or -1 if not measured at this order or not met
+/// @param outC1UAngle Output: C1 U angle, or -1
+/// @param outC1VAngle Output: C1 V angle, or -1
 /// @return true if analysis succeeded
 bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1, double u1, double v1,
     OCCTSurfaceRef _Nonnull surface2, double u2, double v2, int32_t order,
@@ -8998,9 +9021,13 @@ bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1, double
     double* _Nonnull outC1UAngle, double* _Nonnull outC1VAngle);
 
 /// Check boolean continuity flags for surface continuity analysis.
-/// @return Bitmask: bit 0=IsC0, bit 1=IsG1, bit 2=IsC1, bit 3=IsG2, bit 4=IsC2
+/// @param outMeasured Output: bitmask of the classes this order actually measured — see
+///   OCCTLocalAnalysisCurveContinuityFlags for why the caller needs it.
+/// @return Bitmask: bit 0=IsC0, bit 1=IsG1, bit 2=IsC1, bit 3=IsG2, bit 4=IsC2, masked to
+///   `outMeasured`
 int32_t OCCTLocalAnalysisSurfaceContinuityFlags(OCCTSurfaceRef _Nonnull surface1, double u1, double v1,
-    OCCTSurfaceRef _Nonnull surface2, double u2, double v2, int32_t order);
+    OCCTSurfaceRef _Nonnull surface2, double u2, double v2, int32_t order,
+    int32_t* _Nonnull outMeasured);
 
 // --- TopTrans_SurfaceTransition ---
 
@@ -18866,7 +18893,13 @@ bool OCCTBRepLibEnsureNormalConsistency(OCCTShapeRef _Nonnull shape, double maxA
 void OCCTBRepLibUpdateDeflection(OCCTShapeRef _Nonnull shape);
 
 /// Get the continuity of the surface across an edge between two faces.
-/// Returns GeomAbs_Shape: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=CN, -1=error.
+/// Returns a raw GeomAbs_Shape ordinal — the measured-class vocabulary, so 0=C0, 1=G1, 2=C1,
+/// 3=G2, 4=C2, 6=CN, and -1 for a null argument or a throw. Six of the seven ordinals are
+/// reachable: `BRepLib::ContinuityOfFaces` never returns C3 (5), and CN is 6, not 5 — a seam
+/// edge on an elementary surface takes an early `return GeomAbs_CN`, and so does any elementary
+/// pair that measures C2. (This comment used to say "5=CN", which is neither the ordinal of CN
+/// nor a value this function can return; the implementation casts the enum straight through, so
+/// there was never a lookup table for it to be describing. #495.)
 int32_t OCCTBRepLibContinuityOfFaces(OCCTShapeRef _Nonnull edge,
                                       OCCTShapeRef _Nonnull face1, OCCTShapeRef _Nonnull face2,
                                       double tolerance);

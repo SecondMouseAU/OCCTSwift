@@ -1570,13 +1570,18 @@ OCCTShapeRef _Nullable OCCTApproxCurvilinearParameter(OCCTShapeRef edgeShape,
 // MARK: - LocalAnalysis_CurveContinuity (v0.67)
 // --- LocalAnalysis_CurveContinuity ---
 
-// The order in and the status out are both GeomAbs_Shape ordinals; occtGeomAbsFromAnalysisOrder /
-// occtAnalysisOrderFromGeomAbs (OCCTBridge_Internal.h) are the shared pair. #490 retired the
-// local orderToShape/shapeToOrder copies here and the identical pair in OCCTBridge_Surface.mm.
+// The order in and the effective order out are both GeomAbs_Shape ordinals;
+// occtGeomAbsFromAnalysisOrder / occtAnalysisOrderFromGeomAbs (OCCTBridge_Internal.h) are the
+// shared pair. #490 retired the local orderToShape/shapeToOrder copies here and the identical
+// pair in OCCTBridge_Surface.mm.
+//
+// Only the requested order's own branch is computed, so every output is gated on
+// occtAnalysisMeasuredMask as well as on the predicate itself — an unmeasured predicate answers
+// true from a zero-initialised member, and its angle/ratio answers 0.0 to match. #495.
 
 bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
-    int32_t* _Nonnull outStatus,
+    int32_t* _Nonnull outEffectiveOrder,
     double* _Nonnull outC0Value, double* _Nonnull outG1Angle,
     double* _Nonnull outC1Angle, double* _Nonnull outC1Ratio,
     double* _Nonnull outC2Angle, double* _Nonnull outC2Ratio,
@@ -1585,29 +1590,40 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, occtGeomAbsFromAnalysisOrder(order));
+        const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
+        const int32_t measured = occtAnalysisMeasuredMask(effective);
+
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, effective);
         if (!cc.IsDone()) return false;
 
-        *outStatus = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
+        // ContinuityStatus() returns the order the analyser was constructed with, verbatim — it
+        // is the request echoed back, not a measurement. Reported as the *effective* order so a
+        // caller can see where a saturated request landed.
+        *outEffectiveOrder = occtAnalysisOrderFromGeomAbs(cc.ContinuityStatus());
         *outC0Value = cc.C0Value();
-        *outG1Angle = cc.IsG1() ? cc.G1Angle() : -1.0;
-        *outC1Angle = cc.IsC1() ? cc.C1Angle() : -1.0;
-        *outC1Ratio = cc.IsC1() ? cc.C1Ratio() : -1.0;
-        *outC2Angle = cc.IsC2() ? cc.C2Angle() : -1.0;
-        *outC2Ratio = cc.IsC2() ? cc.C2Ratio() : -1.0;
-        *outG2Angle = cc.IsG2() ? cc.G2Angle() : -1.0;
-        *outG2CurvatureVariation = cc.IsG2() ? cc.G2CurvatureVariation() : -1.0;
+        *outG1Angle = ((measured & 0x02) && cc.IsG1()) ? cc.G1Angle() : -1.0;
+        *outC1Angle = ((measured & 0x04) && cc.IsC1()) ? cc.C1Angle() : -1.0;
+        *outC1Ratio = ((measured & 0x04) && cc.IsC1()) ? cc.C1Ratio() : -1.0;
+        *outC2Angle = ((measured & 0x10) && cc.IsC2()) ? cc.C2Angle() : -1.0;
+        *outC2Ratio = ((measured & 0x10) && cc.IsC2()) ? cc.C2Ratio() : -1.0;
+        *outG2Angle = ((measured & 0x08) && cc.IsG2()) ? cc.G2Angle() : -1.0;
+        *outG2CurvatureVariation = ((measured & 0x08) && cc.IsG2()) ? cc.G2CurvatureVariation() : -1.0;
         return true;
     } catch (...) { return false; }
 }
 
 int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, double u1,
-    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order) {
+    OCCTCurve3DRef _Nonnull curve2, double u2, int32_t order,
+    int32_t* _Nonnull outMeasured) {
+    *outMeasured = 0;
     try {
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
 
-        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, occtGeomAbsFromAnalysisOrder(order));
+        const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
+        const int32_t measured = occtAnalysisMeasuredMask(effective);
+
+        LocalAnalysis_CurveContinuity cc(c1->curve, u1, c2->curve, u2, effective);
         if (!cc.IsDone()) return 0;
 
         int32_t flags = 0;
@@ -1616,7 +1632,8 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
         if (cc.IsC1()) flags |= 4;
         if (cc.IsG2()) flags |= 8;
         if (cc.IsC2()) flags |= 16;
-        return flags;
+        *outMeasured = measured;
+        return flags & measured;
     } catch (...) { return 0; }
 }
 
@@ -4454,20 +4471,15 @@ OCCTCurve3DRef OCCTInterpolateWithParameters(const double* points, int32_t count
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTCurve3DInterpolate with the periodicity flag pinned. It used to be a second,
+// independent GeomAPI_Interpolate call site, which had already drifted: it rejected count < 3
+// where the general entry point rejects only count < 2, so the same 2-point input reached OCCT
+// through one and not the other, and it hardcoded the tolerance with no way to reach any other
+// value. Forwarding keeps the C ABI while leaving one implementation (#493, the 3D counterpart of
+// #412's fix on OCCTInterpolate2DPeriodic). Callers that need a tolerance other than the default
+// should call OCCTCurve3DInterpolate directly with closed = true.
 OCCTCurve3DRef OCCTInterpolatePeriodic(const double* points, int32_t count) {
-    if (!points || count < 3) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
-        }
-        GeomAPI_Interpolate interp(pts, Standard_True, 1e-6);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve3DRef)new OCCTCurve3D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve3DInterpolate(points, count, true, 1e-6);
 }
 
 

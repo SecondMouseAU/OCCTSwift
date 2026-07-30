@@ -15498,8 +15498,37 @@ extension Shape {
         OCCTBRepLibUpdateDeflection(handle)
     }
 
-    /// Get the continuity of the surface across an edge between two faces.
-    /// Returns GeomAbs_Shape: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=CN, -1=error.
+    /// The continuity of the surface across an edge between two faces.
+    ///
+    /// A sharp join reports ``ContinuityClass/c0``, a fillet's tangent join
+    /// ``ContinuityClass/g1``, and a seam edge on an elementary surface (a cylinder's or
+    /// sphere's) ``ContinuityClass/cN`` — `BRepLib::ContinuityOfFaces` short-circuits to CN for
+    /// those, and promotes any elementary pair that measures C2 to CN as well. ``ContinuityClass/c3``
+    /// is the one class it never returns.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.faces(), edges = box.edges()
+    /// Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
+    /// ```
+    ///
+    /// - Returns: The measured class, or nil if the arguments are not an edge and two faces that
+    ///   share it (OCCT throwing, or a null handle).
+    public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shape,
+                                              tolerance: Double = 1e-6) -> ContinuityClass? {
+        ContinuityClass(rawValue:
+            OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))
+    }
+
+    /// The continuity across an edge, as a raw `GeomAbs_Shape` ordinal (-1 on failure).
+    ///
+    /// This spelling's doc comment claimed `5=CN` for years. It is wrong twice over: CN is
+    /// ordinal 6, and 5 (C3) is a value `BRepLib::ContinuityOfFaces` cannot return at all. The
+    /// function itself was always right — it casts the enum straight through — so a caller who
+    /// matched `5` for "smooth" never matched anything, and one who received `6` had no
+    /// documented meaning for it. ``continuityClassOfFaces(edge:face1:face2:tolerance:)`` returns
+    /// the same measurement as a ``ContinuityClass``, where the ordinals cannot be misread. #495.
+    @available(*, deprecated, renamed: "continuityClassOfFaces(edge:face1:face2:tolerance:)")
     public static func continuityOfFaces(edge: Shape, face1: Shape, face2: Shape,
                                           tolerance: Double = 1e-6) -> Int {
         Int(OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))

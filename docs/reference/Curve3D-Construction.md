@@ -260,17 +260,20 @@ Controls the parameterization explicitly — each point is placed at the corresp
 
 ---
 
-### `Curve3D.interpolatePeriodic(points:)`
+### `Curve3D.interpolatePeriodic(points:tolerance:)`
 
 Interpolates a periodic (closed) BSpline through the given points.
 
 ```swift
-public static func interpolatePeriodic(points: [SIMD3<Double>]) -> Curve3D?
+public static func interpolatePeriodic(points: [SIMD3<Double>],
+                                       tolerance: Double = 1e-6) -> Curve3D?
 ```
 
 The resulting curve is periodic: it passes through all points and closes smoothly back to the first point without an explicit closing segment. The first and last points need not coincide.
 
-- **Parameters:** `points` — interpolation points (minimum 2, typically 3 or more for a non-degenerate loop).
+A spelling of [`interpolate(points:closed:tolerance:)`](Curve3D.md) with `closed: true`, and it delegates to it: the two cannot produce different curves for the same input. Before #493 it was a second, independent `GeomAPI_Interpolate` call site with the tolerance pinned at `1e-6` and unreachable, and with a stricter minimum point count (3, against the general entry point's 2) that the two had drifted into. This is the same fix #412 applied to `Curve2D.interpolatePeriodic`.
+
+- **Parameters:** `points`, interpolation points (minimum 2, typically 3 or more for a non-degenerate loop); `tolerance`, point coincidence tolerance. Points closer together than this are treated as coincident and the interpolation fails.
 - **Returns:** Periodic interpolated BSpline, or `nil` on failure.
 - **OCCT:** `GeomAPI_Interpolate(pts, Standard_True, tol)` + `Perform()`.
 - **Example:**
@@ -280,6 +283,12 @@ The resulting curve is periodic: it passes through all points and closes smoothl
   ]) {
       #expect(loop.isPeriodic)
   }
+
+  // Identical to spelling it out on the general factory:
+  let same = Curve3D.interpolate(points: [
+      SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0)
+  ], closed: true)
+  #expect(same?.isPeriodic == true)
   ```
 
 ---

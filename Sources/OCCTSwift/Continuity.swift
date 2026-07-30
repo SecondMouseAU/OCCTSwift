@@ -256,3 +256,17 @@ extension ContinuityClass {
         return order >= Int(required.rawValue)
     }
 }
+
+extension ContinuityClass {
+    /// The bit this class occupies in the bridge's junction-analysis bitmasks.
+    ///
+    /// The bridge numbers those bits by `GeomAbs_Shape` ordinal — bit 0 is C0, bit 1 is G1, and
+    /// so on — which is this enum's own raw value, so the two need no lookup table between them.
+    /// ``c3`` and ``cN`` have bits here for completeness; `LocalAnalysis_*` never sets them.
+    var analysisFlagBit: Int { 1 << Int(rawValue) }
+
+    /// Decode one of those bitmasks back into the classes it names.
+    static func set(fromAnalysisMask mask: Int32) -> Set<ContinuityClass> {
+        Set(allCases.filter { Int(mask) & $0.analysisFlagBit != 0 })
+    }
+}

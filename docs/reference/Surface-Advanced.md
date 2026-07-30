@@ -678,20 +678,22 @@ public func continuityWith(
     _ other: Surface,
     u1: Double, v1: Double,
     u2: Double, v2: Double,
-    order: Int = 4
+    order: ContinuityClass = .c2
 ) -> ContinuityAnalysis?
 ```
 
-Returns C0, G1, C1, G2, C2 status in a single call. The `ContinuityAnalysis` struct exposes
-both raw angular values and Boolean convenience flags (`isC0`, `isG1`, `isC1`, `isG2`, `isC2`).
+`order` selects which classes are measured, not just a ceiling — one branch of
+`LocalAnalysis_SurfaceContinuity` runs per call, and `ContinuityAnalysis.holds(_:)` reports `nil`
+for anything outside it. See [Surface-Analysis](Surface-Analysis.md#continuityanalysis) for the
+per-order measured sets and the `.c2`/second-derivative caveat.
 
-- **Parameters:** `other` — second surface; `u1`, `v1` — UV parameters on this surface; `u2`, `v2` — UV parameters on `other`; `order` — maximum order to check (0=C0 … 4=C2).
+- **Parameters:** `other` — second surface; `u1`, `v1` — UV parameters on this surface; `u2`, `v2` — UV parameters on `other`; `order` — the class to measure (default `.c2`).
 - **Returns:** `ContinuityAnalysis`, or `nil` if analysis fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
 - **Example:**
   ```swift
-  if let ca = surf1.continuityWith(surf2, u1: 1.0, v1: 0.5, u2: 0.0, v2: 0.5) {
-      #expect(ca.isG1)
+  if let ca = surf1.continuityWith(surf2, u1: 1.0, v1: 0.5, u2: 0.0, v2: 0.5, order: .g1) {
+      #expect(ca.holds(.g1) == true)
       print("C0 gap:", ca.c0Value, "G1 angle:", ca.g1Angle)
   }
   ```

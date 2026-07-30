@@ -401,6 +401,32 @@ inline int32_t occtAnalysisOrderFromGeomAbs(GeomAbs_Shape shape) {
     }
 }
 
+// Which of the five analysis predicates an analysis order actually computes. Bit layout matches
+// the OCCTLocalAnalysis*ContinuityFlags bitmask: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
+//
+// LocalAnalysis_CurveContinuity and LocalAnalysis_SurfaceContinuity run exactly one branch of a
+// switch on the order they were constructed with, and only that branch's quantities are ever
+// computed. Every other predicate then reads a member still at its 0.0 initialiser and compares
+// it against a tolerance, so its Is*() returns true whatever the geometry does: a sharp
+// 90-degree corner analysed at order C0 reports IsC2() == true, and C2Angle() answers 0.0 (a
+// perfect match) to go with it. The five branches are cumulative only along their own ladder,
+// and no order computes all five — not even the C2 default, which never touches G1 or G2.
+//
+// Callers mask against this so an unmeasured class is reported as "not asked" rather than as a
+// false positive. #495; OCCT's own header says as much ("the constructor computes the quantities
+// which are necessary to check the continuity in the following cases"), just not in a form any
+// caller can act on.
+inline int32_t occtAnalysisMeasuredMask(GeomAbs_Shape order) {
+    switch (order) {
+        case GeomAbs_C0: return 0x01;                      // C0
+        case GeomAbs_G1: return 0x01 | 0x02;               // C0, G1
+        case GeomAbs_C1: return 0x01 | 0x04;               // C0, C1
+        case GeomAbs_G2: return 0x01 | 0x02 | 0x08;        // C0, G1, G2
+        case GeomAbs_C2: return 0x01 | 0x04 | 0x10;        // C0, C1, C2
+        default:         return 0x01;                      // unreachable: the order saturates
+    }
+}
+
 // === #430/#432/#434: surface-filling helpers ===
 //
 // Shared by both filling entry points — OCCTShapeFill* (OCCTBridge_Healing.mm) and OCCTFilling*

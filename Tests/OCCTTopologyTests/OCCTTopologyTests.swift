@@ -4392,16 +4392,18 @@ struct BRepLibExtendedTests {
     }
 
     @Test("Continuity of faces")
-    func continuityOfFaces() {
+    func continuityAcrossASharedEdge() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
             let faces = b.subShapes(ofType: .face)
             let edges = b.subShapes(ofType: .edge)
             if faces.count >= 2, edges.count > 0 {
-                // Try to find a shared edge between two faces
-                let cont = Shape.continuityOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])
-                // -1 means error (edge may not be shared); >= 0 is valid
-                #expect(cont >= -1)
+                // Try to find a shared edge between two faces. Whatever comes back must be a
+                // class the vocabulary actually has — the old `>= -1` was true of every Int
+                // (#495); Issue495FaceContinuityTests pins the values per geometry.
+                let cont = Shape.continuityClassOfFaces(edge: edges[0],
+                                                        face1: faces[0], face2: faces[1])
+                #expect(cont == nil || ContinuityClass.allCases.contains(cont!))
             }
         }
     }
