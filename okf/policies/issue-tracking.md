@@ -19,9 +19,12 @@ Todo/In Progress/Done default: [OCCTSwift Refactor (#377)](https://github.com/or
 `refactor` + `phase:*` labels identify which issues belong to it.
 
 **Update `Status` at the same points the workflow already visits**, not as a separate later pass:
-opening a PR moves the card to `PR Review`, a review landing moves it to `Code-Review`, a merge moves
-it to `Done`. The project's own Workflows panel automates the one transition GitHub can do for you
-("Item closed" / "Pull request merged" → `Done`); turn both on per board.
+opening a PR moves the card to `PR Review`, a review landing moves it to `Code-Review`. **A merge
+into `refactor/381-pass1b` is not `Done`**: that branch is the initiative's own integration branch,
+not `main`, so a merged/closed issue stays at `Code-Review` until the initiative's branch itself
+reaches `main`. Do not wire the project's native "Item closed" / "Pull request merged" → `Done`
+Workflows here: both fire on the branch merge, not the eventual `main` merge, which is exactly the
+wrong event for this initiative's shape.
 
 **`Linked pull requests` will not populate for a PR based on anything but the repo's default branch**,
 including every `refactor/381-pass1b`-targeted PR in this project. That is GitHub platform behaviour,
