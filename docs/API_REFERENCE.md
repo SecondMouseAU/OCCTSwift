@@ -353,10 +353,10 @@ a map of the major areas, and the `Total` as the count.
 | **GC_MakeCircle** | 4 | circle from axis+radius, 3 points, center+normal, parallel |
 | **GC_MakeEllipse** | 3 | ellipse from axis+radii, 3 points, full Ax2 |
 | **GC_MakeHyperbola** | 2 | hyperbola from axis+radii, 3 points |
-| **GCE2d_MakeCircle** | 5 | 2D circle: center+radius, 3 points, center+point, parallel, axis |
-| **GCE2d_MakeEllipse** | 3 | 2D ellipse: axis+radii, 3 points, Ax22d |
-| **GCE2d_MakeHyperbola** | 2 | 2D hyperbola: axis+radii, 3 points |
-| **GCE2d_MakeParabola** | 2 | 2D parabola: axis+focal, directrix+focus |
+| **GC_MakeCircle2d** | 5 | 2D circle: center+radius, 3 points, center+point, parallel, axis |
+| **GC_MakeEllipse2d** | 3 | 2D ellipse: axis+radii, 3 points, Ax22d |
+| **GC_MakeHyperbola2d** | 2 | 2D hyperbola: axis+radii, 3 points |
+| **GC_MakeParabola2d** | 2 | 2D parabola: axis+focal, directrix+focus |
 | **GCPnts_UniformAbscissa** | 4 | uniform arc-length points by count/distance, full/subrange |
 | **GeomConvert_CompCurveToBSpline** | 1 | concatenate bounded 3D curves into BSpline |
 | **Geom2dConvert_CompCurveToBSpline** | 1 | concatenate bounded 2D curves into BSpline |
@@ -568,9 +568,9 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 #### 2D Parametric Curves
 | Swift API | OCCT Class |
 |-----------|------------|
-| `Curve2D.segment(from:to:)` | `GCE2d_MakeSegment` |
+| `Curve2D.segment(from:to:)` | `GC_MakeSegment2d` |
 | `Curve2D.circle(center:radius:)` | `Geom2d_Circle` |
-| `Curve2D.ellipse(...)` | `GCE2d_MakeEllipse` |
+| `Curve2D.ellipse(...)` | `Geom2d_Ellipse` |
 | `Curve2D.bspline(...)` | `Geom2d_BSplineCurve` |
 | `Curve2D.interpolate(through:)` | `Geom2dAPI_Interpolate` |
 | `curve.curvature(at:)` | `Geom2dLProp_CLProps2d` |

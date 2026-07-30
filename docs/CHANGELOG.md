@@ -105,6 +105,45 @@ catches it.
 
 No behaviour changed.
 
+#### The 12 bridge symbols that never said "OCCT", and the index entry for a symbol that never existed (#508)
+
+Of ~1161 bridge function declarations, twelve began `OCT` rather than `OCCT` — the whole
+`GC_MakeCircle2d`/`Ellipse2d`/`Hyperbola2d`/`Parabola2d` family, consistently misspelled across the
+header, the `.mm`, and the Swift call site since v0.105.0. Nothing was broken; the mismatch was
+internally consistent end to end, which is exactly why it survived.
+
+The obvious fix was to insert the missing `C`. Instead the family is now `OCCTCurve2DMake*`,
+matching `OCCTCurve2DMakeLineThroughPoints`/`OCCTCurve2DMakeLineParallel` — the `GC_MakeLine2d`
+wrappers declared two lines away, the direct sibling of these four classes. The old name was a
+second inaccuracy layered on the first: `GCE2d` is a *different* OCCT package, and v0.156.0 already
+moved these implementations off it when OCCT 8.0.0 deprecated `GCE2d_X` into a `using` alias for
+`GC_X2d`. That release deliberately kept the C names for ABI reasons that no longer apply, so a
+grep for the package these functions were named after led away from the code, not to it.
+
+The header's cross-reference index carried a matching but distinct error: its one `GC 2D` entry
+read `GC_MakeLine2d → OCCTGCE2dMakeLine* (bridge symbols retain GCE2d historical name)`. That
+prefix has zero occurrences anywhere in the repo — it named neither the conic family nor the line
+functions it claimed to describe. All five `GC_Make*2d` families are now indexed under their real
+symbols.
+
+`Scripts/check-bridge-index.py`, written for #484/#510 to catch precisely this, could not see the
+entry: it stripped only a `(vX.Y.Z)` suffix, so the trailing prose aside left the symbol glued to
+the annotation and the entry was silently skipped rather than reported stale. It now strips any
+parenthetical, which also un-hides two further entries that were being skipped for the same reason
+(both resolve). The stale count is unchanged at 135 — the #510 backlog, untouched here.
+
+Documentation for this family named a *fourth* variant, `gce_MakeCirc2d`/`gce_MakeElips2d`/
+`gce_MakeHypr2d` — a real OCCT package, but not the one these twelve call. Corrected to the actual
+`GC_Make*2d` classes, along with two rows elsewhere in `API_REFERENCE.md` left stale by the same
+v0.156.0 migration (`Curve2D.segment` is `GC_MakeSegment2d`; `Curve2D.ellipse` constructs
+`Geom2d_Ellipse` directly and never went through `GCE2d_MakeEllipse`).
+
+Four tests close the coverage hole the audit found alongside the naming drift:
+`gceCircleParallel`, `gceEllipse(s1:s2:center:)` and `gceHyperbola(s1:s2:center:)` had no test at
+all. They assert measured geometry rather than non-nil, and were verified to fail against injected
+defects — a flipped parallel-offset sign, and swapped `S1`/`S2` apex points. No public Swift API
+changed; `OCCTBridge` is not an SPM product, so the C-layer rename reaches no consumer.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each

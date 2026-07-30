@@ -2188,7 +2188,7 @@ public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIM
 
 ## GC_MakeCircle2d
 
-`Curve2D` factory methods backed by `gce_MakeCirc2d`.
+`Curve2D` factory methods backed by `GC_MakeCircle2d`.
 
 ### `Curve2D.gceCircle(center:radius:)`
 
@@ -2198,7 +2198,7 @@ Create a 2D circle from center and radius.
 public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` via `OCTGCE2dMakeCircleCenterRadius`.
+- **OCCT:** `GC_MakeCircle2d` via `OCCTCurve2DMakeCircleCenterRadius`.
 
 ---
 
@@ -2210,7 +2210,7 @@ Create a 2D circle through 3 points.
 public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (3 points) via `OCTGCE2dMakeCircle3Points`.
+- **OCCT:** `GC_MakeCircle2d` (3 points) via `OCCTCurve2DMakeCircle3Points`.
 
 ---
 
@@ -2222,7 +2222,7 @@ Create a 2D circle from center and a point on the circle.
 public static func gceCircle(center: SIMD2<Double>, pointOn: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (center + point) via `OCTGCE2dMakeCircleCenterPoint`.
+- **OCCT:** `GC_MakeCircle2d` (center + point) via `OCCTCurve2DMakeCircleCenterPoint`.
 
 ---
 
@@ -2235,7 +2235,7 @@ public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Dou
                                       radius: Double, distance: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (parallel) via `OCTGCE2dMakeCircleParallel`.
+- **OCCT:** `GC_MakeCircle2d` (parallel) via `OCCTCurve2DMakeCircleParallel`.
 
 ---
 
@@ -2248,7 +2248,7 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
                               radius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeCirc2d` (axis) via `OCTGCE2dMakeCircleAxis`.
+- **OCCT:** `GC_MakeCircle2d` (axis) via `OCCTCurve2DMakeCircleAxis`.
 - **Example:**
   ```swift
   if let c = Curve2D.gceCircle(center: SIMD2(0, 0), radius: 5) {
@@ -2260,7 +2260,7 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
 
 ## GC_MakeEllipse2d
 
-`Curve2D` factory methods backed by `gce_MakeElips2d`.
+`Curve2D` factory methods backed by `GC_MakeEllipse2d`.
 
 ### `Curve2D.gceEllipse(center:xDirection:majorRadius:minorRadius:)`
 
@@ -2271,7 +2271,7 @@ public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                majorRadius: Double, minorRadius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeElips2d` via `OCTGCE2dMakeEllipse`.
+- **OCCT:** `GC_MakeEllipse2d` via `OCCTCurve2DMakeEllipse`.
 
 ---
 
@@ -2283,7 +2283,7 @@ Create a 2D ellipse from 3 points (S1, S2, center).
 public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeElips2d` (3 points) via `OCTGCE2dMakeEllipse3Points`.
+- **OCCT:** `GC_MakeEllipse2d` (3 points) via `OCCTCurve2DMakeEllipse3Points`.
 
 ---
 
@@ -2298,13 +2298,13 @@ public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
 ```
 
 - **Parameters:** `yDirection` — explicit Y-axis direction for the ellipse frame.
-- **OCCT:** `gce_MakeElips2d` (Ax22d) via `OCTGCE2dMakeEllipseAxis22d`.
+- **OCCT:** `GC_MakeEllipse2d` (Ax22d) via `OCCTCurve2DMakeEllipseAxis22d`.
 
 ---
 
 ## GC_MakeHyperbola2d
 
-`Curve2D` factory methods backed by `gce_MakeHypr2d`.
+`Curve2D` factory methods backed by `GC_MakeHyperbola2d`.
 
 ### `Curve2D.gceHyperbola(center:xDirection:majorRadius:minorRadius:)`
 
@@ -2315,7 +2315,7 @@ public static func gceHyperbola(center: SIMD2<Double>, xDirection: SIMD2<Double>
                                  majorRadius: Double, minorRadius: Double) -> Curve2D?
 ```
 
-- **OCCT:** `gce_MakeHypr2d` via `OCTGCE2dMakeHyperbola`.
+- **OCCT:** `GC_MakeHyperbola2d` via `OCCTCurve2DMakeHyperbola`.
 
 ---
 
@@ -2328,7 +2328,7 @@ public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SI
 ```
 
 - **Parameters:** `s1`, `s2` — points on the hyperbola; `center` — hyperbola center.
-- **OCCT:** `gce_MakeHypr2d` (3 points) via `OCTGCE2dMakeHyperbola3Points`.
+- **OCCT:** `GC_MakeHyperbola2d` (3 points) via `OCCTCurve2DMakeHyperbola3Points`.
 - **Example:**
   ```swift
   if let h = Curve2D.gceHyperbola(center: .zero,

@@ -15,7 +15,7 @@ This page covers geometry construction and analysis utilities added across v0.10
 
 ## GC_MakeParabola2d
 
-Two-dimensional parabola constructors extending `Curve2D` via `GCE2d_MakeParabola`.
+Two-dimensional parabola constructors extending `Curve2D` via `GC_MakeParabola2d`.
 
 ### `Curve2D.gceParabola(center:direction:focalDistance:)`
 
@@ -28,7 +28,7 @@ public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
 
 - **Parameters:** `center` — origin of the parabola axis; `direction` — X-direction of the axis; `focalDistance` — distance from vertex to focus.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` if construction fails.
-- **OCCT:** `GCE2d_MakeParabola`
+- **OCCT:** `GC_MakeParabola2d`
 - **Example:**
   ```swift
   if let p = Curve2D.gceParabola(center: .zero, direction: SIMD2(1, 0), focalDistance: 2.0) {
@@ -49,7 +49,7 @@ public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection
 
 - **Parameters:** `directrixPoint` — a point on the directrix; `directrixDirection` — direction of the directrix; `focus` — the focus point.
 - **Returns:** A `Curve2D` wrapping a `Geom2d_Parabola`, or `nil` on failure.
-- **OCCT:** `GCE2d_MakeParabola` (directrix-focus constructor)
+- **OCCT:** `GC_MakeParabola2d` (directrix-focus constructor)
 - **Example:**
   ```swift
   if let p = Curve2D.gceParabola(directrixPoint: SIMD2(-2, 0),
