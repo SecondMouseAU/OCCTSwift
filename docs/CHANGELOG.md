@@ -67,6 +67,35 @@ symbol references name symbols that exist nowhere in `Sources/`**. Filed as #510
 here — each stale entry needs its real call site identified, and inventing a plausible name for a
 class that has no wrap would be worse than leaving the entry visibly broken.
 
+#### `Surface`'s two transform families now share one `gp_Trsf` builder (#488)
+
+`OCCTBridge_Surface.mm` carried the same `gp_Trsf`-construction switch seven times: once inline in
+each of the six immutable functions (`OCCTSurfaceTranslate`, `Rotate`, `Scale`, `MirrorPlane`,
+`MirrorPoint`, `MirrorAxis`) and once more as a standalone `buildTrsf3D` that only the in-place
+`OCCTSurfaceTransform` dispatcher used. All seven now route through the one `buildTrsf3D`, matching
+what #416 did for `Curve3D`, which that issue explicitly flagged for `Surface` and never applied.
+
+The triplication had already caused a divergence. `OCCTSurfaceTransform` guarded only
+`if (!surface)` and then dereferenced `surface->surface` unconditionally, while all six of its
+siblings in the same file check `s->surface.IsNull()` first. That is the identical gap #416 fixed on
+`OCCTCurve3DTransform`. It now guards both. No live path reaches it with a null internal handle
+today (every call site null-checks the OCCT maker result before assigning), so this is a latent
+crash closed, not an observed one; a null `Handle` deref here would be an uncatchable SIGSEGV per the
+#345 precedent, not a caught C++ exception.
+
+New `SurfaceTransformFamilyParityTests` (`Tests/OCCTSurfaceTests`) asserts the two families produce
+identical geometry for identical input across all six transform kinds, on a sphere and on a Bezier
+surface. The Bezier case matters because the analytic surfaces all take
+`Geom_ElementarySurface::Transform`, which just moves an axis placement, while a Bezier transforms
+every pole. Nothing had checked the two families agreed before, for `Surface` or, until #416, for
+`Curve3D`.
+
+Writing that suite turned up a dead test: `SurfaceTransformTests.transformBezierSurface`
+(`Tests/OCCTMathTests`) built its surface from `Curve3D.line`, but `OCCTSurfaceBezierFill2`
+down-casts its inputs to `Geom_BezierCurve` and returns `nullptr` for anything else, so the test got
+`nil` back and skipped its entire body through `if let` without ever calling `translate`. It now uses
+real Bezier boundaries and asserts the surface actually moved.
+
 ---
 
 ## Release History
