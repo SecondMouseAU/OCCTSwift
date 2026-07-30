@@ -11640,8 +11640,13 @@ extension Curve3D {
     }
 
     /// Find parameter on curve nearest to a 3D point.
+    @available(*, deprecated, message: """
+        Returns .nan when there is no projection, where it used to return the curve's \
+        firstParameter, a real parameter in its own domain, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns nil.
+        """)
     public func parameterAtPoint(_ point: SIMD3<Double>) -> Double {
-        OCCTCurve3DParameterAtPoint(handle, point.x, point.y, point.z)
+        nearestParameter(to: point) ?? .nan
     }
 }
 
@@ -11655,8 +11660,13 @@ extension Curve2D {
     }
 
     /// Find parameter on 2D curve nearest to a 2D point.
+    @available(*, deprecated, message: """
+        Returns .nan when there is no projection, where it used to return the curve's \
+        firstParameter, a real parameter in its own domain, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns nil.
+        """)
     public func parameterAtPoint(_ point: SIMD2<Double>) -> Double {
-        OCCTCurve2DParameterAtPoint(handle, point.x, point.y)
+        nearestParameter(to: point) ?? .nan
     }
 }
 

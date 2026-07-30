@@ -458,26 +458,40 @@ e.g. `param1 == param2`).
 
 ---
 
-### `closestParameter(to:)`
+### `nearestParameter(to:)`
 
-Finds the parameter of the closest point on this curve to a given 3D point.
+Finds the parameter of the nearest point on this curve to a given 3D point.
 
 ```swift
-public func closestParameter(to point: SIMD3<Double>) -> Double
+public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
-Uses a projection; returns `0` if projection finds no points or an exception occurs.
-
 - **Parameters:** `point` — the query point in 3D space.
-- **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to `point`.
+- **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to
+  `point`, or `nil` if the point has no projection at all: one beyond the ends of a bounded
+  curve, or the centre of a circle, which is equidistant from every point on it. `nil` is the
+  only answer that says so: every `Double` is a legitimate parameter on some curve.
 - **OCCT:** `GeomAPI_ProjectPointOnCurve::LowerDistanceParameter`.
 - **Example:**
   ```swift
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1,0,0)) {
-      let param = line.closestParameter(to: SIMD3(5, 3, 0))
-      #expect(abs(param - 5.0) < 0.1)
+      let param = line.nearestParameter(to: SIMD3(5, 3, 0))
+      #expect(param.map { abs($0 - 5.0) < 0.1 } == true)
+  }
+
+  // A curve trimmed to [3, 8]: a point past the end has no projection.
+  if let seg = Curve3D.line(through: .zero, direction: SIMD3(1,0,0))?.trimmed(from: 3, to: 8) {
+      #expect(seg.nearestParameter(to: SIMD3(100, 0, 0)) == nil)
   }
   ```
+
+Contrast [`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which runs a
+different OCCT algorithm (`ShapeAnalysis_Curve::Project`) that always answers, adjusting to the
+curve's ends rather than reporting that there is no projection.
+
+`closestParameter(to:)` is the deprecated spelling of this method. It returns `.nan` where this
+one returns `nil`; before #500 it returned `0`, which is not even inside the domain of a curve
+trimmed to `[3, 8]`.
 
 ---
 

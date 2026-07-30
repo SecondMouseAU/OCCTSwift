@@ -775,17 +775,22 @@ Returns: `0` = Line, `1` = Circle, `2` = Ellipse, `3` = Hyperbola, `4` = Parabol
 
 ---
 
-### `Curve3D.parameterAtPoint(_:)`
+### `Curve3D.nearestParameter(to:)`
 
 Find the curve parameter nearest to a 3D point.
 
 ```swift
-public func parameterAtPoint(_ point: SIMD3<Double>) -> Double
+public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
 - **Parameters:** `point` — the 3D query point.
-- **Returns:** The nearest parameter `u` on the curve.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTCurve3DParameterAtPoint`).
+- **Returns:** The nearest parameter `u` on the curve, or `nil` if the point has no projection at
+  all: one beyond the ends of a bounded curve, or the centre of a circle.
+- **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTCurve3DNearestParameter`).
+
+Replaces `parameterAtPoint(_:)` and
+[`closestParameter(to:)`](Curve3D-Construction.md#nearestparameterto), both deprecated: they ran
+the identical projection and disagreed about the no-projection case (#500).
 
 ---
 
@@ -803,15 +808,21 @@ Returns same codes as `Curve3D.curveType` but for `Geom2d_Curve`.
 
 ---
 
-### `Curve2D.parameterAtPoint(_:)`
+### `Curve2D.nearestParameter(to:)`
 
 Find the 2D curve parameter nearest to a 2D point.
 
 ```swift
-public func parameterAtPoint(_ point: SIMD2<Double>) -> Double
+public func nearestParameter(to point: SIMD2<Double>) -> Double?
 ```
 
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (via `OCCTCurve2DParameterAtPoint`).
+- **Returns:** The nearest parameter, or `nil` if the point has no projection at all. Agrees with
+  `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_:)` and
+  `Point2D.distance(to:)` on exactly when that is (#413, #500).
+- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (via `OCCTCurve2DNearestParameter`).
+
+Replaces `parameterAtPoint(_:)`, deprecated: it reported the no-projection case as the curve's
+own `firstParameter`.
 
 ---
 

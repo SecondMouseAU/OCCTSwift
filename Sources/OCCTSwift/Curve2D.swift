@@ -712,7 +712,7 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameter p: Point to project.
     /// - Returns: The nearest projection, or `nil` if the point has no projection onto this curve
-    ///   — one beyond the ends of a bounded curve, or the centre of a circle.
+    ///     one beyond the ends of a bounded curve, or the centre of a circle.
     ///
     /// `project(_:)` (the `Point2D` overload) and `Point2D.distance(to:)` compute the same nearest
     /// solution through the same shared bridge path, and agree on both the value and on when
@@ -728,6 +728,34 @@ public final class Curve2D: @unchecked Sendable {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
         guard r.distance >= 0 else { return nil }
         return Curve2DProjection(point: SIMD2(r.x, r.y), parameter: r.parameter, distance: r.distance)
+    }
+
+    /// The parameter of the point on this curve nearest to `point`.
+    ///
+    /// - Parameter point: Point to project.
+    /// - Returns: The nearest parameter, or `nil` if the point has no projection onto this curve
+    ///     one beyond the ends of a bounded curve, or the centre of a circle.
+    ///
+    /// The scalar form of `project(point:)`, computed by the same shared bridge path and agreeing
+    /// with it, with `Point2D.distance(to:)` and with `allProjections(of:)` on exactly when there
+    /// is no projection.
+    ///
+    /// `nil` is the only answer that says so, which is why this replaces the deprecated
+    /// `parameterAtPoint(_:)`: no `Double` can carry the signal. `0` is a legitimate parameter on
+    /// any curve whose domain includes it, and so is every other value.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// #expect(segment.nearestParameter(to: SIMD2(5, 3)) == 5)
+    /// #expect(segment.nearestParameter(to: SIMD2(100, 0)) == nil)   // past the end
+    ///
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// #expect(circle.nearestParameter(to: .zero) == nil)            // equidistant everywhere
+    /// ```
+    public func nearestParameter(to point: SIMD2<Double>) -> Double? {
+        var parameter = 0.0
+        guard OCCTCurve2DNearestParameter(handle, point.x, point.y, &parameter) else { return nil }
+        return parameter
     }
 
     /// Project a point onto this curve, returning all projections.

@@ -4144,14 +4144,43 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve) {
     } catch (...) { return 7; }
 }
 
-double OCCTCurve3DParameterAtPoint(OCCTCurve3DRef curve,
-                                   double x, double y, double z) {
-    if (!curve || curve->curve.IsNull()) return 0;
+// The 3D counterpart of OCCTBridge_Geom2d.mm's occtNearestProjectionOnCurve2d, which #413 gave the
+// 2D side and #500 found the 3D side had never had: one GeomAPI_ProjectPointOnCurve construction
+// behind every entry point that wants the nearest solution over the curve's whole range:
+// OCCTCurve3DNearestParameter and OCCTExtremaLocateOnCurve's full-range fallback.
+//
+// Returns false when there is no projection at all, an ordinary outcome rather than an error: a point
+// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Failure may not
+// be reported through the parameter, since every double is a legitimate parameter on some curve.
+//
+// Not routed through here, and why: OCCTExtremaLocateOnCurve's primary search and
+// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) pass an explicit parameter window;
+// OCCTExtremaPointCurve and OCCTProjOnCurve* need every extremum, not the nearest;
+// OCCTCurve3DProjectPoint runs ShapeAnalysis_Curve::Project, a different algorithm with a
+// different contract, adjusting to the curve ends rather than reporting no projection.
+static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve, const gp_Pnt& point,
+                                           gp_Pnt* outNearest, double* outParameter,
+                                           double* outDistance) {
+    if (!curve || curve->curve.IsNull()) return false;
     try {
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(x, y, z), curve->curve);
-        if (proj.NbPoints() < 1) return curve->curve->FirstParameter();
-        return proj.LowerDistanceParameter();
-    } catch (...) { return 0; }
+        GeomAPI_ProjectPointOnCurve proj(point, curve->curve);
+        if (proj.NbPoints() == 0) return false;
+        if (outNearest) *outNearest = proj.NearestPoint();
+        if (outParameter) *outParameter = proj.LowerDistanceParameter();
+        if (outDistance) *outDistance = proj.LowerDistance();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+// Failure contract: returns false, leaving *outParameter untouched. This replaces two functions
+// that computed the identical projection and disagreed about how to report its absence:
+// OCCTCurve3DParameterAtPoint returned curve->FirstParameter(), OCCTCurve3DClosestParameter
+// returned 0, which is not even in the domain of a curve trimmed to, say, [3, 8] (#500).
+bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve, double x, double y, double z,
+                                 double* _Nonnull outParameter) {
+    return occtNearestProjectionOnCurve3d(curve, gp_Pnt(x, y, z), nullptr, outParameter, nullptr);
 }
 // --- Extrema extras ---
 
@@ -4170,11 +4199,8 @@ bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
         GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve->curve, lo, hi);
         if (proj.NbPoints() < 1) {
             // Fallback to full range
-            GeomAPI_ProjectPointOnCurve projFull(gp_Pnt(px, py, pz), curve->curve);
-            if (projFull.NbPoints() < 1) return false;
-            *param = projFull.LowerDistanceParameter();
-            *distance = projFull.LowerDistance();
-            return true;
+            return occtNearestProjectionOnCurve3d(curve, gp_Pnt(px, py, pz), nullptr,
+                                                  param, distance);
         }
         *param = proj.LowerDistanceParameter();
         *distance = proj.LowerDistance();
@@ -4579,16 +4605,9 @@ double OCCTCurve3DLength(OCCTCurve3DRef curve, double u1, double u2) {
     } catch (...) { return 0; }
 }
 
-double OCCTCurve3DClosestParameter(OCCTCurve3DRef curve, double px, double py, double pz) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve->curve);
-        if (proj.NbPoints() > 0) {
-            return proj.LowerDistanceParameter();
-        }
-        return 0;
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DClosestParameter lived here: the same projection as OCCTCurve3DNearestParameter,
+// differing only in reporting no-projection as 0 rather than FirstParameter(). Removed by #500;
+// Curve3D.closestParameter(to:) now shares the one implementation.
 
 
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, double fromParam) {

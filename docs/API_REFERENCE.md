@@ -440,7 +440,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape Location/Orientation** | 9 | child, isLocked, setLocked, located, getLocation, setLocation, oriented, compounded, empty |
 | **Wire/Face Construction** | 8 | wireFromEdges, makeCompound, makeShell, isCompound, isSolid, isShell, isFace, isEdge |
 | **BRepCheck Extended** | 8 | checkFaceStatus, checkEdgeStatus, checkVertexStatus, maxTolerance, minTolerance, avgTolerance, fixTolerance, limitMaxTolerance |
-| **Curve3D/2D Type & Projection** | 5 | curveType (3D), parameterAtPoint (3D), curveType (2D), parameterAtPoint (2D), surfaceGetType |
+| **Curve3D/2D Type & Projection** | 5 | curveType (3D), nearestParameter (3D), curveType (2D), nearestParameter (2D), surfaceGetType |
 | **Extrema Extras** | 4 | locateOnCurve, locateOnSurface, pointCurve, pointSurface |
 | **MakeEdge Completions** | 12 | edgeFromEllipse, edgeFromEllipseArc, edgeFromHyperbolaArc, edgeFromParabolaArc, edgeFromCurve, edgeFromCurveParams, edgeFromCurvePoints, edgeOnSurface, edgeOnSurfaceParams, edgeVertex1, edgeVertex2, edgeError |
 | **ProjectionOnCurve** | 8 | create, release, nbPoints, point, parameter, distance, lowerDistance, lowerParam |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,285** | |
+| **Total** | **4,287** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
