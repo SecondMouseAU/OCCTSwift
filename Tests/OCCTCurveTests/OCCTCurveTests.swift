@@ -1875,7 +1875,7 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
         if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isC0)
+            #expect(analysis.isC0 == true)
             #expect(analysis.c0Value < 1e-6)
         }
     }
@@ -1887,8 +1887,12 @@ struct LocalAnalysisCurveContinuityTests {
         guard let c2 = Curve3D.fit(points: [
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
-        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isG1)
+        // G1 has to be requested: the `.c2` default computes C0/C1/C2 and never looks at
+        // tangency, so this assertion used to pass off an uninitialised member rather than a
+        // measurement (#495).
+        if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound,
+                                            u2: c2.domain.lowerBound, order: .g1) {
+            #expect(analysis.isG1 == true)
             #expect(analysis.g1Angle >= 0)
         }
     }
@@ -1902,7 +1906,7 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(5.5, 2.5, 0), SIMD3(5, 5, 0)
         ]) else { return }
         if let analysis = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(analysis.isC0)
+            #expect(analysis.isC0 == true)
         }
     }
 
@@ -1914,7 +1918,9 @@ struct LocalAnalysisCurveContinuityTests {
             SIMD3(5, 0, 0), SIMD3(7.5, -1, 0), SIMD3(10, 0, 0)
         ]) else { return }
         if let a = c1.continuityWith(c2, u1: c1.domain.upperBound, u2: c2.domain.lowerBound) {
-            #expect(a.status >= 0)
+            // `order` is the request echoed back, so pinning it to the default is all it can
+            // tell us; the measurement is `c1Ratio`, which the default order does compute.
+            #expect(a.order == .c2)
             #expect(a.c1Ratio > 0)
         }
     }

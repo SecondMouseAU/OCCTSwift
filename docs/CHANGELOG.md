@@ -17,6 +17,75 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### Breaking: the junction analysers now say what they measured, and stop reporting what they did not (#495)
+
+**Source-breaking, in one place:** `Curve3D.ContinuityAnalysis` and `Surface.ContinuityAnalysis`
+expose `isC0`/`isG1`/`isC1`/`isG2`/`isC2` as `Bool?` rather than `Bool`. `nil` means "the order you
+asked for never measured this class". [`SEMVER.md`](SEMVER.md#recorded-exception-v1170-2026-07-29)
+records the exception; a shim is impossible, because Swift does not overload a property on its type.
+
+`LocalAnalysis_CurveContinuity` and `LocalAnalysis_SurfaceContinuity` run exactly one branch of a
+switch on the order they are constructed with, and only that branch's quantities are ever computed.
+Every other predicate then compared a member still at its `0.0` initialiser against a tolerance and
+answered `true` whatever the geometry did. A sharp 90° corner analysed at order C0 reported
+`isC2 == true`, with `c2Angle == 0.0` — a perfect second-derivative match — to go with it. The five
+branches are cumulative only along their own ladder, and **no order measures all five**, not even
+the `.c2` default, which never looks at G1 or G2:
+
+| order | measures |
+|---|---|
+| `.c0` | C0 |
+| `.g1` | C0, G1 |
+| `.c1` | C0, C1 |
+| `.g2` | C0, G1, G2 |
+| `.c2` | C0, C1, C2 |
+
+```swift
+// Before — compiles, and lies. The .c2 default never computes G1.
+if analysis.isG1 { … }
+
+// After — ask for what you want measured, and nil says when you did not.
+let a = c1.continuityWith(c2, u1: e1, u2: s2, order: .g1)!
+a.holds(.g1)   // Optional(true)
+a.holds(.c1)   // nil — .g1 does not measure C1
+a.measured     // [.c0, .g1]
+```
+
+The angle and ratio outputs are gated the same way: an unmeasured class now reports `-1` (the
+"not applicable" value those fields already used) instead of `0.0`. `flags` is masked to the
+measured set, and `measured`/`holds(_:)` are the new way to read it.
+
+Three more things fell out of the same audit, none of them source-breaking:
+
+- **`ContinuityAnalysis.status` was never a measurement.** `ContinuityStatus()` returns the order
+  the analyser was constructed with, verbatim. It is now `order: ContinuityClass`, documented as
+  the request after saturation, which is the one thing it can honestly report; `status` remains as
+  a deprecated `Int` shim. Every test that touched it asserted `status >= 0`, which is why the echo
+  went unnoticed.
+- **`order:` is typed.** `Curve3D.continuityWith` and `Surface.continuityWith` took a raw
+  `Int = 4`, the last two continuity parameters #398/PR#436 did not reach — a caller could pass
+  `5`, `-1` or a value borrowed from an unrelated continuity enum and be clamped without being
+  told. Both now take a `ContinuityClass = .c2`, with a deprecated `Int` overload that decodes
+  identically.
+- **`Shape.continuityOfFaces` documented its own return values wrong.** Its comment said
+  `5=CN`; CN is ordinal 6, and 5 (C3) is a value `BRepLib::ContinuityOfFaces` cannot return at all.
+  The function was always right — it casts the enum straight through, so there was no lookup table
+  for the comment to be describing — but a caller matching `5` for "smooth" never matched anything,
+  and one receiving `6` had no documented meaning for it. Same wrong string had been copied into
+  the bridge header and the Swift doc comment.
+  `continuityClassOfFaces(edge:face1:face2:tolerance:) -> ContinuityClass?` is the typed
+  replacement; the `Int` spelling is deprecated, not changed.
+
+Measured, not inferred: a box edge reports `.c0`, a filleted box's blend joins report `.g1`, a
+cylinder seam reports `.cN` (ordinal 6), and `.c3` appears nowhere. Also pinned by test, since the
+default order walks straight into it: the `.c2` branch needs a non-zero second derivative in both
+parametric directions, so `Surface.continuityWith` at the default returns `nil` for a plane (none in
+either direction) and for a cylinder (none along its axis) — ask for `.c1` or `.g1` on planar or
+ruled geometry. Six pre-existing tests across three targets asserted nothing at all because of
+these two facts together, and now assert the measurements.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
 #### One continuity decoder per vocabulary, not nineteen (#490)
 
 Continuity reached OCCT as a plain integer through 19 separate decoders: seven independently-named

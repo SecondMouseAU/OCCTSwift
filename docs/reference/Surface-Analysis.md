@@ -118,26 +118,31 @@ Struct returned by `continuityWith(_:u1:v1:u2:v2:order:)`.
 
 ```swift
 public struct ContinuityAnalysis: Sendable {
-    public let status: Int
+    public let order: ContinuityClass
+    public let measured: Set<ContinuityClass>
     public let c0Value: Double
     public let g1Angle: Double
     public let c1UAngle: Double
     public let c1VAngle: Double
     public let flags: Int
-    public var isC0: Bool { flags & 1  != 0 }
-    public var isG1: Bool { flags & 2  != 0 }
-    public var isC1: Bool { flags & 4  != 0 }
-    public var isG2: Bool { flags & 8  != 0 }
-    public var isC2: Bool { flags & 16 != 0 }
+    public func holds(_ continuity: ContinuityClass) -> Bool?
+    public var isC0: Bool? { holds(.c0) }
+    public var isG1: Bool? { holds(.g1) }
+    public var isC1: Bool? { holds(.c1) }
+    public var isG2: Bool? { holds(.g2) }
+    public var isC2: Bool? { holds(.c2) }
 }
 ```
 
-- `status` — raw `GeomAbs_Shape` continuity status code.
+- `order` — the class the junction was analysed at, i.e. the request after saturation. `LocalAnalysis_SurfaceContinuity::ContinuityStatus()` echoes its constructor argument, so this is never a finding; it exists to tell you where a saturated request landed.
+- `measured` — the classes this `order` actually evaluated. Each order runs one branch: `.c0` measures C0; `.g1` measures C0 and G1; `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2. **No order measures all five.**
 - `c0Value` — positional gap distance at the junction.
-- `g1Angle` — angle between surface normals at the junction (radians).
-- `c1UAngle` / `c1VAngle` — angles between first derivatives in U and V directions.
-- `flags` — bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2.
-- Computed boolean helpers `isC0` … `isC2` decode the bitmask.
+- `g1Angle` — angle between surface normals at the junction (radians), or `-1` if G1 was not measured or does not hold.
+- `c1UAngle` / `c1VAngle` — angles between first derivatives in U and V directions, or `-1`.
+- `flags` — bitmask: bit 0 = C0, bit 1 = G1, bit 2 = C1, bit 3 = G2, bit 4 = C2, masked to `measured`.
+- `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
+
+> Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° crease analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
 
 ---
 
@@ -150,25 +155,22 @@ public func continuityWith(
     _ other: Surface,
     u1: Double, v1: Double,
     u2: Double, v2: Double,
-    order: Int = 4
+    order: ContinuityClass = .c2
 ) -> ContinuityAnalysis?
 ```
 
-`order` controls the maximum continuity level tested: 0 = C0, 1 = G1, 2 = C1, 3 = G2, 4 = C2. Use this to verify that two adjacent surface patches meet smoothly at a shared seam.
+`order` **selects** the analysis rather than capping it — see `measured` above. `.c2` is the strictest class `LocalAnalysis_SurfaceContinuity` implements, so `.c3` and `.cN` saturate to it.
 
-- **Parameters:** `other` — the second surface; `u1`/`v1` — parameters on this surface; `u2`/`v2` — parameters on `other`; `order` — maximum order to check (0–4, default 4).
-- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_SurfaceContinuity` fails (e.g. degenerate point, invalid order).
+- **Parameters:** `other` — the second surface; `u1`/`v1` — parameters on this surface; `u2`/`v2` — parameters on `other`; `order` — the class to measure (default `.c2`).
+- **Returns:** `ContinuityAnalysis`, or `nil` if `LocalAnalysis_SurfaceContinuity` fails.
 - **OCCT:** `LocalAnalysis_SurfaceContinuity`.
+- **Note:** the `.c2` branch needs a non-zero second derivative in both U and V on both surfaces. A plane has none in either direction and a cylinder has none along its axis, so the default order returns `nil` for both — ask for `.c1` or `.g1` on planar or ruled geometry.
 - **Example:**
   ```swift
-  if let a = ContinuityAnalysis(
-         s1.continuityWith(s2, u1: u1, v1: v1, u2: u2, v2: v2)
-     ) {
-      print(a.isG1, a.g1Angle)
-  }
-  // safe unwrap form:
-  if let ca = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0) {
-      print(ca.isC1)
+  // Tangency is its own question: the .c2 default never computes G1.
+  if let a = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .g1) {
+      print(a.holds(.g1), a.g1Angle)   // Optional(true), 0.0
+      print(a.holds(.c1))              // nil — .g1 does not measure C1
   }
   ```
 

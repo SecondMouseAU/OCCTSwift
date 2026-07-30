@@ -1128,65 +1128,134 @@ extension Curve3D {
 
     /// Result of curve continuity analysis at a junction point.
     public struct ContinuityAnalysis: Sendable {
-        /// Continuity status as GeomAbs_Shape value (0=C0, 1=G1, 2=C1, 3=G2, 4=C2)
-        public let status: Int
+        /// The order the junction was actually analysed at: the requested ``ContinuityClass``
+        /// after saturation at ``ContinuityClass/c2``.
+        ///
+        /// This is the request, not a finding. `LocalAnalysis_CurveContinuity::ContinuityStatus()`
+        /// returns the order it was constructed with verbatim, so the only thing it can tell you
+        /// is where a saturated request landed. The findings are ``measured`` and ``holds(_:)``.
+        public let order: ContinuityClass
+        /// The continuity classes this ``order`` actually measured.
+        ///
+        /// Each order computes only its own branch — `.c0` measures C0; `.g1` measures C0 and G1;
+        /// `.c1` measures C0 and C1; `.g2` measures C0, G1 and G2; `.c2` measures C0, C1 and C2.
+        /// No order measures all five, not even the `.c2` default, which never looks at G1 or G2.
+        public let measured: Set<ContinuityClass>
         /// Distance between curve endpoints at junction
         public let c0Value: Double
-        /// Angle between tangents (radians)
+        /// Angle between tangents (radians), or -1 if G1 was not measured or does not hold
         public let g1Angle: Double
-        /// Angle between first derivatives
+        /// Angle between first derivatives, or -1
         public let c1Angle: Double
-        /// Ratio of first derivative magnitudes
+        /// Ratio of first derivative magnitudes, or -1
         public let c1Ratio: Double
-        /// Angle between second derivatives
+        /// Angle between second derivatives, or -1
         public let c2Angle: Double
-        /// Ratio of second derivative magnitudes
+        /// Ratio of second derivative magnitudes, or -1
         public let c2Ratio: Double
-        /// Angle between osculating planes
+        /// Angle between osculating planes, or -1
         public let g2Angle: Double
-        /// Variation of curvature at junction
+        /// Variation of curvature at junction, or -1
         public let g2CurvatureVariation: Double
-        /// Bitmask: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2
+        /// Bitmask of the classes that hold: bit0=C0, bit1=G1, bit2=C1, bit3=G2, bit4=C2.
+        ///
+        /// Only ever sets bits for classes in ``measured``, so a clear bit means "does not hold
+        /// *or* was not measured". Prefer ``holds(_:)``, which separates the two.
         public let flags: Int
 
-        /// Whether the junction is positionally continuous (C0)
-        public var isC0: Bool { flags & 1 != 0 }
-        /// Whether the junction is geometrically tangent-continuous (G1)
-        public var isG1: Bool { flags & 2 != 0 }
-        /// Whether the junction is parametrically tangent-continuous (C1)
-        public var isC1: Bool { flags & 4 != 0 }
-        /// Whether the junction is geometrically curvature-continuous (G2)
-        public var isG2: Bool { flags & 8 != 0 }
-        /// Whether the junction is parametrically curvature-continuous (C2)
-        public var isC2: Bool { flags & 16 != 0 }
+        /// Whether `continuity` holds at the junction, or `nil` if this ``order`` never measured
+        /// it.
+        ///
+        /// ```swift
+        /// let a = corner.continuityWith(other, u1: e1, u2: s2, order: .c1)!
+        /// a.holds(.c1)   // false — measured, and the junction is not C1
+        /// a.holds(.g1)   // nil   — order .c1 never computes G1
+        /// ```
+        public func holds(_ continuity: ContinuityClass) -> Bool? {
+            guard measured.contains(continuity) else { return nil }
+            return flags & continuity.analysisFlagBit != 0
+        }
+
+        /// Whether the junction is positionally continuous (C0). Always measured.
+        public var isC0: Bool? { holds(.c0) }
+        /// Whether the junction is geometrically tangent-continuous (G1), or nil if ``order``
+        /// did not measure G1 (only `.g1` and `.g2` do).
+        public var isG1: Bool? { holds(.g1) }
+        /// Whether the junction is parametrically tangent-continuous (C1), or nil if ``order``
+        /// did not measure C1 (only `.c1` and `.c2` do).
+        public var isC1: Bool? { holds(.c1) }
+        /// Whether the junction is geometrically curvature-continuous (G2), or nil if ``order``
+        /// was not `.g2`.
+        public var isG2: Bool? { holds(.g2) }
+        /// Whether the junction is parametrically curvature-continuous (C2), or nil if ``order``
+        /// was not `.c2`.
+        public var isC2: Bool? { holds(.c2) }
+
+        /// The effective analysis order as a raw `GeomAbs_Shape` ordinal. Former spelling of
+        /// ``order``.
+        ///
+        /// Named as though it reported a measurement; it never did. See ``order``.
+        @available(*, deprecated, renamed: "order")
+        public var status: Int { Int(order.rawValue) }
     }
 
     /// Analyze continuity between this curve at parameter `u1` and another curve at `u2`.
+    ///
+    /// ```swift
+    /// // Is this junction tangent-continuous? Ask for G1 — the .c2 default never measures it.
+    /// let a = leftArc.continuityWith(rightArc, u1: leftArc.domain.upperBound,
+    ///                                u2: rightArc.domain.lowerBound, order: .g1)
+    /// if a?.holds(.g1) == true { print("tangent, angle \(a!.g1Angle)") }
+    /// ```
     ///
     /// - Parameters:
     ///   - u1: Parameter on this curve
     ///   - other: Second curve
     ///   - u2: Parameter on second curve
-    ///   - order: Continuity class to check, as a `GeomAbs_Shape` ordinal (0=C0, 1=G1, 2=C1,
-    ///     3=G2, 4=C2) — the same encoding `ContinuityAnalysis.status` reports back. C2 is the
-    ///     ceiling: `LocalAnalysis_*` implements no predicate above C2/G2, and asking for more
-    ///     leaves every predicate reporting true, so anything above 4 is read as 4.
+    ///   - order: Which continuity class to measure. This selects the analysis, not just a
+    ///     ceiling: `LocalAnalysis_CurveContinuity` computes one branch of a switch, so the
+    ///     classes outside it are never measured and ``ContinuityAnalysis/holds(_:)`` reports
+    ///     `nil` for them. `.c2` is the strictest question the class can answer — it implements
+    ///     no predicate above C2/G2 — so `.c3` and `.cN` saturate to `.c2`, which
+    ///     ``ContinuityAnalysis/order`` reports back.
     /// - Returns: Continuity analysis result, or nil on failure
-    public func continuityWith(_ other: Curve3D, u1: Double, u2: Double, order: Int = 4) -> ContinuityAnalysis? {
-        var outStatus: Int32 = 0
+    public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
+                               order: ContinuityClass = .c2) -> ContinuityAnalysis? {
+        continuityAnalysis(with: other, u1: u1, u2: u2, rawOrder: order.rawValue)
+    }
+
+    /// Analyze continuity, with the order given as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The untyped spelling is what let a caller pass `5`, `-1` or a raw value borrowed from an
+    /// unrelated continuity enum and be clamped without saying so. Pass a ``ContinuityClass``;
+    /// ``ContinuityAnalysis/order`` then reports where a saturated request landed.
+    @available(*, deprecated, message: "Pass a ContinuityClass (.c0/.g1/.c1/.g2/.c2) instead of a raw GeomAbs_Shape ordinal.")
+    public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
+                               order: Int) -> ContinuityAnalysis? {
+        continuityAnalysis(with: other, u1: u1, u2: u2, rawOrder: Int32(clamping: order))
+    }
+
+    // Both overloads land here, and neither reproduces the saturation rule: the bridge's
+    // occtGeomAbsFromAnalysisOrder owns it and reports the order it settled on.
+    private func continuityAnalysis(with other: Curve3D, u1: Double, u2: Double,
+                                    rawOrder: Int32) -> ContinuityAnalysis? {
+        var outEffectiveOrder: Int32 = 0
         var outC0: Double = 0, outG1: Double = 0
         var outC1A: Double = 0, outC1R: Double = 0
         var outC2A: Double = 0, outC2R: Double = 0
         var outG2A: Double = 0, outG2CV: Double = 0
         let ok = OCCTLocalAnalysisCurveContinuity(
-            handle, u1, other.handle, u2, Int32(order),
-            &outStatus, &outC0, &outG1, &outC1A, &outC1R,
+            handle, u1, other.handle, u2, rawOrder,
+            &outEffectiveOrder, &outC0, &outG1, &outC1A, &outC1R,
             &outC2A, &outC2R, &outG2A, &outG2CV)
         guard ok else { return nil }
+        var outMeasured: Int32 = 0
         let flags = Int(OCCTLocalAnalysisCurveContinuityFlags(
-            handle, u1, other.handle, u2, Int32(order)))
+            handle, u1, other.handle, u2, rawOrder, &outMeasured))
         return ContinuityAnalysis(
-            status: Int(outStatus), c0Value: outC0, g1Angle: outG1,
+            order: ContinuityClass(rawValue: outEffectiveOrder) ?? .c2,
+            measured: ContinuityClass.set(fromAnalysisMask: outMeasured),
+            c0Value: outC0, g1Angle: outG1,
             c1Angle: outC1A, c1Ratio: outC1R,
             c2Angle: outC2A, c2Ratio: outC2R,
             g2Angle: outG2A, g2CurvatureVariation: outG2CV,
