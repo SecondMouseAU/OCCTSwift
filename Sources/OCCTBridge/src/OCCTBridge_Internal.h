@@ -398,4 +398,61 @@ int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, Kn
     return nbSplits;
 }
 
+// === #399/#411/#487: conic dimension preconditions ===
+//
+// The dimensions a circle, ellipse, hyperbola or parabola needs in order to be that curve rather
+// than a degenerate stand-in for a point or a line. Not dimension-specific: whether the conic is
+// built in a plane or in space changes nothing about which radii describe one, so these four
+// predicates serve both the Curve3D and the Curve2D factories.
+//
+// Two families build each curve type from caller-supplied dimensions, and every one of them needs
+// the same answer: the direct family (OCCTCurve3DCreate*, OCCTCurve2DCreate*, including the ArcOf*
+// variants) constructing a Geom_* / Geom2d_* object outright, and the gce family (OCCTGceMake*,
+// OCCTGceMake*2d) going through a gce_Make* algorithm first.
+//
+// They must be checked here, in the bridge, and not left to OCCT. Every OCCT precondition is
+// written as a *_Raise_if macro, and the pinned OCCT.xcframework is a Release build, where OCCT's
+// own BUILD_RELEASE_DISABLE_EXCEPTIONS (default ON) defines No_Exception and expands all of those
+// macros to nothing inside OCCT's translation units. So the checks OCCT documents in its headers do
+// not run in this build; measured consequences (#487):
+//
+//   - gce_MakeElips2d(ax, 5, -3) reports gce_Done and yields a live Geom2d_Ellipse whose
+//     MinorRadius() is -3. Its own two checks (MajorRadius < 0, MajorRadius < MinorRadius) do not
+//     cover that input, and gp_Elips2d's check, which would, is compiled out.
+//   - gce_MakeHypr2d(ax, 0, 0, true) and gce_MakeParab2d(ax, 0) both succeed, as do the
+//     corresponding direct Geom2d_Hyperbola / Geom2d_Parabola constructors. OCCT accepts these
+//     through every route; rejecting them is entirely this bridge's contract.
+//
+// A degenerate conic is not a harmless curve either: a zero-radius ellipse evaluates to its own
+// centre at every parameter while still reporting a [0, 2pi] range, so it reads as a curve
+// everywhere downstream and behaves as a point.
+//
+// One definition each, because the alternative is what the audit found: #399 added these four to
+// OCCTBridge_Curve3D.mm, #411 added a byte-equivalent occtValidCircle2dRadius to
+// OCCTBridge_Geom2d.mm, and the 2D direct factories spelled the same conditions inline in six more
+// places, which is how the 2D gce factories came to be skipped by both passes.
+
+// A circle needs a positive radius. Zero collapses it to its own centre.
+inline bool occtValidCircleRadius(double radius) {
+    return radius > 0;
+}
+
+// An ellipse needs both radii positive, and the minor no larger than the major, which is the
+// orientation OCCT's own gp_Elips2d/gp_Elips invariant requires.
+inline bool occtValidEllipseRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0 && minorR <= majorR;
+}
+
+// A hyperbola needs both radii positive. Unlike an ellipse it puts no ordering on them: a minor
+// radius larger than the major is an ordinary hyperbola, not an inverted one.
+inline bool occtValidHyperbolaRadii(double majorR, double minorR) {
+    return majorR > 0 && minorR > 0;
+}
+
+// A parabola needs a positive focal length. At zero it degenerates to a line parallel to its own
+// axis of symmetry, which is gp_Parab2d's documented behaviour, not an error it reports.
+inline bool occtValidParabolaFocal(double focal) {
+    return focal > 0;
+}
+
 #endif /* OCCTBridge_Internal_h */

@@ -147,11 +147,21 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a full ellipse.
+    ///
     /// - Parameters:
     ///   - center: Center point
-    ///   - majorRadius: Semi-major axis length (must be >= minorRadius)
-    ///   - minorRadius: Semi-minor axis length
+    ///   - majorRadius: Semi-major axis length. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
     ///   - rotation: Rotation of the major axis from the X axis (radians)
+    /// - Returns: The ellipse, or `nil` if either radius is not positive or `minorRadius` exceeds
+    ///   `majorRadius`.
+    ///
+    /// ```swift
+    /// let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
+    /// #expect(Curve2D.ellipse(center: .zero, majorRadius: 5, minorRadius: 10) == nil)
+    /// ```
     public static func ellipse(center: SIMD2<Double>, majorRadius: Double,
                                minorRadius: Double, rotation: Double = 0) -> Curve2D? {
         guard let h = OCCTCurve2DCreateEllipse(center.x, center.y,
@@ -170,10 +180,19 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a parabola.
+    ///
     /// - Parameters:
     ///   - focus: Focus point of the parabola
     ///   - direction: Axis direction (from vertex toward focus)
-    ///   - focalLength: Distance from vertex to focus
+    ///   - focalLength: Distance from vertex to focus. Must be `> 0`; at zero the parabola
+    ///     degenerates into a line parallel to its own axis.
+    /// - Returns: The parabola, or `nil` if `focalLength <= 0`.
+    ///
+    /// ```swift
+    /// let p = Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 1)
+    /// #expect(p != nil)
+    /// #expect(Curve2D.parabola(focus: .zero, direction: SIMD2(1, 0), focalLength: 0) == nil)
+    /// ```
     public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                                 focalLength: Double) -> Curve2D? {
         guard let h = OCCTCurve2DCreateParabola(focus.x, focus.y,
@@ -183,6 +202,23 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a hyperbola.
+    ///
+    /// Unlike an ellipse, a hyperbola puts no ordering on its radii: a minor radius larger than the
+    /// major one is an ordinary hyperbola and is accepted.
+    ///
+    /// - Parameters:
+    ///   - center: Center point
+    ///   - majorRadius: Semi-major axis length. Must be `> 0`.
+    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
+    ///   - rotation: Rotation of the major axis from the X axis (radians)
+    /// - Returns: The hyperbola, or `nil` if either radius is not positive.
+    ///
+    /// ```swift
+    /// let h = Curve2D.hyperbola(center: .zero, majorRadius: 5, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 3, minorRadius: 5) != nil)
+    /// #expect(Curve2D.hyperbola(center: .zero, majorRadius: 0, minorRadius: 0) == nil)
+    /// ```
     public static func hyperbola(center: SIMD2<Double>, majorRadius: Double,
                                  minorRadius: Double, rotation: Double = 0) -> Curve2D? {
         guard let h = OCCTCurve2DCreateHyperbola(center.x, center.y,
@@ -1989,8 +2025,8 @@ extension Curve2D {
 
     /// Create a 2D circle from center + radius (`gce_MakeCirc2d`).
     ///
-    /// Geometrically identical to `circle(center:radius:)` — both produce a `Geom2d_Circle` on
-    /// the same X-axis-oriented frame — and, since #411, enforces the same radius contract.
+    /// Geometrically identical to `circle(center:radius:)` (both produce a `Geom2d_Circle` on the
+    /// same X-axis-oriented frame) and, since #411, enforces the same radius contract.
     ///
     /// - Parameters:
     ///   - center: Circle centre.
@@ -2029,7 +2065,30 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D ellipse (gce_MakeElips2d)
+    /// Create a 2D ellipse from centre, major-axis direction and radii (`gce_MakeElips2d`).
+    ///
+    /// Geometrically identical to `ellipse(center:majorRadius:minorRadius:rotation:)`, which takes
+    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the
+    /// same radius contract.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - direction: Major-axis direction.
+    ///   - majorRadius: Semi-major axis length. Must be `> 0` and `>= minorRadius`.
+    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
+    /// - Returns: The ellipse, or `nil` if either radius is not positive or `minorRadius` exceeds
+    ///   `majorRadius`.
+    ///
+    /// ```swift
+    /// let e = Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                      majorRadius: 8, minorRadius: 4)
+    /// #expect(e != nil)
+    /// // Same rejections as the direct factory: no degenerate ellipse, no negative minor radius.
+    /// #expect(Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                      majorRadius: 0, minorRadius: 0) == nil)
+    /// #expect(Curve2D.ellipseFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                      majorRadius: 5, minorRadius: -3) == nil)
+    /// ```
     public static func ellipseFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
                                             majorRadius: Double,
                                             minorRadius: Double) -> Curve2D? {
@@ -2038,7 +2097,33 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D hyperbola (gce_MakeHypr2d)
+    /// Create a 2D hyperbola from centre, major-axis direction and radii (`gce_MakeHypr2d`).
+    ///
+    /// Geometrically identical to `hyperbola(center:majorRadius:minorRadius:rotation:)`, which takes
+    /// the major-axis direction as a rotation angle instead of a vector, and since #487 enforces the
+    /// same radius contract.
+    ///
+    /// Unlike an ellipse, a hyperbola puts no ordering on its radii: a minor radius larger than the
+    /// major one is an ordinary hyperbola and is accepted.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - direction: Major-axis direction.
+    ///   - majorRadius: Semi-major axis length. Must be `> 0`.
+    ///   - minorRadius: Semi-minor axis length. Must be `> 0`.
+    /// - Returns: The hyperbola, or `nil` if either radius is not positive.
+    ///
+    /// ```swift
+    /// let h = Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                        majorRadius: 6, minorRadius: 3)
+    /// #expect(h != nil)
+    /// // Minor larger than major is a valid hyperbola, unlike for an ellipse.
+    /// #expect(Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                        majorRadius: 3, minorRadius: 6) != nil)
+    /// // Same rejection as the direct factory: no degenerate zero-radius hyperbola.
+    /// #expect(Curve2D.hyperbolaFromCenterDir(center: .zero, direction: SIMD2(1, 0),
+    ///                                        majorRadius: 0, minorRadius: 0) == nil)
+    /// ```
     public static func hyperbolaFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
                                               majorRadius: Double,
                                               minorRadius: Double) -> Curve2D? {
@@ -2047,7 +2132,26 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Create a 2D parabola (gce_MakeParab2d)
+    /// Create a 2D parabola from a point on its axis of symmetry, that axis' direction, and the
+    /// focal length (`gce_MakeParab2d`).
+    ///
+    /// `center` is the parabola's vertex, so this places the curve the same way
+    /// `parabola(focus:direction:focalLength:)` does once that factory has stepped back from the
+    /// focus to the vertex. Since #487 both enforce the same focal-length contract.
+    ///
+    /// - Parameters:
+    ///   - center: Vertex of the parabola.
+    ///   - direction: Direction of the axis of symmetry.
+    ///   - focal: Distance from vertex to focus. Must be `> 0`; at zero the parabola degenerates
+    ///     into a line parallel to its own axis.
+    /// - Returns: The parabola, or `nil` if `focal <= 0`.
+    ///
+    /// ```swift
+    /// let p = Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 3)
+    /// #expect(p != nil)
+    /// // Same rejection as the direct factory: a zero focal length is a line, not a parabola.
+    /// #expect(Curve2D.parabolaFromCenterDir(center: .zero, direction: SIMD2(1, 0), focal: 0) == nil)
+    /// ```
     public static func parabolaFromCenterDir(center: SIMD2<Double>, direction: SIMD2<Double>,
                                              focal: Double) -> Curve2D? {
         guard let h = OCCTGceMakeParab2d(center.x, center.y, direction.x, direction.y,

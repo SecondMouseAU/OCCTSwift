@@ -67,6 +67,53 @@ symbol references name symbols that exist nowhere in `Sources/`**. Filed as #510
 here — each stale entry needs its real call site identified, and inventing a plausible name for a
 class that has no wrap would be worse than leaving the entry visibly broken.
 
+#### The 2D conic factories reject degenerate dimensions, like their siblings already did (#487)
+
+**Behaviour change.** `Curve2D.ellipseFromCenterDir`, `Curve2D.hyperbolaFromCenterDir` and
+`Curve2D.parabolaFromCenterDir` now return `nil` for dimensions that cannot describe the curve they
+name, matching the direct factories (`Curve2D.ellipse`, `Curve2D.hyperbola`, `Curve2D.parabola`) they
+are geometrically identical to. Previously they had no precondition at all and returned a live,
+degenerate curve:
+
+| call | before | now |
+|---|---|---|
+| `ellipseFromCenterDir(majorRadius: 0, minorRadius: 0)` | ellipse whose every point is its centre | `nil` |
+| `ellipseFromCenterDir(majorRadius: 8, minorRadius: 0)` | ellipse with a zero minor radius | `nil` |
+| `ellipseFromCenterDir(majorRadius: 5, minorRadius: -3)` | ellipse reporting `MinorRadius() == -3` | `nil` |
+| `hyperbolaFromCenterDir(majorRadius: 0, minorRadius: 0)` | degenerate hyperbola | `nil` |
+| `hyperbolaFromCenterDir(majorRadius: 6, minorRadius: 0)` | degenerate hyperbola | `nil` |
+| `parabolaFromCenterDir(focal: 0)` | parabola collapsed to a line | `nil` |
+
+Valid input is unaffected: both families still build the same curve, verified pointwise. Equal
+ellipse radii stay valid, and a hyperbola with its minor radius larger than its major stays valid,
+since neither is degenerate.
+
+This is the same gap #399 closed for the four 3D conics and #411 closed for the 2D circle. Neither
+pass reached the 2D ellipse, hyperbola or parabola, because the predicate had been copied rather than
+shared: #399 left four `static inline` helpers in `OCCTBridge_Curve3D.mm`, #411 added a
+byte-equivalent fifth (`occtValidCircle2dRadius`) in `OCCTBridge_Geom2d.mm`, and the 2D direct
+factories spelled the same conditions inline in six more places. All twelve now call one of four
+definitions in `OCCTBridge_Internal.h`. A conic's radii do not depend on whether it lives in a plane
+or in space, so there is nothing for a 2D copy to say differently.
+
+Worth recording for future audits of this kind: **no precondition inside the OCCT library is
+load-bearing in this build.** Every one is written as a `*_Raise_if` macro, and the pinned
+`OCCT.xcframework` is a Release build, where OCCT's own `BUILD_RELEASE_DISABLE_EXCEPTIONS` (default
+ON) defines `No_Exception` and expands all of them to nothing inside OCCT's translation units. That
+is why `gce_MakeElips2d(ax, 5, -3)` reports `gce_Done`: its own two checks do not cover that input,
+and `gp_Elips2d`'s check, which does, is not compiled. The bridge's `.mm` files are built without
+that macro, so the identical constructor called from the bridge does throw. For the hyperbola and
+parabola cases the divergence was never an OCCT accept/reject asymmetry at all: OCCT accepts
+`(0, 0)` and `focal == 0` through both routes, and rejecting them is entirely this bridge's contract.
+
+Six more `OCCTBridge_Geom2d.mm` sites build a 2D conic from caller dimensions with no precondition
+(`OCCTConvertEllipseToBSpline2D`, `OCCTConvertHyperbolaToBSpline2D`, `OCCTConvertParabolaToBSpline2D`,
+`OCCTMakeEdge2dEllipse`, `OCCTMakeEdge2dEllipseArc`, `OCCTConic2dFromEllipse`) and none of their
+downstream algorithms self-reject: a zero-radius ellipse yields a 5-pole BSpline, an edge reporting
+`IsDone()`, and six zero conic coefficients respectively. Filed as #514 rather than swept in here;
+two of them have no nil channel to report a rejection through and each needs its own contract
+decision.
+
 ---
 
 ## Release History
