@@ -197,7 +197,7 @@ public func points(count: Int) -> [SIMD3<Double>]
 
 One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points (must be ≥ 2; returns `[]` if less).
+- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of `count` evenly-spaced 3D points; fewer if the bridge yields fewer results.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_CompCurve&, count)`.
 - **Example:**
@@ -216,14 +216,36 @@ Points spaced approximately `spacing` apart along the wire by arc length.
 public func points(spacing: Double) -> [SIMD3<Double>]
 ```
 
-Pure-Swift: computes `count = max(2, round(length / spacing) + 1)` then delegates to `points(count:)`. The exact step is adjusted so samples divide the wire evenly end-to-end.
+Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`. The exact step is adjusted so samples divide the wire evenly end-to-end.
 
 - **Parameters:** `spacing` — target arc-length step in model units.
-- **Returns:** Evenly-spaced points; empty array if `spacing <= 0` or `length == 0`.
+- **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
   let wc = WireCurve(wire)!
   let pts = wc.points(spacing: 5.0)  // one point every ~5 units
+  wc.points(spacing: 1e-9).isEmpty   // true: implies 1e11 points, past the ceiling
+  ```
+
+---
+
+### `maximumSampleCount`
+
+The largest sample count either adaptor will produce: 10 million points. Shared by `WireCurve` and `EdgeCurve`, since it is declared once on `ArcLengthCurveAdaptor`.
+
+```swift
+public static var maximumSampleCount: Int  // 10_000_000
+```
+
+`count` sizes a Swift allocation and is then cast to the `int32_t` the bridge takes its count in, so an unbounded count is a process abort rather than a failed call: before #479 a `points(spacing:)` small enough to imply 10<sup>11</sup> points asked for a ~2.4 TB array, and one small enough to overflow `Int` trapped in the conversion itself. Both entry points now return `[]` above the ceiling instead, with no clamping: a request the ceiling cannot honour fails visibly rather than coming back silently coarser than what was asked for.
+
+The ceiling is a bound on the allocation, not on what is useful. One sample costs 24 bytes in the packed bridge buffer plus 32 in the returned array; measured on a two-edge, 200-unit wire, the ceiling itself is 10,000,000 points in 46 s at 624 MB resident, and the sampler honours it exactly (10,000,001 returns `[]`).
+
+- **Example:**
+  ```swift
+  let wc = WireCurve(wire)!
+  wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty   // true
+  wc.points(count: Int(Int32.max) + 1).isEmpty                 // true, no trap
   ```
 
 ---
@@ -409,7 +431,7 @@ public func points(count: Int) -> [SIMD3<Double>]
 
 One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
 
-- **Parameters:** `count` — number of sample points (must be ≥ 2; returns `[]` if less).
+- **Parameters:** `count` — number of sample points, honoured within `2...maximumSampleCount`; outside that range the result is `[]` (#479).
 - **Returns:** Array of up to `count` evenly-spaced 3D points.
 - **OCCT:** `GCPnts_UniformAbscissa(BRepAdaptor_Curve&, count)`.
 - **Example:**
@@ -428,14 +450,31 @@ Points spaced approximately `spacing` apart along the edge by arc length.
 public func points(spacing: Double) -> [SIMD3<Double>]
 ```
 
-Pure-Swift: computes `count = max(2, round(length / spacing) + 1)` then delegates to `points(count:)`.
+Pure-Swift: derives the sample count from `length / spacing` and delegates to `points(count:)`.
 
 - **Parameters:** `spacing` — target arc-length step in model units.
-- **Returns:** Evenly-spaced points; empty array if `spacing <= 0` or `length == 0`.
+- **Returns:** Evenly-spaced points; empty array if `spacing <= 0`, if `spacing` is NaN, if `length == 0`, or if the spacing implies more than `maximumSampleCount` points (#479).
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!
   let pts = ec.points(spacing: 1.0)  // sample every ~1 unit
+  ec.points(spacing: 1e-18).isEmpty  // true: past the ceiling, and past Int.max
+  ```
+
+---
+
+### `maximumSampleCount`
+
+The same ceiling `WireCurve` applies; see [maximumSampleCount](#maximumsamplecount) above. It is declared once on `ArcLengthCurveAdaptor`, so `EdgeCurve.maximumSampleCount == WireCurve.maximumSampleCount`.
+
+```swift
+public static var maximumSampleCount: Int  // 10_000_000
+```
+
+- **Example:**
+  ```swift
+  let ec = EdgeCurve(edge)!
+  ec.points(count: EdgeCurve.maximumSampleCount + 1).isEmpty   // true
   ```
 
 ---

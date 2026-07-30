@@ -4,10 +4,10 @@ import Foundation
 ///
 /// Both types wrap a distinct OCCT curve adaptor behind a distinct bridge handle type
 /// (`BRepAdaptor_Curve` for a single edge, `BRepAdaptor_CompCurve` for a multi-edge wire), so they
-/// stay separate public classes — but once each type supplies its own native-parameter primitives
+/// stay separate public classes, but once each type supplies its own native-parameter primitives
 /// (`length`, `point(atParameter:)`, `tangent(atParameter:)`, `parameter(atAbscissa:)`,
 /// `points(count:)`), the arc-length *composition* built on top of them (looking up a point/tangent
-/// by abscissa, converting a spacing into an evenly-divided sample count) is identical for both —
+/// by abscissa, converting a spacing into an evenly-divided sample count) is identical for both:
 /// this protocol's extension supplies that composition exactly once instead of per-type.
 ///
 /// ```swift
@@ -19,7 +19,7 @@ public protocol ArcLengthCurveAdaptor: AnyObject {
     /// Total arc length of the underlying curve.
     var length: Double { get }
 
-    /// The native parameter range `[first, last]` (not arc length — use the `atAbscissa:`
+    /// The native parameter range `[first, last]` (not arc length, use the `atAbscissa:`
     /// methods for arc-length sampling).
     var parameterRange: (first: Double, last: Double) { get }
 
@@ -33,8 +33,11 @@ public protocol ArcLengthCurveAdaptor: AnyObject {
     /// The native parameter at arc length `s` measured from the start of the curve.
     func parameter(atAbscissa s: Double) -> Double?
 
-    /// `count` points spaced equally by arc length along the curve (`count >= 2`), including both
-    /// endpoints. One pass, cheaper than calling ``point(atAbscissa:)`` in a loop.
+    /// `count` points spaced equally by arc length along the curve, including both endpoints.
+    /// One pass, cheaper than calling ``point(atAbscissa:)`` in a loop.
+    ///
+    /// `count` must be at least 2 and at most ``maximumSampleCount``; anything outside that range
+    /// returns an empty array (#479).
     func points(count: Int) -> [SIMD3<Double>]
 }
 
@@ -51,12 +54,66 @@ extension ArcLengthCurveAdaptor {
         return tangent(atParameter: u)
     }
 
+    /// The largest sample count either adaptor will produce: 10 million points.
+    ///
+    /// Both ``points(count:)`` and ``points(spacing:)`` return an empty array rather than
+    /// attempting a larger request. The number is a ceiling on the *allocation*, not on what is
+    /// useful: one sample costs 24 bytes in the bridge's packed buffer plus 32 in the returned
+    /// array, so the ceiling itself is already about 625 MB resident and, measured on a two-edge
+    /// wire, about 45 seconds of sampling. It is also two orders of magnitude below the `int32_t`
+    /// the bridge takes its count in.
+    ///
+    /// ```swift
+    /// let wc = WireCurve(wire)!
+    /// wc.points(spacing: 1e-9).isEmpty      // true: implies 1e11 points, past the ceiling
+    /// wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty   // true
+    /// ```
+    public static var maximumSampleCount: Int { 10_000_000 }
+
     /// Points spaced approximately `spacing` apart along the curve (by arc length). The exact
     /// step is adjusted so the samples divide the curve evenly end-to-end.
+    ///
+    /// - Parameter spacing: Arc-length step, greater than 0. A spacing so small that it implies
+    ///   more than ``maximumSampleCount`` points returns an empty array, as do a spacing of 0 or
+    ///   less, a NaN spacing, and a curve of zero length (#479). There is no clamping: a request
+    ///   the ceiling cannot honour fails visibly rather than coming back silently coarser than
+    ///   what was asked for.
+    ///
+    /// ```swift
+    /// let wc = WireCurve(wire)!          // a 200mm-long wire
+    /// let pts = wc.points(spacing: 10)   // 21 points, 10mm apart
+    /// wc.points(spacing: 1e-9).isEmpty   // true: 2e11 points is past the ceiling
+    /// ```
     public func points(spacing: Double) -> [SIMD3<Double>] {
         let len = length
         guard spacing > 0, len > 0 else { return [] }
-        let count = max(2, Int((len / spacing).rounded()) + 1)
-        return points(count: count)
+        // Stay in Double for the derivation: `Int(_:)` on a Double past Int.max is a trap, not an
+        // error, and (len / spacing) is caller-supplied on both sides. Anything the ceiling cannot
+        // honour is rejected here, so the conversion below is always in range (#479).
+        let implied = (len / spacing).rounded() + 1
+        guard implied <= Double(Self.maximumSampleCount) else { return [] }
+        return points(count: max(2, Int(implied)))
+    }
+
+    /// The shared body of both types' ``points(count:)``: applies the count contract once,
+    /// allocates the packed `(x,y,z)` buffer the bridge writes into, and unpacks exactly as many
+    /// points as the bridge reports writing.
+    ///
+    /// - Parameters:
+    ///   - count: The requested sample count, honoured only within `2...`
+    ///     ``maximumSampleCount``. The lower bound is OCCT's own (`GCPnts_UniformAbscissa`
+    ///     documents `nbPoints >= 2` but the Release kernel compiles that precondition out, #501);
+    ///     the upper bound is this layer's, since `count` sizes a Swift allocation and is cast to
+    ///     the bridge's `int32_t` (#479).
+    ///   - sample: The conforming type's own bridge call, taking the count and the buffer and
+    ///     returning how many points it wrote.
+    internal func sampledPoints(
+        count: Int,
+        _ sample: (Int32, UnsafeMutablePointer<Double>) -> Int32
+    ) -> [SIMD3<Double>] {
+        guard count >= 2, count <= Self.maximumSampleCount else { return [] }
+        var buffer = [Double](repeating: 0, count: count * 3)
+        let written = Int(sample(Int32(count), &buffer))
+        return unpackSIMD3(buffer, count: written)
     }
 }
