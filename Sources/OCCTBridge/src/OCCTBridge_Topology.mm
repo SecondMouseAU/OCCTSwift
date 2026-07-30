@@ -2992,6 +2992,9 @@ bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef shape) {
 bool OCCTBRepLibBuildCurves3dForShape(OCCTShapeRef shape, double tolerance) {
     if (!shape) return false;
     try {
+        // The catch is load-bearing: an edge with no 3D curve and no pcurve at all reaches
+        // BuildCurve3d's approximation branch, which dereferences the pcurve handle it never
+        // found and throws Standard_NullObject. Report that as failure, not as a crash. #498.
         return BRepLib::BuildCurves3d(shape->shape, tolerance);
     } catch (...) { return false; }
 }
@@ -3606,13 +3609,6 @@ int32_t OCCTBRepLibContinuityOfFaces(OCCTShapeRef edge, OCCTShapeRef face1, OCCT
             tolerance);
         return (int32_t)cont;
     } catch (...) { return -1; }
-}
-
-bool OCCTBRepLibBuildCurves3dAll(OCCTShapeRef shape, double tolerance) {
-    if (!shape) return false;
-    try {
-        return BRepLib::BuildCurves3d(shape->shape, tolerance);
-    } catch (...) { return false; }
 }
 
 void OCCTBRepLibSameParameterAll(OCCTShapeRef shape, double tolerance, bool forced) {

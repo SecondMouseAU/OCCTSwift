@@ -2799,15 +2799,41 @@ public func orientClosedSolid() -> Bool
 
 ### `Shape.buildCurves3d(tolerance:)`
 
-Build 3D curves for all edges in the shape that lack them.
+Build 3D curves for all edges in the shape that lack them. Edges from a loft, a sweep, or a
+surface-based face can carry a 2D curve on their support surface and no 3D curve at all; anything
+that walks edge geometry needs the 3D curve. Edges that already have one are left untouched, so a
+second call costs nothing.
 
 ```swift
 @discardableResult
-public func buildCurves3d(tolerance: Double = 1e-7) -> Bool
+public func buildCurves3d(tolerance: Double = 1e-5) -> Bool
 ```
 
-- **Returns:** `true` on success.
+- **Parameters:** `tolerance` — approximation tolerance, and also the rebuilt edge's tolerance
+  floor: OCCT sets the edge tolerance to this value rather than to the deviation it achieved. The
+  default is OCCT's own default for the operation. A tighter value buys a closer curve for a pole
+  or two more (measured on a helix: `1e-5` deviates by 2.6e-6, `1e-7` by 9.0e-8) but claims an
+  accuracy the approximation may not reach on hard geometry. Ignored when the pcurve lies on a
+  plane — that branch is analytic and exact.
+- **Returns:** `false` if any single edge could not be given a 3D curve (a degenerate edge with no
+  planar pcurve, or one stripped of every representation). The edges that did succeed are still
+  modified, so `false` means "partially built", not "nothing happened".
 - **OCCT:** `BRepLib::BuildCurves3d` (via `OCCTBRepLibBuildCurves3dForShape`).
+- **Example:**
+  ```swift
+  // An edge built from a pcurve on a cylinder has no 3D curve until this runs.
+  let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10)!
+  let pcurve = Curve2D.line(through: SIMD2(0.2, -3), direction: SIMD2(0.6, 0.8))!
+  let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: cylinder, u1: 0, u2: 2)!
+
+  print(edge.extractEdgeCurve3D() == nil)   // true
+  print(edge.buildCurves3d())               // true
+  print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
+  print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+  ```
+- **Note:** the default was `1e-7` until #498. It moved to `1e-5` when this method absorbed
+  `buildCurves3dAll`, whose separate C entry point had a byte-identical body and whose default was
+  already OCCT's 1e-5. Pass `tolerance: 1e-7` to keep the old behaviour.
 
 ---
 

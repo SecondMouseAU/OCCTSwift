@@ -673,6 +673,57 @@ removal; the two index-addressed siblings already failed on it. `defeature(faces
 deprecated (it forwards, and its tolerance was never read); calls that omit `tolerance:` were
 already reaching the tolerance-free path and are unaffected.
 
+#### One `BRepLib::BuildCurves3d` entry point, not three, and one default instead of two (#498)
+
+**Behaviour change.** `Shape.buildCurves3d(tolerance:)`'s default moved from `1e-7` to `1e-5`.
+Callers who pass a tolerance explicitly are unaffected; callers who omit it get OCCT's own default
+for the operation. Pass `tolerance: 1e-7` to keep the old value.
+
+The bridge had three C entry points for one operation. Two of them —
+`OCCTBRepLibBuildCurves3dForShape` (v0.114.0) and `OCCTBRepLibBuildCurves3dAll` (v0.122.0), declared
+~1700 header lines apart — had byte-identical bodies: the same overload, the same two arguments. The
+third, `void OCCTShapeBuildCurves3d`, wrapped `BuildCurves3d`'s no-tolerance overload, which
+[turns out to be](../Scripts/repro/498-buildcurves3d-triplication/) `return BuildCurves3d(S, 1.0e-5);`
+and nothing else — so it was the same call again, with the success flag discarded. All three now go
+through `OCCTBRepLibBuildCurves3dForShape`.
+
+Nothing connected the two Swift wrappers written over the duplicate symbols, so their defaults
+drifted 100x apart, and the cost was real. On a pcurve-only edge on a cylinder:
+
+```swift
+// Before — same operation, same input, no arguments, two different curves.
+edge.buildCurves3d()      // edge tolerance 1e-07, 8 poles
+edge.buildCurves3dAll()   // edge tolerance 1e-05, 7 poles, curve up to 2.6e-6 away
+
+// After — one call behind both names.
+edge.buildCurves3d()      // edge tolerance 1e-05
+edge.buildCurves3d(tolerance: 1e-7)   // the tighter curve, asked for
+```
+
+`1e-5` was chosen over `1e-7` because it is OCCT's own default for both the parameter and the
+no-tolerance overload, it is what two of the three entry points already used, and the tolerance is
+not only an approximation bound: `BRepLib::BuildCurve3d` also makes it the rebuilt edge's tolerance
+**floor**, using the requested value rather than the deviation it achieved (the line that would have
+used the measured deviation is commented out in the kernel). `1e-7` therefore claims an accuracy the
+approximator is asked but not required to deliver.
+
+- `Shape.buildCurves3dAll(tolerance:)` is deprecated and forwards to `buildCurves3d(tolerance:)`.
+- `Shape.allEdgePolylinesIndexed(deflection:maxPointsPerEdge:)` now spells its `1e-5` out, which is
+  exactly what the no-tolerance overload it used to call did. Its behaviour is unchanged.
+- `buildCurves3d` returning `false` is documented for the first time: it means "at least one edge
+  failed", and the edges that succeeded are still modified. The `void` entry point discarded that
+  signal, on the one path (bulk discretisation of arbitrary imported shapes) where partial failure
+  is likeliest.
+
+Both pre-existing tests called the operation on a box, where every edge already has a 3D curve, so
+OCCT returns `true` at its first line and computes nothing — a tolerance of 42 passes them just as
+`1e-7` did, which is why the drift survived. One is now an explicit early-return test (asserting the
+edge tolerances and curves are untouched, with tolerance 42); the other is the deprecated-spelling
+guard. New `BuildCurves3dTests` (`Tests/OCCTTopologyTests`) covers the case where the operation
+actually works: an edge carrying only a pcurve on a cylinder. Run against the unfixed code first,
+the default-value and cross-wrapper-agreement tests fail there, so they cover the defect rather
+than describing it.
+
 ---
 
 ## Release History

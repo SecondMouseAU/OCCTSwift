@@ -1372,13 +1372,13 @@ public func allEdgePolylines(
 ) -> [[SIMD3<Double>]]
 ```
 
-Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls `OCCTShapeBuildCurves3d` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
+Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls [`buildCurves3d(tolerance:)`](Document-Mesh-Fixing.md#shapebuildcurves3dtolerance) at `1e-5` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
 
 - **Parameters:**
   - `deflection` — maximum chord deviation per edge.
   - `maxPointsPerEdge` — maximum points per edge (values below 2 return `[]`).
 - **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped — the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
-- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTShapeBuildCurves3d` and `OCCTShapeComputeAllEdgePolylines`).
+- **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTBRepLibBuildCurves3dForShape` and `OCCTShapeComputeAllEdgePolylines`).
 - **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).
 - **Example:**
   ```swift

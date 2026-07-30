@@ -12664,9 +12664,37 @@ extension Shape {
         OCCTBRepLibOrientClosedSolid(handle)
     }
 
-    /// Build 3D curves for all edges in the shape.
+    /// Build a 3D curve for every edge of this shape that has only pcurves.
+    ///
+    /// Edges from a loft, a sweep, or a surface-based face can carry a 2D curve on their support
+    /// surface and no 3D curve at all. Anything that walks edge geometry — discretisation, length,
+    /// export — needs the 3D curve, so this fills them in. Edges that already have one are left
+    /// exactly as they are, so calling it twice costs nothing the second time.
+    ///
+    /// ```swift
+    /// // An edge built from a pcurve on a cylinder has no 3D curve until this runs.
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10)!
+    /// let pcurve = Curve2D.line(through: SIMD2(0.2, -3), direction: SIMD2(0.6, 0.8))!
+    /// let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: cylinder, u1: 0, u2: 2)!
+    ///
+    /// print(edge.extractEdgeCurve3D() == nil)   // true
+    /// print(edge.buildCurves3d())               // true
+    /// print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
+    /// print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+    /// ```
+    ///
+    /// - Parameter tolerance: Approximation tolerance, and also the rebuilt edge's tolerance floor
+    ///   (OCCT sets the edge tolerance to this value, not to the deviation it actually achieved).
+    ///   The default is OCCT's own default for the operation. A tighter value buys a closer curve
+    ///   for a pole or two more — measured on a helix, `1e-5` deviates from the exact curve by
+    ///   2.6e-6 and `1e-7` by 9.0e-8 — but it also claims an edge tolerance the approximation may
+    ///   not be able to keep on hard geometry. Ignored when the pcurve lies on a plane: that case
+    ///   is analytic and exact.
+    /// - Returns: `false` if any single edge could not be given a 3D curve (a degenerate edge with
+    ///   no planar pcurve, or one stripped of every representation). The edges that did succeed are
+    ///   still modified, so `false` means "partially built", not "nothing happened".
     @discardableResult
-    public func buildCurves3d(tolerance: Double = 1e-7) -> Bool {
+    public func buildCurves3d(tolerance: Double = 1e-5) -> Bool {
         OCCTBRepLibBuildCurves3dForShape(handle, tolerance)
     }
 
@@ -15545,9 +15573,18 @@ extension Shape {
     }
 
     /// Build 3D curves for all edges in a shape.
+    ///
+    /// This was a second wrapper over a second C entry point whose body was byte-identical to the
+    /// one behind ``buildCurves3d(tolerance:)`` — the same `BRepLib::BuildCurves3d` overload with
+    /// the same two arguments, re-wrapped eight releases later under a new name. Because nothing
+    /// connected them, the two defaults drifted 100x apart: on a pcurve-only edge on a cylinder,
+    /// `buildCurves3d()` and `buildCurves3dAll()` produced curves 2.6e-6 apart and edges whose
+    /// tolerance differed by the same 100x. Both names now run the same call with the same default.
+    /// #498.
+    @available(*, deprecated, renamed: "buildCurves3d(tolerance:)")
     @discardableResult
     public func buildCurves3dAll(tolerance: Double = 1e-5) -> Bool {
-        OCCTBRepLibBuildCurves3dAll(handle, tolerance)
+        buildCurves3d(tolerance: tolerance)
     }
 
     /// Same-parameter all edges in a shape.

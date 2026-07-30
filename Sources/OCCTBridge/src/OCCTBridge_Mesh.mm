@@ -294,13 +294,6 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
 
 // MARK: - Edge Discretization
 
-void OCCTShapeBuildCurves3d(OCCTShapeRef shape) {
-    if (!shape) return;
-    try {
-        BRepLib::BuildCurves3d(shape->shape);
-    } catch (...) {}
-}
-
 namespace {
 
 /// Discretise one edge into `outPoints` (flat xyz triples). Returns points written, or -1.

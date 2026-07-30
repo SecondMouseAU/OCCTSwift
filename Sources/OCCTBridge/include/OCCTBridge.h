@@ -820,10 +820,11 @@ OCCTMeshRef OCCTMeshCreateFromArrays(
 
 // MARK: - Edge Discretization
 
-/// Ensure all edges in a shape have explicit 3D curves.
-/// Call before allEdgePolylines on lofted/swept shapes where edges may only have pcurves.
-/// Safe to call multiple times — only builds missing curves.
-void OCCTShapeBuildCurves3d(OCCTShapeRef shape);
+// Ensuring a shape's edges have explicit 3D curves — needed before discretising a lofted/swept
+// shape whose edges may carry only pcurves — is OCCTBRepLibBuildCurves3dForShape. There used to be
+// a void OCCTShapeBuildCurves3d here wrapping BRepLib::BuildCurves3d's no-tolerance overload, but
+// that overload is `return BuildCurves3d(S, 1.0e-5);` and nothing else, so it was the same call
+// with the success flag discarded. #498.
 
 /// Get discretized edge as polyline points
 ///
@@ -17243,7 +17244,18 @@ OCCTShapeRef _Nullable OCCTThickSolidWithOptions(OCCTShapeRef _Nonnull shape,
 /// Orient a closed solid so that its faces' normals point outward.
 bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef _Nonnull solid);
 
-/// Build 3D curves for all edges in a shape.
+/// Build a 3D curve for every edge of a shape that has only pcurves. The one entry point for
+/// BRepLib::BuildCurves3d — both of its overloads, since the no-tolerance one is just
+/// `BuildCurves3d(S, 1.0e-5)`, and OCCT's own default for the parameter is that same 1e-5.
+///
+/// Returns false if any single edge could not be given a 3D curve (a degenerate edge with no
+/// planar pcurve, or an edge stripped of every representation); the edges that did succeed are
+/// still modified, so false means "partially built", not "nothing happened".
+///
+/// `tolerance` is not only the approximation tolerance: BRepLib::BuildCurve3d also makes it the
+/// rebuilt edge's tolerance floor, so it is readable off the result afterwards. It has no effect
+/// at all when the pcurve lies on a plane — that branch is analytic (GeomLib::To3d) and hard-codes
+/// the new edge tolerance to 0. See Scripts/repro/498-buildcurves3d-triplication/. #498.
 bool OCCTBRepLibBuildCurves3dForShape(OCCTShapeRef _Nonnull shape, double tolerance);
 
 /// Sort faces of a shape by decreasing area (returns sorted face list as a compound).
@@ -18920,8 +18932,9 @@ int32_t OCCTBRepLibContinuityOfFaces(OCCTShapeRef _Nonnull edge,
                                       OCCTShapeRef _Nonnull face1, OCCTShapeRef _Nonnull face2,
                                       double tolerance);
 
-/// Build 3D curves for all edges in a shape. Returns true if all curves built.
-bool OCCTBRepLibBuildCurves3dAll(OCCTShapeRef _Nonnull shape, double tolerance);
+// OCCTBRepLibBuildCurves3dAll used to be declared here (v0.122.0), with a body byte-identical to
+// OCCTBRepLibBuildCurves3dForShape (v0.114.0) ~1700 header lines above: same overload, same two
+// arguments. Use that one. #498.
 
 /// Same-parameter all edges in a shape.
 void OCCTBRepLibSameParameterAll(OCCTShapeRef _Nonnull shape, double tolerance,
