@@ -3997,6 +3997,8 @@ struct BooleanExpansionTests {
         }
     }
 
+    // The tolerance argument this test used to pass is gone: BRepAlgoAPI_Defeaturing never read
+    // it, so the overload that took one is deprecated. Issue497DefeaturingTests covers that. #497
     @Test func defeature() {
         if let box = Shape.box(width: 20, height: 20, depth: 20) {
             let filleted = box.filleted(radius: 2.0)
@@ -4006,9 +4008,15 @@ struct BooleanExpansionTests {
                 if faces.count > 6 {
                     // Pick the extra faces (fillets)
                     let filletFaces = Array(faces.suffix(from: 6).prefix(2))
-                    let result = f.defeature(faces: filletFaces, tolerance: 0.01)
+                    let result = f.defeature(faces: filletFaces)
                     // Defeaturing may or may not succeed on filleted box
-                    let _ = result
+                    if let r = result {
+                        #expect(r.isValid)
+                        // Removing fillet faces can only add material back.
+                        if let before = f.volume, let after = r.volume {
+                            #expect(after >= before - 1e-9)
+                        }
+                    }
                 }
             }
         }

@@ -35,7 +35,7 @@ a map of the major areas, and the `Total` as the count.
 |----------|-------|----------|
 | **Primitives** | 13 | box, cylinder, cylinder(at:), sphere, cone, torus, surface, wedge, halfSpace, vertex, shell(from surface), shell(from Surface), nonUniformScale |
 | **Sweeps** | 23 | pipe sweep, pipeShell, pipeShellWithTransition, pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
-| **Booleans** | 13 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory, defeatureWithTolerance |
+| **Booleans** | 12 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
 | **Modifications** | 33 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
 | **Wires** | 31 | rectangle, circle, polygon, polygon3D, line, arc, bspline, nurbs, path, join, offset, offset3D, interpolate, fillet2D, filletAll2D, chamfer2D, chamferAll2D, helix, helixTapered, orderedEdgeCount, orderedEdgePoints, orderedEdgePointCount, analyze, wireFromEdges, edges, allEdgePolylines, allEdgePolylinesIndexed, edgePolyline, bounds |
@@ -471,7 +471,7 @@ a map of the major areas, and the `Total` as the count.
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 1 | defeature(faces:) |
+| **Defeaturing** | 2 | defeature(faces:), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |

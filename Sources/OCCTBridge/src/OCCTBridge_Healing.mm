@@ -433,18 +433,11 @@ OCCTShapeRef OCCTShapeRemoveSmallFaces(OCCTShapeRef shape, double minArea) {
             return new OCCTShape(shape->shape);
         }
 
-        // Use defeaturing to remove small faces
-        BRepAlgoAPI_Defeaturing defeaturer;
-        defeaturer.SetShape(shape->shape);
-        defeaturer.AddFacesToRemove(facesToRemove);
-        defeaturer.Build();
-
-        if (!defeaturer.IsDone()) {
-            return nullptr;
-        }
-
-        TopoDS_Shape result = defeaturer.Shape();
-        if (result.IsNull()) return nullptr;
+        // Use defeaturing to remove small faces. This entry point picks the faces itself, so it
+        // needs no face-resolution helper, but it runs the same skeleton as the rest. #497
+        BRepAlgoAPI_Defeaturing defeaturing;
+        TopoDS_Shape result;
+        if (!occtDefeaturePerform(defeaturing, shape->shape, facesToRemove, result)) return nullptr;
 
         return new OCCTShape(result);
     } catch (...) {

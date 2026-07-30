@@ -1079,8 +1079,13 @@ public func withoutFeatures(faces: [Face]) -> Shape?
 Useful for simplifying imported geometry or removing small features before analysis.
 
 - **Parameters:** `faces` — faces to remove (must have valid `index` values from this shape).
-- **Returns:** Shape with features removed, or `nil` on failure.
-- **OCCT:** `BOPAlgo_Defeaturing` (via `OCCTShapeRemoveFeatures`).
+- **Returns:** Shape with features removed, or `nil` on failure — including when a face's index does
+  not belong to this shape. Such an index used to be skipped, which returned a shape that still
+  carried the feature and looked no different from a successful removal (#497).
+- **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveFeatures`). Corrected here: this row
+  previously named `BOPAlgo_Defeaturing`, which is not an OCCT class.
+- **See also:** [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces), the same
+  operation addressing its faces as shapes, and the rest of the defeaturing family listed there.
 
 ---
 

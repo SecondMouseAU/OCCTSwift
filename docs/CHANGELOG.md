@@ -481,6 +481,45 @@ in its request set — both entry points must still return the *same* surface th
 excludes it from the "reported error describes the returned surface" assertion, with a comment to
 drop that exclusion when #522 is fixed.
 
+#### One defeaturing skeleton, and the fuzzy tolerance that never existed (#497)
+
+Five bridge functions ran `BRepAlgoAPI_Defeaturing`, each with its own copy of the same
+`SetShape`/`AddFaceToRemove`/`Build`/`IsDone` sequence, and the copies had drifted apart on every
+precondition: one silently skipped an out-of-range face index while another failed the call, one
+dereferenced its faces array with no null check (a crash no `catch (...)` could have caught), and
+only two checked the result shape for null. `OCCTBridge.h`'s own cross-reference index listed one of
+the five, so a maintainer using the index to find the existing wrap would have found a third of it.
+
+Two of the five were the same function twice: `OCCTShapeDefeature` (v0.118.0) and
+`OCCTDefeatureWithTolerance` (v0.114.0) differed only in that the older one called `SetFuzzyValue`.
+On the Swift side both were spelled `defeature(faces:)`-callable — `defeature(faces:)` and
+`defeature(faces:tolerance: Double = 0)` — and Swift's overload resolution sends a call site that
+omits `tolerance:` to the exact-arity overload every time, so the fuzzy path was unreachable without
+naming the argument. Confirmed against this package, not argued from the rules: deprecating one
+overload and rebuilding showed the existing test at `OCCTModelingTests.swift:4134` binding to it.
+
+**The tolerance it was hiding does nothing.** `BRepAlgoAPI_Defeaturing::Build` forwards the input
+shape, the faces to remove, the history flag and the parallel flag to the `BOPAlgo_RemoveFeatures`
+that does the work, and nothing else; the fuzzy value inherited from `BOPAlgo_Options` is stored,
+readable back through `FuzzyValue()`, and never consulted. Its own header says so in the class
+comment ("the other options of the base class are not supported here and will have no effect").
+Measured as well as read: identical BREP output at every fuzzy value from `1e-7` to `100`, against a
+`BRepAlgoAPI_Cut` control that the same magnitudes collapse to an empty shape — see
+[`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert).
+Not an upstream defect, so nothing to file or patch; the wrapper was `OCCTShapeDefeature` under
+another name and is gone.
+
+The four remaining entry points — `withoutFeatures(faces:)`, `defeature(faces:)`,
+`defeaturedWithFullHistory(faces:)` and `withoutSmallFaces(minArea:)` — now share one skeleton and
+one set of preconditions, and the index names all four.
+
+**Behaviour change.** A face index that does not belong to the shape now fails
+`withoutFeatures(faces:)` instead of being dropped from the request. Dropping it returned a shape
+that still carried the feature the caller asked to remove, indistinguishable from a successful
+removal; the two index-addressed siblings already failed on it. `defeature(faces:tolerance:)` is
+deprecated (it forwards, and its tolerance was never read); calls that omit `tolerance:` were
+already reaching the tolerance-free path and are unaffected.
+
 ---
 
 ## Release History
