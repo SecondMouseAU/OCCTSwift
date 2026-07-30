@@ -4471,20 +4471,15 @@ OCCTCurve3DRef OCCTInterpolateWithParameters(const double* points, int32_t count
     } catch (...) { return nullptr; }
 }
 
+// Exactly OCCTCurve3DInterpolate with the periodicity flag pinned. It used to be a second,
+// independent GeomAPI_Interpolate call site, which had already drifted: it rejected count < 3
+// where the general entry point rejects only count < 2, so the same 2-point input reached OCCT
+// through one and not the other, and it hardcoded the tolerance with no way to reach any other
+// value. Forwarding keeps the C ABI while leaving one implementation (#493, the 3D counterpart of
+// #412's fix on OCCTInterpolate2DPeriodic). Callers that need a tolerance other than the default
+// should call OCCTCurve3DInterpolate directly with closed = true.
 OCCTCurve3DRef OCCTInterpolatePeriodic(const double* points, int32_t count) {
-    if (!points || count < 3) return nullptr;
-    try {
-        Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, count);
-        for (int i = 0; i < count; i++) {
-            pts->SetValue(i + 1, gp_Pnt(points[i*3], points[i*3+1], points[i*3+2]));
-        }
-        GeomAPI_Interpolate interp(pts, Standard_True, 1e-6);
-        interp.Perform();
-        if (interp.IsDone()) {
-            return (OCCTCurve3DRef)new OCCTCurve3D{interp.Curve()};
-        }
-        return nullptr;
-    } catch (...) { return nullptr; }
+    return OCCTCurve3DInterpolate(points, count, true, 1e-6);
 }
 
 

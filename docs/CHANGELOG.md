@@ -550,6 +550,37 @@ in its request set — both entry points must still return the *same* surface th
 excludes it from the "reported error describes the returned surface" assertion, with a comment to
 drop that exclusion when #522 is fixed.
 
+#### `Curve3D.interpolatePeriodic` delegates instead of reimplementing, and gains `tolerance:` (#493)
+
+**Behaviour change.** `Curve3D.interpolatePeriodic(points:)` with exactly 2 points used to return
+`nil`; it now returns a valid out-and-back periodic loop. `OCCTInterpolatePeriodic` was a second,
+independent `GeomAPI_Interpolate` call site alongside `OCCTCurve3DInterpolate`, and the two had
+drifted: the periodic one rejected `count < 3` where the general one rejects only `count < 2`, so
+the same 2-point input reached OCCT through `interpolate(points:closed:tolerance:)` with
+`closed: true` and not through `interpolatePeriodic`. Confirmed by running it, not by inspection: the
+general entry point returns a closed, periodic curve over `0...20` for two points, and OCCT builds it
+without complaint.
+
+This is #412's fix, applied to the 3D sibling it never touched. The 2D pair was fixed in v1.17.0 and
+the 3D pair was left with the defect verbatim, including the fix comment's own description of it.
+`OCCTInterpolatePeriodic` is now `return OCCTCurve3DInterpolate(points, count, true, 1e-6);`. The C
+ABI is unchanged, and `Curve3D.interpolatePeriodic` delegates to
+`interpolate(points:closed:tolerance:)` rather than flattening its own buffer.
+
+Additive: `Curve3D.interpolatePeriodic(points:tolerance:)` gains a `tolerance:` parameter defaulted
+to the `1e-6` it used to hardcode, so the bare call is unchanged. The tolerance was previously
+unreachable, and it is not decorative: OCCT treats points closer together than the tolerance as
+coincident and refuses the interpolation, so with two points `1e-3` apart the default succeeds and
+`tolerance: 1e-2` returns `nil`. That case is now asserted rather than assumed.
+
+New `Curve3DInterpolatePeriodicParityTests` (`Tests/OCCTCurveTests`) ports the 2D suite #427 added
+(default-tolerance parity, tolerance reachability, the 2-point floor, single-point rejection) and
+adds the tolerance-changes-the-outcome case and a non-planar loop, which checks the shared path is
+not flattening z. The 2-point test was run against the unfixed code first and fails there, so it
+covers the defect rather than describing it. The only pre-existing coverage of the 3D function was a
+4-point square asserting `!= nil` (`Tests/OCCTMiscTests`) plus one use as a fixture for an unrelated
+test, which is why the drift survived #412.
+
 ---
 
 ## Release History

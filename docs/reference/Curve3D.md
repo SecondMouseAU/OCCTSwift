@@ -420,7 +420,7 @@ public static func interpolate(points: [SIMD3<Double>], closed: Bool = false,
                                tolerance: Double = 1e-6) -> Curve3D?
 ```
 
-Unlike `bspline(poles:…)`, the curve passes exactly through every point. Use `closed: true` for a periodic loop.
+Unlike `bspline(poles:…)`, the curve passes exactly through every point. Use `closed: true` for a periodic loop: [`interpolatePeriodic(points:tolerance:)`](Curve3D-Construction.md) is a spelling of exactly that case and delegates here (#493).
 
 - **Parameters:** `points` — points the curve must pass through (minimum 2); `closed` — closed/periodic curve; `tolerance` — interpolation precision.
 - **Returns:** Interpolated BSpline curve, or `nil` on failure.
