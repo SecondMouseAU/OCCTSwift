@@ -945,8 +945,11 @@ int32_t OCCTCurve3DEvaluateGrid(OCCTCurve3DRef curve, const double* params, int3
         NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt> results = evaluator.EvaluateGrid(paramArr);
-        // An evaluator with no specialization for this curve type returns an empty array, so
-        // clamp rather than trusting paramCount: the caller's buffer is only paramCount long.
+        // Defensive: bound the write by the caller's buffer as well as by what OCCT returned.
+        // Every evaluator in the pinned kernel returns exactly theParams.Length() or an empty
+        // array (empty only for a null curve or empty params, both rejected above), so neither
+        // direction is reachable today. Taking the min covers both anyway: a shorter result must
+        // not be read past its end, and a longer one must not be written past outXYZ's end.
         int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt& pt = results.Value(i + 1);
@@ -968,7 +971,7 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, in
         NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<GeomGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));  // see EvaluateGrid
         for (int32_t i = 0; i < n; i++) {
             const GeomGridEval::CurveD1& r = results.Value(i + 1);
             outXYZ[i*3]     = r.Point.X();

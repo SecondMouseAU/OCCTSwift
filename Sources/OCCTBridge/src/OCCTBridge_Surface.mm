@@ -950,7 +950,14 @@ int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
         NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
 
         NCollection_Array2<gp_Pnt> results = evaluator.EvaluateGrid(uArr, vArr);
-        // An evaluator with no specialization for this surface type returns an empty grid.
+        // Reject rather than clamp, unlike the curve family's std::min. The loop below indexes
+        // results by uCount/vCount, so a short grid would be an out-of-bounds *read* here (and
+        // this build defines No_Exception, so NCollection's own bounds check is compiled out and
+        // that read is undefined rather than a caught Standard_OutOfRange). A partly-filled 2D
+        // grid also has no count worth returning: a caller checking n == uCount * vCount cannot
+        // do anything useful with "some rows are real". Not reachable in the pinned kernel, where
+        // every surface evaluator returns a full uCount x vCount grid or an empty one, and empty
+        // bottoms out at a null surface or empty params, both rejected above.
         if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;
 
         for (int32_t iu = 0; iu < uCount; iu++) {
@@ -980,7 +987,7 @@ int32_t OCCTSurfaceEvaluateGridD1(OCCTSurfaceRef surface,
         NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
 
         NCollection_Array2<GeomGridEval::SurfD1> results = evaluator.EvaluateGridD1(uArr, vArr);
-        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;
+        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;  // see EvaluateGrid
 
         for (int32_t iu = 0; iu < uCount; iu++) {
             for (int32_t iv = 0; iv < vCount; iv++) {
