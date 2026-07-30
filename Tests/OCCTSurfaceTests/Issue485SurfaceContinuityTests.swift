@@ -47,8 +47,10 @@ struct Issue485SurfaceContinuityTests {
     @Test("ContinuityClass orders by increasing smoothness")
     func continuityClassOrdersBySmoothness() {
         // Monotonic in smoothness is a property of GeomAbs_Shape worth pinning, not assuming:
-        // it is what lets "at least this smooth" be answered by comparison.
-        #expect(ContinuityClass.allCases == ContinuityClass.allCases.sorted())
+        // it is what lets "at least this smooth" be answered by comparison. The pairwise
+        // comparisons below are that property; the literal pins iteration order to it too, so
+        // `allCases` stays usable as an ascending sequence.
+        #expect(ContinuityClass.allCases == [.c0, .g1, .c1, .g2, .c2, .c3, .cN])
         #expect(ContinuityClass.c0 < .g1)
         #expect(ContinuityClass.g1 < .c1)
         #expect(ContinuityClass.c1 < .g2)
