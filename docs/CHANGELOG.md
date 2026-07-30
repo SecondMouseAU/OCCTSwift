@@ -60,10 +60,10 @@ four tests.
 reports `nil` on a line, a segment and a circle, but on a BSpline `GCPnts_AbscissaPoint::Length`
 returns a plausible number (`0` for a NaN upper bound, the whole length for a NaN lower bound), so
 the failure-versus-zero distinction #408 established holds for the curve types its own tests use and
-not for BSplines. Separately, `Curve2D.arcLength(from:to:)` still measures through the 2D
+not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` still measures through the 2D
 pre-bounded adaptor deliberately, documented as range-checked, so the 2D and 3D spellings of the same
-call now differ on a reversed range. Both are #408/#409 contract questions rather than duplication,
-so they are filed rather than folded in here.
+call now differ on a reversed range (#549). Both are #408/#409 contract questions rather than
+duplication, so they are filed rather than folded in here.
 
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
