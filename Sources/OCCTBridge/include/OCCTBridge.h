@@ -3706,21 +3706,25 @@ int32_t OCCTKDTreeBoxSearch(OCCTKDTreeRef tree,
 bool OCCTStepTidyOptimize(const char* inputPath, const char* outputPath);
 
 // MARK: - Batch Curve2D Evaluation (v0.28.0)
+//
+// One of the six batch grid-evaluation entry points. See the family contract documented
+// above OCCTCurve3DEvaluateGrid.
 
 /// Evaluate a 2D curve at multiple parameter values (batch).
 /// @param curve The curve to evaluate
 /// @param params Array of parameter values
 /// @param paramCount Number of parameters
-/// @param outXY Output buffer for xy pairs (must hold 2 * paramCount doubles)
-/// @return Number of points evaluated
+/// @param outXY Output buffer for xy pairs, interleaved: outXY[i * 2 + {0,1}]
+///              (must hold 2 * paramCount doubles)
+/// @return Number of points evaluated (paramCount on success, 0 on failure)
 int32_t OCCTCurve2DEvaluateGrid(OCCTCurve2DRef curve,
                                  const double* params, int32_t paramCount,
                                  double* outXY);
 
 /// Evaluate a 2D curve and its first derivative at multiple parameters (batch).
-/// @param outXY Output buffer for point xy pairs (2 * paramCount doubles)
-/// @param outDXDY Output buffer for derivative xy pairs (2 * paramCount doubles)
-/// @return Number of points evaluated
+/// @param outXY Output buffer for point xy pairs, interleaved (2 * paramCount doubles)
+/// @param outDXDY Output buffer for derivative xy pairs, interleaved (2 * paramCount doubles)
+/// @return Number of points evaluated (paramCount on success, 0 on failure)
 int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
                                    const double* params, int32_t paramCount,
                                    double* outXY, double* outDXDY);
@@ -3779,19 +3783,35 @@ OCCTShapeRef OCCTShapeNormalProjection(OCCTShapeRef wireOrEdge, OCCTShapeRef sur
 
 // MARK: - Batch Curve3D Evaluation (v0.29.0)
 
+// These six functions (OCCTCurve3DEvaluateGrid/D1, OCCTCurve2DEvaluateGrid/D1 above, and
+// OCCTSurfaceEvaluateGrid/D1 below) are the *whole* batch grid-evaluation family. Extend
+// this family; do not start a seventh spelling of the same job. Three generations of duplicates
+// (v0.110's OCCTCurve3DEvalBatchD0/D1 + OCCTCurve2DEvalBatchD0/D1, v0.111's OCCTGridEvalCurveD0/D1
+// + OCCTGridEvalCurve2dD0/D1 + OCCTGridEvalSurfaceD0/D1) were removed in #486 after the two
+// Surface spellings were found writing opposite UV layouts. The family contract:
+//
+//   - one OCCT batch evaluator per job (GeomGridEval_Curve, Geom2dGridEval_Curve,
+//     GeomGridEval_Surface), never a hand-rolled per-point loop;
+//   - output buffers are interleaved coordinates, not per-axis planes;
+//   - surface grids are U-major: index (iu, iv) sits at occtSurfaceGridIndex(iu, iv, vCount),
+//     matching OCCTSurfaceDrawMesh and the Swift SurfaceGrid type (#404);
+//   - the return value is the number of points written, 0 on failure, so a caller can tell a
+//     failed evaluation from a grid of zeroes.
+
 /// Evaluate a 3D curve at multiple parameter values (batch).
 /// @param curve The curve to evaluate
 /// @param params Array of parameter values
 /// @param paramCount Number of parameters
-/// @param outXYZ Output buffer for xyz triples (must hold 3 * paramCount doubles)
-/// @return Number of points evaluated
+/// @param outXYZ Output buffer for xyz triples, interleaved: outXYZ[i * 3 + {0,1,2}]
+///               (must hold 3 * paramCount doubles)
+/// @return Number of points evaluated (paramCount on success, 0 on failure)
 int32_t OCCTCurve3DEvaluateGrid(OCCTCurve3DRef curve, const double* params, int32_t paramCount,
                                  double* outXYZ);
 
 /// Evaluate a 3D curve and its first derivative at multiple parameters (batch).
-/// @param outXYZ Output buffer for point xyz triples (3 * paramCount doubles)
-/// @param outDXDYDZ Output buffer for derivative xyz triples (3 * paramCount doubles)
-/// @return Number of points evaluated
+/// @param outXYZ Output buffer for point xyz triples, interleaved (3 * paramCount doubles)
+/// @param outDXDYDZ Output buffer for derivative xyz triples, interleaved (3 * paramCount doubles)
+/// @return Number of points evaluated (paramCount on success, 0 on failure)
 int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, int32_t paramCount,
                                    double* outXYZ, double* outDXDYDZ);
 
@@ -3799,18 +3819,42 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, in
 // MARK: - Batch Surface Evaluation (v0.29.0)
 
 /// Evaluate a surface at a grid of UV parameter values (batch).
-/// Output is row-major (u varies fastest): outXYZ[(iv * uCount + iu) * 3 + {0,1,2}].
+///
+/// Output is **U-major**, u varying slowest and v fastest:
+/// `outXYZ[(iu * vCount + iv) * 3 + {0,1,2}]`. Same layout as OCCTSurfaceDrawMesh and
+/// OCCTSurfaceEvaluateGridD1. It was v-major until #486, which is why the Swift wrapper no
+/// longer transposes.
+///
 /// @param surface The surface to evaluate
 /// @param uParams Array of U parameter values
 /// @param uCount Number of U parameters
 /// @param vParams Array of V parameter values
 /// @param vCount Number of V parameters
 /// @param outXYZ Output buffer for xyz triples (must hold 3 * uCount * vCount doubles)
-/// @return Number of points evaluated (uCount * vCount on success)
+/// @return Number of points evaluated (uCount * vCount on success, 0 on failure)
 int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
                                  const double* uParams, int32_t uCount,
                                  const double* vParams, int32_t vCount,
                                  double* outXYZ);
+
+/// Evaluate a surface and its first partial derivatives at a grid of UV parameters (batch).
+///
+/// Output is **U-major**, identical indexing to OCCTSurfaceEvaluateGrid:
+/// `outXYZ[(iu * vCount + iv) * 3 + {0,1,2}]`, and likewise for the two derivative buffers.
+///
+/// @param surface The surface to evaluate
+/// @param uParams Array of U parameter values
+/// @param uCount Number of U parameters
+/// @param vParams Array of V parameter values
+/// @param vCount Number of V parameters
+/// @param outXYZ Output buffer for point xyz triples (3 * uCount * vCount doubles)
+/// @param outD1U Output buffer for dS/du xyz triples (3 * uCount * vCount doubles)
+/// @param outD1V Output buffer for dS/dv xyz triples (3 * uCount * vCount doubles)
+/// @return Number of points evaluated (uCount * vCount on success, 0 on failure)
+int32_t OCCTSurfaceEvaluateGridD1(OCCTSurfaceRef surface,
+                                   const double* uParams, int32_t uCount,
+                                   const double* vParams, int32_t vCount,
+                                   double* outXYZ, double* outD1U, double* outD1V);
 
 
 // MARK: - Wire Explorer (v0.29.0)
@@ -16123,24 +16167,12 @@ void OCCTSurfaceEvalD2(OCCTSurfaceRef _Nonnull surface, double u, double v,
                          double* _Nonnull d2uvx, double* _Nonnull d2uvy, double* _Nonnull d2uvz);
 
 // MARK: - Batch Curve Evaluation (v0.110.0)
-
-/// Evaluate 3D curve at multiple parameters, returning points.
-void OCCTCurve3DEvalBatchD0(OCCTCurve3DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs);
-
-/// Evaluate 3D curve at multiple parameters, returning points and first derivatives.
-void OCCTCurve3DEvalBatchD1(OCCTCurve3DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs,
-                              double* _Nonnull d1xs, double* _Nonnull d1ys, double* _Nonnull d1zs);
-
-/// Evaluate 2D curve at multiple parameters, returning points.
-void OCCTCurve2DEvalBatchD0(OCCTCurve2DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys);
-
-/// Evaluate 2D curve at multiple parameters, returning points and first derivatives.
-void OCCTCurve2DEvalBatchD1(OCCTCurve2DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys,
-                              double* _Nonnull d1xs, double* _Nonnull d1ys);
+//
+// #486: OCCTCurve3DEvalBatchD0/D1 and OCCTCurve2DEvalBatchD0/D1 lived here. They evaluated
+// Geom_Curve::EvalD0/EvalD1 in a plain per-point loop, duplicating v0.29.0's already
+// batch-optimised OCCTCurve3DEvaluateGrid/D1 and OCCTCurve2DEvaluateGrid/D1 under a second
+// name and a per-axis-plane output shape. Removed; their Swift spellings
+// (Curve3D/Curve2D.evalBatchD0/D1) now forward to the v0.29.0 family.
 
 // MARK: - math_PSO (v0.111.0)
 
@@ -16187,45 +16219,16 @@ bool OCCTMathNewtonFuncSetRoot(int32_t nVars, int32_t nEqs,
                                  const double* _Nonnull start, double tol, int32_t maxIter,
                                  double* _Nonnull result);
 
-// MARK: - GeomGridEval_Curve 3D (v0.111.0)
-
-/// Evaluate 3D curve at multiple parameters using GeomGridEval_Curve (batch D0).
-void OCCTGridEvalCurveD0(OCCTCurve3DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                           double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs);
-
-/// Evaluate 3D curve at multiple parameters using GeomGridEval_Curve (batch D1).
-void OCCTGridEvalCurveD1(OCCTCurve3DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                           double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs,
-                           double* _Nonnull d1xs, double* _Nonnull d1ys, double* _Nonnull d1zs);
-
-// MARK: - Geom2dGridEval_Curve (v0.111.0)
-
-/// Evaluate 2D curve at multiple parameters using Geom2dGridEval_Curve (batch D0).
-void OCCTGridEvalCurve2dD0(OCCTCurve2DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys);
-
-/// Evaluate 2D curve at multiple parameters using Geom2dGridEval_Curve (batch D1).
-void OCCTGridEvalCurve2dD1(OCCTCurve2DRef _Nonnull curve, const double* _Nonnull params, int32_t count,
-                              double* _Nonnull xs, double* _Nonnull ys,
-                              double* _Nonnull d1xs, double* _Nonnull d1ys);
-
-// MARK: - GeomGridEval_Surface (v0.111.0)
-
-/// Evaluate surface at grid of (u, v) parameters using GeomGridEval_Surface (batch D0).
-/// Output arrays are row-major: xs[uCount * vCount], etc.
-void OCCTGridEvalSurfaceD0(OCCTSurfaceRef _Nonnull surface,
-                              const double* _Nonnull uParams, int32_t uCount,
-                              const double* _Nonnull vParams, int32_t vCount,
-                              double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs);
-
-/// Evaluate surface at grid of (u, v) parameters using GeomGridEval_Surface (batch D1).
-/// Output arrays are row-major: xs[uCount * vCount], etc.
-void OCCTGridEvalSurfaceD1(OCCTSurfaceRef _Nonnull surface,
-                              const double* _Nonnull uParams, int32_t uCount,
-                              const double* _Nonnull vParams, int32_t vCount,
-                              double* _Nonnull xs, double* _Nonnull ys, double* _Nonnull zs,
-                              double* _Nonnull d1uxs, double* _Nonnull d1uys, double* _Nonnull d1uzs,
-                              double* _Nonnull d1vxs, double* _Nonnull d1vys, double* _Nonnull d1vzs);
+// MARK: - GeomGridEval_Curve / Geom2dGridEval_Curve / GeomGridEval_Surface (v0.111.0)
+//
+// #486: OCCTGridEvalCurveD0/D1, OCCTGridEvalCurve2dD0/D1 and OCCTGridEvalSurfaceD0/D1 lived
+// here, a third spelling of the batch grid-evaluation job, calling exactly the same OCCT
+// evaluators as v0.29.0's OCCTCurve3DEvaluateGrid/D1, OCCTCurve2DEvaluateGrid/D1 and
+// OCCTSurfaceEvaluateGrid. The Surface pair is what made the duplication load-bearing: it
+// wrote a U-major grid while OCCTSurfaceEvaluateGrid wrote V-major, both headers describing
+// their own layout as "row-major". Removed; OCCTSurfaceEvaluateGridD1 (declared with its D0
+// sibling, above) is the surviving surface-D1 entry point, and the Swift spellings
+// (Curve3D/Curve2D.gridEvalD0/D1, Surface.gridEvalD0/D1) forward to the v0.29.0 family.
 
 // MARK: - BRepLProp_CLProps (v0.111.0)
 

@@ -114,6 +114,69 @@ downstream algorithms self-reject: a zero-radius ellipse yields a 5-pole BSpline
 two of them have no nil channel to report a rejection through and each needs its own contract
 decision.
 
+#### One batch grid-evaluation family, not three generations per type (#486)
+
+`Curve3D`, `Curve2D` and `Surface` each had **three** generations of "evaluate at N parameters"
+bridge functions, 15 in total, no shared helper between any of them, each hand-rolling its own
+parameter-pack loop and its own result-unpack loop. The two Surface entry points had drifted onto
+**opposite UV layouts** as a direct result:
+
+| | wrote | its header comment said |
+|---|---|---|
+| `OCCTSurfaceEvaluateGrid` (v0.29.0) | `outXYZ[(iv * uCount + iu) * 3]`, V-major | "row-major (u varies fastest)" |
+| `OCCTGridEvalSurfaceD0` (v0.111.0) | `xs[iu * vCount + iv]`, U-major | "row-major" |
+
+"Row-major" says nothing about a UV grid, where either parameter can be the row. Nine duplicate
+bridge functions are removed, and the surviving six
+(`OCCTCurve3DEvaluateGrid`/`D1`, `OCCTCurve2DEvaluateGrid`/`D1`, `OCCTSurfaceEvaluateGrid`/`D1`)
+now share one parameter-packing helper and one definition of the surface grid index
+(`occtSurfaceGridIndex`, U-major), so the layouts cannot drift apart again.
+
+**New: `Surface.evaluateGridD1(uParameters:vParameters:)` and `SurfaceGridD1`.** This finishes for
+the D1 path what [#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404) did for D0: results
+are indexed `.at(u:v:)` instead of arriving as a flat array whose major order you have to know.
+
+```swift
+let grid = surface.evaluateGridD1(uParameters: us, vParameters: vs)
+let sample = grid.at(u: 2, v: 0)
+let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+```
+
+**Deprecated (all still work, each forwarding to its canonical sibling):**
+
+| Deprecated | Use instead |
+|---|---|
+| `Curve3D.evalBatchD0(params:)`, `Curve3D.gridEvalD0(params:)` | `Curve3D.evaluateGrid(_:)` |
+| `Curve3D.evalBatchD1(params:)`, `Curve3D.gridEvalD1(params:)` | `Curve3D.evaluateGridD1(_:)` |
+| `Curve2D.evalBatchD0(params:)`, `Curve2D.gridEvalD0(params:)` | `Curve2D.evaluateGrid(_:)` |
+| `Curve2D.evalBatchD1(params:)`, `Curve2D.gridEvalD1(params:)` | `Curve2D.evaluateGridD1(_:)` |
+| `Surface.gridEvalD0(uParams:vParams:)` | `Surface.evaluateGrid(uParameters:vParameters:)` |
+| `Surface.gridEvalD1(uParams:vParams:)` | `Surface.evaluateGridD1(uParameters:vParameters:)` |
+
+The `evaluateGridD1` spellings label the derivative `tangent`, where the deprecated ones labelled
+it `d1`. No public API is removed and no signature changes, so no source break.
+
+**Behaviour change: a failed evaluation returns an empty result, not zeroes.** The v0.110/v0.111
+bridge functions returned `void`: on a failure their Swift callers could not detect (null or
+unsupported geometry, an exception inside the evaluator) they wrote nothing, and the wrapper
+returned a full-length array of default-initialised `SIMD3(0, 0, 0)` as if evaluation had
+succeeded. All six survivors return the number of points written, and every wrapper now returns an
+empty array or an empty grid instead.
+
+**Behaviour change: `evalBatchD0`/`evalBatchD1` now use the batch evaluator.** Those four methods
+had regressed to calling `Geom_Curve::EvalD0`/`EvalD1` (and the 2D equivalents) once per
+parameter, bypassing the `GeomGridEval_Curve` batch path that `evaluateGrid` had used since
+v0.29.0. They now forward there, so results can differ from the old per-point loop by ~1e-13 on a
+BSpline (measured against a ground-truth C++ comparison; analytic curves such as circles agree
+exactly).
+
+**Behaviour change (C API only).** `OCCTSurfaceEvaluateGrid` now writes a U-major buffer
+(`outXYZ[(iu * vCount + iv) * 3]`), matching `OCCTSurfaceDrawMesh`, `OCCTSurfaceEvaluateGridD1`
+and the Swift `SurfaceGrid`. `Surface.evaluateGrid` used to transpose the old V-major buffer while
+unpacking and no longer does, so its `SurfaceGrid` output is byte-for-byte unchanged, but any
+direct consumer of the C bridge must swap its index formula. `OCCTGridEvalSurfaceD1` was renamed
+`OCCTSurfaceEvaluateGridD1` and reshaped to the family's interleaved-triple buffers.
+
 ---
 
 ## Release History

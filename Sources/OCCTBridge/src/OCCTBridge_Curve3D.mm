@@ -932,19 +932,22 @@ bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef c,
 #include <GeomGridEval_Curve.hxx>
 #include <GeomGridEval.hxx>
 
+// The canonical 3D-curve batch evaluators. Two later generations duplicated this job under
+// other names (v0.110's OCCTCurve3DEvalBatchD0/D1 with a hand-rolled per-point loop, v0.111's
+// OCCTGridEvalCurveD0/D1 with the same GeomGridEval_Curve calls as here); #486 removed both and
+// pointed their Swift spellings at these two.
+
 int32_t OCCTCurve3DEvaluateGrid(OCCTCurve3DRef curve, const double* params, int32_t paramCount,
                                  double* outXYZ) {
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt> results = evaluator.EvaluateGrid(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        // An evaluator with no specialization for this curve type returns an empty array, so
+        // clamp rather than trusting paramCount: the caller's buffer is only paramCount long.
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt& pt = results.Value(i + 1);
             outXYZ[i*3]   = pt.X();
@@ -962,14 +965,10 @@ int32_t OCCTCurve3DEvaluateGridD1(OCCTCurve3DRef curve, const double* params, in
     if (!curve || curve->curve.IsNull() || !params || !outXYZ || !outDXDYDZ || paramCount <= 0) return 0;
     try {
         GeomGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<GeomGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const GeomGridEval::CurveD1& r = results.Value(i + 1);
             outXYZ[i*3]     = r.Point.X();
@@ -4163,86 +4162,16 @@ void OCCTCurve3DEvalD3(OCCTCurve3DRef curve, double u,
         *d3x = r.D3.X(); *d3y = r.D3.Y(); *d3z = r.D3.Z();
     } catch (...) {}
 }
-// MARK: - Batch Curve Evaluation (v0.110.0)
-
-void OCCTCurve3DEvalBatchD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y(); zs[i] = p.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve3DEvalBatchD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* zs,
-                              double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y(); zs[i] = r.Point.Z();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y(); d1zs[i] = r.D1.Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD0(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            gp_Pnt2d p = curve->curve->EvalD0(params[i]);
-            xs[i] = p.X(); ys[i] = p.Y();
-        }
-    } catch (...) {}
-}
-
-void OCCTCurve2DEvalBatchD1(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys,
-                              double* d1xs, double* d1ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        for (int i = 0; i < count; i++) {
-            Geom2d_Curve::ResD1 r = curve->curve->EvalD1(params[i]);
-            xs[i] = r.Point.X(); ys[i] = r.Point.Y();
-            d1xs[i] = r.D1.X(); d1ys[i] = r.D1.Y();
-        }
-    } catch (...) {}
-}
-// MARK: - GeomGridEval_Curve 3D (v0.111.0)
-
-void OCCTGridEvalCurveD0(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<gp_Pnt> results = eval.EvaluateGrid(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).X(); ys[i] = results(i+1).Y(); zs[i] = results(i+1).Z();
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalCurveD1(OCCTCurve3DRef curve, const double* params, int32_t count,
-                           double* xs, double* ys, double* zs,
-                           double* d1xs, double* d1ys, double* d1zs) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        GeomGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<GeomGridEval::CurveD1> results = eval.EvaluateGridD1(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).Point.X(); ys[i] = results(i+1).Point.Y(); zs[i] = results(i+1).Point.Z();
-            d1xs[i] = results(i+1).D1.X(); d1ys[i] = results(i+1).D1.Y(); d1zs[i] = results(i+1).D1.Z();
-        }
-    } catch (...) {}
-}
+// MARK: - Batch Curve Evaluation (v0.110.0 / v0.111.0)
+//
+// #486: six functions lived here. OCCTCurve3DEvalBatchD0/D1 and OCCTCurve2DEvalBatchD0/D1
+// (v0.110, a plain per-point Geom_Curve::EvalD0/EvalD1 loop that bypassed the batch evaluator
+// v0.29.0 was already using) and OCCTGridEvalCurveD0/D1 (v0.111, the same GeomGridEval_Curve
+// calls as OCCTCurve3DEvaluateGrid/D1 above, only writing per-axis planes instead of interleaved
+// triples). All duplicated OCCTCurve3DEvaluateGrid/D1 or OCCTCurve2DEvaluateGrid/D1 (the latter
+// pair in OCCTBridge_Geom2d.mm, where the 2D ones belonged all along; OCCTCurve2DEvalBatchD0/D1
+// were defined in this file despite operating on Curve2D). Removed; their Swift spellings now
+// forward to the v0.28.0/v0.29.0 family.
 
 // MARK: - v0.112: Curve3D extras + Extrema extras (LocateOnCurve/Surface)
 // --- Curve3D extras ---
