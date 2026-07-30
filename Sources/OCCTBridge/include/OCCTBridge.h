@@ -299,7 +299,8 @@
 // Geom2dAPI_InterCurveCurve           → OCCTCurve2DIntersect, OCCTCurve2DSelfIntersect
 // Geom2dAPI_Interpolate               → OCCTCurve2DInterpolate*
 // Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
-//                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve
+//                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve,
+//                                        OCCTCurve2DNearestParameter
 //
 // --- Geom2dGcc ---
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
@@ -320,7 +321,10 @@
 // GeomAPI_IntSS                       → OCCTSurfaceSurfaceIntersect
 // GeomAPI_PointsToBSpline             → OCCTCurve3DFit
 // GeomAPI_PointsToBSplineSurface      → OCCTSurfacePlateThrough, OCCTSurfaceNLPlateG0
-// GeomAPI_ProjectPointOnCurve         → OCCTCurve3DProjectPoint
+// GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
+//                                        OCCTExtremaPointCurve, OCCTProjOnCurve*,
+//                                        OCCTEdgeProjectPoint
+//                                        (NOT OCCTCurve3DProjectPoint; see ShapeAnalysis_Curve)
 // GeomAPI_ProjectPointOnSurf          → OCCTSurfaceProjectPoint, OCCTFaceProject*
 //
 // --- GeomConvert ---
@@ -430,7 +434,9 @@
 // ProjLib_ComputeApproxOnPolarSurface → OCCTProjLibProjectOntoPolarSurface
 //
 // --- ShapeAnalysis ---
-// ShapeAnalysis_Curve                 → OCCTCurveRangeValid*, OCCTCurveSamplePoints, OCCTCurveProjectPoint
+// ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
+//                                        OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
+//                                        OCCTCurve3DIsPeriodicSA
 // ShapeAnalysis_FreeBoundsProperties  → OCCTShapeFreeBoundsAnalysis*
 // ShapeAnalysis_Surface               → OCCTSurfaceUVProject*
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
@@ -16647,18 +16653,28 @@ bool OCCTShapeLimitMaxTolerance(OCCTShapeRef _Nonnull shape, double maxTol);
 /// Get the curve type enum (GeomAbs_CurveType: 0=Line..7=OtherCurve).
 int32_t OCCTCurve3DCurveType(OCCTCurve3DRef _Nonnull curve);
 
-/// Find parameter on curve nearest to a 3D point.
-double OCCTCurve3DParameterAtPoint(OCCTCurve3DRef _Nonnull curve,
-                                   double x, double y, double z);
+/// Find the parameter on a 3D curve nearest to a 3D point, over the curve's whole range.
+///
+/// Returns false and leaves *outParameter untouched when the point has no projection at all:
+/// one beyond the ends of a bounded curve, or a circle's centre. That is an ordinary outcome, not
+/// an error, and it cannot be signalled through the parameter: every double is a legitimate
+/// parameter on some curve. Replaces OCCTCurve3DParameterAtPoint and OCCTCurve3DClosestParameter,
+/// which ran the identical projection and disagreed about the no-projection case (#500).
+bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve, double x, double y, double z,
+                                 double* _Nonnull outParameter);
 
 // --- Curve2D extras ---
 
 /// Get the 2D curve type enum.
 int32_t OCCTCurve2DCurveType(OCCTCurve2DRef _Nonnull curve);
 
-/// Find parameter on 2D curve nearest to a 2D point.
-double OCCTCurve2DParameterAtPoint(OCCTCurve2DRef _Nonnull curve,
-                                   double x, double y);
+/// Find the parameter on a 2D curve nearest to a 2D point, over the curve's whole range.
+///
+/// Returns false and leaves *outParameter untouched when the point has no projection at all,
+/// on the same contract as the other Geom2dAPI_ProjectPointOnCurve entry points (#413, #500).
+/// Replaces OCCTCurve2DParameterAtPoint, which reported that case as FirstParameter().
+bool OCCTCurve2DNearestParameter(OCCTCurve2DRef _Nonnull curve, double x, double y,
+                                 double* _Nonnull outParameter);
 
 // --- Surface extras ---
 
@@ -17624,8 +17640,8 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 /// Compute the length of a 3D curve between parameters u1 and u2.
 double OCCTCurve3DLength(OCCTCurve3DRef _Nonnull curve, double u1, double u2);
 
-/// Find the closest point on a 3D curve to a given point. Returns parameter.
-double OCCTCurve3DClosestParameter(OCCTCurve3DRef _Nonnull curve, double px, double py, double pz);
+/// OCCTCurve3DClosestParameter was declared here: a second spelling of the projection
+/// OCCTCurve3DNearestParameter now performs. Removed by #500.
 
 /// Create a trimmed copy of a 2D curve between parameters u1 and u2.
 OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, double u1, double u2);

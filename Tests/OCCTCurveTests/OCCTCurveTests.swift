@@ -2922,10 +2922,11 @@ struct Curve3DExtrasV112Tests {
         }
     }
 
-    @Test func parameterAtPoint() {
+    @Test func nearestParameterOnLine() {
         if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
-            let param = line.parameterAtPoint(SIMD3(5, 0, 0))
-            #expect(abs(param - 5.0) < 0.1)
+            let param = line.nearestParameter(to: SIMD3(5, 0, 0))
+            #expect(param != nil)
+            if let param { #expect(abs(param - 5.0) < 0.1) }
         }
     }
 }
@@ -3185,9 +3186,10 @@ struct CurveLengthTests {
 
     @Test func curve3DClosestParameter() {
         if let line = Curve3D.line(through: SIMD3(0,0,0), direction: SIMD3(1,0,0)) {
-            let param = line.closestParameter(to: SIMD3(5, 3, 0))
+            let param = line.nearestParameter(to: SIMD3(5, 3, 0))
             // For a line along X, closest to (5,3,0) should be near param=5
-            #expect(abs(param - 5.0) < 0.1)
+            #expect(param != nil)
+            if let param { #expect(abs(param - 5.0) < 0.1) }
         }
     }
 

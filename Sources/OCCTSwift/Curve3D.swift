@@ -1895,9 +1895,44 @@ extension Curve3D {
         length(from: param1, to: param2) ?? -1.0
     }
 
+    /// The parameter of the point on this curve nearest to `point`.
+    ///
+    /// - Parameter point: Point to project.
+    /// - Returns: The nearest parameter, or `nil` if the point has no projection onto this curve
+    ///     one beyond the ends of a bounded curve, or the centre of a circle.
+    ///
+    /// `nil` is the only answer that says so: no `Double` can carry the signal, because
+    /// every value is a legitimate parameter on some curve. This is the 3D counterpart of
+    /// `Curve2D.nearestParameter(to:)`, and it replaces both `closestParameter(to:)` and
+    /// `parameterAtPoint(_:)`, which ran the identical projection and disagreed about how to
+    /// report its absence.
+    ///
+    /// Contrast `projectPoint(_:precision:)`, which runs a different OCCT algorithm
+    /// (`ShapeAnalysis_Curve::Project`) that always answers, adjusting to the curve's ends rather
+    /// than reporting that there is no projection.
+    ///
+    /// ```swift
+    /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
+    /// let segment = line.trimmed(from: 3, to: 8)!
+    /// #expect(segment.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
+    /// #expect(segment.nearestParameter(to: SIMD3(100, 0, 0)) == nil)   // past the end
+    /// ```
+    public func nearestParameter(to point: SIMD3<Double>) -> Double? {
+        var parameter = 0.0
+        guard OCCTCurve3DNearestParameter(handle, point.x, point.y, point.z, &parameter) else {
+            return nil
+        }
+        return parameter
+    }
+
     /// Find the parameter of the closest point on this curve to a given point.
+    @available(*, deprecated, message: """
+        Returns .nan when there is no projection, where it used to return 0, a value that is not \
+        even in the domain of a curve trimmed to, say, [3, 8]. Use nearestParameter(to:), which \
+        returns nil.
+        """)
     public func closestParameter(to point: SIMD3<Double>) -> Double {
-        OCCTCurve3DClosestParameter(handle, point.x, point.y, point.z)
+        nearestParameter(to: point) ?? .nan
     }
 
     /// Split this curve at C1 discontinuities.

@@ -86,6 +86,59 @@ these two facts together, and now assert the measurements.
 
 Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### The point-to-curve projection family finally has one answer for "there isn't one" (#500)
+
+`Curve2D.parameterAtPoint(_:)` was a fifth `Geom2dAPI_ProjectPointOnCurve` construction that #413's
+unification never reached, and it had invented a third failure convention, worse than either of
+the two #413 replaced. Where a point has no projection at all (one beyond the ends of a bounded
+curve, or a circle's centre, which is equidistant from every point on it), it returned the curve's
+own `firstParameter`: a real parameter inside the curve's own domain, indistinguishable from a
+genuine result. Whether that was right depended only on which end you fell off.
+
+The 3D side turned out to be worse, and the audit's own "adjacent, systemic" note undersold it.
+`Curve3D.parameterAtPoint(_:)` and `Curve3D.closestParameter(to:)` are two public spellings of the
+same computation, each with its own `GeomAPI_ProjectPointOnCurve`, and they *disagree*: one answers
+`firstParameter`, the other `0`. On a curve trimmed to `[3, 8]`, `0` is not even in the domain.
+Both old tests used a curve starting at parameter 0, where the two answers coincide, which is how
+the disagreement survived. There was no shared 3D helper at all: the 2D side got one in #413, the
+3D side never did.
+
+```swift
+let seg = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!.trimmed(from: 3, to: 8)!
+
+// Before: same question, three answers, none of them sayable as "no projection".
+seg.parameterAtPoint(SIMD3(100, 0, 0))     // 3.0  the far end of the curve
+seg.closestParameter(to: SIMD3(100, 0, 0)) // 0.0  outside the domain entirely
+
+// After.
+seg.nearestParameter(to: SIMD3(100, 0, 0)) // nil
+seg.nearestParameter(to: SIMD3(5, 2, 0))   // 5.0
+```
+
+**Not source-breaking.** `Curve2D.nearestParameter(to:)` and `Curve3D.nearestParameter(to:)` are
+new and return `Double?`; all three old spellings remain as deprecated shims. Their *behaviour*
+changes in the no-projection case only: they now return `.nan`, the one `Double` that is not a
+legitimate parameter on some curve, instead of three different plausible-looking values. Code that
+was reading a real answer reads the same real answer.
+
+Bridge-side, `OCCTCurve2DParameterAtPoint` now routes through `occtNearestProjectionOnCurve2d`
+(five entry points, one construction), and the 3D side gains the `occtNearestProjectionOnCurve3d`
+it never had, shared by `OCCTCurve3DNearestParameter` and `OCCTExtremaLocateOnCurve`'s full-range
+fallback. `OCCTCurve3DClosestParameter` is gone.
+
+`Curve3D.projectPoint(_:precision:)` is deliberately *not* folded in: it runs
+`ShapeAnalysis_Curve::Project`, a different algorithm that always answers by adjusting to the
+curve's ends. A test now pins that distinction so a later pass does not "unify" two things that
+genuinely compute differently.
+
+Three cross-reference index entries in `OCCTBridge.h` were corrected along the way. The staleness
+the audit blamed for the miss was real, and worse than reported. `Geom2dAPI_ProjectPointOnCurve`
+listed four of its five entry points; `GeomAPI_ProjectPointOnCurve` listed exactly one function,
+which does not use it (`OCCTCurve3DProjectPoint` calls `ShapeAnalysis_Curve`), and none of the five
+that do; and `ShapeAnalysis_Curve` named three functions that do not exist under those names.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
 #### One continuity decoder per vocabulary, not nineteen (#490)
 
 Continuity reached OCCT as a plain integer through 19 separate decoders: seven independently-named

@@ -109,15 +109,19 @@
 // otherwise-identical pass over the 3D side; #487 converged them.
 
 // One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
-// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and OCCTPoint2DDistanceToCurve.
-// They were three independent constructions of the same algorithm with three different
-// failure-signalling conventions bolted on separately (#413). It also gives the two that lacked
-// one an explicit null-handle guard rather than relying on catch(...) to absorb the dereference.
+// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve and
+// OCCTCurve2DNearestParameter. They were four independent constructions of the same algorithm with
+// four different failure-signalling conventions bolted on separately (#413 unified the first
+// three, #500 the fourth). It also gives those that lacked one an explicit null-handle guard
+// rather than relying on catch(...) to absorb the dereference.
 //
 // Returns false when there is no projection at all — an ordinary outcome, not an error: a point
 // beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Each caller
 // applies its own documented sentinel; none of them may report failure through the parameter,
 // since 0 is a legitimate parameter on any curve whose domain includes it.
+//
+// OCCTCurve2DProjectPointAll is the multi-solution sibling: it needs every extremum rather than
+// the nearest one, so it constructs its own and is not routed through here.
 static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d& point,
                                             gp_Pnt2d* outNearest, double* outParameter,
                                             double* outDistance) {
@@ -3971,14 +3975,13 @@ int32_t OCCTCurve2DCurveType(OCCTCurve2DRef curve) {
     } catch (...) { return 7; }
 }
 
-double OCCTCurve2DParameterAtPoint(OCCTCurve2DRef curve,
-                                   double x, double y) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        Geom2dAPI_ProjectPointOnCurve proj(gp_Pnt2d(x, y), curve->curve);
-        if (proj.NbPoints() < 1) return curve->curve->FirstParameter();
-        return proj.LowerDistanceParameter();
-    } catch (...) { return 0; }
+// Failure contract: returns false, leaving *outParameter untouched. This replaces
+// OCCTCurve2DParameterAtPoint, which reported "no projection" as curve->FirstParameter(): a real
+// parameter in the curve's own domain, indistinguishable from a genuine result, and right or
+// maximally wrong depending only on which end the point fell off (#500).
+bool OCCTCurve2DNearestParameter(OCCTCurve2DRef _Nonnull curve, double x, double y,
+                                 double* _Nonnull outParameter) {
+    return occtNearestProjectionOnCurve2d(curve, gp_Pnt2d(x, y), nullptr, outParameter, nullptr);
 }
 
 // MARK: - v0.114: Curve2D isBounded + DN + type-name
