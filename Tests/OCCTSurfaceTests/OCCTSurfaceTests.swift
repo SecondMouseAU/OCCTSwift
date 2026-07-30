@@ -1773,7 +1773,7 @@ struct PipeShellTransitionTests {
         let p3 = SIMD3<Double>(10, 10, 0)
         let spine = Wire.path([p1, p2, p3])!
         let profile = Wire.circle(radius: 1)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .transformed, solid: true
         )
@@ -1786,7 +1786,7 @@ struct PipeShellTransitionTests {
         // is perpendicular to the spine tangent (required for RightCorner)
         let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
         let profile = Wire.circle(radius: 2)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .rightCorner, solid: true
         )
@@ -1799,7 +1799,7 @@ struct PipeShellTransitionTests {
         // is perpendicular to the spine tangent (required for RoundCorner)
         let spine = Wire.path([SIMD3(0,0,0), SIMD3(0,0,10), SIMD3(0,10,10)])!
         let profile = Wire.circle(radius: 2)!
-        let result = Shape.pipeShellWithTransition(
+        let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .roundCorner, solid: true
         )
@@ -1807,6 +1807,7 @@ struct PipeShellTransitionTests {
     }
 
     @Test("Pipe transition with corrected Frenet mode")
+    @available(*, deprecated, message: "Exercises the deprecated `pipeShellWithTransition` on purpose.")
     func pipeCorrectedFrenetTransition() {
         // Simple straight spine — Frenet and CorrectedFrenet should behave the same
         guard let spine = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10)) else { return }

@@ -17,6 +17,48 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### One pipe shell, and the sweep mode it was quietly discarding (#503)
+
+Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each
+was `OCCTShapeCreatePipeShellMultiSection` with `profileCount = 1` and some arguments nailed shut.
+Confirmed rather than assumed: OCCT's `Add(profile)` is `Add(profile, false, false)` by default
+argument, and the two spellings produce byte-identical BREP. All four are gone. Every `Add()`-based
+pipe sweep is now one function, and the workaround comment `SetIsBuildHistory(false) // avoid SEGV
+on closed spine+profile` went from six pasted copies to one.
+
+Two of the four accepted an `OCCTPipeMode` they could not express. Their mode switch had a case for
+`FixedBinormal` and `Auxiliary` that fell through to `SetMode(Standard_False)`, plain Frenet, and
+returned the resulting solid as a success. At the C level that branch was unreachable from Swift,
+but the same defect had already surfaced in the public API:
+`Shape.pipeShellWithTransition(mode: .fixed(binormal:))` swept Frenet. Measured on an S-curve spine
+with a 5×3 rectangular section: 180.287 requested as a fixed binormal, where the fixed binormal
+builds 149.999. **A straight spine will not show this**: with no torsion the modes coincide
+exactly, which is how it survived a suite that only ever swept straight lines and gentle arcs.
+
+A mode whose own argument is unusable now fails the call instead of substituting a different mode:
+`.fixed(binormal: .zero)` and an auxiliary spine OCCT rejects both return `nil`.
+
+Three things became reachable that were not, all of which change the output rather than being
+inert knobs:
+
+| control | was | measured effect |
+|---|---|---|
+| `transition:` on a multi-section sweep | single-profile only | 113.05 / 256.65 / 240.53 for transformed / rightCorner / roundCorner |
+| `withContact:` / `withCorrection:` on a single-profile sweep | multi-section only | correction re-orthogonalises a tilted section: 205.208 → 251.327 |
+| `.auxiliary(spine:)` with one profile | untested, no coverage anywhere | builds, and differs from Frenet |
+
+**API changes.** `Shape.pipeShell` gains `transition:`, `withContact:` and `withCorrection:`;
+`Shape.pipeShellMultiSection` gains `transition:`. All default to the previous behaviour, so no call
+site changes. `Shape.pipeShellWithTransition` is **deprecated** (it is now `pipeShell` with one
+argument set) and forwards, honouring every mode. `Shape.pipeShellWithLaw` keeps its own entry
+point, since `SetLaw` is not an `Add()` sweep and OCCT's header warns against combining the two; it
+shares the build tail.
+
+Verified by capturing every pipe-shell call path's volume, area and face count before the change and
+re-running after: every figure is identical except `pipeShellWithTransition(mode: .fixed(...))`,
+which moved to the value its non-transition sibling already produced. The new tests were also run
+against a deliberately reintroduced fall-through: 4 of 8 fail, naming the substituted mode.
+
 #### Breaking: the junction analysers now say what they measured, and stop reporting what they did not (#495)
 
 **Source-breaking, in one place:** `Curve3D.ContinuityAnalysis` and `Surface.ContinuityAnalysis`

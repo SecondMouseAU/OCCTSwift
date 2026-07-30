@@ -2753,36 +2753,53 @@ extension Shape {
 
     /// Create a pipe (sweep) with advanced sweep modes
     ///
-    /// Unlike the basic `pipe(profile:path:)`, this method provides control over
-    /// how the profile is oriented along the sweep path.
+    /// Unlike the basic `pipe(profile:path:)`, this method controls how the profile is
+    /// oriented along the sweep path, what happens at corners in the spine, and whether the
+    /// profile is repositioned onto the spine before sweeping.
+    ///
+    /// This is the single-profile form of
+    /// ``pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)``
+    /// and runs the same code: one `BRepOffsetAPI_MakePipeShell` with one section added (#503).
+    ///
+    /// ```swift
+    /// let spine = Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 5, 0),
+    ///                           SIMD3(20, -5, 10), SIMD3(30, 0, 10)])!
+    /// let profile = Wire.rectangle(width: 5, height: 3)!
+    ///
+    /// // Frenet lets the section roll with the spine's torsion.
+    /// let rolled = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet)
+    ///
+    /// // A fixed binormal keeps it upright instead, which is a different solid.
+    /// let upright = Shape.pipeShell(spine: spine, profile: profile,
+    ///                               mode: .fixed(binormal: SIMD3(0, 0, 1)))
+    /// print(rolled?.volume ?? 0)    // 180.29
+    /// print(upright?.volume ?? 0)   // 150.00
+    /// ```
     ///
     /// - Parameters:
     ///   - spine: Path wire along which to sweep
     ///   - profile: Profile wire to sweep
-    ///   - mode: Sweep mode controlling profile orientation
+    ///   - mode: Sweep mode controlling profile orientation. A mode whose own argument is
+    ///     unusable (`.fixed(binormal:)` given a zero-length vector, or `.auxiliary(spine:)`
+    ///     given a spine OCCT rejects) returns nil rather than quietly sweeping some other
+    ///     mode, which is what the pre-#503 bridge did.
+    ///   - transition: How to handle transitions at spine corners
+    ///   - withContact: If true, the profile is moved to touch the spine before sweeping
+    ///   - withCorrection: If true, the profile is rotated to stay orthogonal to the spine
     ///   - solid: If true, create a solid; if false, create a shell
     /// - Returns: Swept shape, or nil on failure
     public static func pipeShell(
         spine: Wire,
         profile: Wire,
         mode: PipeSweepMode = .frenet,
+        transition: PipeTransitionMode = .transformed,
+        withContact: Bool = false,
+        withCorrection: Bool = false,
         solid: Bool = true
     ) -> Shape? {
-        let result: OCCTShapeRef?
-
-        switch mode {
-        case .frenet:
-            result = OCCTShapeCreatePipeShell(spine.handle, profile.handle, OCCTPipeModeFrenet, solid)
-        case .correctedFrenet:
-            result = OCCTShapeCreatePipeShell(spine.handle, profile.handle, OCCTPipeModeCorrectedFrenet, solid)
-        case .fixed(let binormal):
-            result = OCCTShapeCreatePipeShellWithBinormal(spine.handle, profile.handle, binormal.x, binormal.y, binormal.z, solid)
-        case .auxiliary(let auxSpine):
-            result = OCCTShapeCreatePipeShellWithAuxSpine(spine.handle, profile.handle, auxSpine.handle, solid)
-        }
-
-        guard let shapeRef = result else { return nil }
-        return Shape(handle: shapeRef)
+        pipeShellMultiSection(
+            spine: spine, profiles: [profile], mode: mode, transition: transition,
+            withContact: withContact, withCorrection: withCorrection, solid: solid)
     }
 
     /// Create a pipe shell with transition mode control.
@@ -2796,6 +2813,14 @@ extension Shape {
     ///   - transition: How to handle transitions at spine corners
     ///   - solid: If true, create a solid; if false, create a shell
     /// - Returns: Swept shape, or nil on failure
+    @available(*, deprecated,
+        renamed: "pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)",
+        message: """
+            This spelling took a PipeSweepMode but could only express .frenet and \
+            .correctedFrenet: .fixed(binormal:) and .auxiliary(spine:) were silently swept \
+            as Frenet, returning a different solid from the one asked for. pipeShell now \
+            takes the same transition: argument and honours every mode (#503).
+            """)
     public static func pipeShellWithTransition(
         spine: Wire,
         profile: Wire,
@@ -2803,16 +2828,7 @@ extension Shape {
         transition: PipeTransitionMode = .transformed,
         solid: Bool = true
     ) -> Shape? {
-        let modeInt: Int32 = {
-            switch mode {
-            case .correctedFrenet: return 1
-            default: return 0
-            }
-        }()
-        guard let h = OCCTShapeCreatePipeShellWithTransition(
-            spine.handle, profile.handle, modeInt, transition.rawValue, solid
-        ) else { return nil }
-        return Shape(handle: h)
+        pipeShell(spine: spine, profile: profile, mode: mode, transition: transition, solid: solid)
     }
 
     // MARK: - Variable-Section Sweep (v0.21.0)
@@ -2833,20 +2849,35 @@ extension Shape {
         return Shape(handle: result)
     }
 
-    /// Sweep several profiles along a spine for a variable-section pipe shell.
+    /// Sweep one or more profiles along a spine for a variable-section pipe shell.
     ///
-    /// This is the multi-section form of ``pipeShell(spine:profile:mode:solid:)``: each
-    /// profile is positioned in 3D at its station along the spine, and OCCT interpolates a
-    /// smooth solid (or shell) that passes through every section. It supports the same
-    /// orientation modes — including ``PipeSweepMode/auxiliary(spine:)``, which keeps the
-    /// section oriented by a secondary curve (e.g. a thread rib that ramps from a runout to
-    /// full crest along a helix while staying radial to the axis).
+    /// Every `MakePipeShell` sweep in OCCTSwift is this call. Each profile is positioned in
+    /// 3D at its station along the spine, and OCCT interpolates a solid (or shell) that
+    /// passes through every section. It supports every orientation mode, including
+    /// ``PipeSweepMode/auxiliary(spine:)``, which keeps the section oriented by a secondary
+    /// curve (e.g. a thread rib that ramps from a runout to full crest along a helix while
+    /// staying radial to the axis). ``pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)``
+    /// is this function with one profile (#503).
+    ///
+    /// ```swift
+    /// let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 10))!
+    /// // Three coaxial circles: wide, narrow, wide. A vase.
+    /// let stations = [(0.0, 2.0), (5.0, 1.0), (10.0, 2.0)].compactMap {
+    ///     Wire.circle(origin: SIMD3(0, 0, $0.0), normal: SIMD3(0, 0, 1), radius: $0.1)
+    /// }
+    /// let vase = Shape.pipeShellMultiSection(spine: spine, profiles: stations, mode: .frenet)
+    /// print(vase?.volume ?? 0)   // 58.64
+    /// ```
     ///
     /// - Parameters:
     ///   - spine: Path wire along which to sweep.
     ///   - profiles: Profile wires, each positioned at its station along the spine. At least
     ///     one is required; two or more give a genuinely varying section.
     ///   - mode: Sweep mode controlling profile orientation (incl. `.auxiliary(spine:)`).
+    ///     A mode whose own argument is unusable returns nil rather than substituting
+    ///     another mode.
+    ///   - transition: How to handle transitions at spine corners. Reaches a multi-section
+    ///     sweep since #503; before that only the single-profile spelling could set it.
     ///   - withContact: If true, each profile is moved to touch the spine before sweeping.
     ///   - withCorrection: If true, each profile is rotated to stay orthogonal to the spine.
     ///   - solid: If true, create a solid; if false, a shell.
@@ -2855,6 +2886,7 @@ extension Shape {
         spine: Wire,
         profiles: [Wire],
         mode: PipeSweepMode = .frenet,
+        transition: PipeTransitionMode = .transformed,
         withContact: Bool = false,
         withCorrection: Bool = false,
         solid: Bool = true
@@ -2882,7 +2914,7 @@ extension Shape {
             OCCTShapeCreatePipeShellMultiSection(
                 spine.handle, buffer.baseAddress, Int32(profiles.count),
                 modeValue, binormal.x, binormal.y, binormal.z,
-                auxHandle, withContact, withCorrection, solid)
+                auxHandle, transition.rawValue, withContact, withCorrection, solid)
         }) else { return nil }
         return Shape(handle: result)
     }

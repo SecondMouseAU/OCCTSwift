@@ -1091,7 +1091,7 @@ Useful for simplifying imported geometry or removing small features before analy
 
 ## Advanced / Variable-Section Pipe Sweep
 
-### `Shape.pipeShell(spine:profile:mode:solid:)`
+### `Shape.pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)`
 
 Creates a pipe sweep with advanced orientation mode control.
 
@@ -1100,17 +1100,31 @@ public static func pipeShell(
     spine: Wire,
     profile: Wire,
     mode: PipeSweepMode = .frenet,
+    transition: PipeTransitionMode = .transformed,
+    withContact: Bool = false,
+    withCorrection: Bool = false,
     solid: Bool = true
 ) -> Shape?
 ```
+
+Since #503 this is the single-profile form of
+[`pipeShellMultiSection`](#shapepipeshellmultisectionspineprofilesmodetransitionwithcontactwithcorrectionsolid)
+and runs the same code, so it reaches the corner-transition and profile-placement controls that
+used to be split across three other spellings.
 
 - **Parameters:**
   - `spine` — path wire.
   - `profile` — profile wire to sweep.
   - `mode` — sweep orientation mode (`.frenet`, `.correctedFrenet`, `.fixed(binormal:)`, `.auxiliary(spine:)`).
+    A mode whose own argument is unusable (a zero-length binormal, or an auxiliary spine OCCT
+    rejects) returns `nil`. It is never swapped for a different mode, which is what the
+    pre-#503 bridge did.
+  - `transition`: corner transition style at spine discontinuities.
+  - `withContact`: if `true`, the profile is moved to touch the spine before sweeping.
+  - `withCorrection`: if `true`, the profile is rotated to stay orthogonal to the spine.
   - `solid` — `true` = solid result; `false` = shell.
 - **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell`.
+- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 - **Example:**
   ```swift
   let spine = Wire.helix(origin: .zero, axis: SIMD3(0,0,1), radius: 10, pitch: 5, turns: 3)!
@@ -1120,11 +1134,19 @@ public static func pipeShell(
 
 ---
 
-### `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`
+### `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)` (deprecated)
 
-Creates a pipe sweep with both orientation mode and spine-corner transition control.
+**Deprecated since #503.** Use
+[`pipeShell(spine:profile:mode:transition:...)`](#shapepipeshellspineprofilemodetransitionwithcontactwithcorrectionsolid),
+which takes the same `transition:` argument.
+
+This spelling accepted a full `PipeSweepMode` but reached a bridge function that could only
+express `.frenet` and `.correctedFrenet`. `.fixed(binormal:)` and `.auxiliary(spine:)` were swept
+as Frenet: a different solid from the one requested, returned as a success. It now forwards to
+`pipeShell` and honours every mode.
 
 ```swift
+@available(*, deprecated, renamed: "pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)")
 public static func pipeShellWithTransition(
     spine: Wire,
     profile: Wire,
@@ -1134,13 +1156,7 @@ public static func pipeShellWithTransition(
 ) -> Shape?
 ```
 
-- **Parameters:**
-  - `spine`, `profile` — as for `pipeShell`.
-  - `mode` — orientation mode (`.frenet` or `.correctedFrenet`; other modes fall back to Frenet).
-  - `transition` — corner transition style.
-  - `solid` — produce a solid when `true`.
-- **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell`.
+- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 
 ---
 
@@ -1165,32 +1181,36 @@ The law value defines how the profile scales along the spine: 1.0 = no scaling, 
 
 ---
 
-### `Shape.pipeShellMultiSection(spine:profiles:mode:withContact:withCorrection:solid:)`
+### `Shape.pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)`
 
-Sweeps multiple profiles along a spine for a variable-section result.
+Sweeps one or more profiles along a spine for a variable-section result.
 
 ```swift
 public static func pipeShellMultiSection(
     spine: Wire,
     profiles: [Wire],
     mode: PipeSweepMode = .frenet,
+    transition: PipeTransitionMode = .transformed,
     withContact: Bool = false,
     withCorrection: Bool = false,
     solid: Bool = true
 ) -> Shape?
 ```
 
-Each profile is positioned in 3D at its station along the spine, and OCCT interpolates a smooth solid that passes through every section. Supports all `PipeSweepMode` cases, including `.auxiliary(spine:)` for twist control.
+Each profile is positioned in 3D at its station along the spine, and OCCT interpolates a smooth solid that passes through every section. Supports all `PipeSweepMode` cases, including `.auxiliary(spine:)` for twist control. Every `MakePipeShell` sweep in OCCTSwift is this call; `pipeShell` is this function with one profile (#503).
 
 - **Parameters:**
   - `spine` — path wire.
   - `profiles` — section wires, each pre-positioned at its station (at least one required).
-  - `mode` — orientation mode.
+  - `mode`: orientation mode. A mode whose own argument is unusable returns `nil` rather than
+    being swapped for another mode.
+  - `transition`: corner transition style at spine discontinuities. Reaches a multi-section
+    sweep since #503; before that only the single-profile spelling could set it.
   - `withContact` — if `true`, each profile is moved to touch the spine.
   - `withCorrection` — if `true`, each profile is rotated to stay orthogonal to the spine.
   - `solid` — produce a solid when `true`.
 - **Returns:** Swept shape, or `nil` on failure.
-- **OCCT:** `BRepOffsetAPI_MakePipeShell` multi-profile form (via `OCCTShapeCreatePipeShellMultiSection`).
+- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
 
 ---
 

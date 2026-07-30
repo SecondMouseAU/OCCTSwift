@@ -70,7 +70,7 @@ OCCTSwift provides method-level coverage of all user-facing OCCT classes. Key ar
 
 | Category | Operations | Highlights |
 |----------|-----------|------------|
-| Primitives & Sweeps | 36 | box, cylinder, sphere, cone, torus, wedge, pipe, extrude, revolve, loft, thru-sections |
+| Primitives & Sweeps | 37 | box, cylinder, sphere, cone, torus, wedge, pipe, extrude, revolve, loft, thru-sections |
 | Booleans | 13 | union, subtract, intersect, section, split, cells builder, defeaturing |
 | Modifications | 33 | fillet (uniform/variable/evolving), chamfer, shell, offset, draft |
 | Wires & Edges | 56 | rectangle, circle, polygon, arc, BSpline, NURBS, helix, fillet2D, chamfer2D |

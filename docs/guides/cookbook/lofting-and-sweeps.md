@@ -160,9 +160,12 @@ guard stations.count == 3,
 ```
 
 `mode:` controls how each section is framed as it travels the spine (`.frenet`, `.correctedFrenet`,
-`.fixed(binormal:)`, `.auxiliary(spine:)`); `withContact` / `withCorrection` move and re-orthogonalise
-the profiles onto the spine. To scale a *single* profile by a law along the spine instead of supplying
-many, use `Shape.pipeShellWithLaw(spine:profile:law:)` — see [Helices & Springs](helices.md).
+`.fixed(binormal:)`, `.auxiliary(spine:)`); `transition:` controls what happens at corners in the
+spine (`.transformed`, `.rightCorner`, `.roundCorner`); `withContact` / `withCorrection` move and
+re-orthogonalise the profiles onto the spine. `Shape.pipeShell(spine:profile:...)` is the same call
+with one profile and takes the same arguments (#503). To scale a *single* profile by a law along the
+spine instead of supplying many, use `Shape.pipeShellWithLaw(spine:profile:law:)`. See
+[Helices & Springs](helices.md).
 
 <table>
 <tr>
