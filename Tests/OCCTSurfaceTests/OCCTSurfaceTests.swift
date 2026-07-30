@@ -3621,13 +3621,14 @@ struct SurfaceExtrasTests {
         }
     }
 
-    @Test func surfaceContinuityOrder() {
+    @Test func planeContinuityClass() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let faces = box.subShapes(ofType: .face)
             if faces.count > 0 {
                 if let surf = faces[0].extractFaceSurface() {
-                    // Plane is CN continuous
-                    #expect(surf.surfaceContinuityOrder >= 0)
+                    // Geom_Plane is analytic, so infinitely differentiable.
+                    #expect(surf.continuityClass == .cN)
+                    #expect(surf.continuityClass.satisfies(.c2))
                 }
             }
         }
@@ -3700,6 +3701,7 @@ struct SurfaceEvalTests {
 
 @Suite("GridEval Surface v0.111")
 struct GridEvalSurfaceTests {
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
     @Test func gridEvalD0Sphere() {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
@@ -3718,6 +3720,7 @@ struct GridEvalSurfaceTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
     @Test func gridEvalD1Sphere() {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
@@ -3735,6 +3738,117 @@ struct GridEvalSurfaceTests {
                 }
             }
         }
+    }
+}
+
+/// #486: the batch grid-evaluation family had three generations per type and the two Surface
+/// spellings wrote opposite UV layouts, `OCCTSurfaceEvaluateGrid` v-major and
+/// `OCCTGridEvalSurfaceD0` u-major, both header comments calling their own layout "row-major".
+///
+/// The pre-existing tests could not have caught it: `GridEvalSurfaceTests` above uses asymmetric
+/// grids but only asserts counts and rough magnitudes, never a specific `(u, v)` against an
+/// independent evaluator, the check `evalGridAsymmetricMatchesDirectEvaluation` had done for
+/// `evaluateGrid` since #404. These pin the layout on every surviving surface entry point and on
+/// the deprecated flat-array spellings' documented index formula.
+@Suite("Issue 486: surface grid layout")
+struct Issue486SurfaceGridTests {
+
+    /// Asymmetric grid: a square one cannot tell u-major from v-major apart.
+    private static let uParams = [0.0, 0.4, 1.1, 2.0, 3.5]
+    private static let vParams = [-1.2, 0.0, 1.2]
+
+    @Test("evaluateGridD1 indexes each (u, v) at its own parameter, not transposed")
+    func evaluateGridD1MatchesDirectEvaluation() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let u = Self.uParams, v = Self.vParams
+        let grid = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        #expect(grid.uCount == u.count)
+        #expect(grid.vCount == v.count)
+        guard !grid.isEmpty else { return }
+
+        for iu in 0..<u.count {
+            for iv in 0..<v.count {
+                let expected = sphere.evalD1(u: u[iu], v: v[iv])
+                let actual = grid.at(u: iu, v: iv)
+                #expect(simd_length(actual.point - expected.point) < 1e-6)
+                #expect(simd_length(actual.d1u - expected.d1u) < 1e-6)
+                #expect(simd_length(actual.d1v - expected.d1v) < 1e-6)
+            }
+        }
+    }
+
+    @Test("evaluateGrid and evaluateGridD1 agree point-for-point under .at(u:v:)")
+    func evaluateGridAndD1Agree() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let u = Self.uParams, v = Self.vParams
+        let d0 = sphere.evaluateGrid(uParameters: u, vParameters: v)
+        let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        #expect(d0.uCount == d1.uCount)
+        #expect(d0.vCount == d1.vCount)
+        guard !d0.isEmpty, !d1.isEmpty else { return }
+
+        for iu in 0..<u.count {
+            for iv in 0..<v.count {
+                #expect(simd_length(d0.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-9)
+            }
+        }
+    }
+
+    @Test("drawMesh, evaluateGrid and evaluateGridD1 all read U-major")
+    func drawMeshSharesTheGridLayout() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let uCount = 5, vCount = 3
+        let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)
+
+        var (uMin, uMax, vMin, vMax) = sphere.domain
+        if uMin < -1e6 { uMin = -100 }
+        if uMax > 1e6 { uMax = 100 }
+        if vMin < -1e6 { vMin = -100 }
+        if vMax > 1e6 { vMax = 100 }
+        let u = (0..<uCount).map { uMin + (uMax - uMin) * Double($0) / Double(uCount - 1) }
+        let v = (0..<vCount).map { vMin + (vMax - vMin) * Double($0) / Double(vCount - 1) }
+
+        let d1 = sphere.evaluateGridD1(uParameters: u, vParameters: v)
+        guard !mesh.isEmpty, !d1.isEmpty else { return }
+        for iu in 0..<uCount {
+            for iv in 0..<vCount {
+                #expect(simd_length(mesh.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-6)
+            }
+        }
+    }
+
+    /// The deprecated spellings return a flat array, and their doc comments now name the index
+    /// formula (`result[u * vParams.count + v]`) that `OCCTGridEvalSurfaceD0` never stated.
+    @available(*, deprecated, message: "Exercises the deprecated flat-array spellings on purpose.")
+    @Test("deprecated gridEvalD0/gridEvalD1 are U-major, matching their documented index formula")
+    func deprecatedFlatSpellingsAreUMajor() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        let u = Self.uParams, v = Self.vParams
+        let flat0 = sphere.gridEvalD0(uParams: u, vParams: v)
+        let flat1 = sphere.gridEvalD1(uParams: u, vParams: v)
+        let grid = sphere.evaluateGrid(uParameters: u, vParameters: v)
+        #expect(flat0.count == u.count * v.count)
+        #expect(flat1.count == u.count * v.count)
+        guard flat0.count == u.count * v.count, flat1.count == u.count * v.count, !grid.isEmpty else { return }
+
+        for iu in 0..<u.count {
+            for iv in 0..<v.count {
+                let flatIdx = iu * v.count + iv
+                let expected = sphere.point(atU: u[iu], v: v[iv])
+                #expect(simd_length(flat0[flatIdx] - expected) < 1e-6)
+                #expect(simd_length(flat1[flatIdx].point - expected) < 1e-6)
+                #expect(simd_length(flat0[flatIdx] - grid.at(u: iu, v: iv)) < 1e-9)
+            }
+        }
+    }
+
+    @Test("empty parameter arrays give an empty grid, not a grid of zeroes")
+    func emptyParametersGiveEmptyGrid() {
+        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
+        #expect(sphere.evaluateGrid(uParameters: [], vParameters: [0.0]).isEmpty)
+        #expect(sphere.evaluateGrid(uParameters: [0.0], vParameters: []).isEmpty)
+        #expect(sphere.evaluateGridD1(uParameters: [], vParameters: [0.0]).isEmpty)
+        #expect(sphere.evaluateGridD1(uParameters: [0.0], vParameters: []).isEmpty)
     }
 }
 
@@ -5881,5 +5995,179 @@ struct SurfaceApproximateDefaultsParityTests {
             }
             #expect(maxDeviation < 0.5)
         }
+    }
+}
+
+// MARK: - #488: Surface transform family parity
+
+/// `Surface` exposes every transform twice: an immutable copy-returning family
+/// (`translated`/`rotated`/`scaled`/`mirrored*`, backed by six separate bridge functions) and an
+/// in-place family (`translate`/`rotate`/`scale`/`mirrorPoint`/`mirrorAxis`/`mirrorPlane`, all
+/// backed by the single `OCCTSurfaceTransform` dispatcher). Both now build their `gp_Trsf` through
+/// one shared `buildTrsf3D`, so they must produce identical geometry for identical input. Before
+/// #488 the switch existed seven times over and nothing checked the copies agreed. Mirrors
+/// `Curve3DTransformFamilyParityTests`, added for the same fix on `Curve3D` (#416).
+///
+/// For each pair: take one immutable copy BEFORE mutating the original in place, apply the same
+/// transform to both, then compare a UV grid of evaluated points.
+@Suite("Surface Transform Family Parity (#488)")
+struct SurfaceTransformFamilyParityTests {
+
+    /// Bounded on both parameters, so sampling its own domain is well defined
+    /// (a plane's or cylinder's domain runs to ±1e100 and cannot be gridded).
+    private func sphere() -> Surface {
+        Surface.sphere(center: SIMD3(1, 2, 3), radius: 4)!
+    }
+
+    private func points(on surface: Surface, steps: Int = 4) -> [SIMD3<Double>] {
+        let d = surface.domain
+        var result: [SIMD3<Double>] = []
+        for i in 0...steps {
+            for j in 0...steps {
+                let u = d.uMin + (d.uMax - d.uMin) * Double(i) / Double(steps)
+                let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(steps)
+                result.append(surface.point(atU: u, v: v))
+            }
+        }
+        return result
+    }
+
+    private func assertMatch(_ a: Surface, _ b: Surface, tolerance: Double = 1e-9) {
+        let pa = points(on: a)
+        let pb = points(on: b)
+        #expect(pa.count == pb.count)
+        for (p, q) in zip(pa, pb) {
+            #expect(abs(p.x - q.x) < tolerance)
+            #expect(abs(p.y - q.y) < tolerance)
+            #expect(abs(p.z - q.z) < tolerance)
+        }
+    }
+
+    @Test("translate vs translated(by:)")
+    func translateParity() {
+        let base = sphere()
+        let copy = base.translated(by: SIMD3(3, -2, 1.5))
+        let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("rotate vs rotated(axisOrigin:axisDirection:angle:)")
+    func rotateParity() {
+        let base = sphere()
+        let axisOrigin = SIMD3<Double>(0, 0, 0)
+        let axisDirection = SIMD3<Double>(0, 0, 1)
+        let angle = Double.pi / 3
+        let copy = base.rotated(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
+        let ok = base.rotate(axisOrigin: axisOrigin, axisDirection: axisDirection, angle: angle)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("scale vs scaled(center:factor:)")
+    func scaleParity() {
+        let base = sphere()
+        let center = SIMD3<Double>(0, 0, 0)
+        let copy = base.scaled(center: center, factor: 2.5)
+        let ok = base.scale(center: center, factor: 2.5)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPoint vs mirrored(acrossPoint:)")
+    func mirrorPointParity() {
+        let base = sphere()
+        let point = SIMD3<Double>(1, 1, 1)
+        let copy = base.mirrored(acrossPoint: point)
+        let ok = base.mirrorPoint(point)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorAxis vs mirrored(acrossAxis:direction:)")
+    func mirrorAxisParity() {
+        let base = sphere()
+        let origin = SIMD3<Double>(0, 0, 0)
+        let direction = SIMD3<Double>(1, 0, 0)
+        let copy = base.mirrored(acrossAxis: origin, direction: direction)
+        let ok = base.mirrorAxis(origin: origin, direction: direction)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    @Test("mirrorPlane vs mirrored(planeOrigin:planeNormal:)")
+    func mirrorPlaneParity() {
+        let base = sphere()
+        let origin = SIMD3<Double>(0, 0, 0)
+        let normal = SIMD3<Double>(0, 0, 1)
+        let copy = base.mirrored(planeOrigin: origin, planeNormal: normal)
+        let ok = base.mirrorPlane(origin: origin, normal: normal)
+        #expect(ok)
+        #expect(copy != nil)
+        if let copy = copy {
+            assertMatch(base, copy)
+        }
+    }
+
+    /// The analytic cases above all exercise `Geom_ElementarySurface::Transform`, which just moves an
+    /// axis placement. A Bezier surface takes a different override that transforms every pole, so it
+    /// is the case most likely to expose a divergence between the two families' `gp_Trsf` values.
+    @Test("Bezier surface: both families agree across all six transform kinds")
+    func bezierParityAcrossAllKinds() {
+        // bezierFill down-casts its inputs to Geom_BezierCurve and returns nil for anything else,
+        // so these have to be real Bezier curves. A Curve3D.line or .segment yields nil.
+        func bezier() -> Surface? {
+            guard let c1 = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]),
+                  let c2 = Curve3D.bezier(poles: [SIMD3(0, 10, 5), SIMD3(5, 10, 8), SIMD3(10, 10, 5)])
+            else { return nil }
+            return Surface.bezierFill(c1, c2)
+        }
+
+        guard let translateBase = bezier(), let rotateBase = bezier(),
+              let scaleBase = bezier(), let mirrorPointBase = bezier(),
+              let mirrorAxisBase = bezier(), let mirrorPlaneBase = bezier() else {
+            Issue.record("bezierFill returned nil")
+            return
+        }
+
+        let translateCopy = translateBase.translated(by: SIMD3(3, -2, 1.5))
+        #expect(translateBase.translate(dx: 3, dy: -2, dz: 1.5))
+        if let c = translateCopy { assertMatch(translateBase, c) }
+
+        let rotateCopy = rotateBase.rotated(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
+                                            angle: .pi / 3)
+        #expect(rotateBase.rotate(axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), angle: .pi / 3))
+        if let c = rotateCopy { assertMatch(rotateBase, c) }
+
+        let scaleCopy = scaleBase.scaled(center: .zero, factor: 2.5)
+        #expect(scaleBase.scale(center: .zero, factor: 2.5))
+        if let c = scaleCopy { assertMatch(scaleBase, c) }
+
+        let mirrorPointCopy = mirrorPointBase.mirrored(acrossPoint: SIMD3(1, 1, 1))
+        #expect(mirrorPointBase.mirrorPoint(SIMD3(1, 1, 1)))
+        if let c = mirrorPointCopy { assertMatch(mirrorPointBase, c) }
+
+        let mirrorAxisCopy = mirrorAxisBase.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
+        #expect(mirrorAxisBase.mirrorAxis(origin: .zero, direction: SIMD3(1, 0, 0)))
+        if let c = mirrorAxisCopy { assertMatch(mirrorAxisBase, c) }
+
+        let mirrorPlaneCopy = mirrorPlaneBase.mirrored(planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
+        #expect(mirrorPlaneBase.mirrorPlane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        if let c = mirrorPlaneCopy { assertMatch(mirrorPlaneBase, c) }
     }
 }

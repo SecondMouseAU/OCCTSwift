@@ -3352,6 +3352,7 @@ struct Curve2DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD0` on purpose.")
     @Test func batchD0() {
         if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
             let params = [0.0, Double.pi / 2, Double.pi]
@@ -3363,6 +3364,7 @@ struct Curve2DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD1` on purpose.")
     @Test func batchD1() {
         if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
             let params = [0.0, Double.pi / 2]
@@ -3374,6 +3376,7 @@ struct Curve2DEvalTests {
 
 @Suite("GridEval 2D Curve v0.111")
 struct GridEvalCurve2DTests {
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
     @Test func gridEvalD0Circle() {
         if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
             let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
@@ -3388,6 +3391,7 @@ struct GridEvalCurve2DTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
     @Test func gridEvalD1Circle() {
         if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
             let params = [0.0, Double.pi / 2]
@@ -3397,6 +3401,80 @@ struct GridEvalCurve2DTests {
             #expect(abs(results[0].d1.x) < 1e-4)
             #expect(abs(results[0].d1.y - 5.0) < 1e-4)
         }
+    }
+}
+
+/// #486: `Curve2D` mirrored `Curve3D`'s three batch-evaluation generations exactly:
+/// `evaluateGrid`/`evaluateGridD1` (v0.28.0, `Geom2dGridEval_Curve`), `evalBatchD0`/`D1`
+/// (v0.110.0, a per-point `Geom2d_Curve::EvalD0`/`EvalD1` loop, and defined in the *Curve3D*
+/// bridge file) and `gridEvalD0`/`D1` (v0.111.0, the same `Geom2dGridEval_Curve` calls again).
+/// The two later bridge generations are gone and the later spellings forward to the first.
+@Suite("Issue 486: Curve2D batch-eval spellings agree")
+struct Issue486Curve2DBatchTests {
+
+    private func bspline() -> Curve2D? {
+        Curve2D.interpolate(through: [
+            SIMD2(0, 0), SIMD2(2, 3), SIMD2(5, 5), SIMD2(8, 3), SIMD2(10, 0)
+        ])
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGrid, evalBatchD0 and gridEvalD0 return the same points")
+    func d0SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<7).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 6.0
+        }
+
+        let canonical = curve.evaluateGrid(params)
+        let batch = curve.evalBatchD0(params: params)
+        let grid = curve.gridEvalD0(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            // point(at:) is the independent per-point evaluator, so this also pins the ordering.
+            #expect(simd_length(canonical[i] - curve.point(at: params[i])) < 1e-6)
+            #expect(simd_length(batch[i] - canonical[i]) < 1e-9)
+            #expect(simd_length(grid[i] - canonical[i]) < 1e-9)
+        }
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGridD1, evalBatchD1 and gridEvalD1 return the same points and derivatives")
+    func d1SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<5).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 4.0
+        }
+
+        let canonical = curve.evaluateGridD1(params)
+        let batch = curve.evalBatchD1(params: params)
+        let grid = curve.gridEvalD1(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            #expect(simd_length(batch[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(batch[i].d1 - canonical[i].tangent) < 1e-9)
+            #expect(simd_length(grid[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(grid[i].d1 - canonical[i].tangent) < 1e-9)
+            // Non-degenerate derivative, so an all-zeroes buffer would not pass.
+            #expect(simd_length(canonical[i].tangent) > 1e-6)
+        }
+    }
+
+    @Test("empty parameters give an empty result, not one padded with zeroes")
+    func emptyParametersGiveEmptyResult() {
+        guard let curve = bspline() else { return }
+        #expect(curve.evaluateGrid([]).isEmpty)
+        #expect(curve.evaluateGridD1([]).isEmpty)
     }
 }
 
@@ -3633,10 +3711,11 @@ struct Curve2DBSplineExtrasTests {
 @Suite("Curve2D Continuity Queries v0.120.0")
 struct Curve2DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func segmentContinuityClass() {
         if let c = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // A trimmed 2D line reports its basis line's continuity, which is analytic.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 

@@ -54,30 +54,33 @@ public var surfaceKind: SurfaceType { get }
 
 ### `Continuity`
 
-Continuity class enum derived from `GeomAbs_Shape`.
+Deprecated alias of the top-level `ContinuityClass`, which `Curve3D` and `Curve2D` now share
+(#485). The raw values are unchanged.
 
 ```swift
-public enum Continuity: Int32, Sendable, CaseIterable {
-    case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
-}
+@available(*, deprecated, renamed: "ContinuityClass")
+public typealias Continuity = ContinuityClass
 ```
 
 ---
 
 ### `continuityClass`
 
-The overall continuity of the surface.
+The measured overall continuity of the surface.
 
 ```swift
-public var continuityClass: Continuity { get }
+public var continuityClass: ContinuityClass { get }
 ```
 
-- **Returns:** A `Continuity` value describing positional through CN continuity.
-- **OCCT:** `Geom_Surface::Continuity`.
+- **Returns:** A `ContinuityClass` describing positional through CN continuity. Raw values are
+  `GeomAbs_Shape`'s own ordinals (`c0=0, g1=1, c1=2, g2=3, c2=4, c3=5, cN=6`), which are not a
+  0/1/2 order — use `satisfies(_:)` rather than comparing raw values.
+- **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
   ```swift
   let bsp = Surface.bspline(poles: ..., ...)!
-  print(bsp.continuityClass)  // typically .c2
+  print(bsp.continuityClass)                  // typically .c2
+  print(bsp.continuityClass.satisfies(.c2))   // true
   ```
 
 ---
@@ -876,6 +879,41 @@ public struct SurfaceGrid: Sendable {
 - **`uCount`/`vCount`:** number of samples in each direction.
 - **`at(u:v:)`:** the point at that grid index. Traps if either index is out of range.
 - **`isEmpty`:** `true` for the grid returned when sampling fails.
+
+Storage is U-major (`u * vCount + v`). Every surface grid producer in the bridge writes that same
+layout (`drawMesh`, `evaluateGrid` and `evaluateGridD1`) since
+[#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486); before it, two bridge functions
+wrote opposite layouts, each describing its own as "row-major".
+
+---
+
+### `SurfaceGridD1`
+
+The D1 counterpart of `SurfaceGrid`, returned by `evaluateGridD1(uParameters:vParameters:)`
+(see [Surface-Analysis.md](Surface-Analysis.md#evaluategridd1uparametersvparameters)). Indexed
+`.at(u:v:)` for the same reason: a flat `[(point:, d1u:, d1v:)]` array leaves the caller guessing
+whether u or v runs fastest, which is exactly the ambiguity the deprecated
+`gridEvalD1(uParams:vParams:)` shipped with
+([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
+
+```swift
+public struct SurfaceGridD1: Sendable {
+    public let uCount: Int
+    public let vCount: Int
+    public var isEmpty: Bool { get }
+    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+}
+```
+
+- **`at(u:v:)`:** point and both first partial derivatives at that grid index. Traps if either
+  index is out of range.
+- **`isEmpty`:** `true` for the grid returned when evaluation fails.
+- **Example:**
+  ```swift
+  let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
+  let sample = grid.at(u: 2, v: 0)
+  let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+  ```
 
 ---
 

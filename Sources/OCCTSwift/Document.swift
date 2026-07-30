@@ -8984,25 +8984,61 @@ extension Shape {
 // MARK: - Curve3D continuity (v0.106.0)
 
 extension Curve3D {
-    /// Get the global continuity of the 3D curve as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// ```swift
+    /// // A cubic BSpline with a doubled interior knot is C1, which is ordinal 2 (not 1).
+    /// print(bspline.continuity)        // 2
+    /// print(bspline.continuityClass)   // .c1
+    /// ```
     public var continuity: Int {
         Int(OCCTCurve3DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 3D curve.
+    ///
+    /// ```swift
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))
+    /// print(line?.continuityClass)                  // .cN
+    /// print(line?.continuityClass.satisfies(.c3))   // true
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve3DGetContinuity(handle)) ?? .c0
     }
 }
 
 // MARK: - Curve2D continuity (v0.106.0)
 
 extension Curve2D {
-    /// Get the global continuity of the 2D curve as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     public var continuity: Int {
         Int(OCCTCurve2DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 2D curve.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
+    /// print(segment?.continuityClass)   // .cN
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve2DGetContinuity(handle)) ?? .c0
     }
 }
 
 // MARK: - Surface continuity (v0.106.0)
 
 extension Surface {
-    /// Get the global continuity of the surface as an integer (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2).
+    /// Measured global continuity of the surface, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
     public var continuity: Int {
         Int(OCCTSurfaceGetContinuity(handle))
     }
@@ -10376,8 +10412,16 @@ extension Surface {
         return (uMin, uMax, vMin, vMax)
     }
 
-    /// Get the surface continuity order (0=C0, 1=C1, 2=C2, 3=C3, 99=CN).
-    public var surfaceContinuityOrder: Int { Int(OCCTSurfaceContinuity(handle)) }
+    /// Measured surface continuity as a raw `GeomAbs_Shape` ordinal. Same value as
+    /// ``continuity``; prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same surface for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.
     public func copy() -> Surface? {
@@ -11022,104 +11066,72 @@ extension Shape {
     }
 }
 
-// MARK: - GridEval Curve3D Extensions (v0.111.0)
+// MARK: - GridEval Extensions (v0.111.0)
+//
+// #486: these six methods were a third Swift spelling of batch evaluation, over a third
+// generation of bridge functions (OCCTGridEvalCurveD0/D1, OCCTGridEvalCurve2dD0/D1,
+// OCCTGridEvalSurfaceD0/D1) that called the same OCCT evaluators as the v0.28.0/v0.29.0 ones.
+// Those bridge functions are gone; each method below now forwards to its canonical sibling,
+// which is the spelling to use. The Surface pair matters most, because the flat arrays these
+// return say nothing about whether u or v runs fastest, and OCCTGridEvalSurfaceD0 disagreed
+// with OCCTSurfaceEvaluateGrid about exactly that.
 
 extension Curve3D {
 
-    /// Evaluate curve at multiple parameters using GeomGridEval_Curve (optimized batch D0).
+    /// Evaluate curve at multiple parameters (batch D0).
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
     public func gridEvalD0(params: [Double]) -> [SIMD3<Double>] {
-        let count = params.count
-        guard count > 0 else { return [] }
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var zs = [Double](repeating: 0, count: count)
-        OCCTGridEvalCurveD0(handle, params, Int32(count), &xs, &ys, &zs)
-        return (0..<count).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
+        evaluateGrid(params)
     }
 
-    /// Evaluate curve at multiple parameters using GeomGridEval_Curve (optimized batch D1).
+    /// Evaluate curve at multiple parameters (batch D1).
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
     public func gridEvalD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
-        let count = params.count
-        guard count > 0 else { return [] }
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var zs = [Double](repeating: 0, count: count)
-        var d1xs = [Double](repeating: 0, count: count)
-        var d1ys = [Double](repeating: 0, count: count)
-        var d1zs = [Double](repeating: 0, count: count)
-        OCCTGridEvalCurveD1(handle, params, Int32(count), &xs, &ys, &zs, &d1xs, &d1ys, &d1zs)
-        return (0..<count).map { (SIMD3(xs[$0], ys[$0], zs[$0]), SIMD3(d1xs[$0], d1ys[$0], d1zs[$0])) }
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
     }
 }
-
-// MARK: - GridEval Curve2D Extensions (v0.111.0)
 
 extension Curve2D {
 
-    /// Evaluate 2D curve at multiple parameters using Geom2dGridEval_Curve (optimized batch D0).
+    /// Evaluate 2D curve at multiple parameters (batch D0).
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
     public func gridEvalD0(params: [Double]) -> [SIMD2<Double>] {
-        let count = params.count
-        guard count > 0 else { return [] }
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        OCCTGridEvalCurve2dD0(handle, params, Int32(count), &xs, &ys)
-        return (0..<count).map { SIMD2(xs[$0], ys[$0]) }
+        evaluateGrid(params)
     }
 
-    /// Evaluate 2D curve at multiple parameters using Geom2dGridEval_Curve (optimized batch D1).
+    /// Evaluate 2D curve at multiple parameters (batch D1).
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
     public func gridEvalD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
-        let count = params.count
-        guard count > 0 else { return [] }
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var d1xs = [Double](repeating: 0, count: count)
-        var d1ys = [Double](repeating: 0, count: count)
-        OCCTGridEvalCurve2dD1(handle, params, Int32(count), &xs, &ys, &d1xs, &d1ys)
-        return (0..<count).map { (SIMD2(xs[$0], ys[$0]), SIMD2(d1xs[$0], d1ys[$0])) }
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
     }
 }
 
-// MARK: - GridEval Surface Extensions (v0.111.0)
-
 extension Surface {
 
-    /// Evaluate surface at grid of (u, v) parameters using GeomGridEval_Surface (optimized batch D0).
-    /// Returns row-major array of points with dimensions [uParams.count x vParams.count].
+    /// Evaluate surface at a grid of (u, v) parameters (batch D0).
+    ///
+    /// - Returns: A flat array, **U-major**: `result[u * vParams.count + v]`. Empty if either
+    ///   input is empty or the evaluation fails (it used to return a grid of zeroes instead).
+    @available(*, deprecated,
+               message: "Use evaluateGrid(uParameters:vParameters:), which returns a SurfaceGrid indexed .at(u:v:) instead of a flat array whose major order you have to know (#486)")
     public func gridEvalD0(uParams: [Double], vParams: [Double]) -> [SIMD3<Double>] {
-        let uCount = uParams.count
-        let vCount = vParams.count
-        guard uCount > 0 && vCount > 0 else { return [] }
-        let total = uCount * vCount
-        var xs = [Double](repeating: 0, count: total)
-        var ys = [Double](repeating: 0, count: total)
-        var zs = [Double](repeating: 0, count: total)
-        OCCTGridEvalSurfaceD0(handle, uParams, Int32(uCount), vParams, Int32(vCount), &xs, &ys, &zs)
-        return (0..<total).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
+        let grid = evaluateGrid(uParameters: uParams, vParameters: vParams)
+        return (0..<grid.uCount).flatMap { u in (0..<grid.vCount).map { v in grid.at(u: u, v: v) } }
     }
 
-    /// Evaluate surface at grid of (u, v) parameters using GeomGridEval_Surface (optimized batch D1).
-    /// Returns row-major array of (point, d1u, d1v) tuples with dimensions [uParams.count x vParams.count].
+    /// Evaluate surface and its first partial derivatives at a grid of (u, v) parameters (batch D1).
+    ///
+    /// - Returns: A flat array, **U-major**: `result[u * vParams.count + v]`. Empty if either
+    ///   input is empty or the evaluation fails (it used to return a grid of zeroes instead).
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(uParameters:vParameters:), which returns a SurfaceGridD1 indexed .at(u:v:) instead of a flat array whose major order you have to know (#486)")
     public func gridEvalD1(uParams: [Double], vParams: [Double]) -> [(point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)] {
-        let uCount = uParams.count
-        let vCount = vParams.count
-        guard uCount > 0 && vCount > 0 else { return [] }
-        let total = uCount * vCount
-        var xs = [Double](repeating: 0, count: total)
-        var ys = [Double](repeating: 0, count: total)
-        var zs = [Double](repeating: 0, count: total)
-        var d1uxs = [Double](repeating: 0, count: total)
-        var d1uys = [Double](repeating: 0, count: total)
-        var d1uzs = [Double](repeating: 0, count: total)
-        var d1vxs = [Double](repeating: 0, count: total)
-        var d1vys = [Double](repeating: 0, count: total)
-        var d1vzs = [Double](repeating: 0, count: total)
-        OCCTGridEvalSurfaceD1(handle, uParams, Int32(uCount), vParams, Int32(vCount),
-                                &xs, &ys, &zs, &d1uxs, &d1uys, &d1uzs, &d1vxs, &d1vys, &d1vzs)
-        return (0..<total).map {
-            (SIMD3(xs[$0], ys[$0], zs[$0]),
-             SIMD3(d1uxs[$0], d1uys[$0], d1uzs[$0]),
-             SIMD3(d1vxs[$0], d1vys[$0], d1vzs[$0]))
-        }
+        let grid = evaluateGridD1(uParameters: uParams, vParameters: vParams)
+        return (0..<grid.uCount).flatMap { u in (0..<grid.vCount).map { v in grid.at(u: u, v: v) } }
     }
 }
 
@@ -11162,26 +11174,25 @@ extension Curve3D {
     }
 
     /// Evaluate curve points at multiple parameters (batch D0).
+    ///
+    /// - Note: #486. This used to call `Geom_Curve::EvalD0` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
     public func evalBatchD0(params: [Double]) -> [SIMD3<Double>] {
-        let count = params.count
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var zs = [Double](repeating: 0, count: count)
-        OCCTCurve3DEvalBatchD0(handle, params, Int32(count), &xs, &ys, &zs)
-        return (0..<count).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
+        evaluateGrid(params)
     }
 
     /// Evaluate curve points and first derivatives at multiple parameters (batch D1).
+    ///
+    /// - Note: #486. This used to call `Geom_Curve::EvalD1` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
     public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
-        let count = params.count
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var zs = [Double](repeating: 0, count: count)
-        var d1xs = [Double](repeating: 0, count: count)
-        var d1ys = [Double](repeating: 0, count: count)
-        var d1zs = [Double](repeating: 0, count: count)
-        OCCTCurve3DEvalBatchD1(handle, params, Int32(count), &xs, &ys, &zs, &d1xs, &d1ys, &d1zs)
-        return (0..<count).map { (SIMD3(xs[$0], ys[$0], zs[$0]), SIMD3(d1xs[$0], d1ys[$0], d1zs[$0])) }
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
     }
 }
 
@@ -11211,23 +11222,25 @@ extension Curve2D {
     }
 
     /// Evaluate 2D curve points at multiple parameters (batch D0).
+    ///
+    /// - Note: #486. This used to call `Geom2d_Curve::EvalD0` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
     public func evalBatchD0(params: [Double]) -> [SIMD2<Double>] {
-        let count = params.count
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        OCCTCurve2DEvalBatchD0(handle, params, Int32(count), &xs, &ys)
-        return (0..<count).map { SIMD2(xs[$0], ys[$0]) }
+        evaluateGrid(params)
     }
 
     /// Evaluate 2D curve points and first derivatives at multiple parameters (batch D1).
+    ///
+    /// - Note: #486. This used to call `Geom2d_Curve::EvalD1` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
     public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
-        let count = params.count
-        var xs = [Double](repeating: 0, count: count)
-        var ys = [Double](repeating: 0, count: count)
-        var d1xs = [Double](repeating: 0, count: count)
-        var d1ys = [Double](repeating: 0, count: count)
-        OCCTCurve2DEvalBatchD1(handle, params, Int32(count), &xs, &ys, &d1xs, &d1ys)
-        return (0..<count).map { (SIMD2(xs[$0], ys[$0]), SIMD2(d1xs[$0], d1ys[$0])) }
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
     }
 }
 
@@ -14416,8 +14429,16 @@ extension Curve2D {
 
 extension Curve3D {
 
-    /// The overall continuity order of this curve (0=C0, 1=C1, 2=C2, etc.).
-    public var continuityOrder: Int { Int(OCCTCurve3DContinuity(handle)) }
+    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
+    /// prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
     public func isCN(_ n: Int) -> Bool {
@@ -14453,8 +14474,16 @@ extension Curve3D {
 
 extension Curve2D {
 
-    /// The overall continuity order of this curve (0=C0, 1=C1, 2=C2, etc.).
-    public var continuityOrder: Int { Int(OCCTCurve2DContinuity(handle)) }
+    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
+    /// prefer ``continuityClass``.
+    ///
+    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
+    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
+    ///   every class except C0. It now returns the real ordinal.
+    @available(*, deprecated, renamed: "continuityClass",
+               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
     public func isCN(_ n: Int) -> Bool {

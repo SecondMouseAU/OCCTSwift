@@ -229,7 +229,10 @@ Uses `GeomProjLib::ProjectOnPlane`. The result is a 3D curve lying in the target
 
 ## Batch Evaluation (v0.29.0)
 
-Evaluate a curve at many parameter values in a single bridge call for efficiency.
+Evaluate a curve at many parameter values in a single bridge call, using OCCT's batch
+`GeomGridEval_Curve` evaluator rather than one `D0`/`D1` call per parameter. These two are the
+canonical batch spellings; `evalBatchD0`/`D1` and `gridEvalD0`/`D1` are deprecated aliases that
+forward here ([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
 
 ---
 
@@ -245,7 +248,7 @@ Significantly faster than calling `point(at:)` in a loop for large parameter arr
 
 - **Parameters:** `parameters` — array of curve parameter values.
 - **Returns:** Array of 3D points in the same order as `parameters`. Length equals `parameters.count` on success; may be shorter if the bridge returns fewer valid results.
-- **OCCT:** `Geom_Curve::D0` per point, batched through the bridge.
+- **OCCT:** `GeomGridEval_Curve::EvaluateGrid` via `OCCTCurve3DEvaluateGrid`.
 - **Example:**
   ```swift
   if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
@@ -270,7 +273,7 @@ Returns point and (unnormalized) tangent vector at each parameter. Suitable for 
 
 - **Parameters:** `parameters` — array of curve parameter values.
 - **Returns:** Array of `(point, tangent)` tuples. The tangent is the first derivative, not the unit tangent — normalize if needed.
-- **OCCT:** `Geom_Curve::D1` per point, batched through the bridge.
+- **OCCT:** `GeomGridEval_Curve::EvaluateGridD1` via `OCCTCurve3DEvaluateGridD1`.
 - **Example:**
   ```swift
   if let c = Curve3D.bspline(points: myPoints) {
