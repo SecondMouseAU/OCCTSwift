@@ -129,19 +129,27 @@ public final class Surface: @unchecked Sendable {
         SurfaceType(rawValue: OCCTSurfaceGetType(handle)) ?? .other
     }
 
-    /// Surface continuity class, derived from GeomAbs_Shape.
+    /// Former name for ``ContinuityClass``, when this result vocabulary was nested here and
+    /// the sibling `Curve3D`/`Curve2D` properties had no typed form at all (#485).
     ///
-    /// - Note: This reports a surface's *measured* continuity, and its raw values are
+    /// Kept as an alias: the raw values are unchanged, so this is a rename only.
+    @available(*, deprecated, renamed: "ContinuityClass")
+    public typealias Continuity = ContinuityClass
+
+    /// Measured overall continuity of the surface.
+    ///
+    /// ```swift
+    /// let cylinder = Surface.cylinder(radius: 5)
+    /// print(cylinder?.continuityClass)                    // .cN
+    /// print(cylinder?.continuityClass.satisfies(.c2))     // true
+    /// ```
+    ///
+    /// - Note: Reports a *measured* class, not a requested order. Its raw values are
     ///   `GeomAbs_Shape`'s own ordinals, which are not a 0/1/2 order. Do not confuse it with
     ///   the top-level ``SurfaceContinuity``, one dot away, which is the G0/G1/G2 order you
     ///   *request* of a filling or plate constraint. See #398 for the full census.
-    public enum Continuity: Int32, Sendable, CaseIterable {
-        case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
-    }
-
-    /// Typed overall continuity of the surface (wraps the Int-returning `continuity`).
-    public var continuityClass: Continuity {
-        Continuity(rawValue: OCCTSurfaceGetContinuity(handle)) ?? .c0
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTSurfaceGetContinuity(handle)) ?? .c0
     }
 
     public var isPlane:              Bool { surfaceKind == .plane }

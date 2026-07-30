@@ -3274,10 +3274,11 @@ struct HelixGeomBuildTests {
 @Suite("Curve3D Continuity Queries v0.120.0")
 struct Curve3DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func lineContinuityClass() {
         if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // Geom_Line is analytic, so infinitely differentiable.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 

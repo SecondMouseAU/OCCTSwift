@@ -114,6 +114,64 @@ downstream algorithms self-reject: a zero-radius ellipse yields a 5-pole BSpline
 two of them have no nil channel to report a rejection through and each needs its own contract
 decision.
 
+#### One result vocabulary for measured continuity, not three encodings (#485)
+
+`OCCTCurve3DContinuity` / `OCCTCurve2DContinuity` / `OCCTSurfaceContinuity` and their
+`*GetContinuity` siblings wrapped the identical `Geom*::Continuity()` call but reported it
+through two incompatible numeric schemes. **C0 was the only class the two agreed on:**
+
+| class | `GetContinuity` (real `GeomAbs_Shape`) | `Continuity` (hand-written switch) |
+|-------|---------------------------------------|------------------------------------|
+| C0 | 0 | 0 |
+| G1 | 1 | −2 |
+| C1 | 2 | 1 |
+| G2 | 3 | −3 |
+| C2 | 4 | 2 |
+| C3 | 5 | 3 |
+| CN | 6 | 99 |
+
+Neither doc comment described either scheme correctly. `GetContinuity`'s claimed
+`0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2`, which is not what a `static_cast` of
+`GeomAbs_Shape` produces; `Continuity`'s omitted its own `−2`/`−3`/`99` values entirely. Both
+wrong comments had been copy-pasted into the Swift layer.
+
+**Behaviour change.** `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and
+`Surface.surfaceContinuityOrder` now report the real `GeomAbs_Shape` ordinal. A C2 curve that
+answered `2` answers `4`; a CN curve that answered `99` answers `6`; a G1 curve that answered
+`−2` answers `1`. All three are deprecated in favour of `continuityClass`. Any threshold check
+of the form `continuityOrder >= someOrder` needs revisiting — that idiom compared two different
+encodings, which is the defect this family invited.
+
+**Behaviour change (C API only).** `OCCTCurve3DContinuity`, `OCCTCurve2DContinuity` and
+`OCCTSurfaceContinuity` returned `-1` for a null argument and now return `0`, matching the
+`*GetContinuity` convention they delegate to. `0` is not distinguishable from a genuine C0
+measurement; a caller needing to tell "null" from "C0" must null-check before calling. This
+follows the family's existing convention rather than inventing a fourth sentinel, and all three
+declare `_Nonnull` arguments, so passing null was already a contract violation. No Swift API is
+affected — `Curve3D`/`Curve2D`/`Surface` cannot hold a null handle reference.
+
+- **Bridge:** the three `switch` bodies were byte-identical to each other and each duplicated
+  its `GetContinuity` sibling's one-line body. All three now delegate to that sibling, which
+  also picks up the `.IsNull()` handle guard the `Continuity` family was missing: they checked
+  only the wrapper pointer, then dereferenced the inner `Handle`, which the wrapper's own
+  default constructor (`OCCTCurve3D() {}`) leaves null — so this was reachable, not theoretical,
+  and a null `Handle` deref is an OS signal the surrounding `catch (...)` cannot intercept. The
+  C declarations are retained for ABI compatibility.
+- **Swift:** new top-level `ContinuityClass` is the shared result vocabulary — the third
+  contract `Continuity.swift` already documented after #398 but had only half-implemented.
+  `Surface.Continuity` becomes a deprecated alias of it (raw values unchanged), and `Curve3D` /
+  `Curve2D` gain `continuityClass`; they previously had no typed form at all.
+  `ContinuityClass` is `Comparable` by increasing smoothness, and adds `derivativeOrder` and
+  `satisfies(_:)` so a continuity floor can be checked without comparing raw values across
+  vocabularies. `g1`/`g2` correctly satisfy no parametric order.
+- **Tests:** 17 across `OCCTCurveTests`, `OCCTGeom2dTests` and `OCCTSurfaceTests`. The
+  pre-existing coverage only ever asserted `>= 0` against CN-continuous primitives, which both
+  encodings satisfy, so none of it could catch this. The new tests pin the real ordinals,
+  compare the two properties on the same object, and reach the G1 class no earlier test could —
+  an offset curve over a C0-but-tangent-continuous BSpline basis, which is the only route to a
+  G1 measurement in the `Geom` hierarchy (`Geom_BSplineCurve` itself only ever reports C0…C3
+  or CN, so `GeomAbs_Shape.hxx`'s own "G2: for BSpline curves only" comment is also wrong).
+
 #### One batch grid-evaluation family, not three generations per type (#486)
 
 `Curve3D`, `Curve2D` and `Surface` each had **three** generations of "evaluate at N parameters"
@@ -176,6 +234,35 @@ and the Swift `SurfaceGrid`. `Surface.evaluateGrid` used to transpose the old V-
 unpacking and no longer does, so its `SurfaceGrid` output is byte-for-byte unchanged, but any
 direct consumer of the C bridge must swap its index formula. `OCCTGridEvalSurfaceD1` was renamed
 `OCCTSurfaceEvaluateGridD1` and reshaped to the family's interleaved-triple buffers.
+
+#### `Surface`'s two transform families now share one `gp_Trsf` builder (#488)
+
+`OCCTBridge_Surface.mm` carried the same `gp_Trsf`-construction switch seven times: once inline in
+each of the six immutable functions (`OCCTSurfaceTranslate`, `Rotate`, `Scale`, `MirrorPlane`,
+`MirrorPoint`, `MirrorAxis`) and once more as a standalone `buildTrsf3D` that only the in-place
+`OCCTSurfaceTransform` dispatcher used. All seven now route through the one `buildTrsf3D`, matching
+what #416 did for `Curve3D`, which that issue explicitly flagged for `Surface` and never applied.
+
+The triplication had already caused a divergence. `OCCTSurfaceTransform` guarded only
+`if (!surface)` and then dereferenced `surface->surface` unconditionally, while all six of its
+siblings in the same file check `s->surface.IsNull()` first. That is the identical gap #416 fixed on
+`OCCTCurve3DTransform`. It now guards both. No live path reaches it with a null internal handle
+today (every call site null-checks the OCCT maker result before assigning), so this is a latent
+crash closed, not an observed one; a null `Handle` deref here would be an uncatchable SIGSEGV per the
+#345 precedent, not a caught C++ exception.
+
+New `SurfaceTransformFamilyParityTests` (`Tests/OCCTSurfaceTests`) asserts the two families produce
+identical geometry for identical input across all six transform kinds, on a sphere and on a Bezier
+surface. The Bezier case matters because the analytic surfaces all take
+`Geom_ElementarySurface::Transform`, which just moves an axis placement, while a Bezier transforms
+every pole. Nothing had checked the two families agreed before, for `Surface` or, until #416, for
+`Curve3D`.
+
+Writing that suite turned up a dead test: `SurfaceTransformTests.transformBezierSurface`
+(`Tests/OCCTMathTests`) built its surface from `Curve3D.line`, but `OCCTSurfaceBezierFill2`
+down-casts its inputs to `Geom_BezierCurve` and returns `nullptr` for anything else, so the test got
+`nil` back and skipped its entire body through `if let` without ever calling `translate`. It now uses
+real Bezier boundaries and asserts the surface actually moved.
 
 ---
 

@@ -420,8 +420,9 @@ struct StressCurve3DAPITests {
 
     @Test func continuity() {
         let c = standardCurve3D()
-        let cn = c.continuityOrder
-        #expect(cn >= 0)
+        // A raw >= 0 check passed under either of the two encodings #485 unified, so pin the
+        // class instead. isCN(2) below already asserts this curve is at least C2.
+        #expect(c.continuityClass.satisfies(.c2))
         #expect(c.isCN(2))
     }
 
@@ -470,7 +471,7 @@ struct StressCurve2DAPITests {
 
     @Test func continuity() {
         let c = standardCurve2D()
-        #expect(c.continuityOrder >= 0)
+        #expect(ContinuityClass.allCases.contains(c.continuityClass))
     }
 }
 

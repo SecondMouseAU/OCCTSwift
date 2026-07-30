@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed — see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,321** of the entry points (~78% of the `Total` below); the rest are real, callable,
+categorisation covering **3,326** of the entry points (~78% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -425,9 +425,9 @@ a map of the major areas, and the `Total` as the count.
 | **Message_Msg** | 4 | message(forKey:), loadFile, loadDefault, hasMessage |
 | **Plate Constraint Extensions (v2)** | 2 | globalTranslation, linearXYZ |
 | **Shape Topology Counting** | 3 | faceCount, edgeCount, shapeTypeString |
-| **Curve3D Extras** | 3 | reverse, copy, continuity |
-| **Curve2D Extras** | 3 | reverse, copy, continuity |
-| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder, copy |
+| **Curve3D Extras** | 4 | reverse, copy, continuity, continuityClass |
+| **Curve2D Extras** | 4 | reverse, copy, continuity, continuityClass |
+| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder (deprecated, #485), copy |
 | **Math Solvers** | 7 | findRoot, findRootBounded, findRootBisection, solveSystem, minimize (BFGS), minimizePowell, minimizeBrent |
 | **Curve3D Evaluation** | 6 | evalD0, evalD1, evalD2, evalD3, evalBatchD0, evalBatchD1 |
 | **Curve2D Evaluation** | 5 | evalD0, evalD1, evalD2, evalBatchD0, evalBatchD1 |
@@ -484,7 +484,7 @@ a map of the major areas, and the `Total` as the count.
 | **Curve2D Bezier** | 7 | bezierProperties (degree, poleCount, isRational, pole, setPole, setWeight, resolution) |
 | **Curve2D BSpline Extras** | 3 | bsplineSetPeriodic, bsplineWeight, bsplineWeights |
 | **BSplineSurface Extras** | 4 | bsplineResolution, bsplineSetUPeriodic, bsplineSetVPeriodic, bsplineWeight |
-| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
+| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D, deprecated #485), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
 | **GLTF Import/Export** | 5 | importGLTF, exportGLTF (GLB/GLTF), documentLoadGLTF, documentWriteGLTF |
 | **FilletBuilder** | 16 | create, addEdge, addEdgeEvolving, build, nbContours, nbEdges, hasResult, badShape, faultyContours, faultyVertices, getRadius, getLength, isConstant, removeEdge, reset |
 | **ChamferBuilder** | 8 | create, addEdge, addEdgeTwoDists, addEdgeDistAngle, build, nbContours, isDistAngle |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,267** | |
+| **Total** | **4,276** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
