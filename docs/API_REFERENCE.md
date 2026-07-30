@@ -25,7 +25,7 @@ two files desynced by 882 across 11 releases before this rule existed — see
 [#289](https://github.com/SecondMouseAU/OCCTSwift/issues/289).
 
 **The category rows below do not sum to the Total, and are not meant to.** They are an illustrative
-categorisation covering **3,327** of the entry points (~78% of the `Total` below); the rest are real, callable,
+categorisation covering **3,328** of the entry points (~78% of the `Total` below); the rest are real, callable,
 and documented in [reference/](reference/) but not yet slotted into a category row. Treat the rows as
 a map of the major areas, and the `Total` as the count.
 
@@ -34,7 +34,7 @@ a map of the major areas, and the `Total` as the count.
 | Category | Count | Examples |
 |----------|-------|----------|
 | **Primitives** | 13 | box, cylinder, cylinder(at:), sphere, cone, torus, surface, wedge, halfSpace, vertex, shell(from surface), shell(from Surface), nonUniformScale |
-| **Sweeps** | 23 | pipe sweep, pipeShell, pipeShellWithTransition, pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
+| **Sweeps** | 24 | pipe sweep, pipeShell, pipeShellMultiSection, pipeShellWithTransition (deprecated, #503), pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
 | **Booleans** | 12 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
 | **Modifications** | 33 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
@@ -1071,10 +1071,13 @@ aliases the input.
 |-----------|------------|
 | `Shape.evolvedAdvanced(spine:profile:joinType:axeProf:solid:volume:tolerance:)` | `BRepOffsetAPI_MakeEvolved` (full constructor) |
 
-#### Pipe Shell Transition (v0.33.0)
+#### Pipe Shell (v0.33.0, unified in #503)
+Every `Add()`-based pipe sweep is one bridge function, `OCCTShapeCreatePipeShellMultiSection`.
 | Swift API | OCCT Class |
 |-----------|------------|
-| `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)` | `BRepOffsetAPI_MakePipeShell.SetTransitionMode` |
+| `Shape.pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)` | `BRepOffsetAPI_MakePipeShell` (one section) |
+| `Shape.pipeShellMultiSection(spine:profiles:mode:transition:withContact:withCorrection:solid:)` | `BRepOffsetAPI_MakePipeShell` (`SetMode` + `Add` per section + `SetTransitionMode`) |
+| `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, **deprecated**, forwards to `pipeShell` | `BRepOffsetAPI_MakePipeShell.SetTransitionMode` |
 
 #### Face from Surface (v0.33.0)
 | Swift API | OCCT Class |

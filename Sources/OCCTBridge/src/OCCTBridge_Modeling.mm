@@ -450,149 +450,74 @@ OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef shape, const int32_t* faceIndi
     }
 }
 
-OCCTShapeRef OCCTShapeCreatePipeShell(OCCTWireRef spine, OCCTWireRef profile,
-                                       OCCTPipeMode mode, bool solid) {
-    if (!spine || !profile) return nullptr;
+// MARK: - Pipe shell (BRepOffsetAPI_MakePipeShell)
+//
+// Every Add()-based pipe shell in this bridge is one call to
+// OCCTShapeCreatePipeShellMultiSection. The single-profile spellings that used to sit
+// here (OCCTShapeCreatePipeShell, ...WithBinormal, ...WithAuxSpine, ...WithTransition)
+// were that function with profileCount == 1 and some of its arguments nailed shut, and
+// two of them disagreed with it about what a mode means (#503).
 
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set sweep mode
-        switch (mode) {
-            case OCCTPipeModeFrenet:
-                pipeShell.SetMode(Standard_False);  // Frenet
-                break;
-            case OCCTPipeModeCorrectedFrenet:
-                pipeShell.SetMode(Standard_True);   // Corrected Frenet
-                break;
-            case OCCTPipeModeFixedBinormal:
-            case OCCTPipeModeAuxiliary:
-                // These modes require additional parameters
-                // Use dedicated functions for them
-                pipeShell.SetMode(Standard_False);
-                break;
-        }
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
+// Apply an orientation mode. Returns false when the mode's own argument is missing;
+// a zero-length binormal throws out of gp_Dir and is caught by the caller.
+static bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell, OCCTPipeMode mode,
+                                 double bnX, double bnY, double bnZ, OCCTWireRef auxSpine) {
+    switch (mode) {
+        case OCCTPipeModeFrenet:
+            pipeShell.SetMode(Standard_False);
+            return true;
+        case OCCTPipeModeCorrectedFrenet:
+            pipeShell.SetMode(Standard_True);
+            return true;
+        case OCCTPipeModeFixedBinormal:
+            pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
+            return true;
+        case OCCTPipeModeAuxiliary:
+            if (!auxSpine) return false;
+            pipeShell.SetMode(auxSpine->wire, Standard_False);  // curvilinear equivalence = false
+            return true;
     }
+    return false;
 }
 
-OCCTShapeRef OCCTShapeCreatePipeShellWithBinormal(OCCTWireRef spine, OCCTWireRef profile,
-                                                   double bnX, double bnY, double bnZ, bool solid) {
-    if (!spine || !profile) return nullptr;
+// Build the configured shell and, when asked, close it into a solid. Holds the sole copy
+// of the build-history workaround that used to be pasted into all six entry points.
+static OCCTShapeRef occtPipeShellFinish(BRepOffsetAPI_MakePipeShell& pipeShell, bool solid) {
+    pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
+    pipeShell.Build();
+    if (!pipeShell.IsDone()) return nullptr;
 
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set fixed binormal direction
-        gp_Dir binormal(bnX, bnY, bnZ);
-        pipeShell.SetMode(binormal);
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
+    TopoDS_Shape result = pipeShell.Shape();
+    if (solid) {
+        pipeShell.MakeSolid();
+        if (pipeShell.IsDone()) {
+            result = pipeShell.Shape();
         }
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
     }
-}
-
-OCCTShapeRef OCCTShapeCreatePipeShellWithAuxSpine(OCCTWireRef spine, OCCTWireRef profile,
-                                                   OCCTWireRef auxSpine, bool solid) {
-    if (!spine || !profile || !auxSpine) return nullptr;
-
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-
-        // Set auxiliary spine for twist control
-        pipeShell.SetMode(auxSpine->wire, Standard_False);  // curvilinear equivalence = false
-
-        // Add profile
-        pipeShell.Add(profile->wire);
-
-        // Build the shell
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-
-        // Make solid if requested
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
+    return new OCCTShape(result);
 }
 
 // Multi-section pipe shell (#180): one MakePipeShell, several Add() calls.
+// Since #503 this is also the single-profile form, and the only Add()-based pipe shell.
 OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
                                                   const OCCTWireRef* profiles, int32_t profileCount,
                                                   OCCTPipeMode mode,
                                                   double bnX, double bnY, double bnZ,
                                                   OCCTWireRef auxSpine,
+                                                  int32_t transitionMode,
                                                   bool withContact, bool withCorrection,
                                                   bool solid) {
     if (!spine || !profiles || profileCount < 1) return nullptr;
-    if (mode == OCCTPipeModeAuxiliary && !auxSpine) return nullptr;
 
     try {
         BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
 
-        switch (mode) {
-            case OCCTPipeModeFrenet:
-                pipeShell.SetMode(Standard_False);
-                break;
-            case OCCTPipeModeCorrectedFrenet:
-                pipeShell.SetMode(Standard_True);
-                break;
-            case OCCTPipeModeFixedBinormal:
-                pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
-                break;
-            case OCCTPipeModeAuxiliary:
-                pipeShell.SetMode(auxSpine->wire, Standard_False);
-                break;
+        if (!occtPipeShellSetMode(pipeShell, mode, bnX, bnY, bnZ, auxSpine)) return nullptr;
+
+        switch (transitionMode) {
+            case 1:  pipeShell.SetTransitionMode(BRepBuilderAPI_RightCorner); break;
+            case 2:  pipeShell.SetTransitionMode(BRepBuilderAPI_RoundCorner); break;
+            default: pipeShell.SetTransitionMode(BRepBuilderAPI_Transformed); break;
         }
 
         // Add every profile (variable cross-section).
@@ -603,18 +528,7 @@ OCCTShapeRef OCCTShapeCreatePipeShellMultiSection(OCCTWireRef spine,
                           withCorrection ? Standard_True : Standard_False);
         }
 
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-        return new OCCTShape(result);
+        return occtPipeShellFinish(pipeShell, solid);
     } catch (...) {
         return nullptr;
     }
@@ -2138,47 +2052,6 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine, OCCTWireRef prof
         if (!evolved.IsDone()) return nullptr;
         TopoDS_Shape result = evolved.Shape();
         if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-// MARK: - Pipe Shell with Transition Mode (v0.33.0)
-
-#include <BRepBuilderAPI_TransitionMode.hxx>
-
-OCCTShapeRef OCCTShapeCreatePipeShellWithTransition(OCCTWireRef spine, OCCTWireRef profile,
-                                                     int32_t mode, int32_t transitionMode,
-                                                     bool solid) {
-    if (!spine || !profile) return nullptr;
-    try {
-        BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-        // Set sweep mode
-        if (mode == 1) {
-            pipeShell.SetMode(Standard_True);   // Corrected Frenet
-        } else {
-            pipeShell.SetMode(Standard_False);  // Frenet
-        }
-        // Set transition mode
-        if (transitionMode == 1) {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_RightCorner);
-        } else if (transitionMode == 2) {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_RoundCorner);
-        } else {
-            pipeShell.SetTransitionMode(BRepBuilderAPI_Transformed);
-        }
-        pipeShell.Add(profile->wire);
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
         return new OCCTShape(result);
     } catch (...) {
         return nullptr;
@@ -4190,6 +4063,9 @@ OCCTLawFunctionRef OCCTLawCreateBSpline(const double* poles, int32_t poleCount,
     }
 }
 
+// The one pipe shell that is not an Add() sweep: SetLaw scales a single profile along the
+// spine, and OCCT's own header warns against combining the two. It shares the build tail
+// (and so the build-history workaround) with OCCTShapeCreatePipeShellMultiSection.
 OCCTShapeRef OCCTShapeCreatePipeShellWithLaw(OCCTWireRef spine,
                                               OCCTWireRef profile,
                                               OCCTLawFunctionRef law,
@@ -4199,18 +4075,7 @@ OCCTShapeRef OCCTShapeCreatePipeShellWithLaw(OCCTWireRef spine,
         BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
         pipeShell.SetMode(Standard_False); // Frenet
         pipeShell.SetLaw(profile->wire, law->law, Standard_False, Standard_False);
-        pipeShell.SetIsBuildHistory(false); // avoid SEGV on closed spine+profile (OCCT bug)
-        pipeShell.Build();
-        if (!pipeShell.IsDone()) return nullptr;
-
-        TopoDS_Shape result = pipeShell.Shape();
-        if (solid) {
-            pipeShell.MakeSolid();
-            if (pipeShell.IsDone()) {
-                result = pipeShell.Shape();
-            }
-        }
-        return new OCCTShape(result);
+        return occtPipeShellFinish(pipeShell, solid);
     } catch (...) {
         return nullptr;
     }
