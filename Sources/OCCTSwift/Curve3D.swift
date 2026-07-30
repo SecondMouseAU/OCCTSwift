@@ -506,6 +506,19 @@ public final class Curve3D: @unchecked Sendable {
     /// `Surface.approximated` (#406) — all three wrap the same `GeomConvert_Approx*`/
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
+    ///
+    /// Returns the fitted curve whenever OCCT produced one, which — per `HasResult()`, the
+    /// accessor this shares with ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
+    /// since #491 — includes a best-effort fit that did *not* reach `tolerance`. A non-nil result
+    /// is therefore not a promise that `tolerance` was met: `approxWithDetails` reports the actual
+    /// `maxError` and an `isDone` flag for that. (Gating on `IsDone()` would not have helped here;
+    /// measured against this kernel it never rejects an over-tolerance fit — a circle fitted with
+    /// one segment at degree 3 against a 1e-9 tolerance reports `maxError` 5.1 and `isDone` true.)
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let bspline = circle.approximated(tolerance: 1e-4)
+    /// ```
     public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                              maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D? {
         guard let h = OCCTCurve3DApproximate(handle, tolerance, Int32(continuity),

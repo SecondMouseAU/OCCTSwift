@@ -601,25 +601,82 @@ OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
     }
 }
 
+// Map a requested approximation continuity onto GeomAbs_Shape. Request orders count 0, 1, 2, 3
+// for C0..C3, which is NOT GeomAbs_Shape's own declared order (that interleaves G1/G2). Out-of-range
+// values fall back to C2, the value both approximation entry points default to.
+static GeomAbs_Shape intToContinuity(int32_t c) {
+    switch (c) {
+        case 0: return GeomAbs_C0;
+        case 1: return GeomAbs_C1;
+        case 2: return GeomAbs_C2;
+        case 3: return GeomAbs_C3;
+        default: return GeomAbs_C2;
+    }
+}
+
+// === #491: one GeomConvert_ApproxSurface run behind both surface approximation entry points ===
+//
+// OCCTSurfaceApproximate (Surface.approximated) and OCCTGeomConvertApproxSurface
+// (Surface.approxWithDetails) are two views of the same approximation: the first returns the fitted
+// BSpline surface, the second returns it alongside the diagnostics OCCT already computed for it.
+// They were written independently and passed different values for GeomConvert_ApproxSurface's
+// eighth constructor argument — 0 here, 1 there — so they returned measurably different surfaces
+// for the same request. They run through this one helper instead.
+//
+// That argument is PrecisCode, "the index of precision", and it is a real algorithm knob rather
+// than a reserved value: GeomConvert_ApproxSurface::Approximate forwards it unchanged into
+// AdvApp2Var_ApproxAFunc2Var, which clamps it to [0, 3] and hands it to AdvApp2Var_Context as
+// iprecis, where lesparam (AdvApp2Var_Context.cxx:22) turns it into the Jacobi degree and the
+// initial per-axis sample-point count that seed the iterative fit. Different values therefore seed
+// a different parameterisation for identical tolerance/continuity/degree/segment inputs.
+//
+// The shared value is 0. Measured over 72 bounded cases (8 surface families x 6 tolerances, plus
+// C0/C1 and maxDegree 10 variants): the two codes never disagreed on IsDone, and produced the same
+// knot/pole layout in 71 of 72 — but a different maxError in all 72, smaller with 0 in 64 of them,
+// and in the single layout-differing case (an offset sphere at tolerance 1e-5) 0 met the requested
+// tolerance with 27x15 poles where 1 needed 27x23. A caller asking for a tolerance wants the
+// lightest surface that meets it, which is what 0 delivered.
+//
+// OCCT itself is split on the value, and splits along that same line: the sites that honour a
+// caller's tolerance and re-check MaxError() themselves pass 0 (ShapeCustom_BSplineRestriction.cxx:852,
+// ShapeConstruct.cxx:265, BRepFill_Sweep.cxx:1162), while the sites that convert with their own
+// hardcoded internal tolerance pass 1 (GeomConvert_1.cxx:786, GeomLib.cxx:1517,
+// GeomFill_Sweep.cxx:296, ShapeUpgrade_UnifySameDomain.cxx:3629). This bridge is in the first group.
+//
+// Note both entry points have always gated on HasResult(), which OCCT documents as true even for a
+// result "not NECESSARILY within the required tolerance" — unlike the curve pair, the surface pair
+// never drifted on that, and unlike the curve class, this one really can report HasResult without
+// IsDone (a torus at tolerance 1e-9 does). Reporting that through isDone is what approxWithDetails
+// is for.
+static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s, double tolerance,
+                                                 int32_t uContinuity, int32_t vContinuity,
+                                                 int32_t maxSegments, int32_t maxDegree) {
+    OCCTApproxSurfaceResult result = {};
+    // Both the outer handle and the surface it wraps: a null Geom_Surface reaches
+    // GeomAdaptor_Surface, whose own Standard_NullObject precondition is compiled out of this
+    // Release kernel.
+    if (!s || s->surface.IsNull()) return result;
+    try {
+        GeomConvert_ApproxSurface approx(s->surface, tolerance,
+                                          intToContinuity(uContinuity),
+                                          intToContinuity(vContinuity),
+                                          maxDegree, maxDegree, maxSegments,
+                                          /* PrecisCode */ 0);
+        result.isDone = approx.IsDone();
+        result.hasResult = approx.HasResult();
+        if (result.hasResult) {
+            result.maxError = approx.MaxError();
+            Handle(Geom_BSplineSurface) bspl = approx.Surface();
+            if (!bspl.IsNull()) result.surface = new OCCTSurface(bspl);
+        }
+    } catch (...) {}
+    return result;
+}
+
 OCCTSurfaceRef OCCTSurfaceApproximate(OCCTSurfaceRef s, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree) {
-    if (!s || s->surface.IsNull()) return nullptr;
-    try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-        }
-        GeomConvert_ApproxSurface approx(s->surface, tolerance,
-                                          cont, cont, maxDegree, maxDegree, maxSegments, 0);
-        if (!approx.HasResult()) return nullptr;
-        return new OCCTSurface(approx.Surface());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtApproxSurface(s, tolerance, continuity, continuity, maxSegments, maxDegree).surface;
 }
 
 // Iso Curves
@@ -2761,44 +2818,18 @@ double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface) {
 }
 
 // MARK: - GeomConvert_ApproxSurface (v0.75)
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
 // --- GeomConvert_ApproxSurface ---
 
+// Both surface approximation entry points share occtApproxSurface, declared next to
+// OCCTSurfaceApproximate above — see the #491 note there for the PrecisCode rationale. Note this
+// entry point takes maxDegree BEFORE maxSegments, the reverse of OCCTSurfaceApproximate's order.
 OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull surface,
                                                       double tolerance,
                                                       int32_t uContinuity,
                                                       int32_t vContinuity,
                                                       int32_t maxDegree,
                                                       int32_t maxSegments) {
-    OCCTApproxSurfaceResult result = {};
-    if (!surface) return result;
-    try {
-        GeomConvert_ApproxSurface approx(surface->surface, tolerance,
-                                          intToContinuity(uContinuity),
-                                          intToContinuity(vContinuity),
-                                          maxDegree, maxDegree, maxSegments, 1);
-        result.isDone = approx.IsDone();
-        result.hasResult = approx.HasResult();
-        if (result.hasResult) {
-            result.maxError = approx.MaxError();
-            Handle(Geom_BSplineSurface) bspl = approx.Surface();
-            if (!bspl.IsNull()) {
-                auto* ref = new OCCTSurface();
-                ref->surface = bspl;
-                result.surface = ref;
-            }
-        }
-    } catch (...) {}
-    return result;
+    return occtApproxSurface(surface, tolerance, uContinuity, vContinuity, maxSegments, maxDegree);
 }
 
 // MARK: - GeomLib_Tool Surface Param + IsPlanar (v0.77)

@@ -724,21 +724,65 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
 
 - **Parameters:**
   - `tolerance` — maximum approximation deviation.
-  - `continuity` — desired continuity order (0=C0, 1=C1, 2=C2).
+  - `continuity` — desired continuity order, applied to **both** parametric directions
+    (`0=C0, 1=C1, 2=C2, 3=C3`; a request order, not a raw `GeomAbs_Shape` ordinal). Values outside
+    `0...3` fall back to C2.
   - `maxSegments` — maximum number of BSpline segments.
   - `maxDegree` — maximum polynomial degree.
-- **Returns:** Approximated BSpline surface, or `nil` on failure.
-- **OCCT:** `GeomConvert_ApproxSurface`.
+- **Returns:** Approximated BSpline surface, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `GeomConvert_ApproxSurface`, gated on `HasResult()`, with `PrecisCode = 0`.
 - **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406) — all three wrap
   the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a different OCCT
   geometry hierarchy, not independent algorithms whose numeric defaults should diverge. (Before
   #406 this defaulted to `tolerance: 0.01, maxDegree: 10`, a 10x looser tolerance with no
   documented reason; measurement found the tighter shared values succeed on every case tried,
   with no meaningful cost difference.)
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, documented as true for a fit that is "not NECESSARILY within the required
+  tolerance" — on a surface `maxDegree` cannot fit (a torus at `1e-9`) OCCT returns a usable best
+  effort anyway. [`approxWithDetails`](#approxwithdetailstoleranceucontinuityvcontinuitymaxdegreemaxsegments)
+  runs the identical approximation and reports the actual `maxError`.
 - **Example:**
   ```swift
   let offset = sphere.offset(distance: 1)!
   let bsp = offset.approximated(tolerance: 0.001)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status, with the two parametric directions requested
+separately.
+
+```swift
+public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                              vContinuity: ParametricContinuity = .c2,
+                              maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult
+```
+
+One shared `GeomConvert_ApproxSurface` run backs both entry points (#491), so for identical
+arguments they return the same surface — this one just also carries the diagnostics OCCT already
+computed. Note `maxDegree` precedes `maxSegments` here, the reverse of `approximated`'s order.
+
+- **Returns:** `ApproxSurfaceResult(surface:maxError:isDone:hasResult:)`. `surface` is populated
+  exactly when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the
+  greatest distance between the source surface and the fit.
+- **OCCT:** `GeomConvert_ApproxSurface` — `Surface()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Note:** Before #491 the continuity defaults here were C1, and this entry point passed
+  `PrecisCode = 1` to `GeomConvert_ApproxSurface` where `approximated` passed `0`, so the two
+  returned measurably different surfaces for the same request. Both now default to C2 and pass `0`.
+- **Note:** `maxError` is not trustworthy for a `.c0` request — see
+  [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), an upstream defect where a C0 fit
+  can collapse a direction to degree 1 and still report an error five orders of magnitude too small.
+- **Example:**
+  ```swift
+  let sphere = Surface.sphere(center: .zero, radius: 10)!
+  let fit = sphere.approxWithDetails(tolerance: 1e-5)
+  if let bspline = fit.surface, fit.isDone {
+      print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+  }
   ```
 
 ---
