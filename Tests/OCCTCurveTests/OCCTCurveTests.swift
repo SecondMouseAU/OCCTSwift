@@ -2713,6 +2713,7 @@ struct Curve3DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD0` on purpose.")
     @Test func batchD0() {
         if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
@@ -2724,6 +2725,7 @@ struct Curve3DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD1` on purpose.")
     @Test func batchD1() {
         if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let params = [0.0, Double.pi / 2]
@@ -2738,6 +2740,7 @@ struct Curve3DEvalTests {
 
 @Suite("GridEval 3D Curve v0.111")
 struct GridEvalCurve3DTests {
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
     @Test func gridEvalD0BSpline() {
         // Create a BSpline curve via interpolation
         if let curve = Curve3D.interpolate(points: [
@@ -2753,6 +2756,7 @@ struct GridEvalCurve3DTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
     @Test func gridEvalD1BSpline() {
         if let curve = Curve3D.interpolate(points: [
             SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
@@ -2765,6 +2769,80 @@ struct GridEvalCurve3DTests {
             let d1Len = sqrt(results[0].d1.x * results[0].d1.x + results[0].d1.y * results[0].d1.y + results[0].d1.z * results[0].d1.z)
             #expect(d1Len > 0.01)
         }
+    }
+}
+
+/// #486: `Curve3D` had three batch-evaluation spellings over three generations of bridge
+/// functions: `evaluateGrid`/`evaluateGridD1` (v0.29.0, `GeomGridEval_Curve`), `evalBatchD0`/`D1`
+/// (v0.110.0, which had regressed to a per-point `Geom_Curve::EvalD0`/`EvalD1` loop) and
+/// `gridEvalD0`/`D1` (v0.111.0, the same `GeomGridEval_Curve` calls again). The two later bridge
+/// generations are gone and the later spellings forward to the first, so all three must agree.
+@Suite("Issue 486: Curve3D batch-eval spellings agree")
+struct Issue486Curve3DBatchTests {
+
+    private func bspline() -> Curve3D? {
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0.5), SIMD3(5, 5, 1.5), SIMD3(8, 3, 0), SIMD3(10, 0, 2)
+        ])
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGrid, evalBatchD0 and gridEvalD0 return the same points")
+    func d0SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<7).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 6.0
+        }
+
+        let canonical = curve.evaluateGrid(params)
+        let batch = curve.evalBatchD0(params: params)
+        let grid = curve.gridEvalD0(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            // point(at:) is the independent per-point evaluator, so this also pins the ordering.
+            #expect(simd_length(canonical[i] - curve.point(at: params[i])) < 1e-6)
+            #expect(simd_length(batch[i] - canonical[i]) < 1e-9)
+            #expect(simd_length(grid[i] - canonical[i]) < 1e-9)
+        }
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGridD1, evalBatchD1 and gridEvalD1 return the same points and derivatives")
+    func d1SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<5).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 4.0
+        }
+
+        let canonical = curve.evaluateGridD1(params)
+        let batch = curve.evalBatchD1(params: params)
+        let grid = curve.gridEvalD1(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            #expect(simd_length(batch[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(batch[i].d1 - canonical[i].tangent) < 1e-9)
+            #expect(simd_length(grid[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(grid[i].d1 - canonical[i].tangent) < 1e-9)
+            // Non-degenerate derivative, so an all-zeroes buffer would not pass.
+            #expect(simd_length(canonical[i].tangent) > 1e-6)
+        }
+    }
+
+    @Test("empty parameters give an empty result, not one padded with zeroes")
+    func emptyParametersGiveEmptyResult() {
+        guard let curve = bspline() else { return }
+        #expect(curve.evaluateGrid([]).isEmpty)
+        #expect(curve.evaluateGridD1([]).isEmpty)
     }
 }
 
@@ -3196,10 +3274,11 @@ struct HelixGeomBuildTests {
 @Suite("Curve3D Continuity Queries v0.120.0")
 struct Curve3DContinuityQueriesTests {
 
-    @Test func continuityOrder() {
+    @Test func lineContinuityClass() {
         if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            let order = c.continuityOrder
-            #expect(order >= 0)
+            // Geom_Line is analytic, so infinitely differentiable.
+            #expect(c.continuityClass == .cN)
+            #expect(c.continuityClass.satisfies(.c2))
         }
     }
 
@@ -4431,5 +4510,275 @@ struct Curve3DArcAliasParityTests {
         let b = Curve3D.arcOfCircle(start: p, interior: p, end: p)
         #expect(a == nil)
         #expect(b == nil)
+    }
+}
+
+// MARK: - #492: one analytical-conversion contract per OCCT converter class
+
+/// Pins the contract shared by every `GeomConvert_CurveToAnaCurve` /
+/// `GeomConvert_SurfToAnaSurf` entry point, after #492 unified the two
+/// independently-grown wrapper families onto one path each.
+@Suite("Analytical conversion contract (#492)")
+struct AnalyticalConversionContractTests {
+
+    private static func dist(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
+        let d = a - b
+        return (d.x * d.x + d.y * d.y + d.z * d.z).squareRoot()
+    }
+
+    /// A wiggly interpolated curve, recognizable as neither line, circle nor ellipse.
+    private static func freeformCurve() -> Curve3D? {
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(1, 3, 0), SIMD3(2, -2, 1),
+            SIMD3(4, 5, -3), SIMD3(6, 0, 2), SIMD3(8, 4, 0),
+        ])
+    }
+
+    /// A bumpy Bezier patch, recognizable as none of the five analytical surfaces.
+    private static func freeformSurface() -> Surface? {
+        var poles: [[SIMD3<Double>]] = []
+        for i in 0..<4 {
+            var row: [SIMD3<Double>] = []
+            for j in 0..<4 {
+                let x = Double(i) * 2, y = Double(j) * 2
+                row.append(SIMD3(x, y, sin(x * 0.7) * cos(y * 1.3) * 4))
+            }
+            poles.append(row)
+        }
+        return Surface.bspline(poles: poles,
+                               knotsU: [0, 1], multiplicitiesU: [4, 4],
+                               knotsV: [0, 1], multiplicitiesV: [4, 4],
+                               degreeU: 3, degreeV: 3)
+    }
+
+    // MARK: Independence of the result
+
+    @Test("Curve result does not alias the input curve")
+    func curveResultIsIndependent() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let analytical = circle.toAnalytical(tolerance: 1e-4) else {
+            Issue.record("circle did not convert")
+            return
+        }
+        let before = circle.point(at: 0)
+        #expect(analytical.translate(dx: 100, dy: 0, dz: 0))
+        let after = circle.point(at: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Range-aware curve result does not alias the input curve")
+    func rangeAwareCurveResultIsIndependent() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) else {
+            Issue.record("circle not built")
+            return
+        }
+        let domain = circle.domain
+        guard let result = circle.toAnalytical(tolerance: 1e-4,
+                                               first: domain.lowerBound,
+                                               last: domain.upperBound) else {
+            Issue.record("circle did not convert")
+            return
+        }
+        let before = circle.point(at: 0)
+        #expect(result.curve.translate(dx: 100, dy: 0, dz: 0))
+        let after = circle.point(at: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Surface result does not alias the input surface")
+    func surfaceResultIsIndependent() {
+        guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
+              let analytical = plane.toAnalytical(tolerance: 1e-4) else {
+            Issue.record("plane did not convert")
+            return
+        }
+        let before = plane.point(atU: 0, v: 0)
+        #expect(analytical.translate(dx: 100, dy: 0, dz: 0))
+        let after = plane.point(atU: 0, v: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    @Test("Gap-returning surface result does not alias the input surface")
+    func gapSurfaceResultIsIndependent() {
+        guard let plane = Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)),
+              let result = plane.toAnalyticalWithGap(tolerance: 1e-4) else {
+            Issue.record("plane did not convert")
+            return
+        }
+        let before = plane.point(atU: 0, v: 0)
+        #expect(result.surface.translate(dx: 100, dy: 0, dz: 0))
+        let after = plane.point(atU: 0, v: 0)
+        #expect(Self.dist(before, after) < 1e-9)
+    }
+
+    // MARK: Parity between the two spellings of each conversion
+
+    @Test("Both curve spellings agree over the curve's own range")
+    func curveSpellingsAgree() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let trimmed = circle.trimmed(from: 0, to: .pi),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline circle not built")
+            return
+        }
+        let domain = bspline.domain
+        let plain = bspline.toAnalytical(tolerance: 1e-4)
+        let ranged = bspline.toAnalytical(tolerance: 1e-4,
+                                          first: domain.lowerBound,
+                                          last: domain.upperBound)
+        #expect((plain == nil) == (ranged == nil))
+        if let plain, let ranged {
+            for t in stride(from: 0.0, through: 1.0, by: 0.25) {
+                let u = ranged.newFirst + (ranged.newLast - ranged.newFirst) * t
+                #expect(Self.dist(plain.point(at: u), ranged.curve.point(at: u)) < 1e-9)
+            }
+        }
+    }
+
+    @Test("Full-range curve spelling agrees with the explicit-range spelling")
+    func fullRangeCurveSpellingAgrees() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let trimmed = circle.trimmed(from: 0, to: .pi),
+              let bspline = trimmed.toBSpline(),
+              let freeform = Self.freeformCurve() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        for curve in [bspline, freeform] {
+            let domain = curve.domain
+            let full = curve.toAnalyticalWithGap(tolerance: 1e-4)
+            let explicit = curve.toAnalytical(tolerance: 1e-4,
+                                              first: domain.lowerBound,
+                                              last: domain.upperBound)
+            #expect((full == nil) == (explicit == nil))
+            if let full, let explicit {
+                #expect(full.newFirst == explicit.newFirst)
+                #expect(full.newLast == explicit.newLast)
+                #expect(full.gap == explicit.gap)
+            }
+        }
+    }
+
+    @Test("Both surface spellings agree on success and on geometry")
+    func surfaceSpellingsAgree() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline(),
+              let alreadyAnalytical = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5),
+              let freeform = Self.freeformSurface() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        for surface in [bspline, alreadyAnalytical, freeform] {
+            let plain = surface.toAnalytical(tolerance: 1e-4)
+            let withGap = surface.toAnalyticalWithGap(tolerance: 1e-4)
+            #expect((plain == nil) == (withGap == nil))
+            if let plain, let withGap {
+                #expect(Self.dist(plain.point(atU: 0.3, v: 0.4),
+                                  withGap.surface.point(atU: 0.3, v: 0.4)) < 1e-9)
+            }
+        }
+    }
+
+    // MARK: Already-analytical inputs
+
+    @Test("Already-analytical inputs convert rather than being rejected")
+    func alreadyAnalyticalInputsConvert() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5) else {
+            Issue.record("fixtures not built")
+            return
+        }
+        #expect(circle.toAnalytical(tolerance: 1e-4) != nil)
+        #expect(cylinder.toAnalytical(tolerance: 1e-4) != nil)
+        if let result = cylinder.toAnalyticalWithGap(tolerance: 1e-4) {
+            #expect(result.gap == 0)
+        } else {
+            Issue.record("cylinder did not convert")
+        }
+    }
+
+    // MARK: Unrecognizable inputs
+
+    @Test("Freeform inputs are rejected by every spelling")
+    func freeformInputsAreRejected() {
+        guard let curve = Self.freeformCurve(), let surface = Self.freeformSurface() else {
+            Issue.record("fixtures not built")
+            return
+        }
+        let domain = curve.domain
+        #expect(curve.toAnalytical(tolerance: 1e-6) == nil)
+        #expect(curve.toAnalytical(tolerance: 1e-6,
+                                   first: domain.lowerBound,
+                                   last: domain.upperBound) == nil)
+        #expect(surface.toAnalytical(tolerance: 1e-6) == nil)
+        #expect(surface.toAnalyticalWithGap(tolerance: 1e-6) == nil)
+        #expect(surface.toAnalyticalWithGap(tolerance: 1e-6,
+                                            uMin: 0, uMax: 1, vMin: 0, vMax: 1) == nil)
+    }
+
+    // MARK: The UV-bounded overload (no coverage at all before #492)
+
+    @Test("UV-bounded conversion recognizes a plane over full bounds and over a sub-range")
+    func boundedConversionRecognizesPlane() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline plane not built")
+            return
+        }
+        let d = bspline.domain
+        let full = bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                               uMin: d.uMin, uMax: d.uMax,
+                                               vMin: d.vMin, vMax: d.vMax)
+        #expect(full != nil)
+        #expect((full?.gap ?? 1) < 1e-3)
+
+        let uMid = (d.uMin + d.uMax) / 2, uQ = (d.uMax - d.uMin) / 4
+        let vMid = (d.vMin + d.vMax) / 2, vQ = (d.vMax - d.vMin) / 4
+        let sub = bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                              uMin: uMid - uQ, uMax: uMid + uQ,
+                                              vMin: vMid - vQ, vMax: vMid + vQ)
+        #expect(sub != nil)
+        #expect((sub?.gap ?? 1) < 1e-3)
+    }
+
+    @Test("UV-bounded conversion rejects inverted bounds instead of trapping")
+    func boundedConversionRejectsInvertedBounds() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let trimmed = plane.trimmed(u1: -10, u2: 10, v1: -10, v2: 10),
+              let bspline = trimmed.toBSpline() else {
+            Issue.record("BSpline plane not built")
+            return
+        }
+        let d = bspline.domain
+        #expect(bspline.toAnalyticalWithGap(tolerance: 1e-4,
+                                            uMin: d.uMax, uMax: d.uMin,
+                                            vMin: d.vMax, vMax: d.vMin) == nil)
+    }
+
+    // MARK: Sub-range curve conversion
+
+    @Test("Explicit sub-range reparameterizes the recognized curve")
+    func subRangeReparameterizesResult() {
+        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
+              let bspline = circle.toBSpline() else {
+            Issue.record("BSpline circle not built")
+            return
+        }
+        let domain = bspline.domain
+        let quarter = (domain.upperBound - domain.lowerBound) / 4
+        guard let result = bspline.toAnalytical(tolerance: 1e-4,
+                                                first: domain.lowerBound + quarter,
+                                                last: domain.upperBound - quarter) else {
+            Issue.record("sub-range did not convert")
+            return
+        }
+        #expect(result.gap < 1e-3)
+        // The recognized circle carries its own parameterisation, not the input's.
+        #expect(result.newLast - result.newFirst > 0)
+        let mid = (result.newFirst + result.newLast) / 2
+        let onResult = result.curve.point(at: mid)
+        #expect(abs((onResult.x * onResult.x + onResult.y * onResult.y).squareRoot() - 5) < 1e-6)
     }
 }

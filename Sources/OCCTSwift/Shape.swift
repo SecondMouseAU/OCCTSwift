@@ -3474,8 +3474,14 @@ extension Shape {
     /// Each edge can have its own fillet radius, allowing for more control
     /// than applying a uniform fillet to all edges.
     ///
-    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs
-    /// - Returns: Filleted shape, or nil on failure
+    /// Every radius must be positive: one non-positive (or NaN) radius rejects the whole batch,
+    /// the same contract ``filleted(edges:radius:)`` and
+    /// ``filleted(edges:startRadius:endRadius:)`` apply to theirs. An out-of-range `edgeIndex` is
+    /// skipped, so the fillet is applied to whichever indices resolve on this shape.
+    ///
+    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs; each radius must be > 0
+    /// - Returns: Filleted shape, or nil on failure, including an empty array, a non-positive
+    ///   radius anywhere in the array, or no index resolving to an edge of this shape
     ///
     /// ## Example
     ///
@@ -3486,9 +3492,12 @@ extension Shape {
     ///     (1, 2.0),  // Edge 1 gets 2mm fillet
     ///     (2, 0.5)   // Edge 2 gets 0.5mm fillet
     /// ])
+    ///
+    /// // Rejected: a radius of zero is not a fillet, so the batch returns nil
+    /// let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
     /// ```
     public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape? {
-        guard !edgeRadii.isEmpty else { return nil }
+        guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
 
         var indices = edgeRadii.map { Int32($0.edgeIndex) }
         var radii = edgeRadii.map { $0.radius }
@@ -5300,10 +5309,12 @@ extension Shape {
     /// shape and a `ShapeHistoryRef` queryable for `Modified` / `Generated` /
     /// `IsDeleted` per input sub-shape (e.g. a filleted edge → multiple
     /// generated fillet faces).
+    ///
+    /// `radius` must be positive, matching ``filleted(edges:radius:)``.
     public func filletedWithFullHistory(radius: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
-        guard !edges.isEmpty else { return nil }
+        guard !edges.isEmpty, radius > 0 else { return nil }
         let edgeIndices = edges.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = edgeIndices.withUnsafeBufferPointer { buf in
@@ -5316,9 +5327,12 @@ extension Shape {
 
     /// Variable-radius fillet on a single edge: radius linearly varies from
     /// `startRadius` (at the edge's first parameter) to `endRadius` (at last).
+    ///
+    /// Both radii must be positive, matching ``filleted(edges:startRadius:endRadius:)``.
     public func filletedWithFullHistory(edge: Int, startRadius: Double, endRadius: Double)
         -> (result: Shape, history: ShapeHistoryRef)?
     {
+        guard startRadius > 0, endRadius > 0 else { return nil }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHistoryFromFilletEdgeVariable(handle, Int32(edge),
                                                                startRadius, endRadius,
@@ -11692,7 +11706,24 @@ public struct ApproxCurveResult {
 }
 
 extension Curve3D {
-    /// Approximate this curve as a BSpline with detailed result (error, status).
+    /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxCurve` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// curve; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
+    /// for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find out.
+    /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let fit = circle.approxWithDetails(tolerance: 1e-6)
+    /// if let bspline = fit.curve, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
+    /// }
+    /// ```
     public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
                                    maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
         let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
@@ -11711,9 +11742,33 @@ public struct ApproxSurfaceResult {
 }
 
 extension Surface {
-    /// Approximate this surface as a BSpline with detailed result (error, status).
-    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
-                                   vContinuity: ParametricContinuity = .c1,
+    /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxSurface` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// surface; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `surface` is populated, and OCCT documents it as true
+    /// even for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find
+    /// out. So a non-nil `surface` is not by itself a promise that `tolerance` was met; on a
+    /// surface where `maxDegree` cannot reach the tolerance (a torus at 1e-9, say) OCCT returns a
+    /// usable best effort with `isDone` false.
+    ///
+    /// The continuity defaults are C2, matching ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``.
+    /// Before #491 they were C1 here, so the two no-continuity-argument calls fitted to different
+    /// smoothness and returned different surfaces. An infinite/unbounded surface must be trimmed to
+    /// a finite parameter domain first (see ``Surface/trimmed(u1:u2:v1:v2:)``).
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let fit = sphere.approxWithDetails(tolerance: 1e-5)
+    /// if let bspline = fit.surface, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                                   vContinuity: ParametricContinuity = .c2,
                                    maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
         let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
                                               vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
@@ -12615,14 +12670,39 @@ extension Surface {
 
 /// Result of converting a curve to its analytical form.
 public struct CurveToAnalyticalResult: Sendable {
+    /// The recognized curve. Independent of the curve it was recognized from.
     public let curve: Curve3D
+    /// Range start, expressed in `curve`'s own parameterization — not the input's.
     public let newFirst: Double
+    /// Range end, expressed in `curve`'s own parameterization — not the input's.
     public let newLast: Double
+    /// Maximum deviation from the input curve. Exactly `0` when the input was already analytical.
     public let gap: Double
 }
 
 extension Curve3D {
     /// Attempt to convert this curve to an analytical form (line, circle, ellipse).
+    ///
+    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its
+    /// domain can be recognized there even when the whole domain is not. The result carries the
+    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
+    /// reports a range starting at 0 on the `Geom_Circle` it returns.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// let domain = bspline.domain
+    /// if let r = bspline.toAnalytical(tolerance: 1e-4,
+    ///                                 first: domain.lowerBound,
+    ///                                 last: domain.upperBound) {
+    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - first: Start of the parameter range to examine.
+    ///   - last: End of the parameter range to examine.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
     public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult? {
         let result = OCCTGeomConvertCurveToAnalytical(handle, tolerance, first, last)
         guard result.success, let curveRef = result.curve else { return nil }
@@ -12632,6 +12712,28 @@ extension Curve3D {
             newLast: result.newLast,
             gap: result.gap
         )
+    }
+
+    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the
+    /// deviation.
+    ///
+    /// The full-range spelling of ``toAnalytical(tolerance:first:last:)``, and the curve counterpart
+    /// of ``Surface/toAnalyticalWithGap(tolerance:)``.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.gap)   // how far the BSpline strayed from the circle
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult? {
+        let domain = self.domain
+        return toAnalytical(tolerance: tolerance,
+                            first: domain.lowerBound,
+                            last: domain.upperBound)
     }
 
     /// Check if a set of 3D points are collinear within tolerance.
@@ -12651,19 +12753,56 @@ extension Curve3D {
 
 /// Result of converting a surface to its analytical form.
 public struct SurfaceToAnalyticalResult: Sendable {
+    /// The recognized surface. Independent of the surface it was recognized from.
     public let surface: Surface
+    /// Maximum deviation from the input surface. Exactly `0` when the input was already analytical.
     public let gap: Double
 }
 
 extension Surface {
-    /// Attempt to convert this surface to an analytical form with detailed result.
+    /// Attempt to convert this surface to an analytical form, reporting the deviation.
+    ///
+    /// The detailed spelling of ``Surface/toAnalytical(tolerance:)``: same recognition, same
+    /// success and failure cases, plus the gap.
+    ///
+    /// ```swift
+    /// let bspline = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(u1: 0, u2: .pi, v1: -5, v2: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.surface.surfaceKind, r.gap)   // .cylinder, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
     public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult? {
         let result = OCCTGeomConvertSurfToAnalytical(handle, tolerance)
         guard result.success, let surfRef = result.surface else { return nil }
         return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
     }
 
-    /// Attempt to convert this surface to analytical form within UV bounds.
+    /// Attempt to convert a UV sub-patch of this surface to an analytical form.
+    ///
+    /// Fits only `[uMin, uMax] × [vMin, vMax]`, so a surface that is a cylinder over part of its
+    /// domain can be recognized there even when the whole domain is not. Inverted bounds
+    /// (`uMin > uMax`) are rejected rather than normalized.
+    ///
+    /// ```swift
+    /// let d = bsplineSurface.domain
+    /// if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+    ///                                               uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+    ///                                               vMin: d.vMin, vMax: d.vMax) {
+    ///     print(r.surface.surfaceKind)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - uMin: Lower U bound of the patch to fit.
+    ///   - uMax: Upper U bound of the patch to fit.
+    ///   - vMin: Lower V bound of the patch to fit.
+    ///   - vMax: Upper V bound of the patch to fit.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
     public func toAnalyticalWithGap(tolerance: Double,
                                       uMin: Double, uMax: Double,
                                       vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {

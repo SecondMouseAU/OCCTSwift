@@ -841,19 +841,63 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
                          maxSegments: Int = 100, maxDegree: Int = 8) -> Curve3D?
 ```
 
-Useful for converting an analytical curve to a polynomial BSpline with controlled accuracy. `continuity` maps to `GeomAbs_Shape`: 0=C0, 1=G1, 2=C1, 3=G2, 4=C2.
+Useful for converting an analytical curve to a polynomial BSpline with controlled accuracy.
+`continuity` is a **request order** counting `0=C0, 1=C1, 2=C2, 3=C3` — not a raw `GeomAbs_Shape`
+ordinal (that enum interleaves the geometric classes: `C0=0, G1=1, C1=2, G2=3, C2=4`). Values
+outside `0...3` fall back to C2.
 
 - **Parameters:** `tolerance` — approximation error; `continuity` — minimum continuity order; `maxSegments` — maximum number of BSpline spans; `maxDegree` — maximum polynomial degree.
-- **Returns:** Approximating BSpline, or `nil` on failure.
-- **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`.
+- **Returns:** Approximating BSpline, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `GeomConvert_ApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree)`, gated on `HasResult()`.
 - **Note:** Defaults are shared with `Curve2D.approximated` and `Surface.approximated` (#406) —
   all three wrap the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a
   different OCCT geometry hierarchy, not independent algorithms that would justify
   independently-tuned numeric defaults.
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, which is documented as true for a fit that is "not NECESSARILY within the required
+  tolerance" — the same accessor
+  [`approxWithDetails`](#approxwithdetailstolerancecontinuitymaxsegmentsmaxdegree) uses, since #491
+  put one shared implementation behind both. Use `approxWithDetails` when you need the actual
+  `maxError`. (Gating on `IsDone()` instead, as this used to, would not have helped: measured
+  against this kernel it never rejects an over-tolerance fit — a circle fitted with one segment at
+  degree 3 against a `1e-9` tolerance reports `maxError` 5.1 and `isDone` true.)
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)!
   let approx = circle.approximated(tolerance: 0.01, continuity: 2)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status.
+
+```swift
+public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
+                              maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult
+```
+
+One shared `GeomConvert_ApproxCurve` run backs both entry points (#491), so for identical arguments
+they return the same curve — this one just also carries the diagnostics OCCT already computed.
+
+- **Returns:** `ApproxCurveResult(curve:maxError:isDone:hasResult:)`. `curve` is populated exactly
+  when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the greatest
+  distance between the source curve and the fit.
+- **OCCT:** `GeomConvert_ApproxCurve` — `Curve()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Note:** `isDone` and `hasResult` are always equal in the pinned kernel. `GeomConvert_ApproxCurve`
+  copies both off `AdvApprox_ApproxAFunction`, whose only `HasResult`-without-`IsDone` path is an
+  `ErrorCode = -1` assignment that upstream has commented out
+  (`AdvApprox_ApproxAFunction.cxx:550`). Read `maxError` against your own tolerance rather than
+  trusting `isDone` to mean "within tolerance".
+- **Example:**
+  ```swift
+  let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+  let fit = circle.approxWithDetails(tolerance: 1e-6)
+  if let bspline = fit.curve, fit.maxError <= 1e-6 {
+      print("fitted with \(bspline.poleCount ?? 0) poles")
+  }
   ```
 
 ---

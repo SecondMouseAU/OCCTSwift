@@ -507,6 +507,19 @@ public final class Curve3D: @unchecked Sendable {
     /// `Geom2dConvert_ApproxCurve` family applied to a different OCCT geometry hierarchy, not
     /// independent algorithms that would justify independently-tuned numeric defaults.
     ///
+    /// Returns the fitted curve whenever OCCT produced one, which — per `HasResult()`, the
+    /// accessor this shares with ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
+    /// since #491 — includes a best-effort fit that did *not* reach `tolerance`. A non-nil result
+    /// is therefore not a promise that `tolerance` was met: `approxWithDetails` reports the actual
+    /// `maxError` and an `isDone` flag for that. (Gating on `IsDone()` would not have helped here;
+    /// measured against this kernel it never rejects an over-tolerance fit — a circle fitted with
+    /// one segment at degree 3 against a 1e-9 tolerance reports `maxError` 5.1 and `isDone` true.)
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let bspline = circle.approximated(tolerance: 1e-4)
+    /// ```
+    ///
     /// - Parameter continuity: A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2). The
     ///   approximator accepts nothing stricter: `AdvApprox` throws for C3 and above, which
     ///   surfaces here as `nil`.
@@ -729,16 +742,26 @@ extension Curve3D {
         return d >= 0 ? d : nil
     }
 
-    /// Convert this freeform curve to an analytical curve if possible.
+    /// Convert this curve to an analytical curve if possible.
     ///
-    /// Recognizes if the curve is actually a line, circle, or ellipse
-    /// within the given tolerance and returns the analytical representation.
+    /// Recognizes if the curve is actually a line, circle, or ellipse within the given tolerance
+    /// and returns the analytical representation. A curve that is already analytical converts to an
+    /// equal, independent curve rather than being rejected.
+    ///
+    /// Examines the curve's whole domain. Use ``toAnalytical(tolerance:first:last:)`` to examine a
+    /// sub-range, or ``toAnalyticalWithGap(tolerance:)`` to also get the deviation.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let analytical = circle.toBSpline()?.toAnalytical(tolerance: 1e-4) {
+    ///     print(analytical.curveKind)   // .circle
+    /// }
+    /// ```
     ///
     /// - Parameter tolerance: Recognition tolerance
     /// - Returns: The analytical curve, or nil if not recognizable
     public func toAnalytical(tolerance: Double = 1e-4) -> Curve3D? {
-        guard let h = OCCTCurve3DToAnalytical(handle, tolerance) else { return nil }
-        return Curve3D(handle: h)
+        toAnalyticalWithGap(tolerance: tolerance)?.curve
     }
 
     // MARK: - Quasi-Uniform Sampling (v0.31.0)

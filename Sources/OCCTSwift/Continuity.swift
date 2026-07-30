@@ -15,7 +15,9 @@
 //      That is `ParametricContinuity`.
 //
 //   3. A GeomAbs_Shape ordinal reported back as a *result*, which is a different job from
-//      either input vocabulary above and keeps its own type: see `Surface.Continuity`.
+//      either input vocabulary above and keeps its own type: `ContinuityClass`. Unlike the two
+//      request vocabularies it is not a 0/1/2 order at all; it is GeomAbs_Shape's own declared
+//      order, which interleaves the geometric classes with the parametric ones.
 //
 // The two are not interchangeable even though both count 0, 1, 2. G1 asks only for parallel
 // tangent directions; C1 asks for equal derivative vectors. Feeding one enum's raw value to
@@ -141,4 +143,116 @@ extension Curve3D {
     /// reports a break. ``ParametricContinuity/c3`` is reachable and fixes that.
     @available(*, deprecated, renamed: "ParametricContinuity")
     public typealias ContinuityOrder = ParametricContinuity
+}
+
+// MARK: - Measured continuity class (a GeomAbs_Shape result)
+
+/// The continuity OCCT *measured* on an existing curve or surface.
+///
+/// This is the one continuity vocabulary that reports rather than requests, and the only one
+/// whose raw values are not a 0/1/2 order. They are `GeomAbs_Shape`'s own ordinals, which
+/// interleave the geometric classes with the parametric ones:
+///
+/// | case | raw | meaning |
+/// |------|-----|---------|
+/// | ``c0`` | 0 | positional only |
+/// | ``g1`` | 1 | tangent directions match, derivative magnitudes need not |
+/// | ``c1`` | 2 | first derivatives match |
+/// | ``g2`` | 3 | curvature matches |
+/// | ``c2`` | 4 | second derivatives match |
+/// | ``c3`` | 5 | third derivatives match |
+/// | ``cN`` | 6 | infinitely differentiable |
+///
+/// ```swift
+/// // A cubic BSpline with an interior knot at multiplicity 2 loses one derivative.
+/// let bspline = Curve3D.bspline(poles: poles, knots: [0, 0.5, 1],
+///                              multiplicities: [4, 2, 4], degree: 3)
+/// print(bspline?.continuityClass)          // .c1
+///
+/// // Analytic geometry is infinitely smooth.
+/// print(Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))?.continuityClass)  // .cN
+/// ```
+///
+/// - Note: Do not compare a raw value against ``ParametricContinuity`` or ``SurfaceContinuity``.
+///   Those are request orders counting 0, 1, 2; these are `GeomAbs_Shape` ordinals where C1 is
+///   2 and C2 is 4. Use ``satisfies(_:)`` for a continuity-floor check instead of comparing
+///   raw values, which is the defect #485 was filed about.
+public enum ContinuityClass: Int32, Sendable, CaseIterable {
+    /// Positional continuity only (`GeomAbs_C0`).
+    case c0 = 0
+    /// Tangent continuity (`GeomAbs_G1`): tangent *directions* agree, magnitudes need not.
+    case g1 = 1
+    /// First-derivative continuity (`GeomAbs_C1`).
+    case c1 = 2
+    /// Curvature continuity (`GeomAbs_G2`).
+    case g2 = 3
+    /// Second-derivative continuity (`GeomAbs_C2`).
+    case c2 = 4
+    /// Third-derivative continuity (`GeomAbs_C3`).
+    case c3 = 5
+    /// Infinite continuity (`GeomAbs_CN`): every derivative exists. Analytic geometry.
+    case cN = 6
+}
+
+extension ContinuityClass: Comparable {
+    /// Orders by increasing smoothness.
+    ///
+    /// `GeomAbs_Shape`'s declared order happens to be monotonic in smoothness
+    /// (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly. That is a
+    /// property of the enum worth pinning rather than assuming, and it is what makes
+    /// "at least this smooth" answerable without a lookup table.
+    public static func < (lhs: ContinuityClass, rhs: ContinuityClass) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
+}
+
+extension ContinuityClass {
+    /// Whether this class guarantees *parametric* continuity (a C-class), not merely geometric.
+    ///
+    /// ``g1`` and ``g2`` are false: they constrain tangent direction and curvature but not the
+    /// derivative vectors themselves.
+    public var isParametric: Bool {
+        switch self {
+        case .c0, .c1, .c2, .c3, .cN: return true
+        case .g1, .g2: return false
+        }
+    }
+
+    /// The highest continuously-differentiable derivative order this class guarantees, if it
+    /// guarantees a parametric one at all.
+    ///
+    /// `nil` for ``g1``/``g2``, which promise nothing about derivative *vectors*.
+    /// ``cN`` reports `Int.max`.
+    ///
+    /// ```swift
+    /// ContinuityClass.c2.derivativeOrder   // 2
+    /// ContinuityClass.g2.derivativeOrder   // nil — curvature matches, C2 does not follow
+    /// ```
+    public var derivativeOrder: Int? {
+        switch self {
+        case .c0: return 0
+        case .c1: return 1
+        case .c2: return 2
+        case .c3: return 3
+        case .cN: return Int.max
+        case .g1, .g2: return nil
+        }
+    }
+
+    /// Whether the measured continuity meets a required parametric floor.
+    ///
+    /// Use this instead of comparing raw values against ``ParametricContinuity``. The two
+    /// encodings differ (`ContinuityClass.c1` is 2, `ParametricContinuity.c1` is 1), so a
+    /// direct `>=` silently misreports, and a ``g1``/``g2`` result is not a parametric
+    /// guarantee at any order however smooth it looks.
+    ///
+    /// ```swift
+    /// if surface.continuityClass.satisfies(.c2) {
+    ///     // safe to ask for second derivatives across the whole surface
+    /// }
+    /// ```
+    public func satisfies(_ required: ParametricContinuity) -> Bool {
+        guard let order = derivativeOrder else { return false }
+        return order >= Int(required.rawValue)
+    }
 }

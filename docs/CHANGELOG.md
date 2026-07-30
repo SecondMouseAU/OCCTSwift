@@ -117,6 +117,45 @@ symbol references name symbols that exist nowhere in `Sources/`**. Filed as #510
 here — each stale entry needs its real call site identified, and inventing a plausible name for a
 class that has no wrap would be worse than leaving the entry visibly broken.
 
+#### Analytical conversion: one path per converter class, and the result no longer aliases its input (#492)
+
+`GeomConvert_CurveToAnaCurve` and `GeomConvert_SurfToAnaSurf` each had two wrapper families, added
+eight releases apart, making the identical OCCT call and then disagreeing about the answer. The
+v0.30.0 curve wrapper hardcoded the curve's own parameter range and discarded `newFirst`/`newLast`/
+`Gap()`; the v0.30.0 surface wrapper carried an "already analytical" guard its v0.78 sibling never
+grew. Five bridge functions now reach two shared helpers, `occtCurveToAnalytical` and
+`occtSurfaceToAnalytical` (`OCCTBridge_Internal.h`), and `OCCTCurve3DToAnalytical` /
+`OCCTSurfaceToAnalytical` are gone.
+
+**The behaviour fix, which the issue did not predict.** Probing both converters against the pinned
+kernel showed they do opposite things with an already-analytical input, and only one wrapper family
+had been written for either. `GeomConvert_SurfToAnaSurf` always allocates
+(`GeomConvert_SurfToAnaSurf.cxx:791-807`), so the surface guard was dead code. But
+`GeomConvert_CurveToAnaCurve` returns **the input handle itself** — `ComputeLine` and `ComputeCircle`
+down-cast the input and return it — and for a `Geom_TrimmedCurve` it returns the basis curve the trim
+still holds. Both curve wrappers handed that shared curve to Swift as a separate `Curve3D`, so the
+two aliased one `Geom_Curve` and `Curve3D.translate` is in-place: translating the result of
+`Curve3D.circle(...).toAnalytical()` by 100 moved the source circle by exactly 100. Both helpers now
+detach the result with `Copy()`, so the guarantee holds for both classes rather than depending on
+which branch of which kernel version happens to allocate. The results are line/circle/ellipse and
+plane/cylinder/cone/sphere/torus, so the copy costs nothing.
+
+The contract is now stated once and identical on both sides: an already-analytical input **converts**
+(`gap == 0` exactly) rather than being rejected, the result is independent of the input, and null
+input, unrecognisable input and OCCT's own throw (the bounded overload raises
+`Geom_BSplineSurface::Segment` on inverted UV bounds) are one failure outcome.
+
+New: `Curve3D.toAnalyticalWithGap(tolerance:)`, the full-range curve spelling that reports the gap —
+the counterpart of `Surface.toAnalyticalWithGap(tolerance:)`, previously missing, which is why
+getting a curve's gap meant switching wrapper families. No other public Swift signature changed.
+
+New `AnalyticalConversionContractTests` (`Tests/OCCTCurveTests`) pins all of it: 12 tests, of which
+the two aliasing cases fail by exactly 100.0 against the pre-#492 bridge. It also gives
+`toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)` its first coverage of any kind. Probe and
+writeup: [`Scripts/repro/492-analytical-conversion/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/492-analytical-conversion).
+`GeomConvert_CurveToAnaCurve` and `GeomConvert_SurfToAnaSurf` also gained the cross-reference index
+entries they never had.
+
 #### The 2D conic factories reject degenerate dimensions, like their siblings already did (#487)
 
 **Behaviour change.** `Curve2D.ellipseFromCenterDir`, `Curve2D.hyperbolaFromCenterDir` and
@@ -164,6 +203,127 @@ downstream algorithms self-reject: a zero-radius ellipse yields a 5-pole BSpline
 two of them have no nil channel to report a rejection through and each needs its own contract
 decision.
 
+#### One result vocabulary for measured continuity, not three encodings (#485)
+
+`OCCTCurve3DContinuity` / `OCCTCurve2DContinuity` / `OCCTSurfaceContinuity` and their
+`*GetContinuity` siblings wrapped the identical `Geom*::Continuity()` call but reported it
+through two incompatible numeric schemes. **C0 was the only class the two agreed on:**
+
+| class | `GetContinuity` (real `GeomAbs_Shape`) | `Continuity` (hand-written switch) |
+|-------|---------------------------------------|------------------------------------|
+| C0 | 0 | 0 |
+| G1 | 1 | −2 |
+| C1 | 2 | 1 |
+| G2 | 3 | −3 |
+| C2 | 4 | 2 |
+| C3 | 5 | 3 |
+| CN | 6 | 99 |
+
+Neither doc comment described either scheme correctly. `GetContinuity`'s claimed
+`0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2`, which is not what a `static_cast` of
+`GeomAbs_Shape` produces; `Continuity`'s omitted its own `−2`/`−3`/`99` values entirely. Both
+wrong comments had been copy-pasted into the Swift layer.
+
+**Behaviour change.** `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and
+`Surface.surfaceContinuityOrder` now report the real `GeomAbs_Shape` ordinal. A C2 curve that
+answered `2` answers `4`; a CN curve that answered `99` answers `6`; a G1 curve that answered
+`−2` answers `1`. All three are deprecated in favour of `continuityClass`. Any threshold check
+of the form `continuityOrder >= someOrder` needs revisiting — that idiom compared two different
+encodings, which is the defect this family invited.
+
+**Behaviour change (C API only).** `OCCTCurve3DContinuity`, `OCCTCurve2DContinuity` and
+`OCCTSurfaceContinuity` returned `-1` for a null argument and now return `0`, matching the
+`*GetContinuity` convention they delegate to. `0` is not distinguishable from a genuine C0
+measurement; a caller needing to tell "null" from "C0" must null-check before calling. This
+follows the family's existing convention rather than inventing a fourth sentinel, and all three
+declare `_Nonnull` arguments, so passing null was already a contract violation. No Swift API is
+affected — `Curve3D`/`Curve2D`/`Surface` cannot hold a null handle reference.
+
+- **Bridge:** the three `switch` bodies were byte-identical to each other and each duplicated
+  its `GetContinuity` sibling's one-line body. All three now delegate to that sibling, which
+  also picks up the `.IsNull()` handle guard the `Continuity` family was missing: they checked
+  only the wrapper pointer, then dereferenced the inner `Handle`, which the wrapper's own
+  default constructor (`OCCTCurve3D() {}`) leaves null — so this was reachable, not theoretical,
+  and a null `Handle` deref is an OS signal the surrounding `catch (...)` cannot intercept. The
+  C declarations are retained for ABI compatibility.
+- **Swift:** new top-level `ContinuityClass` is the shared result vocabulary — the third
+  contract `Continuity.swift` already documented after #398 but had only half-implemented.
+  `Surface.Continuity` becomes a deprecated alias of it (raw values unchanged), and `Curve3D` /
+  `Curve2D` gain `continuityClass`; they previously had no typed form at all.
+  `ContinuityClass` is `Comparable` by increasing smoothness, and adds `derivativeOrder` and
+  `satisfies(_:)` so a continuity floor can be checked without comparing raw values across
+  vocabularies. `g1`/`g2` correctly satisfy no parametric order.
+- **Tests:** 17 across `OCCTCurveTests`, `OCCTGeom2dTests` and `OCCTSurfaceTests`. The
+  pre-existing coverage only ever asserted `>= 0` against CN-continuous primitives, which both
+  encodings satisfy, so none of it could catch this. The new tests pin the real ordinals,
+  compare the two properties on the same object, and reach the G1 class no earlier test could —
+  an offset curve over a C0-but-tangent-continuous BSpline basis, which is the only route to a
+  G1 measurement in the `Geom` hierarchy (`Geom_BSplineCurve` itself only ever reports C0…C3
+  or CN, so `GeomAbs_Shape.hxx`'s own "G2: for BSpline curves only" comment is also wrong).
+
+#### One batch grid-evaluation family, not three generations per type (#486)
+
+`Curve3D`, `Curve2D` and `Surface` each had **three** generations of "evaluate at N parameters"
+bridge functions, 15 in total, no shared helper between any of them, each hand-rolling its own
+parameter-pack loop and its own result-unpack loop. The two Surface entry points had drifted onto
+**opposite UV layouts** as a direct result:
+
+| | wrote | its header comment said |
+|---|---|---|
+| `OCCTSurfaceEvaluateGrid` (v0.29.0) | `outXYZ[(iv * uCount + iu) * 3]`, V-major | "row-major (u varies fastest)" |
+| `OCCTGridEvalSurfaceD0` (v0.111.0) | `xs[iu * vCount + iv]`, U-major | "row-major" |
+
+"Row-major" says nothing about a UV grid, where either parameter can be the row. Nine duplicate
+bridge functions are removed, and the surviving six
+(`OCCTCurve3DEvaluateGrid`/`D1`, `OCCTCurve2DEvaluateGrid`/`D1`, `OCCTSurfaceEvaluateGrid`/`D1`)
+now share one parameter-packing helper and one definition of the surface grid index
+(`occtSurfaceGridIndex`, U-major), so the layouts cannot drift apart again.
+
+**New: `Surface.evaluateGridD1(uParameters:vParameters:)` and `SurfaceGridD1`.** This finishes for
+the D1 path what [#404](https://github.com/SecondMouseAU/OCCTSwift/issues/404) did for D0: results
+are indexed `.at(u:v:)` instead of arriving as a flat array whose major order you have to know.
+
+```swift
+let grid = surface.evaluateGridD1(uParameters: us, vParameters: vs)
+let sample = grid.at(u: 2, v: 0)
+let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+```
+
+**Deprecated (all still work, each forwarding to its canonical sibling):**
+
+| Deprecated | Use instead |
+|---|---|
+| `Curve3D.evalBatchD0(params:)`, `Curve3D.gridEvalD0(params:)` | `Curve3D.evaluateGrid(_:)` |
+| `Curve3D.evalBatchD1(params:)`, `Curve3D.gridEvalD1(params:)` | `Curve3D.evaluateGridD1(_:)` |
+| `Curve2D.evalBatchD0(params:)`, `Curve2D.gridEvalD0(params:)` | `Curve2D.evaluateGrid(_:)` |
+| `Curve2D.evalBatchD1(params:)`, `Curve2D.gridEvalD1(params:)` | `Curve2D.evaluateGridD1(_:)` |
+| `Surface.gridEvalD0(uParams:vParams:)` | `Surface.evaluateGrid(uParameters:vParameters:)` |
+| `Surface.gridEvalD1(uParams:vParams:)` | `Surface.evaluateGridD1(uParameters:vParameters:)` |
+
+The `evaluateGridD1` spellings label the derivative `tangent`, where the deprecated ones labelled
+it `d1`. No public API is removed and no signature changes, so no source break.
+
+**Behaviour change: a failed evaluation returns an empty result, not zeroes.** The v0.110/v0.111
+bridge functions returned `void`: on a failure their Swift callers could not detect (null or
+unsupported geometry, an exception inside the evaluator) they wrote nothing, and the wrapper
+returned a full-length array of default-initialised `SIMD3(0, 0, 0)` as if evaluation had
+succeeded. All six survivors return the number of points written, and every wrapper now returns an
+empty array or an empty grid instead.
+
+**Behaviour change: `evalBatchD0`/`evalBatchD1` now use the batch evaluator.** Those four methods
+had regressed to calling `Geom_Curve::EvalD0`/`EvalD1` (and the 2D equivalents) once per
+parameter, bypassing the `GeomGridEval_Curve` batch path that `evaluateGrid` had used since
+v0.29.0. They now forward there, so results can differ from the old per-point loop by ~1e-13 on a
+BSpline (measured against a ground-truth C++ comparison; analytic curves such as circles agree
+exactly).
+
+**Behaviour change (C API only).** `OCCTSurfaceEvaluateGrid` now writes a U-major buffer
+(`outXYZ[(iu * vCount + iv) * 3]`), matching `OCCTSurfaceDrawMesh`, `OCCTSurfaceEvaluateGridD1`
+and the Swift `SurfaceGrid`. `Surface.evaluateGrid` used to transpose the old V-major buffer while
+unpacking and no longer does, so its `SurfaceGrid` output is byte-for-byte unchanged, but any
+direct consumer of the C bridge must swap its index formula. `OCCTGridEvalSurfaceD1` was renamed
+`OCCTSurfaceEvaluateGridD1` and reshaped to the family's interleaved-triple buffers.
+
 #### `Surface`'s two transform families now share one `gp_Trsf` builder (#488)
 
 `OCCTBridge_Surface.mm` carried the same `gp_Trsf`-construction switch seven times: once inline in
@@ -192,6 +352,134 @@ Writing that suite turned up a dead test: `SurfaceTransformTests.transformBezier
 down-casts its inputs to `Geom_BezierCurve` and returns `nullptr` for anything else, so the test got
 `nil` back and skipped its entire body through `if let` without ever calling `translate`. It now uses
 real Bezier boundaries and asserts the surface actually moved.
+
+#### One skeleton behind the three edge-list fillet entry points, and the radius precondition one of them never had (#489)
+
+**Behaviour change, one call shape.** `Shape.blendedEdges(_:)` now returns `nil` when any radius in
+the batch is non-positive or NaN, which is the contract `filleted(edges:radius:)` and
+`filleted(edges:startRadius:endRadius:)` already applied to theirs:
+
+| call | before | now |
+|---|---|---|
+| `blendedEdges([(0, 2.0), (99999, -5.0)])` | shape filleted on edge 0 only, reported as success | `nil` |
+| `blendedEdges([(0, 0.0)])` | `nil` | `nil` |
+| `blendedEdges([(0, -5.0)])` | `nil` | `nil` |
+| `blendedEdges([(0, 2.0), (1, 0.0)])` | `nil` | `nil` |
+
+Only the first row changes, and measuring that is what narrowed the finding: a non-positive radius
+that reached OCCT was already reported as failure, because `BRepFilletAPI_MakeFillet::Add(r, edge)`
+with `r` of 0, a negative `r`, or NaN does not throw and does not build a wrong shape, it fails
+`IsDone()` (ground truth in
+[`Scripts/repro/489-fillet-radius-validation/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/489-fillet-radius-validation)).
+The case that escaped was a bad radius paired with an out-of-range edge index: the bounds check
+dropped the pair before the radius was ever used, so the batch built from the remaining edges and
+reported success for a request that was never fully honoured. Valid input is unaffected, pinned by a
+test that a uniform per-edge radius list produces the same volume as the uniform entry point. An
+out-of-range index with a valid radius is still skipped, unchanged.
+
+`OCCTShapeFilletEdges` and `OCCTShapeFilletEdgesLinear` (`OCCTBridge_Modeling.mm`) and
+`OCCTShapeBlendEdges` (`OCCTBridge_Healing.mm`) were three hand-maintained copies of one loop:
+same `TopExp::MapShapes` edge map, same 0-based index bounds check, same `Build`/`IsDone`/`Shape`
+triad, same `catch (...)`, differing only in the radius each edge gets. That is how the guard came to
+exist in two of them and not the third. All three now share `occtShapeFilletEdgeList` and the
+`occtValidFilletRadius` / `occtValidFilletRadii` predicates in `OCCTBridge_Internal.h`, so the next
+piece of hardening this family needs lands once. `OCCTShapeFilletEdges` also picks up the null-result
+check the blend function already had.
+
+A fourth copy of the same loop turned up in `OCCTShapeHistoryFromFilletEdges`, which the finding did
+not name: it cannot use the full skeleton, because it keeps its builder alive to hand back a
+`BRepTools_History` over it, so the loop is split out as `occtFilletAddEdges` and shared at that
+level. It had no radius precondition either, nor does its single-edge sibling
+`OCCTShapeHistoryFromFilletEdgeVariable`; both now apply the same one, as do their Swift wrappers
+`Shape.filletedWithFullHistory(radius:edges:)` and
+`Shape.filletedWithFullHistory(edge:startRadius:endRadius:)`. No observable change for either: both
+take a single radius (or radius pair) that is either valid or rejected outright, with no per-element
+pairing for an index skip to hide.
+
+Bridge-only: no kernel patch, no xcframework rebuild, nothing filed upstream, since `Add()` reporting
+failure through `IsDone()` is OCCT's documented `BRepBuilderAPI_MakeShape` contract.
+
+The cross-reference index entry for `BRepFilletAPI_MakeFillet` named only the `OCCTShapeFillet*`
+prefix, so four of its call sites were unreachable from the index: `OCCTShapeBlendEdges` (the one this
+issue is about), `OCCTShapeFuseAndBlend`, `OCCTShapeCutAndBlend` and the `OCCTFilletBuilder*` family.
+That is the #484 failure mode again, an audit by symbol name finding fewer sites than exist, and it is
+how this family's copies stayed out of view. The entry now names all of them;
+`Scripts/check-bridge-index.py` still reports the same 139 pre-existing stale entries (#510), none of
+them new.
+
+Two family-level inconsistencies were found and deliberately left alone, filed as #520: the other two
+`BRepFilletAPI_MakeFillet` edge-list functions disagree with these three about what an edge index
+means and what an invalid one does. `OCCTShapeFilletEvolving` takes 1-based indices (documented as
+such on `EvolvingFilletEdge.edgeIndex`) and rejects an out-of-range one, and
+`OCCTShapeFilletVariable` takes a 0-based index and also rejects. Reconciling them changes public
+API behaviour and needs its own decision, not a drive-by in a dedup fix.
+
+#### One `GeomConvert_Approx*` run per type, not two that disagree (#491)
+
+`Curve3D` and `Surface` each wrapped the same OCCT approximation class twice — `approximated`
+returning the fitted BSpline, `approxWithDetails` returning it plus OCCT's own diagnostics — and each
+pair had drifted. Both now run through one shared bridge helper per type, so the detailed entry point
+differs from the plain one only by carrying `maxError`/`isDone`/`hasResult`.
+
+Three divergences resolved, plus one that turned out to be paper-only:
+
+- **`Surface`: `PrecisCode` 0 vs 1.** `OCCTSurfaceApproximate` passed `0` as
+  `GeomConvert_ApproxSurface`'s eighth constructor argument and `OCCTGeomConvertApproxSurface` passed
+  `1`, with no comment either side. It is a real algorithm knob, not a reserved value: it reaches
+  `AdvApp2Var_Context`'s `iprecis`, where `lesparam` turns it into the Jacobi degree and the initial
+  per-axis sample count that seed the fit. Both now pass `0`. Chosen on measurement over 72 bounded
+  cases (8 surface families x 6 tolerances, plus C0/C1 and `maxDegree` 10 variants): the two codes
+  never disagreed on `IsDone` and produced the same knot/pole layout in 71 of 72, but a different
+  `maxError` in all 72 — smaller with `0` in 64 of them — and in the one layout-differing case (an
+  offset sphere at tolerance `1e-5`) `0` met the requested tolerance with 27x15 poles where `1`
+  needed 27x23. A caller who states a tolerance wants the lightest surface that meets it. OCCT itself
+  splits along that same line: its tolerance-honouring conversion loops pass `0`
+  (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `BRepFill_Sweep`), its fixed-internal-tolerance
+  conversions pass `1` (`GeomConvert_1`, `GeomLib`, `GeomFill_Sweep`, `ShapeUpgrade_UnifySameDomain`).
+- **`Surface`: default continuity C2 vs C1.** `Surface.approxWithDetails` defaulted `uContinuity` and
+  `vContinuity` to `.c1` while `Surface.approximated` defaulted to C2, so the two
+  no-continuity-argument calls fitted to different smoothness and returned different surfaces (15 vs
+  16 U poles on a sphere at `1e-3`). Both now default to C2.
+- **Both: the null-handle guard.** `OCCTGeomConvertApproxCurve`/`Surface` checked only the outer
+  wrapper pointer, while their plain counterparts also checked the OCCT handle inside it. A null
+  `Geom_Curve`/`Geom_Surface` reaching `GeomAdaptor_*` is an uncatchable SIGSEGV in this Release
+  kernel, where OCCT's own `Standard_NullObject` precondition is compiled out. Both now check both.
+- **`Curve3D`: `IsDone()` vs `HasResult()` — the audit's headline claim, and it does not reproduce.**
+  The header documents these as different questions, so `OCCTCurve3DApproximate`'s `IsDone()` gate
+  looked like it would reject a completed-but-over-tolerance fit that `OCCTGeomConvertApproxCurve`'s
+  `HasResult()` gate returns. It cannot: `GeomConvert_ApproxCurve` copies both flags off
+  `AdvApprox_ApproxAFunction`, whose only `HasResult`-without-`IsDone` path is an `ErrorCode = -1`
+  assignment upstream has commented out (`AdvApprox_ApproxAFunction.cxx:550`, `// for now
+  ErrorCode=-1;`). With that line dead the two accessors are equal for every input, which is why
+  gating on `IsDone()` never actually rejected anything — a circle fitted with one segment at degree
+  3 against a `1e-9` tolerance reports `maxError` 5.1 and `isDone` true. The gate is unified on
+  `HasResult()` anyway: it is what OCCT's own curve-conversion sites use (`GeomConvert.cxx`,
+  `GeomToIGES_GeomCurve.cxx`, `GeomFill_Profiler.cxx`), what both surface entry points already used,
+  and the only gate under which `approxWithDetails`' `isDone: false` diagnostic means anything.
+
+So `Curve3D.approximated` is unchanged in behaviour and `Surface.approximated` is unchanged in
+output; what changes observably is `Surface.approxWithDetails`, which now returns the same surface
+`Surface.approximated` does instead of a slightly different one. Neither divergence had any test
+coverage in either direction — no test anywhere called both entry points on the same input. New
+`Issue491Curve3DApproxParityTests` (`Tests/OCCTCurveTests`) and `Issue491SurfaceApproxParityTests`
+(`Tests/OCCTSurfaceTests`) assert success, geometry, pole/degree counts and reported `maxError` agree
+across both entry points on 9 curve and 12 surface requests spanning the starved, over-tolerance and
+unreachable-tolerance cases.
+
+Each `.mm` also had two copies of the request-side `int32_t` → `GeomAbs_Shape` mapping (a `static
+intToContinuity` for the detailed entry point, the identical `switch` spelled inline in the plain
+one); each file now has one. The wider census of that conversion across the bridge is #513's, not
+this issue's.
+
+Building the parity tests surfaced an unrelated upstream defect, filed as
+[#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522): `GeomConvert_ApproxSurface` asked for
+`GeomAbs_C0` can collapse a direction to degree 1 and return a surface deviating by the input's own
+diameter while reporting `IsDone()` and a `maxError` five orders of magnitude too small (a full
+sphere at C0 comes back as a straight line across its longitude). It predates #491, both entry points
+hit it identically, and unifying them neither causes nor fixes it. The surface parity suite keeps C0
+in its request set — both entry points must still return the *same* surface there, and they do — but
+excludes it from the "reported error describes the returned surface" assertion, with a comment to
+drop that exclusion when #522 is fixed.
 
 ---
 

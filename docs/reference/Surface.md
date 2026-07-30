@@ -54,30 +54,33 @@ public var surfaceKind: SurfaceType { get }
 
 ### `Continuity`
 
-Continuity class enum derived from `GeomAbs_Shape`.
+Deprecated alias of the top-level `ContinuityClass`, which `Curve3D` and `Curve2D` now share
+(#485). The raw values are unchanged.
 
 ```swift
-public enum Continuity: Int32, Sendable, CaseIterable {
-    case c0 = 0, g1 = 1, c1 = 2, g2 = 3, c2 = 4, c3 = 5, cN = 6
-}
+@available(*, deprecated, renamed: "ContinuityClass")
+public typealias Continuity = ContinuityClass
 ```
 
 ---
 
 ### `continuityClass`
 
-The overall continuity of the surface.
+The measured overall continuity of the surface.
 
 ```swift
-public var continuityClass: Continuity { get }
+public var continuityClass: ContinuityClass { get }
 ```
 
-- **Returns:** A `Continuity` value describing positional through CN continuity.
-- **OCCT:** `Geom_Surface::Continuity`.
+- **Returns:** A `ContinuityClass` describing positional through CN continuity. Raw values are
+  `GeomAbs_Shape`'s own ordinals (`c0=0, g1=1, c1=2, g2=3, c2=4, c3=5, cN=6`), which are not a
+  0/1/2 order — use `satisfies(_:)` rather than comparing raw values.
+- **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
   ```swift
   let bsp = Surface.bspline(poles: ..., ...)!
-  print(bsp.continuityClass)  // typically .c2
+  print(bsp.continuityClass)                  // typically .c2
+  print(bsp.continuityClass.satisfies(.c2))   // true
   ```
 
 ---
@@ -721,21 +724,65 @@ Useful when exact `toBSpline()` conversion is unavailable (e.g. offset or compos
 
 - **Parameters:**
   - `tolerance` — maximum approximation deviation.
-  - `continuity` — desired continuity order, a `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2). C2 is the ceiling: `AdvApprox` throws for C3 and above, which surfaces as `nil`.
+  - `continuity` — desired continuity order, applied to **both** parametric directions, a
+    `ParametricContinuity` raw value (0=C0, 1=C1, 2=C2). C2 is the ceiling: `AdvApprox` throws for
+    C3 and above, which surfaces as `nil`.
   - `maxSegments` — maximum number of BSpline segments.
   - `maxDegree` — maximum polynomial degree.
-- **Returns:** Approximated BSpline surface, or `nil` on failure.
-- **OCCT:** `GeomConvert_ApproxSurface`.
+- **Returns:** Approximated BSpline surface, or `nil` when OCCT produced no fit at all.
+- **OCCT:** `GeomConvert_ApproxSurface`, gated on `HasResult()`, with `PrecisCode = 0`.
 - **Note:** Defaults match `Curve3D.approximated`/`Curve2D.approximated` (#406) — all three wrap
   the same `GeomConvert_Approx*`/`Geom2dConvert_ApproxCurve` family applied to a different OCCT
   geometry hierarchy, not independent algorithms whose numeric defaults should diverge. (Before
   #406 this defaulted to `tolerance: 0.01, maxDegree: 10`, a 10x looser tolerance with no
   documented reason; measurement found the tighter shared values succeed on every case tried,
   with no meaningful cost difference.)
+- **Note:** A non-`nil` result is **not** a promise that `tolerance` was met. This gates on OCCT's
+  `HasResult()`, documented as true for a fit that is "not NECESSARILY within the required
+  tolerance" — on a surface `maxDegree` cannot fit (a torus at `1e-9`) OCCT returns a usable best
+  effort anyway. [`approxWithDetails`](#approxwithdetailstoleranceucontinuityvcontinuitymaxdegreemaxsegments)
+  runs the identical approximation and reports the actual `maxError`.
 - **Example:**
   ```swift
   let offset = sphere.offset(distance: 1)!
   let bsp = offset.approximated(tolerance: 0.001)
+  ```
+
+---
+
+### `approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)`
+
+The same approximation as [`approximated`](#approximatedtolerancecontinuitymaxsegmentsmaxdegree),
+reporting the fit's error and completion status, with the two parametric directions requested
+separately.
+
+```swift
+public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                              vContinuity: ParametricContinuity = .c2,
+                              maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult
+```
+
+One shared `GeomConvert_ApproxSurface` run backs both entry points (#491), so for identical
+arguments they return the same surface — this one just also carries the diagnostics OCCT already
+computed. Note `maxDegree` precedes `maxSegments` here, the reverse of `approximated`'s order.
+
+- **Returns:** `ApproxSurfaceResult(surface:maxError:isDone:hasResult:)`. `surface` is populated
+  exactly when `hasResult`; `isDone` is whether the fit reached `tolerance`; `maxError` is the
+  greatest distance between the source surface and the fit.
+- **OCCT:** `GeomConvert_ApproxSurface` — `Surface()`, `MaxError()`, `IsDone()`, `HasResult()`.
+- **Note:** Before #491 the continuity defaults here were C1, and this entry point passed
+  `PrecisCode = 1` to `GeomConvert_ApproxSurface` where `approximated` passed `0`, so the two
+  returned measurably different surfaces for the same request. Both now default to C2 and pass `0`.
+- **Note:** `maxError` is not trustworthy for a `.c0` request — see
+  [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), an upstream defect where a C0 fit
+  can collapse a direction to degree 1 and still report an error five orders of magnitude too small.
+- **Example:**
+  ```swift
+  let sphere = Surface.sphere(center: .zero, radius: 10)!
+  let fit = sphere.approxWithDetails(tolerance: 1e-5)
+  if let bspline = fit.surface, fit.isDone {
+      print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+  }
   ```
 
 ---
@@ -876,6 +923,41 @@ public struct SurfaceGrid: Sendable {
 - **`uCount`/`vCount`:** number of samples in each direction.
 - **`at(u:v:)`:** the point at that grid index. Traps if either index is out of range.
 - **`isEmpty`:** `true` for the grid returned when sampling fails.
+
+Storage is U-major (`u * vCount + v`). Every surface grid producer in the bridge writes that same
+layout (`drawMesh`, `evaluateGrid` and `evaluateGridD1`) since
+[#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486); before it, two bridge functions
+wrote opposite layouts, each describing its own as "row-major".
+
+---
+
+### `SurfaceGridD1`
+
+The D1 counterpart of `SurfaceGrid`, returned by `evaluateGridD1(uParameters:vParameters:)`
+(see [Surface-Analysis.md](Surface-Analysis.md#evaluategridd1uparametersvparameters)). Indexed
+`.at(u:v:)` for the same reason: a flat `[(point:, d1u:, d1v:)]` array leaves the caller guessing
+whether u or v runs fastest, which is exactly the ambiguity the deprecated
+`gridEvalD1(uParams:vParams:)` shipped with
+([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
+
+```swift
+public struct SurfaceGridD1: Sendable {
+    public let uCount: Int
+    public let vCount: Int
+    public var isEmpty: Bool { get }
+    public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+}
+```
+
+- **`at(u:v:)`:** point and both first partial derivatives at that grid index. Traps if either
+  index is out of range.
+- **`isEmpty`:** `true` for the grid returned when evaluation fails.
+- **Example:**
+  ```swift
+  let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
+  let sample = grid.at(u: 2, v: 0)
+  let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+  ```
 
 ---
 

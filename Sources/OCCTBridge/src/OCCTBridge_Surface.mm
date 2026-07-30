@@ -601,19 +601,72 @@ OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
     }
 }
 
+// === #491: one GeomConvert_ApproxSurface run behind both surface approximation entry points ===
+//
+// OCCTSurfaceApproximate (Surface.approximated) and OCCTGeomConvertApproxSurface
+// (Surface.approxWithDetails) are two views of the same approximation: the first returns the fitted
+// BSpline surface, the second returns it alongside the diagnostics OCCT already computed for it.
+// They were written independently and passed different values for GeomConvert_ApproxSurface's
+// eighth constructor argument — 0 here, 1 there — so they returned measurably different surfaces
+// for the same request. They run through this one helper instead.
+//
+// That argument is PrecisCode, "the index of precision", and it is a real algorithm knob rather
+// than a reserved value: GeomConvert_ApproxSurface::Approximate forwards it unchanged into
+// AdvApp2Var_ApproxAFunc2Var, which clamps it to [0, 3] and hands it to AdvApp2Var_Context as
+// iprecis, where lesparam (AdvApp2Var_Context.cxx:22) turns it into the Jacobi degree and the
+// initial per-axis sample-point count that seed the iterative fit. Different values therefore seed
+// a different parameterisation for identical tolerance/continuity/degree/segment inputs.
+//
+// The shared value is 0. Measured over 72 bounded cases (8 surface families x 6 tolerances, plus
+// C0/C1 and maxDegree 10 variants): the two codes never disagreed on IsDone, and produced the same
+// knot/pole layout in 71 of 72 — but a different maxError in all 72, smaller with 0 in 64 of them,
+// and in the single layout-differing case (an offset sphere at tolerance 1e-5) 0 met the requested
+// tolerance with 27x15 poles where 1 needed 27x23. A caller asking for a tolerance wants the
+// lightest surface that meets it, which is what 0 delivered.
+//
+// OCCT itself is split on the value, and splits along that same line: the sites that honour a
+// caller's tolerance and re-check MaxError() themselves pass 0 (ShapeCustom_BSplineRestriction.cxx:852,
+// ShapeConstruct.cxx:265, BRepFill_Sweep.cxx:1162), while the sites that convert with their own
+// hardcoded internal tolerance pass 1 (GeomConvert_1.cxx:786, GeomLib.cxx:1517,
+// GeomFill_Sweep.cxx:296, ShapeUpgrade_UnifySameDomain.cxx:3629). This bridge is in the first group.
+//
+// Note both entry points have always gated on HasResult(), which OCCT documents as true even for a
+// result "not NECESSARILY within the required tolerance" — unlike the curve pair, the surface pair
+// never drifted on that, and unlike the curve class, this one really can report HasResult without
+// IsDone (a torus at tolerance 1e-9 does). Reporting that through isDone is what approxWithDetails
+// is for.
+//
+// Continuity decodes through the #490 shared occtGeomAbsFromParametricContinuity rather than a
+// local copy; this was the one call site that still had its own until the #491/#490 merge.
+static OCCTApproxSurfaceResult occtApproxSurface(OCCTSurfaceRef s, double tolerance,
+                                                 int32_t uContinuity, int32_t vContinuity,
+                                                 int32_t maxSegments, int32_t maxDegree) {
+    OCCTApproxSurfaceResult result = {};
+    // Both the outer handle and the surface it wraps: a null Geom_Surface reaches
+    // GeomAdaptor_Surface, whose own Standard_NullObject precondition is compiled out of this
+    // Release kernel.
+    if (!s || s->surface.IsNull()) return result;
+    try {
+        GeomConvert_ApproxSurface approx(s->surface, tolerance,
+                                          occtGeomAbsFromParametricContinuity(uContinuity),
+                                          occtGeomAbsFromParametricContinuity(vContinuity),
+                                          maxDegree, maxDegree, maxSegments,
+                                          /* PrecisCode */ 0);
+        result.isDone = approx.IsDone();
+        result.hasResult = approx.HasResult();
+        if (result.hasResult) {
+            result.maxError = approx.MaxError();
+            Handle(Geom_BSplineSurface) bspl = approx.Surface();
+            if (!bspl.IsNull()) result.surface = new OCCTSurface(bspl);
+        }
+    } catch (...) {}
+    return result;
+}
+
 OCCTSurfaceRef OCCTSurfaceApproximate(OCCTSurfaceRef s, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree) {
-    if (!s || s->surface.IsNull()) return nullptr;
-    try {
-        const GeomAbs_Shape cont = occtGeomAbsFromParametricContinuity(continuity);
-        GeomConvert_ApproxSurface approx(s->surface, tolerance,
-                                          cont, cont, maxDegree, maxDegree, maxSegments, 0);
-        if (!approx.HasResult()) return nullptr;
-        return new OCCTSurface(approx.Surface());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtApproxSurface(s, tolerance, continuity, continuity, maxSegments, maxDegree).surface;
 }
 
 // Iso Curves
@@ -932,6 +985,13 @@ int32_t OCCTSurfaceGetVDegree(OCCTSurfaceRef s) {
 
 #include <GeomGridEval_Surface.hxx>
 
+// The canonical surface batch evaluators. v0.111's OCCTGridEvalSurfaceD0 duplicated the D0 call
+// here under another name AND wrote the opposite UV layout (u-major vs the v-major this used to
+// write), both headers calling their own layout "row-major"; #486 removed it, settled the family
+// on u-major via occtSurfaceGridIndex (the layout OCCTSurfaceDrawMesh and the Swift SurfaceGrid
+// already used), and renamed its D1 sibling to OCCTSurfaceEvaluateGridD1 (below), the one
+// surface-D1 entry point.
+
 int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
                                  const double* uParams, int32_t uCount,
                                  const double* vParams, int32_t vCount,
@@ -940,30 +1000,65 @@ int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
         || uCount <= 0 || vCount <= 0) return 0;
     try {
         GeomGridEval_Surface evaluator(surface->surface);
-
-        NCollection_Array1<double> uArr(1, uCount);
-        for (int32_t i = 0; i < uCount; i++) {
-            uArr.SetValue(i + 1, uParams[i]);
-        }
-        NCollection_Array1<double> vArr(1, vCount);
-        for (int32_t i = 0; i < vCount; i++) {
-            vArr.SetValue(i + 1, vParams[i]);
-        }
+        NCollection_Array1<double> uArr = occtGridEvalParams(uParams, uCount);
+        NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
 
         NCollection_Array2<gp_Pnt> results = evaluator.EvaluateGrid(uArr, vArr);
-        int32_t total = uCount * vCount;
-        int32_t idx = 0;
-        // Row-major: v (rows) varies slowest, u (cols) varies fastest
-        for (int32_t iv = 1; iv <= vCount; iv++) {
-            for (int32_t iu = 1; iu <= uCount; iu++) {
-                const gp_Pnt& pt = results.Value(iu, iv);
+        // Reject rather than clamp, unlike the curve family's std::min. The loop below indexes
+        // results by uCount/vCount, so a short grid would be an out-of-bounds *read* here (and
+        // this build defines No_Exception, so NCollection's own bounds check is compiled out and
+        // that read is undefined rather than a caught Standard_OutOfRange). A partly-filled 2D
+        // grid also has no count worth returning: a caller checking n == uCount * vCount cannot
+        // do anything useful with "some rows are real". Not reachable in the pinned kernel, where
+        // every surface evaluator returns a full uCount x vCount grid or an empty one, and empty
+        // bottoms out at a null surface or empty params, both rejected above.
+        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;
+
+        for (int32_t iu = 0; iu < uCount; iu++) {
+            for (int32_t iv = 0; iv < vCount; iv++) {
+                const gp_Pnt& pt = results.Value(iu + 1, iv + 1);
+                const int32_t idx = occtSurfaceGridIndex(iu, iv, vCount);
                 outXYZ[idx*3]   = pt.X();
                 outXYZ[idx*3+1] = pt.Y();
                 outXYZ[idx*3+2] = pt.Z();
-                idx++;
             }
         }
-        return total;
+        return uCount * vCount;
+    } catch (...) {
+        return 0;
+    }
+}
+
+int32_t OCCTSurfaceEvaluateGridD1(OCCTSurfaceRef surface,
+                                   const double* uParams, int32_t uCount,
+                                   const double* vParams, int32_t vCount,
+                                   double* outXYZ, double* outD1U, double* outD1V) {
+    if (!surface || surface->surface.IsNull() || !uParams || !vParams
+        || !outXYZ || !outD1U || !outD1V || uCount <= 0 || vCount <= 0) return 0;
+    try {
+        GeomGridEval_Surface evaluator(surface->surface);
+        NCollection_Array1<double> uArr = occtGridEvalParams(uParams, uCount);
+        NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
+
+        NCollection_Array2<GeomGridEval::SurfD1> results = evaluator.EvaluateGridD1(uArr, vArr);
+        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;  // see EvaluateGrid
+
+        for (int32_t iu = 0; iu < uCount; iu++) {
+            for (int32_t iv = 0; iv < vCount; iv++) {
+                const GeomGridEval::SurfD1& r = results.Value(iu + 1, iv + 1);
+                const int32_t idx = occtSurfaceGridIndex(iu, iv, vCount);
+                outXYZ[idx*3]   = r.Point.X();
+                outXYZ[idx*3+1] = r.Point.Y();
+                outXYZ[idx*3+2] = r.Point.Z();
+                outD1U[idx*3]   = r.D1U.X();
+                outD1U[idx*3+1] = r.D1U.Y();
+                outD1U[idx*3+2] = r.D1U.Z();
+                outD1V[idx*3]   = r.D1V.X();
+                outD1V[idx*3+1] = r.D1V.Y();
+                outD1V[idx*3+2] = r.D1V.Z();
+            }
+        }
+        return uCount * vCount;
     } catch (...) {
         return 0;
     }
@@ -1036,24 +1131,6 @@ double OCCTCurve3DDistanceToSurface(OCCTCurve3DRef curve, OCCTSurfaceRef surface
         return extrema.LowerDistance();
     } catch (...) {
         return -1.0;
-    }
-}
-
-// MARK: - Surface to Analytical (v0.30.0)
-
-#include <GeomConvert_SurfToAnaSurf.hxx>
-
-OCCTSurfaceRef OCCTSurfaceToAnalytical(OCCTSurfaceRef surface, double tolerance) {
-    if (!surface || surface->surface.IsNull()) return nullptr;
-    try {
-        GeomConvert_SurfToAnaSurf converter(surface->surface);
-        Handle(Geom_Surface) result = converter.ConvertToAnalytical(tolerance);
-        if (result.IsNull()) return nullptr;
-        // If the result is the same handle, it was already analytical or couldn't convert
-        if (result == surface->surface) return nullptr;
-        return new OCCTSurface(result);
-    } catch (...) {
-        return nullptr;
     }
 }
 
@@ -2690,35 +2767,18 @@ double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface) {
 }
 
 // MARK: - GeomConvert_ApproxSurface (v0.75)
-
 // --- GeomConvert_ApproxSurface ---
 
+// Both surface approximation entry points share occtApproxSurface, declared next to
+// OCCTSurfaceApproximate above — see the #491 note there for the PrecisCode rationale. Note this
+// entry point takes maxDegree BEFORE maxSegments, the reverse of OCCTSurfaceApproximate's order.
 OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull surface,
                                                       double tolerance,
                                                       int32_t uContinuity,
                                                       int32_t vContinuity,
                                                       int32_t maxDegree,
                                                       int32_t maxSegments) {
-    OCCTApproxSurfaceResult result = {};
-    if (!surface) return result;
-    try {
-        GeomConvert_ApproxSurface approx(surface->surface, tolerance,
-                                          occtGeomAbsFromParametricContinuity(uContinuity),
-                                          occtGeomAbsFromParametricContinuity(vContinuity),
-                                          maxDegree, maxDegree, maxSegments, 1);
-        result.isDone = approx.IsDone();
-        result.hasResult = approx.HasResult();
-        if (result.hasResult) {
-            result.maxError = approx.MaxError();
-            Handle(Geom_BSplineSurface) bspl = approx.Surface();
-            if (!bspl.IsNull()) {
-                auto* ref = new OCCTSurface();
-                ref->surface = bspl;
-                result.surface = ref;
-            }
-        }
-    } catch (...) {}
-    return result;
+    return occtApproxSurface(surface, tolerance, uContinuity, vContinuity, maxSegments, maxDegree);
 }
 
 // MARK: - GeomLib_Tool Surface Param + IsPlanar (v0.77)
@@ -2769,40 +2829,33 @@ bool OCCTGeomLibPlanarSurfacePlane(OCCTSurfaceRef _Nonnull surfRef, double toler
     }
 }
 
-// MARK: - GeomConvert_SurfToAnaSurf (v0.78)
 // MARK: - GeomConvert_SurfToAnaSurf
 
-OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalytical(OCCTSurfaceRef _Nonnull surfaceRef, double tolerance) {
+// Package one occtSurfaceToAnalytical answer as the C result both entry points return.
+static OCCTSurfToAnaSurfResult occtSurfToAnaSurfResult(OCCTSurfaceRef _Nullable surfaceRef,
+                                                       double tolerance, const double* uvBounds) {
     OCCTSurfToAnaSurfResult result = {nullptr, 0, false};
-    try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
-        GeomConvert_SurfToAnaSurf converter(surface);
-        Handle(Geom_Surface) resSurf = converter.ConvertToAnalytical(tolerance);
-        if (!resSurf.IsNull()) {
-            result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
+    if (!surfaceRef) return result;
+    Handle(Geom_Surface) resSurf;
+    if (!occtSurfaceToAnalytical(reinterpret_cast<OCCTSurface*>(surfaceRef)->surface, tolerance,
+                                 uvBounds, resSurf, result.gap)) {
+        return result;
+    }
+    result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
+    result.success = true;
     return result;
+}
+
+OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalytical(OCCTSurfaceRef _Nonnull surfaceRef, double tolerance) {
+    return occtSurfToAnaSurfResult(surfaceRef, tolerance, nullptr);
 }
 
 OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalyticalBounded(OCCTSurfaceRef _Nonnull surfaceRef,
                                                                   double tolerance,
                                                                   double uMin, double uMax,
                                                                   double vMin, double vMax) {
-    OCCTSurfToAnaSurfResult result = {nullptr, 0, false};
-    try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
-        GeomConvert_SurfToAnaSurf converter(surface);
-        Handle(Geom_Surface) resSurf = converter.ConvertToAnalytical(tolerance, uMin, uMax, vMin, vMax);
-        if (!resSurf.IsNull()) {
-            result.surface = reinterpret_cast<OCCTSurfaceRef>(new OCCTSurface{resSurf});
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
-    return result;
+    const double uvBounds[4] = {uMin, uMax, vMin, vMax};
+    return occtSurfToAnaSurfResult(surfaceRef, tolerance, uvBounds);
 }
 
 bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef) {
@@ -4611,21 +4664,9 @@ void OCCTSurfaceBounds(OCCTSurfaceRef surface,
     } catch (...) {}
 }
 
+// Delegates to OCCTSurfaceGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTSurfaceContinuity(OCCTSurfaceRef surface) {
-    if (!surface) return -1;
-    try {
-        GeomAbs_Shape cont = surface->surface->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTSurfaceGetContinuity(surface);
 }
 
 OCCTSurfaceRef OCCTSurfaceCopy(OCCTSurfaceRef surface) {
@@ -4689,50 +4730,11 @@ void OCCTSurfaceEvalD2(OCCTSurfaceRef surface, double u, double v,
     } catch (...) {}
 }
 // MARK: - GeomGridEval_Surface (v0.111.0)
-
-void OCCTGridEvalSurfaceD0(OCCTSurfaceRef surface, const double* uParams, int32_t uCount,
-                              const double* vParams, int32_t vCount,
-                              double* xs, double* ys, double* zs) {
-    if (!surface || surface->surface.IsNull() || uCount <= 0 || vCount <= 0) return;
-    try {
-        GeomGridEval_Surface eval(surface->surface);
-        NCollection_Array1<double> uArr(1, uCount), vArr(1, vCount);
-        for (int i = 0; i < uCount; i++) uArr(i+1) = uParams[i];
-        for (int i = 0; i < vCount; i++) vArr(i+1) = vParams[i];
-        NCollection_Array2<gp_Pnt> results = eval.EvaluateGrid(uArr, vArr);
-        for (int iu = 0; iu < uCount; iu++) {
-            for (int iv = 0; iv < vCount; iv++) {
-                int idx = iu * vCount + iv;
-                const gp_Pnt& p = results(iu+1, iv+1);
-                xs[idx] = p.X(); ys[idx] = p.Y(); zs[idx] = p.Z();
-            }
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalSurfaceD1(OCCTSurfaceRef surface, const double* uParams, int32_t uCount,
-                              const double* vParams, int32_t vCount,
-                              double* xs, double* ys, double* zs,
-                              double* d1uxs, double* d1uys, double* d1uzs,
-                              double* d1vxs, double* d1vys, double* d1vzs) {
-    if (!surface || surface->surface.IsNull() || uCount <= 0 || vCount <= 0) return;
-    try {
-        GeomGridEval_Surface eval(surface->surface);
-        NCollection_Array1<double> uArr(1, uCount), vArr(1, vCount);
-        for (int i = 0; i < uCount; i++) uArr(i+1) = uParams[i];
-        for (int i = 0; i < vCount; i++) vArr(i+1) = vParams[i];
-        NCollection_Array2<GeomGridEval::SurfD1> results = eval.EvaluateGridD1(uArr, vArr);
-        for (int iu = 0; iu < uCount; iu++) {
-            for (int iv = 0; iv < vCount; iv++) {
-                int idx = iu * vCount + iv;
-                const auto& r = results(iu+1, iv+1);
-                xs[idx] = r.Point.X(); ys[idx] = r.Point.Y(); zs[idx] = r.Point.Z();
-                d1uxs[idx] = r.D1U.X(); d1uys[idx] = r.D1U.Y(); d1uzs[idx] = r.D1U.Z();
-                d1vxs[idx] = r.D1V.X(); d1vys[idx] = r.D1V.Y(); d1vzs[idx] = r.D1V.Z();
-            }
-        }
-    } catch (...) {}
-}
+//
+// #486: OCCTGridEvalSurfaceD0/D1 lived here. D0 duplicated OCCTSurfaceEvaluateGrid's
+// GeomGridEval_Surface::EvaluateGrid call while writing the opposite UV layout; D1 had no
+// duplicate and survives as OCCTSurfaceEvaluateGridD1, moved up beside its D0 sibling and
+// reshaped to the family's interleaved-triple buffers.
 
 // MARK: - v0.112: BiTgte_CurveOnEdge + Surface extras
 // --- BiTgte_CurveOnEdge ---

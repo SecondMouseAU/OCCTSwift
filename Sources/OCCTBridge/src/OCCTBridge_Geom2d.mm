@@ -139,20 +139,27 @@ static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d&
 #include <Geom2dGridEval_Curve.hxx>
 #include <Geom2dGridEval.hxx>
 
+// The canonical 2D-curve batch evaluators. Two later generations duplicated this job under
+// other names (v0.110's OCCTCurve2DEvalBatchD0/D1, which looped Geom2d_Curve::EvalD0/EvalD1
+// per point and was defined over in OCCTBridge_Curve3D.mm; v0.111's OCCTGridEvalCurve2dD0/D1,
+// the same Geom2dGridEval_Curve calls as here); #486 removed both and pointed their Swift
+// spellings at these two.
+
 int32_t OCCTCurve2DEvaluateGrid(OCCTCurve2DRef curve,
                                  const double* params, int32_t paramCount,
                                  double* outXY) {
     if (!curve || curve->curve.IsNull() || !params || !outXY || paramCount <= 0) return 0;
     try {
         Geom2dGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<gp_Pnt2d> results = evaluator.EvaluateGrid(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        // Defensive: bound the write by the caller's buffer as well as by what OCCT returned.
+        // Every evaluator in the pinned kernel returns exactly theParams.Length() or an empty
+        // array (empty only for a null curve or empty params, both rejected above), so neither
+        // direction is reachable today. Taking the min covers both anyway: a shorter result must
+        // not be read past its end, and a longer one must not be written past outXY's end.
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));
         for (int32_t i = 0; i < n; i++) {
             const gp_Pnt2d& pt = results.Value(i + 1);
             outXY[i*2]   = pt.X();
@@ -170,14 +177,10 @@ int32_t OCCTCurve2DEvaluateGridD1(OCCTCurve2DRef curve,
     if (!curve || curve->curve.IsNull() || !params || !outXY || !outDXDY || paramCount <= 0) return 0;
     try {
         Geom2dGridEval_Curve evaluator(curve->curve);
-
-        NCollection_Array1<double> paramArr(1, paramCount);
-        for (int32_t i = 0; i < paramCount; i++) {
-            paramArr.SetValue(i + 1, params[i]);
-        }
+        NCollection_Array1<double> paramArr = occtGridEvalParams(params, paramCount);
 
         NCollection_Array1<Geom2dGridEval::CurveD1> results = evaluator.EvaluateGridD1(paramArr);
-        int32_t n = static_cast<int32_t>(results.Size());
+        int32_t n = std::min(paramCount, static_cast<int32_t>(results.Size()));  // see EvaluateGrid
         for (int32_t i = 0; i < n; i++) {
             const Geom2dGridEval::CurveD1& r = results.Value(i + 1);
             outXY[i*2]     = r.Point.X();
@@ -3912,21 +3915,9 @@ OCCTCurve2DRef OCCTCurve2DCopy(OCCTCurve2DRef curve) {
     } catch (...) { return nullptr; }
 }
 
+// Delegates to OCCTCurve2DGetContinuity: same Continuity() call, one encoding (#485).
 int32_t OCCTCurve2DContinuity(OCCTCurve2DRef curve) {
-    if (!curve) return -1;
-    try {
-        GeomAbs_Shape cont = curve->curve->Continuity();
-        switch (cont) {
-            case GeomAbs_C0: return 0;
-            case GeomAbs_C1: return 1;
-            case GeomAbs_C2: return 2;
-            case GeomAbs_C3: return 3;
-            case GeomAbs_CN: return 99;
-            case GeomAbs_G1: return -2;
-            case GeomAbs_G2: return -3;
-            default: return -1;
-        }
-    } catch (...) { return -1; }
+    return OCCTCurve2DGetContinuity(curve);
 }
 // MARK: - Curve2D Evaluation (v0.110.0)
 
@@ -3964,35 +3955,10 @@ void OCCTCurve2DEvalD2(OCCTCurve2DRef curve, double u,
     } catch (...) {}
 }
 // MARK: - Geom2dGridEval_Curve (v0.111.0)
-
-void OCCTGridEvalCurve2dD0(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        Geom2dGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<gp_Pnt2d> results = eval.EvaluateGrid(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).X(); ys[i] = results(i+1).Y();
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalCurve2dD1(OCCTCurve2DRef curve, const double* params, int32_t count,
-                              double* xs, double* ys, double* d1xs, double* d1ys) {
-    if (!curve || curve->curve.IsNull() || count <= 0) return;
-    try {
-        Geom2dGridEval_Curve eval(curve->curve);
-        NCollection_Array1<double> pArr(1, count);
-        for (int i = 0; i < count; i++) pArr(i+1) = params[i];
-        NCollection_Array1<Geom2dGridEval::CurveD1> results = eval.EvaluateGridD1(pArr);
-        for (int i = 0; i < count; i++) {
-            xs[i] = results(i+1).Point.X(); ys[i] = results(i+1).Point.Y();
-            d1xs[i] = results(i+1).D1.X(); d1ys[i] = results(i+1).D1.Y();
-        }
-    } catch (...) {}
-}
+//
+// #486: OCCTGridEvalCurve2dD0/D1 lived here, the same Geom2dGridEval_Curve::EvaluateGrid /
+// EvaluateGridD1 calls as OCCTCurve2DEvaluateGrid/D1 above, only writing per-axis planes
+// instead of interleaved pairs. Removed; Curve2D.gridEvalD0/D1 now forward to the v0.28.0 pair.
 
 // MARK: - v0.112: Curve2D extras
 // --- Curve2D extras ---
