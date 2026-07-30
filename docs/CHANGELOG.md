@@ -46,11 +46,21 @@ answered `2` answers `4`; a CN curve that answered `99` answers `6`; a G1 curve 
 of the form `continuityOrder >= someOrder` needs revisiting — that idiom compared two different
 encodings, which is the defect this family invited.
 
+**Behaviour change (C API only).** `OCCTCurve3DContinuity`, `OCCTCurve2DContinuity` and
+`OCCTSurfaceContinuity` returned `-1` for a null argument and now return `0`, matching the
+`*GetContinuity` convention they delegate to. `0` is not distinguishable from a genuine C0
+measurement; a caller needing to tell "null" from "C0" must null-check before calling. This
+follows the family's existing convention rather than inventing a fourth sentinel, and all three
+declare `_Nonnull` arguments, so passing null was already a contract violation. No Swift API is
+affected — `Curve3D`/`Curve2D`/`Surface` cannot hold a null handle reference.
+
 - **Bridge:** the three `switch` bodies were byte-identical to each other and each duplicated
   its `GetContinuity` sibling's one-line body. All three now delegate to that sibling, which
-  also picks up the `.IsNull()` handle guard the `Continuity` family was missing (it checked
-  only the wrapper pointer, then dereferenced a possibly-null `Handle`). The C declarations are
-  retained for ABI compatibility.
+  also picks up the `.IsNull()` handle guard the `Continuity` family was missing: they checked
+  only the wrapper pointer, then dereferenced the inner `Handle`, which the wrapper's own
+  default constructor (`OCCTCurve3D() {}`) leaves null — so this was reachable, not theoretical,
+  and a null `Handle` deref is an OS signal the surrounding `catch (...)` cannot intercept. The
+  C declarations are retained for ABI compatibility.
 - **Swift:** new top-level `ContinuityClass` is the shared result vocabulary — the third
   contract `Continuity.swift` already documented after #398 but had only half-implemented.
   `Surface.Continuity` becomes a deprecated alias of it (raw values unchanged), and `Curve3D` /
