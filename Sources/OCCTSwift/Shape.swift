@@ -3474,8 +3474,14 @@ extension Shape {
     /// Each edge can have its own fillet radius, allowing for more control
     /// than applying a uniform fillet to all edges.
     ///
-    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs
-    /// - Returns: Filleted shape, or nil on failure
+    /// Every radius must be positive: one non-positive (or NaN) radius rejects the whole batch,
+    /// the same contract ``filleted(edges:radius:)`` and
+    /// ``filleted(edges:startRadius:endRadius:)`` apply to theirs. An out-of-range `edgeIndex` is
+    /// skipped, so the fillet is applied to whichever indices resolve on this shape.
+    ///
+    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs; each radius must be > 0
+    /// - Returns: Filleted shape, or nil on failure, including an empty array, a non-positive
+    ///   radius anywhere in the array, or no index resolving to an edge of this shape
     ///
     /// ## Example
     ///
@@ -3486,9 +3492,12 @@ extension Shape {
     ///     (1, 2.0),  // Edge 1 gets 2mm fillet
     ///     (2, 0.5)   // Edge 2 gets 0.5mm fillet
     /// ])
+    ///
+    /// // Rejected: a radius of zero is not a fillet, so the batch returns nil
+    /// let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
     /// ```
     public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape? {
-        guard !edgeRadii.isEmpty else { return nil }
+        guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
 
         var indices = edgeRadii.map { Int32($0.edgeIndex) }
         var radii = edgeRadii.map { $0.radius }
@@ -5300,10 +5309,12 @@ extension Shape {
     /// shape and a `ShapeHistoryRef` queryable for `Modified` / `Generated` /
     /// `IsDeleted` per input sub-shape (e.g. a filleted edge → multiple
     /// generated fillet faces).
+    ///
+    /// `radius` must be positive, matching ``filleted(edges:radius:)``.
     public func filletedWithFullHistory(radius: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
-        guard !edges.isEmpty else { return nil }
+        guard !edges.isEmpty, radius > 0 else { return nil }
         let edgeIndices = edges.map { Int32($0) }
         var resultRef: OCCTShapeRef?
         let h = edgeIndices.withUnsafeBufferPointer { buf in
@@ -5316,9 +5327,12 @@ extension Shape {
 
     /// Variable-radius fillet on a single edge: radius linearly varies from
     /// `startRadius` (at the edge's first parameter) to `endRadius` (at last).
+    ///
+    /// Both radii must be positive, matching ``filleted(edges:startRadius:endRadius:)``.
     public func filletedWithFullHistory(edge: Int, startRadius: Double, endRadius: Double)
         -> (result: Shape, history: ShapeHistoryRef)?
     {
+        guard startRadius > 0, endRadius > 0 else { return nil }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeHistoryFromFilletEdgeVariable(handle, Int32(edge),
                                                                startRadius, endRadius,

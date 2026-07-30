@@ -2070,9 +2070,10 @@ public func filletedWithFullHistory(radius: Double, edges: [Int])
 ```
 
 - **Parameters:**
-  - `radius` — fillet radius.
-  - `edges` — 0-based edge indices to fillet.
-- **Returns:** Result shape and history, or nil on failure or empty edge list.
+  - `radius` — fillet radius. Must be > 0.
+  - `edges` — 0-based edge indices to fillet. An index that does not resolve on this shape is skipped.
+- **Returns:** Result shape and history, or nil on failure, an empty edge list, or a non-positive
+  radius (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeHistoryFromFilletEdges`).
 - **Example:**
   ```swift
@@ -2094,9 +2095,10 @@ Radius varies linearly from `startRadius` (at the edge's first parameter) to `en
 
 - **Parameters:**
   - `edge` — 0-based edge index.
-  - `startRadius` — radius at the start of the edge.
-  - `endRadius` — radius at the end of the edge.
-- **Returns:** Result shape and history, or nil on failure.
+  - `startRadius` — radius at the start of the edge. Must be > 0.
+  - `endRadius` — radius at the end of the edge. Must be > 0.
+- **Returns:** Result shape and history, or nil on failure, or a non-positive radius at either
+  end (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` variable-radius (via `OCCTShapeHistoryFromFilletEdgeVariable`).
 - **Example:**
   ```swift

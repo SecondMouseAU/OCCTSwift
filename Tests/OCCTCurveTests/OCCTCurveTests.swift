@@ -2713,6 +2713,7 @@ struct Curve3DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD0` on purpose.")
     @Test func batchD0() {
         if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
@@ -2724,6 +2725,7 @@ struct Curve3DEvalTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD1` on purpose.")
     @Test func batchD1() {
         if let curve = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
             let params = [0.0, Double.pi / 2]
@@ -2738,6 +2740,7 @@ struct Curve3DEvalTests {
 
 @Suite("GridEval 3D Curve v0.111")
 struct GridEvalCurve3DTests {
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
     @Test func gridEvalD0BSpline() {
         // Create a BSpline curve via interpolation
         if let curve = Curve3D.interpolate(points: [
@@ -2753,6 +2756,7 @@ struct GridEvalCurve3DTests {
         }
     }
 
+    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
     @Test func gridEvalD1BSpline() {
         if let curve = Curve3D.interpolate(points: [
             SIMD3(0, 0, 0), SIMD3(2, 3, 0), SIMD3(5, 5, 0), SIMD3(8, 3, 0), SIMD3(10, 0, 0)
@@ -2765,6 +2769,80 @@ struct GridEvalCurve3DTests {
             let d1Len = sqrt(results[0].d1.x * results[0].d1.x + results[0].d1.y * results[0].d1.y + results[0].d1.z * results[0].d1.z)
             #expect(d1Len > 0.01)
         }
+    }
+}
+
+/// #486: `Curve3D` had three batch-evaluation spellings over three generations of bridge
+/// functions: `evaluateGrid`/`evaluateGridD1` (v0.29.0, `GeomGridEval_Curve`), `evalBatchD0`/`D1`
+/// (v0.110.0, which had regressed to a per-point `Geom_Curve::EvalD0`/`EvalD1` loop) and
+/// `gridEvalD0`/`D1` (v0.111.0, the same `GeomGridEval_Curve` calls again). The two later bridge
+/// generations are gone and the later spellings forward to the first, so all three must agree.
+@Suite("Issue 486: Curve3D batch-eval spellings agree")
+struct Issue486Curve3DBatchTests {
+
+    private func bspline() -> Curve3D? {
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(2, 3, 0.5), SIMD3(5, 5, 1.5), SIMD3(8, 3, 0), SIMD3(10, 0, 2)
+        ])
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGrid, evalBatchD0 and gridEvalD0 return the same points")
+    func d0SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<7).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 6.0
+        }
+
+        let canonical = curve.evaluateGrid(params)
+        let batch = curve.evalBatchD0(params: params)
+        let grid = curve.gridEvalD0(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            // point(at:) is the independent per-point evaluator, so this also pins the ordering.
+            #expect(simd_length(canonical[i] - curve.point(at: params[i])) < 1e-6)
+            #expect(simd_length(batch[i] - canonical[i]) < 1e-9)
+            #expect(simd_length(grid[i] - canonical[i]) < 1e-9)
+        }
+    }
+
+    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
+    @Test("evaluateGridD1, evalBatchD1 and gridEvalD1 return the same points and derivatives")
+    func d1SpellingsAgree() {
+        guard let curve = bspline() else { return }
+        let domain = curve.domain
+        let params = (0..<5).map {
+            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 4.0
+        }
+
+        let canonical = curve.evaluateGridD1(params)
+        let batch = curve.evalBatchD1(params: params)
+        let grid = curve.gridEvalD1(params: params)
+        #expect(canonical.count == params.count)
+        #expect(batch.count == params.count)
+        #expect(grid.count == params.count)
+        guard canonical.count == params.count else { return }
+
+        for i in 0..<params.count {
+            #expect(simd_length(batch[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(batch[i].d1 - canonical[i].tangent) < 1e-9)
+            #expect(simd_length(grid[i].point - canonical[i].point) < 1e-9)
+            #expect(simd_length(grid[i].d1 - canonical[i].tangent) < 1e-9)
+            // Non-degenerate derivative, so an all-zeroes buffer would not pass.
+            #expect(simd_length(canonical[i].tangent) > 1e-6)
+        }
+    }
+
+    @Test("empty parameters give an empty result, not one padded with zeroes")
+    func emptyParametersGiveEmptyResult() {
+        guard let curve = bspline() else { return }
+        #expect(curve.evaluateGrid([]).isEmpty)
+        #expect(curve.evaluateGridD1([]).isEmpty)
     }
 }
 

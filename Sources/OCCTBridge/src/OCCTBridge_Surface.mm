@@ -995,6 +995,13 @@ int32_t OCCTSurfaceGetVDegree(OCCTSurfaceRef s) {
 
 #include <GeomGridEval_Surface.hxx>
 
+// The canonical surface batch evaluators. v0.111's OCCTGridEvalSurfaceD0 duplicated the D0 call
+// here under another name AND wrote the opposite UV layout (u-major vs the v-major this used to
+// write), both headers calling their own layout "row-major"; #486 removed it, settled the family
+// on u-major via occtSurfaceGridIndex (the layout OCCTSurfaceDrawMesh and the Swift SurfaceGrid
+// already used), and renamed its D1 sibling to OCCTSurfaceEvaluateGridD1 (below), the one
+// surface-D1 entry point.
+
 int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
                                  const double* uParams, int32_t uCount,
                                  const double* vParams, int32_t vCount,
@@ -1003,30 +1010,65 @@ int32_t OCCTSurfaceEvaluateGrid(OCCTSurfaceRef surface,
         || uCount <= 0 || vCount <= 0) return 0;
     try {
         GeomGridEval_Surface evaluator(surface->surface);
-
-        NCollection_Array1<double> uArr(1, uCount);
-        for (int32_t i = 0; i < uCount; i++) {
-            uArr.SetValue(i + 1, uParams[i]);
-        }
-        NCollection_Array1<double> vArr(1, vCount);
-        for (int32_t i = 0; i < vCount; i++) {
-            vArr.SetValue(i + 1, vParams[i]);
-        }
+        NCollection_Array1<double> uArr = occtGridEvalParams(uParams, uCount);
+        NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
 
         NCollection_Array2<gp_Pnt> results = evaluator.EvaluateGrid(uArr, vArr);
-        int32_t total = uCount * vCount;
-        int32_t idx = 0;
-        // Row-major: v (rows) varies slowest, u (cols) varies fastest
-        for (int32_t iv = 1; iv <= vCount; iv++) {
-            for (int32_t iu = 1; iu <= uCount; iu++) {
-                const gp_Pnt& pt = results.Value(iu, iv);
+        // Reject rather than clamp, unlike the curve family's std::min. The loop below indexes
+        // results by uCount/vCount, so a short grid would be an out-of-bounds *read* here (and
+        // this build defines No_Exception, so NCollection's own bounds check is compiled out and
+        // that read is undefined rather than a caught Standard_OutOfRange). A partly-filled 2D
+        // grid also has no count worth returning: a caller checking n == uCount * vCount cannot
+        // do anything useful with "some rows are real". Not reachable in the pinned kernel, where
+        // every surface evaluator returns a full uCount x vCount grid or an empty one, and empty
+        // bottoms out at a null surface or empty params, both rejected above.
+        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;
+
+        for (int32_t iu = 0; iu < uCount; iu++) {
+            for (int32_t iv = 0; iv < vCount; iv++) {
+                const gp_Pnt& pt = results.Value(iu + 1, iv + 1);
+                const int32_t idx = occtSurfaceGridIndex(iu, iv, vCount);
                 outXYZ[idx*3]   = pt.X();
                 outXYZ[idx*3+1] = pt.Y();
                 outXYZ[idx*3+2] = pt.Z();
-                idx++;
             }
         }
-        return total;
+        return uCount * vCount;
+    } catch (...) {
+        return 0;
+    }
+}
+
+int32_t OCCTSurfaceEvaluateGridD1(OCCTSurfaceRef surface,
+                                   const double* uParams, int32_t uCount,
+                                   const double* vParams, int32_t vCount,
+                                   double* outXYZ, double* outD1U, double* outD1V) {
+    if (!surface || surface->surface.IsNull() || !uParams || !vParams
+        || !outXYZ || !outD1U || !outD1V || uCount <= 0 || vCount <= 0) return 0;
+    try {
+        GeomGridEval_Surface evaluator(surface->surface);
+        NCollection_Array1<double> uArr = occtGridEvalParams(uParams, uCount);
+        NCollection_Array1<double> vArr = occtGridEvalParams(vParams, vCount);
+
+        NCollection_Array2<GeomGridEval::SurfD1> results = evaluator.EvaluateGridD1(uArr, vArr);
+        if (results.NbRows() < uCount || results.NbColumns() < vCount) return 0;  // see EvaluateGrid
+
+        for (int32_t iu = 0; iu < uCount; iu++) {
+            for (int32_t iv = 0; iv < vCount; iv++) {
+                const GeomGridEval::SurfD1& r = results.Value(iu + 1, iv + 1);
+                const int32_t idx = occtSurfaceGridIndex(iu, iv, vCount);
+                outXYZ[idx*3]   = r.Point.X();
+                outXYZ[idx*3+1] = r.Point.Y();
+                outXYZ[idx*3+2] = r.Point.Z();
+                outD1U[idx*3]   = r.D1U.X();
+                outD1U[idx*3+1] = r.D1U.Y();
+                outD1U[idx*3+2] = r.D1U.Z();
+                outD1V[idx*3]   = r.D1V.X();
+                outD1V[idx*3+1] = r.D1V.Y();
+                outD1V[idx*3+2] = r.D1V.Z();
+            }
+        }
+        return uCount * vCount;
     } catch (...) {
         return 0;
     }
@@ -4746,50 +4788,11 @@ void OCCTSurfaceEvalD2(OCCTSurfaceRef surface, double u, double v,
     } catch (...) {}
 }
 // MARK: - GeomGridEval_Surface (v0.111.0)
-
-void OCCTGridEvalSurfaceD0(OCCTSurfaceRef surface, const double* uParams, int32_t uCount,
-                              const double* vParams, int32_t vCount,
-                              double* xs, double* ys, double* zs) {
-    if (!surface || surface->surface.IsNull() || uCount <= 0 || vCount <= 0) return;
-    try {
-        GeomGridEval_Surface eval(surface->surface);
-        NCollection_Array1<double> uArr(1, uCount), vArr(1, vCount);
-        for (int i = 0; i < uCount; i++) uArr(i+1) = uParams[i];
-        for (int i = 0; i < vCount; i++) vArr(i+1) = vParams[i];
-        NCollection_Array2<gp_Pnt> results = eval.EvaluateGrid(uArr, vArr);
-        for (int iu = 0; iu < uCount; iu++) {
-            for (int iv = 0; iv < vCount; iv++) {
-                int idx = iu * vCount + iv;
-                const gp_Pnt& p = results(iu+1, iv+1);
-                xs[idx] = p.X(); ys[idx] = p.Y(); zs[idx] = p.Z();
-            }
-        }
-    } catch (...) {}
-}
-
-void OCCTGridEvalSurfaceD1(OCCTSurfaceRef surface, const double* uParams, int32_t uCount,
-                              const double* vParams, int32_t vCount,
-                              double* xs, double* ys, double* zs,
-                              double* d1uxs, double* d1uys, double* d1uzs,
-                              double* d1vxs, double* d1vys, double* d1vzs) {
-    if (!surface || surface->surface.IsNull() || uCount <= 0 || vCount <= 0) return;
-    try {
-        GeomGridEval_Surface eval(surface->surface);
-        NCollection_Array1<double> uArr(1, uCount), vArr(1, vCount);
-        for (int i = 0; i < uCount; i++) uArr(i+1) = uParams[i];
-        for (int i = 0; i < vCount; i++) vArr(i+1) = vParams[i];
-        NCollection_Array2<GeomGridEval::SurfD1> results = eval.EvaluateGridD1(uArr, vArr);
-        for (int iu = 0; iu < uCount; iu++) {
-            for (int iv = 0; iv < vCount; iv++) {
-                int idx = iu * vCount + iv;
-                const auto& r = results(iu+1, iv+1);
-                xs[idx] = r.Point.X(); ys[idx] = r.Point.Y(); zs[idx] = r.Point.Z();
-                d1uxs[idx] = r.D1U.X(); d1uys[idx] = r.D1U.Y(); d1uzs[idx] = r.D1U.Z();
-                d1vxs[idx] = r.D1V.X(); d1vys[idx] = r.D1V.Y(); d1vzs[idx] = r.D1V.Z();
-            }
-        }
-    } catch (...) {}
-}
+//
+// #486: OCCTGridEvalSurfaceD0/D1 lived here. D0 duplicated OCCTSurfaceEvaluateGrid's
+// GeomGridEval_Surface::EvaluateGrid call while writing the opposite UV layout; D1 had no
+// duplicate and survives as OCCTSurfaceEvaluateGridD1, moved up beside its D0 sibling and
+// reshaped to the family's interleaved-triple buffers.
 
 // MARK: - v0.112: BiTgte_CurveOnEdge + Surface extras
 // --- BiTgte_CurveOnEdge ---

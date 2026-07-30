@@ -711,37 +711,18 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance) {
     }
 }
 
+// Shares occtShapeFilletEdgeList (OCCTBridge_Internal.h) with OCCTShapeFilletEdges and
+// OCCTShapeFilletEdgesLinear in OCCTBridge_Modeling.mm, supplying only the per-edge radius.
+// This is the entry point that had no radius precondition at all; see that helper. #489
 OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
                                   const int32_t* edgeIndices, const double* radii, int32_t count) {
-    if (!shape || !edgeIndices || !radii || count < 1) return nullptr;
+    if (!occtValidFilletRadii(radii, count)) return nullptr;
 
-    try {
-        // Get all edges from shape
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        // Create fillet maker
-        BRepFilletAPI_MakeFillet fillet(shape->shape);
-
-        // Add each edge with its radius
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx < 0 || idx >= edgeMap.Extent()) continue;
-
-            TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx + 1));
-            fillet.Add(radii[i], edge);
-        }
-
-        fillet.Build();
-        if (!fillet.IsDone()) return nullptr;
-
-        TopoDS_Shape result = fillet.Shape();
-        if (result.IsNull()) return nullptr;
-
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
+    return occtShapeFilletEdgeList(shape, edgeIndices, count,
+                                   [radii](BRepFilletAPI_MakeFillet& fillet,
+                                           const TopoDS_Edge& edge, int32_t entry) {
+        fillet.Add(radii[entry], edge);
+    });
 }
 
 // MARK: - Surface filling (#430/#434)
