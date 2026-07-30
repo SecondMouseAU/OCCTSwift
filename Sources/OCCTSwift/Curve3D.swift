@@ -1786,13 +1786,32 @@ extension Curve3D {
     }
 
     /// Interpolate a periodic (closed) 3D BSpline through points.
-    public static func interpolatePeriodic(points: [SIMD3<Double>]) -> Curve3D? {
-        var flat = [Double]()
-        for p in points { flat.append(contentsOf: [p.x, p.y, p.z]) }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTInterpolatePeriodic(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
-        return Curve3D(handle: ref)
+    ///
+    /// A spelling of `interpolate(points:closed:tolerance:)` with `closed: true`, and it
+    /// delegates to it: the two cannot produce different curves for the same input.
+    ///
+    /// - Parameters:
+    ///   - points: Points to interpolate. At least 2; the curve closes back to `points[0]`, so
+    ///     do not repeat the first point at the end.
+    ///   - tolerance: Interpolation tolerance. Defaults to `1e-6`, which is what this method used
+    ///     to hardcode with no way to change it (#493).
+    /// - Returns: The periodic curve, or `nil` if interpolation fails.
+    ///
+    /// ```swift
+    /// let loop = Curve3D.interpolatePeriodic(points: [
+    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),
+    /// ])
+    /// #expect(loop?.isPeriodic == true)
+    ///
+    /// // Identical to spelling it out on the general factory:
+    /// let same = Curve3D.interpolate(points: [
+    ///     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(-1, 0, 0), SIMD3(0, -1, 0),
+    /// ], closed: true)
+    /// #expect(loop?.domain == same?.domain)
+    /// ```
+    public static func interpolatePeriodic(points: [SIMD3<Double>],
+                                           tolerance: Double = 1e-6) -> Curve3D? {
+        interpolate(points: points, closed: true, tolerance: tolerance)
     }
 
     /// Approximate a 3D BSpline through points with degree and continuity control.
