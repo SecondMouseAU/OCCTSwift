@@ -2941,6 +2941,10 @@ int32_t OCCTCurve3DBSplineToBeziers(OCCTCurve3DRef curve,
 void OCCTCurve3DFreeArray(OCCTCurve3DRef* curves, int32_t count);
 OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves, int32_t count,
                                          double tolerance);
+/// Approximate a curve as a BSpline. Returns the fit whenever GeomConvert_ApproxCurve produced one
+/// (HasResult), which per OCCT includes a best-effort fit outside `tolerance` — use
+/// OCCTGeomConvertApproxCurve for the same fit plus its maxError/isDone. Both share one
+/// implementation (#491).
 OCCTCurve3DRef OCCTCurve3DApproximate(OCCTCurve3DRef curve, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree);
@@ -3061,6 +3065,11 @@ OCCTSurfaceRef OCCTSurfaceMirrorAxis(OCCTSurfaceRef surface,
 
 // Conversion
 OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef surface);
+/// Approximate a surface as a BSpline surface. Returns the fit whenever GeomConvert_ApproxSurface
+/// produced one (HasResult), which per OCCT includes a best-effort fit outside `tolerance` — use
+/// OCCTGeomConvertApproxSurface for the same fit plus its maxError/isDone. Both share one
+/// implementation, including the PrecisCode they pass (#491). `continuity` applies to both
+/// parametric directions; the detailed entry point takes them separately.
 OCCTSurfaceRef OCCTSurfaceApproximate(OCCTSurfaceRef surface, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree);
@@ -10038,6 +10047,9 @@ typedef struct {
     bool hasResult;
 } OCCTApproxCurveResult;
 
+/// The same approximation OCCTCurve3DApproximate performs (one shared implementation since #491),
+/// reporting the fit's maxError and completion flags. `curve` is populated exactly when
+/// `hasResult`; `isDone` is whether the fit reached `tolerance`.
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                   double tolerance,
                                                   int32_t continuity,
@@ -10054,6 +10066,11 @@ typedef struct {
     bool hasResult;
 } OCCTApproxSurfaceResult;
 
+/// The same approximation OCCTSurfaceApproximate performs (one shared implementation since #491,
+/// including the PrecisCode passed to GeomConvert_ApproxSurface), reporting the fit's maxError and
+/// completion flags. `surface` is populated exactly when `hasResult`; `isDone` is whether the fit
+/// reached `tolerance`. Note maxDegree comes BEFORE maxSegments here, the reverse of
+/// OCCTSurfaceApproximate's argument order.
 OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull surface,
                                                       double tolerance,
                                                       int32_t uContinuity,

@@ -743,26 +743,67 @@ OCCTCurve3DRef OCCTCurve3DJoinToBSpline(const OCCTCurve3DRef* curves, int32_t co
     }
 }
 
+// Map a requested approximation continuity onto GeomAbs_Shape. Request orders count 0, 1, 2, 3
+// for C0..C3, which is NOT GeomAbs_Shape's own declared order (that interleaves G1/G2). Out-of-range
+// values fall back to C2, the value both approximation entry points default to.
+static GeomAbs_Shape intToContinuity(int32_t c) {
+    switch (c) {
+        case 0: return GeomAbs_C0;
+        case 1: return GeomAbs_C1;
+        case 2: return GeomAbs_C2;
+        case 3: return GeomAbs_C3;
+        default: return GeomAbs_C2;
+    }
+}
+
+// === #491: one GeomConvert_ApproxCurve run behind both curve approximation entry points ===
+//
+// OCCTCurve3DApproximate (Curve3D.approximated) and OCCTGeomConvertApproxCurve
+// (Curve3D.approxWithDetails) are two views of the same approximation: the first returns the
+// fitted BSpline, the second returns it alongside the diagnostics OCCT already computed for it.
+// They were written independently and drifted on which completion accessor decides success —
+// IsDone() here, HasResult() there — so they run through this one helper instead.
+//
+// The shared gate is HasResult(). The header documents the two as different questions: IsDone() is
+// "the approximation has been done within required tolerance", HasResult() is "did come out with a
+// result that is not NECESSARILY within the required tolerance". In this kernel they cannot
+// actually disagree: GeomConvert_ApproxCurve copies both flags off AdvApprox_ApproxAFunction, whose
+// only HasResult-without-IsDone path is the ErrorCode = -1 assignment at
+// AdvApprox_ApproxAFunction.cxx:550 — commented out upstream ("// for now ErrorCode=-1;"). With
+// that line dead, ErrorCode is only ever 0 (both flags set) or 1 (neither), which is why gating on
+// IsDone() never actually rejected an over-tolerance fit: a circle fitted with one segment at
+// degree 3 against a 1e-9 tolerance reports maxError 5.1 and still reports IsDone.
+//
+// HasResult() is the right one to standardise on regardless. It is what OCCT's own curve conversion
+// entry points use (GeomConvert.cxx:345/441, GeomToIGES_GeomCurve.cxx:632,
+// GeomFill_Profiler.cxx:136), it is what both surface entry points already used, and it is the only
+// gate under which approxWithDetails' isDone/maxError diagnostics mean anything — reporting
+// isDone: false is the point of that API, so it cannot also be the reason to return nothing.
+static OCCTApproxCurveResult occtApproxCurve(OCCTCurve3DRef c, double tolerance,
+                                             int32_t continuity, int32_t maxSegments,
+                                             int32_t maxDegree) {
+    OCCTApproxCurveResult result = {};
+    // Both the outer handle and the curve it wraps: a null Geom_Curve reaches GeomAdaptor_Curve,
+    // whose own Standard_NullObject precondition is compiled out of this Release kernel.
+    if (!c || c->curve.IsNull()) return result;
+    try {
+        GeomConvert_ApproxCurve approx(c->curve, tolerance, intToContinuity(continuity),
+                                        maxSegments, maxDegree);
+        result.isDone = approx.IsDone();
+        result.hasResult = approx.HasResult();
+        if (result.hasResult) {
+            result.maxError = approx.MaxError();
+            Handle(Geom_BSplineCurve) bspl = approx.Curve();
+            if (!bspl.IsNull()) result.curve = new OCCTCurve3D(bspl);
+        }
+    } catch (...) {}
+    return result;
+}
+
 OCCTCurve3DRef OCCTCurve3DApproximate(OCCTCurve3DRef c, double tolerance,
                                        int32_t continuity, int32_t maxSegments,
                                        int32_t maxDegree) {
-    if (!c || c->curve.IsNull()) return nullptr;
-    try {
-        GeomAbs_Shape cont = GeomAbs_C2;
-        switch (continuity) {
-            case 0: cont = GeomAbs_C0; break;
-            case 1: cont = GeomAbs_C1; break;
-            case 2: cont = GeomAbs_C2; break;
-            case 3: cont = GeomAbs_C3; break;
-        }
-
-        GeomConvert_ApproxCurve approx(c->curve, tolerance, cont, maxSegments, maxDegree);
-        if (!approx.IsDone()) return nullptr;
-
-        return new OCCTCurve3D(approx.Curve());
-    } catch (...) {
-        return nullptr;
-    }
+    return occtApproxCurve(c, tolerance, continuity, maxSegments, maxDegree).curve;
 }
 
 // Draw Methods
@@ -1628,39 +1669,14 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
 // MARK: - GeomConvert_ApproxCurve (v0.75)
 // --- GeomConvert_ApproxCurve ---
 
-static GeomAbs_Shape intToContinuity(int32_t c) {
-    switch (c) {
-        case 0: return GeomAbs_C0;
-        case 1: return GeomAbs_C1;
-        case 2: return GeomAbs_C2;
-        case 3: return GeomAbs_C3;
-        default: return GeomAbs_C2;
-    }
-}
-
+// Both curve approximation entry points share occtApproxCurve, declared next to
+// OCCTCurve3DApproximate above — see the #491 note there for why the gate is HasResult().
 OCCTApproxCurveResult OCCTGeomConvertApproxCurve(OCCTCurve3DRef _Nonnull curve,
                                                   double tolerance,
                                                   int32_t continuity,
                                                   int32_t maxSegments,
                                                   int32_t maxDegree) {
-    OCCTApproxCurveResult result = {};
-    if (!curve) return result;
-    try {
-        GeomConvert_ApproxCurve approx(curve->curve, tolerance,
-                                        intToContinuity(continuity), maxSegments, maxDegree);
-        result.isDone = approx.IsDone();
-        result.hasResult = approx.HasResult();
-        if (result.hasResult) {
-            result.maxError = approx.MaxError();
-            Handle(Geom_BSplineCurve) bspl = approx.Curve();
-            if (!bspl.IsNull()) {
-                auto* ref = new OCCTCurve3D();
-                ref->curve = bspl;
-                result.curve = ref;
-            }
-        }
-    } catch (...) {}
-    return result;
+    return occtApproxCurve(curve, tolerance, continuity, maxSegments, maxDegree);
 }
 
 // MARK: - GCPnts QuasiUniform / TangentialDeflection (v0.75)

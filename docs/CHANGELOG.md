@@ -201,6 +201,73 @@ down-casts its inputs to `Geom_BezierCurve` and returns `nullptr` for anything e
 `nil` back and skipped its entire body through `if let` without ever calling `translate`. It now uses
 real Bezier boundaries and asserts the surface actually moved.
 
+#### One `GeomConvert_Approx*` run per type, not two that disagree (#491)
+
+`Curve3D` and `Surface` each wrapped the same OCCT approximation class twice — `approximated`
+returning the fitted BSpline, `approxWithDetails` returning it plus OCCT's own diagnostics — and each
+pair had drifted. Both now run through one shared bridge helper per type, so the detailed entry point
+differs from the plain one only by carrying `maxError`/`isDone`/`hasResult`.
+
+Three divergences resolved, plus one that turned out to be paper-only:
+
+- **`Surface`: `PrecisCode` 0 vs 1.** `OCCTSurfaceApproximate` passed `0` as
+  `GeomConvert_ApproxSurface`'s eighth constructor argument and `OCCTGeomConvertApproxSurface` passed
+  `1`, with no comment either side. It is a real algorithm knob, not a reserved value: it reaches
+  `AdvApp2Var_Context`'s `iprecis`, where `lesparam` turns it into the Jacobi degree and the initial
+  per-axis sample count that seed the fit. Both now pass `0`. Chosen on measurement over 72 bounded
+  cases (8 surface families x 6 tolerances, plus C0/C1 and `maxDegree` 10 variants): the two codes
+  never disagreed on `IsDone` and produced the same knot/pole layout in 71 of 72, but a different
+  `maxError` in all 72 — smaller with `0` in 64 of them — and in the one layout-differing case (an
+  offset sphere at tolerance `1e-5`) `0` met the requested tolerance with 27x15 poles where `1`
+  needed 27x23. A caller who states a tolerance wants the lightest surface that meets it. OCCT itself
+  splits along that same line: its tolerance-honouring conversion loops pass `0`
+  (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `BRepFill_Sweep`), its fixed-internal-tolerance
+  conversions pass `1` (`GeomConvert_1`, `GeomLib`, `GeomFill_Sweep`, `ShapeUpgrade_UnifySameDomain`).
+- **`Surface`: default continuity C2 vs C1.** `Surface.approxWithDetails` defaulted `uContinuity` and
+  `vContinuity` to `.c1` while `Surface.approximated` defaulted to C2, so the two
+  no-continuity-argument calls fitted to different smoothness and returned different surfaces (15 vs
+  16 U poles on a sphere at `1e-3`). Both now default to C2.
+- **Both: the null-handle guard.** `OCCTGeomConvertApproxCurve`/`Surface` checked only the outer
+  wrapper pointer, while their plain counterparts also checked the OCCT handle inside it. A null
+  `Geom_Curve`/`Geom_Surface` reaching `GeomAdaptor_*` is an uncatchable SIGSEGV in this Release
+  kernel, where OCCT's own `Standard_NullObject` precondition is compiled out. Both now check both.
+- **`Curve3D`: `IsDone()` vs `HasResult()` — the audit's headline claim, and it does not reproduce.**
+  The header documents these as different questions, so `OCCTCurve3DApproximate`'s `IsDone()` gate
+  looked like it would reject a completed-but-over-tolerance fit that `OCCTGeomConvertApproxCurve`'s
+  `HasResult()` gate returns. It cannot: `GeomConvert_ApproxCurve` copies both flags off
+  `AdvApprox_ApproxAFunction`, whose only `HasResult`-without-`IsDone` path is an `ErrorCode = -1`
+  assignment upstream has commented out (`AdvApprox_ApproxAFunction.cxx:550`, `// for now
+  ErrorCode=-1;`). With that line dead the two accessors are equal for every input, which is why
+  gating on `IsDone()` never actually rejected anything — a circle fitted with one segment at degree
+  3 against a `1e-9` tolerance reports `maxError` 5.1 and `isDone` true. The gate is unified on
+  `HasResult()` anyway: it is what OCCT's own curve-conversion sites use (`GeomConvert.cxx`,
+  `GeomToIGES_GeomCurve.cxx`, `GeomFill_Profiler.cxx`), what both surface entry points already used,
+  and the only gate under which `approxWithDetails`' `isDone: false` diagnostic means anything.
+
+So `Curve3D.approximated` is unchanged in behaviour and `Surface.approximated` is unchanged in
+output; what changes observably is `Surface.approxWithDetails`, which now returns the same surface
+`Surface.approximated` does instead of a slightly different one. Neither divergence had any test
+coverage in either direction — no test anywhere called both entry points on the same input. New
+`Issue491Curve3DApproxParityTests` (`Tests/OCCTCurveTests`) and `Issue491SurfaceApproxParityTests`
+(`Tests/OCCTSurfaceTests`) assert success, geometry, pole/degree counts and reported `maxError` agree
+across both entry points on 9 curve and 12 surface requests spanning the starved, over-tolerance and
+unreachable-tolerance cases.
+
+Each `.mm` also had two copies of the request-side `int32_t` → `GeomAbs_Shape` mapping (a `static
+intToContinuity` for the detailed entry point, the identical `switch` spelled inline in the plain
+one); each file now has one. The wider census of that conversion across the bridge is #513's, not
+this issue's.
+
+Building the parity tests surfaced an unrelated upstream defect, filed as
+[#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522): `GeomConvert_ApproxSurface` asked for
+`GeomAbs_C0` can collapse a direction to degree 1 and return a surface deviating by the input's own
+diameter while reporting `IsDone()` and a `maxError` five orders of magnitude too small (a full
+sphere at C0 comes back as a straight line across its longitude). It predates #491, both entry points
+hit it identically, and unifying them neither causes nor fixes it. The surface parity suite keeps C0
+in its request set — both entry points must still return the *same* surface there, and they do — but
+excludes it from the "reported error describes the returned surface" assertion, with a comment to
+drop that exclusion when #522 is fixed.
+
 ---
 
 ## Release History

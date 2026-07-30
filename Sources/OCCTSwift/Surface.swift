@@ -481,6 +481,14 @@ public final class Surface: @unchecked Sendable {
     /// infinite/unbounded surface must still be trimmed to a finite parameter domain before
     /// calling this (see `trimmed(u1:u2:v1:v2:)`) — approximation does not do that for you.
     ///
+    /// Returns the fitted surface whenever OCCT produced one, which — per `HasResult()` — includes
+    /// a best-effort fit that did *not* reach `tolerance`. A non-nil result is therefore not a
+    /// promise that `tolerance` was met; on a surface where `maxDegree` cannot reach it (a torus at
+    /// 1e-9, say) OCCT returns a usable surface anyway.
+    /// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)``
+    /// runs the identical approximation (one shared `GeomConvert_ApproxSurface` behind both since
+    /// #491) and reports the actual `maxError` plus an `isDone` flag.
+    ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// let bsp = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
