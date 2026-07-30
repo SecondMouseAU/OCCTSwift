@@ -793,11 +793,22 @@ public func knotSplitting(continuityOrder: Int = 2) -> [Int]
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
 Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
-`bounds` — see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
+`bounds`; see `knotSplitParameters(continuityOrder:)` for the parameter-value form.
+
+Every split is returned, however many there are. **Before #481** the result was capped at 100:
+a law with more splits than that reported exactly 100, with nothing to say the rest had been
+dropped, so it disagreed with `knotSplitParameters(continuityOrder:)` (same analyzer, same law)
+about how many splits the law has.
 
 - **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
 - **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
-- **OCCT:** `Law_BSplineKnotSplitting`.
+- **OCCT:** `Law_BSplineKnotSplitting::NbSplits` / `SplitValue`.
+- **Example:**
+  ```swift
+  let indices = law.knotSplitting(continuityOrder: 2)
+  let params  = law.knotSplitParameters(continuityOrder: 2)
+  // indices[i] is the knot-table index of params[i], so the two always agree on count
+  ```
 
 ---
 

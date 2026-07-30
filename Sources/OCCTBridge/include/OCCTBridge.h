@@ -9103,7 +9103,9 @@ void OCCTGeomFillNSectionsInfo(
 /// @param continuityOrder Continuity level to check (0=C0, 1=C1, 2=C2)
 /// @param outIndices Output array of split knot indices
 /// @param maxIndices Maximum number of indices to write
-/// @return Number of split knot indices written
+/// @return Number of split knot indices found (true count, even if writing was truncated
+///   by maxIndices), or -1 on failure. #481: was the written count, which capped callers
+///   at their first-pass buffer size; matches OCCTLawBSplineKnotSplitParams below.
 int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef _Nonnull law,
     int32_t continuityOrder,
     int32_t* _Nonnull outIndices, int32_t maxIndices);

@@ -126,13 +126,34 @@ public final class LawFunction: @unchecked Sendable {
     /// `bounds`, since this API exposes no way to read that knot table back. See
     /// `knotSplitParameters(continuityOrder:)` for the actual parameter values (#403).
     ///
+    /// ```swift
+    /// let indices = law.knotSplitting(continuityOrder: 2)
+    /// let params  = law.knotSplitParameters(continuityOrder: 2)
+    /// // Same analyzer over the same law: indices[i] is the knot-table index of params[i],
+    /// // so the two always agree on count, however many splits the law has (#481).
+    /// ```
+    ///
     /// - Parameter continuityOrder: Continuity level (0=C0, 1=C1, 2=C2)
     /// - Returns: Array of knot indices where continuity breaks, or empty array
     public func knotSplitting(continuityOrder: Int = 2) -> [Int] {
-        let maxIndices: Int32 = 100
-        var indices = [Int32](repeating: 0, count: Int(maxIndices))
-        let count = OCCTLawBSplineKnotSplitting(handle, Int32(continuityOrder), &indices, maxIndices)
-        return (0..<Int(count)).map { Int(indices[$0]) }
+        // Same retry-on-truncation pattern as knotSplitParameters below: the bridge always
+        // reports the true split count even when it writes fewer, so one retry sized to
+        // that count is always enough. #481: this used to keep whatever fitted in a fixed
+        // 100-entry buffer, so a law with more splits than that reported exactly 100 and
+        // disagreed with its sibling about how many splits the law has.
+        func read(capacity: Int32) -> (count: Int32, indices: [Int32]) {
+            var indices = [Int32](repeating: 0, count: Int(capacity))
+            let count = OCCTLawBSplineKnotSplitting(handle, Int32(continuityOrder), &indices, capacity)
+            return (count, indices)
+        }
+
+        var (count, indices) = read(capacity: 100)
+        guard count >= 0 else { return [] }
+        if count > 100 {
+            (count, indices) = read(capacity: count)
+            guard count >= 0 else { return [] }
+        }
+        return indices.prefix(Int(count)).map(Int.init)
     }
 
     /// Parameter values (not raw knot indices) at which continuity drops below `continuityOrder`.

@@ -1516,6 +1516,35 @@ and a "no law on constant edges" throw on the next.
 
 Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### Fix: `LawFunction.knotSplitting` reported at most 100 splits, whatever the law had (#481)
+
+`LawFunction.knotSplitting(continuityOrder:)` read into a fixed 100-entry buffer and returned
+however many entries came back, so a law with more splits than that reported exactly 100 with
+nothing to say the rest had been dropped. Its sibling `knotSplitParameters(continuityOrder:)`,
+added alongside it in #403 over the same `Law_BSplineKnotSplitting` analyzer and the same law,
+reads the true count and retries at that size. The two therefore disagreed about how many splits
+a law has: measured on a degree-3 law with 150 knots of multiplicity 3, `knotSplitting` returned
+100 indices and `knotSplitParameters` returned 150 parameters.
+
+The issue's proposed fix, applying the sibling's read-then-retry in Swift, could not work on its
+own. `OCCTLawBSplineKnotSplitting` returned `min(maxIndices, nbSplits)`, the count it had
+*written*, so at a 100-entry first pass a truncated result is indistinguishable from a law with
+exactly 100 splits and there is nothing to size a retry from. The bridge function now reports the
+true split count even when the write was truncated, and fails with `-1`, matching
+`OCCTLawBSplineKnotSplitParams` in both respects. That is a **C-layer contract change**: a direct
+caller of the bridge that treated the return value as "entries written" now needs to clamp it, and
+one that treated `0` as failure now sees `-1`. `OCCTBridge` is not an SPM product, so no package
+outside this repo can be that caller.
+
+Both bridge functions now share one `occtWriteKnotSplits` helper, generalised from #403's
+`occtWriteKnotSplitParams` (which is now a thin wrapper over it), so the two cannot drift apart on
+their truncation contract again. This is the same defect and the same fix as
+`Curve3D.continuityBreaks` (#398, a fixed 256-entry buffer) and `Surface.knotSplitting` (#403).
+
+`Issue481LawKnotSplittingTruncationTests` (`Tests/OCCTCurveTests`), 4 tests, run against the
+unmodified bridge first: the count-agreement test failed at 100 versus 150, which is the property
+the truncation broke.
+
 ---
 
 ## Release History

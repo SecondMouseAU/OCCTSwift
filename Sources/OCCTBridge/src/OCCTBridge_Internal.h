@@ -549,27 +549,36 @@ bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceC
 bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
                           const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult);
 
-// === #403: shared BSpline knot-split-to-parameter conversion ===
+// === #403/#481: shared BSpline knot-splitting buffer contract ===
 //
-// Curve3D.continuityBreaks, LawFunction.knotSplitParameters, and Surface.knotSplitting
-// each wrap a different OCCT *KnotSplitting analyzer (GeomConvert_BSplineCurveKnotSplitting,
-// Law_BSplineKnotSplitting, GeomConvert_BSplineSurfaceKnotSplitting -- the last one calling
-// this twice, once per parametric direction) but all three reduce to the identical loop:
-// walk the N computed split points, convert each one's knot-table index to a real
-// parameter value, write up to maxParams of them, and report the true split count even
-// when writing was truncated (so a caller can always retry with a bigger buffer).
+// Curve3D.continuityBreaks, LawFunction.knotSplitting, LawFunction.knotSplitParameters and
+// Surface.knotSplitting each wrap a different OCCT *KnotSplitting analyzer
+// (GeomConvert_BSplineCurveKnotSplitting, Law_BSplineKnotSplitting, and
+// GeomConvert_BSplineSurfaceKnotSplitting, the last one calling this twice, once per
+// parametric direction) but all reduce to the identical loop: walk the N computed split
+// points, write up to maxOut of them into the caller's buffer, and report the TRUE split
+// count even when writing was truncated, so a caller that came up short can retry at the
+// size it was just told. #481: LawFunction.knotSplitting was the one that returned the
+// written count instead, silently capping itself at its Swift caller's first-pass buffer.
 //
-// splitIndexAt(i) returns the underlying knot-table index for split i (1-based, matching
-// every *KnotSplitting class's own SplitValue/USplitValue/VSplitValue numbering);
-// knotAt(index) converts that knot-table index to an actual parameter value.
+// valueAt(i) produces split i's value (1-based, matching every *KnotSplitting class's own
+// SplitValue/USplitValue/VSplitValue numbering).
+template <class T, class ValueAt>
+int32_t occtWriteKnotSplits(int32_t nbSplits, ValueAt valueAt, T* outValues, int32_t maxOut) {
+    int32_t count = std::min(nbSplits, maxOut);
+    for (int32_t i = 0; i < count; i++) {
+        outValues[i] = valueAt(i + 1);
+    }
+    return nbSplits;
+}
+
+// The parameter-valued form of the above: splitIndexAt(i) returns the underlying knot-table
+// index for split i, and knotAt(index) converts that index to an actual parameter value.
 template <class SplitIndexAt, class KnotAt>
 int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, KnotAt knotAt,
                                   double* outParams, int32_t maxParams) {
-    int32_t count = std::min(nbSplits, maxParams);
-    for (int32_t i = 0; i < count; i++) {
-        outParams[i] = knotAt(splitIndexAt(i + 1));
-    }
-    return nbSplits;
+    return occtWriteKnotSplits<double>(nbSplits,
+        [&](int32_t i) { return knotAt(splitIndexAt(i)); }, outParams, maxParams);
 }
 
 // === #399/#411/#487: conic dimension preconditions ===
