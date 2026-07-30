@@ -4030,7 +4030,9 @@ OCCTCurve2DRef OCCTInterpolate2DWithTangents(const double* points, int32_t count
 OCCTCurve2DRef OCCTInterpolate2DPeriodic(const double* points, int32_t count) {
     return OCCTCurve2DInterpolate(points, count, true, 1e-6);
 }
-// --- GeomAPI_PointsToBSpline expansion ---
+// --- Geom2dAPI_PointsToBSpline expansion ---
+// (the 2D half of the header's "PointsToBSpline expansion" section; the 3D and surface
+// halves live in OCCTBridge_Curve3D.mm and OCCTBridge_Surface.mm)
 
 OCCTCurve2DRef OCCTPoints2DToBSplineWithParams(const double* points, int32_t count,
                                                   int32_t degMin, int32_t degMax,

@@ -17,9 +17,11 @@ Utility and solver types that sit alongside the primary geometry hierarchy: a B-
 
 Least-squares B-spline curve approximation through a set of 3D points. Backed by `GeomAPI_PointsToBSpline` since OCCT 8.0.0p1 (the original `Approx_BSplineApproxInterp` was removed in that release). Inspect `maxError` for the worst-case residual after calling `perform()` or `performOptimal()`.
 
+The API is kept source-compatible with the removed solver, so several of its controls survive as **no-ops**: `interpolatePoint(_:withKink:)`, `setParametrizationAlpha(_:)`, `setMinPivot(_:)`, `setClosedTolerance(_:)` and `setKnotInsertionTolerance(_:)`. `nbControlPoints` and `continuousIfClosed` are advisory, and `performOptimal(maxIterations:)` is identical to `perform()`. The two controls that still bite are `setConvergenceTolerance(_:)` and `setProjectionTolerance(_:)`, which drive one shared 3D fit tolerance. Each is flagged individually below; the contracts are pinned by `BSplineApproxInterpContractTests` in `Tests/OCCTCurveTests`.
+
 ### `init?(points:nbControlPoints:degree:continuousIfClosed:)`
 
-Creates a constrained B-spline approximation solver.
+Creates a least-squares B-spline approximation solver.
 
 ```swift
 public init?(points: [SIMD3<Double>], nbControlPoints: Int,
@@ -29,10 +31,10 @@ public init?(points: [SIMD3<Double>], nbControlPoints: Int,
 Returns `nil` if `points.count < 2`.
 
 - **Parameters:**
-  - `points` — array of 3D points to fit.
-  - `nbControlPoints` — advisory number of control points; the approximator chooses the pole count needed to meet tolerance.
-  - `degree` — B-spline degree (default `3`).
-  - `continuousIfClosed` — enforce C2 continuity when the curve is detected as closed (default `false`).
+  - `points`: array of 3D points to fit.
+  - `nbControlPoints`: advisory number of control points; the approximator chooses the pole count needed to meet tolerance.
+  - `degree`: B-spline degree (default `3`); widens the fit's degree range to `[min(3, degree), max(degree, 8)]`.
+  - `continuousIfClosed`: advisory and currently ignored; originally enforced C2 continuity when the curve was detected as closed (default `false`).
 - **Returns:** A configured solver, or `nil` on invalid input.
 - **OCCT:** `GeomAPI_PointsToBSpline` (replaces removed `Approx_BSplineApproxInterp`).
 - **Example:**
@@ -54,17 +56,17 @@ Returns `nil` if `points.count < 2`.
 
 ### `interpolatePoint(_:withKink:)`
 
-Mark a point to be exactly interpolated (0-based index).
+**No-op.** Originally marked a point to be exactly interpolated (0-based index).
 
 ```swift
 public func interpolatePoint(_ index: Int, withKink: Bool = false)
 ```
 
-> **Note:** No-op since OCCT 8.0.0p1 — `GeomAPI_PointsToBSpline` has no per-point exact interpolation. The approximation still passes near every point.
+> **Note:** No-op since OCCT 8.0.0p1. `GeomAPI_PointsToBSpline` has no per-point exact interpolation or C0-break control. The approximation still passes near every point.
 
 - **Parameters:**
-  - `index` — 0-based index into the points array.
-  - `withKink` — if `true`, inserts a C0 discontinuity at this parameter (also a no-op in the current backend).
+  - `index`: ignored; originally a 0-based index into the points array.
+  - `withKink`: ignored; originally inserted a C0 discontinuity at this parameter.
 - **OCCT:** Previously `Approx_BSplineApproxInterp::ChangeConstraints` (now inert).
 
 ---
@@ -88,14 +90,16 @@ public func perform()
 
 ### `performOptimal(maxIterations:)`
 
-Perform the fit with iterative parameter optimization.
+Perform the fit. Identical to `perform()`.
 
 ```swift
 public func performOptimal(maxIterations: Int = 10)
 ```
 
-- **Parameters:** `maxIterations` — maximum number of optimization iterations (default `10`).
-- **OCCT:** `GeomAPI_PointsToBSpline` with iterative reparametrisation.
+> **Note:** `GeomAPI_PointsToBSpline` has no iterative parameter-optimisation mode, so this runs the same single fit as `perform()` and `maxIterations` is ignored. Kept for source compatibility with the removed solver.
+
+- **Parameters:** `maxIterations`: ignored.
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor, same as `perform()`.
 
 ---
 
@@ -138,75 +142,86 @@ The maximum approximation error.
 public var maxError: Double { get }
 ```
 
-- **Returns:** Worst-case 3D distance from any input point to the fitted curve.
-- **OCCT:** `GeomAPI_PointsToBSpline::MaxError`.
+- **Returns:** Worst-case 3D distance from any input point to the fitted curve, or `-1` if the fit has not run or did not succeed.
+- **OCCT:** computed by the bridge. `GeomAPI_PointsToBSpline` reports no error, so each input point is projected back onto the fitted curve with `GeomAPI_ProjectPointOnCurve` and the largest `LowerDistance()` is returned.
 
 ---
 
 ### `setParametrizationAlpha(_:)`
 
-Set parametrisation power: `0` = uniform, `0.5` = centripetal (default), `1` = chord-length.
+**No-op.** Originally set the parametrisation power: `0` = uniform, `0.5` = centripetal (default), `1` = chord-length.
 
 ```swift
 public func setParametrizationAlpha(_ alpha: Double)
 ```
 
-- **Parameters:** `alpha` — exponent in `[0, 1]`.
-- **OCCT:** `GeomAPI_PointsToBSpline` parametrisation mode.
+> **Note:** `GeomAPI_PointsToBSpline` selects parametrisation with an `Approx_ParametrizationType` rather than an alpha exponent, and the bridge does not currently forward one, so this call has no effect on the fit.
+
+- **Parameters:** `alpha`: ignored.
 
 ---
 
 ### `setMinPivot(_:)`
 
-Set minimum pivot value for the Gauss solver (default `1e-20`).
+**No-op.** Originally set the minimum pivot value for the Gauss solver (default `1e-20`).
 
 ```swift
 public func setMinPivot(_ value: Double)
 ```
 
-- **Parameters:** `value` — pivot threshold below which a column is considered singular.
+> **Note:** `GeomAPI_PointsToBSpline` exposes no solver internals, so there is no pivot threshold to set.
 
 ---
 
 ### `setClosedTolerance(_:)`
 
-Set relative tolerance for closed-curve detection (default `1e-12`).
+**No-op.** Originally set the relative tolerance for closed-curve detection (default `1e-12`).
 
 ```swift
 public func setClosedTolerance(_ value: Double)
 ```
 
+> **Note:** `GeomAPI_PointsToBSpline` performs no closed-curve detection, so there is nothing to tune.
+
 ---
 
 ### `setKnotInsertionTolerance(_:)`
 
-Set tolerance for knot insertion during kink handling (default `1e-4`).
+**No-op.** Originally set the tolerance for knot insertion during kink handling (default `1e-4`).
 
 ```swift
 public func setKnotInsertionTolerance(_ value: Double)
 ```
 
+> **Note:** Kink handling belonged to the removed solver; `GeomAPI_PointsToBSpline` has no equivalent.
+
 ---
 
 ### `setConvergenceTolerance(_:)`
 
-Set convergence tolerance for parameter optimization (default `1e-3`).
+Set the 3D fit tolerance (default `1e-3`). Values `<= 0` are ignored.
 
 ```swift
 public func setConvergenceTolerance(_ value: Double)
 ```
 
-Drive accuracy with this and `setProjectionTolerance` when the default fit is insufficient.
+This is the primary accuracy control: it becomes `Tol3D` on the next `perform()`.
+
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor `Tol3D` argument.
 
 ---
 
 ### `setProjectionTolerance(_:)`
 
-Set projection tolerance for parameter optimization (default `1e-6`).
+Tighten the 3D fit tolerance to `min(current, value)` (default `1e-6`). Values `<= 0` are ignored.
 
 ```swift
 public func setProjectionTolerance(_ value: Double)
 ```
+
+> **Note:** This shares one tolerance with `setConvergenceTolerance(_:)`, so the two are not independent knobs, and this one can only tighten. A value looser than the current tolerance does nothing.
+
+- **OCCT:** `GeomAPI_PointsToBSpline` constructor `Tol3D` argument.
 
 ---
 

@@ -306,6 +306,8 @@
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DExtrema, OCCTCurve2DCurvatureExtrema
 // Geom2dAPI_InterCurveCurve           → OCCTCurve2DIntersect, OCCTCurve2DSelfIntersect
 // Geom2dAPI_Interpolate               → OCCTCurve2DInterpolate*
+// Geom2dAPI_PointsToBSpline           → OCCTCurve2DFitPoints, OCCTCurve2DApproximate2D,
+//                                        OCCTPoints2DToBSplineWithParams
 // Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
 //                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve,
 //                                        OCCTCurve2DNearestParameter
@@ -327,8 +329,15 @@
 // GeomAPI_ExtremaSurfaceSurface       → OCCTSurfaceExtrema
 // GeomAPI_IntCS                       → OCCTCurve3DIntersectSurface
 // GeomAPI_IntSS                       → OCCTSurfaceSurfaceIntersect
-// GeomAPI_PointsToBSpline             → OCCTCurve3DFit
-// GeomAPI_PointsToBSplineSurface      → OCCTSurfacePlateThrough, OCCTSurfaceNLPlateG0
+// GeomAPI_PointsToBSpline             → OCCTCurve3DFitPoints, OCCTPointsToBSplineWithParams,
+//                                        OCCTPointsToBSplineWithParameters, OCCTWireCreateBSpline,
+//                                        OCCTBSplineApproxInterp* (that family keeps the C ABI of
+//                                        Approx_BSplineApproxInterp, removed in OCCT 8.0.0p1, and
+//                                        is backed by this class; see its section for the no-ops)
+// GeomAPI_PointsToBSplineSurface      → OCCTPointsToSurfaceBSpline, OCCTSurfaceNLPlateG0,
+//                                        OCCTSurfaceNLPlateG1, OCCTSurfaceNLPlateG2,
+//                                        OCCTSurfaceNLPlateG3, OCCTSurfaceNLPlateIncrementalG0
+//                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                        OCCTExtremaPointCurve, OCCTProjOnCurve*,
 //                                        OCCTEdgeProjectPoint
@@ -376,9 +385,9 @@
 // GeomLProp_SLProps                   → OCCTGeomLPropSurface
 //
 // --- GeomPlate ---
-// GeomPlate_BuildPlateSurface         → OCCTShapePlate*, OCCTGeomPlateSurface
+// GeomPlate_BuildPlateSurface         → OCCTShapePlate*, OCCTGeomPlateSurface, OCCTSurfacePlateThrough
 // GeomPlate_BuildAveragePlane         → OCCTGeomPlateBuildAveragePlane (v0.69.0)
-// GeomPlate_MakeApprox                → OCCTShapePlate*, OCCTGeomPlateSurface
+// GeomPlate_MakeApprox                → OCCTShapePlate*, OCCTGeomPlateSurface, OCCTSurfacePlateThrough
 //
 // --- IntAna2d ---
 // IntAna2d_AnaIntersection            → OCCTIntAna2d*
@@ -17396,7 +17405,12 @@ OCCTCurve2DRef _Nullable OCCTInterpolate2DWithTangents(const double* _Nonnull po
 /// Interpolate 2D BSpline as periodic (closed) curve.
 OCCTCurve2DRef _Nullable OCCTInterpolate2DPeriodic(const double* _Nonnull points, int32_t count);
 
-// --- GeomAPI_PointsToBSpline expansion ---
+// --- PointsToBSpline expansion ---
+//
+// One section, three different OCCT classes, one per dimension:
+//   GeomAPI_PointsToBSpline          (3D curve)   OCCTPointsToBSplineWithParams/WithParameters
+//   Geom2dAPI_PointsToBSpline        (2D curve)   OCCTPoints2DToBSplineWithParams
+//   GeomAPI_PointsToBSplineSurface   (surface)    OCCTPointsToSurfaceBSpline
 
 /// Approximate 3D BSpline through points with degree and continuity control.
 /// continuity: parametric continuity — see "Continuity vocabularies" at the top of this header.
@@ -20114,13 +20128,30 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef _Nonnull curve,
 
 // MARK: - v0.131.0: Approx_BSplineApproxInterp, GeomEval TBezier/AHTBezier, GeomAdaptor_TransformedCurve
 
-// --- Approx_BSplineApproxInterp ---
+// --- Approx_BSplineApproxInterp (reimplemented on GeomAPI_PointsToBSpline) ---
+//
+// OCCT 8.0.0p1 removed Approx_BSplineApproxInterp. The C ABI below is preserved unchanged,
+// but every function in this section is now served by GeomAPI_PointsToBSpline, which is
+// where the cross-reference index at the top of this header lists the family, and where a
+// behaviour change to that class has to be propagated. Implementation and the reasoning
+// behind each mapping: OCCTBridge_Curve3D.mm, "Approx_BSplineApproxInterp" section.
+//
+// Differences the preserved ABI cannot express, kept so callers compile and run unchanged:
+//   * nbControlPts and continuousIfClosed are ADVISORY: GeomAPI_PointsToBSpline picks the
+//     pole count it needs to meet the tolerance within [DegMin, DegMax].
+//   * InterpolatePoint, SetAlpha, SetMinPivot, SetClosedTol and SetKnotTol are NO-OPS;
+//     GeomAPI_PointsToBSpline exposes no equivalent control. Flagged per function below.
+//   * SetConvergenceTol and SetProjectionTol both drive the one 3D fit tolerance.
+//   * PerformOptimal is identical to Perform; maxIter is ignored.
+//   * MaxError is measured by projecting the input points back onto the fitted curve.
 
-/// Opaque ref to Approx_BSplineApproxInterp solver.
+/// Opaque ref to the B-spline approximation solver (backed by GeomAPI_PointsToBSpline).
 typedef struct OCCTBSplineApproxInterp* OCCTBSplineApproxInterpRef;
 
-/// Create a constrained least-squares B-spline approximation solver.
+/// Create a least-squares B-spline approximation solver.
 /// points: flat [x,y,z,...], count = number of 3D points.
+/// nbControlPts and continuousIfClosed are advisory and currently ignored (see section note);
+/// degree widens the fit's degree range to [min(3, degree), max(degree, 8)].
 OCCTBSplineApproxInterpRef _Nullable OCCTBSplineApproxInterpCreate(
     const double* _Nonnull points, int32_t count,
     int32_t nbControlPts, int32_t degree, bool continuousIfClosed);
@@ -20128,14 +20159,17 @@ OCCTBSplineApproxInterpRef _Nullable OCCTBSplineApproxInterpCreate(
 /// Release the solver.
 void OCCTBSplineApproxInterpRelease(OCCTBSplineApproxInterpRef _Nonnull ref);
 
-/// Mark a point to be exactly interpolated (0-based index). withKink inserts C0 break.
+/// No-op. Originally: mark a point to be exactly interpolated (0-based index), withKink
+/// inserting a C0 break. GeomAPI_PointsToBSpline has no per-point exact-interpolation or
+/// kink control; the approximation still passes near every input point.
 void OCCTBSplineApproxInterpInterpolatePoint(OCCTBSplineApproxInterpRef _Nonnull ref,
                                               int32_t pointIndex, bool withKink);
 
 /// Perform the fit using auto-computed parameters.
 void OCCTBSplineApproxInterpPerform(OCCTBSplineApproxInterpRef _Nonnull ref);
 
-/// Perform the fit with iterative parameter optimization.
+/// Perform the fit. Identical to OCCTBSplineApproxInterpPerform: GeomAPI_PointsToBSpline
+/// has no iterative parameter-optimization mode, so maxIter is ignored.
 void OCCTBSplineApproxInterpPerformOptimal(OCCTBSplineApproxInterpRef _Nonnull ref,
                                             int32_t maxIter);
 
@@ -20145,25 +20179,33 @@ bool OCCTBSplineApproxInterpIsDone(OCCTBSplineApproxInterpRef _Nonnull ref);
 /// Returns the resulting curve, or null if not done.
 OCCTCurve3DRef _Nullable OCCTBSplineApproxInterpCurve(OCCTBSplineApproxInterpRef _Nonnull ref);
 
-/// Returns the maximum approximation error.
+/// Returns the maximum approximation error: the largest distance from an input point to its
+/// projection on the fitted curve. -1 if the fit has not run or did not succeed.
 double OCCTBSplineApproxInterpMaxError(OCCTBSplineApproxInterpRef _Nonnull ref);
 
-/// Set parametrization alpha: 0=uniform, 0.5=centripetal (default), 1=chord-length.
+/// No-op. Originally: set parametrization alpha (0=uniform, 0.5=centripetal, 1=chord-length).
+/// GeomAPI_PointsToBSpline takes an Approx_ParametrizationType, not an alpha, and the bridge
+/// does not currently forward one.
 void OCCTBSplineApproxInterpSetAlpha(OCCTBSplineApproxInterpRef _Nonnull ref, double alpha);
 
-/// Set minimum pivot value for Gauss solver (default 1e-20).
+/// No-op. Originally: set the minimum pivot value for the Gauss solver (default 1e-20).
+/// GeomAPI_PointsToBSpline exposes no solver internals.
 void OCCTBSplineApproxInterpSetMinPivot(OCCTBSplineApproxInterpRef _Nonnull ref, double val);
 
-/// Set closed-curve detection tolerance (default 1e-12).
+/// No-op. Originally: set the closed-curve detection tolerance (default 1e-12).
+/// GeomAPI_PointsToBSpline has no closed-curve detection to tune.
 void OCCTBSplineApproxInterpSetClosedTol(OCCTBSplineApproxInterpRef _Nonnull ref, double val);
 
-/// Set knot insertion tolerance (default 1e-4).
+/// No-op. Originally: set the knot insertion tolerance (default 1e-4). Knot insertion was
+/// part of the removed solver's kink handling, which no longer exists.
 void OCCTBSplineApproxInterpSetKnotTol(OCCTBSplineApproxInterpRef _Nonnull ref, double val);
 
-/// Set convergence tolerance for optimization (default 1e-3).
+/// Set the 3D fit tolerance (default 1e-3). Values <= 0 are ignored.
 void OCCTBSplineApproxInterpSetConvergenceTol(OCCTBSplineApproxInterpRef _Nonnull ref, double val);
 
-/// Set projection tolerance for optimization (default 1e-6).
+/// Tighten the 3D fit tolerance to min(current, val) (default 1e-6). Values <= 0 are ignored.
+/// Note this shares one tolerance with OCCTBSplineApproxInterpSetConvergenceTol; the two are
+/// not independent knobs.
 void OCCTBSplineApproxInterpSetProjectionTol(OCCTBSplineApproxInterpRef _Nonnull ref, double val);
 
 // --- GeomAdaptor_TransformedCurve ---
