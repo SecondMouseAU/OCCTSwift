@@ -4,7 +4,7 @@ title: Carried OCCT source patches
 resource: https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/patches
 tags: [occt, patches, upstream, thread-safety, kernel]
 description: Upstream-bound OCCT fixes OCCTSwift carries in its xcframework build until they ship in an OCCT release.
-timestamp: 2026-07-22
+timestamp: 2026-07-30
 ---
 
 # Carried OCCT source patches
@@ -17,8 +17,12 @@ bundled OCCT version includes the fix. Full rationale + validation per patch liv
 `Scripts/patches/README.md` — this note is the ecosystem-level pointer.
 
 Each patch is also meant to be **offered upstream** as an OCCT PR. When you do, follow
-[Upstream OCCT PRs follow OCCT's house style](../policies/upstream-occt-style.md): clang-format with
-OCCT's own `.clang-format`, and OCCT's terse comment style — not OCCTSwift's.
+[Upstream OCCT PRs — style and submission workflow](../policies/upstream-occt-style.md): clang-format
+with OCCT's own `.clang-format`, OCCT's terse comment style — not OCCTSwift's — and, as of
+2026-07-30, go straight to the PR rather than filing a separate repro issue first when the fix is
+already in hand (an OCCT maintainer asked for exactly that). The table below still shows the older
+repro-issue-then-fix-PR pattern for patches filed before that — left as the accurate historical
+record, not something to retitle after the fact.
 
 | Patch | Fixes | Upstream | Retire when |
 |-------|-------|----------|-------------|
