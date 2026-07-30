@@ -274,7 +274,7 @@ bool OCCTSurfaceGetNormal(OCCTSurfaceRef s, double u, double v,
                            double* nx, double* ny, double* nz) {
     if (!s || s->surface.IsNull() || !nx || !ny || !nz) return false;
     try {
-        GeomLProp_SLProps props(s->surface, u, v, 1, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(s->surface, u, v, 1);
         if (!props.IsNormalDefined()) return false;
         gp_Dir n = props.Normal();
         *nx = n.X(); *ny = n.Y(); *nz = n.Z();
@@ -824,14 +824,16 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 // resolution argument — the linear tolerance IsCurvatureDefined() tests tangent vectors against
 // for nullity — is stated once. OCCTSurfaceCurvatures used to construct its own with a hardcoded
 // 1e-6, 10x looser than Precision::Confusion(), so the two APIs could disagree about whether
-// curvature is defined at all for the same surface and the same (u, v) (#405).
+// curvature is defined at all for the same surface and the same (u, v) (#405). The resolution
+// itself now comes from occtLocalPropsResolution(), shared with the Local* family that #405 left
+// on its own 1e-10 (#494).
 // Returns false (leaving the outputs untouched) where curvature is undefined; each caller
 // applies its own documented fallback.
 static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s, double u, double v,
                                       double* gaussian, double* mean) {
     if (!s || s->surface.IsNull()) return false;
     try {
-        GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(s->surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
         if (gaussian) *gaussian = props.GaussianCurvature();
         if (mean) *mean = props.MeanCurvature();
@@ -860,7 +862,7 @@ bool OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef s, double u, double v,
     if (!s || s->surface.IsNull() || !kMin || !kMax ||
         !d1x || !d1y || !d1z || !d2x || !d2y || !d2z) return false;
     try {
-        GeomLProp_SLProps props(s->surface, u, v, 2, Precision::Confusion());
+        GeomLProp_SLProps props = occtSurfaceLocalProps(s->surface, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
         *kMin = props.MinCurvature();
         *kMax = props.MaxCurvature();
@@ -5032,12 +5034,24 @@ OCCTSurfaceRef OCCTPointsToSurfaceBSpline(const double* points, int32_t uCount, 
 // --- GeomConvert utilities ---
 
 // MARK: - v0.116: Surface Local Curvatures + Curvature Directions
+//
+// These two report the same GeomLProp_SLProps quantities as OCCTSurfaceCurvatures /
+// OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature / OCCTSurfaceGetPrincipalCurvatures
+// above, differing only in returning all four curvature scalars (or both directions) in one call.
+// They used to construct their props with a hardcoded 1e-10 rather than the shared resolution, so
+// they disagreed with every one of those siblings about whether curvature exists at all near a
+// degeneracy — reporting a defined mean curvature of -8.66e7 at a point on a cone the canonical
+// entry points called undefined. Both now build props through occtSurfaceLocalProps (#494).
 void OCCTSurfaceLocalCurvatures(OCCTSurfaceRef _Nonnull surface, double u, double v,
                                   double* _Nonnull gaussian, double* _Nonnull mean,
                                   double* _Nonnull maxCurvature, double* _Nonnull minCurvature,
                                   bool* _Nonnull isDefined) {
+    if (surface->surface.IsNull()) {
+        *isDefined = false; *gaussian = 0; *mean = 0; *maxCurvature = 0; *minCurvature = 0;
+        return;
+    }
     try {
-        GeomLProp_SLProps props(surface->surface, u, v, 2, 1e-10);
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface->surface, u, v, 2);
         *isDefined = props.IsCurvatureDefined();
         if (*isDefined) {
             *gaussian = props.GaussianCurvature();
@@ -5054,8 +5068,14 @@ void OCCTSurfaceLocalCurvatureDirections(OCCTSurfaceRef _Nonnull surface, double
                                            double* _Nonnull maxDx, double* _Nonnull maxDy, double* _Nonnull maxDz,
                                            double* _Nonnull minDx, double* _Nonnull minDy, double* _Nonnull minDz,
                                            bool* _Nonnull isDefined) {
+    if (surface->surface.IsNull()) {
+        *isDefined = false;
+        *maxDx = 0; *maxDy = 0; *maxDz = 0;
+        *minDx = 0; *minDy = 0; *minDz = 0;
+        return;
+    }
     try {
-        GeomLProp_SLProps props(surface->surface, u, v, 2, 1e-10);
+        GeomLProp_SLProps props = occtSurfaceLocalProps(surface->surface, u, v, 2);
         *isDefined = props.IsCurvatureDefined() && !props.IsUmbilic();
         if (*isDefined) {
             gp_Dir maxD, minD;

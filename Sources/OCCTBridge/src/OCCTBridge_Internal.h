@@ -62,6 +62,11 @@
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
+// These four serve the local-properties helpers (occtSurfaceLocalProps and friends).
+#include <GeomLProp_SLProps.hxx>
+#include <GeomLProp_CLProps.hxx>
+#include <Precision.hxx>
+#include <cmath>
 
 // === Foundation struct definitions ===
 
@@ -888,6 +893,80 @@ inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int3
     TopTools_IndexedMapOfShape map;
     if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
     return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+// === #405/#494: one resolution behind every GeomLProp_* local-property construction ===
+//
+// GeomLProp_SLProps / GeomLProp_CLProps / GeomLProp_CLProps2d each take a `Resolution` their own
+// headers document as "the linear tolerance (it is used to test if a vector is null)". It is not a
+// comparison or display tolerance: it decides whether a derivative at one (u, v) counts as null,
+// and so whether the tangent, normal and curvature are reported as existing at all. Two entry
+// points that pass different values disagree about the *existence* of curvature at the same point
+// on the same geometry, which is the defect #405 fixed for three Surface entry points and #494
+// finished for the rest.
+//
+// A *smaller* resolution is the more permissive one. The null test is
+// `derivative.SquareMagnitude() > resolution * resolution`, so the 1e-10 the Local* family used to
+// pass called a derivative significant that Precision::Confusion() calls null -- the opposite of
+// how a tolerance usually reads, which is why the drift survived #405's own audit.
+//
+// Measured before converging them (Scripts/repro/494-lprop-resolution/): on a cone approaching its
+// apex, 1e-10 reports curvature defined with mean curvature -8.66e7 at v = 1e-8 where
+// Precision::Confusion() reports it undefined; on a cubic Bezier whose first two poles sit 1e-8
+// apart, 1e-10 returns curvature 6.67e15 where Precision::Confusion() returns RealLast(). The
+// third value in play, the 1e-6 of OCCTGeomLPropCLProps/OCCTGeomLPropSLProps, was the same value
+// #405 removed from OCCTSurfaceCurvatures.
+//
+// The 19 BRepLProp_SLProps/BRepLProp_CLProps constructions elsewhere in the bridge still pass a
+// literal 1e-6. They are a different (adaptor-based) class family asking the same question of a
+// face rather than a surface, tracked separately -- this accessor is the value they should adopt.
+inline double occtLocalPropsResolution() { return Precision::Confusion(); }
+
+// Construct the local-properties object for a surface at (u, v), computing derivatives up to
+// `order` (1 for tangents and the normal, 2 for curvature). C++17 guarantees the returned prvalue
+// is constructed directly into the caller's variable, so nothing is copied or moved.
+inline GeomLProp_SLProps occtSurfaceLocalProps(const occ::handle<Geom_Surface>& surface,
+                                                double u, double v, int order) {
+    return GeomLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
+}
+
+// Curve counterpart. The parameter is bound here rather than through a later SetParameter() call,
+// which the two-step callers (construct, then SetParameter) get for free.
+inline GeomLProp_CLProps occtCurveLocalProps(const occ::handle<Geom_Curve>& curve,
+                                              double u, int order) {
+    return GeomLProp_CLProps(curve, u, order, occtLocalPropsResolution());
+}
+
+// 2D curve counterpart, over Geom2d_Curve.
+inline GeomLProp_CLProps2d occtCurve2dLocalProps(const occ::handle<Geom2d_Curve>& curve,
+                                                  double u, int order) {
+    return GeomLProp_CLProps2d(curve, u, order, occtLocalPropsResolution());
+}
+
+// Whether a curvature reported by GeomLProp_CLProps/CLProps2d can be turned into a radius, and so
+// into a normal direction or a centre of curvature.
+//
+// Two ways it cannot, and every bridge entry point that inverts a curvature has to reject both:
+//
+//   - Curvature at or below the resolution. A straight stretch of curve has no centre of
+//     curvature; OCCT's own CentreOfCurvature() throws LProp_NotDefined here.
+//
+//   - Curvature exactly RealLast(). OCCT returns that sentinel, meaning infinite curvature, when
+//     the first significant derivative has order > 1 -- a cusp, e.g. a Bezier whose first two
+//     poles coincide. IsTangentDefined() is still true there (the search falls through to D2), and
+//     RealLast() passes any "is the curvature big enough" test, so the sentinel used to flow
+//     straight into CentreOfCurvature(). That is worse than an exception: LProp_CurveUtils::
+//     Curvature() returns the sentinel *without* assigning the myCurvature field it normally sets,
+//     leaving it 0.0, so ComputeCentreOfCurvature divides the normal by zero and the caller gets
+//     (nan, inf, nan) reported as a successfully computed point. Measured on the same cusped
+//     Bezier. Normal() rejects the sentinel explicitly and throws, so it was never exposed there.
+//
+// Non-finite values cannot arise from OCCT's own arithmetic here, but are rejected too so that a
+// caller of this predicate never has to ask a second question about the value it approved.
+inline bool occtCurveCurvatureIsInvertible(double curvature) {
+    return std::isfinite(curvature)
+        && curvature != RealLast()
+        && std::abs(curvature) > occtLocalPropsResolution();
 }
 
 #endif /* OCCTBridge_Internal_h */

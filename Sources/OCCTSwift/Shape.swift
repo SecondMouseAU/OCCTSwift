@@ -9373,6 +9373,14 @@ public struct SurfaceLocalProperties: Sendable {
     public let minCurvature: Double
     public let meanCurvature: Double
     public let gaussianCurvature: Double
+    /// Whether the four curvature values above mean anything.
+    ///
+    /// They are all `0` where curvature is undefined — a cone's apex, a sphere's pole, any point
+    /// with no defined normal — which is indistinguishable from a genuinely flat point without
+    /// this flag. The bridge has always computed it; it was simply not carried through to Swift
+    /// until #494, which is why the per-scalar siblings (`Face.gaussianCurvature(atU:v:)` and
+    /// friends, all returning optionals) were the only way to tell the two apart.
+    public let curvatureDefined: Bool
     public let isUmbilic: Bool
 }
 
@@ -9495,10 +9503,11 @@ extension Shape {
         let point = SIMD3(r.px, r.py, r.pz)
         let tangent: SIMD3<Double>? = r.tangentDefined ?
             SIMD3(r.tx, r.ty, r.tz) : nil
-        let normal: SIMD3<Double>? = (r.tangentDefined && r.curvature > 1e-10) ?
-            SIMD3(r.nx, r.ny, r.nz) : nil
-        let center: SIMD3<Double>? = (r.tangentDefined && r.curvature > 1e-10) ?
-            SIMD3(r.cx, r.cy, r.cz) : nil
+        // #494: was `r.tangentDefined && r.curvature > 1e-10` here, a Swift-side copy of a
+        // bridge-side literal. The bridge now reports whether it filled these in, so the threshold
+        // lives in exactly one place and the two sides cannot drift apart.
+        let normal: SIMD3<Double>? = r.curvatureInvertible ? SIMD3(r.nx, r.ny, r.nz) : nil
+        let center: SIMD3<Double>? = r.curvatureInvertible ? SIMD3(r.cx, r.cy, r.cz) : nil
         return CurveLocalProperties(
             point: point, tangent: tangent, normal: normal,
             centerOfCurvature: center, curvature: r.curvature)
@@ -9519,7 +9528,7 @@ extension Shape {
             point: point, normal: normal, tangentU: tu, tangentV: tv,
             maxCurvature: r.maxCurvature, minCurvature: r.minCurvature,
             meanCurvature: r.meanCurvature, gaussianCurvature: r.gaussianCurvature,
-            isUmbilic: r.isUmbilic)
+            curvatureDefined: r.curvatureDefined, isUmbilic: r.isUmbilic)
     }
 
     // MARK: - BRepOffset_SimpleOffset
