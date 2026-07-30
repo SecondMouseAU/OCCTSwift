@@ -170,7 +170,7 @@ a map of the major areas, and the `Total` as the count.
 | **Approx SameParameter** | 1 | checkSameParameter (3D vs 2D on surface) |
 | **ShapeUpgrade CurveSplit** | 3 | splitByContinuity (3D/2D), convertToBezierSegments (2D) |
 | **ShapeUpgrade SurfaceSplit** | 3 | splitSurfaceByContinuity, splitByAngle, splitByArea |
-| **GeomConvert Recognition** | 5 | curveToAnalytical, arePointsLinear, surfToAnalyticalWithGap, surfToAnalyticalBounded, isCanonical |
+| **GeomConvert Recognition** | 6 | curveToAnalytical, curveToAnalyticalWithGap, arePointsLinear, surfToAnalyticalWithGap, surfToAnalyticalBounded, isCanonical |
 | **Geom2dConvert** | 1 | approxArcsAndSegments (approximate 2D curves as arcs/lines) |
 | **Poly_Polygon2D** | 5 | create, nodeCount, node, nodes, deflection |
 | **Poly_Polygon3D** | 8 | create, createWithParams, nodeCount, node, nodes, hasParameters, parameter, deflection |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,273** | |
+| **Total** | **4,274** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -846,10 +846,19 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `surface.intersections(with: otherSurface)` | `GeomAPI_IntSS` |
 
 #### Analytical Recognition (v0.30.0)
+
+Every `GeomConvert_CurveToAnaCurve` / `GeomConvert_SurfToAnaSurf` spelling reaches one bridge entry
+point per class (#492). An already-analytical input converts, with `gap == 0`; the result never
+aliases the input.
+
 | Swift API | OCCT Class |
 |-----------|------------|
 | `curve.toAnalytical(tolerance:)` | `GeomConvert_CurveToAnaCurve` |
+| `curve.toAnalytical(tolerance:first:last:)` | `GeomConvert_CurveToAnaCurve` |
+| `curve.toAnalyticalWithGap(tolerance:)` | `GeomConvert_CurveToAnaCurve` |
 | `surface.toAnalytical(tolerance:)` | `GeomConvert_SurfToAnaSurf` |
+| `surface.toAnalyticalWithGap(tolerance:)` | `GeomConvert_SurfToAnaSurf` |
+| `surface.toAnalyticalWithGap(tolerance:uMin:uMax:vMin:vMax:)` | `GeomConvert_SurfToAnaSurf` (bounded) |
 | `shape.recognizeCanonical(tolerance:)` | `ShapeAnalysis_CanonicalRecognition` |
 
 #### Shape Census & Edge Analysis (v0.30.0)

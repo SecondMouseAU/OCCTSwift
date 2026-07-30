@@ -295,6 +295,8 @@
 // --- GeomConvert ---
 // GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DToBezierSegments
 // GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoined
+// GeomConvert_CurveToAnaCurve         → OCCTGeomConvertCurveToAnalytical, OCCTGeomConvertIsLinear
+// GeomConvert_SurfToAnaSurf           → OCCTGeomConvertSurfToAnalytical*, OCCTGeomConvertIsCanonical
 //
 // --- Convert ---
 // Convert_CompBezierCurvesToBSplineCurve   → OCCTConvertCompBezierToBSpline (v0.99.0)
@@ -4094,24 +4096,6 @@ int32_t OCCTSurfaceIntersect(OCCTSurfaceRef s1, OCCTSurfaceRef s2, double tolera
 /// @param surface The surface
 /// @return Minimum distance, or -1.0 on failure
 double OCCTCurve3DDistanceToSurface(OCCTCurve3DRef curve, OCCTSurfaceRef surface);
-
-
-// MARK: - Curve to Analytical (v0.30.0)
-
-/// Convert a curve to its analytical (canonical) form if possible.
-/// @param curve The input curve
-/// @param tolerance Conversion tolerance
-/// @return Analytical curve, or NULL if conversion is not possible
-OCCTCurve3DRef OCCTCurve3DToAnalytical(OCCTCurve3DRef curve, double tolerance);
-
-
-// MARK: - Surface to Analytical (v0.30.0)
-
-/// Convert a surface to its analytical (canonical) form if possible.
-/// @param surface The input surface
-/// @param tolerance Conversion tolerance
-/// @return Analytical surface, or NULL if conversion is not possible
-OCCTSurfaceRef OCCTSurfaceToAnalytical(OCCTSurfaceRef surface, double tolerance);
 
 
 // MARK: - Shape Contents (v0.30.0)
@@ -10466,14 +10450,19 @@ int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef, int nbParts, bool i
 
 /// Result struct for curve-to-analytical conversion.
 typedef struct {
-    OCCTCurve3DRef _Nullable curve;
-    double newFirst;
-    double newLast;
-    double gap;
+    OCCTCurve3DRef _Nullable curve;   ///< Owned by the caller; independent of the input curve
+    double newFirst;                  ///< Range start, in the RECOGNISED curve's parameterisation
+    double newLast;                   ///< Range end, in the RECOGNISED curve's parameterisation
+    double gap;                       ///< Max deviation from the input; exactly 0 when already analytical
     bool success;
 } OCCTCurveToAnaCurveResult;
 
-/// Convert a BSpline curve to an analytical curve (line, circle, ellipse).
+/// Convert a curve to an analytical curve (line, circle, ellipse) over [first, last].
+///
+/// The sole entry point for GeomConvert_CurveToAnaCurve; the v0.30.0 OCCTCurve3DToAnalytical, which
+/// hardcoded the curve's own range and dropped newFirst/newLast/gap, was retired into it (#492).
+/// An already-analytical input succeeds with gap 0 rather than being rejected, and the returned
+/// curve never aliases the input.
 OCCTCurveToAnaCurveResult OCCTGeomConvertCurveToAnalytical(OCCTCurve3DRef _Nonnull curveRef,
                                                              double tolerance, double first, double last);
 
@@ -10485,15 +10474,21 @@ bool OCCTGeomConvertIsLinear(const double* _Nonnull points, int count, double to
 
 /// Result struct for surface-to-analytical conversion.
 typedef struct {
-    OCCTSurfaceRef _Nullable surface;
-    double gap;
+    OCCTSurfaceRef _Nullable surface;  ///< Owned by the caller; independent of the input surface
+    double gap;                        ///< Max deviation from the input; exactly 0 when already analytical
     bool success;
 } OCCTSurfToAnaSurfResult;
 
-/// Convert a BSpline surface to an analytical surface (plane, cylinder, cone, sphere, torus).
+/// Convert a surface to an analytical surface (plane, cylinder, cone, sphere, torus).
+///
+/// The sole unbounded entry point for GeomConvert_SurfToAnaSurf; the v0.30.0
+/// OCCTSurfaceToAnalytical was retired into it (#492), along with its "if the result is the same
+/// handle it was already analytical" guard, which never fired -- every branch of
+/// ConvertToAnalytical allocates. An already-analytical input succeeds with gap 0.
 OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalytical(OCCTSurfaceRef _Nonnull surfaceRef, double tolerance);
 
-/// Convert with UV bounds.
+/// Convert, fitting only the [uMin, uMax] x [vMin, vMax] sub-patch. Inverted bounds fail (OCCT
+/// throws Geom_BSplineSurface::Segment, caught here) rather than being normalised.
 OCCTSurfToAnaSurfResult OCCTGeomConvertSurfToAnalyticalBounded(OCCTSurfaceRef _Nonnull surfaceRef,
                                                                   double tolerance,
                                                                   double uMin, double uMax,

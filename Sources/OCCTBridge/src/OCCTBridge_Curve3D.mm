@@ -1050,27 +1050,6 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef c1, OCCTCurve3DRef c2, OCCTCurveExtrem
     }
 }
 
-// MARK: - Curve to Analytical (v0.30.0)
-
-#include <GeomConvert_CurveToAnaCurve.hxx>
-
-OCCTCurve3DRef OCCTCurve3DToAnalytical(OCCTCurve3DRef curve, double tolerance) {
-    if (!curve || curve->curve.IsNull()) return nullptr;
-    try {
-        GeomConvert_CurveToAnaCurve converter(curve->curve);
-        Handle(Geom_Curve) result;
-        double newFirst, newLast;
-        bool ok = converter.ConvertToAnalytical(tolerance, result,
-                                                 curve->curve->FirstParameter(),
-                                                 curve->curve->LastParameter(),
-                                                 newFirst, newLast);
-        if (!ok || result.IsNull()) return nullptr;
-        return new OCCTCurve3D(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
-
 // MARK: - Quasi-Uniform Curve Sampling (v0.31.0)
 
 #include <GCPnts_QuasiUniformAbscissa.hxx>
@@ -2179,26 +2158,20 @@ int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef, int criterion, 
     }
 }
 
-// MARK: - GeomConvert_CurveToAnaCurve (v0.78)
 // MARK: - GeomConvert_CurveToAnaCurve
 
 OCCTCurveToAnaCurveResult OCCTGeomConvertCurveToAnalytical(OCCTCurve3DRef _Nonnull curveRef,
                                                              double tolerance, double first, double last) {
     OCCTCurveToAnaCurveResult result = {nullptr, 0, 0, 0, false};
-    try {
-        auto& curve = reinterpret_cast<OCCTCurve3D*>(curveRef)->curve;
-        GeomConvert_CurveToAnaCurve converter(curve);
-        Handle(Geom_Curve) resCurve;
-        double newF, newL;
-        bool ok = converter.ConvertToAnalytical(tolerance, resCurve, first, last, newF, newL);
-        if (ok && !resCurve.IsNull()) {
-            result.curve = reinterpret_cast<OCCTCurve3DRef>(new OCCTCurve3D{resCurve});
-            result.newFirst = newF;
-            result.newLast = newL;
-            result.gap = converter.Gap();
-            result.success = true;
-        }
-    } catch (...) {}
+    if (!curveRef) return result;
+    Handle(Geom_Curve) resCurve;
+    if (!occtCurveToAnalytical(reinterpret_cast<OCCTCurve3D*>(curveRef)->curve, tolerance,
+                               first, last, resCurve,
+                               result.newFirst, result.newLast, result.gap)) {
+        return result;
+    }
+    result.curve = reinterpret_cast<OCCTCurve3DRef>(new OCCTCurve3D{resCurve});
+    result.success = true;
     return result;
 }
 
