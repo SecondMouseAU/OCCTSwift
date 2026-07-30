@@ -985,7 +985,10 @@ public final class Shape: @unchecked Sendable {
     ) -> [(edgeIndex: Int, points: [SIMD3<Double>])] {
         // Build 3D curves for all edges upfront. Lofted/swept shapes may only
         // have pcurves; this ensures explicit 3D curves exist before discretization.
-        OCCTShapeBuildCurves3d(handle)
+        // The tolerance is spelled out because this used to call BRepLib::BuildCurves3d's
+        // no-tolerance overload, which is `BuildCurves3d(S, 1.0e-5)` and nothing else (#498).
+        // A false result means some edge has no buildable 3D curve; that edge is skipped below.
+        buildCurves3d(tolerance: 1e-5)
 
         // One bulk pass: the bridge builds the edge map once. Looping `edgePolyline(at:)`
         // instead rebuilds it per call, making this O(edges²) — 20 s for a 12k-edge shell,

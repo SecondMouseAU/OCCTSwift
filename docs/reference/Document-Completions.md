@@ -470,21 +470,28 @@ public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shap
 
 ---
 
-### `Shape.buildCurves3dAll(tolerance:)`
+### `Shape.buildCurves3dAll(tolerance:)` — deprecated (#498)
 
-Build 3D curves for all edges in the shape.
+Deprecated in favour of [`Shape.buildCurves3d(tolerance:)`](Document-Mesh-Fixing.md#shapebuildcurves3dtolerance),
+which it now forwards to.
 
 ```swift
+@available(*, deprecated, renamed: "buildCurves3d(tolerance:)")
 @discardableResult
 public func buildCurves3dAll(tolerance: Double = 1e-5) -> Bool
 ```
 
-- **Parameters:** `tolerance` — the desired tolerance for curve construction.
-- **Returns:** `true` if all curves were built successfully.
-- **OCCT:** `BRepLib::BuildCurves3d` (shape overload).
+This wrapped a second C entry point whose body was byte-identical to the one behind
+`buildCurves3d` — the same `BRepLib::BuildCurves3d` overload with the same two arguments,
+re-wrapped eight releases later under a new name. Because nothing connected them, the two defaults
+drifted 100x apart: on a pcurve-only edge on a cylinder, `buildCurves3d()` and `buildCurves3dAll()`
+produced curves 2.6e-6 apart and edges whose tolerance differed by the same 100x. Both names now
+run the same call with the same default.
+
+- **OCCT:** `BRepLib::BuildCurves3d` (via `OCCTBRepLibBuildCurves3dForShape`).
 - **Example:**
   ```swift
-  shape.buildCurves3dAll()
+  shape.buildCurves3d()   // was: shape.buildCurves3dAll()
   ```
 
 ---

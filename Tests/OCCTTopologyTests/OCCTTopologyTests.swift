@@ -3758,11 +3758,25 @@ struct BRepLibUtilitiesTests {
         }
     }
 
-    @Test func buildCurves3d() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let ok = box.buildCurves3d(tolerance: 1e-7)
-            #expect(ok)
+    /// A box's edges all have 3D curves already, so this is the early-return path: OCCT returns
+    /// true without computing anything, and the tolerance is never read. Asserting that (rather
+    /// than just `ok`) is the difference between testing the contract and testing nothing — the
+    /// absurd tolerance below used to be `1e-7` and passed for the same reason 42 does. #498.
+    @Test("Building 3D curves on a shape that already has them changes nothing")
+    func buildCurves3dOnFullyBuiltShapeIsANoOp() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("could not build a box")
+            return
         }
+        let edges = box.subShapes(ofType: .edge)
+        #expect(edges.count == 12)
+        #expect(edges.allSatisfy { $0.extractEdgeCurve3D() != nil })
+        let tolerancesBefore = edges.map(\.edgeTolerance)
+
+        #expect(box.buildCurves3d(tolerance: 42))
+
+        #expect(edges.map(\.edgeTolerance) == tolerancesBefore)
+        #expect(edges.allSatisfy { $0.extractEdgeCurve3D() != nil })
     }
 
     @Test func sortFaces() {
@@ -4408,13 +4422,18 @@ struct BRepLibExtendedTests {
         }
     }
 
-    @Test("Build curves 3D all")
-    func buildCurves3dAll() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            let ok = b.buildCurves3dAll(tolerance: 1e-5)
-            #expect(ok)
+    /// `buildCurves3dAll` is now a deprecated forwarder onto `buildCurves3d`; the two used to wrap
+    /// separate, byte-identical C entry points. Its behaviour on a pcurve-only edge is covered by
+    /// ``BuildCurves3dTests``; this is the "the old name still works" guard. #498.
+    @Test("Build curves 3D all, the deprecated spelling")
+    @available(*, deprecated, message: "exercises the deprecated buildCurves3dAll on purpose")
+    func buildCurves3dAllDeprecatedSpelling() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("could not build a box")
+            return
         }
+        #expect(box.buildCurves3dAll(tolerance: 1e-5))
+        #expect(box.buildCurves3dAll())
     }
 
     @Test("Same parameter all")
