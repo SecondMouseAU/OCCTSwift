@@ -5092,14 +5092,17 @@ int32_t OCCTCurve2DDrawAdaptive(OCCTCurve2DRef c, double angularDefl, double cho
 }
 
 int32_t OCCTCurve2DDrawUniform(OCCTCurve2DRef c, int32_t pointCount, double* outXY) {
-    if (!c || c->curve.IsNull() || !outXY || pointCount <= 0) return 0;
+    // outXY holds pointCount pairs, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!c || c->curve.IsNull() || !outXY || !occtValidSampleCount(pointCount)) return 0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
         GCPnts_UniformAbscissa sampler(adaptor, pointCount);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, pointCount);
         for (int32_t i = 0; i < n; i++) {
-            double u = sampler.Parameter(i + 1);
+            double u = sampler.Parameter(occtSamplerIndex(i, n, total));
             gp_Pnt2d p = adaptor.Value(u);
             outXY[i * 2] = p.X();
             outXY[i * 2 + 1] = p.Y();

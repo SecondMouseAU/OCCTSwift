@@ -714,6 +714,73 @@ that still carried the feature the caller asked to remove, indistinguishable fro
 removal; the two index-addressed siblings already failed on it. `defeature(faces:tolerance:)` is
 deprecated (it forwards, and its tolerance was never read); calls that omit `tolerance:` were
 already reaching the tolerance-free path and are unaffected.
+#### Fix: four arc-length samplers wrote past the end of the caller's buffer (#501)
+
+`GCPnts_UniformAbscissa` sizes its own parameter array at `nbPoints + 5` and fills it as far as the
+arc-length walk runs, so `NbPoints()` is not bounded by the count that was asked for, and
+`GCPnts_QuasiUniformAbscissa` inherits that for every curve which is neither Bezier nor BSpline,
+because it forwards to `GCPnts_UniformAbscissa` for those. Four bridge functions were handed a
+buffer sized from the requested count and then filled it with `NbPoints()` values:
+`OCCTCurve3DQuasiUniformAbscissa` (`Curve3D.quasiUniformParameters(count:)`),
+`OCCTCurve3DDrawUniform` (`Curve3D.drawUniform(pointCount:)`), `OCCTCurve2DDrawUniform`
+(`Curve2D.drawUniform(pointCount:)`) and `sampleAdaptorUniform`
+(`CompCurve`/`EdgeCurve` `sampleUniform(count:)`).
+
+Reproduced against the shipped functions with sentinel-guarded buffers: on an ellipse with major
+radius 1e6 and minor radius 1e-3, 22 of the first 59 point counts overshoot by one, for **48
+overflowing calls** across the three curve entry points. The trigger is rounding: the walk stops
+~1.6e-8 in parameter short of the end against an epsilon of ~1e-13, so the sampler takes one more
+step. Well-conditioned geometry does not do it, which is why this survived from v0.31.0: a line, a
+circle at radii from 1e-6 to 1e7, a 5x2 ellipse, hyperbola, parabola, Bezier, BSpline, offset and
+trimmed curves were all clean across counts 2..200.
+
+The two `drawUniform` entry points did not corrupt memory quietly. They **crashed the process**.
+Their Swift wrappers unpack the buffer by index using the count the bridge returned, so a returned
+`pointCount + 1` reads three (or two) elements past the end of the Swift `Array` and hits its bounds
+check: `Fatal error: Index out of range`. `quasiUniformParameters` uses `prefix(n)`, which clamps,
+so there the only symptom was the heap write itself.
+
+Clamping alone would not have been the fix. The surplus point *is* the curve's end parameter, so
+truncating the tail leaves the distribution stopping short of the curve, which is precisely what
+`OCCTGCPntsQuasiUniform` (`Edge.quasiUniformParameters(count:)`), the one member of the family that
+already clamped, had been doing silently on every overshooting call. The shared
+`occtSamplerKept`/`occtSamplerIndex` helpers keep the first `capacity - 1` samples and the sampler's
+own last one.
+
+Also fixed: **`Shape.uniformAbscissa(pointCount: 0)` returned five parameters** instead of `nil`.
+Both samplers document `nbPoints >= 2` and enforce it with a `Raise_if`, which the Release kernel
+compiles out (`No_Exception`, #487), and `OCCTUniformAbscissaByCount`/`ByCountRange` had no count
+precondition of their own. Below 2 the algorithms misbehave rather than fail:
+`GCPnts_QuasiUniformAbscissa(bezier_or_bspline, 0)` builds an `NCollection_HArray1` over the empty
+range `(1, 0)` and writes element 1 of it: an uncatchable SIGSEGV, one missing guard away on three
+of the six entry points. `occtValidSampleCount` is now applied at all of them, so `count`/
+`pointCount` below 2 returns empty rather than reaching OCCT.
+
+Reproducer and the full measured tables: [`Scripts/repro/501-quasiuniform-buffer-overflow/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/501-quasiuniform-buffer-overflow).
+
+#### The orphaned duplicate the index was hiding, and eight corrected entries (#501)
+
+`OCCTBridge.h`'s index mapped `GCPnts_QuasiUniformAbscissa → OCCTCurve3DQuasiUniformParams`, a
+symbol that has never existed. Chasing the real one turned up two: `OCCTCurve3DQuasiUniformAbscissa`
+(v0.31.0) and `OCCTGCPntsQuasiUniformCurve` (v0.75), byte-for-byte the same sampling of the same
+`Curve3D` through the same two OCCT classes. The v0.75 one had no caller in Swift or in the tests
+and never had; it is removed. Its `maxParams` bound (the one thing the older spelling lacked, and
+the reason the older spelling was overflowing) is folded into the survivor. No Swift API changes:
+`OCCTGCPntsQuasiUniformCurve` was C-level only and never reachable.
+
+Index entries corrected alongside it: the whole `GCPnts` block (`UniformAbscissa` and
+`UniformDeflection` both pointed at `OCCTCPntsUniformDeflection*`, which wraps a **different OCCT
+class**, `CPnts_UniformDeflection`, now given its own entry; `AbscissaPoint` named one 2D function
+out of eleven; `TangentialDeflection` had no entry at all), `BRepGProp` (two of three symbols
+missing their `Get`), `ShapeCustom_DirectModification` (missing its `Custom`), and
+`BRepOffset_SimpleOffset`, which named `OCCTShapeSimpleOffset` (a function that wraps
+`BRepOffset_MakeSimpleOffset`, a different class, now indexed separately) while the real
+`OCCTBRepOffsetSimpleOffset` was absent. `Scripts/check-bridge-index.py` goes from 139 stale entries
+to 134; the remaining 134 are #510.
+
+Worth noting for #510: the two `GCPnts_Uniform*` entries **passed** the checker. It verifies that a
+named symbol exists, not that it wraps the class the entry claims, so a mis-attributed entry is
+invisible to it. 139 is a floor, not the count.
 
 #### One `BRepLib::BuildCurves3d` entry point, not three, and one default instead of two (#498)
 

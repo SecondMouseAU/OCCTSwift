@@ -407,15 +407,15 @@ Concentrates sample points where curvature is high and fewer where the curve is 
 
 ### `drawUniform(pointCount:)`
 
-Discretizes the curve at exactly `pointCount` uniformly-spaced arc-length points.
+Discretizes the curve at up to `pointCount` uniformly-spaced arc-length points. The first point is always the start of the curve and the last is always its end.
 
 ```swift
 public func drawUniform(pointCount: Int) -> [SIMD2<Double>]
 ```
 
-- **Parameters:** `pointCount` — desired number of output points.
-- **Returns:** Array of 2D points; empty on failure.
-- **OCCT:** `GCPnts_UniformAbscissa` (via `OCCTCurve2DDrawUniform`).
+- **Parameters:** `pointCount`, the desired number of output points. Must be at least 2; below that the result is empty (#501).
+- **Returns:** Array of 2D points, never more than `pointCount`; empty on failure.
+- **OCCT:** `GCPnts_UniformAbscissa` (via `OCCTCurve2DDrawUniform`). It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!

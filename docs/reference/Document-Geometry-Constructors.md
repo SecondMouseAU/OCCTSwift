@@ -73,7 +73,7 @@ Uniformly sample an edge by point count; returns parameter values.
 public func uniformAbscissa(pointCount: Int) -> [Double]?
 ```
 
-- **Parameters:** `pointCount` — number of sample points.
+- **Parameters:** `pointCount`, the number of sample points. Must be at least 2, else `nil`. OCCT documents that precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so a request for zero used to come back with five parameters (#501).
 - **Returns:** Array of curve parameter values, or `nil` if the edge is invalid or sampling fails.
 - **OCCT:** `GCPnts_UniformAbscissa` (by number of points)
 - **Example:**
@@ -114,7 +114,7 @@ Uniformly sample an edge by point count within a parameter range.
 public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]?
 ```
 
-- **Parameters:** `pointCount` — number of points; `u1`, `u2` — parameter range on the underlying curve.
+- **Parameters:** `pointCount`, the number of points, at least 2 (else `nil`, see above); `u1`, `u2`, the parameter range on the underlying curve.
 - **Returns:** Array of parameter values, or `nil` on failure.
 - **OCCT:** `GCPnts_UniformAbscissa` (range variant, by count)
 - **Example:**

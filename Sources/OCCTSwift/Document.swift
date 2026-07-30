@@ -7922,6 +7922,10 @@ extension Curve2D {
 
 extension Shape {
     /// Uniformly sample an edge by point count. Returns parameter values.
+    ///
+    /// - Parameter pointCount: Desired number of samples; must be at least 2, else `nil`. OCCT's
+    ///   sampler documents that precondition but cannot enforce it in a Release kernel, and used to
+    ///   answer a request for zero with five parameters (#501).
     public func uniformAbscissa(pointCount: Int) -> [Double]? {
         let n = Int(OCCTUniformAbscissaByCount(handle, Int32(pointCount), nil))
         guard n > 0 else { return nil }
@@ -7940,6 +7944,8 @@ extension Shape {
     }
 
     /// Uniformly sample an edge by point count within parameter range.
+    ///
+    /// - Parameter pointCount: Desired number of samples; must be at least 2, else `nil` (#501).
     public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]? {
         let n = Int(OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, nil))
         guard n > 0 else { return nil }

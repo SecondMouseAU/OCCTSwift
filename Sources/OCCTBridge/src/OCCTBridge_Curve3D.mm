@@ -821,14 +821,17 @@ int32_t OCCTCurve3DDrawAdaptive(OCCTCurve3DRef c,
 
 int32_t OCCTCurve3DDrawUniform(OCCTCurve3DRef c,
                                 int32_t pointCount, double* outXYZ) {
-    if (!c || c->curve.IsNull() || !outXYZ || pointCount <= 0) return 0;
+    // outXYZ holds pointCount triples, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!c || c->curve.IsNull() || !outXYZ || !occtValidSampleCount(pointCount)) return 0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
         GCPnts_UniformAbscissa sampler(adaptor, pointCount);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, pointCount);
         for (int32_t i = 0; i < n; i++) {
-            double u = sampler.Parameter(i + 1);
+            double u = sampler.Parameter(occtSamplerIndex(i, n, total));
             gp_Pnt p = adaptor.Value(u);
             outXYZ[i*3] = p.X();
             outXYZ[i*3+1] = p.Y();
@@ -1088,14 +1091,17 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef c1, OCCTCurve3DRef c2, OCCTCurveExtrem
 #include <GCPnts_QuasiUniformAbscissa.hxx>
 
 int32_t OCCTCurve3DQuasiUniformAbscissa(OCCTCurve3DRef curve, int32_t nbPoints, double* outParams) {
-    if (!curve || curve->curve.IsNull() || !outParams || nbPoints <= 0) return 0;
+    // outParams holds nbPoints doubles, which is not what the sampler is bounded by. See
+    // occtSamplerKept/occtSamplerIndex in OCCTBridge_Internal.h (#501).
+    if (!curve || curve->curve.IsNull() || !outParams || !occtValidSampleCount(nbPoints)) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
         GCPnts_QuasiUniformAbscissa sampler(adaptor, nbPoints);
         if (!sampler.IsDone()) return 0;
-        int32_t n = sampler.NbPoints();
+        int32_t total = sampler.NbPoints();
+        int32_t n = occtSamplerKept(total, nbPoints);
         for (int32_t i = 0; i < n; i++) {
-            outParams[i] = sampler.Parameter(i + 1);
+            outParams[i] = sampler.Parameter(occtSamplerIndex(i, n, total));
         }
         return n;
     } catch (...) {
@@ -1656,14 +1662,17 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
                                 int32_t nbPoints,
                                 double* _Nonnull params,
                                 int32_t maxParams) {
-    if (!edge || nbPoints < 2) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve curve(TopoDS::Edge(edge->edge));
         GCPnts_QuasiUniformAbscissa sampler(curve, nbPoints);
         if (!sampler.IsDone()) return 0;
-        int32_t count = std::min((int32_t)sampler.NbPoints(), maxParams);
+        // This one always clamped, but to the tail, so whenever the sampler overshot the result
+        // stopped short of the edge's last parameter. occtSamplerIndex keeps the end (#501).
+        int32_t total = sampler.NbPoints();
+        int32_t count = occtSamplerKept(total, maxParams);
         for (int32_t i = 0; i < count; i++) {
-            params[i] = sampler.Parameter(i + 1); // 1-based
+            params[i] = sampler.Parameter(occtSamplerIndex(i, count, total)); // 1-based
         }
         return count;
     } catch (...) {
@@ -1671,24 +1680,11 @@ int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
     }
 }
 
-int32_t OCCTGCPntsQuasiUniformCurve(OCCTCurve3DRef _Nonnull curve,
-                                      int32_t nbPoints,
-                                      double* _Nonnull params,
-                                      int32_t maxParams) {
-    if (!curve || nbPoints < 2) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        GCPnts_QuasiUniformAbscissa sampler(adaptor, nbPoints);
-        if (!sampler.IsDone()) return 0;
-        int32_t count = std::min((int32_t)sampler.NbPoints(), maxParams);
-        for (int32_t i = 0; i < count; i++) {
-            params[i] = sampler.Parameter(i + 1);
-        }
-        return count;
-    } catch (...) {
-        return 0;
-    }
-}
+// A second Curve3D-based spelling, OCCTGCPntsQuasiUniformCurve, lived here from v0.75 until #501.
+// It was byte-for-byte the same sampling as OCCTCurve3DQuasiUniformAbscissa (v0.31.0) and never
+// had a caller in Swift or in the tests; the cross-reference index that should have caught the
+// re-wrap named a function that does not exist. It is gone; its maxParams bound, the one thing the
+// older spelling lacked, is now folded into that spelling.
 
 // --- GCPnts_TangentialDeflection ---
 
@@ -3000,8 +2996,12 @@ OCCTCurve3DRef OCCTGCMakeHyperbola3Points(double x1, double y1, double z1,
 #include <GCPnts_UniformAbscissa.hxx>
 #include <BRepAdaptor_Curve.hxx>
 
+// These four are called twice by their Swift wrappers (once with params == nullptr to learn the
+// count, then again with a buffer of exactly that size), so the sampler's own overshoot is already
+// accounted for and there is nothing to clamp. The count preconditions still have to be applied
+// here: without them nbPoints == 0 reported IsDone() with five parameters (#501).
 int32_t OCCTUniformAbscissaByCount(OCCTShapeRef edge, int32_t nbPoints, double* params) {
-    if (!edge) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
         GCPnts_UniformAbscissa ua(ac, nbPoints);
@@ -3034,7 +3034,7 @@ int32_t OCCTUniformAbscissaByDistance(OCCTShapeRef edge, double abscissa, double
 
 int32_t OCCTUniformAbscissaByCountRange(OCCTShapeRef edge, int32_t nbPoints,
                                          double u1, double u2, double* params) {
-    if (!edge) return 0;
+    if (!edge || !occtValidSampleCount(nbPoints)) return 0;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
         GCPnts_UniformAbscissa ua(ac, nbPoints, u1, u2);
@@ -5611,15 +5611,17 @@ static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outPara
 // N points spaced equally by arc length along the curve. outXYZ must hold count*3 doubles;
 // returns the number of points actually written.
 static int32_t sampleAdaptorUniform(Adaptor3d_Curve& a, int32_t count, double* outXYZ) {
-    if (count < 2 || !outXYZ) return 0;
+    if (!occtValidSampleCount(count) || !outXYZ) return 0;
     GCPnts_UniformAbscissa sampler(a, count);
     if (!sampler.IsDone()) return 0;
-    int32_t n = sampler.NbPoints();
-    for (int32_t i = 1; i <= n; ++i) {
-        gp_Pnt p = a.Value(sampler.Parameter(i));
-        outXYZ[(i - 1) * 3 + 0] = p.X();
-        outXYZ[(i - 1) * 3 + 1] = p.Y();
-        outXYZ[(i - 1) * 3 + 2] = p.Z();
+    // The sampler is not bounded by `count`. See occtSamplerKept/occtSamplerIndex (#501).
+    int32_t total = sampler.NbPoints();
+    int32_t n = occtSamplerKept(total, count);
+    for (int32_t i = 0; i < n; ++i) {
+        gp_Pnt p = a.Value(sampler.Parameter(occtSamplerIndex(i, n, total)));
+        outXYZ[i * 3 + 0] = p.X();
+        outXYZ[i * 3 + 1] = p.Y();
+        outXYZ[i * 3 + 2] = p.Z();
     }
     return n;
 }

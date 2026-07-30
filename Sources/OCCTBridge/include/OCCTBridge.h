@@ -158,7 +158,7 @@
 // BRepFilletAPI_MakeFillet2d          → OCCTShapeFillet2D*, OCCTShapeChamfer2D*
 //
 // --- BRepGProp ---
-// BRepGProp                           → OCCTShapeVolume, OCCTShapeSurfaceArea, OCCTShapeGetCenterOfMass
+// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetCenterOfMass
 // BRepGProp_Face                      → OCCTFaceGProp*
 // BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
@@ -180,8 +180,9 @@
 //
 // --- BRepOffset ---
 // BRepOffset_Analyse                  → OCCTEdgeGetConvexity
+// BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
 // BRepOffset_Offset                   → OCCTBRepOffsetFace
-// BRepOffset_SimpleOffset             → OCCTShapeSimpleOffset
+// BRepOffset_SimpleOffset             → OCCTBRepOffsetSimpleOffset
 //
 // --- BRepOffsetAPI ---
 // BRepOffsetAPI_DraftAngle            → OCCTShapeDraft
@@ -210,7 +211,7 @@
 // BRepPrimAPI_MakeWedge               → OCCTShapeCreateWedge
 //
 // --- BRepTools ---
-// BRepTools_Modifier                  → OCCTShapeNurbsConvertViaModifier, OCCTShapeSimpleOffset
+// BRepTools_Modifier                  → OCCTBRepToolsModifierNurbsConvert, OCCTBRepOffsetSimpleOffset, OCCTShapeCopyModification, OCCTShapeTrsfModification, OCCTShapeGTrsfModification, OCCTShapeDraftModification
 // BRepTools_ReShape                   → OCCTShapeReplaceSubShape*
 // BRepTools_Substitution              → OCCTShapeSubstituted
 // BRepTools_WireExplorer              → OCCTWireGetOrderedEdge*
@@ -229,6 +230,9 @@
 // Contap_ContAna                      → OCCTContapSphereDir, OCCTContapCylinderDir, OCCTContapSphereEye
 // Contap_Contour                      → OCCTContapContour*
 //
+// --- CPnts ---
+// CPnts_UniformDeflection             → OCCTCPntsUniformDeflection*
+//
 // --- GC ---
 // GC_MakeArcOfCircle                  → OCCTWireCreateArc, OCCTWireCreateArc3Points
 // GC_MakeCircle                       → OCCTWireCreateCircle
@@ -243,11 +247,12 @@
 // GC_MakeLine2d                       → OCCTGCE2dMakeLine* (bridge symbols retain GCE2d historical name)
 //
 // --- GCPnts ---
-// GCPnts_AbscissaPoint                → OCCTCurve2DParameterAtLength
-// GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformParams
+// GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+// GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
-// GCPnts_UniformAbscissa              → OCCTCPntsUniformDeflection*
-// GCPnts_UniformDeflection            → OCCTCPntsUniformDeflection*
+// GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive
+// GCPnts_UniformAbscissa              → OCCTUniformAbscissaBy*, OCCTCurve3DDrawUniform, OCCTCurve2DDrawUniform, OCCTCompCurveSampleUniform, OCCTEdgeCurveSampleUniform
+// GCPnts_UniformDeflection            → OCCTCurve3DDrawDeflection, OCCTCurve2DDrawDeflection
 //
 // --- GccAna ---
 // GccAna_Circ2d2TanOn                 → OCCTGccAnaCirc2d2TanOn*
@@ -460,7 +465,7 @@
 // --- ShapeCustom ---
 // ShapeCustom_BSplineRestriction      → OCCTShapeBSplineRestriction*
 // ShapeCustom_Curve2d                 → OCCTCurve2DIsLinear, OCCTCurve2DConvertToLine, OCCTCurve2DSimplifyBSpline
-// ShapeCustom_DirectModification      → OCCTShapeDirectModification
+// ShapeCustom_DirectModification      → OCCTShapeCustomDirectModification
 // ShapeCustom_Surface                 → OCCTSurfaceConvertToAnalytical, OCCTSurfaceConvertToPeriodic, OCCTSurfaceConversionGap
 // ShapeCustom_SweptToElementary       → OCCTShapeSweptToElementary
 // ShapeCustom_TrsfModification        → OCCTShapeTrsfModificationScale
@@ -4322,9 +4327,11 @@ bool OCCTDocumentGetLengthUnit(OCCTDocumentRef doc, double* unitScale, char* uni
 
 /// Sample curve parameters using quasi-uniform abscissa distribution.
 /// @param curve The curve to sample
-/// @param nbPoints Desired number of sample points
+/// @param nbPoints Desired number of sample points; must be >= 2, else 0 is returned
 /// @param outParams Output array for parameter values (must hold nbPoints doubles)
-/// @return Actual number of parameters written, or 0 on failure
+/// @return Actual number of parameters written, never more than nbPoints, or 0 on failure.
+///         GCPnts can compute one or more points beyond the request; the surplus is dropped, but
+///         the last slot still gets the curve's last parameter so the result spans the curve (#501).
 int32_t OCCTCurve3DQuasiUniformAbscissa(OCCTCurve3DRef curve, int32_t nbPoints, double* outParams);
 
 
@@ -10194,17 +10201,19 @@ OCCTApproxSurfaceResult OCCTGeomConvertApproxSurface(OCCTSurfaceRef _Nonnull sur
 // MARK: - GCPnts_QuasiUniformAbscissa
 
 /// Compute quasi-uniform parameter distribution on an edge curve.
-/// Returns parameter count, fills params array.
+/// The Curve3D form of this is OCCTCurve3DQuasiUniformAbscissa (v0.31.0), not a second function
+/// here. The one that used to be, OCCTGCPntsQuasiUniformCurve, was a never-called re-wrap (#501).
+/// @param edge The edge to sample
+/// @param nbPoints Desired number of sample points; must be >= 2, else 0 is returned
+/// @param params Output array for parameter values (must hold maxParams doubles)
+/// @param maxParams Capacity of params. The sampler can report more points than nbPoints, so this
+///        is a real bound, not a formality; when it bites, the last slot still gets the edge's last
+///        parameter so the distribution spans the whole edge.
+/// @return Actual number of parameters written, or 0 on failure
 int32_t OCCTGCPntsQuasiUniform(OCCTEdgeRef _Nonnull edge,
                                 int32_t nbPoints,
                                 double* _Nonnull params,
                                 int32_t maxParams);
-
-/// Quasi-uniform sampling on a Curve3D.
-int32_t OCCTGCPntsQuasiUniformCurve(OCCTCurve3DRef _Nonnull curve,
-                                      int32_t nbPoints,
-                                      double* _Nonnull params,
-                                      int32_t maxParams);
 
 // MARK: - GCPnts_TangentialDeflection
 

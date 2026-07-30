@@ -245,7 +245,18 @@ public final class Curve2D: @unchecked Sendable {
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
-    /// Discretize the curve with exactly `pointCount` uniformly-spaced-by-arc-length points.
+    /// Discretize the curve with at most `pointCount` uniformly-spaced-by-arc-length points.
+    ///
+    /// The first point is always the start of the curve and the last is always its end.
+    ///
+    /// ```swift
+    /// let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
+    /// let pts = seg.drawUniform(pointCount: 11)
+    /// // pts[5] ≈ SIMD2(5, 0)
+    /// ```
+    ///
+    /// - Parameter pointCount: Desired number of output points; must be at least 2, else empty.
+    /// - Returns: Array of 2D points, never more than `pointCount` of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD2<Double>] {
         var buffer = [Double](repeating: 0, count: pointCount * 2)
         let n = Int(OCCTCurve2DDrawUniform(handle, Int32(pointCount), &buffer))

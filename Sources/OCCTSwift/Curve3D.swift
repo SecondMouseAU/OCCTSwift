@@ -542,7 +542,18 @@ public final class Curve3D: @unchecked Sendable {
         return unpackSIMD3(buffer, count: n)
     }
 
-    /// Uniform arc-length spacing discretization
+    /// Uniform arc-length spacing discretization.
+    ///
+    /// The first point is always the start of the curve and the last is always its end.
+    ///
+    /// ```swift
+    /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+    /// let pts = seg.drawUniform(pointCount: 11)
+    /// // pts[5] ≈ SIMD3(5, 0, 0)
+    /// ```
+    ///
+    /// - Parameter pointCount: Desired number of output points; must be at least 2, else empty.
+    /// - Returns: Array of 3D points, never more than `pointCount` of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD3<Double>] {
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let n = Int(OCCTCurve3DDrawUniform(handle, Int32(pointCount), &buffer))
@@ -769,10 +780,21 @@ extension Curve3D {
     /// Sample parameter values at quasi-uniform arc-length intervals.
     ///
     /// Uses `GCPnts_QuasiUniformAbscissa` to distribute sample points
-    /// approximately evenly along the curve's arc length.
+    /// approximately evenly along the curve's arc length. The first parameter is always the start
+    /// of the curve's domain and the last is always its end.
     ///
-    /// - Parameter count: Desired number of sample points
-    /// - Returns: Array of parameter values, or empty array on failure
+    /// ```swift
+    /// if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
+    ///     let params = c.quasiUniformParameters(count: 8)
+    ///     #expect(params.count == 8)
+    ///     #expect(params.last == c.domain.upperBound)
+    /// }
+    /// ```
+    ///
+    /// - Parameter count: Desired number of sample points. Must be at least 2. OCCT's samplers
+    ///   document that precondition but cannot enforce it in a Release kernel, and below 2 they
+    ///   misbehave rather than fail, so anything smaller returns an empty array here.
+    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
         var params = [Double](repeating: 0, count: count)
         let n = Int(OCCTCurve3DQuasiUniformAbscissa(handle, Int32(count), &params))
