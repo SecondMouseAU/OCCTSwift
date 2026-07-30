@@ -181,6 +181,67 @@ that do; and `ShapeAnalysis_Curve` named three functions that do not exist under
 
 Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### One free-bounds analyser, and the double-`perform()` bug the second one hid (#504)
+
+`ShapeAnalysis_FreeBoundsProperties` was wrapped twice. The v0.49.0 family behind `Shape`'s five
+`…FreeBound…` methods rebuilt the whole analyser and re-ran `Perform()` on every single call, so
+a per-bound report cost one full free-bound search *per bound*; the v0.114.0 family behind
+`FreeBoundsProperties` analysed once and answered every query from that result. The two also took
+opposite index bases in the C layer, 0-based on one side and 1-based on the other for the same
+conceptual parameter, with neither declaration saying the other existed. Both Swift wrappers
+compensated correctly, so nothing was visibly broken; a third caller written against either C
+function by analogy with the other would have been off by one with no diagnostic.
+
+Consolidating them turned up a real bug that only the newer family could reach. OCCT's `Perform()`
+*appends* to its two result sequences and never clears them, and `Init()` does not clear them
+either; only the constructors allocate them. `FreeBoundsProperties.perform()` is public and
+`@discardableResult`, so calling it twice doubled every count and every notch:
+
+```swift
+let props = FreeBoundsProperties(shape: opened, tolerance: 1e-3)!
+props.perform(); props.closedCount   // 2
+props.perform(); props.closedCount   // 4   (before #504)
+props.perform(); props.closedCount   // 6
+```
+
+The stateless family could not hit it, because each of its calls built a fresh analyser. It is
+latched in the bridge now, and `perform()` is optional as well as idempotent: every accessor runs
+the analysis on demand, so forgetting it no longer reads as "this shape has no free bounds".
+
+**Not source-breaking.** `Shape.freeBoundsAnalysis(tolerance:)`, `closedFreeBoundInfo`,
+`openFreeBoundInfo`, `closedFreeBoundWire` and `openFreeBoundWire` keep their signatures and now
+run on the shared analyser. `FreeBoundsProperties` keeps all eight of its accessors and gains
+`totalCount`, `info(_:at:)` and `wire(_:at:)`, which take a `BoundKind` (`.closed` / `.open`) and
+give the open side the `ratio`, `width` and `notchCount` only the closed side used to expose.
+
+An out-of-range index is now a real answer rather than a guess. `Shape`'s info methods used to
+infer it from `perimeter > 0`, so a genuine zero-perimeter bound would have read as "no such
+bound", and the `FreeBoundsProperties` accessors did not range-check at all, letting the index reach
+`NCollection_Sequence::Value` and come back 0 from a catch-all. Both are checked in the bridge
+against the sequence length, and both report it as `nil` (or `0`, for the `Double` accessors).
+
+Two OCCT behaviours are documented and pinned by tests, having been found while measuring this:
+
+- **`ratio` is an aspect ratio**, contour length over contour width: 2 for a 20×10 bound. Both
+  `OCCTBridge.h` and `Shape.FreeBoundInfo` called it `area / perimeter²`, which for that bound is
+  0.0556. OCCT solves it from the area and the perimeter, and leaves *both* `ratio` and `width` at
+  0 when that solve has no real root, which an exactly **square** bound hits by one ulp, sitting
+  precisely on the branch boundary. So 0 means "not solvable", not "degenerate contour", and a
+  square is the one fixture that must not be used to test either field.
+- **`Perform()` is not a success signal.** It returns
+  `DispatchBounds() | CheckNotches() | CheckContours()`, and `CheckNotches()` returns `true`
+  unconditionally, so it is `true` for a shape with no free bounds at all and for one that was
+  never loaded, the opposite of its documented "False if fail or no free bounds are found".
+  `IsLoaded()` is what the bridge checks instead.
+
+The C family is 18 functions down to 6. `OCCTBridge.h`'s cross-reference index entry for the class
+named `OCCTShapeFreeBoundsAnalysis*`, a prefix that has never existed anywhere in the codebase; it
+names the real family now. `ShapeAnalysis_FreeBounds` (the similarly-named sibling class behind
+`Shape.freeBoundsClosedWires` and friends, easy to conflate and genuinely different) gains the
+index entry it never had.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
 #### One continuity decoder per vocabulary, not nineteen (#490)
 
 Continuity reached OCCT as a plain integer through 19 separate decoders: seven independently-named

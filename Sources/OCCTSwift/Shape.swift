@@ -8038,11 +8038,17 @@ extension Shape {
         public let area: Double
         /// Perimeter length
         public let perimeter: Double
-        /// Aspect ratio (area / perimeter^2)
+        /// Aspect ratio: contour length divided by contour width. 1 for a square-ish bound, 10 for
+        /// a 100×10 one.
+        ///
+        /// OCCT solves this from `area` and `perimeter` and leaves both this and ``width`` at 0
+        /// when that solve has no real root, which an exactly square bound hits by one ulp, since
+        /// it sits precisely on the boundary between the two branches. So 0 means "not solvable
+        /// here", not "degenerate contour"; `area` and `perimeter` are still good in that case.
         public let ratio: Double
-        /// Average width
+        /// Average width, on the same "0 means unsolved" contract as ``ratio``
         public let width: Double
-        /// Number of notches
+        /// Number of notches (narrow 'V'-like sub-contours) found on the bound
         public let notchCount: Int
     }
 
@@ -8058,50 +8064,66 @@ extension Shape {
 
     /// Analyze free bounds (boundary wires) of this shape.
     ///
-    /// Free bounds are edges that belong to only one face. Uses
-    /// ShapeAnalysis_FreeBoundsProperties to find and classify them.
+    /// Free bounds are chains of edges that belong to only one face, closed into contours where
+    /// they can be. Uses `ShapeAnalysis_FreeBoundsProperties` to find and classify them.
     ///
-    /// - Parameter tolerance: Sewing tolerance for finding free bounds
+    /// The shape needs to be a compound or shell of faces: the search runs over its direct
+    /// children, so a lone face reports no free bounds at all. In practice the sewing pass closes
+    /// essentially every contour it finds, so ``FreeBoundsAnalysis/openCount`` is usually 0.
+    ///
+    /// Each of the five `…FreeBound…` methods here runs its own analysis. To read several bounds
+    /// of one shape, build a ``FreeBoundsProperties`` instead: it analyses once and answers every
+    /// query from that one result.
+    ///
+    /// ```swift
+    /// let opened = Shape.compound(box.subShapes(ofType: .face).dropLast())!
+    /// let analysis = opened.freeBoundsAnalysis(tolerance: 1e-3)
+    /// print(analysis.closedCount)  // 1, the contour around the missing face
+    ///
+    /// if let bound = opened.closedFreeBoundInfo(tolerance: 1e-3, index: 0) {
+    ///     print(bound.area, bound.perimeter)
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
+    ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared
+    ///   topology instead of from a sewing pass.
     /// - Returns: Analysis summary with bound counts
     public func freeBoundsAnalysis(tolerance: Double) -> FreeBoundsAnalysis {
-        let result = OCCTFreeBoundsAnalyze(handle, tolerance)
+        guard let props = FreeBoundsProperties(shape: self, tolerance: tolerance) else {
+            return FreeBoundsAnalysis(totalCount: 0, closedCount: 0, openCount: 0)
+        }
         return FreeBoundsAnalysis(
-            totalCount: Int(result.totalFreeBounds),
-            closedCount: Int(result.closedFreeBounds),
-            openCount: Int(result.openFreeBounds)
+            totalCount: props.totalCount,
+            closedCount: props.closedCount,
+            openCount: props.openCount
         )
     }
 
     /// Get properties of a closed free bound.
+    ///
+    /// See ``freeBoundsAnalysis(tolerance:)`` for what the tolerance selects, and
+    /// ``FreeBoundsProperties`` for reading several bounds without re-analysing each time.
     ///
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the closed free bound
     /// - Returns: Properties of the bound, or nil if index is out of range
     public func closedFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo? {
-        let result = OCCTFreeBoundsGetClosedBoundInfo(handle, tolerance, Int32(index))
-        guard result.perimeter > 0 else { return nil }
-        return FreeBoundInfo(
-            area: result.area, perimeter: result.perimeter,
-            ratio: result.ratio, width: result.width,
-            notchCount: Int(result.notchCount)
-        )
+        FreeBoundsProperties(shape: self, tolerance: tolerance)?.info(.closed, at: index)
     }
 
     /// Get properties of an open free bound.
+    ///
+    /// See ``freeBoundsAnalysis(tolerance:)`` for what the tolerance selects, and
+    /// ``FreeBoundsProperties`` for reading several bounds without re-analysing each time.
     ///
     /// - Parameters:
     ///   - tolerance: Same tolerance used for analysis
     ///   - index: 0-based index of the open free bound
     /// - Returns: Properties of the bound, or nil if index is out of range
     public func openFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo? {
-        let result = OCCTFreeBoundsGetOpenBoundInfo(handle, tolerance, Int32(index))
-        guard result.perimeter > 0 else { return nil }
-        return FreeBoundInfo(
-            area: result.area, perimeter: result.perimeter,
-            ratio: result.ratio, width: result.width,
-            notchCount: Int(result.notchCount)
-        )
+        FreeBoundsProperties(shape: self, tolerance: tolerance)?.info(.open, at: index)
     }
 
     /// Get the wire shape of a closed free bound.
@@ -8111,8 +8133,7 @@ extension Shape {
     ///   - index: 0-based index of the closed free bound
     /// - Returns: Wire as a Shape, or nil if index is out of range
     public func closedFreeBoundWire(tolerance: Double, index: Int) -> Shape? {
-        guard let ref = OCCTFreeBoundsGetClosedBoundWire(handle, tolerance, Int32(index)) else { return nil }
-        return Shape(handle: ref)
+        FreeBoundsProperties(shape: self, tolerance: tolerance)?.wire(.closed, at: index)
     }
 
     /// Get the wire shape of an open free bound.
@@ -8122,8 +8143,7 @@ extension Shape {
     ///   - index: 0-based index of the open free bound
     /// - Returns: Wire as a Shape, or nil if index is out of range
     public func openFreeBoundWire(tolerance: Double, index: Int) -> Shape? {
-        guard let ref = OCCTFreeBoundsGetOpenBoundWire(handle, tolerance, Int32(index)) else { return nil }
-        return Shape(handle: ref)
+        FreeBoundsProperties(shape: self, tolerance: tolerance)?.wire(.open, at: index)
     }
 
     // MARK: - v0.50.0: Polyhedral distance, history tracking, wire vertex analysis, nearest plane

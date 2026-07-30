@@ -2226,7 +2226,14 @@ public struct FreeBoundInfo: Sendable {
 }
 ```
 
-- `ratio` — `area / perimeter²` (shape factor).
+- `ratio`, an aspect ratio: contour length over contour width, so 2 for a 20×10 bound. **Not**
+  `area / perimeter²`, which is what this field's documentation claimed before #504 (0.0556 for
+  that same bound). OCCT solves it from `area` and `perimeter` and leaves *both* `ratio` and
+  `width` at 0 when that solve has no real root, which an exactly square bound hits by one ulp,
+  sitting precisely on the boundary between the two branches. So 0 means "not solvable here", not
+  "degenerate contour"; `area` and `perimeter` are still good in that case.
+- `width`, the average contour width, on the same "0 means unsolved" contract as `ratio`.
+- `notchCount`, the narrow 'V'-like sub-contours found on the bound.
 
 ---
 
@@ -2252,15 +2259,31 @@ Analyze free bounds (boundary wires) of this shape.
 public func freeBoundsAnalysis(tolerance: Double) -> FreeBoundsAnalysis
 ```
 
-Free bounds are edges that belong to only one face.
+A free bound is a chain of edges that belong to only one face, closed into a contour where it can
+be. The shape needs to be a compound or shell of faces: the search runs over its direct children,
+so a lone face reports no free bounds. In practice the sewing pass closes essentially every contour
+it finds, so `openCount` is usually 0.
 
-- **Parameters:** `tolerance` — Sewing tolerance for finding free bounds.
-- **Returns:** Analysis summary with closed and open bound counts.
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsAnalyze`).
+Each of the five `…FreeBound…` methods here runs its own analysis. To read several bounds of one
+shape, build a `FreeBoundsProperties` instead: it analyses once and answers every query from that
+one result. Both have run on the same implementation since #504.
+
+- **Parameters:** `tolerance`, the sewing tolerance used to chain free edges into contours. 0 or below
+  selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
+  instead of from a sewing pass.
+- **Returns:** Analysis summary with total, closed and open bound counts.
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsCounts`).
 - **Example:**
   ```swift
-  let fb = shell.freeBoundsAnalysis(tolerance: 1e-6)
-  print("open: \(fb.openCount), closed: \(fb.closedCount)")
+  let faces = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .face)
+  let opened = Shape.compound(Array(faces.dropLast()))!   // free boundary = the square hole
+
+  let fb = opened.freeBoundsAnalysis(tolerance: 1e-3)
+  print("open: \(fb.openCount), closed: \(fb.closedCount)")   // open: 0, closed: 1
+
+  if let bound = opened.closedFreeBoundInfo(tolerance: 1e-3, index: 0) {
+      print(bound.area, bound.perimeter)                        // 100.0 40.0
+  }
   ```
 
 ---
@@ -2277,7 +2300,7 @@ public func closedFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the closed free bound.
 - **Returns:** Properties, or `nil` if the index is out of range.
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsGetClosedBoundInfo`).
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsInfo`).
 
 ---
 
@@ -2293,7 +2316,7 @@ public func openFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the open free bound.
 - **Returns:** Properties, or `nil` if the index is out of range.
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsGetOpenBoundInfo`).
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsInfo`).
 
 ---
 
@@ -2309,7 +2332,7 @@ public func closedFreeBoundWire(tolerance: Double, index: Int) -> Shape?
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the closed free bound.
 - **Returns:** Wire as a `Shape`, or `nil` if the index is out of range.
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsGetClosedBoundWire`).
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsWire`).
 
 ---
 
@@ -2325,4 +2348,4 @@ public func openFreeBoundWire(tolerance: Double, index: Int) -> Shape?
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the open free bound.
 - **Returns:** Wire as a `Shape`, or `nil` if the index is out of range.
-- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsGetOpenBoundWire`).
+- **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsWire`).
