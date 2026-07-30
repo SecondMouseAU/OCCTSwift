@@ -2189,8 +2189,15 @@ OCCTShapeRef OCCTShapeFixFaceConnect(OCCTShapeRef shape, double tolerance) {
             }
 
             TopoDS_Shell result = connector.Build(shell, tolerance, tolerance);
-            // Build() returns a null shell when it could not connect this one; keep the input
-            // shell rather than dropping it from a multi-shell result.
+            // Defensive, not reachable: read ShapeFix_FaceConnect::Build (occt-src) end to end --
+            // `result` starts as the input shell and is only ever reassigned via TopoDS::Shell() on
+            // a ReShape::Apply() result or a rebuilt shell, never a default-constructed TopoDS_Shell.
+            // Probed directly (Add() consecutive face pairs then Build(), matching this loop exactly)
+            // against a real connect, a no-Add() no-op, and a single-face shell: IsNull() is false in
+            // all three (#484). Kept for the same reason #443's equivalent branch was kept once its
+            // own "failure" was found to be dead code: the alternative is trusting an internal OCCT
+            // invariant to hold forever, and the cost of being wrong (silently dropping a shell from
+            // a multi-shell result) is worse than one unreachable branch.
             anyConnected = anyConnected || !result.IsNull();
             connected.push_back(result.IsNull() ? shell : (TopoDS_Shape)result);
         }
