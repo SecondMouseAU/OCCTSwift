@@ -53,14 +53,15 @@ struct Issue489FilletRadiusTests {
         #expect(box.blendedEdges([(0, 2.0), (99_999, -5.0)]) == nil)
     }
 
-    /// The bounds check itself is unchanged: an out-of-range index paired with a *valid* radius is
-    /// still skipped, and the batch still builds from whatever edges resolved.
-    @Test("An out-of-range index with a valid radius is still skipped, not rejected")
-    func blendOutOfRangeIndexStillSkipped() {
+    /// #489 left the bounds check itself alone, so an out-of-range index paired with a *valid*
+    /// radius was still skipped and the batch still built from whatever edges resolved. #520
+    /// settled that question the other way for all five entry points in this family: a partial
+    /// fillet reported as a complete one is the defect, not the convenience. Pinned in
+    /// `Issue520FilletContractTests`; kept here so the pair of #489 cases still reads as a pair.
+    @Test("An out-of-range index rejects the batch whatever its radius")
+    func blendOutOfRangeIndexRejected() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let blended = box.blendedEdges([(0, 2.0), (99_999, 2.0)])
-        #expect(blended != nil)
-        if let blended { #expect(blended.isValid) }
+        #expect(box.blendedEdges([(0, 2.0), (99_999, 2.0)]) == nil)
     }
 
     // MARK: - Uniform radius (Shape.filleted(edges:radius:))
