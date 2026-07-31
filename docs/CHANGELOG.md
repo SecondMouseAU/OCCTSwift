@@ -178,6 +178,64 @@ comment blames a hang, #522 is not a hang, and retiring a hang guard needs a rep
 Post-`0019` the workaround also costs nothing measurable — forced C0 returns a slightly coarser fit
 (1.2e-7 against 1.4e-8) that is comfortably inside tolerance either way.
 
+#### Breaking: plate surfaces honour the tolerance they were given (#571)
+
+Six bridge functions build a surface with `GeomPlate_MakeApprox` — `Shape.plateSurface(through:)`,
+`plateSurface(constrainedBy:)`, `plateSurface(through:orders:)`, `plateSurface(through:curves:)`,
+`plateSurface(points:)` and `Surface.plateThrough(_:)`. Five of them passed `Nbmax = 1` and
+`dmax = tolerance * 10`, and between them those two arguments made `tolerance` unenforceable.
+
+`Nbmax` caps the number of Bezier patches, and **1 is the one value that disarms the algorithm**.
+`AdvApp2Var_ApproxAFunc2Var::ComputePatches` derives its cut decision from that cap; at 1 every
+branch leaves it at "do not cut", so `AdvApp2Var_Patch::CutSense` returns the same answer whether or
+not the G0 criterion was satisfied. The criterion is still evaluated and still reported through
+`CriterionError()` — it simply cannot act. Measured on a 25-point wavy plate at `tolerance: 0.01`:
+the criterion came back at `0.098` against its own `0.01` threshold, violated, and the surface was
+returned unchanged. `Nbmax = 2` or more fits the same plate to `0.0044`.
+
+`dmax` sets that threshold, as `seuil = max(Tol3d, 10 * dmax)`. `tolerance * 10` therefore asked the
+criterion to accept **100x the tolerance the caller requested** — and it is not merely dead weight
+once subdivision is allowed: at `Nbmax = 20` that value reproduces the bad single-patch answer
+exactly, while `tolerance * 0.1` gives the good one. `tolerance * 0.1` makes `10 * dmax == Tol3d`,
+so the threshold is the caller's own tolerance. It is the value the sixth site already used.
+
+All six now share one helper (`occtPlateApproxSurface`) with one contract. What changes for callers:
+
+| | before | after |
+|---|---|---|
+| worst deviation, 25-point wavy plate at `tolerance: 0.01` | `0.0724` (7.2x the request) | `0.0032` |
+| control points in U | 9 (a single degree-8 patch) | 16 |
+| `plateSurface(through:)` vs `plateSurface(points:)`, same input | 22x apart on accuracy | identical |
+
+Surfaces from these six entry points therefore **move**, and callers who stored derived geometry
+should regenerate it. Two related contracts are now explicit rather than implicit:
+
+- **`maxSegments: 1` is clamped to 2.** `Shape.plateSurface(points:maxSegments:)` is the one entry
+  point that exposes the cap, and 1 there is not a coarser request but the value that voids
+  `tolerance` entirely.
+- **The approximation's continuity is passed explicitly, and stays `GeomAbs_C1`.** It is the
+  continuity of the joins *between* patches, a different axis from the constraint order handed to
+  `GeomPlate_PointConstraint`/`GeomPlate_CurveConstraint` — so `plateSurface(constrainedBy:continuity:)`
+  still applies the caller's `.g0`/`.g1`/`.g2` to the boundary constraints only, and does not forward
+  it to the fit. Only `C0`, `C1` and `C2` are accepted there at all: `G1`, `G2`, `C3` and `CN` each
+  throw `AdvApp2Var_ApproxAFunc2Var : UContinuity Error` (measured), which is why
+  `occtGeomAbsFromSurfaceContinuity` — whose order-1 answer is `GeomAbs_G1` — must not feed it.
+
+**This is not fallout from [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), though
+that is what prompted the audit.** `GeomPlate_MakeApprox` is the one consumer of the defective
+approximator that does not go through `GeomConvert_ApproxSurface`, so it took #522's always-zero
+interior error without appearing in any census built by grepping for that class. Fingerprinting the
+control net of 54 plate fits either side of the `0019` patch — a stock override-link against the
+patched kernel — shows **every one identical**. Only the reported `ApproxError()` moved, rising
+1.03x to 5.37x as the interior contribution is counted for the first time. At the implicit `C1`
+default the degree floor is already 8, so #522's collapse could not reach these sites, exactly as
+#571 predicted.
+
+Two plate suites carrying `.disabled("Plate surface operations cause segfault in OCCT")` are
+re-enabled: 18 tests, 13 consecutive clean runs, and they pass against the pre-fix arguments too, so
+the annotation was stale rather than describing something this change cured. They cover two of the
+six sites. Reproducers and both transcripts: [`Scripts/repro/571-plate-approx-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/571-plate-approx-contract).
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge

@@ -48,6 +48,34 @@ for scattered probe data, feature points, or any unstructured point set. See als
   }
   ```
 
+#### What `tolerance` means here (#571)
+
+`tolerance` bounds the distance between the fitted BSpline and the plate at the plate's own
+constraint points, and the approximator subdivides into more Bezier patches until it is met. Before
+#571 it could not be met: five of the six plate entry points capped the approximation at a single
+patch, which is the one value that stops `AdvApp2Var_ApproxAFunc2Var` from acting on its own error
+criterion, so a violated tolerance and a satisfied one produced the same surface. A 25-point wavy
+plate asked for `tolerance: 0.01` came back deviating `0.072`.
+
+Verify it rather than assume it — the fit is a least-squares approximation, not an interpolation,
+and a plate that genuinely cannot be fitted still returns its best effort:
+
+```swift
+let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    (0..<5).map { j in
+        SIMD3(Double(i) * 4, Double(j) * 4,
+              4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    }
+}
+if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    print(worst)                // 0.0032 — inside tolerance
+    print(plate.uPoleCount)     // 16 — more than one degree-8 patch, so it did subdivide
+}
+```
+
+`uPoleCount <= degreeCap + 1` (9 at the default cap of 8) means the fit never subdivided.
+
 ---
 
 ### `nlPlateDeformed(constraints:maxIterations:tolerance:)`

@@ -9119,11 +9119,25 @@ extension Shape {
     /// Creates a smooth BSpline surface that passes through or near the given points.
     /// Useful for creating surfaces from scattered point data.
     ///
+    /// The fit subdivides into more Bezier patches until it is within `tolerance` of the plate.
+    /// `maxSegments` caps that subdivision; **1 is clamped to 2**, because a single patch cannot be
+    /// cut and the approximator then ignores its own error criterion entirely, which makes
+    /// `tolerance` unenforceable rather than merely coarse (#571).
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = [
+    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),
+    /// ]
+    /// if let face = Shape.plateSurface(points: points, tolerance: 1e-3) {
+    ///     print(face.surfaceArea ?? 0)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - points: Array of 3D points to fit the surface through
     ///   - tolerance: Approximation tolerance (default 1e-3)
     ///   - maxDegree: Maximum BSpline degree (default 8)
-    ///   - maxSegments: Maximum BSpline segments (default 20)
+    ///   - maxSegments: Maximum BSpline segments (default 20; values below 2 are clamped to 2)
     /// - Returns: Face with plate surface, or nil on failure
     public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-3,
                                      maxDegree: Int = 8, maxSegments: Int = 20) -> Shape? {

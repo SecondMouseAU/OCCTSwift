@@ -861,10 +861,29 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Advanced Plate Surfaces (v0.23.0)
 
-    /// Create a plate surface (parametric) interpolating through 3D points.
+    /// Create a plate surface (parametric) approximating a set of 3D points.
     ///
-    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce
-    /// a BSpline surface that passes through all given points.
+    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce a BSpline surface
+    /// through the given points. It **approximates** rather than interpolates: the fit subdivides
+    /// into more Bezier patches until it is within `tolerance` of the plate, and a cloud that
+    /// cannot be fitted that tightly still returns its best effort. Check the result:
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    ///     (0..<5).map { j in
+    ///         SIMD3(Double(i) * 4, Double(j) * 4,
+    ///               4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    ///     }
+    /// }
+    /// if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    ///     let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    ///     print(worst)              // 0.0032 — inside tolerance
+    ///     print(plate.uPoleCount)   // 16 — more than one patch, so the fit did subdivide
+    /// }
+    /// ```
+    ///
+    /// A `uPoleCount` no greater than the degree cap plus one means the fit stayed on a single
+    /// Bezier patch. Before #571 that was forced, and `tolerance` was unenforceable as a result.
     ///
     /// - Parameters:
     ///   - points: Array of 3D points (minimum 3)
