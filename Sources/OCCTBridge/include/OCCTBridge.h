@@ -107,9 +107,9 @@
 // BRepBuilderAPI_FastSewing           → OCCTShapeFastSewn
 // BRepBuilderAPI_FindPlane            → OCCTShapeFindPlane
 // BRepBuilderAPI_GTransform           → OCCTShapeNonUniformScale
-// BRepBuilderAPI_MakeEdge             → OCCTWireCreate*, OCCTBRepLibEdge*
+// BRepBuilderAPI_MakeEdge             → OCCTWireCreate*, OCCTMakeEdgeFrom*, OCCTMakeEdgeOnSurface*
 // BRepBuilderAPI_MakeEdge2d           → OCCTMakeEdge2d*
-// BRepBuilderAPI_MakeFace             → OCCTShapeCreate*, OCCTFaceFill*
+// BRepBuilderAPI_MakeFace             → OCCTMakeFace*, OCCTShapeCreateFace*
 // BRepBuilderAPI_MakePolygon          → OCCTWireCreateFastPolygon
 // BRepBuilderAPI_MakeShapeOnMesh      → OCCTShapeFromMesh
 // BRepBuilderAPI_MakeShell            → OCCTShapeCreateShellFromSurface
@@ -134,32 +134,32 @@
 // BRepExtrema_Poly                    → OCCTShapePolyhedralDistance
 //
 // --- BRepFeat ---
-// BRepFeat_Builder                    → OCCTBRepFeatFuse, OCCTBRepFeatCut
+// BRepFeat_Builder                    → OCCTBRepFeatBuilderFuse, OCCTBRepFeatBuilderCut
 // BRepFeat_Gluer                      → OCCTBRepFeatGluer
 // BRepFeat_MakeCylindricalHole        → OCCTBRepFeatCylindricalHole*
 // BRepFeat_MakeDPrism                 → OCCTShapeDraftPrism*
-// BRepFeat_MakeLinearForm             → OCCTShapeLinearRib
+// BRepFeat_MakeLinearForm             → OCCTShapeAddLinearRib
 // BRepFeat_MakePipe                   → OCCTShapePipeFeature*
-// BRepFeat_MakePrism                  → OCCTShapePrism, OCCTShapeSemiInfiniteExtrusion
+// BRepFeat_MakePrism                  → OCCTShapePrismUntilFace
 // BRepFeat_MakeRevol                  → OCCTShapeRevolFeature*
-// BRepFeat_MakeRevolutionForm         → OCCTShapeRevolutionForm
+// BRepFeat_MakeRevolutionForm         → OCCTShapeAddRevolutionForm
 // BRepFeat_SplitShape                 → OCCTBRepFeatSplitShape*
 //
 // --- BRepFill ---
-// BRepFill_CompatibleWires            → OCCTShapeCompatibleWires
-// BRepFill_Draft                      → OCCTShapeDraftFromWire
-// BRepFill_Generator                  → OCCTShapeRuledShell
+// BRepFill_CompatibleWires            → OCCTBRepFillCompatibleWires
+// BRepFill_Draft                      → OCCTBRepFillDraft
+// BRepFill_Generator                  → OCCTBRepFillGenerator
 // BRepFill_OffsetWire                 → OCCTWireOffset
-// BRepFill_Pipe                       → OCCTShapePipeSweep
+// BRepFill_Pipe                       → OCCTBRepFillPipe
 //
 // --- BRepFilletAPI ---
 // BRepFilletAPI_MakeChamfer           → OCCTShapeChamfer*
 // BRepFilletAPI_MakeFillet            → OCCTShapeFillet*, OCCTShapeBlendEdges, OCCTShapeFuseAndBlend, OCCTShapeCutAndBlend, OCCTFilletBuilder*
-// BRepFilletAPI_MakeFillet2d          → OCCTShapeFillet2D*, OCCTShapeChamfer2D*
+// BRepFilletAPI_MakeFillet2d          → OCCTFace2DFillet, OCCTFace2DChamfer
 //
 // --- BRepGProp ---
 // BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetCenterOfMass
-// BRepGProp_Face                      → OCCTFaceGProp*
+// BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds, OCCTFaceEvaluateNormalAtUV
 // BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
 //
@@ -167,37 +167,38 @@
 // BRepIntCurveSurface_Inter           → OCCTCurveSurfaceInter*
 //
 // --- BRepLib ---
-// BRepLib_MakeEdge                    → OCCTBRepLibEdge*
-// BRepLib_MakeFace                    → OCCTBRepLibFace*
-// BRepLib_MakeShell                   → OCCTBRepLibShell*
-// BRepLib_MakeSolid                   → OCCTBRepLibSolidFromShell
+// BRepLib_MakeEdge                    → OCCTBRepLibMakeEdge*
+// BRepLib_MakeFace                    → OCCTBRepLibMakeFace*
+// BRepLib_MakeShell                   → OCCTBRepLibMakeShellFromPlane
+// BRepLib_MakeSolid                   → OCCTShapeMakeSolidFromShell
 // BRepLib_ValidateEdge                → OCCTValidateEdge
 //
 // --- BRepMesh ---
-// BRepMesh_Deflection                 → OCCTDeflectionCompute, OCCTDeflectionIsConsistent
+// BRepMesh_Deflection                 → OCCTComputeAbsoluteDeflection, OCCTDeflectionIsConsistent
 // BRepMesh_IncrementalMesh            → OCCTShapeCreateMesh*
 // BRepMesh_ShapeTool                  → OCCTMeshShapeTool*
 //
 // --- BRepOffset ---
 // BRepOffset_Analyse                  → OCCTEdgeGetConvexity
 // BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
-// BRepOffset_Offset                   → OCCTBRepOffsetFace
+// BRepOffset_Offset                   → OCCTBRepOffsetOffsetFace
 // BRepOffset_SimpleOffset             → OCCTBRepOffsetSimpleOffset
 //
 // --- BRepOffsetAPI ---
 // BRepOffsetAPI_DraftAngle            → OCCTShapeDraft
 // BRepOffsetAPI_MakeDraft             → OCCTShapeMakeDraft
-// BRepOffsetAPI_MakeEvolved           → OCCTShapeEvolved*
+// BRepOffsetAPI_MakeEvolved           → OCCTShapeCreateEvolved, OCCTShapeCreateEvolvedAdvanced
 // BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
-//                                        (FillingSurface) — one implementation, #434
+//                                       (FillingSurface) — one implementation, #434
 // BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
 // BRepOffsetAPI_MakePipe              → OCCTShapePipe*
 // BRepOffsetAPI_MakePipeShell         → OCCTShapeCreatePipeShellMultiSection (every
 //                                       Add() sweep, one profile or many),
 //                                       OCCTShapeCreatePipeShellWithLaw (SetLaw),
 //                                       OCCTPipeShell* (the incremental builder). #503
-// BRepOffsetAPI_MakeThickSolid        → OCCTShapeShell, OCCTShapeHollowed
-// BRepOffsetAPI_ThruSections          → OCCTShapeLoft*
+// BRepOffsetAPI_MakeThickSolid        → OCCTShapeShell*, OCCTShapeMakeThickSolid, OCCTThickSolidWithOptions,
+//                                       OCCTShapeHistoryFromShell
+// BRepOffsetAPI_ThruSections          → OCCTShapeCreateLoft*, OCCTThruSections*
 //
 // --- BRepPrimAPI ---
 // BRepPrimAPI_MakeBox                 → OCCTShapeCreateBox*
@@ -205,7 +206,7 @@
 // BRepPrimAPI_MakeCylinder            → OCCTShapeCreateCylinder*, OCCTShapeDrillHole
 // BRepPrimAPI_MakeHalfSpace           → OCCTShapeCreateHalfSpace
 // BRepPrimAPI_MakePrism               → OCCTShapeCreateExtrusion
-// BRepPrimAPI_MakeRevol               → OCCTShapeCreateRevolve
+// BRepPrimAPI_MakeRevol               → OCCTShapeCreateRevolution*
 // BRepPrimAPI_MakeSphere              → OCCTShapeCreateSphere
 // BRepPrimAPI_MakeTorus               → OCCTShapeCreateTorus
 // BRepPrimAPI_MakeWedge               → OCCTShapeCreateWedge
@@ -213,14 +214,14 @@
 // --- BRepTools ---
 // BRepTools_Modifier                  → OCCTBRepToolsModifierNurbsConvert, OCCTBRepOffsetSimpleOffset, OCCTShapeCopyModification, OCCTShapeTrsfModification, OCCTShapeGTrsfModification, OCCTShapeDraftModification
 // BRepTools_ReShape                   → OCCTShapeReplaceSubShape*
-// BRepTools_Substitution              → OCCTShapeSubstituted
-// BRepTools_WireExplorer              → OCCTWireGetOrderedEdge*
+// BRepTools_Substitution              → OCCTBRepToolsSubstitute, OCCTShapeSubstitute, OCCTSubstitutionIsCopied
+// BRepTools_WireExplorer              → OCCTWireExplorer*
 //
 // --- ChFi2d ---
-// ChFi2d_AnaFilletAlgo               → OCCTShapeAnaFillet*
+// ChFi2d_AnaFilletAlgo                → OCCTChFi2dAnaFillet
 // ChFi2d_Builder                      → OCCTChFi2dAdd*, OCCTChFi2dModify*, OCCTChFi2dRemove*
 // ChFi2d_ChamferAPI                   → OCCTChFi2dChamferEdges
-// ChFi2d_FilletAlgo                   → OCCTShapeFilletAlgo*
+// ChFi2d_FilletAlgo                   → OCCTChFi2dFilletAlgo
 // ChFi2d_FilletAPI                    → OCCTChFi2dFilletEdges
 //
 // --- FilletSurf ---
@@ -234,14 +235,14 @@
 // CPnts_UniformDeflection             → OCCTCPntsUniformDeflection*
 //
 // --- GC ---
-// GC_MakeArcOfCircle                  → OCCTWireCreateArc, OCCTWireCreateArc3Points
+// GC_MakeArcOfCircle                  → OCCTCurve3DCreateArcOfCircle, OCCTWireCreateArcThroughPoints
 // GC_MakeCircle                       → OCCTWireCreateCircle
 // GC_MakeEllipse                      → OCCTGCMakeEllipse3Points
 // GC_MakeHyperbola                    → OCCTGCMakeHyperbola3Points
-// GC_MakeMirror                       → OCCTGCMakeMirror*
-// GC_MakeScale                        → OCCTGCMakeScale
+// GC_MakeMirror                       → OCCTShapeMirrorAboutAxis, OCCTShapeMirrorAboutPoint
+// GC_MakeScale                        → OCCTShapeScaleAboutPoint
 // GC_MakeSegment                      → OCCTWireCreateLine
-// GC_MakeTranslation                  → OCCTGCMakeTranslation
+// GC_MakeTranslation                  → OCCTShapeTranslateByPoints
 //
 // --- GC 2D ---
 // GC_MakeCircle2d                     → OCCTCurve2DMakeCircle*
@@ -263,72 +264,76 @@
 // GccAna_Circ2d2TanRad                → OCCTGccAnaCirc2d2TanRad*
 // GccAna_Circ2dTanCen                 → OCCTGccAnaCirc2dTanCen*
 // GccAna_Circ2dTanOnRad               → OCCTGccAnaCirc2dTanOnRad*
-// GccAna_Lin2dBisec                   → OCCTGccAnaBisecLL, OCCTGccAnaBisecPP
-// GccAna_Lin2dTanObl                  → OCCTGccAnaLinOblique*
-// GccAna_Lin2dTanPar                  → OCCTGccAnaLinParallel*
-// GccAna_Lin2dTanPer                  → OCCTGccAnaLinPerpendicular*
+// GccAna_Lin2dBisec                   → OCCTGccAnaLin2dBisec
+// GccAna_Lin2dTanObl                  → OCCTGccAnaLin2dTanOblPt
+// GccAna_Lin2dTanPar                  → OCCTGccAnaLin2dTanPar*
+// GccAna_Lin2dTanPer                  → OCCTGccAnaLin2dTanPer*
 // GccAna_Circ2d3Tan                   → OCCTGccAnaCirc2d3Tan* (v0.68.0)
-// GccAna_Pnt2dBisec                   → OCCTGccAnaBisecPP
+// GccAna_Pnt2dBisec                   → OCCTGccAnaPnt2dBisec
 //
 // --- Geom ---
 // Geom_BSplineCurve                   → OCCTCurve3D*, OCCTSurface*
 // Geom_BSplineSurface                 → OCCTSurface*
-// Geom_BezierCurve                    → OCCTCurve3DBezier
+// Geom_BezierCurve                    → OCCTCurve3DBezier*, OCCTCurve3DCreateBezier
 // Geom_BezierSurface                  → OCCTSurface*
-// Geom_Circle                         → OCCTCurve3DCircle, OCCTCurve3DArc*
+// Geom_Circle                         → OCCTCurve3DCircle*, OCCTCurve3DCreateCircle, OCCTGceMakeCircFrom*
 // Geom_ConicalSurface                 → OCCTSurfaceCone*
 // Geom_CylindricalSurface             → OCCTSurfaceCylinder*
 // Geom_Ellipse                        → OCCTCurve3DEllipse*
 // Geom_Hyperbola                      → OCCTCurve3DHyperbola*
-// Geom_Line                           → OCCTCurve3DLine, OCCTCurve3DSegment
+// Geom_Line                           → OCCTCurve3DLine*, OCCTCurve3DCreateLine, OCCTGceMakeLinFrom2Points
 // Geom_OffsetSurface                  → OCCTSurfaceOffset, OCCTSurfaceOffsetValue, OCCTSurfaceSetOffsetValue, OCCTSurfaceOffsetBasis (v0.99.0)
 // Geom_Parabola                       → OCCTCurve3DParabola*
 // Geom_Plane                          → OCCTSurfacePlane*
-// Geom_SphericalSurface               → OCCTSurfaceSphere
-// Geom_SurfaceOfLinearExtrusion       → OCCTSurfaceExtrusion
-// Geom_SurfaceOfRevolution            → OCCTSurfaceRevolution
-// Geom_ToroidalSurface                → OCCTSurfaceTorus
+// Geom_SphericalSurface               → OCCTSurfaceSphere*, OCCTSurfaceCreateSphere
+// Geom_SurfaceOfLinearExtrusion       → OCCTSurfaceCreateExtrusion, OCCTFaceGetPrimaryAxis
+// Geom_SurfaceOfRevolution            → OCCTSurfaceRevolution*, OCCTSurfaceCreateRevolution, OCCTShapeRevolutionAxes
+// Geom_ToroidalSurface                → OCCTSurfaceTorus*, OCCTSurfaceCreateTorus
 // Geom_TrimmedCurve                   → OCCTCurve3DTrim
 //
 // --- Geom2d ---
 // Geom2d_AxisPlacement                → OCCTAxisPlacement2D*
 // Geom2d_BSplineCurve                 → OCCTCurve2D*
-// Geom2d_BezierCurve                  → OCCTCurve2DBezier
+// Geom2d_BezierCurve                  → OCCTCurve2DBezier*, OCCTCurve2DCreateBezier
 // Geom2d_CartesianPoint               → OCCTPoint2D*
-// Geom2d_Circle                       → OCCTCurve2DCircle, OCCTCurve2DArc*
+// Geom2d_Circle                       → OCCTCurve2DCircle*, OCCTCurve2DCreateCircle, OCCTCurve2DCreateArcOfCircle,
+//                                       OCCTGceMakeCirc2d*
 // Geom2d_Direction                    → OCCTDirection2D*
 // Geom2d_Ellipse                      → OCCTCurve2DEllipse*
-// Geom2d_Hyperbola                    → OCCTCurve2DHyperbola
-// Geom2d_Line                         → OCCTCurve2DLine, OCCTCurve2DSegment
+// Geom2d_Hyperbola                    → OCCTCurve2DHyperbola*, OCCTCurve2DCreateHyperbola,
+//                                       OCCTCurve2DCreateArcOfHyperbola, OCCTGceMakeHypr2d
+// Geom2d_Line                         → OCCTCurve2DLine*, OCCTCurve2DCreateLine, OCCTCurve2DSegmentFromPoints,
+//                                       OCCTGceMakeLin2d*
 // Geom2d_OffsetCurve                  → OCCTCurve2DOffset
-// Geom2d_Parabola                     → OCCTCurve2DParabola
+// Geom2d_Parabola                     → OCCTCurve2DParabola*, OCCTCurve2DCreateParabola,
+//                                       OCCTCurve2DCreateArcOfParabola, OCCTGceMakeParab2d
 // Geom2d_Transformation               → OCCTTransform2D*
 // Geom2d_TrimmedCurve                 → OCCTCurve2DTrim
 // Geom2d_VectorWithMagnitude          → OCCTVector2D*
 //
 // --- Geom2dAPI ---
-// Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DExtrema, OCCTCurve2DCurvatureExtrema
+// Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DMinDistance, OCCTCurve2DAllExtrema
 // Geom2dAPI_InterCurveCurve           → OCCTCurve2DIntersect, OCCTCurve2DSelfIntersect
 // Geom2dAPI_Interpolate               → OCCTCurve2DInterpolate*
 // Geom2dAPI_PointsToBSpline           → OCCTCurve2DFitPoints, OCCTCurve2DApproximate2D,
 //                                        OCCTPoints2DToBSplineWithParams
 // Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
-//                                        OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve,
-//                                        OCCTCurve2DNearestParameter
+//                                       OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve,
+//                                       OCCTCurve2DNearestParameter
 //
 // --- Geom2dGcc ---
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
-// Geom2dGcc_Circ2d2TanRad             → OCCTGeom2dGccCirc2d2TanRad*
-// Geom2dGcc_Circ2dTanCen              → OCCTGeom2dGccCirc2dTanCen*
+// Geom2dGcc_Circ2d2TanRad             → OCCTGccCircle2d2TanRad, OCCTGccCircle2dTanPtRad, OCCTGccCircle2d2PtRad
+// Geom2dGcc_Circ2dTanCen              → OCCTGccCircle2dTanCen
 // Geom2dGcc_Circ2dTanOnRad            → OCCTGeom2dGccCirc2dTanOnRad*
-// Geom2dGcc_Lin2d2Tan                 → OCCTGeom2dGccLin2d2Tan*
+// Geom2dGcc_Lin2d2Tan                 → OCCTGccLine2d2Tan, OCCTGccLine2dTanPt
 // Geom2dGcc_Lin2dTanObl               → OCCTGeom2dGccLin2dTanObl*
 //
 // --- Geom2dHatch ---
-// Geom2dHatch_Hatcher                 → OCCTHatchGenerate
+// Geom2dHatch_Hatcher                 → OCCTCurve2DHatch
 //
 // --- GeomAPI ---
-// GeomAPI_ExtremaCurveCurve           → OCCTCurve3DMinDistance, OCCTCurve3DExtrema
+// GeomAPI_ExtremaCurveCurve           → OCCTCurve3DMinDistanceToCurve, OCCTCurve3DExtrema
 // GeomAPI_ExtremaCurveSurface         → OCCTCurve3DDistanceToSurface
 // GeomAPI_ExtremaSurfaceSurface       → OCCTSurfaceExtrema
 // GeomAPI_IntCS                       → OCCTCurve3DIntersectSurface
@@ -343,14 +348,16 @@
 //                                        OCCTSurfaceNLPlateG3, OCCTSurfaceNLPlateIncrementalG0
 //                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
-//                                        OCCTExtremaPointCurve, OCCTProjOnCurve*,
-//                                        OCCTEdgeProjectPoint
-//                                        (NOT OCCTCurve3DProjectPoint; see ShapeAnalysis_Curve)
+//                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
+//                                       OCCTEdgeProjectPoint
+//                                       (NOT OCCTCurve3DProjectPoint; see ShapeAnalysis_Curve)
 // GeomAPI_ProjectPointOnSurf          → OCCTSurfaceProjectPoint, OCCTFaceProject*
 //
 // --- GeomConvert ---
-// GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DToBezierSegments
-// GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoined
+// GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DBSplineToBeziers, OCCTCurve3DSplitAtContinuity,
+//                                       OCCTSurfaceToBSpline, OCCTSurfaceToBezierPatches
+// GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoinCurves, OCCTCurve3DJoinToBSpline,
+//                                       OCCTCurve3DConcatenateG1, OCCTConcatenateCurves3D
 // GeomConvert_CurveToAnaCurve         → OCCTGeomConvertCurveToAnalytical, OCCTGeomConvertIsLinear
 // GeomConvert_SurfToAnaSurf           → OCCTGeomConvertSurfToAnalytical*, OCCTGeomConvertIsCanonical
 //
@@ -359,34 +366,41 @@
 // Convert_CompBezierCurves2dToBSplineCurve2d → OCCTConvertCompBezier2dToBSpline2d (v0.99.0)
 //
 // --- GeomFill ---
-// GeomFill_BSplineCurves              → OCCTSurfaceBSplineFill*
+// GeomFill_BSplineCurves              → OCCTSurfaceFillBSpline2Curves, OCCTSurfaceFillBSpline4Curves
 // GeomFill_BezierCurves               → OCCTSurfaceBezierFill*
-// GeomFill_ConstrainedFilling         → OCCTShapeConstrainedFill
-// GeomFill_Coons                      → OCCTGeomFillCoons
-// GeomFill_CoonsAlgPatch              → OCCTGeomFillCoonsAlgPatch
+// GeomFill_ConstrainedFilling         → OCCTGeomFillConstrained
+// GeomFill_Coons                      → OCCTGeomFillCoonsPoles
+// GeomFill_CoonsAlgPatch              → OCCTGeomFillCoonsAlgPatchEval
 // GeomFill_CorrectedFrenet            → OCCTGeomFillCorrectedFrenet
-// GeomFill_Curved                     → OCCTGeomFillCurved
+// GeomFill_Curved                     → OCCTGeomFillCurvedPoles
 // GeomFill_DiscreteTrihedron          → OCCTGeomFillDiscreteTrihedron
 // GeomFill_ConstantBiNormal           → OCCTGeomFillConstantBiNormalTrihedron (v0.68.0)
 // GeomFill_Darboux                    → OCCTGeomFillDarbouxTrihedron (v0.68.0)
 // GeomFill_DraftTrihedron             → OCCTGeomFillDraftTrihedron
-// GeomFill_EvolvedSection             → OCCTGeomFillEvolvedSection
+// GeomFill_EvolvedSection             → OCCTGeomFillEvolvedSectionInfo
 // GeomFill_Fixed                      → OCCTGeomFillFixedTrihedron (v0.68.0)
 // GeomFill_Frenet                     → OCCTGeomFillFrenetTrihedron (v0.68.0)
 // GeomFill_NSections                  → OCCTGeomFillNSections (v0.68.0)
 // GeomFill_Generator                  → OCCTGeomFillGenerator (v0.69.0)
-// GeomFill_DegeneratedBound           → OCCTGeomFillDegeneratedBound (v0.69.0)
-// GeomFill_BoundWithSurf              → OCCTGeomFillBoundWithSurf (v0.69.0)
-// GeomFill_Pipe                       → OCCTSurfacePipe*
-// GeomFill_SimpleBound                → OCCTShapeConstrainedFill
+// GeomFill_DegeneratedBound           → OCCTGeomFillDegeneratedBoundValue,
+//                                       OCCTGeomFillDegeneratedBoundIsDegenerated (v0.69.0)
+// GeomFill_BoundWithSurf              → OCCTGeomFillBoundWithSurfEvaluate (v0.69.0)
+// GeomFill_Pipe                       → OCCTSurfaceCreatePipe, OCCTSurfaceCreatePipeWithSection
+// GeomFill_SimpleBound                → OCCTGeomFillConstrained, OCCTGeomFillCoonsAlgPatchEval
 // GeomFill_Sweep                      → OCCTGeomFillSweep
 //
 // --- GeomInt ---
 // GeomInt_IntSS                       → OCCTGeomIntSS*
 //
 // --- GeomLProp ---
-// GeomLProp_CLProps                   → OCCTGeomLPropCurve
-// GeomLProp_SLProps                   → OCCTGeomLPropSurface
+// GeomLProp_CLProps                   → OCCTGeomLPropCLProps, OCCTCurve3DGetCurvature, OCCTCurve3DGetTangent,
+//                                       OCCTCurve3DGetNormal, OCCTCurve3DGetCenterOfCurvature,
+//                                       OCCTCurve3DLocal*, OCCTEdgeGetCurvature3D, OCCTEdgeGetTangent3D,
+//                                       OCCTEdgeGetNormal3D, OCCTEdgeGetCenterOfCurvature3D
+// GeomLProp_SLProps                   → OCCTGeomLPropSLProps, OCCTFaceGetNormalAtUV, OCCTFaceGetGaussianCurvature,
+//                                       OCCTFaceGetMeanCurvature, OCCTFaceGetPrincipalCurvatures,
+//                                       OCCTSurfaceGetNormal, OCCTSurfaceGetPrincipalCurvatures,
+//                                       OCCTSurfaceLocalCurvatures, OCCTSurfaceLocalCurvatureDirections
 //
 // --- GeomPlate ---
 // GeomPlate_BuildPlateSurface         → OCCTShapePlate*, OCCTGeomPlateSurface, OCCTSurfacePlateThrough
@@ -397,8 +411,8 @@
 // IntAna2d_AnaIntersection            → OCCTIntAna2d*
 //
 // --- IntCurvesFace ---
-// IntCurvesFace_Intersector           → OCCTIntCurvesFaceIntersect
-// IntCurvesFace_ShapeIntersector      → OCCTRayIntersect*
+// IntCurvesFace_Intersector           → OCCTIntersectLineFace
+// IntCurvesFace_ShapeIntersector      → OCCTIntCurvesFaceShapeIntersect*, OCCTShapeRaycast
 //
 // --- IntTools ---
 // IntTools_BeanFaceIntersector        → OCCTIntToolsBeanFaceIntersect
@@ -408,12 +422,12 @@
 // IntTools_FClass2d                   → OCCTIntToolsFClass2d*
 //
 // --- Law ---
-// Law_BSpFunc                         → OCCTLawBSpline
-// Law_BSpline                         → OCCTLawBSpline
-// Law_Constant                        → OCCTLawConstant
+// Law_BSpFunc                         → OCCTLawCreateBSpline, OCCTLawInterpolate
+// Law_BSpline                         → OCCTLawCreateBSpline, OCCTLawInterpolate, OCCTLawBSplineKnotSplit*
+// Law_Constant                        → OCCTLawCreateConstant
 // Law_Interpol                        → OCCTLawInterpolate
-// Law_Linear                          → OCCTLawLinear
-// Law_S                               → OCCTLawSCurve
+// Law_Linear                          → OCCTLawCreateLinear
+// Law_S                               → OCCTLawCreateS
 // Law_BSplineKnotSplitting            → OCCTLawBSplineKnotSplitting (v0.68.0)
 // Law_Composite                       → OCCTLawComposite (v0.68.0)
 //
@@ -422,28 +436,28 @@
 //
 // --- LocOpe ---
 // LocOpe_BuildShape                   → OCCTLocOpeBuildShape
-// LocOpe_CSIntersector                → OCCTLocOpeCSIntersect
+// LocOpe_CSIntersector                → OCCTLocOpeCSIntersectLine
 // LocOpe_DPrism                       → OCCTLocOpeDPrism
-// LocOpe_FindEdges                    → OCCTLocOpeCommonEdges
-// LocOpe_FindEdgesInFace              → OCCTLocOpeEdgesInFace
+// LocOpe_FindEdges                    → OCCTLocOpeFindEdges
+// LocOpe_FindEdgesInFace              → OCCTLocOpeFindEdgesInFace
 // LocOpe_Gluer                        → OCCTLocOpeGlue
-// LocOpe_LinearForm                   → OCCTShapeLocalLinearForm
+// LocOpe_LinearForm                   → OCCTLocOpeLinearForm
 // LocOpe_Pipe                         → OCCTLocOpePipe
 // LocOpe_Prism                        → OCCTLocOpePrism
 // LocOpe_Revol                        → OCCTLocOpeRevol
-// LocOpe_RevolutionForm               → OCCTShapeLocalRevolutionForm
+// LocOpe_RevolutionForm               → OCCTLocOpeRevolutionForm
 // LocOpe_SplitDrafts                  → OCCTLocOpeSplitDrafts
 // LocOpe_SplitShape                   → OCCTLocOpeSplitShape*
-// LocOpe_Spliter                      → OCCTLocOpeSpliter*
-// LocOpe_WiresOnShape                 → OCCTLocOpeWiresOnShape*
+// LocOpe_Spliter                      → OCCTLocOpeSplitByWire*
+// LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
 //
 // --- LProp ---
 // LProp_AnalyticCurInf                → OCCTLPropAnalyticCurInf
 //
 // --- NLPlate ---
-// NLPlate_NLPlate                     → OCCTSurfaceNLPlateG0, OCCTSurfaceNLPlateG1, OCCTNLPlate*
-// NLPlate_HPG0G2Constraint            → OCCTNLPlateG0G2
-// NLPlate_HPG0G3Constraint            → OCCTNLPlateG0G3
+// NLPlate_NLPlate                     → OCCTSurfaceNLPlate*
+// NLPlate_HPG0G2Constraint            → OCCTSurfaceNLPlateG2
+// NLPlate_HPG0G3Constraint            → OCCTSurfaceNLPlateG3
 //
 // --- OSD ---
 // OSD_Environment                     → OCCTEnvironment*
@@ -456,19 +470,23 @@
 // Plate_GtoCConstraint                → OCCTPlateLoadGtoC
 //
 // --- ProjLib ---
-// ProjLib_ComputeApprox               → OCCTProjLibProjectOntoSurface
-// ProjLib_ComputeApproxOnPolarSurface → OCCTProjLibProjectOntoPolarSurface
+// ProjLib_ComputeApprox               → OCCTProjLibComputeApprox
+// ProjLib_ComputeApproxOnPolarSurface → OCCTProjLibComputeApproxOnPolarSurface
 //
 // --- ShapeAnalysis ---
 // ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
-//                                        OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
-//                                        OCCTCurve3DIsPeriodicSA
+//                                       OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
+//                                       OCCTCurve3DIsPeriodicSA
 // ShapeAnalysis_FreeBounds            → OCCTShapeFreeBounds, OCCTShapeFreeBoundsClosedCount,
-//                                        OCCTShapeFreeBoundsClosed, OCCTShapeFreeBoundsOpen
+//                                       OCCTShapeFreeBoundsClosed, OCCTShapeFreeBoundsOpen
 // ShapeAnalysis_FreeBoundsProperties  → OCCTFreeBoundsProps* (one family since #504; the stateless
-//                                        OCCTFreeBounds* family was a second wrapping of the same
-//                                        class and is gone)
-// ShapeAnalysis_Surface               → OCCTSurfaceUVProject*
+//                                       OCCTFreeBounds* family was a second wrapping of the same
+//                                       class and is gone)
+// ShapeAnalysis_Surface               → OCCTSurfaceProjectPointUV*, OCCTSurfaceProjectDegenerated,
+//                                       OCCTSurfaceValueOfUV, OCCTSurfaceNextValueOfUV, OCCTSurfaceUVFromIso,
+//                                       OCCTSurfaceSingularity*, OCCTSurfaceHasSingularities,
+//                                       OCCTSurfaceNbSingularities, OCCTSurfaceIsDegenerated,
+//                                       OCCTSurfaceIsUClosedSA, OCCTSurfaceIsVClosedSA
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
 // ShapeAnalysis_WireOrder             → OCCTWireAnalyze
 //
@@ -485,23 +503,25 @@
 // ShapeCustom_DirectModification      → OCCTShapeCustomDirectModification
 // ShapeCustom_Surface                 → OCCTSurfaceConvertToAnalytical, OCCTSurfaceConvertToPeriodic, OCCTSurfaceConversionGap
 // ShapeCustom_SweptToElementary       → OCCTShapeSweptToElementary
-// ShapeCustom_TrsfModification        → OCCTShapeTrsfModificationScale
+// ShapeCustom_TrsfModification        → OCCTShapeCustomTrsfModificationScale
 //
 // --- ShapeExtend ---
-// ShapeExtend_Explorer                → OCCTShapeExtendSorted*, OCCTShapeExtendPredominant*
+// ShapeExtend_Explorer                → OCCTShapeExtendSortedCompound, OCCTShapeExtendShapeType
 //
 // --- ShapeFix ---
 // ShapeFix_Edge                       → OCCTShapeFixEdge*
 // ShapeFix_Face                       → OCCTFaceFix, OCCTFaceFixer*, OCCTShapeCreateFaceFromSurfaceWire, OCCTShapeCreateFaceFromSurfaceWireWithHoles
 // ShapeFix_FaceConnect                → OCCTShapeFixFaceConnect
 // ShapeFix_FixSmallFace               → OCCTShapeFixSmallFaces
-// ShapeFix_FixSmallSolid              → OCCTShapeFixSmallSolid*
-// ShapeFix_Shape                      → OCCTShapeFix, OCCTShapeFixed*
-// ShapeFix_ShapeTolerance             → OCCTShapeLimitTolerance, OCCTShapeSetTolerance
-// ShapeFix_Shell                      → OCCTShapeFixShell
+// ShapeFix_FixSmallSolid              → OCCTShapeFixRemoveSmallSolids, OCCTShapeFixMergeSmallSolids
+// ShapeFix_Shape                      → OCCTShapeFixDetailed, OCCTShapeFixer*, OCCTShapeHeal*, OCCTShapeSimplify,
+//                                       OCCTShapeUpgrade, OCCTImportSTEPRobust*, OCCTImportSTEPWithDiagnostics,
+//                                       OCCTImportIGESRobust*, OCCTImportSTLRobust
+// ShapeFix_ShapeTolerance             → OCCTShapeFixLimitTolerance, OCCTShapeFixSetTolerance,
+//                                       OCCTShapeFixTolerance, OCCTShapeLimitMaxTolerance
 // ShapeFix_SplitCommonVertex          → OCCTShapeFixSplitCommonVertex
 // ShapeFix_Wire                       → OCCTShapeFixWire*
-// ShapeFix_WireVertex                 → OCCTShapeFixWireVertices
+// ShapeFix_WireVertex                 → OCCTShapeFixWireVertex
 // ShapeFix_Wireframe                  → OCCTShapeFixWireframe, OCCTShapeFixWireGaps, OCCTShapeFixSmallEdges (v0.99.0)
 //
 // --- ShapeUpgrade ---
@@ -510,29 +530,40 @@
 // ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
 // ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
 // ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeUpgradeConvertCurves3dToBezier
-// ShapeUpgrade_ShapeDivideClosed      → OCCTShapeDividedClosedEdges
-// ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDividedByContinuity
-// ShapeUpgrade_UnifySameDomain        → OCCTShapeUnified
+// ShapeUpgrade_ShapeDivideClosed      → OCCTShapeUpgradeDivideClosed
+// ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide, OCCTShapeUpgradeDivideContinuity
+// ShapeUpgrade_UnifySameDomain        → OCCTShapeUnifySameDomain, OCCTShapeSimplify, OCCTUnifySameDomainCreate
 //
 // --- STEP/IGES/OBJ/PLY/STL ---
 // STEPControl_Reader/Writer           → OCCTExportSTEP, OCCTImportSTEP*
 // IGESControl_Reader/Writer           → OCCTExportIGES, OCCTImportIGES*
-// RWObj_CafReader/Writer              → OCCTDocumentImportOBJ, OCCTDocumentExportOBJ
-// RWPly_CafWriter                     → OCCTDocumentExportPLY
+// RWObj_CafReader/Writer              → OCCTDocumentLoadOBJ*, OCCTDocumentWriteOBJ,
+//                                       OCCTImportOBJ, OCCTExportOBJ
+// RWPly_CafWriter                     → OCCTDocumentWritePLY, OCCTExportPLY, OCCTExportPLYWithOptions
 // StlAPI_Reader/Writer                → OCCTImportSTL, OCCTExportSTL
 //
 // --- TDF/OCAF ---
 // TDF_Label                           → OCCTDocumentLabel*
-// TDF_Reference                       → OCCTLabelSetReference
-// TDF_CopyLabel                       → OCCTLabelCopy
+// TDF_Reference                       → OCCTDocumentLabelSetReference, OCCTDocumentLabelGetReference
+// TDF_CopyLabel                       → OCCTDocumentCopyLabel
 // TDocStd_Document                    → OCCTDocument*
 //
 // --- TDataStd ---
-// TDataStd_Integer/Real/AsciiString   → OCCTLabel{Set,Get}Integer/Real/AsciiString
-// TDataStd_Comment                    → OCCTLabelSetComment
-// TDataStd_IntegerArray/RealArray     → OCCTLabel*Array*
-// TDataStd_NamedData                  → OCCTLabelNamedData*
-// TDataStd_TreeNode                   → OCCTLabelSetTreeNode*
+// TDataStd_Integer/Real/AsciiString   → OCCTDocumentSetIntegerAttr, OCCTDocumentGetIntegerAttr,
+//                                       OCCTDocumentSetRealAttr, OCCTDocumentGetRealAttr,
+//                                       OCCTDocumentSetAsciiStringAttr,
+//                                       OCCTDocumentGetAsciiStringAttr
+// TDataStd_Comment                    → OCCTDocumentSetCommentAttr, OCCTDocumentGetCommentAttr
+// TDataStd_IntegerArray/RealArray     → OCCTDocumentInitIntegerArray,
+//                                       OCCTDocumentSetIntegerArrayValue,
+//                                       OCCTDocumentGetIntegerArrayValue,
+//                                       OCCTDocumentGetIntegerArrayBounds,
+//                                       OCCTDocumentInitRealArray, OCCTDocumentSetRealArrayValue,
+//                                       OCCTDocumentGetRealArrayValue,
+//                                       OCCTDocumentGetRealArrayBounds
+// TDataStd_TreeNode                   → OCCTDocumentSetTreeNode, OCCTDocumentAppendTreeChild,
+//                                       OCCTDocumentTreeNode*, OCCTChildNodeIteratorCount
+// TDataStd_NamedData                  → OCCTDocumentNamedData*
 // TDataStd_IntPackedMap               → OCCTIntPackedMap*
 // TDataStd_NoteBook                   → OCCTNoteBook*
 // TDataStd_UAttribute                 → OCCTUAttribute*
@@ -543,33 +574,61 @@
 // TopTrans_SurfaceTransition          → OCCTTopTransSurfaceTransition* (v0.67.0)
 //
 // --- TNaming ---
-// TNaming_Builder                     → OCCTNamingBuilder*
+// TNaming_Builder                     → OCCTDocumentNamingRecord, OCCTDocumentSetShapeAttr
 // TNaming_CopyShape                   → OCCTShapeDeepCopy
-// TNaming_Iterator                    → OCCTNamingIterateEntries
+// TNaming_Iterator                    → OCCTDocumentNamingHistoryCount, OCCTDocumentNamingGetHistoryEntry,
+//                                       OCCTDocumentNamingGetOldShape, OCCTDocumentNamingGetNewShape
 // TNaming_NamedShape                  → OCCTNamingGet*, OCCTNamingIsEmpty, OCCTNamingGetVersion/SetVersion
-// TNaming_NewShapeIterator            → OCCTNamingNewShapeHistory
-// TNaming_OldShapeIterator            → OCCTNamingOldShapeHistory
-// TNaming_SameShapeIterator           → OCCTNamingSameShapeTags
+// TNaming_NewShapeIterator            → OCCTDocumentNamingTraceForward
+// TNaming_OldShapeIterator            → OCCTDocumentNamingTraceBackward
+// TNaming_SameShapeIterator           → OCCTNamingSameShapeCount, OCCTNamingSameShapeLabels
 // TNaming_Selector                    → OCCTDocumentNamingSelect*, OCCTDocumentNamingResolve*
-// TNaming_Tool                        → OCCTNamingCurrentShape, OCCTNamingGetStoredShape, OCCTNamingOriginalShape, OCCTNamingHasLabel, OCCTNamingFindLabelTag, OCCTNamingValidUntil
+// TNaming_Tool                        → OCCTNamingOriginalShape, OCCTNamingHasLabel, OCCTNamingFindLabel,
+//                                       OCCTNamingValidUntil, OCCTDocumentNamingGetCurrentShape,
+//                                       OCCTDocumentNamingGetShape, OCCTDocumentNamingResolve
 //
 // --- XCAFDoc ---
 // XCAFDoc_AssemblyGraph               → OCCTAssemblyGraph*
 // XCAFDoc_AssemblyItemId              → OCCTAssemblyItemId*
 // XCAFDoc_ClippingPlaneTool           → OCCTDocumentClipPlaneTool*
-// XCAFDoc_Color                       → OCCTDocumentSet/GetColorAttr*
-// XCAFDoc_ColorTool                   → OCCTXCAFShape*Color*
-// XCAFDoc_Editor                      → OCCTXCAFEditorExpand, OCCTXCAFRescaleGeometry
+// XCAFDoc_Color                       → OCCTDocumentSetColorAttr, OCCTDocumentSetColorRGBAAttr,
+//                                       OCCTDocumentSetColorNOCAttr, OCCTDocumentGetColorAttr,
+//                                       OCCTDocumentGetColorRGBAAttr, OCCTDocumentGetColorAlphaAttr,
+//                                       OCCTDocumentGetColorNOCAttr
+// XCAFDoc_ColorTool                   → OCCTDocumentColorTool*, OCCTDocumentSetLabelColor,
+//                                       OCCTDocumentGetLabelColor, OCCTDocumentSetShapeColor,
+//                                       OCCTDocumentGetShapeColor, OCCTDocumentIsShapeColorSet,
+//                                       OCCTDocumentSetLabelVisibility, OCCTDocumentGetLabelVisibility
+// XCAFDoc_Editor                      → OCCTDocumentEditorExpand, OCCTDocumentEditorRescaleGeometry
 // XCAFDoc_GraphNode                   → OCCTDocumentGraphNode*
-// XCAFDoc_LayerTool                   → OCCTXCAFSet/Get/FindLayer*
-// XCAFDoc_Location                    → OCCTDocumentSet/GetLocation*
-// XCAFDoc_Material                    → OCCTDocumentSet/GetMaterialAttr*
+// XCAFDoc_LayerTool                   → OCCTDocumentSetLayer*, OCCTDocumentGetLayer*, OCCTDocumentGetLabelLayers,
+//                                       OCCTDocumentFindLayer, OCCTDocumentIsLayerSet
+// XCAFDoc_Location                    → OCCTDocumentSetLocation, OCCTDocumentGetLocationTranslation,
+//                                       OCCTDocumentHasLocation
+// XCAFDoc_Material                    → OCCTDocumentSetMaterialAttr, OCCTDocumentGetMaterialAttr*,
+//                                       OCCTDocumentHasMaterialAttr
 // XCAFDoc_NoteBalloon                 → OCCTDocumentSetNoteBalloon
-// XCAFDoc_NoteBinData                 → OCCTDocumentSet/GetNoteBinData*
-// XCAFDoc_NoteComment                 → OCCTDocumentSet/GetNoteComment*
+// XCAFDoc_NoteBinData                 → OCCTDocumentSetNoteBinData, OCCTDocumentGetNoteBinDataSize
+// XCAFDoc_NoteComment                 → OCCTDocumentSetNoteComment, OCCTDocumentGetNoteCommentText,
+//                                       OCCTDocumentGetNoteUserName
 // XCAFDoc_NotesTool                   → OCCTDocumentNotesTool*
 // XCAFDoc_ShapeMapTool                → OCCTDocumentShapeMapTool*
-// XCAFDoc_ShapeTool                   → OCCTXCAFShape*
+// XCAFDoc_ShapeTool                   → OCCTDocumentShapeTool*, and the assembly surface it backs:
+//                                       OCCTDocumentAddShape, OCCTDocumentNewShape,
+//                                       OCCTDocumentRemoveShape, OCCTDocumentFindShape,
+//                                       OCCTDocumentSearchShape, OCCTDocumentGetShape*,
+//                                       OCCTDocumentAddComponent*, OCCTDocumentRemoveComponent,
+//                                       OCCTDocumentGetComponent*, OCCTDocumentGetFreeShape*,
+//                                       OCCTDocumentGetRoot*, OCCTDocumentGetChild*,
+//                                       OCCTDocumentGetSubShape*, OCCTDocumentGetReferredLabelId,
+//                                       OCCTDocumentIsAssembly, OCCTDocumentIsComponent,
+//                                       OCCTDocumentIsCompound, OCCTDocumentIsReference,
+//                                       OCCTDocumentIsSubShape, OCCTDocumentIsTopLevel,
+//                                       OCCTDocumentExpandShape, OCCTDocumentUpdateAssemblies,
+//                                       OCCTDocumentExplorer*, and every OBJ/PLY/glTF/STEP
+//                                       import/export (OCCTImportOBJ, OCCTImportGLTF,
+//                                       OCCTExportOBJ, OCCTExportPLY*, OCCTExportGLTF,
+//                                       OCCTDocumentLoad*, OCCTDocumentWrite*)
 // XCAFDoc_VisMaterialCommon           → OCCTVisMaterialCommon*
 // XCAFDoc_VisMaterialPBR              → OCCTVisMaterialPBR*
 //

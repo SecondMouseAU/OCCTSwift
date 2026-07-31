@@ -12,10 +12,20 @@ missed: the index named `OCCTShapeFixFace`, which exists nowhere, so a re-audit 
 A trailing `*` in an index entry means "family prefix": at least one real symbol
 must start with it.
 
+Every `OCCT`-prefixed name anywhere in an entry is checked, including inside a
+parenthetical aside. The first version of this script split the entry on commas
+and slashes and required each piece to be a bare symbol, which meant an annotated
+name (`OCCTShapeFill* (Shape.fill)`), a wrapped continuation line, and a heading
+naming several classes at once (`RWObj_CafReader/Writer`) were all dropped without
+a word — that is how two fabricated entries survived until #510 went looking for
+them, and how #508's `OCCTGCE2dMakeLine*` survived #510's own first pass. A
+validator that skips what it cannot parse reports zero for two different reasons.
+
 Usage (from the repo root):
 
-    python3 Scripts/check-bridge-index.py          # report stale entries
-    python3 Scripts/check-bridge-index.py --quiet  # exit status only
+    python3 Scripts/check-bridge-index.py             # report stale entries
+    python3 Scripts/check-bridge-index.py --quiet     # exit status only
+    python3 Scripts/check-bridge-index.py --self-test # prove each failure mode is caught
 
 Exit status is 1 when any entry is stale, so this can gate a commit.
 """
@@ -26,27 +36,29 @@ import sys
 HEADER = 'Sources/OCCTBridge/include/OCCTBridge.h'
 SRC_DIR = 'Sources/OCCTBridge/src'
 SYMBOL = re.compile(r'\bOCCT[A-Za-z0-9_]+')
-ENTRY = re.compile(r'^//\s+(\w+)\s+→\s+(.+?)\s*$')
+ENTRY = re.compile(r'^//\s+([\w/]+)\s+→\s*(.*?)\s*$')
+CONTINUATION = re.compile(r'^//\s{20,}(\S.*?)\s*$')
+NAMED = re.compile(r'\bOCCT[A-Za-z0-9_]+\*?')
 
 
 def index_entries(lines):
     """(line number, OCCT class, bridge symbol) for every symbol named in the index."""
-    out = []
-    for i, line in enumerate(lines):
-        m = ENTRY.match(line)
+    out, i = [], 0
+    while i < len(lines):
+        m = ENTRY.match(lines[i])
         if not m:
+            i += 1
             continue
-        # Strip any parenthetical annotation, not just `(vX.Y.Z)`: a prose aside
-        # such as `OCCTFoo* (historical name)` otherwise leaves the symbol glued
-        # to the prose, failing the fullmatch below and silently skipping the
-        # entry. That is how #508's fabricated `OCCTGCE2dMakeLine*` survived the
-        # #510 sweep. The `)` is optional because an aside may wrap to the next
-        # line, which this line-at-a-time scan never sees.
-        cls, syms = m.group(1), re.sub(r'\([^)]*\)?', '', m.group(2))
-        for sym in re.split(r'[,/]', syms):
-            sym = sym.strip()
-            if re.fullmatch(r'OCCT\w+\*?', sym):
-                out.append((i + 1, cls, sym))
+        ln, cls, syms = i + 1, m.group(1), m.group(2)
+        i += 1
+        while i < len(lines) and '→' not in lines[i]:
+            cont = CONTINUATION.match(lines[i])
+            if not cont:
+                break
+            syms += ' ' + cont.group(1)
+            i += 1
+        for sym in NAMED.findall(syms):
+            out.append((ln, cls, sym))
     return out
 
 
@@ -66,6 +78,53 @@ def real_symbols(lines):
     return found
 
 
+def stale_entries(entries, known):
+    """(line, class, symbol, hint) for every index symbol that names nothing real."""
+    out = []
+    for ln, cls, sym in entries:
+        if sym.endswith('*'):
+            if not any(k.startswith(sym[:-1]) for k in known):
+                out.append((ln, cls, sym, 'no symbol starts with this prefix'))
+        elif sym not in known:
+            near = sorted(k for k in known if sym in k or k in sym)
+            hint = 'did you mean: ' + ', '.join(near[:3]) if near else 'no similar symbol'
+            out.append((ln, cls, sym, hint))
+    return out
+
+
+# Each case is a real index entry with one fabricated name injected. The parser this
+# script replaced reported every one of them as clean, because it dropped the shape
+# they are written in rather than checking it (#510).
+SELF_TEST = [
+    ('plain entry', [
+        '// BRepFill_Draft                      → OCCTBRepFillDraftNope']),
+    ('continuation line', [
+        '// ShapeFix_Shape                      → OCCTShapeFixDetailed, OCCTShapeHeal*,',
+        '//                                       OCCTImportSTLRobustNope']),
+    ('heading naming several classes', [
+        '// RWObj_CafReader/Writer              → OCCTDocumentLoadOBJNope*']),
+    ('name inside a parenthetical aside', [
+        '// GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter',
+        '//                                       (NOT OCCTCurve3DProjectPointNope; see below)']),
+    ('annotated family prefix', [
+        '// BRepOffsetAPI_MakeFilling           → OCCTShapeFillNope* (Shape.fill)']),
+]
+
+
+def self_test(known):
+    """Prove each failure mode this script covers is actually caught."""
+    failed = 0
+    for name, lines in SELF_TEST:
+        found = stale_entries(index_entries(lines), known)
+        flagged = [s for _, _, s, _ in found if 'Nope' in s]
+        status = 'ok  ' if flagged else 'MISS'
+        if not flagged:
+            failed += 1
+        print(f'  {status} {name}: {", ".join(flagged) or "injected name not reported"}')
+    print(f'{len(SELF_TEST) - failed}/{len(SELF_TEST)} failure modes caught')
+    return 1 if failed else 0
+
+
 def main():
     quiet = '--quiet' in sys.argv
     if not os.path.exists(HEADER):
@@ -77,15 +136,10 @@ def main():
     entries = index_entries(lines)
     known = real_symbols(lines)
 
-    stale = []
-    for ln, cls, sym in entries:
-        if sym.endswith('*'):
-            if not any(k.startswith(sym[:-1]) for k in known):
-                stale.append((ln, cls, sym, 'no symbol starts with this prefix'))
-        elif sym not in known:
-            near = sorted(k for k in known if sym in k or k in sym)
-            hint = 'did you mean: ' + ', '.join(near[:3]) if near else 'no similar symbol'
-            stale.append((ln, cls, sym, hint))
+    if '--self-test' in sys.argv:
+        return self_test(known)
+
+    stale = stale_entries(entries, known)
 
     if not quiet:
         classes = len({c for _, c, _ in entries})

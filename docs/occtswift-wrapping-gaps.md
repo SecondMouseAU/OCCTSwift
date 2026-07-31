@@ -47,6 +47,15 @@ These require implementing C++ abstract classes, which the bridge architecture d
 - `Approx_FitAndDivide`, `Approx_FitAndDivide2d` — need `AppCont_Function` abstract impl
 - `BRepBlend_AppSurface` — needs `Approx_SweepFunction` abstract impl
 
+### Classes Not Wrapped Directly (reached only through another wrapper)
+
+- `ShapeFix_Shell` — no bridge function constructs one. Shell repair is reached through
+  `ShapeFix_Shape`, which drives `ShapeFix_Shell` internally; the header is `#include`d by the
+  bridge's umbrella translation unit but never used. The cross-reference index in `OCCTBridge.h`
+  claimed an `OCCTShapeFixShell` wrapper until #510 measured it and removed the entry. Wrapping it
+  directly would mean exposing per-shell orientation/mode control (`FixFaceOrientation`,
+  `SetNonManifoldFlag`) that `ShapeFix_Shape` currently chooses for the caller.
+
 ### Constraint Solver Infrastructure (Complete)
 
 All priority items from the original gap analysis are now wrapped:
