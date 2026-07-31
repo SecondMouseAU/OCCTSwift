@@ -175,13 +175,17 @@ Mutates the circle's radius in place.
 public func setRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a circle or the value is invalid.
+- **Parameters:** `r`: new radius, must be `> 0`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a circle or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Circle::SetRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
-      curve.circleProperties.setRadius(8)
+      #expect(curve.circleProperties.setRadius(8) == true)
+
+      // Rejected, and the radius set above survives.
+      #expect(curve.circleProperties.setRadius(0) == false)
+      #expect(curve.circleProperties.radius == 8)
   }
   ```
 
@@ -340,14 +344,18 @@ Mutates the ellipse's major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be > minor radius per OCCT).
-- **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
+- **Parameters:** `r`: new major radius. Judged against the minor radius already on the curve, so it must be `> 0` and no smaller than the current `minorRadius`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not an ellipse or the resulting pair would not describe one. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Ellipse::SetMajorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
                                   majorRadius: 10, minorRadius: 5) {
-      curve.ellipseProperties.setMajorRadius(12)
+      #expect(curve.ellipseProperties.setMajorRadius(12) == true)
+
+      // Below the current minor radius: no longer an ellipse.
+      #expect(curve.ellipseProperties.setMajorRadius(3) == false)
+      #expect(curve.ellipseProperties.majorRadius == 12)
   }
   ```
 
@@ -362,14 +370,18 @@ Mutates the ellipse's minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be < major radius per OCCT).
-- **Returns:** `true` on success, `false` if the curve is not an ellipse or the value is invalid.
+- **Parameters:** `r`: new minor radius. Judged against the major radius already on the curve, so it must be `> 0` and no larger than the current `majorRadius`.
+- **Returns:** `true` if the radius was written, `false` if the curve is not an ellipse or the resulting pair would not describe one. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Ellipse::SetMinorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
                                   majorRadius: 10, minorRadius: 5) {
-      curve.ellipseProperties.setMinorRadius(3)
+      #expect(curve.ellipseProperties.setMinorRadius(3) == true)
+
+      // Zero would leave a live ellipse evaluating onto its own major axis.
+      #expect(curve.ellipseProperties.setMinorRadius(0) == false)
+      #expect(curve.ellipseProperties.minorRadius == 3)
   }
   ```
 
@@ -570,14 +582,16 @@ Mutates the hyperbola's major radius in place.
 public func setMajorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new major radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a hyperbola or the value is invalid.
+- **Parameters:** `r`: new major radius, must be `> 0`. Unlike an ellipse there is no ordering constraint against the minor radius.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a hyperbola or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Hyperbola::SetMajorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
                                     majorRadius: 5, minorRadius: 3) {
-      curve.hyperbolaProperties.setMajorRadius(7)
+      #expect(curve.hyperbolaProperties.setMajorRadius(7) == true)
+      #expect(curve.hyperbolaProperties.setMajorRadius(0) == false)
+      #expect(curve.hyperbolaProperties.majorRadius == 7)
   }
   ```
 
@@ -592,14 +606,18 @@ Mutates the hyperbola's minor radius in place.
 public func setMinorRadius(_ r: Double) -> Bool
 ```
 
-- **Parameters:** `r` — new minor radius (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a hyperbola or the value is invalid.
+- **Parameters:** `r`: new minor radius, must be `> 0`. It may exceed the major radius.
+- **Returns:** `true` if the radius was written, `false` if the curve is not a hyperbola or `r` is not a valid radius. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Hyperbola::SetMinorRadius`.
 - **Example:**
   ```swift
   if let curve = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
                                     majorRadius: 5, minorRadius: 3) {
-      curve.hyperbolaProperties.setMinorRadius(4)
+      #expect(curve.hyperbolaProperties.setMinorRadius(4) == true)
+
+      // A minor radius above the major is an ordinary hyperbola, so this is accepted.
+      #expect(curve.hyperbolaProperties.setMinorRadius(8) == true)
+      #expect(curve.hyperbolaProperties.setMinorRadius(0) == false)
   }
   ```
 
@@ -740,13 +758,15 @@ Mutates the parabola's focal distance in place.
 public func setFocal(_ f: Double) -> Bool
 ```
 
-- **Parameters:** `f` — new focal distance (must be > 0).
-- **Returns:** `true` on success, `false` if the curve is not a parabola or `f` is invalid.
+- **Parameters:** `f`: new focal distance, must be `> 0`. At zero the parabola degenerates to a straight line along its own axis of symmetry, which is `gp_Parab`'s documented behaviour rather than an error it reports.
+- **Returns:** `true` if the value was written, `false` if the curve is not a parabola or `f` is not a valid focal distance. On `false` the curve is left exactly as it was.
 - **OCCT:** `Geom_Parabola::SetFocal`.
 - **Example:**
   ```swift
-  if let curve = Curve3D.parabola(vertex: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
-      curve.parabolaProperties.setFocal(5)
+  if let curve = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 3) {
+      #expect(curve.parabolaProperties.setFocal(5) == true)
+      #expect(curve.parabolaProperties.setFocal(0) == false)
+      #expect(curve.parabolaProperties.focal == 5)
   }
   ```
 

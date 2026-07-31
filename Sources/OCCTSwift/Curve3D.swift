@@ -888,7 +888,22 @@ extension Curve3D {
     ///   - startAngle: Start angle in radians
     ///   - endAngle: End angle in radians
     ///   - counterclockwise: Arc direction (default: true)
-    /// - Returns: The elliptical arc curve, or nil on failure
+    /// - Returns: The elliptical arc curve, or `nil` on failure, including when the radii do not
+    ///   describe an ellipse.
+    ///
+    /// `majorRadius` and `minorRadius` must both be `> 0` with `minorRadius <= majorRadius`, the
+    /// same contract `ellipse(center:normal:majorRadius:minorRadius:)` enforces. A zero minor
+    /// radius is rejected rather than collapsed onto the major axis.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                majorRadius: 10, minorRadius: 5,
+    ///                                startAngle: 0, endAngle: .pi)
+    /// #expect(arc != nil)
+    /// #expect(Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                              majorRadius: 10, minorRadius: 0,
+    ///                              startAngle: 0, endAngle: .pi) == nil)
+    /// ```
     public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
                                      majorRadius: Double, minorRadius: Double,
                                      startAngle: Double, endAngle: Double,
@@ -914,7 +929,23 @@ extension Curve3D {
     ///   - from: Start point (must lie on the ellipse)
     ///   - to: End point (must lie on the ellipse)
     ///   - counterclockwise: Arc direction (default: true)
-    /// - Returns: The elliptical arc curve, or nil on failure
+    /// - Returns: The elliptical arc curve, or `nil` on failure, including when the radii do not
+    ///   describe an ellipse.
+    ///
+    /// Same radius contract as the angular form. It matters more here: this form inverts each
+    /// point back to a parameter, and with a zero minor radius that inversion is `NaN`, which
+    /// OCCT reports as a *successful* construction. Before the radii were checked, this returned
+    /// a live curve whose parameter range and every evaluation were `NaN` (#554).
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                majorRadius: 10, minorRadius: 5,
+    ///                                from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0))
+    /// #expect(arc != nil)
+    /// #expect(Curve3D.arcOfEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                              majorRadius: 10, minorRadius: 0,
+    ///                              from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0)) == nil)
+    /// ```
     public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
                                      majorRadius: Double, minorRadius: Double,
                                      from: SIMD3<Double>, to: SIMD3<Double>,
@@ -1042,7 +1073,18 @@ extension Curve3D {
     ///   - alpha1: Start parameter value
     ///   - alpha2: End parameter value
     ///   - sense: Direction of parameterization (true = natural)
-    /// - Returns: Trimmed curve representing the arc, or nil on failure
+    /// - Returns: Trimmed curve representing the arc, or `nil` on failure, including when either
+    ///   radius is `<= 0`.
+    ///
+    /// Both radii must be `> 0`. Unlike an ellipse there is no ordering constraint between them:
+    /// a minor radius larger than the major is an ordinary hyperbola.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arcOfHyperbola(majorRadius: 8, minorRadius: 3, alpha1: 0, alpha2: 1)
+    /// #expect(arc != nil)
+    /// #expect(Curve3D.arcOfHyperbola(majorRadius: 8, minorRadius: 0,
+    ///                                alpha1: 0, alpha2: 1) == nil)
+    /// ```
     public static func arcOfHyperbola(
         center: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -1069,7 +1111,18 @@ extension Curve3D {
     ///   - alpha1: Start parameter value
     ///   - alpha2: End parameter value
     ///   - sense: Direction of parameterization (true = natural)
-    /// - Returns: Trimmed curve representing the arc, or nil on failure
+    /// - Returns: Trimmed curve representing the arc, or `nil` on failure, including when
+    ///   `focalDistance` is `<= 0`.
+    ///
+    /// `focalDistance` must be `> 0`. At zero the parabola degenerates to a straight line along
+    /// its own axis of symmetry, which is `gp_Parab`'s documented behaviour rather than an error
+    /// it reports, so the arc would build and read as a curve.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.arcOfParabola(focalDistance: 4, alpha1: 0, alpha2: 1)
+    /// #expect(arc != nil)
+    /// #expect(Curve3D.arcOfParabola(focalDistance: 0, alpha1: 0, alpha2: 1) == nil)
+    /// ```
     public static func arcOfParabola(
         center: SIMD3<Double> = .zero,
         direction: SIMD3<Double> = SIMD3(0, 0, 1),
@@ -1560,6 +1613,17 @@ extension Curve3D {
         public var radius: Double { OCCTCurve3DCircleRadius(handle) }
 
         /// Set the radius of the circle.
+        ///
+        /// - Parameter r: New radius. Must be `> 0`; zero collapses the circle onto its centre.
+        /// - Returns: `true` if the radius was written, `false` if the curve is not a circle or
+        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        ///
+        /// ```swift
+        /// if let c = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
+        ///     #expect(c.circleProperties.setRadius(8) == true)
+        ///     #expect(c.circleProperties.setRadius(0) == false)
+        /// }
+        /// ```
         @discardableResult
         public func setRadius(_ r: Double) -> Bool { OCCTCurve3DCircleSetRadius(handle, r) }
 
@@ -1604,10 +1668,39 @@ extension Curve3D {
         public var minorRadius: Double { OCCTCurve3DEllipseMinorRadius(handle) }
 
         /// Set the major radius.
+        ///
+        /// - Parameter r: New major radius. Judged against the minor radius already on the
+        ///   curve, so it must be `> 0` and no smaller than the current `minorRadius`.
+        /// - Returns: `true` if the radius was written, `false` if the curve is not an ellipse or
+        ///   the pair would not describe one. On `false` the curve is left as it was.
+        ///
+        /// ```swift
+        /// if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+        ///                            majorRadius: 10, minorRadius: 5) {
+        ///     #expect(e.ellipseProperties.setMajorRadius(12) == true)
+        ///     #expect(e.ellipseProperties.setMajorRadius(3) == false)  // below the minor
+        /// }
+        /// ```
         @discardableResult
         public func setMajorRadius(_ r: Double) -> Bool { OCCTCurve3DEllipseSetMajorRadius(handle, r) }
 
         /// Set the minor radius.
+        ///
+        /// - Parameter r: New minor radius. Judged against the major radius already on the curve,
+        ///   so it must be `> 0` and no larger than the current `majorRadius`.
+        /// - Returns: `true` if the radius was written, `false` if the curve is not an ellipse or
+        ///   the pair would not describe one. On `false` the curve is left as it was.
+        ///
+        /// Zero is rejected here as it is at construction: it would leave a live `Geom_Ellipse`
+        /// that evaluates onto its own major axis at every parameter.
+        ///
+        /// ```swift
+        /// if let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+        ///                            majorRadius: 10, minorRadius: 5) {
+        ///     #expect(e.ellipseProperties.setMinorRadius(3) == true)
+        ///     #expect(e.ellipseProperties.setMinorRadius(0) == false)
+        /// }
+        /// ```
         @discardableResult
         public func setMinorRadius(_ r: Double) -> Bool { OCCTCurve3DEllipseSetMinorRadius(handle, r) }
 
@@ -1658,10 +1751,35 @@ extension Curve3D {
         public var minorRadius: Double { OCCTCurve3DHyperbolaMinorRadius(handle) }
 
         /// Set the major radius.
+        ///
+        /// - Parameter r: New major radius. Must be `> 0`. Unlike an ellipse there is no ordering
+        ///   constraint against the minor radius.
+        /// - Returns: `true` if the radius was written, `false` if the curve is not a hyperbola or
+        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        ///
+        /// ```swift
+        /// if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+        ///                              majorRadius: 8, minorRadius: 3) {
+        ///     #expect(h.hyperbolaProperties.setMajorRadius(7) == true)
+        ///     #expect(h.hyperbolaProperties.setMajorRadius(0) == false)
+        /// }
+        /// ```
         @discardableResult
         public func setMajorRadius(_ r: Double) -> Bool { OCCTCurve3DHyperbolaSetMajorRadius(handle, r) }
 
         /// Set the minor radius.
+        ///
+        /// - Parameter r: New minor radius. Must be `> 0`; it may exceed the major radius.
+        /// - Returns: `true` if the radius was written, `false` if the curve is not a hyperbola or
+        ///   `r` is not a valid radius. On `false` the curve is left as it was.
+        ///
+        /// ```swift
+        /// if let h = Curve3D.hyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+        ///                              majorRadius: 8, minorRadius: 3) {
+        ///     #expect(h.hyperbolaProperties.setMinorRadius(4) == true)
+        ///     #expect(h.hyperbolaProperties.setMinorRadius(0) == false)
+        /// }
+        /// ```
         @discardableResult
         public func setMinorRadius(_ r: Double) -> Bool { OCCTCurve3DHyperbolaSetMinorRadius(handle, r) }
 
@@ -1699,6 +1817,18 @@ extension Curve3D {
         public var focal: Double { OCCTCurve3DParabolaFocal(handle) }
 
         /// Set the focal distance.
+        ///
+        /// - Parameter f: New focal distance. Must be `> 0`; at zero the parabola degenerates to
+        ///   a straight line along its own axis of symmetry.
+        /// - Returns: `true` if the value was written, `false` if the curve is not a parabola or
+        ///   `f` is not a valid focal distance. On `false` the curve is left as it was.
+        ///
+        /// ```swift
+        /// if let p = Curve3D.parabola(center: .zero, normal: SIMD3(0, 0, 1), focal: 4) {
+        ///     #expect(p.parabolaProperties.setFocal(5) == true)
+        ///     #expect(p.parabolaProperties.setFocal(0) == false)
+        /// }
+        /// ```
         @discardableResult
         public func setFocal(_ f: Double) -> Bool { OCCTCurve3DParabolaSetFocal(handle, f) }
 

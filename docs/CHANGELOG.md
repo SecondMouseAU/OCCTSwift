@@ -206,6 +206,80 @@ separately. The 3D equivalents are unsurveyed, as #514 noted.
 build with every guard stripped back out: the 10 rejection tests fail, and the 8 that pin valid
 input (including "a hyperbola may have minor > major" and the coefficient order) still pass.
 
+#### The 3D conic sites that took a dimension and never checked it (#554)
+
+The 3D counterparts of #514, which surveyed only the 2D side. Twenty-two sites across
+`OCCTBridge_Curve3D.mm` and `OCCTBridge_Modeling.mm` build a 3D conic from a caller-supplied
+dimension, or rewrite one on a live curve, and none of them checked it. All twenty-two now use the
+same four shared predicates: 11 ellipse, 6 hyperbola, 4 parabola, 1 circle. #399's earlier pass
+covered the `Curve3D` *factories* only.
+
+**The census is wider than the issue's nine `gp_Elips` sites**, because three separate families
+have the same gap by three different mechanisms, and OCCT's own checks survive this build to three
+different degrees:
+
+| family | sites | what OCCT still rejects | what gets through |
+|---|---|---|---|
+| `gp_Elips`/`gp_Hypr`/`gp_Parab` constructed in a bridge TU | 11 | negatives and inverted ellipse radii: the constructor is `constexpr` in the header, so its `Standard_ConstructionError_Raise_if` runs here | zero |
+| `GC_MakeEllipse`/`GC_MakeHyperbola` | 5 | negatives and inverted radii, via the maker's own status (`!IsDone()`) rather than the macro, which `No_Exception` deletes inside OCCT | zero |
+| `Geom_Ellipse`/`Geom_Hyperbola`/`Geom_Parabola`/`Geom_Circle` setters | 6 | negatives, and an ellipse major below its own minor: these are a hand-written `if (...) throw`, not a macro, so `No_Exception` never touched them | zero |
+
+That third row refines #487's rule rather than restating it: `No_Exception` voids the *macro*, not
+every OCCT precondition. `Geom_Ellipse::SetMajorRadius` throws from inside OCCT's own translation
+unit because the check is spelled by hand.
+
+Zero satisfies every check any of the three writes (`minor < 0 || major < minor` is false for
+`(0, 0)`), which is why it is the one degenerate input that arrived intact by every route.
+
+**The sharpest case is `GC_MakeArcOfEllipse`'s two-point form**, where `IsDone()` is not merely
+insufficient but actively misleading. That form inverts each endpoint back to a parameter, which
+divides by the minor radius; at zero both bounds come back `NaN` and the maker still reports
+success. The `if (!maker.IsDone()) return nullptr` line the bridge relied on therefore passed, and
+`Curve3D.arcOfEllipse(…, from:to:)` returned a live curve whose parameter range was `[nan, nan]`
+and whose every evaluation was `NaN`. Measured against the pinned kernel, with the identical call
+on a healthy `(5, 3)` ellipse as the control:
+
+| radii | `IsDone()` | resulting parameter range |
+|---|---|---|
+| `(5, 3)` | true | `[0, 3.14159]` |
+| `(5, 0)` | true | `[nan, nan]` |
+| `(0, 0)` | true | `[nan, nan]` |
+
+**Every site was placed by asking #553's question, not by which OCCT class it calls.** #553 settled
+whether a degenerate conic can be a meaningful *query* rather than a broken construction, and
+answered it by probing whether OCCT actually returns the degenerate answer. Applied here the same
+question splits this family in two, and the split does not follow the "pure query" line it looks
+like it should:
+
+- **The three `Extrema` entry points are guarded**, because OCCT does not answer the degenerate
+  question: `Extrema_ExtPElC` reports `NbExt() == 0` against a `(0, 0)` ellipse rather than the one
+  extremum at its centre, and `Extrema_ExtElC` reports `IsParallel()` regardless of what the line
+  does. Same failure shape #553 measured across the `Gcc` families, and the same conclusion.
+- **`BndLib` and `ElCLib` are excluded**, because they do answer it. `ElCLib::Value(1.0,
+  gp_Elips(ax, 5, 0))` is `(2.70151, 0, 0)`, a point on the collapsed segment, which is exactly
+  what that curve is; `BndLib::Add` returns the true box of it. Both are also `void` with nowhere
+  to report a rejection, so guarding them would mean widening a signature in order to refuse an
+  input OCCT handles correctly.
+
+The second bullet is the one worth stating explicitly, because "it is only a query" is not the
+reason — #553 has already shown that a query can be exactly where the wrong answer hides.
+
+Also excluded, and pinned by a test so the exclusion stays deliberate: the four `GC_Make*`
+three-point forms. They take no dimension at all, and OCCT's own status already rejects a
+degenerate point triple (measured: coincident points, and an `S2` lying on the major axis, both
+report `!IsDone()`).
+
+No API signature changed, and nothing that used to succeed on valid input now fails. Every
+affected entry point already had somewhere to say no: `nil` for the 13 factory and edge builders,
+`false` for the 6 setters, and the existing `-1` error return for the 3 `Extrema` functions, which
+the Swift layer already maps to `[]`.
+
+26 tests in `Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift`. They were run against a
+build with every guard stripped back out: 19 fail, and the 7 that pass are exactly the controls —
+valid input still accepted, the negative and inverted cases OCCT already rejected, the three-point
+forms, the ellipse major setter that `Geom_Ellipse`'s own `throw` already covered, and the
+`BndLib`/`ElCLib` exclusion.
+
 #### The null-handle guard, swept across the whole geometry-wrapper surface (#478)
 
 #416 added the missing `IsNull()` guard to `OCCTCurve3DTransform` and #488 to
