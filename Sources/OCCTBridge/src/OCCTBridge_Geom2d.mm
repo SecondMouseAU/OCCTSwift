@@ -4196,18 +4196,11 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
     } catch (...) { return nullptr; }
 }
 
-#include <Geom2dAdaptor_Curve.hxx>
-
-// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
-// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
-// unrestricted adaptor, which tolerates either order.
-double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return -1.0;
-    try {
-        Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return -1.0; }
-}
+// OCCTCurve2DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// Geom2dAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as -1.0) and extrapolates past a multi-span curve's knots instead of clamping to
+// its domain. Removed by #549, which is what #506 did to the 3D spelling of the same call;
+// Curve2D.arcLength(from:to:) now routes through OCCTCurve2DGetLengthBetween, which does neither.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,

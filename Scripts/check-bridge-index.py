@@ -62,19 +62,27 @@ def index_entries(lines):
     return out
 
 
+def code_only(lines):
+    """The lines that declare or define something, with `//` comment lines dropped."""
+    return '\n'.join(l for l in lines if not l.lstrip().startswith('//'))
+
+
 def real_symbols(lines):
     """Every bridge symbol that actually exists.
 
-    The index lives in header comments, so comment lines are stripped first —
-    otherwise every entry trivially finds itself.
+    Comment lines are stripped from the header (otherwise every index entry
+    trivially finds itself) and from the sources too. The sources were read whole
+    until #549, which meant a *removed* function still counted as existing as long
+    as its tombstone comment named it, and the tombstone idiom (#500, #506) puts
+    that name in a comment on purpose. Three entries in the GCPnts_AbscissaPoint
+    line were stale that way, all three of them removed arc-length spellings.
     """
-    code = '\n'.join(l for l in lines if not l.lstrip().startswith('//'))
-    found = set(SYMBOL.findall(code))
+    found = set(SYMBOL.findall(code_only(lines)))
     for root, _dirs, files in os.walk(SRC_DIR):
         for name in files:
             if name.endswith(('.mm', '.h')):
                 with open(os.path.join(root, name), errors='replace') as f:
-                    found.update(SYMBOL.findall(f.read()))
+                    found.update(SYMBOL.findall(code_only(f.read().split('\n'))))
     return found
 
 
@@ -108,15 +116,21 @@ SELF_TEST = [
         '//                                       (NOT OCCTCurve3DProjectPointNope; see below)']),
     ('annotated family prefix', [
         '// BRepOffsetAPI_MakeFilling           → OCCTShapeFillNope* (Shape.fill)']),
+    # Not a fabricated name: OCCTCurve2DLength was a real function until #549 removed it, and
+    # its tombstone comment still names it in both the header and OCCTBridge_Geom2d.mm. This
+    # case fails the moment real_symbols() reads a source comment as a definition again.
+    ('symbol surviving only in a tombstone comment', [
+        '// GCPnts_AbscissaPoint                → OCCTCurve2DLength'], 'OCCTCurve2DLength'),
 ]
 
 
 def self_test(known):
     """Prove each failure mode this script covers is actually caught."""
     failed = 0
-    for name, lines in SELF_TEST:
+    for name, lines, *expected in SELF_TEST:
+        marker = expected[0] if expected else 'Nope'
         found = stale_entries(index_entries(lines), known)
-        flagged = [s for _, _, s, _ in found if 'Nope' in s]
+        flagged = [s for _, _, s, _ in found if marker in s]
         status = 'ok  ' if flagged else 'MISS'
         if not flagged:
             failed += 1

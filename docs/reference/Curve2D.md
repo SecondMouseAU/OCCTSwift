@@ -830,9 +830,9 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
-`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
-rather than a range-checked one.
+Arc length between two parameter values. This is the canonical, failure-distinguishing entry
+point: `arcLength(from:to:)` delegates to it and collapses `nil` to a `-1.0` sentinel for source
+compatibility (#549).
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
@@ -841,6 +841,11 @@ public func length(from u1: Double, to u2: Double) -> Double?
 - **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
+  with more than one span (an interpolation, an approximation, any multi-span BSpline) the range
+  is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
+  of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
+  interior knots to clamp against and measures the range as given.
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!

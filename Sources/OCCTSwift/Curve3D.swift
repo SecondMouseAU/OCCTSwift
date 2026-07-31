@@ -448,8 +448,11 @@ public final class Curve3D: @unchecked Sendable {
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`. Parameters outside the curve's domain are clamped to it, so a
-    /// range wholly outside measures `0` rather than extrapolating the curve's polynomial.
+    /// parameters measure `0`. On a curve with more than one span (an interpolation, an
+    /// approximation, any multi-span BSpline) the range is clamped to the curve's own knots, so
+    /// a range wholly outside the domain measures `0` instead of extrapolating the polynomial.
+    /// A single-span curve (a line, a circle, a Bezier) has no interior knots to clamp against
+    /// and measures the range as given: measured in #549, where the claim had been unqualified.
     ///
     /// - Parameters:
     ///   - u1: Start parameter.

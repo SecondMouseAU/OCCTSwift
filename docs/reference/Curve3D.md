@@ -747,9 +747,12 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 - **Returns:** Arc length, or `nil` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
   `length`.
-- **Note:** The range may be given in either order, and equal parameters measure `0`. Parameters
-  outside the curve's domain are clamped to it, so a range wholly outside measures `0` rather
-  than extrapolating the curve's polynomial past its knots.
+- **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
+  with more than one span (an interpolation, an approximation, any multi-span BSpline) the range
+  is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
+  of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
+  interior knots to clamp against and measures the range as given. The unqualified form of this
+  claim was corrected in #549, which measured it on all four curve types.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!

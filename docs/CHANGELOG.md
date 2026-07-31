@@ -17,6 +17,59 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The 2D arc length that measured 8082 for a curve 353 long (#549)
+
+`Curve2D.arcLength(from:to:)` and `Curve2D.length(from:to:)` answered differently on a reversed
+range: the first reported `-1.0`, the second measured the span. #506 removed the 3D spelling of that
+divergence and filed this one as the 2D half, a consistency question rather than a bug report, since
+both behaviours were documented and each doc page was accurate about itself. Measuring the pair
+first, as the issue asked, made it a correctness question as well. On a 5-point 2D interpolation
+(domain `[0, 318.433]`, length 353.508):
+
+| range | pre-bounded (`arcLength`) | ranged (`length`) |
+|---|---|---|
+| in domain, forward | 169.457 | 169.457 |
+| in domain, reversed | raises, reported as `-1.0` | 169.457 |
+| overshooting both ends by a domain width | **8082.404** | 353.508 |
+| overshooting the upper end only | **2549.691** | 353.508 |
+| wholly outside the domain | **1.259** | 0 |
+| equal parameters, periodic seam, two full periods, unbounded sub-range | agree | agree |
+
+The reversed-range rejection was the visible half of a pre-bounded `Geom2dAdaptor_Curve(curve, u1,
+u2)`. The other half was that it evaluated a multi-span curve's polynomial past its knots and
+reported the result as an ordinary success: the defect #477 removed from the 3D path, still live in
+2D because the two dimensions were fixed one at a time.
+
+`OCCTCurve2DLength` is gone, with tombstone comments naming the survivor, and
+`Curve2D.arcLength(from:to:)` now delegates to `length(from:to:)`, the shape
+`Curve3D.arcLength(from:to:)` has had since #408. That was the last pre-bounded arc-length call site
+in the bridge. New suite `Issue549Curve2DArcLengthRangeTests` (`OCCTGeom2dTests`) pins the divergent
+ranges against a chord-sum reference and checks the 2D answers against the 3D ones on the same points
+in the z = 0 plane; #409's suite keeps the `-1.0`-not-`0.0` sentinel it was written for, on an input
+that still fails. Proved by injection: restoring the pre-bounded call reproduces the figures above
+through the public Swift API and fails 7 of the 11 tests across the two suites. Probe and full
+figures at
+[`Scripts/repro/549-curve2d-arclength-range-order/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/549-curve2d-arclength-range-order).
+
+**Two things the measurement corrected on the way past.** `Curve3D.length(from:to:)` documented its
+clamping unconditionally ("Parameters outside the curve's domain are clamped to it"), which holds
+only for a curve with more than one `GeomAbs_CN` interval: `GCPnts_AbscissaPoint::length` intersects
+each interval with the requested range there, but a line, a circle or a 2-pole spline returns
+`|u2 - u1| * ratio` and a single-span Bezier integrates the range as given, both unclamped. Measured
+on four curve types in both dimensions (a Bezier reports 41.256 for a range wholly outside its
+domain), and the 2D and 3D wording now say so. Separately,
+`Scripts/check-bridge-index.py` read the sources whole, so a *removed* function still counted as
+existing as long as its tombstone comment named it, which the tombstone idiom (#500, #506) puts there
+on purpose. It strips comment lines from the sources now, which surfaced three stale entries in the
+`GCPnts_AbscissaPoint` index line, all three of them removed arc-length spellings. The new
+`--self-test` case is exactly that: a real symbol that survives only in a tombstone.
+
+**Noticed, not fixed.** Routing 2D onto the ranged form gives it #548's NaN hole too: on a multi-span
+2D curve a NaN bound lands on a domain bound instead of poisoning the integral, so
+`length(from: f, to: .nan)` reports `0` and `length(from: .nan, to: l)` the whole length. On a line,
+a circle, a segment or a Bezier the NaN propagates and both spellings report failure, which is what
+the new suite pins. Noted on #548 so one fix covers both dimensions.
+
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 
 `Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and
@@ -595,10 +648,11 @@ four tests.
 reports `nil` on a line, a segment and a circle, but on a BSpline `GCPnts_AbscissaPoint::Length`
 returns a plausible number (`0` for a NaN upper bound, the whole length for a NaN lower bound), so
 the failure-versus-zero distinction #408 established holds for the curve types its own tests use and
-not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` still measures through the 2D
+not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` measured through the 2D
 pre-bounded adaptor deliberately, documented as range-checked, so the 2D and 3D spellings of the same
-call now differ on a reversed range (#549). Both are #408/#409 contract questions rather than
-duplication, so they are filed rather than folded in here.
+call differed on a reversed range (#549, fixed above in this same release once the 2D form turned out
+to extrapolate as well). Both are #408/#409 contract questions rather than duplication, so they were
+filed rather than folded in here.
 
 #### The PointsToBSpline index entry, and the controls it hid that do nothing (#507)
 
