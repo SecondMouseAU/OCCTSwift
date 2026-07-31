@@ -90,6 +90,13 @@ was left out of #539 because fixing it needs a decision about its `solutionCount
 `580-repair-options.mm` measures that decision rather than leaving it open. Over 189 edge/point
 combinations:
 
+> **Shipped.** #580 took the recommendation below: `Shape.pointEdgeExtrema` now computes its
+> distance, parameter and point with `occtNearestPointOnCurveRange` and keeps `BRepExtrema_ExtPC`
+> solely for `solutionCount`, which stops doubling as a success flag. Fixing it also turned up a
+> second, unrelated defect the probes here do not cover: `edgeIndex` walked a bare `TopExp_Explorer`
+> (one entry per *occurrence* — a box's 12 edges are 24), so from index 9 it named a different edge
+> than `Shape.edges()`. It now uses `occtEdgeAt`, #541's enumeration.
+
 | candidate set | correct distances |
 |---|---|
 | all extrema, `nil` when `IsDone()` is false (today) | 101 correct, 34 wrong, 54 `nil` |

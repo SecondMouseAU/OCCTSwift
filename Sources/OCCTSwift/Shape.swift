@@ -8011,27 +8011,56 @@ extension Shape {
 
     /// Result of point-edge distance extrema computation
     public struct PointEdgeExtrema: Sendable {
-        /// Minimum distance from the point to the edge
+        /// Minimum distance from the point to the edge, over the whole edge including its ends
         public let distance: Double
-        /// Parameter on edge at closest point
+        /// Parameter on the edge at the nearest point
         public let parameter: Double
-        /// Closest point on edge
+        /// The nearest point on the edge
         public let pointOnEdge: SIMD3<Double>
-        /// Number of extrema solutions found
+        /// How many perpendicular feet the point has on this edge (`BRepExtrema_ExtPC`'s extrema).
+        ///
+        /// Zero is an ordinary, informative answer rather than a failure: it means the nearest
+        /// point is one of the edge's two ends. A non-zero count does *not* mean the nearest point
+        /// is one of those feet — an extremum can be a maximum — so read `distance`, `parameter`
+        /// and `pointOnEdge` for the answer and this only for the count.
         public let solutionCount: Int
     }
 
-    /// Compute minimum distance from a point to an edge of this shape.
+    /// Compute the minimum distance from a point to an edge of this shape.
     ///
-    /// Uses BRepExtrema_ExtPC to find the closest point on the specified edge.
+    /// The answer is the nearest point over the whole edge, its two ends included, and matches
+    /// ``Edge/project(point:)`` on the same edge and the same point — both take a minimum over
+    /// `ShapeAnalysis_Curve`, `GeomAPI_ProjectPointOnCurve` and the edge's ends.
+    ///
+    /// ```swift
+    /// let arc = Shape.fromWire(Wire.arc(
+    ///     center: SIMD3(0, 0, 0), radius: 5, startAngle: 0, endAngle: .pi)!)!
+    ///
+    /// // Below the arc, the nearest point is an end — the only extremum is the far side of it.
+    /// if let hit = arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0) {
+    ///     print(hit.distance)       // 7.81, to the end at (5, 0, 0). Was 11, the far side.
+    ///     print(hit.solutionCount)  // 1 — and that one extremum is a maximum
+    /// }
+    ///
+    /// let segment = Shape.fromWire(Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!)!
+    /// if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
+    ///     print(hit.distance)       // 92. Was nil: no extremum exists past the end.
+    ///     print(hit.solutionCount)  // 0 — no perpendicular foot, not a failure
+    /// }
+    /// ```
+    ///
+    /// Before #580 this reported the smallest of `BRepExtrema_ExtPC`'s extrema, which excludes the
+    /// edge's ends and can be a single *maximum*: the arc above answered 11 (the far side), and a
+    /// point beyond the end of a trimmed segment answered `nil`.
     ///
     /// - Parameters:
     ///   - point: 3D point
-    ///   - edgeIndex: 0-based edge index
-    /// - Returns: Extrema result, or nil if computation fails
+    ///   - edgeIndex: 0-based edge index, in the enumeration ``edges()`` reads
+    /// - Returns: The nearest-point result, or nil if there is no such edge index or that edge has
+    ///   no 3D curve.
     public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeExtrema? {
         let result = OCCTBRepExtremaExtPC(point.x, point.y, point.z, handle, Int32(edgeIndex))
-        guard result.solutionCount > 0 else { return nil }
+        guard result.isValid else { return nil }
         return PointEdgeExtrema(
             distance: result.distance,
             parameter: result.parameter,

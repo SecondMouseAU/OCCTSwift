@@ -132,7 +132,10 @@
 // BRepExtrema_ExtCC                   → OCCTBRepExtremaExtCC
 // BRepExtrema_ExtCF                   → OCCTBRepExtremaExtCF
 // BRepExtrema_ExtFF                   → OCCTBRepExtremaExtFF
-// BRepExtrema_ExtPC                   → OCCTBRepExtremaExtPC
+// BRepExtrema_ExtPC                   → OCCTBRepExtremaExtPC (for its extrema COUNT only since
+//                                       #580; the distance/parameter/point come from
+//                                       occtNearestPointOnCurveRange, because extrema exclude the
+//                                       edge's ends and the one in range can be a maximum)
 // BRepExtrema_ExtPF                   → OCCTBRepExtremaExtPF
 // BRepExtrema_Poly                    → OCCTShapePolyhedralDistance
 //
@@ -352,8 +355,9 @@
 //                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
-//                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint
-//                                       (the last two only as one of the three candidate sources
+//                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint,
+//                                       OCCTBRepExtremaExtPC
+//                                       (the last three only as one of the three candidate sources
 //                                       occtNearestPointOnCurveRange takes a minimum over; see
 //                                       ShapeAnalysis_Curve for the other, and #539 for why
 //                                       neither class answers correctly on its own)
@@ -482,8 +486,9 @@
 // --- ShapeAnalysis ---
 // ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
 //                                       OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
-//                                       OCCTCurve3DIsPeriodicSA, OCCTEdgeProjectPoint
-//                                       (the two projection entry points reach ::Project through
+//                                       OCCTCurve3DIsPeriodicSA, OCCTEdgeProjectPoint,
+//                                       OCCTBRepExtremaExtPC
+//                                       (the three projection entry points reach ::Project through
 //                                       occtNearestPointOnCurveRange, which does not trust its
 //                                       answer alone; see GeomAPI_ProjectPointOnCurve)
 // ShapeAnalysis_FreeBounds            → OCCTShapeFreeBounds, OCCTShapeFreeBoundsClosedCount,
@@ -6508,17 +6513,31 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int3
 
 /// Point-edge extrema result
 typedef struct {
-    double distance;           // Minimum distance
-    double parameter;          // Parameter on edge at closest point
-    double ptx, pty, ptz;     // Closest point on edge
-    int32_t solutionCount;    // Number of extrema found
+    double distance;           // Minimum distance over the edge, ends included (#580)
+    double parameter;          // Parameter on edge at the nearest point
+    double ptx, pty, ptz;     // Nearest point on edge
+    int32_t solutionCount;    // Number of perpendicular feet BRepExtrema_ExtPC found; 0 is a
+                              // reportable state, not a failure -- see below
+    bool isValid;             // false only when there is no such edge, or it has no 3D curve
 } OCCTPointEdgeExtremaResult;
 
-/// Compute distance from a point to an edge.
+/// Compute the minimum distance from a point to an edge of a shape, over the whole edge.
+///
+/// The distance/parameter/point are the minimum over the edge's own range including its two ends,
+/// via occtNearestPointOnCurveRange -- the same helper behind OCCTEdgeProjectPoint, so the two
+/// cannot disagree about the same point and the same edge. This used to report the minimum over
+/// BRepExtrema_ExtPC's extrema instead, which excludes the ends and can consist of a single
+/// MAXIMUM: a point below a half circle of radius 5 read as 11 away when it is 7.81 away, and a
+/// point past the end of a trimmed segment had no answer at all (#580).
+///
+/// `solutionCount` keeps both its meaning and its source: how many extrema BRepExtrema_ExtPC found,
+/// which is how many perpendicular feet the point has on the edge. It is no longer a success flag.
+/// Zero means the nearest point is one of the ends, which is worth reporting rather than refusing.
+///
 /// @param px,py,pz Point coordinates
 /// @param shape Shape containing the edge
-/// @param edgeIndex Edge index (0-based)
-/// @return Extrema result (minimum distance solution)
+/// @param edgeIndex Edge index (0-based, in the enumeration Shape.edges() reads)
+/// @return Nearest-point result; check isValid, not solutionCount
 OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
                                                  OCCTShapeRef shape, int32_t edgeIndex);
 
