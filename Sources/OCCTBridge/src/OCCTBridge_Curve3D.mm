@@ -1211,6 +1211,7 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
     if (!curves || count < 1) return nullptr;
     try {
         // First curve initializes the joiner
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) return nullptr;
 
@@ -1240,7 +1241,7 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
 OCCTCurveProjectResult OCCTCurve3DProjectPoint(OCCTCurve3DRef curve,
     double px, double py, double pz, double precision) {
     OCCTCurveProjectResult result = {};
-    if (!curve) return result;
+    if (!curve || curve->curve.IsNull()) return result;
     try {
         ShapeAnalysis_Curve sac;
         gp_Pnt proj;
@@ -1263,7 +1264,7 @@ OCCTCurveValidateRangeResult OCCTCurve3DValidateRange(OCCTCurve3DRef curve,
     result.first = first;
     result.last = last;
     result.wasAdjusted = false;
-    if (!curve) return result;
+    if (!curve || curve->curve.IsNull()) return result;
     try {
         ShapeAnalysis_Curve sac;
         double f = first, l = last;
@@ -1279,7 +1280,7 @@ OCCTCurveValidateRangeResult OCCTCurve3DValidateRange(OCCTCurve3DRef curve,
 
 int32_t OCCTCurve3DGetSamplePoints3D(OCCTCurve3DRef curve, double first, double last,
     double* outXYZ, int32_t maxPoints) {
-    if (!curve || !outXYZ || maxPoints <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outXYZ || maxPoints <= 0) return 0;
     try {
         ShapeAnalysis_Curve sac;
         NCollection_Sequence<gp_Pnt> pts;
@@ -1343,7 +1344,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfParabola(
 
 // MARK: - Curve3D ConvertToPeriodic / SplitAt (v0.50)
 OCCTCurve3DRef OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeCustom_Curve scc(curve->curve);
         Handle(Geom_Curve) periodic = scc.ConvertToPeriodic(Standard_False);
@@ -1358,7 +1359,7 @@ OCCTCurve3DRef OCCTCurve3DConvertToPeriodic(OCCTCurve3DRef curve) {
 
 bool OCCTCurve3DSplitAt(OCCTCurve3DRef curve, double splitParam,
     OCCTCurve3DRef* outCurve1, OCCTCurve3DRef* outCurve2) {
-    if (!curve || !outCurve1 || !outCurve2) return false;
+    if (!curve || curve->curve.IsNull() || !outCurve1 || !outCurve2) return false;
     *outCurve1 = nullptr;
     *outCurve2 = nullptr;
     try {
@@ -1731,7 +1732,7 @@ int32_t OCCTGCPntsTangentialDeflectionCurve(OCCTCurve3DRef _Nonnull curve,
                                              double* _Nonnull params,
                                              double* _Nullable coords,
                                              int32_t maxPoints) {
-    if (!curve) return 0;
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
         GCPnts_TangentialDeflection sampler(adaptor, angularDeflection, curvatureDeflection,
@@ -2003,7 +2004,7 @@ void OCCTAxis2PlacementSetXDirection(OCCTAxis2PlacementRef _Nonnull ref, double 
 
 OCCTCurve3DRef _Nullable OCCTShapeConstructConvertToBSpline3D(OCCTCurve3DRef _Nonnull curve,
                                                                 double first, double last, double precision) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeConstruct_Curve scc;
         Handle(Geom_BSplineCurve) bsp = scc.ConvertToBSpline(curve->curve, first, last, precision);
@@ -2018,7 +2019,7 @@ OCCTCurve3DRef _Nullable OCCTShapeConstructConvertToBSpline3D(OCCTCurve3DRef _No
 bool OCCTShapeConstructAdjustCurve3D(OCCTCurve3DRef _Nonnull curve,
                                       double p1x, double p1y, double p1z,
                                       double p2x, double p2y, double p2z) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         ShapeConstruct_Curve scc;
         return scc.AdjustCurve(curve->curve, gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z));
@@ -2508,6 +2509,7 @@ OCCTGeomTransformRef OCCTGeomTransformInverted(OCCTGeomTransformRef transform) {
 OCCTCurve3DRef OCCTCurve3DCreateOffset(OCCTCurve3DRef basisCurve,
                                          double offset,
                                          double dirX, double dirY, double dirZ) {
+    if (!basisCurve || basisCurve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_OffsetCurve) oc = new Geom_OffsetCurve(
             basisCurve->curve, offset, gp_Dir(dirX, dirY, dirZ));
@@ -2784,14 +2786,14 @@ bool OCCTConvertCompBezier2dToBSpline2d(const double* poles, int32_t segCount, i
 // --- ShapeAnalysis_Curve static methods ---
 
 bool OCCTCurve3DIsClosedWithPreci(OCCTCurve3DRef curve, double preci) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         return ShapeAnalysis_Curve::IsClosed(curve->curve, preci);
     } catch (...) { return false; }
 }
 
 bool OCCTCurve3DIsPeriodicSA(OCCTCurve3DRef curve) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         return ShapeAnalysis_Curve::IsPeriodic(curve->curve);
     } catch (...) { return false; }
@@ -2813,6 +2815,7 @@ OCCTCurve3DRef OCCTCurve3DOffsetBasis(OCCTCurve3DRef curve) {
 // --- Geom_TrimmedCurve ---
 
 OCCTCurve3DRef OCCTCurve3DTrimmed(OCCTCurve3DRef basisCurve, double u1, double u2) {
+    if (!basisCurve || basisCurve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_TrimmedCurve) tc = new Geom_TrimmedCurve(basisCurve->curve, u1, u2);
         OCCTCurve3D* c = new OCCTCurve3D();
@@ -3092,6 +3095,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
     if (!curves || count <= 0) return nullptr;
     try {
         // First curve must be bounded — try to cast
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom_BoundedCurve) first = Handle(Geom_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) {
             // Try trimming the curve using its parameter range
@@ -3101,6 +3105,7 @@ OCCTCurve3DRef OCCTConcatenateCurves3D(OCCTCurve3DRef* curves, int32_t count, do
         }
         GeomConvert_CompCurveToBSplineCurve comp(first);
         for (int32_t i = 1; i < count; i++) {
+            if (!curves[i] || curves[i]->curve.IsNull()) return nullptr;
             Handle(Geom_BoundedCurve) bc = Handle(Geom_BoundedCurve)::DownCast(curves[i]->curve);
             if (bc.IsNull()) {
                 double f = curves[i]->curve->FirstParameter();
@@ -4641,7 +4646,7 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 
 
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, double fromParam) {
-    if (!curve) return 0;
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
         GCPnts_AbscissaPoint ap(adaptor, arcLength, fromParam);
@@ -5336,7 +5341,7 @@ int32_t OCCTExtremaPCCurve(OCCTCurve3DRef curve,
                             double* outParams, double* outDistances,
                             double* outPx, double* outPy, double* outPz,
                             int32_t maxResults) {
-    if (!curve || !outParams || !outDistances || maxResults <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
     try {
         ExtremaPC_Curve extPC(curve->curve);
         if (!extPC.IsInitialized()) return 0;
@@ -5360,7 +5365,7 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef curve,
                                    double* outParams, double* outDistances,
                                    double* outPx, double* outPy, double* outPz,
                                    int32_t maxResults) {
-    if (!curve || !outParams || !outDistances || maxResults <= 0) return 0;
+    if (!curve || curve->curve.IsNull() || !outParams || !outDistances || maxResults <= 0) return 0;
     try {
         ExtremaPC_Curve extPC(curve->curve, uMin, uMax);
         if (!extPC.IsInitialized()) return 0;
@@ -5380,7 +5385,7 @@ int32_t OCCTExtremaPCCurveBounded(OCCTCurve3DRef curve,
 
 double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,
                                 double px, double py, double pz) {
-    if (!curve) return -1.0;
+    if (!curve || curve->curve.IsNull()) return -1.0;
     try {
         ExtremaPC_Curve extPC(curve->curve);
         if (!extPC.IsInitialized()) return -1.0;

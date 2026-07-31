@@ -1435,7 +1435,7 @@ static Handle(Geom_BSplineCurve) toBSplineCurve(const Handle(Geom_Curve)& curve)
 
 OCCTSurfaceRef OCCTSurfaceFillBSpline2Curves(OCCTCurve3DRef curve1, OCCTCurve3DRef curve2,
                                                int32_t fillStyle) {
-    if (!curve1 || !curve2) return nullptr;
+    if (!curve1 || !curve2 || curve1->curve.IsNull() || curve2->curve.IsNull()) return nullptr;
     try {
         Handle(Geom_BSplineCurve) c1 = toBSplineCurve(curve1->curve);
         Handle(Geom_BSplineCurve) c2 = toBSplineCurve(curve2->curve);
@@ -1458,6 +1458,8 @@ OCCTSurfaceRef OCCTSurfaceFillBSpline4Curves(OCCTCurve3DRef c1, OCCTCurve3DRef c
                                                OCCTCurve3DRef c3, OCCTCurve3DRef c4,
                                                int32_t fillStyle) {
     if (!c1 || !c2 || !c3 || !c4) return nullptr;
+    if (c1->curve.IsNull() || c2->curve.IsNull() || c3->curve.IsNull() || c4->curve.IsNull())
+        return nullptr;
     try {
         Handle(Geom_BSplineCurve) bc1 = toBSplineCurve(c1->curve);
         Handle(Geom_BSplineCurve) bc2 = toBSplineCurve(c2->curve);
@@ -1497,6 +1499,7 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef s1, OCCTSurfaceRef s2,
                             double u2Min, double u2Max, double v2Min, double v2Max,
                             OCCTSurfaceExtremaResult* outResult) {
     if (!s1 || !s2 || !outResult) return 0;
+    if (s1->surface.IsNull() || s2->surface.IsNull()) return 0;
     try {
         GeomAPI_ExtremaSurfaceSurface extrema(
             s1->surface, s2->surface,
@@ -1637,7 +1640,7 @@ bool OCCTGeomFillConstrainedInfo(OCCTShapeRef face, OCCTConstrainedFillingInfo* 
 OCCTSurfaceUVResult OCCTSurfaceValueOfUV(OCCTSurfaceRef surface,
     double px, double py, double pz, double precision) {
     OCCTSurfaceUVResult result = {};
-    if (!surface) return result;
+    if (!surface || surface->surface.IsNull()) return result;
     try {
         Handle(ShapeAnalysis_Surface) sa = new ShapeAnalysis_Surface(surface->surface);
         gp_Pnt2d uv = sa->ValueOfUV(gp_Pnt(px, py, pz), precision);
@@ -1653,7 +1656,7 @@ OCCTSurfaceUVResult OCCTSurfaceValueOfUV(OCCTSurfaceRef surface,
 OCCTSurfaceUVResult OCCTSurfaceNextValueOfUV(OCCTSurfaceRef surface,
     double prevU, double prevV, double px, double py, double pz, double precision) {
     OCCTSurfaceUVResult result = {};
-    if (!surface) return result;
+    if (!surface || surface->surface.IsNull()) return result;
     try {
         Handle(ShapeAnalysis_Surface) sa = new ShapeAnalysis_Surface(surface->surface);
         gp_Pnt2d uv = sa->NextValueOfUV(gp_Pnt2d(prevU, prevV), gp_Pnt(px, py, pz), precision);
@@ -1872,7 +1875,7 @@ OCCTSurfaceRef OCCTSurfaceJoinBezierPatches(
 // MARK: - Surface ConvertToAnalytical (v0.50)
 OCCTSurfaceAnalyticalResult OCCTSurfaceConvertToAnalytical(OCCTSurfaceRef surface, double tolerance) {
     OCCTSurfaceAnalyticalResult result = {};
-    if (!surface) return result;
+    if (!surface || surface->surface.IsNull()) return result;
     try {
         ShapeCustom_Surface sc(surface->surface);
         Handle(Geom_Surface) recognized = sc.ConvertToAnalytical(tolerance, Standard_False);
@@ -2753,7 +2756,7 @@ bool OCCTGeomFillBoundWithSurfEvaluate(
 // --- ShapeCustom_Surface: ConvertToPeriodic, Gap ---
 
 OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull surface) {
-    if (!surface) return nullptr;
+    if (!surface || surface->surface.IsNull()) return nullptr;
     try {
         ShapeCustom_Surface sc(surface->surface);
         Handle(Geom_Surface) periodic = sc.ConvertToPeriodic(Standard_False);
@@ -2767,7 +2770,7 @@ OCCTSurfaceRef _Nullable OCCTSurfaceConvertToPeriodic(OCCTSurfaceRef _Nonnull su
 }
 
 double OCCTSurfaceConversionGap(OCCTSurfaceRef _Nonnull surface) {
-    if (!surface) return -1.0;
+    if (!surface || surface->surface.IsNull()) return -1.0;
     try {
         ShapeCustom_Surface sc(surface->surface);
         // Trigger a conversion to populate gap
@@ -3342,6 +3345,7 @@ OCCTSurfaceRef _Nullable OCCTGceMakePlnFrom3Points(double p1x, double p1y, doubl
 OCCTSurfaceRef OCCTSurfaceCreateRectangularTrimmed(OCCTSurfaceRef basisSurface,
                                                      double u1, double u2,
                                                      double v1, double v2) {
+    if (!basisSurface || basisSurface->surface.IsNull()) return nullptr;
     try {
         Handle(Geom_RectangularTrimmedSurface) ts =
             new Geom_RectangularTrimmedSurface(basisSurface->surface, u1, u2, v1, v2);
@@ -3353,6 +3357,7 @@ OCCTSurfaceRef OCCTSurfaceCreateRectangularTrimmed(OCCTSurfaceRef basisSurface,
 
 OCCTSurfaceRef OCCTSurfaceCreateTrimmedInU(OCCTSurfaceRef basisSurface,
                                              double param1, double param2) {
+    if (!basisSurface || basisSurface->surface.IsNull()) return nullptr;
     try {
         Handle(Geom_RectangularTrimmedSurface) ts =
             new Geom_RectangularTrimmedSurface(basisSurface->surface, param1, param2, true);
@@ -3364,6 +3369,7 @@ OCCTSurfaceRef OCCTSurfaceCreateTrimmedInU(OCCTSurfaceRef basisSurface,
 
 OCCTSurfaceRef OCCTSurfaceCreateTrimmedInV(OCCTSurfaceRef basisSurface,
                                              double param1, double param2) {
+    if (!basisSurface || basisSurface->surface.IsNull()) return nullptr;
     try {
         Handle(Geom_RectangularTrimmedSurface) ts =
             new Geom_RectangularTrimmedSurface(basisSurface->surface, param1, param2, false);
@@ -3594,6 +3600,7 @@ OCCTSurfaceRef OCCTSurfaceOffsetBasis(OCCTSurfaceRef surface) {
 
 double OCCTSurfaceProjectPointUV(OCCTSurfaceRef surface, double px, double py, double pz,
                                    double preci, double* u, double* v) {
+    if (!surface || surface->surface.IsNull()) { *u = 0; *v = 0; return -1.0; }
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         gp_Pnt2d uv = sas->ValueOfUV(gp_Pnt(px, py, pz), preci);
@@ -3604,6 +3611,7 @@ double OCCTSurfaceProjectPointUV(OCCTSurfaceRef surface, double px, double py, d
 }
 
 bool OCCTSurfaceHasSingularities(OCCTSurfaceRef surface, double preci) {
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         return sas->HasSingularities(preci);
@@ -3611,6 +3619,7 @@ bool OCCTSurfaceHasSingularities(OCCTSurfaceRef surface, double preci) {
 }
 
 int32_t OCCTSurfaceNbSingularities(OCCTSurfaceRef surface, double preci) {
+    if (!surface || surface->surface.IsNull()) return 0;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         return sas->NbSingularities(preci);
@@ -3618,6 +3627,7 @@ int32_t OCCTSurfaceNbSingularities(OCCTSurfaceRef surface, double preci) {
 }
 
 bool OCCTSurfaceIsUClosedSA(OCCTSurfaceRef surface, double preci) {
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         return sas->IsUClosed(preci);
@@ -3625,6 +3635,7 @@ bool OCCTSurfaceIsUClosedSA(OCCTSurfaceRef surface, double preci) {
 }
 
 bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef surface, double preci) {
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         return sas->IsVClosed(preci);
@@ -3644,6 +3655,7 @@ bool OCCTSurfaceIsVClosedSA(OCCTSurfaceRef surface, double preci) {
 /// 3D gap (very large on failure).
 double OCCTSurfaceUVFromIso(OCCTSurfaceRef surface, double px, double py, double pz,
                             double preci, double* u, double* v) {
+    if (!surface || surface->surface.IsNull()) { if (u) *u = 0; if (v) *v = 0; return -1.0; }
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         double U = 0, V = 0;
@@ -3660,6 +3672,7 @@ bool OCCTSurfaceSingularityDetail(OCCTSurfaceRef surface, int32_t num, double* p
                                   double* px, double* py, double* pz,
                                   double* firstU, double* firstV, double* lastU, double* lastV,
                                   double* firstPar, double* lastPar, bool* uIsoDegenerate) {
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         gp_Pnt P3d; gp_Pnt2d f2, l2; double fp = 0, lp = 0; Standard_Boolean uiso = Standard_False;
@@ -3680,6 +3693,7 @@ bool OCCTSurfaceSingularityDetail(OCCTSurfaceRef surface, int32_t num, double* p
 bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef surface, double px, double py, double pz,
                                    double preci, double neighbourU, double neighbourV,
                                    double* ru, double* rv) {
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         gp_Pnt2d result;
@@ -3697,6 +3711,7 @@ bool OCCTSurfaceProjectDegenerated(OCCTSurfaceRef surface, double px, double py,
 double OCCTSurfaceProjectPointUVInDomain(OCCTSurfaceRef surface, double px, double py, double pz,
                                          double preci, double u1, double u2, double v1, double v2,
                                          double* u, double* v) {
+    if (!surface || surface->surface.IsNull()) { if (u) *u = 0; if (v) *v = 0; return -1.0; }
     try {
         Handle(ShapeAnalysis_Surface) sas = new ShapeAnalysis_Surface(surface->surface);
         sas->SetDomain(u1, u2, v1, v2);
@@ -6383,12 +6398,12 @@ OCCTSurfaceRef OCCTGeomFillGordon(const OCCTCurve3DRef* profiles, int32_t profil
     try {
         NCollection_Array1<occ::handle<Geom_Curve>> profs(0, profileCount - 1);
         for (int i = 0; i < profileCount; i++) {
-            if (!profiles[i]) return nullptr;
+            if (!profiles[i] || profiles[i]->curve.IsNull()) return nullptr;
             profs.SetValue(i, profiles[i]->curve);
         }
         NCollection_Array1<occ::handle<Geom_Curve>> gds(0, guideCount - 1);
         for (int i = 0; i < guideCount; i++) {
-            if (!guides[i]) return nullptr;
+            if (!guides[i] || guides[i]->curve.IsNull()) return nullptr;
             gds.SetValue(i, guides[i]->curve);
         }
 
@@ -6465,12 +6480,12 @@ OCCTSurfaceRef OCCTGeomFillGordonReport(const OCCTCurve3DRef* profiles, int32_t 
     try {
         NCollection_Array1<occ::handle<Geom_Curve>> profs(0, profileCount - 1);
         for (int i = 0; i < profileCount; i++) {
-            if (!profiles[i]) return nullptr;
+            if (!profiles[i] || profiles[i]->curve.IsNull()) return nullptr;
             profs.SetValue(i, profiles[i]->curve);
         }
         NCollection_Array1<occ::handle<Geom_Curve>> gds(0, guideCount - 1);
         for (int i = 0; i < guideCount; i++) {
-            if (!guides[i]) return nullptr;
+            if (!guides[i] || guides[i]->curve.IsNull()) return nullptr;
             gds.SetValue(i, guides[i]->curve);
         }
 

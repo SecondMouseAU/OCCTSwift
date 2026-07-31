@@ -67,6 +67,13 @@ Opaque handle types (`OCCTShapeRef`, `OCCTWireRef`, `OCCTFaceRef`, `OCCTEdgeRef`
 3. **Swift wrapper** (appropriate `.swift` file): Add public method/static factory
 4. **Test**: Add `@Suite`/`@Test` to the matching `Tests/OCCT<Domain>Tests/` target (see "Test Layout")
 
+If the new function takes an `OCCTCurve3DRef` / `OCCTCurve2DRef` / `OCCTSurfaceRef`, guard the
+handle as well as the pointer: `if (!x || x->curve.IsNull()) return <the fallback the catch below
+uses>;`. Checking only the pointer says nothing about the handle, and 24 of the 35 OCCT entry
+points this bridge passes such a handle into dereference it unconditionally, which is an
+uncatchable signal, not something `catch (...)` can absorb (#478, #556). Run
+`python3 Scripts/check-null-handle-guards.py` to verify; it exits 1 on any unguarded site.
+
 ## Naming Conventions
 
 - Bridge functions: `OCCTShape...`, `OCCTWire...`, `OCCTFace...`, `OCCTEdge...`
