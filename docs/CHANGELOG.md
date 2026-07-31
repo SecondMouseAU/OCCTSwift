@@ -54,7 +54,7 @@ the five and calls the other four clean. The sixth is #508's `GC_MakeLine2d → 
 real wrappers (`OCCTCurve2DMakeLineThroughPoints`, `OCCTCurve2DMakeLineParallel`) were already two lines
 away in the same file.
 
-A second defect class remains, filed as a follow-up: the checker verifies that a named symbol *exists*,
+A second defect class remains, filed as #565: the checker verifies that a named symbol *exists*,
 not that it wraps the class the entry files it under. A mis-attributed entry that happens to name a real
 symbol from a neighbouring class is still invisible, and it misleads exactly the way a fabricated one
 does.
