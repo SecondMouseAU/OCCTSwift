@@ -68,6 +68,9 @@ echo "tvOS SDK: $TVOS_SDK"
 echo "tvOS Simulator SDK: $TVSIM_SDK"
 echo ""
 
+# Libraries/ is gitignored in its entirety, so a clean checkout — CI, or anyone's first build —
+# does not have it. Create it rather than `cd` into nothing (#585).
+mkdir -p "$LIBRARIES_DIR"
 cd "$LIBRARIES_DIR"
 
 # --------------------

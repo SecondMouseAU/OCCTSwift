@@ -69,5 +69,12 @@ jobs:
         if: steps.occt-cache.outputs.cache-hit != 'true'
         run: ./Scripts/build-occt.sh
 
+      # OCCTSWIFT_LOCAL=1, not Package.swift's auto-detect. The step above restores
+      # ~/Library/Caches/org.swift.swiftpm, which caches the manifest *evaluation* — including the
+      # `useLocalBinary` filesystem probe that ran before Libraries/OCCT.xcframework existed. A
+      # restored cache therefore makes SwiftPM keep resolving the pinned released kernel, and this
+      # job silently validates the wrong binary while reporting green. Measured locally on #532:
+      # touching Package.swift, deleting .build/artifacts/*/OCCT, `swift package resolve` and even
+      # a full `swift package reset` all failed to dislodge it; the explicit override is what works.
       - name: swift test
-        run: swift test
+        run: OCCTSWIFT_LOCAL=1 swift test
