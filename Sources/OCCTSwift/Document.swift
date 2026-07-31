@@ -16400,35 +16400,105 @@ extension Document {
 
 extension FilletBuilder {
 
-    /// Get the parameter bounds of a fillet on a contour edge.
+    /// Parameter bounds of the radius law on one edge of a contour.
+    ///
+    /// The range is the contour's own spine parameterisation, not the edge's: it runs past the
+    /// edge's ends once the fillet is built, because the blend surface extends beyond the edge it
+    /// was asked for.
+    ///
+    /// Returns `nil` when there is no law to measure, which covers four cases:
+    /// `contour` is outside `1...contourCount`; the contour does not hold `edge` (an edge from
+    /// another contour counts, and used to be answered about anyway, #505); the contour's spine has
+    /// not been split yet, which `build()` and ``FilletBuilder/simulate(contour:)`` both do; or the
+    /// radius is constant along the contour, which OCCT represents as no law rather than a flat one.
+    ///
     /// - Parameters:
     ///   - contour: Contour index (1-based)
-    ///   - edge: The edge in the contour
-    /// - Returns: Parameter range (first, last), or nil if not found
-    public func getBounds(contour: Int, edge: Shape) -> (first: Double, last: Double)? {
+    ///   - edge: An edge the contour holds
+    /// - Returns: Parameter range `(first, last)`, or `nil`
+    ///
+    /// ```swift
+    /// let builder = FilletBuilder(shape: box)!
+    /// let edge = box.edges()[0]
+    /// builder.addEdge(edge, radius1: 0.5, radius2: 2.0)   // evolving: there is a law
+    /// _ = builder.build()
+    /// if let bounds = builder.getBounds(contour: 1, edge: edge) {
+    ///     print(bounds.first, bounds.last)
+    /// }
+    /// ```
+    public func getBounds(contour: Int, edge: Edge) -> (first: Double, last: Double)? {
         var first = 0.0, last = 0.0
         guard OCCTFilletBuilderGetBounds(handle, Int32(contour), edge.handle, &first, &last) else { return nil }
         return (first, last)
     }
 
-    /// Get the law function for a fillet edge on a contour.
+    /// The radius law on one edge of a contour.
+    ///
+    /// Returns `nil` in the same four cases as ``FilletBuilder/getBounds(contour:edge:)``. In
+    /// particular a constant-radius contour has no law, so ask ``FilletBuilder/isConstant(contour:)``
+    /// first if the radius did not come from ``FilletBuilder/addEdge(_:radius1:radius2:)``.
+    ///
     /// - Parameters:
     ///   - contour: Contour index (1-based)
-    ///   - edge: The edge in the contour
-    /// - Returns: The law function, or nil if not available
-    public func getLaw(contour: Int, edge: Shape) -> LawFunction? {
+    ///   - edge: An edge the contour holds
+    /// - Returns: The law function, or `nil`
+    ///
+    /// ```swift
+    /// if let law = builder.getLaw(contour: 1, edge: edge) {
+    ///     print(law.value(at: law.bounds.lowerBound))   // 0.5, the radius at the start
+    /// }
+    /// ```
+    public func getLaw(contour: Int, edge: Edge) -> LawFunction? {
         guard let ref = OCCTFilletBuilderGetLaw(handle, Int32(contour), edge.handle) else { return nil }
         return LawFunction(handle: ref)
     }
 
-    /// Set a law function for a fillet edge on a contour.
+    /// Set the radius law on one edge of a contour.
+    ///
+    /// Rejected, returning `false`, in the same four cases as
+    /// ``FilletBuilder/getBounds(contour:edge:)``: no such contour, an edge the contour does not
+    /// hold, no spine split yet, or a constant-radius contour.
+    ///
+    /// The law is what ``FilletBuilder/getLaw(contour:edge:)`` reads back afterwards. It does not
+    /// reach the geometry: measured against the pinned kernel, a `build()` after this call reports
+    /// success and hands back the *unfilleted* input shape
+    /// (`Scripts/repro/505-filletbuilder-edge-type/`), so treat this as editing the builder's
+    /// recorded law rather than as a way to reshape an already-built fillet.
+    ///
     /// - Parameters:
     ///   - contour: Contour index (1-based)
-    ///   - edge: The edge
-    ///   - law: The law function to use
+    ///   - edge: An edge the contour holds
+    ///   - law: The radius law, over the range ``FilletBuilder/getBounds(contour:edge:)`` reports
+    /// - Returns: `true` if the law was set
+    ///
+    /// ```swift
+    /// let bounds = builder.getBounds(contour: 1, edge: edge)!
+    /// let law = LawFunction.linear(from: 4, to: 4, parameterRange: bounds.first...bounds.last)!
+    /// builder.setLaw(contour: 1, edge: edge, law: law)
+    /// builder.getLaw(contour: 1, edge: edge)?.value(at: bounds.first)   // 4.0
+    /// ```
     @discardableResult
     public func setLaw(contour: Int, edge: Edge, law: LawFunction) -> Bool {
         OCCTFilletBuilderSetLaw(handle, Int32(contour), edge.handle, law.handle)
+    }
+
+    /// The `Shape`-typed spelling of ``FilletBuilder/getBounds(contour:edge:)``.
+    ///
+    /// `BRepFilletAPI_MakeFillet::GetBounds` takes a `TopoDS_Edge`, so a `Shape` only ever reached
+    /// it through a downcast, and every caller holding an `Edge` (the type `addEdge`, `removeEdge`,
+    /// `setRadius` and `contour(for:)` all take) had to convert it and back again (#505).
+    @available(*, deprecated, message: "Pass the Edge itself. Convert a Shape with Edge(_:) if that is what you hold.")
+    public func getBounds(contour: Int, edge: Shape) -> (first: Double, last: Double)? {
+        guard let edge = Edge(edge) else { return nil }
+        return getBounds(contour: contour, edge: edge)
+    }
+
+    /// The `Shape`-typed spelling of ``FilletBuilder/getLaw(contour:edge:)``, deprecated for the same
+    /// reason as the `Shape`-typed `getBounds` above it.
+    @available(*, deprecated, message: "Pass the Edge itself. Convert a Shape with Edge(_:) if that is what you hold.")
+    public func getLaw(contour: Int, edge: Shape) -> LawFunction? {
+        guard let edge = Edge(edge) else { return nil }
+        return getLaw(contour: contour, edge: edge)
     }
 
     /// Get shapes generated from an input shape by the fillet operation.

@@ -19701,18 +19701,30 @@ bool OCCTSurfaceBezierSetPoleRowWeights(OCCTSurfaceRef _Nonnull surface, int32_t
 int32_t OCCTDocumentColorToolGetAllColors(OCCTDocumentRef _Nonnull doc,
                                            int64_t* _Nullable * _Nonnull outLabelIds);
 
-// --- FilletBuilder history queries ---
+// --- FilletBuilder radius laws, keyed by contour edge ---
+//
+// These three take an OCCTEdgeRef because the OCCT functions behind them take a const TopoDS_Edge&,
+// and all three resolve that edge the same way. They reject a contour index outside
+// [1, NbContours()] and an edge the named contour does not hold, which OCCT does not; see
+// occtFilletContourHoldsEdge in OCCTBridge_Internal.h for what happens without that (#505).
+//
+// The three below them (Generated/Modified/IsDeleted) take an OCCTShapeRef because their OCCT
+// counterparts take a const TopoDS_Shape&: any sub-shape of the input can be asked about, not just
+// an edge.
 
-/// Get the parameter bounds of a fillet on a contour edge. Returns false if not found.
+/// Get the parameter bounds of the radius law on a contour edge. Returns false in four cases:
+/// contourIndex outside [1, NbContours()], an edge the contour does not hold, a contour whose spine
+/// has not been split yet (before Build or Simulate), or a constant radius, which OCCT represents as
+/// no law rather than a flat one.
 bool OCCTFilletBuilderGetBounds(OCCTFilletBuilderRef _Nonnull builder,
-                                 int32_t contourIndex, OCCTShapeRef _Nonnull edge,
+                                 int32_t contourIndex, OCCTEdgeRef _Nonnull edge,
                                  double* _Nonnull outFirst, double* _Nonnull outLast);
 
-/// Get the law function for a fillet edge on a contour. Returns NULL if not available.
+/// Get the radius law on a contour edge. Returns NULL in the same four cases as GetBounds.
 OCCTLawFunctionRef _Nullable OCCTFilletBuilderGetLaw(OCCTFilletBuilderRef _Nonnull builder,
-                                                      int32_t contourIndex, OCCTShapeRef _Nonnull edge);
+                                                      int32_t contourIndex, OCCTEdgeRef _Nonnull edge);
 
-/// Set a law function for a fillet edge on a contour.
+/// Set the radius law on a contour edge. Returns false in the same four cases as GetBounds.
 bool OCCTFilletBuilderSetLaw(OCCTFilletBuilderRef _Nonnull builder,
                               int32_t contourIndex, OCCTEdgeRef _Nonnull edge,
                               OCCTLawFunctionRef _Nonnull law);

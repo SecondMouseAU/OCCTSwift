@@ -5101,40 +5101,27 @@ struct FilletBuilderCompletionsTests {
 struct FilletBuilderHistoryTests {
 
     @Test("FilletBuilder GetBounds for evolving radius")
-    func getBounds() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let builder = FilletBuilder(shape: box) else { return }
+    func getBoundsForEvolvingRadius() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
-        // Use evolving radius to avoid constant-edge law crash
-        let added = builder.addEdge(edges[0], radius1: 0.5, radius2: 2.0)
-        if added {
-            if let _ = builder.build() {
-                // getBounds takes a Shape, convert edge to shape
-                if let edgeShape = Shape.fromEdge(edges[0]) {
-                    if let bounds = builder.getBounds(contour: 1, edge: edgeShape) {
-                        #expect(bounds.first < bounds.last)
-                    }
-                }
-            }
-        }
+        let edge = try #require(edges.first)
+        // An evolving radius, because a constant one has no law to bound (#505).
+        #expect(builder.addEdge(edge, radius1: 0.5, radius2: 2.0))
+        #expect(builder.build() != nil)
+        let bounds = try #require(builder.getBounds(contour: 1, edge: edge))
+        #expect(bounds.first < bounds.last)
     }
 
     @Test("FilletBuilder GetLaw for evolving radius")
-    func getLaw() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        guard let builder = FilletBuilder(shape: box) else { return }
+    func getLawForEvolvingRadius() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
-        guard !edges.isEmpty else { return }
-        let added = builder.addEdge(edges[0], radius1: 0.5, radius2: 2.0)
-        if added {
-            if let _ = builder.build() {
-                if let edgeShape = Shape.fromEdge(edges[0]) {
-                    let law = builder.getLaw(contour: 1, edge: edgeShape)
-                    #expect(law != nil)
-                }
-            }
-        }
+        let edge = try #require(edges.first)
+        #expect(builder.addEdge(edge, radius1: 0.5, radius2: 2.0))
+        #expect(builder.build() != nil)
+        #expect(builder.getLaw(contour: 1, edge: edge) != nil)
     }
 
     @Test("FilletBuilder Generated from edge")
