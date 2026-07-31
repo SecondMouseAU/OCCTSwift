@@ -1598,6 +1598,157 @@ their truncation contract again. This is the same defect and the same fix as
 unmodified bridge first: the count-agreement test failed at 100 versus 150, which is the property
 the truncation broke.
 
+### `OCCT.xcframework` rebuilt: the #484 null-context guard is now in the kernel binary (#512)
+
+A carried patch does nothing until the xcframework is rebuilt from source, so `0017` above was inert
+on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **19** carried patches:
+`ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and
+`ShapeUpgrade_WireDivide::Perform()` no longer SIGSEGV when the caller never set a
+`ShapeBuild_ReShape` context.
+
+**No API change and no behaviour change through this wrapper.** Both bridge call sites already set a
+context, so nothing here could reach the crash before or after; those workarounds stay in place, and
+retiring them is a later follow-up (the same PR1→PR2 pattern as #298/#341/#344/#349). What the
+rebuild buys is closing the crash for code that reaches those OCCT classes through a path this
+package does not control.
+
+Verified against the rebuilt binary with **no** override-linked TUs. The earlier #484 evidence was
+all override-linked, which proves the patch compiles and works, not that it shipped. Both `ctx=NO`
+cases in `repro_484_crash.mm` complete where they were killed by SIGSEGV before, and all four
+`ctx=yes` fingerprints in `repro_484_equivalence.mm` are unchanged (now recorded as reference values
+in [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/484-null-reshape-context)).
+Full `swift test`: 4842 tests in 1346 suites, clean. `0017` itself needs no ThreadSanitizer gate,
+being a null-handle guard on a single-threaded path, but the gate did run for the `0016` redesign
+below, which ships in the same rebuild.
+
+`Package.swift`'s remote `url:`/`checksum:` pin and the kernel-patch list on the `## Current:` line
+above are the **release commit's** job, not this change's: until then a consumer resolving the remote
+URL still gets the previously released kernel, while this checkout and every sibling repo
+path-depending on its `Libraries/OCCT.xcframework` get the new one. `docs/guides/building-occt.md`
+gained a "Shipping a rebuild" section covering that sequence, which until now existed only as
+hand-written checklists in issues. Patch `0016` (#374) also gained the
+`Scripts/patches/README.md` entry it never got. The rebuild carries `0018` (#555) and `0019` (#522)
+as well, both added after this entry was first written.
+
+### `Storage_Schema`'s scratch state becomes a member instead of a guarded global (#518)
+
+Patch `0016` (#374) fixed two kernel races: `Resource_Manager::Debug` became `std::atomic<bool>`, and
+`Storage_Schema::ICurrentData()`, a function-local `static Handle(Storage_Data)` shared by every
+`Storage_Schema` in the process, was guarded by a new recursive mutex held across `Write()` and every
+internal accessor. Reviewing our upstream PR
+[OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399#issuecomment-5112586065), maintainer
+gkv311 pointed out the second half should not need a lock at all: the handle can just be a
+`mutable Handle(Storage_Data)` field on the class.
+
+That holds up. **Every** `Storage_Schema` in the kernel is constructed locally by its caller and used
+only there (`PCDM_StorageDriver::Write`, and `PCDM_ReadWriter_1` at three sites); none is cached or
+shared, and `Storage_CallBack::Add`/`Write`/`Read` all take the driving schema as an argument, so
+every callback re-entry lands back on the same instance. The state was per-instance data
+masquerading as a global. `0016` now deletes the static and the mutex in favour of the field, and
+also drops the `static` from `AddPersistent()`'s `TCollection_AsciiString aTypeName` scratch
+variable, a smaller hazard in the same class that the mutex had covered incidentally. Both
+`ICurrentData()` and `ISetCurrentData()` were private with no callers outside the class, so nothing
+observable changes.
+
+Same correction, and the same lesson, as #341 to #363: a lock is the right tool only when the state
+is genuinely one shared resource. It is also strictly stronger on the failure #374 reported, since a
+throwaway schema built during an unrelated `Open()` can no longer reach an in-flight `Write()`'s data
+at all, where the mutex only stopped it from being a data race.
+
+No OCCTSwift API or behaviour change, and the patch number stays `0016` (a corrected design, not a
+new fix), renamed to `...-Storage_Schema-per-instance-374.patch`. Verified with the same #374
+ThreadSanitizer harness the mutex version was verified against: 0 races and 0 save/load/verify
+failures at 8×50, 8×30 and 10×60, plus the full `Scripts/tsan-stress.sh run` gate (10 scenarios)
+clean. Ships in the same rebuild as #512 above. OCCT#1399 has since been updated to this design and
+is green on all 17 upstream CI jobs.
+
+### Two `GCPnts` point-count defects patched in the kernel (#555)
+
+New carried patch `0018`, in the arc-length samplers behind `Curve3D.quasiUniformParameters(count:)`,
+`Curve3D.drawUniform(pointCount:)`, `Curve2D.drawUniform(pointCount:)`, `Shape.uniformAbscissa` and
+the `sampleUniform(count:)` family.
+
+**`NbPoints()` was not bounded by the requested count.** `GCPnts_UniformAbscissa` sizes its parameter
+array at `theNbPoints + 5` and walks until it reaches the end parameter or runs out of room, so a
+caller sizing its own buffer from the request could be handed more points than it asked for.
+`GCPnts_QuasiUniformAbscissa` inherited this for every curve that is neither Bezier nor BSpline. The
+cause is a tolerance mismatch: the walk terminates on a parametric epsilon derived from the curve's
+*largest* derivative, which on an ellipse with major radius 1e6 and minor radius 1e-3 is about nine
+orders of magnitude too tight at the end, so the walk stops 1.557e-08 short, takes one more step and
+appends what is measurably a duplicate point (1.175e-10 away in 3D). `Perform` now also accepts a
+point that coincides with the end in 3D within the caller's tolerance. Clamping the count instead
+would have dropped the exact end parameter and left the distribution stopping short of the curve.
+
+**A point count below 2 stored out of bounds.** Both classes document `theNbPoints >= 2` and enforce
+it with `Standard_ConstructionError_Raise_if`, which compiles to nothing in the shipped Release
+kernel (#487). `GCPnts_QuasiUniformAbscissa`'s Bezier/BSpline branch then allocated an empty array
+and unconditionally stored into index 1 of it: an uncatchable SIGSEGV, the same class as #263, #310,
+#317 and #318. Both classes now leave the object not done for such a count, so a request for zero
+points is answered with nothing rather than with a crash or with five parameters.
+
+`Shape.uniformAbscissa(pointCount:)` and friends already rejected degenerate counts bridge-side after
+#501, and the buffer overflow was closed there too, so **no OCCTSwift API changes behaviour here**.
+What the patch buys is closing both for code that reaches those OCCT classes through a path this
+package does not control.
+
+Measured across 17 curve types and counts 2 to 200 (6766 configurations): **232 lines change and they
+are exactly the 232 that were over-requesting**, every other line byte-identical, and the last
+parameter still exactly the end on the changed ones. Reproducers, including the trap that a repro
+built without `-DNo_Exception` measures a kernel nobody ships:
+[`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract).
+Filed upstream as [OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417).
+
+### Surface approximation at C0 stops collapsing, and its reported error starts being true (#522)
+
+New carried patch `0019`, behind `Surface.approximated(tolerance:continuity:)` and
+`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:)` — and behind a good deal of the OCCT
+kernel besides.
+
+A radius-10 sphere approximated at C0 and tolerance 1e-3 came back as a **degree-1, 2-pole-in-U
+B-spline**: a straight line across the full `2*pi` of its longitude, deviating by the sphere's own
+diameter of 20, while `isDone` said the tolerance was met and `maxError` said 1.07e-4. A bicubic
+Bezier at C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15 at every tolerance from 1e-1 down
+to 1e-7 — tightening the request changed nothing.
+
+One line in `AdvApp2Var_ApproxF2var::mma2ce1_` explains both. It partitions a single scratch
+allocation into seven buffers, `ipt4` for `XMAXJU` (the maxima of the U Jacobi polynomials) and
+`ipt5` for `XMAXJV`, then fills **both from `ipt5`**, leaving `XMAXJU` unwritten and in practice
+zero. Every truncation error the approximator computes is
+`|coefficient| * XMAXJU(i) * XMAXJV(j)`, so a zero `XMAXJU` makes the interior error of every patch
+evaluate to exactly 0. From there: the tolerance test can never fire on the interior, `maxError`
+only ever describes the boundary iso-curves, and the degree-reduction search — asked for the lowest
+degree whose truncation error still fits — always answers with its floor, because every candidate
+scores 0. C0 is where that floor is low (a full sphere's V-boundary isos are its two poles, one
+coefficient each), which is why C0 collapsed and C1/C2 did not. The misreported error was never
+specific to C0.
+
+Across a 98-case sweep (7 surface families x all 9 (uContinuity, vContinuity) combinations of
+C0/C1/C2, plus C0/C0 at five tolerances), results whose real deviation exceeds the reported
+`maxError` by more than 10x go from **12 to 0**, and those exceeding it at all from 17 to 1 — the
+survivor a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Every
+reported error rises slightly, which is the interior contribution being counted for the first time.
+Degrees rise only where the collapse was happening: a cylinder trimmed in V still fits at degree 1 in
+V, because it *is* linear there.
+
+`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`,
+`ShapeCustom_BSplineRestriction`, `ShapeConstruct` and `GeomConvert_1` all call it,
+`ShapeCustom_ConvertToBSpline` and `ShapeUpgrade_UnifySameDomain` reach it, and
+`GeomPlate_MakeApprox` drives the same approximator directly. Most request C1 or C2, so the collapse
+could not reach them, but the always-zero interior error could — and the healing paths reach C0 on
+purpose: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the
+requested continuity down to 0 on failure, then accept the result on `MaxError() <= tol`, and
+`ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface
+(`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. The two remaining
+mentions of the class, `BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712`, are both inside
+comment blocks and are not callers. Follow-ups filed for what this means per consumer.
+
+`Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift`'s `maxErrorDescribesTheSharedFit`
+had to exclude `.c0` requests when it was written, because "sampled deviation <= reported maxError"
+failed there on OCCT's own numbers. That exclusion is gone. Reproducers, the root-cause walkthrough
+and the before/after sweep transcripts:
+[`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse).
+Filed upstream as [OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418).
+
 ---
 
 ## Release History

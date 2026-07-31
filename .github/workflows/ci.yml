@@ -1,10 +1,11 @@
 name: CI
 
-# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source (that's
-# kernel-rebuild.yml's job, ~30-60 min) — a clean checkout has no local Libraries/, so
+# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source (that is a manual
+# local `Scripts/build-occt.sh` run, ~30-60 min, done only when a carried patch in
+# Scripts/patches/ needs to reach the shipped binary). A clean checkout has no local Libraries/, so
 # Package.swift's binaryTarget resolves OCCT.xcframework from its pinned release URL and
 # verifies the checksum, which only costs a download. OCCTBridge compiles from source by
-# default (no OCCTSWIFT_BRIDGE_PREBUILT set) — that's the repo's own intended default, see
+# default (no OCCTSWIFT_BRIDGE_PREBUILT set), which is the repo's own intended default, see
 # the comment above `useBridgePrebuilt` in Package.swift, and it's a couple of minutes, not
 # tens of minutes.
 

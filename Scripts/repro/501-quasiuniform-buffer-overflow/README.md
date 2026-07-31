@@ -122,6 +122,12 @@ Before: 48 overflowing calls (16 counts x 3 functions), plus `OCCTGCPntsQuasiUni
 last parameter short of the edge's end on all 16.
 After: `PASS: 0 overflowing calls`, and the end parameter kept everywhere.
 
+Those "before" numbers need a kernel without `Scripts/patches/0018` to reproduce. That patch
+([#555](https://github.com/SecondMouseAU/OCCTSwift/issues/555)) fixes the sampler itself, so on the
+current xcframework `NbPoints()` never exceeds the request and the bridge guards described here have
+nothing left to clamp. They stay in place regardless: they are what makes the bridge correct against
+any kernel, including one built from unpatched OCCT.
+
 ## Not examined
 
 `OCCTUniformAbscissaByDistance` / `OCCTUniformAbscissaByDistanceRange` take an arc-length step rather
