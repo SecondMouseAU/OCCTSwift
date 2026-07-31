@@ -82,8 +82,8 @@ Same collision, one type down: a straight edge's curvature and a fully degenerat
 one are both the double `0`. The cusp is the one case a bare double *does* distinguish, because OCCT
 gives it its own sentinel.
 
-Six entry points share this shape and keep it after #583, filed as its own follow-up rather than
-folded in here, because each is a separate public type with its own break surface:
+Six entry points share this shape and keep it after #583, filed as #595 rather than folded in here,
+because each is a separate public type with its own break surface:
 
 | Swift | bridge | gate |
 |---|---|---|

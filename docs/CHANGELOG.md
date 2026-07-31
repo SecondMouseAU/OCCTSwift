@@ -594,7 +594,7 @@ comes back as a successful `0`) fails 2 tests, and making the `catch` unreportab
 `Shape` comes back as a successful `0`) fails 1. Seventeen and eighteen tests respectively are
 controls and pass under both.
 
-**Not changed, and filed as its own follow-up.** Six entry points on other types keep the same bare
+**Not changed, and filed as #595.** Six entry points on other types keep the same bare
 double: `Curve3D.curvature(at:)`, `Curve3D.localCurvature(at:)`, `Curve2D.curvature(at:)`,
 `Shape.edgeCurvatureLP(at:)`, `Surface.gaussianCurvature(atU:v:)` and `Surface.meanCurvature(atU:v:)`.
 The last two disagree with both `Face.gaussianCurvature(atU:v:)`/`meanCurvature(atU:v:)` and with
