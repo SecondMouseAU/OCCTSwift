@@ -4056,9 +4056,22 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert BSpline surfaces to their closest analytical form
+    /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// Attempts to convert BSpline surfaces to planes, cylinders, cones, spheres, or tori.
+    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
+    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
+    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
+    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    ///
+    /// Continuity is fixed at C1 here; use
+    /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
+    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
+    ///
+    /// ```swift
+    /// let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001)
+    /// ```
     ///
     /// - Parameters:
     ///   - surfaceTolerance: Tolerance for surface approximation (default: 0.01)
@@ -8174,7 +8187,10 @@ extension Shape {
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum.
+    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
+    ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
+    ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
+    ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
@@ -13138,7 +13154,9 @@ extension Shape {
     /// - Parameters:
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has.
+    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
+    ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(_ shape: Shape,

@@ -2247,8 +2247,12 @@ public func bsplineRestriction(
   - `tol2d` — 2D approximation tolerance.
   - `maxDegree` — Maximum BSpline degree.
   - `maxSegments` — Maximum number of segments.
-  - `continuity3d` — 3D continuity requirement.
-  - `continuity2d` — 2D continuity requirement.
+  - `continuity3d` — 3D continuity **ceiling**, not a guarantee. `.c3` is rejected outright and
+    fails the whole call, so `.c2` is the practical maximum; below that, OCCT reduces the continuity
+    it delivers with no diagnostic whenever the requested one cannot meet `tol3d` within `maxDegree`,
+    and with `degreePriority` it degrades all the way to C0. Measured in #570, a face on an offset
+    sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
+  - `continuity2d` — 2D continuity requirement, same ceiling and same `.c3` limit.
   - `degreePriority` — If `true`, prioritize degree reduction over segment reduction.
   - `rational` — Allow rational BSplines.
 - **Returns:** Simplified shape, or `nil` on failure.
