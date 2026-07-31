@@ -6190,7 +6190,8 @@ struct AdaptorLocalPropsParityTests {
                 continue
             }
             // Non-zero is what makes this discriminating: the adaptor family reports 0 both for
-            // "flat here" and for "undefined here", so a zero expectation would pass pre-fix too.
+            // "flat here" and for "undefined here" (#583), so a zero expectation would pass pre-fix
+            // too.
             #expect(mean != 0, label)
             expectClose(shape.faceLPropMeanCurvature(u: 0, v: v), mean, label)
             expectClose(shape.faceLPropGaussianCurvature(u: 0, v: v), gaussian, label)
@@ -6227,7 +6228,8 @@ struct AdaptorLocalPropsParityTests {
                 for (u, v) in [(0.3, 0.2), (1.1, -0.4), (2.0, 0.9)] {
                     let label: Comment = "\(name) u=\(u) v=\(v)"
                     let mean = face.meanCurvature(atU: u, v: v)
-                    // Definedness has to match; the adaptor family spells "undefined" as 0.
+                    // Definedness has to match; the adaptor family spells "undefined" as 0, so this
+                    // half can only be asserted one way until #583 makes it optional.
                     if let mean {
                         expectClose(faceShape.faceLPropMeanCurvature(u: u, v: v), mean, label)
                     }

@@ -492,8 +492,8 @@ Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
 
 **Noticed, not fixed.** The face-side curvature getters (`faceLPropMaxCurvature` and its four
 siblings) still spell "undefined" as `0`, where the `Face` counterparts return `nil` — the
-silent-zero class #486 and #494 have both hit, and a wider change than a resolution. Filed rather
-than folded in.
+silent-zero class #486 and #494 have both hit, and five more source-breaking signatures on top of
+the four here. Filed as #583 rather than folded in.
 
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
