@@ -1730,13 +1730,17 @@ reported error rises slightly, which is the interior contribution being counted 
 Degrees rise only where the collapse was happening: a cylinder trimmed in V still fits at degree 1 in
 V, because it *is* linear there.
 
-`GeomConvert_ApproxSurface` is not a leaf. `BRepFill_Sweep`, `GeomFill_Sweep`, `BRepOffset_Offset`,
-`GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeCustom_ConvertToBSpline`, `ShapeConstruct`,
-`ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` all call it, and `GeomPlate_MakeApprox` drives the
-same approximator directly. Most request C1 or C2, so the collapse could not reach them, but the
-always-zero interior error could — and two healing paths reach C0 on purpose:
-`ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the
-requested continuity down to 0 on failure, then accept the result on `MaxError() <= tol`.
+`GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`,
+`ShapeCustom_BSplineRestriction`, `ShapeConstruct` and `GeomConvert_1` all call it,
+`ShapeCustom_ConvertToBSpline` and `ShapeUpgrade_UnifySameDomain` reach it, and
+`GeomPlate_MakeApprox` drives the same approximator directly. Most request C1 or C2, so the collapse
+could not reach them, but the always-zero interior error could — and the healing paths reach C0 on
+purpose: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the
+requested continuity down to 0 on failure, then accept the result on `MaxError() <= tol`, and
+`ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface
+(`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. The two remaining
+mentions of the class, `BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712`, are both inside
+comment blocks and are not callers. Follow-ups filed for what this means per consumer.
 
 `Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift`'s `maxErrorDescribesTheSharedFit`
 had to exclude `.c0` requests when it was written, because "sampled deviation <= reported maxError"

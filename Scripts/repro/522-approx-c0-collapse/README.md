@@ -173,14 +173,40 @@ away the poles gives the V-boundary isos real content and raises `NDMINU` out of
 
 ## Blast radius inside the kernel
 
-`GeomConvert_ApproxSurface` is not a leaf: `BRepFill_Sweep`, `GeomFill_Sweep`, `BRepOffset_Offset`,
-`GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeCustom_ConvertToBSpline`, `ShapeConstruct`,
-`ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` all call it, and `GeomPlate_MakeApprox` drives
-`AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen — but the
-always-zero interior error affected all of them, and two healing paths reach C0 on purpose:
-`ShapeConstruct::ConvertSurfaceToBSpline` loops the requested continuity down to 0 on failure, and
-`ShapeCustom_BSplineRestriction` degrades it the same way. Both then decide whether to accept the
-result with `anApprox.MaxError() <= tol`, i.e. against the number that could not be exceeded.
+`GeomConvert_ApproxSurface` is not a leaf. Live construction sites, with the `PrecisCode` each
+passes:
+
+| site | `PrecisCode` | continuity requested |
+|---|---|---|
+| `GeomFill_Sweep.cxx:296` | 1 | caller's |
+| `BRepOffset_Offset.cxx:1626` | 1 | caller's `Conti` |
+| `ShapeCustom_BSplineRestriction.cxx:852` | 0 | caller's, **degraded on failure** |
+| `ShapeConstruct.cxx:265` | 0 | caller's, **looped down to 0 on failure** |
+| `ShapeUpgrade_UnifySameDomain.cxx:3629` | 1 | caller's |
+| `GeomLib.cxx:1517` | caller's | caller's |
+| `GeomConvert_1.cxx:786`, `:960` | 1 | caller's |
+
+`GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly rather than through
+`GeomConvert_ApproxSurface`, defaulting to `GeomAbs_C1`, so it took the always-zero interior error
+without being on this list at all.
+
+Most of these pass C1 or C2, where the collapse cannot happen — but the always-zero interior error
+affected all of them. The healing paths reach C0 on purpose: `ShapeConstruct::ConvertSurfaceToBSpline`
+loops the requested continuity down to 0 on failure and `ShapeCustom_BSplineRestriction` degrades it
+the same way, both then deciding whether to accept the result with `anApprox.MaxError() <= tol`, i.e.
+against the number that could not be exceeded. `ShapeCustom_ConvertToBSpline` does not construct one
+itself: it calls `ShapeConstruct::ConvertSurfaceToBSpline`, and **forces `cnt = GeomAbs_C0` for any
+offset surface** (`ShapeCustom_ConvertToBSpline.cxx:148`, a 1999 workaround for a hang), so that path
+started at the collapsing continuity rather than degrading into it.
+
+**Two mentions are not callers.** `BRepFill_Sweep.cxx:1162` sits inside a `/* */` block spanning
+`:1064`-`:1179`, and `BRepFill_Filling.cxx:712` is a `//`-commented line. A filename-level grep counts
+both; neither is compiled. `Sources/OCCTBridge/src/OCCTBridge_Surface.mm`'s `PrecisCode` census cites
+the `BRepFill_Sweep` one as a live site (#573).
+
+What each consumer inherited is tracked separately: #570 (the healing paths that decide on
+`MaxError() <= tol`, including the forced-C0 offset-surface branch), #571 (`GeomPlate_MakeApprox`)
+and #572 (the C1/C2 consumers).
 
 ## Interaction with #491
 
