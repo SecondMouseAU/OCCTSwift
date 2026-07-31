@@ -4,8 +4,8 @@ import OCCTBridge
 /// A single `Edge` as an **arc-length-parameterized** curve (`BRepAdaptor_Curve`).
 ///
 /// `Edge` already offers `point(at parameter:)` / `tangent(at parameter:)` in the edge's
-/// *native* parameter space; `EdgeCurve` adds the arc-length side — `length`,
-/// `point(atAbscissa:)`, evenly-spaced sampling — matching ``WireCurve`` for a single edge. (#211/#212)
+/// *native* parameter space; `EdgeCurve` adds the arc-length side (`length`,
+/// `point(atAbscissa:)`, evenly-spaced sampling), matching ``WireCurve`` for a single edge. (#211/#212)
 ///
 /// The arc-length composition (`point`/`tangent(atAbscissa:)`, `points(spacing:)`) is shared with
 /// ``WireCurve`` via ``ArcLengthCurveAdaptor``; see that protocol for the underlying primitives.
@@ -58,14 +58,21 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
         return u
     }
 
-    /// `count` points spaced equally by arc length along the edge (`count >= 2`), endpoints included.
+    /// `count` points spaced equally by arc length along the edge, endpoints included.
+    ///
+    /// - Parameter count: Sample count, honoured within `2...`
+    ///   ``ArcLengthCurveAdaptor/maximumSampleCount``; outside that range the result is empty
+    ///   (#479). Buffer allocation and the count contract are shared with ``WireCurve``.
+    ///
+    /// ```swift
+    /// let ec = EdgeCurve(edge)!
+    /// let pts = ec.points(count: 11)                     // 11 points, endpoints included
+    /// ec.points(count: EdgeCurve.maximumSampleCount + 1).isEmpty   // true
+    /// ```
     public func points(count: Int) -> [SIMD3<Double>] {
-        guard count >= 2 else { return [] }
-        var buf = [Double](repeating: 0, count: count * 3)
-        let n = Int(OCCTEdgeCurveSampleUniform(ref, Int32(count), &buf))
-        return (0..<n).map { SIMD3(buf[$0 * 3], buf[$0 * 3 + 1], buf[$0 * 3 + 2]) }
+        sampledPoints(count: count) { n, buf in OCCTEdgeCurveSampleUniform(ref, n, buf) }
     }
 
     // point(atAbscissa:), tangent(atAbscissa:), points(spacing:) are supplied by the
-    // ArcLengthCurveAdaptor extension — see that protocol.
+    // ArcLengthCurveAdaptor extension: see that protocol.
 }

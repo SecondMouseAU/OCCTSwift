@@ -270,6 +270,50 @@ one-family drift fails the parity suite, while a defect inside the shared `build
 families identically and leaves the parity suite entirely green, failing only the geometry suite.
 A parity assertion stops being evidence the moment the thing it compares becomes shared.
 
+#### Fix: arc-length sampling aborted the process on a sample count it could not allocate (#479)
+
+`EdgeCurve`/`WireCurve` `points(spacing:)` derived its sample count from the caller's spacing with a
+lower clamp only, `max(2, Int((length / spacing).rounded()) + 1)`, and `points(count:)` then
+allocated `count * 3` doubles from it. Neither end of that had an upper bound, and both failure
+modes are a process abort rather than an empty array or a clamped result. Measured on a 200-unit
+wire, one case per process:
+
+| call | before |
+|---|---|
+| `points(spacing: 1e-9)` | count 2e11 + 1, i.e. a ~4.8 TB allocation |
+| `points(spacing: 1e-18)` | `Fatal error: Double value cannot be converted to Int because the result would be greater than Int.max` |
+| `points(spacing: 5e-324)` | same trap |
+| `points(count: Int(Int32.max) + 1)` | trap: `Int32(count)` overflows the bridge's own count type |
+| `points(count: Int.max)` | trap: `count * 3` overflows |
+
+The last two need no spacing at all, so the bound belongs on `points(count:)`, where the allocation
+is, and `points(spacing:)` has to derive its count without ever converting an out-of-range `Double`.
+Both are now bounded by **`ArcLengthCurveAdaptor.maximumSampleCount`, 10 million points**, declared
+once and shared by both types; the derivation stays in `Double` until it is known to be in range.
+Anything past the ceiling returns an empty array, matching what `spacing <= 0`, a NaN spacing, a
+zero-length curve and `count < 2` already did. There is deliberately no clamping: a request the
+ceiling cannot honour fails visibly rather than coming back silently coarser than what was asked
+for, which is the defect #501 found in the one sampler that did clamp.
+
+The ceiling is a bound on the allocation, not on what is useful (one sample costs 24 bytes in the
+packed bridge buffer plus 32 in the returned array), and it is honoured exactly, not aspirational:
+at the ceiling, 10,000,000 points come back in 46 s at 624 MB resident, and 10,000,001 returns
+empty. It is also two orders of magnitude below the `int32_t` the bridge takes its count in.
+
+The hazard was pre-existing and duplicated: `EdgeCurve` and `WireCurve` each had their own copy of
+the body until #422 moved it verbatim into the shared extension. Both `points(count:)`
+implementations now delegate their allocation, count contract and unpacking to one
+`sampledPoints(count:_:)` skeleton, which also brings them onto `unpackSIMD3` (#419), the two sites
+the shared unpack helper had never reached.
+
+**The same shape is live at fourteen other sampling entry points** across `Curve3D`, `Curve2D`,
+`Edge`, `Surface`, `Shape` and `BRepGraph`: every one of them traps at `Int(Int32.max) + 1`, and the
+eight `Curve2D`/`Curve3D` ones trap on a *negative* count too, inside `[Double](repeating:count:)`
+itself, despite documenting "must be at least 2, else empty". Measured one case per process, not
+assumed. Filed as #558 rather than widened into this fix: `maxPoints` on an adaptive algorithm is a
+capacity rather than a request, and `uSamples`/`vSamples` bound a product, so those need a contract
+decision per parameter rather than this one's ceiling applied uniformly.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each
