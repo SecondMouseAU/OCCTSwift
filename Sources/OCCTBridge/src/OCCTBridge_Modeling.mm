@@ -5830,30 +5830,31 @@ OCCTShapeRef _Nullable OCCTBOPAlgoSection(const OCCTShapeRef _Nonnull * _Nonnull
 // MARK: - Law_BSplineKnotSplitting + Law_Composite (v0.68)
 // --- Law_BSplineKnotSplitting ---
 
+// #481: reports the true split count even when maxIndices truncated the write, and fails
+// with -1, matching OCCTLawBSplineKnotSplitParams below in both respects. The two wrap the
+// same analyzer over the same law, so a caller pairing them must be able to size a retry off
+// either one. Returning the written count instead capped LawFunction.knotSplitting at its
+// caller's first-pass buffer with nothing to signal that anything had been dropped.
 int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef law,
     int32_t continuityOrder,
     int32_t* outIndices, int32_t maxIndices)
 {
+    if (!law || !outIndices || maxIndices <= 0) return -1;
     try {
         auto* wrapper = reinterpret_cast<OCCTLawFunction*>(law);
         // The law must be a BSpline-based law (Law_BSpFunc or similar)
         Handle(Law_BSpFunc) bspFunc = Handle(Law_BSpFunc)::DownCast(wrapper->law);
-        if (bspFunc.IsNull()) return 0;
+        if (bspFunc.IsNull()) return -1;
 
         Handle(Law_BSpline) bspl = bspFunc->Curve();
-        if (bspl.IsNull()) return 0;
+        if (bspl.IsNull()) return -1;
 
         Law_BSplineKnotSplitting splitter(bspl, continuityOrder);
-        int nb = splitter.NbSplits();
-        int count = std::min((int)maxIndices, nb);
-        NCollection_Array1<int> splits(1, nb);
-        splitter.Splitting(splits);
-        for (int i = 0; i < count; i++) {
-            outIndices[i] = (int32_t)splits(i + 1);
-        }
-        return (int32_t)count;
+        return occtWriteKnotSplits<int32_t>(splitter.NbSplits(),
+            [&](int32_t i) { return (int32_t)splitter.SplitValue(i); },
+            outIndices, maxIndices);
     } catch (...) {
-        return 0;
+        return -1;
     }
 }
 
