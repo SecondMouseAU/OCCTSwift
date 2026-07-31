@@ -844,7 +844,12 @@ extension Curve3D {
     /// let breaks = bspline.continuityBreaks(minContinuity: .c3)  // + interior knots
     /// ```
     ///
-    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc
+    /// - Parameter minContinuity: Minimum continuity to require of each resulting arc. This is a
+    ///   derivative order, and `GeomConvert_BSplineCurveKnotSplitting` splits a knot only when
+    ///   `degree - multiplicity < minContinuity`, so the meaningful range is 0...degree and it
+    ///   saturates there. On a degree-4-or-higher curve ``ParametricContinuity/c3`` is the
+    ///   strictest question this vocabulary can ask; `toBezierSegments()` is the dedicated API
+    ///   for the every-knot split at the far end of that ladder (#480).
     /// - Returns: Split parameters in ascending order, bounded by the curve's end knots, or
     ///   nil if the curve is not a BSpline
     public func continuityBreaks(minContinuity: ParametricContinuity = .c1) -> [Double]? {

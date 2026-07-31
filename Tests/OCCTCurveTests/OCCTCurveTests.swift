@@ -2068,7 +2068,7 @@ struct LawCompositeTests {
             knots: [0.0, 0.5, 1.0],
             multiplicities: [4, 2, 4],
             degree: 3) else { return }
-        let splits = law.knotSplitting(continuityOrder: 2)
+        let splits = law.knotSplitting(continuityOrder: .c2)
         #expect(splits.count >= 2)
     }
 }

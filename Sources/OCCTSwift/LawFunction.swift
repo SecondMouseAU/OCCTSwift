@@ -127,15 +127,19 @@ public final class LawFunction: @unchecked Sendable {
     /// `knotSplitParameters(continuityOrder:)` for the actual parameter values (#403).
     ///
     /// ```swift
-    /// let indices = law.knotSplitting(continuityOrder: 2)
-    /// let params  = law.knotSplitParameters(continuityOrder: 2)
+    /// let indices = law.knotSplitting(continuityOrder: .c2)
+    /// let params  = law.knotSplitParameters(continuityOrder: .c2)
     /// // Same analyzer over the same law: indices[i] is the knot-table index of params[i],
     /// // so the two always agree on count, however many splits the law has (#481).
     /// ```
     ///
-    /// - Parameter continuityOrder: Continuity level (0=C0, 1=C1, 2=C2)
+    /// - Parameter continuityOrder: Minimum continuity to require of each arc. This is a
+    ///   derivative order, and `Law_BSplineKnotSplitting` splits a knot only when
+    ///   `degree - multiplicity < continuityOrder`, so the meaningful range is 0...degree and it
+    ///   saturates there: a cubic law with simple interior knots is already C2 at every
+    ///   interior knot, and only ``ParametricContinuity/c3`` reports them (#480).
     /// - Returns: Array of knot indices where continuity breaks, or empty array
-    public func knotSplitting(continuityOrder: Int = 2) -> [Int] {
+    public func knotSplitting(continuityOrder: ParametricContinuity = .c1) -> [Int] {
         // Same retry-on-truncation pattern as knotSplitParameters below: the bridge always
         // reports the true split count even when it writes fewer, so one retry sized to
         // that count is always enough. #481: this used to keep whatever fitted in a fixed
@@ -143,7 +147,7 @@ public final class LawFunction: @unchecked Sendable {
         // disagreed with its sibling about how many splits the law has.
         func read(capacity: Int32) -> (count: Int32, indices: [Int32]) {
             var indices = [Int32](repeating: 0, count: Int(capacity))
-            let count = OCCTLawBSplineKnotSplitting(handle, Int32(continuityOrder), &indices, capacity)
+            let count = OCCTLawBSplineKnotSplitting(handle, continuityOrder.rawValue, &indices, capacity)
             return (count, indices)
         }
 
@@ -166,19 +170,22 @@ public final class LawFunction: @unchecked Sendable {
     /// fields in #403: same "cheap to compute, previously dropped" gap.
     ///
     /// ```swift
-    /// let breaks = law.knotSplitParameters(continuityOrder: 2)
+    /// // A cubic law with simple interior knots is already C2 there, so .c3 is the order
+    /// // that reports its interior knots; anything below returns just the two end knots.
+    /// let breaks = law.knotSplitParameters(continuityOrder: .c3)
     /// // breaks are real parameters within law.bounds, usable e.g. as sweep split points
     /// ```
     ///
-    /// - Parameter continuityOrder: Continuity level (0=C0, 1=C1, 2=C2)
+    /// - Parameter continuityOrder: Minimum continuity to require of each arc, same derivative
+    ///   order contract as `knotSplitting(continuityOrder:)` (#480)
     /// - Returns: Split parameters in ascending order, or empty array if not a BSpline-based law
-    public func knotSplitParameters(continuityOrder: Int = 2) -> [Double] {
+    public func knotSplitParameters(continuityOrder: ParametricContinuity = .c1) -> [Double] {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split count even when it writes fewer, so one retry sized to
         // that count is always enough.
         func read(capacity: Int32) -> (count: Int32, params: [Double]) {
             var params = [Double](repeating: 0, count: Int(capacity))
-            let count = OCCTLawBSplineKnotSplitParams(handle, Int32(continuityOrder), &params, capacity)
+            let count = OCCTLawBSplineKnotSplitParams(handle, continuityOrder.rawValue, &params, capacity)
             return (count, params)
         }
 

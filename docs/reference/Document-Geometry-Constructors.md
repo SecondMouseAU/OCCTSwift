@@ -196,56 +196,67 @@ public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) ->
 
 Extensions on `Surface` wrapping `GeomConvert_BSplineSurfaceKnotSplitting`.
 
+`continuity` throughout this section and the next is a `ParametricContinuity` read as a *derivative
+order*: a knot splits only when `degree - multiplicity < continuity`, so the meaningful range is
+`0...degree` and it saturates there. A cubic with simple interior knots is already C2 at every
+interior knot, which means `.c0`, `.c1` and `.c2` all report just the two bracketing knots and
+`.c3` is the order that reports the interior ones (#480). These five entry points drive the same
+two analyzers as [`Surface.knotSplitting`](Surface-Advanced.md) and
+[`Curve2D.splitIndicesAtDiscontinuities`](Curve2D.md), differing only in what they return.
+
 ### `Surface.bsplineKnotSplitsU(continuity:)`
 
-Number of U-direction knot split points required to achieve the specified continuity.
+Number of U-direction knot split points required to achieve the specified continuity. Same count
+as `knotSplitting(uContinuity:vContinuity:)`'s `uSplitCount`.
 
 ```swift
-public func bsplineKnotSplitsU(continuity: Int) -> Int
+public func bsplineKnotSplitsU(continuity: ParametricContinuity) -> Int
 ```
 
-- **Parameters:** `continuity` — desired continuity order (0 = C0, 1 = C1, …).
+- **Parameters:** `continuity`: minimum continuity to require of each U patch.
 - **Returns:** Count of U split indices.
 - **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbUSplits`
 - **Example:**
   ```swift
-  let n = bsplineSurf.bsplineKnotSplitsU(continuity: 1)
+  let n = bsplineSurf.bsplineKnotSplitsU(continuity: .c3)
   ```
 
 ---
 
 ### `Surface.bsplineKnotSplitsV(continuity:)`
 
-Number of V-direction knot split points required to achieve the specified continuity.
+Number of V-direction knot split points required to achieve the specified continuity. Same count
+as `knotSplitting(uContinuity:vContinuity:)`'s `vSplitCount`.
 
 ```swift
-public func bsplineKnotSplitsV(continuity: Int) -> Int
+public func bsplineKnotSplitsV(continuity: ParametricContinuity) -> Int
 ```
 
-- **Parameters:** `continuity` — desired continuity order.
+- **Parameters:** `continuity`: minimum continuity to require of each V patch.
 - **Returns:** Count of V split indices.
 - **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbVSplits`
 - **Example:**
   ```swift
-  let n = bsplineSurf.bsplineKnotSplitsV(continuity: 1)
+  let n = bsplineSurf.bsplineKnotSplitsV(continuity: .c3)
   ```
 
 ---
 
 ### `Surface.bsplineKnotSplitValues(continuity:)`
 
-Retrieve both U and V knot-split index arrays.
+Retrieve both U and V knot-split index arrays. `bsplineUKnot(index:)` and `bsplineVKnot(index:)`
+turn them into parameters, which is what `knotSplitting(uContinuity:vContinuity:)` returns directly.
 
 ```swift
-public func bsplineKnotSplitValues(continuity: Int) -> (uSplits: [Int32], vSplits: [Int32])
+public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> (uSplits: [Int32], vSplits: [Int32])
 ```
 
-- **Parameters:** `continuity` — desired continuity order.
+- **Parameters:** `continuity`: minimum continuity to require of each patch.
 - **Returns:** Tuple of U-split and V-split knot index arrays (1-based OCCT knot indices).
 - **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::Splitting`
 - **Example:**
   ```swift
-  let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: 1)
+  let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: .c3)
   ```
 
 ---
@@ -257,35 +268,38 @@ Extensions on `Curve2D` wrapping `Geom2dConvert_BSplineCurveKnotSplitting`.
 ### `Curve2D.bsplineKnotSplits(continuity:)`
 
 Number of knot split points required to achieve the specified continuity for a 2D BSpline curve.
+Same count as `splitIndicesAtDiscontinuities(continuity:)`'s array length.
 
 ```swift
-public func bsplineKnotSplits(continuity: Int) -> Int
+public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int
 ```
 
-- **Parameters:** `continuity` — desired continuity order.
+- **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Count of split indices.
 - **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::NbSplits`
 - **Example:**
   ```swift
-  let n = curve2d.bsplineKnotSplits(continuity: 1)
+  let n = curve2d.bsplineKnotSplits(continuity: .c3)
   ```
 
 ---
 
 ### `Curve2D.bsplineKnotSplitValues(continuity:)`
 
-Retrieve the knot-split index array for a 2D BSpline curve.
+Retrieve the knot-split index array for a 2D BSpline curve. The same indices
+`splitIndicesAtDiscontinuities(continuity:)` returns, as `[Int32]` and empty rather than `nil`
+for a non-BSpline curve.
 
 ```swift
-public func bsplineKnotSplitValues(continuity: Int) -> [Int32]
+public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32]
 ```
 
-- **Parameters:** `continuity` — desired continuity order.
+- **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot split indices, or empty if none.
 - **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::Splitting`
 - **Example:**
   ```swift
-  let splits = curve2d.bsplineKnotSplitValues(continuity: 2)
+  let splits = curve2d.bsplineKnotSplitValues(continuity: .c3)
   ```
 
 ---

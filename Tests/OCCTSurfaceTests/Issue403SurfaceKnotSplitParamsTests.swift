@@ -21,7 +21,7 @@ struct Issue403SurfaceKnotSplitParamsTests {
     @Test("Param array lengths match their own counts")
     func paramCountsMatchSplitCounts() throws {
         let bspline = try bsplineCylinder()
-        let result = bspline.knotSplitting(uContinuity: 0, vContinuity: 0)
+        let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
 
         #expect(result.uSplitParams.count == result.uSplitCount)
         #expect(result.vSplitParams.count == result.vSplitCount)
@@ -32,7 +32,7 @@ struct Issue403SurfaceKnotSplitParamsTests {
     @Test("Params are ascending and bracketed by the surface's own U/V domain")
     func paramsMatchDomain() throws {
         let bspline = try bsplineCylinder()
-        let result = bspline.knotSplitting(uContinuity: 0, vContinuity: 0)
+        let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         let domain = bspline.domain
 
         if let uFirst = result.uSplitParams.first, let uLast = result.uSplitParams.last {
@@ -50,7 +50,7 @@ struct Issue403SurfaceKnotSplitParamsTests {
     @Test("Non-BSpline surface returns empty params, not a crash")
     func nonBSplineSurfaceReturnsEmpty() throws {
         let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
-        let result = plane.knotSplitting(uContinuity: 0, vContinuity: 0)
+        let result = plane.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         #expect(result.uSplitCount == 0)
         #expect(result.vSplitCount == 0)
         #expect(result.uSplitParams.isEmpty)

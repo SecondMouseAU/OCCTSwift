@@ -32,8 +32,8 @@ struct Issue481LawKnotSplittingTruncationTests {
             Issue.record("could not build the test law")
             return
         }
-        let indices = law.knotSplitting(continuityOrder: 2)
-        let params = law.knotSplitParameters(continuityOrder: 2)
+        let indices = law.knotSplitting(continuityOrder: .c2)
+        let params = law.knotSplitParameters(continuityOrder: .c2)
 
         // The property the truncation broke: both wrap the same analyzer over the same law.
         #expect(indices.count == params.count)
@@ -49,7 +49,7 @@ struct Issue481LawKnotSplittingTruncationTests {
             Issue.record("could not build the test law")
             return
         }
-        let indices = law.knotSplitting(continuityOrder: 2)
+        let indices = law.knotSplitting(continuityOrder: .c2)
         // A retry that re-read into a fresh buffer but kept a stale count, or that returned
         // the first pass's contents, would show up as a repeat or a drop here.
         #expect(zip(indices, indices.dropFirst()).allSatisfy { $0 < $1 })
@@ -65,8 +65,8 @@ struct Issue481LawKnotSplittingTruncationTests {
             Issue.record("could not build the test law")
             return
         }
-        let indices = law.knotSplitting(continuityOrder: 2)
-        let params = law.knotSplitParameters(continuityOrder: 2)
+        let indices = law.knotSplitting(continuityOrder: .c2)
+        let params = law.knotSplitParameters(continuityOrder: .c2)
         #expect(indices.count == 12)
         #expect(indices.count == params.count)
     }
@@ -77,6 +77,6 @@ struct Issue481LawKnotSplittingTruncationTests {
             Issue.record("could not build the test law")
             return
         }
-        #expect(law.knotSplitting(continuityOrder: 1).isEmpty)
+        #expect(law.knotSplitting(continuityOrder: .c1).isEmpty)
     }
 }

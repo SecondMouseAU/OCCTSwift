@@ -314,6 +314,59 @@ assumed. Filed as #558 rather than widened into this fix: `maxPoints` on an adap
 capacity rather than a request, and `uSamples`/`vSamples` bound a product, so those need a contract
 decision per parameter rather than this one's ceiling applied uniformly.
 
+#### The knot-splitting continuity cap, on the four fifths of the family #398 did not reach (#480)
+
+#398 established that a knot-splitting continuity documented as `0=C0, 1=C1, 2=C2` lists every
+value that does nothing on ordinary cubic geometry: the analyzers split a knot only when
+`degree - multiplicity < ContinuityRange`, and a cubic with simple interior knots is already C2
+there. It widened `Curve3D.continuityBreaks` to `ParametricContinuity`, whose `.c3` is reachable.
+The rest of the family kept the cap, and a census by OCCT class rather than by the issue's site
+list found more of it than the issue named: **four** analyzers, **nine** public Swift entry points,
+eight still typed `Int` and still documenting the range that does nothing.
+
+All of them now take `ParametricContinuity`:
+
+| API | was | now |
+|---|---|---|
+| `Surface.knotSplitting(uContinuity:vContinuity:)` | `Int = 1, Int = 1` | `.c1, .c1` |
+| `LawFunction.knotSplitting(continuityOrder:)` | `Int = 2` | `.c1` |
+| `LawFunction.knotSplitParameters(continuityOrder:)` | `Int = 2` | `.c1` |
+| `Curve2D.splitIndicesAtDiscontinuities(continuity:)` | `Int = 1` | `.c1` |
+| `Surface.bsplineKnotSplitsU/V(continuity:)`, `Surface.bsplineKnotSplitValues(continuity:)` | `Int` | `ParametricContinuity` |
+| `Curve2D.bsplineKnotSplits(continuity:)`, `Curve2D.bsplineKnotSplitValues(continuity:)` | `Int` | `ParametricContinuity` |
+
+**Source-breaking:** callers passing integer literals need the spelled case (`0` → `.c0`). That is
+the point: the raw `Int` is what let a documented range consisting entirely of no-ops go unnoticed
+for five releases.
+
+The defaults were revisited and deliberately left at `.c1`, now uniform across the family (the two
+law methods moved from 2). Measured on a cubic with four interior knots: at `.c1` a
+multiplicity-3 knot (a genuine kink) is reported and nothing else is; at `.c3` *every* interior
+knot is reported, which is a Bezier decomposition rather than a discontinuity report. So `.c1`
+answers "where does this actually kink", which is the question a default should answer, and the
+fix for the issue is that `.c3` is now spellable, not that it is now the default.
+
+Also measured, and now documented rather than left implicit: all four analyzers
+(`GeomConvert_BSplineCurveKnotSplitting`, `Geom2dConvert_BSplineCurveKnotSplitting`,
+`GeomConvert_BSplineSurfaceKnotSplitting`, `Law_BSplineKnotSplitting`) run a byte-identical
+algorithm and agree on every count; the useful domain is `0...degree` and saturates there, so on a
+degree-5 BSpline nothing below `.c5` reaches a simple interior knot and `.c3` is the strictest
+question this vocabulary can ask (`toBezierSegments()`/`toBezierPatches()` is the dedicated API for
+the every-knot split at the far end of that ladder); and a negative range throws
+`Standard_RangeError` through an explicit `throw` rather than a `*_Raise_if` macro, so unlike most
+OCCT preconditions it survives this kernel's `No_Exception` build and reaches the bridge's
+`catch(...)`.
+
+Two doc corrections found on the way: `Surface.knotSplitting` was attributed to
+`BSplSLib::KnotSplitting`, which is not what it calls, and the bridge header still documented the
+`0=C0, 1=C1, 2=C2` range on `OCCTCurve3DBSplineKnotSplits`, the one function #398 had already
+fixed on the Swift side.
+
+New tests pin the measured contract in all three affected domains rather than the signature, so
+they also catch the opposite mistake of decoding the enum to a `GeomAbs_Shape` first: `GeomAbs_C2`
+is ordinal 4, which would split at every knot where `.c2` must split at none. Both mistakes were
+injected and confirmed to fail the new cases.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each

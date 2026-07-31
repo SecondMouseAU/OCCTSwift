@@ -20,9 +20,16 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 Minimum parametric continuity to require of a piece of geometry. Shared by every operation
 that splits, approximates or simplifies against a continuity floor: `Shape.divided(at:)`,
 `Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)`,
-`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and
-`Curve3D.continuityBreaks(minContinuity:)`. The raw value maps to `GeomAbs_C0` through
-`GeomAbs_C3`.
+`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and the whole BSpline
+knot-splitting family: `Curve3D.continuityBreaks(minContinuity:)`,
+`Curve2D.splitIndicesAtDiscontinuities(continuity:)`,
+`Surface.knotSplitting(uContinuity:vContinuity:)`, `LawFunction.knotSplitting(continuityOrder:)`
+and `LawFunction.knotSplitParameters(continuityOrder:)`.
+
+What the value becomes depends on the consumer. Most decode it to a `GeomAbs_Shape` (`GeomAbs_C0`
+through `GeomAbs_C3`); the knot-splitting family instead passes it to OCCT as a literal derivative
+order against the geometry's own degree, so `.c3` is exact for a cubic but is the strictest question
+askable of a degree-4-or-higher BSpline (#480). Each API's own page states its measured domain.
 
 ```swift
 public enum ParametricContinuity: Int32, Sendable, CaseIterable {

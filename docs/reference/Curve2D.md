@@ -955,16 +955,25 @@ public func approximated(tolerance: Double = 1e-3, continuity: Int = 2,
 Finds knot indices where a BSpline has continuity discontinuities.
 
 ```swift
-public func splitIndicesAtDiscontinuities(continuity: Int = 1) -> [Int]?
+public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]?
 ```
 
-- **Parameters:** `continuity` — desired continuity level to check (0=C0, 1=C1, etc.).
+Indices are 1-based into the curve's own knot table, so `bsplineKnot(index:)` turns each one into
+a parameter. The first and last knots are always included, so a curve that never drops below
+`continuity` reports exactly those two.
+
+- **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity drops below the requested level, or `nil` if not a BSpline or no discontinuities found.
-- **OCCT:** `Geom2d_BSplineCurve` knot analysis (via `OCCTCurve2DSplitAtDiscontinuities`).
+- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`).
+- **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuity`, so the meaningful range is `0...degree` and it saturates
+  there. A cubic with simple interior knots is already C2 there, which means `.c0`, `.c1` and `.c2`
+  all report just the two end knots and `.c3` is the order that reports the interior ones.
 - **Example:**
   ```swift
   if let bsp = Curve2D.bspline(poles: [...], knots: [...], multiplicities: [...], degree: 3) {
-      let indices = bsp.splitIndicesAtDiscontinuities(continuity: 1)
+      let indices = bsp.splitIndicesAtDiscontinuities(continuity: .c3)
+      let params = indices?.map { bsp.bsplineKnot(index: $0) }
   }
   ```
 

@@ -91,7 +91,11 @@ query it exists to answer: `GeomConvert_BSplineCurveKnotSplitting` splits where
 `degree - multiplicity < ContinuityRange`, and an ordinary cubic interpolation has interior
 knots of multiplicity 1, so it is already C2 there. Measured on a degree-3 interpolated BSpline,
 ranges 0, 1 and 2 all return just the two end knots; range 3 returns five parameters.
-`ParametricContinuity.c3` is reachable and fixes that. OCCT itself accepts any range `>= 0`.
+`ParametricContinuity.c3` is reachable and fixes that. OCCT itself accepts any range `>= 0` and
+saturates at the curve's own degree, so on a degree-4-or-higher BSpline `.c3` is the strictest
+question this vocabulary can ask; `toBezierSegments()` is the dedicated API for the every-knot
+split at the far end of that ladder. The same cap and the same fix apply to the surface, law and
+2D-curve siblings (#480).
 
 Pass to `continuityBreaks(minContinuity:)` to specify the minimum required continuity across knots.
 

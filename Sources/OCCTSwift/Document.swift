@@ -8037,24 +8037,38 @@ extension Curve2D {
 
 // MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
 
+// `continuity` throughout both sections below is the same derivative-order ContinuityRange
+// `Surface.knotSplitting` documents: a knot splits only when `degree - multiplicity <
+// continuity`, so the meaningful range is 0...degree and it saturates there. These five
+// entry points drive the same two OCCT analyzers as `Surface.knotSplitting` and
+// `Curve2D.splitIndicesAtDiscontinuities` and differ only in what they return. #480.
+
 extension Surface {
     /// Get number of U-direction knot splits for a BSpline surface at given continuity.
-    public func bsplineKnotSplitsU(continuity: Int) -> Int {
-        Int(OCCTBSplineSurfaceKnotSplitsU(handle, Int32(continuity)))
+    ///
+    /// Same count as `knotSplitting(uContinuity:vContinuity:)`'s `uSplitCount`.
+    public func bsplineKnotSplitsU(continuity: ParametricContinuity) -> Int {
+        Int(OCCTBSplineSurfaceKnotSplitsU(handle, continuity.rawValue))
     }
 
     /// Get number of V-direction knot splits for a BSpline surface at given continuity.
-    public func bsplineKnotSplitsV(continuity: Int) -> Int {
-        Int(OCCTBSplineSurfaceKnotSplitsV(handle, Int32(continuity)))
+    ///
+    /// Same count as `knotSplitting(uContinuity:vContinuity:)`'s `vSplitCount`.
+    public func bsplineKnotSplitsV(continuity: ParametricContinuity) -> Int {
+        Int(OCCTBSplineSurfaceKnotSplitsV(handle, continuity.rawValue))
     }
 
     /// Get U and V knot split index arrays.
-    public func bsplineKnotSplitValues(continuity: Int) -> (uSplits: [Int32], vSplits: [Int32]) {
+    ///
+    /// Indices are 1-based into the surface's own U/V knot tables; `bsplineUKnot(index:)` and
+    /// `bsplineVKnot(index:)` turn them into parameters, which is what
+    /// `knotSplitting(uContinuity:vContinuity:)` returns directly.
+    public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> (uSplits: [Int32], vSplits: [Int32]) {
         let nu = bsplineKnotSplitsU(continuity: continuity)
         let nv = bsplineKnotSplitsV(continuity: continuity)
         var uSplits = [Int32](repeating: 0, count: max(nu, 1))
         var vSplits = [Int32](repeating: 0, count: max(nv, 1))
-        OCCTBSplineSurfaceKnotSplitValues(handle, Int32(continuity), &uSplits, &vSplits)
+        OCCTBSplineSurfaceKnotSplitValues(handle, continuity.rawValue, &uSplits, &vSplits)
         return (Array(uSplits.prefix(nu)), Array(vSplits.prefix(nv)))
     }
 }
@@ -8063,16 +8077,21 @@ extension Surface {
 
 extension Curve2D {
     /// Get number of knot splits for a 2D BSpline curve at given continuity.
-    public func bsplineKnotSplits(continuity: Int) -> Int {
-        Int(OCCTBSplineCurve2dKnotSplits(handle, Int32(continuity)))
+    ///
+    /// Same count as `splitIndicesAtDiscontinuities(continuity:)`'s array length.
+    public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int {
+        Int(OCCTBSplineCurve2dKnotSplits(handle, continuity.rawValue))
     }
 
     /// Get knot split indices for a 2D BSpline curve at given continuity.
-    public func bsplineKnotSplitValues(continuity: Int) -> [Int32] {
+    ///
+    /// The same indices `splitIndicesAtDiscontinuities(continuity:)` returns, as `[Int32]`
+    /// and empty rather than `nil` for a non-BSpline curve.
+    public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32] {
         let n = bsplineKnotSplits(continuity: continuity)
         guard n > 0 else { return [] }
         var splits = [Int32](repeating: 0, count: n)
-        OCCTBSplineCurve2dKnotSplitValues(handle, Int32(continuity), &splits)
+        OCCTBSplineCurve2dKnotSplitValues(handle, continuity.rawValue, &splits)
         return splits
     }
 }

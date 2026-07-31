@@ -1700,25 +1700,41 @@ extension Surface {
     /// directions, each with its own knot vector -- so this reports counts *and* parameter
     /// locations per direction, unlike `Curve3D.continuityBreaks` (one 1D parameter list).
     ///
+    /// The result is a set of *split* parameters, not a set of defects: each direction's own
+    /// first and last knots are always included, so a direction that never drops below the
+    /// requested continuity reports exactly those two rather than nothing.
+    ///
     /// ```swift
-    /// let result = bsplineSurface.knotSplitting(uContinuity: 0, vContinuity: 0)
-    /// // result.uSplitParams / result.vSplitParams are real U/V parameters, usable to
-    /// // split the surface into same-continuity patches (e.g. via GeomConvert).
+    /// // Where does the surface actually kink?
+    /// let kinks = bsplineSurface.knotSplitting()
+    ///
+    /// // A bicubic surface with simple interior knots is already C2 at every interior knot,
+    /// // so .c3 is the order that reports them (.c0, .c1 and .c2 return only the bounds).
+    /// let all = bsplineSurface.knotSplitting(uContinuity: .c3, vContinuity: .c3)
+    /// // all.uSplitParams / all.vSplitParams are real U/V parameters, usable to split the
+    /// // surface into same-continuity patches.
     /// ```
     ///
     /// - Parameters:
-    ///   - uContinuity: Desired U continuity (0=C0, 1=C1, 2=C2)
-    ///   - vContinuity: Desired V continuity (0=C0, 1=C1, 2=C2)
+    ///   - uContinuity: Minimum continuity to require of each U patch. This is a derivative
+    ///     order, and `GeomConvert_BSplineSurfaceKnotSplitting` splits a knot only when
+    ///     `U degree - multiplicity < uContinuity`, so the meaningful range is 0...U degree and
+    ///     it saturates there. On a degree-4-or-higher surface ``ParametricContinuity/c3`` is
+    ///     the strictest question this vocabulary can ask; `toBezierPatches()` is the dedicated
+    ///     API for the every-knot split at the far end of that ladder (#480).
+    ///   - vContinuity: Minimum continuity to require of each V patch, against the V degree
+    ///     and V knots
     /// - Returns: Split counts plus the actual U/V parameter values, or all-empty/zero for
     ///   a non-BSpline surface
-    public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult {
+    public func knotSplitting(uContinuity: ParametricContinuity = .c1,
+                              vContinuity: ParametricContinuity = .c1) -> KnotSplitResult {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split counts even when it writes fewer, so one retry sized to
         // those counts is always enough.
         func read(uCapacity: Int32, vCapacity: Int32) -> (OCCTSurfaceKnotSplitResult, [Double], [Double]) {
             var uParams = [Double](repeating: 0, count: Int(uCapacity))
             var vParams = [Double](repeating: 0, count: Int(vCapacity))
-            let result = OCCTSurfaceKnotSplitting(handle, Int32(uContinuity), Int32(vContinuity),
+            let result = OCCTSurfaceKnotSplitting(handle, uContinuity.rawValue, vContinuity.rawValue,
                                                    &uParams, uCapacity, &vParams, vCapacity)
             return (result, uParams, vParams)
         }
