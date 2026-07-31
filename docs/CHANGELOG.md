@@ -1749,6 +1749,28 @@ and the before/after sweep transcripts:
 [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse).
 Filed upstream as [OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418).
 
+### New workflow: `kernel-integration.yml` validates a carried patch against the patched kernel (#585)
+
+`ci.yml`'s macOS check always resolves `Package.swift`'s pinned, **released** OCCT.xcframework, since
+a clean checkout has no local `Libraries/`. A PR that carries a kernel patch not yet in a release
+and adds a regression test for its fixed behaviour therefore fails that check indistinguishably
+from a real regression: #519 (patches `0016`(redesign)/`0018`/`0019`, closing #518/#522/#555) hit
+this exactly, its new #522 test reproducing the original bug's own symptom against the stale
+kernel, needing a manual dig to tell "expected gap" apart from "the patch doesn't work." The old
+`ci.yml` comment already named the fix and never built it: "that's `kernel-rebuild.yml`'s job,
+~30-60 min" describes a workflow that never existed anywhere in this repo's history.
+
+`kernel-integration.yml` is that workflow, finally built. It triggers only on a PR/push touching
+`Scripts/patches/**` or `Scripts/build-occt.sh`, so ordinary PRs stay on the fast `ci.yml` path.
+`actions/cache@v4` keys on a hash of the patch files plus the build script itself (so a pinned-OCCT
+version bump also invalidates it): the first run after a patch changes pays the full rebuild, every
+later run with the same patch set restores `Libraries/OCCT.xcframework` in seconds. Deliberately
+caches only the **final** xcframework, never the intermediate `occt-build-*`/`occt-src` trees —
+`CMakeCache.txt` bakes in the configuring checkout's absolute path, which a fresh runner never
+reuses, so caching a half-built tree would just restore an unusable cache every run (the same
+gotcha `docs/guides/building-occt.md` already documents for resuming an interrupted local build).
+`ci.yml`'s own comment now points here instead of describing the rebuild as manual-only.
+
 ---
 
 ## Release History

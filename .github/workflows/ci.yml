@@ -1,13 +1,15 @@
 name: CI
 
-# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source (that is a manual
-# local `Scripts/build-occt.sh` run, ~30-60 min, done only when a carried patch in
-# Scripts/patches/ needs to reach the shipped binary). A clean checkout has no local Libraries/, so
-# Package.swift's binaryTarget resolves OCCT.xcframework from its pinned release URL and
-# verifies the checksum, which only costs a download. OCCTBridge compiles from source by
-# default (no OCCTSWIFT_BRIDGE_PREBUILT set), which is the repo's own intended default, see
-# the comment above `useBridgePrebuilt` in Package.swift, and it's a couple of minutes, not
-# tens of minutes.
+# Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source: a clean checkout has
+# no local Libraries/, so Package.swift's binaryTarget resolves OCCT.xcframework from its pinned
+# release URL and verifies the checksum, which only costs a download. A PR that touches
+# Scripts/patches/ (a carried kernel patch not yet in a release) gets kernel-integration.yml
+# instead, which does rebuild from source and runs swift test against that binary (#585) — this
+# workflow's own macOS check will fail such a PR's new regression tests against the stale pinned
+# kernel, and that's expected, not a defect; read kernel-integration.yml's result instead.
+# OCCTBridge compiles from source by default (no OCCTSWIFT_BRIDGE_PREBUILT set), which is the
+# repo's own intended default, see the comment above `useBridgePrebuilt` in Package.swift, and
+# it's a couple of minutes, not tens of minutes.
 
 on:
   pull_request:
