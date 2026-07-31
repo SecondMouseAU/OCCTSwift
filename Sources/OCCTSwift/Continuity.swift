@@ -92,8 +92,12 @@ public typealias PlateConstraintOrder = SurfaceContinuity
 /// Used wherever an operation splits, approximates or simplifies geometry against a continuity
 /// floor: ``Shape/divided(at:)``, ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``,
 /// ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``,
-/// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)`` and
-/// ``Curve3D/continuityBreaks(minContinuity:)``.
+/// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)``, and
+/// the whole BSpline knot-splitting family: ``Curve3D/continuityBreaks(minContinuity:)``,
+/// ``Curve2D/splitIndicesAtDiscontinuities(continuity:)``,
+/// ``Surface/knotSplitting(uContinuity:vContinuity:)``,
+/// ``LawFunction/knotSplitting(continuityOrder:)`` and
+/// ``LawFunction/knotSplitParameters(continuityOrder:)``.
 ///
 /// ```swift
 /// // Split a shape wherever it drops below C2
@@ -107,6 +111,12 @@ public typealias PlateConstraintOrder = SurfaceContinuity
 /// - Note: This is *parametric* continuity (equal derivative vectors), not the geometric
 ///   G0/G1/G2 constraint order of ``SurfaceContinuity`` (parallel tangent directions). The
 ///   two count the same way but mean different things and are not interchangeable.
+///
+/// - Note: What the strict end of the ladder can express depends on the consumer. The
+///   knot-splitting family reads the value as a literal derivative order against the geometry's
+///   own degree, so ``c3`` is exact for a cubic but is the strictest question askable of a
+///   degree-4-or-higher BSpline; the approximation family rejects anything above ``c2``
+///   outright. Each API's own doc states its measured domain (#480, #490).
 public enum ParametricContinuity: Int32, Sendable, CaseIterable {
     /// Positional continuity (C0).
     case c0 = 0

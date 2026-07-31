@@ -2582,6 +2582,8 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx, double fy,
 // Conversion Extras
 OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree);
+// `continuity` is a ContinuityRange (a literal derivative order, splitting where
+// `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in OCCTBridge_Internal.h.
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef curve, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max);
 int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef curve, double tolerance,
@@ -5421,7 +5423,10 @@ int32_t OCCTSurfaceBSplineToBezierPatches(OCCTSurfaceRef surface,
 
 /// Find continuity break parameters in a BSpline curve
 /// @param curve3D BSpline curve reference
-/// @param continuityOrder Minimum continuity to require (0=C0, 1=C1, 2=C2)
+/// @param continuityOrder Minimum continuity to require, as a literal derivative order: a knot
+///   splits when `degree - multiplicity < continuityOrder`. Useful domain 0...degree, saturating
+///   there: a cubic with simple interior knots needs 3. See the #480 note in
+///   OCCTBridge_Internal.h. A negative order throws, which surfaces here as -1
 /// @param outParams Pre-allocated array for break parameters
 /// @param maxParams Maximum number of parameters to return
 /// @return Number of break parameters found, or -1 on failure
@@ -6717,8 +6722,10 @@ typedef struct {
 
 /// Analyze BSpline surface knot splitting at a given continuity level.
 /// @param surface BSpline surface to analyze
-/// @param uContinuity Desired U continuity (0=C0, 1=C1, 2=C2)
-/// @param vContinuity Desired V continuity (0=C0, 1=C1, 2=C2)
+/// @param uContinuity Desired U continuity, as a literal derivative order: a knot splits when
+///   `degree - multiplicity < uContinuity`. Useful domain 0...U degree, saturating there: a
+///   cubic with simple interior knots needs 3. See the #480 note in OCCTBridge_Internal.h
+/// @param vContinuity Desired V continuity, same contract against the V degree and knots
 /// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
 /// @param maxUParams Capacity of outUParams
 /// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
@@ -9100,7 +9107,10 @@ void OCCTGeomFillNSectionsInfo(
 // --- Law_BSplineKnotSplitting ---
 /// Find knot indices where a BSpline law drops below given continuity.
 /// @param law BSpline law function handle
-/// @param continuityOrder Continuity level to check (0=C0, 1=C1, 2=C2)
+/// @param continuityOrder Continuity level to check, as a literal derivative order: a knot
+///   splits when `degree - multiplicity < continuityOrder`. Useful domain 0...degree, saturating
+///   there: a cubic with simple interior knots needs 3. See the #480 note in
+///   OCCTBridge_Internal.h
 /// @param outIndices Output array of split knot indices
 /// @param maxIndices Maximum number of indices to write
 /// @return Number of split knot indices found (true count, even if writing was truncated
@@ -9113,7 +9123,8 @@ int32_t OCCTLawBSplineKnotSplitting(OCCTLawFunctionRef _Nonnull law,
 /// Find PARAMETER values (not knot-table indices) where a BSpline law drops below
 /// given continuity -- the law-function analogue of OCCTCurve3DBSplineKnotSplits. #403.
 /// @param law BSpline law function handle
-/// @param continuityOrder Continuity level to check (0=C0, 1=C1, 2=C2)
+/// @param continuityOrder Continuity level to check, same contract as
+///   OCCTLawBSplineKnotSplitting above
 /// @param outParams Pre-allocated array for break parameter values
 /// @param maxParams Maximum number of parameters to return
 /// @return Number of break parameters found (true count, even if writing was truncated
@@ -14565,6 +14576,10 @@ OCCTCurve2DRef _Nullable OCCTConcatenateCurves2D(OCCTCurve2DRef _Nonnull * _Nonn
                                                    int32_t count, double tolerance);
 
 // MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
+//
+// `continuity` throughout this section is the same ContinuityRange as OCCTSurfaceKnotSplitting
+// takes: a literal derivative order, splitting where `degree - multiplicity < continuity`, with
+// useful domain 0...degree. See the #480 note in OCCTBridge_Internal.h.
 
 /// Get number of U-direction knot splits for a BSpline surface at given continuity.
 int32_t OCCTBSplineSurfaceKnotSplitsU(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
@@ -14577,6 +14592,9 @@ void OCCTBSplineSurfaceKnotSplitValues(OCCTSurfaceRef _Nonnull surface, int32_t 
                                         int32_t* _Nonnull uSplits, int32_t* _Nonnull vSplits);
 
 // MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
+//
+// Same ContinuityRange contract again: Geom2dConvert_BSplineCurveKnotSplitting runs the
+// identical algorithm on a 2D curve. See the #480 note in OCCTBridge_Internal.h.
 
 /// Get number of knot splits for a 2D BSpline curve at given continuity.
 int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef _Nonnull curve, int32_t continuity);

@@ -549,6 +549,29 @@ bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceC
 bool occtDefeaturePerform(BRepAlgoAPI_Defeaturing& defeaturing, const TopoDS_Shape& shape,
                           const TopTools_ListOfShape& facesToRemove, TopoDS_Shape& outResult);
 
+// === #480: what a knot-splitting `continuity` argument actually means ===
+//
+// Four OCCT analyzers split a BSpline at knots: GeomConvert_BSplineCurveKnotSplitting,
+// Geom2dConvert_BSplineCurveKnotSplitting, GeomConvert_BSplineSurfaceKnotSplitting (once per
+// parametric direction) and Law_BSplineKnotSplitting. All four run a byte-for-byte identical
+// algorithm, so every bridge function below shares one contract, measured against the pinned
+// kernel on 3D curves, 2D curves, laws and surfaces (identical counts in all four):
+//
+//   - The argument is a `ContinuityRange`: a literal derivative order, not a GeomAbs_Shape.
+//     It must reach OCCT as the raw integer the caller asked for. Decoding it to a GeomAbs_Shape
+//     first would be silently wrong, since GeomAbs_C3 is ordinal 5 and would split at knots the
+//     caller never asked about.
+//   - A knot splits when `degree - multiplicity(knot) < ContinuityRange`. Range 0 short-circuits
+//     to the two bracketing knots, and so does any range the whole curve already satisfies.
+//   - So the useful domain is 0...degree and it saturates there: on a cubic with simple interior
+//     knots, ranges 0, 1 and 2 all return just the two bracketing knots and range 3 returns every
+//     knot; on a degree-5 curve nothing below 5 reaches a simple interior knot. That cap is the
+//     defect #398 found on curves and #480 fixed across the rest of the family: the Swift range
+//     was documented as 0...2, which on ordinary cubic geometry is every value that does nothing.
+//   - A negative range throws Standard_RangeError. That one is an explicit `throw`, not a
+//     *_Raise_if macro, so unlike most OCCT preconditions it survives this kernel's No_Exception
+//     build (verified) and reaches the catch(...) in each bridge function below.
+//
 // === #403/#481: shared BSpline knot-splitting buffer contract ===
 //
 // Curve3D.continuityBreaks, LawFunction.knotSplitting, LawFunction.knotSplitParameters and

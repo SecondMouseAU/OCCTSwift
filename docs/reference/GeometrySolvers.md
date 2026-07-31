@@ -788,7 +788,7 @@ public static func composite(laws: [LawFunction],
 Find knot indices where a BSpline law drops below given continuity.
 
 ```swift
-public func knotSplitting(continuityOrder: Int = 2) -> [Int]
+public func knotSplitting(continuityOrder: ParametricContinuity = .c1) -> [Int]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
@@ -800,13 +800,18 @@ a law with more splits than that reported exactly 100, with nothing to say the r
 dropped, so it disagreed with `knotSplitParameters(continuityOrder:)` (same analyzer, same law)
 about how many splits the law has.
 
-- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+- **Parameters:** `continuityOrder`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity breaks, or empty array if none or if the function is not BSpline-based.
 - **OCCT:** `Law_BSplineKnotSplitting::NbSplits` / `SplitValue`.
+- **Continuity range (#480):** the order is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuityOrder`, so the meaningful range is `0...degree` and it
+  saturates there. A cubic law with simple interior knots is already C2 there, which means `.c0`,
+  `.c1` and `.c2` all report just the two end knots and `.c3` is the order that reports the
+  interior ones.
 - **Example:**
   ```swift
-  let indices = law.knotSplitting(continuityOrder: 2)
-  let params  = law.knotSplitParameters(continuityOrder: 2)
+  let indices = law.knotSplitting(continuityOrder: .c2)
+  let params  = law.knotSplitParameters(continuityOrder: .c2)
   // indices[i] is the knot-table index of params[i], so the two always agree on count
   ```
 
@@ -818,19 +823,22 @@ Find parameter values (not raw knot indices) where a BSpline law drops below giv
 the law-function analogue of `Curve3D.continuityBreaks`.
 
 ```swift
-public func knotSplitParameters(continuityOrder: Int = 2) -> [Double]
+public func knotSplitParameters(continuityOrder: ParametricContinuity = .c1) -> [Double]
 ```
 
 Only works on BSpline-based law functions created via `bspline(poles:knots:multiplicities:degree:)`.
 Unlike `knotSplitting(continuityOrder:)`'s raw indices, these are real parameter values, directly
 usable with `value(at:)` and bounded by `bounds`.
 
-- **Parameters:** `continuityOrder` — continuity level to check (`0`=C0, `1`=C1, `2`=C2).
+- **Parameters:** `continuityOrder`: minimum continuity to require of each arc, same derivative-order
+  contract as `knotSplitting(continuityOrder:)` above (#480).
 - **Returns:** Split parameters in ascending order, or empty array if none or if the function is not BSpline-based.
 - **OCCT:** `Law_BSplineKnotSplitting`.
 - **Example:**
   ```swift
-  let breaks = law.knotSplitParameters(continuityOrder: 2)
+  // A cubic law with simple interior knots is already C2 there, so .c3 is the order that
+  // reports its interior knots; anything below returns just the two end knots.
+  let breaks = law.knotSplitParameters(continuityOrder: .c3)
   // breaks are real parameters within law.bounds, usable e.g. as sweep split points
   ```
 

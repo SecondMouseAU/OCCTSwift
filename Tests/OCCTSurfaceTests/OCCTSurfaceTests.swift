@@ -2308,7 +2308,7 @@ struct SurfaceKnotSplittingTests {
         // Use trimmed cylinder (bounded) so it can convert to BSpline
         let trimCyl = try #require(Surface.trimmedCylinder(radius: 5.0, height: 10.0))
         let bspline = try #require(trimCyl.toBSpline())
-        let result = bspline.knotSplitting(uContinuity: 0, vContinuity: 0)
+        let result = bspline.knotSplitting(uContinuity: .c0, vContinuity: .c0)
         #expect(result.uSplitCount >= 1)
         #expect(result.vSplitCount >= 1)
     }
@@ -3360,7 +3360,7 @@ struct BSplineSurfaceKnotSplitTests {
         // Create a sphere surface and convert to BSpline
         if let sphere = Surface.sphere(center: .zero, radius: 5) {
             if let bsp = sphere.toBSpline() {
-                let n = bsp.bsplineKnotSplitsU(continuity: 0)
+                let n = bsp.bsplineKnotSplitsU(continuity: .c0)
                 #expect(n >= 0)
             }
         }

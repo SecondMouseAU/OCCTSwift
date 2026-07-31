@@ -578,19 +578,36 @@ public static func trimmedCylinder(
 Analyses where a BSpline surface would need to be split to achieve a given continuity level.
 
 ```swift
-public func knotSplitting(uContinuity: Int = 1, vContinuity: Int = 1) -> KnotSplitResult
+public func knotSplitting(
+    uContinuity: ParametricContinuity = .c1,
+    vContinuity: ParametricContinuity = .c1
+) -> KnotSplitResult
 ```
 
 Returns the number of U and V splits needed, plus the actual U/V parameter values at each
-split; does not modify the surface.
+split; does not modify the surface. Each direction's own first and last knots are always
+included, so a direction that never drops below the requested continuity reports exactly those
+two rather than nothing.
 
-- **Parameters:** `uContinuity` — desired U continuity (0=C0, 1=C1, 2=C2); `vContinuity` — desired V continuity.
+- **Parameters:** `uContinuity`: minimum continuity to require of each U patch; `vContinuity`:
+  the same against the V degree and V knots.
 - **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount` and `uSplitParams`/`vSplitParams`
   (ascending, bounded by the surface's own U/V domain).
-- **OCCT:** `BSplSLib::KnotSplitting`.
+- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting`.
+- **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
+  `degree - multiplicity < continuity`. So the meaningful range is `0...degree` and it saturates
+  there. A bicubic surface with simple interior knots is already C2 at every interior knot, which
+  means `.c0`, `.c1` and `.c2` all report just the two bounding curves per direction and `.c3` is
+  the order that reports the interior ones. On a degree-4-or-higher surface `.c3` is the strictest
+  question this vocabulary can ask; [`toBezierPatches()`](Surface.md) is the dedicated API for the
+  every-knot split at the far end of that ladder.
 - **Example:**
   ```swift
-  let result = surf.knotSplitting(uContinuity: 2, vContinuity: 2)
+  // Where does the surface actually kink? (multiplicity == degree)
+  let kinks = surf.knotSplitting()
+
+  // Every interior knot of a bicubic surface.
+  let result = surf.knotSplitting(uContinuity: .c3, vContinuity: .c3)
   print("U splits needed:", result.uSplitCount, result.uSplitParams)
   print("V splits needed:", result.vSplitCount, result.vSplitParams)
   ```

@@ -769,7 +769,7 @@ struct Curve2DConvertExtrasTests {
         let joined = Curve2D.join([seg1, seg2])
         #expect(joined != nil)
         if let joined = joined {
-            let indices = joined.splitIndicesAtDiscontinuities(continuity: 2)
+            let indices = joined.splitIndicesAtDiscontinuities(continuity: .c2)
             // May or may not find C2 discontinuities depending on join method
             #expect(indices != nil)
         }
@@ -2996,10 +2996,10 @@ struct BSplineCurve2dKnotSplitTests {
     @Test func knotSplits() {
         // Create a 2D BSpline curve from interpolation
         if let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 0), SIMD2(3, 1)]) {
-            let n = c.bsplineKnotSplits(continuity: 0)
+            let n = c.bsplineKnotSplits(continuity: .c0)
             #expect(n >= 0)
             if n > 0 {
-                let vals = c.bsplineKnotSplitValues(continuity: 0)
+                let vals = c.bsplineKnotSplitValues(continuity: .c0)
                 #expect(vals.count == n)
             }
         }

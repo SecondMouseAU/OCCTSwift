@@ -654,11 +654,26 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Find knot indices where a B-spline has continuity discontinuities.
-    /// - Parameter continuity: The desired continuity level to check (0=C0, 1=C1, etc.)
+    ///
+    /// Indices are 1-based into the curve's own knot table, so `bsplineKnot(index:)` turns
+    /// each one into a parameter. The first and last knots are always included, so a curve
+    /// that never drops below `continuity` reports exactly those two.
+    ///
+    /// ```swift
+    /// // A cubic 2D BSpline with simple interior knots is already C2 there, so .c3 is the
+    /// // order that reports its interior knots.
+    /// let indices = curve.splitIndicesAtDiscontinuities(continuity: .c3)
+    /// let params = indices?.map { curve.bsplineKnot(index: $0) }
+    /// ```
+    ///
+    /// - Parameter continuity: Minimum continuity to require of each arc. This is a derivative
+    ///   order, and `Geom2dConvert_BSplineCurveKnotSplitting` splits a knot only when
+    ///   `degree - multiplicity < continuity`, so the meaningful range is 0...degree and it
+    ///   saturates there (#480).
     /// - Returns: Array of knot indices where the curve drops below the requested continuity, or nil if not a B-spline.
-    public func splitIndicesAtDiscontinuities(continuity: Int = 1) -> [Int]? {
+    public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]? {
         var buffer = [Int32](repeating: 0, count: 256)
-        let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, Int32(continuity), &buffer, 256))
+        let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue, &buffer, 256))
         guard n > 0 else { return nil }
         return (0..<n).map { Int(buffer[$0]) }
     }
