@@ -1743,6 +1743,7 @@ had to exclude `.c0` requests when it was written, because "sampled deviation <=
 failed there on OCCT's own numbers. That exclusion is gone. Reproducers, the root-cause walkthrough
 and the before/after sweep transcripts:
 [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse).
+Filed upstream as [OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418).
 
 ---
 

@@ -8,7 +8,8 @@ it; the fix itself is #522's, not #491's.
 (`Surface.approximated` / `Surface.approxWithDetails`) hit this identically, before and after that
 issue unified them, because both call the same OCCT class. Nothing about it is bridge-side.
 
-**Fixed** in `Scripts/patches/0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch`.
+**Fixed** in `Scripts/patches/0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch`, filed upstream as
+[OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418).
 `sweep-before.txt` and `sweep-after.txt` are the full 98-case transcripts either side of it.
 
 Compile with the standard ground-truth invocation from `CLAUDE.md`:
