@@ -1384,8 +1384,16 @@ public func defeature(faces: [Shape]) -> Shape?
   }
   ```
 
-**The rest of the family.** Four Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
-operation, over one shared bridge path (#497):
+**Faces that are not part of this shape.** A face can only be removed from the shape it belongs to.
+OCCT drops a foreign face from the request and carries on with the rest, so a request mixing real
+faces with foreign ones succeeds and removes only the real ones, while a request of nothing but
+foreign faces fails. Membership is by identity, not geometry: the same face measured off an
+identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is stricter —
+since #497 one bad index fails the whole call. Measured in
+[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify).
+
+**The rest of the family.** Five Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
+operation, over one shared bridge path (#497, #536):
 
 | Call | Addresses faces as | Notes |
 |------|--------------------|-------|
@@ -1393,10 +1401,14 @@ operation, over one shared bridge path (#497):
 | [`withoutFeatures(faces:)`](Shape-Features.md#withoutfeaturesfaces) | `[Face]` (by index) | same operation |
 | `defeaturedWithFullHistory(faces:)` | `[Int]` (indices) | also returns the removal history |
 | [`withoutSmallFaces(minArea:)`](Shape-Features.md) | picks its own | every face below an area threshold |
+| [`removeFeatures(faces:)`](Shape-Builders-2.md#removefeaturesfaces--deprecated-536) | `[Shape]` | deprecated: this call, reached one OCCT layer down |
 
 `defeature(faces:tolerance:)` is deprecated and forwards here: `BRepAlgoAPI_Defeaturing` has no
 fuzzy tolerance to set, and never had — see
 [`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert).
+`removeFeatures(faces:)` is deprecated too, and forwards here as well: it drove
+`BOPAlgo_RemoveFeatures` directly, which is the algorithm `BRepAlgoAPI_Defeaturing::Build` forwards
+to (#536).
 
 ---
 

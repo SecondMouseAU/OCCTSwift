@@ -76,7 +76,6 @@
 #include <BRepLib_MakeEdge.hxx>
 #include <BRepLib_MakeFace.hxx>
 #include <BRepLib_MakeShell.hxx>
-#include <BOPAlgo_RemoveFeatures.hxx>
 #include <BOPAlgo_Section.hxx>
 #include <BRepFeat_Builder.hxx>
 #include <Law_BSplineKnotSplitting.hxx>
@@ -5766,26 +5765,12 @@ OCCTShapeRef _Nullable OCCTBRepOffsetOffsetFace(OCCTShapeRef faceShape, double o
 }
 
 // MARK: - BOPAlgo RemoveFeatures (v0.64)
-// --- BOPAlgo_RemoveFeatures ---
-
-OCCTShapeRef _Nullable OCCTBOPAlgoRemoveFeatures(OCCTShapeRef shape,
-    const OCCTShapeRef _Nonnull * _Nonnull facesToRemove, int32_t faceCount) {
-    if (!shape || faceCount <= 0) return nullptr;
-    try {
-        BOPAlgo_RemoveFeatures remover;
-        remover.SetShape(shape->shape);
-        for (int32_t i = 0; i < faceCount; i++) {
-            if (facesToRemove[i]) {
-                remover.AddFaceToRemove(facesToRemove[i]->shape);
-            }
-        }
-        remover.Perform();
-        if (remover.HasErrors()) return nullptr;
-        TopoDS_Shape result = remover.Shape();
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) { return nullptr; }
-}
+// OCCTBOPAlgoRemoveFeatures lived here. It was OCCTShapeDefeature one OCCT layer down:
+// BRepAlgoAPI_Defeaturing::Build forwards its shape, its faces, its history flag and its parallel
+// flag to a BOPAlgo_RemoveFeatures member and returns that member's result, and both paths took the
+// same defaults for the two forwarded flags. Measured identical, BREP byte for byte, on every case
+// including the refusals — see Scripts/repro/536-defeature-removefeatures-unify/. Both Swift
+// spellings now reach OCCTShapeDefeature. #536
 
 // MARK: - BOPAlgo Section (v0.64)
 // --- BOPAlgo_Section ---

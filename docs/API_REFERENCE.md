@@ -88,7 +88,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape History** | 1 | History (create, addModified, addGenerated, remove, isRemoved, hasModified, hasGenerated, hasRemoved, modifiedCount, generatedCount) |
 | **Contour Analysis** | 3 | contourSphereDir, contourCylinderDir, contourSphereEye |
 | **IntCurvesFace** | 1 | intersectLine (line-face intersection) |
-| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures, section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
+| **BOPAlgo Utilities** | 17 | split (splitter), CellsBuilder (create, addAll, removeAll, removeInternalBoundaries, result), analyzeBoolean, removeFeatures (deprecated — `defeature(faces:)` one OCCT layer down, #536), section(instance), section(static), buildFaces, buildSolids, splitShell, edgesToWires, wiresToFaces, makeWire |
 | **IntTools** | 6 | edgeEdgeIntersection, edgeFaceIntersection, faceFaceIntersection, classifyPoint2d, isHole, beanFaceIntersect |
 | **BOPTools** | 4 | normalOnEdge, pointInFace, isEmpty, isOpenShell |
 | **PCurve / BRepAdaptor** | 3 | pcurveParams, pcurveValue, approxCurveOnSurface |
@@ -471,7 +471,7 @@ a map of the major areas, and the `Total` as the count.
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 2 | defeature(faces:), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
+| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |
