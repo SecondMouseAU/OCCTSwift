@@ -1571,11 +1571,14 @@ OCCTShapeRef OCCTShapeReadSTL(const char* filePath) {
 // MARK: - v0.102: Poly_Connect Mesh Adjacency
 // MARK: - Poly_Connect Mesh Adjacency (v0.102.0)
 
+// #541: the FACE index is 0-based, like Face.index and every other face index in the API. It was
+// 1-based, so the caller had no way to name face 0 -- and nothing in the Swift API produces a
+// 1-based face index to feed it. The triangle and node indices these functions take stay 1-based:
+// those address Poly_Triangulation's own arrays, not a shape's faces, and the triangle indices
+// they hand back (Poly_Connect::Triangles/Triangle) are 1-based too.
 static Handle(Poly_Triangulation) _getFaceTriangulation(OCCTShapeRef shape, int32_t faceIndex) {
-    NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> faceMap;
-    TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-    if (faceIndex < 1 || faceIndex > faceMap.Extent()) return nullptr;
-    TopoDS_Face face = TopoDS::Face(faceMap(faceIndex));
+    TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+    if (face.IsNull()) return nullptr;
     TopLoc_Location loc;
     return BRep_Tool::Triangulation(face, loc);
 }

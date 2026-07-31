@@ -903,21 +903,33 @@ public struct ShapeContents: Sendable {
 
 ### `contents`
 
-Get a census of sub-shape counts in this shape.
+A census of sub-shape **occurrences** in this shape.
 
 ```swift
 public var contents: ShapeContents { get }
 ```
 
-Reports topology complexity metrics: counts of solids, shells, faces, wires, edges, vertices, and free (unconnected) elements.
+A complexity metric, not the addressable sub-shape enumeration. It counts one entry per visit in
+the topology tree, so a sub-shape reachable from two parents is counted twice, and every edge of a
+box is counted once per adjacent face.
 
-- **Returns:** A `ShapeContents` struct populated from `BRepTools` traversal.
-- **OCCT:** `BRepTools` iteration (via `OCCTShapeGetContents`).
+- **Returns:** A `ShapeContents` struct: counts of solids, shells, faces, wires, edges, vertices,
+  and free (unconnected) elements.
+- **OCCT:** `ShapeAnalysis_ShapeContents` (via `OCCTShapeGetContents`).
 - **Example:**
   ```swift
-  let c = solid.contents
-  print("faces: \(c.faces), freeEdges: \(c.freeEdges)")
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  print(box.edgeCount)        // 12 — the distinct edges, and the addressable ones
+  print(box.contents.edges)   // 24 — one per (face, edge) visit
+  print(box.faceCount)        // 6
+  print(box.contents.faces)   // 6 — a box shares no face, so these agree
   ```
+- **Note:** **None of these numbers is an index bound.** `0..<contents.faces` overruns `face(at:)`
+  on any shape with a shared face; use `faceCount`. There is a third count again in
+  `contentsExtended()`: its `nbSharedFaces` deduplicates with the location *discarded*, so unlike
+  `faceCount` — which follows `TopoDS_Shape::IsSame` and keeps placements apart — it also collapses
+  two instances of one body. Measured on a compound of a box with a `moved(dx:dy:dz:)` copy of
+  itself: `faceCount` 12, `contents.faces` 12, `nbSharedFaces` 6. (#541)
 
 ---
 

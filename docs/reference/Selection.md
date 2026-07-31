@@ -392,13 +392,21 @@ Total number of face sub-shapes in the shape.
 public var faceCount: Int { get }
 ```
 
-- **Returns:** Count of `TopoDS_Face` sub-shapes; 0 on error or if the shape has no faces.
+This is the same enumeration `Shape.faces()` walks and `Shape.face(at:)` indexes: one entry per
+**distinct** face (`TopoDS_Shape::IsSame` — same TShape and location, orientation ignored), in
+`TopExp_Explorer` order, addressed from 0. A face reachable from two parents counts once.
+
+- **Returns:** Count of distinct `TopoDS_Face` sub-shapes; 0 on error or if the shape has none.
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_FACE, faceMap)` → `faceMap.Extent()`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  print(box.faceCount)  // 6
+  print(box.faceCount)                     // 6
+  print(box.faces().count)                 // 6, the same enumeration
+  print(box.subShapeCount(ofType: .face))  // 6, the generic spelling
   ```
+- **Note:** `contents.faces` is a different number — it counts *occurrences* and is not an index
+  bound. See `Shape.contents`. (#541)
 
 ---
 
@@ -410,9 +418,12 @@ Returns the face at a 0-based index within the shape's indexed face map.
 public func face(at index: Int) -> Face?
 ```
 
-The index corresponds to `TopTools_IndexedMapOfShape` ordering, matching the `faceIndex` field returned by `RayHit`.
+The index is the one `Face.index` carries, the `faceIndex` field `RayHit` returns, and the one
+every face-index-taking method on `Shape` expects. It is meaningful only against the shape it came
+from: an index taken from one shape and used on another names an unrelated face, or nothing at all.
+(#541)
 
-- **Parameters:** `index` — 0-based face index.
+- **Parameters:** `index` — 0-based face index, in `0..<faceCount`.
 - **Returns:** `Face` at the given index, or `nil` if `index` is out of bounds or the shape is null.
 - **OCCT:** `TopExp::MapShapes` + `TopoDS::Face(faceMap(index + 1))` (OCCT maps are 1-based internally).
 - **Example:**
@@ -512,7 +523,10 @@ public struct PickResult: Sendable {
 - `depth` — distance from the camera to the hit.
 - `point` — 3D world-space point where the pick ray intersected the sensitive primitive.
 - `subShapeType` — topology type of the sub-shape hit (e.g. `.face`, `.edge`).
-- `subShapeIndex` — 1-based index of the hit sub-shape within its parent shape; 0 when the whole shape is selected (mode 0).
+- `subShapeIndex` — 0-based index of the hit sub-shape within its parent shape, addressable with
+  `face(at:)` or `subShape(type:index:)`; `-1` when the whole shape is selected (mode 0). This was
+  1-based with `0` as that sentinel until #541, which named the sub-shape before the one hit and
+  made the sentinel indistinguishable from a hit on sub-shape 0.
 
 ---
 

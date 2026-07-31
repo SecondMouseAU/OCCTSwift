@@ -705,7 +705,9 @@ struct SelectorSubShapeTests {
         if !results.isEmpty {
             #expect(results[0].shapeId == 1)
             #expect(results[0].subShapeType == .face)
-            #expect(results[0].subShapeIndex > 0)
+            // #541: 0-based, so the first face is 0 rather than the "whole shape" sentinel.
+            #expect(results[0].subShapeIndex >= 0)
+            #expect(box.face(at: Int(results[0].subShapeIndex)) != nil)
         }
     }
 
@@ -731,7 +733,9 @@ struct SelectorSubShapeTests {
         // Just verify no crash and correct sub-shape type if hit
         if !results.isEmpty {
             #expect(results[0].subShapeType == .edge)
-            #expect(results[0].subShapeIndex > 0)
+            // #541: 0-based, addressable against the shape the pick came from.
+            #expect(results[0].subShapeIndex >= 0)
+            #expect(box.subShape(type: .edge, index: Int(results[0].subShapeIndex)) != nil)
         }
     }
 
@@ -742,7 +746,7 @@ struct SelectorSubShapeTests {
         #expect(selector.pixelTolerance == 5)
     }
 
-    @Test("Shape mode pick returns shape sub-shape type with index 0")
+    @Test("Shape mode pick returns the whole-shape sentinel, not an index")
     func shapeModePick() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let cam = makeCamera()
@@ -757,8 +761,8 @@ struct SelectorSubShapeTests {
         )
 
         if !results.isEmpty {
-            // In shape mode, subShapeIndex should be 0 (whole shape)
-            #expect(results[0].subShapeIndex == 0)
+            // #541: the "whole shape" sentinel is -1, since 0 is now a real sub-shape index.
+            #expect(results[0].subShapeIndex == -1)
         }
     }
 }
@@ -1021,9 +1025,11 @@ struct ShapeContentsTests {
         #expect(c.solids == 1)
         #expect(c.shells == 1)
         #expect(c.faces == 6)
-        // ShapeAnalysis counts topology references, not unique shapes
-        #expect(c.edges > 0)
-        #expect(c.vertices > 0)
+        // #541: ShapeAnalysis_ShapeContents counts *occurrences*, not distinct sub-shapes, so
+        // these are not edgeCount/vertexCount and are not index bounds. A box's every edge is
+        // visited once per adjacent face. Pinned exactly in Issue541FaceIndexContractTests.
+        #expect(c.edges == 24)
+        #expect(c.vertices == 48)
     }
 
     @Test("Cylinder contents")

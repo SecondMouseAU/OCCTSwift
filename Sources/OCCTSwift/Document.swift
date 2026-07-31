@@ -7186,14 +7186,29 @@ extension Shape {
         return counts.map { Int($0) }
     }
 
-    /// Get 1-based face indices adjacent to a specific edge within this shape.
+    /// The 0-based indices of the faces adjacent to `edge` within this shape.
+    ///
+    /// The indices address the same enumeration ``Shape/face(at:)`` reads, so they can be handed
+    /// straight to it. They used to be 1-based, which named the face before the intended one and
+    /// could never name face 0 (#541).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.subShapes(ofType: .edge).first!
+    /// for i in box.adjacentFaces(forEdge: edge) {
+    ///     print(box.face(at: i)!.area())   // the two faces meeting at that edge
+    /// }
+    /// ```
     public func adjacentFaces(forEdge edge: Shape) -> [Int] {
         var indices = [Int32](repeating: 0, count: 64)
         let count = Int(OCCTEdgeAdjacentFaces(handle, edge.handle, &indices, 64))
         return indices.prefix(count).map { Int($0) }
     }
 
-    /// Get 1-based edge indices adjacent to a specific vertex within this shape.
+    /// The 0-based indices of the edges meeting `vertex` within this shape.
+    ///
+    /// The indices address the same enumeration ``Shape/subShape(type:index:)`` reads for
+    /// `.edge`. They used to be 1-based (#541).
     public func adjacentEdges(forVertex vertex: Shape) -> [Int] {
         var indices = [Int32](repeating: 0, count: 64)
         let count = Int(OCCTVertexAdjacentEdges(handle, vertex.handle, &indices, 64))
@@ -7206,7 +7221,11 @@ extension Shape {
 extension Shape {
 
     /// Get adjacent triangles for a triangle in a meshed face.
-    /// faceIndex and triangleIndex are 1-based. Returns (adj1, adj2, adj3), 0 means no neighbor.
+    /// The three triangles adjacent to one triangle of a face's triangulation.
+    ///
+    /// `faceIndex` is 0-based, like ``Face/index`` and every other face index in this API (#541).
+    /// `triangleIndex` and the returned neighbour indices are `Poly_Triangulation`'s own 1-based
+    /// triangle numbers; 0 means no neighbour on that side.
     public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)? {
         var a1: Int32 = 0, a2: Int32 = 0, a3: Int32 = 0
         guard OCCTMeshTriangleAdjacency(handle, Int32(faceIndex), Int32(triangleIndex), &a1, &a2, &a3) else {
@@ -7215,13 +7234,18 @@ extension Shape {
         return (Int(a1), Int(a2), Int(a3))
     }
 
-    /// Get a triangle index containing a given node. faceIndex and nodeIndex are 1-based.
+    /// A triangle containing the given node of a face's triangulation.
+    ///
+    /// `faceIndex` is 0-based (#541); `nodeIndex` and the returned triangle index are
+    /// `Poly_Triangulation`'s own 1-based numbers.
     public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int? {
         let idx = Int(OCCTMeshNodeTriangle(handle, Int32(faceIndex), Int32(nodeIndex)))
         return idx > 0 ? idx : nil
     }
 
     /// Count triangles sharing a node (triangle fan count).
+    ///
+    /// `faceIndex` is 0-based (#541); `nodeIndex` is `Poly_Triangulation`'s own 1-based number.
     public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int {
         Int(OCCTMeshNodeTriangleCount(handle, Int32(faceIndex), Int32(nodeIndex)))
     }

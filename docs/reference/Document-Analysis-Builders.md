@@ -946,28 +946,39 @@ public func vertexEdgeAdjacency() -> [Int]
 
 ### `adjacentFaces(forEdge:)`
 
-Get 1-based face indices adjacent to a specific edge within this shape.
+Get the 0-based indices of the faces adjacent to a specific edge within this shape.
 
 ```swift
 public func adjacentFaces(forEdge edge: Shape) -> [Int]
 ```
 
 - **Parameters:** `edge` — the edge shape to query adjacency for.
-- **Returns:** Array of 1-based face indices (up to 64).
+- **Returns:** Array of 0-based face indices (up to 64), addressable with `face(at:)`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let edge = box.subShapes(ofType: .edge).first!
+  for i in box.adjacentFaces(forEdge: edge) {
+      print(box.face(at: i)!.area())   // the two faces meeting at that edge
+  }
+  ```
+- **Note:** These were 1-based until #541, which named the face before the intended one and could
+  never name face 0. Drop any `- 1` a caller was applying.
 - **OCCT:** `TopExp` adjacency map via `OCCTEdgeAdjacentFaces`.
 
 ---
 
 ### `adjacentEdges(forVertex:)`
 
-Get 1-based edge indices adjacent to a specific vertex within this shape.
+Get the 0-based indices of the edges meeting a specific vertex within this shape.
 
 ```swift
 public func adjacentEdges(forVertex vertex: Shape) -> [Int]
 ```
 
 - **Parameters:** `vertex` — the vertex shape to query adjacency for.
-- **Returns:** Array of 1-based edge indices (up to 64).
+- **Returns:** Array of 0-based edge indices (up to 64), addressable with
+  `subShape(type: .edge, index:)`. These were 1-based until #541.
 - **OCCT:** `TopExp` adjacency map via `OCCTVertexAdjacentEdges`.
 - **Example:**
   ```swift
@@ -983,15 +994,17 @@ public func adjacentEdges(forVertex vertex: Shape) -> [Int]
 
 ### `meshTriangleAdjacency(faceIndex:triangleIndex:)`
 
-Get adjacent triangles for a triangle in a meshed face. Indices are 1-based; `0` means no neighbour.
+Get adjacent triangles for a triangle in a meshed face. Triangle indices are 1-based; `0` means
+no neighbour.
 
 ```swift
 public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `triangleIndex` — 1-based triangle index within the face.
+  - `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use (#541).
+  - `triangleIndex` — 1-based triangle index within the face, as `Poly_Triangulation` numbers
+    them. The returned neighbour indices are 1-based for the same reason.
 - **Returns:** Tuple `(adj1, adj2, adj3)` of adjacent triangle indices, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshTriangleAdjacency`.
 
@@ -1006,8 +1019,8 @@ public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int?
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `nodeIndex` — 1-based node index.
+  - `faceIndex` — 0-based face index (#541).
+  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** 1-based triangle index, or `nil` if not found.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangle`.
 
@@ -1022,8 +1035,8 @@ public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int
 ```
 
 - **Parameters:**
-  - `faceIndex` — 1-based face index.
-  - `nodeIndex` — 1-based node index.
+  - `faceIndex` — 0-based face index (#541).
+  - `nodeIndex` — 1-based node index, as `Poly_Triangulation` numbers them.
 - **Returns:** Number of triangles in the fan around this node.
 - **OCCT:** `Poly_Connect` via `OCCTMeshNodeTriangleCount`.
 

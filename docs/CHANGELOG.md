@@ -139,6 +139,94 @@ points; the total stays 4295. The skip-an-out-of-range-index idiom survives outs
 functions; those are a separate family and are left for their own issue rather than widened into
 this one.
 
+#### Breaking: one meaning for a face index (#541)
+
+A face index in this API is now one thing: **a 0-based position in the enumeration
+`Shape.faces()`, `Shape.faceCount` and `Shape.face(at:)` all read** — `TopExp::MapShapes`, one
+entry per distinct face (`TopoDS_Shape::IsSame`). It used to be three things, and the three
+disagreed.
+
+`Shape.faces()` drove its own bare `TopExp_Explorer`, one entry per **occurrence** in the topology
+tree, and wrote the array position into `Face.index`. `faceCount` / `face(at:)` and most
+index-taking entry points read the deduplicated map. A handful read that map **1-based**.
+
+This is the case #502 (Pass 1b's sub-shape traversal fix) deliberately left, because face indices
+are an addressing token the API hands out and takes back, and auditing every consumer is not a
+one-line change.
+
+**The defect was worse than #541 reported.** Measured on the pinned kernel
+([`Scripts/repro/541-face-index-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/541-face-index-contract)),
+fifteen fixtures walked both ways. The issue's reproduction is a hand-built
+`Shape.compound([face, face])`, but **one ordinary modelling operation produces the divergence**: a
+single `BRepAlgoAPI_Splitter` run cutting a box with a plane leaves two solids sharing the one cut
+face — 12 occurrences over 11 distinct faces. And because that duplicate is not the last
+occurrence, every index after it is shifted:
+
+| index | `faces()` | `face(at:)` |
+|---|---|---|
+| 0–9 | the same face | the same face |
+| **10** | **one face** | **a different face** |
+| 11 | a face | `nil` |
+
+So a caller selecting a face from `faces()` and handing it to `drafted(faces:)`,
+`shelled(openFaces:)` or `withoutFeatures(faces:)` — all map-backed — drafted, opened or deleted **a
+face it had not selected**, with no error. #541's reported symptom (`face(at:)` returning `nil` for
+an index `faces()` handed out) turns out to be the milder half.
+
+The control matters as much: across the ten fixtures that share no face — primitives, a hollow
+solid, both booleans, a compsolid, a sewn sheet, two placements of one body — the two enumerations
+are **identical at every index**, compared face-by-face rather than by count. Converging them moves
+nothing on any shape that does not share a sub-shape.
+
+**What changed.** `OCCTShapeGetFaces` reads `occtMapSubShapes`. The fourteen entry points that
+walked their own explorer to resolve an index (`OCCTShapeClassifyPoint2D`,
+`OCCTShapeFaceDomainEdgeCount`, `OCCTShapeBuildLoops`, `OCCTShapeDraftModification`, the three
+`BRepExtrema_Ext*F` extrema, the three `LocOpe` splitters, three `ShapeFix`/`BRepAlgo` healers and
+`OCCTBRepCheckSubShapeValid`) read `occtFaceAt` / `occtEdgeAt` / `occtSubShapeAt` instead. The
+1-based entry points and index outputs moved to 0-based. Two new helpers in
+`OCCTBridge_Internal.h` carry the contract in one place.
+
+**Six silent behaviour changes**, each recorded in [`SEMVER.md`](SEMVER.md) with its migration:
+
+```swift
+// faces() no longer double-counts a shared face
+let pieces = block.split(by: knife)!            // one splitter run
+let assembly = Shape.compound(pieces)!
+assembly.faces().count      // was 12, now 11 — and now equal to assembly.faceCount
+assembly.faces().allSatisfy { assembly.face(at: $0.index) != nil }   // was false, now true
+
+// adjacency indices are 0-based, so they index face(at:) directly
+for i in box.adjacentFaces(forEdge: edge) {
+    box.face(at: i)!        // was box.face(at: i - 1)
+}
+
+// the buildWires sentinel moved off 0, which is a real face
+box.buildWires(faceIndex: -1)   // every edge of the shape (was 0)
+box.buildWires(faceIndex: 0)    // face 0's edges (was rejected)
+```
+
+Also 0-based now: `splitByWireOnFace(_:faceIndex:)`, `offsetPerFace`'s `faceOffsets` keys (where an
+out-of-range key now fails the call instead of being silently skipped — the same silent-success
+failure #497 fixed for defeaturing), `EvolvingFilletEdge.edgeIndex` (the one fillet/chamfer entry
+point in the file that was 1-based), the `Poly_Connect` mesh family's `faceIndex` (their triangle
+and node indices stay `Poly_Triangulation`-native 1-based, as do the triangle indices they return),
+and `Selector.PickResult.subShapeIndex`, whose "whole shape" sentinel moved from `0` to `-1`.
+
+**`Shape.contents` was left counting what it counts, and is now documented as doing so.**
+`ShapeAnalysis_ShapeContents` is a fourth answer and a fifth: `NbFaces` tracks the explorer, while
+`contentsExtended()`'s `nbSharedFaces` strips the location before deduplicating, so unlike `IsSame`
+it also collapses two placements of one face. On a compound of a box with a `moved(dx:dy:dz:)` copy
+of itself the three read 12 / 12 / 6. It answers a different question — a complexity metric — and
+its docs now say so, with the warning that none of its numbers is an index bound.
+
+Regression tests in `Tests/OCCTTopologyTests/Issue541FaceIndexContractTests.swift`; run against the
+unfixed bridge, seven of the ten failed and the three controls passed. Full suite green (4880
+tests); the only fallout was one existing test whose helper subtracted 1 from
+`adjacentFaces(forEdge:)`, and the selector tests that asserted the old sentinel.
+
+Not an upstream defect — both OCCT primitives behave exactly as documented, and the kernel is not
+involved in the base convention at all. No kernel patch, no xcframework rebuild.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed

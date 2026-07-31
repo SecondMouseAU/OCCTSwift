@@ -1158,13 +1158,7 @@ OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double px, double py, double pz,
     OCCTPointFaceExtremaResult result = {};
     if (!shape) return result;
     try {
-        // Find face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return result;
 
         TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
@@ -1189,18 +1183,8 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1, int32_t face
     OCCTFaceFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // Find faces
-        TopoDS_Face f1, f2;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex1) { f1 = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex2) { f2 = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face f1 = occtFaceAt(shape1->shape, faceIndex1);
+        TopoDS_Face f2 = occtFaceAt(shape2->shape, faceIndex2);
         if (f1.IsNull() || f2.IsNull()) return result;
 
         BRepExtrema_ExtFF extFF(f1, f2);
@@ -1268,20 +1252,10 @@ OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Edge edge = occtEdgeAt(shape1->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
-        TopoDS_Face face;
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
-            idx++;
-        }
+        TopoDS_Face face = occtFaceAt(shape2->shape, faceIndex);
         if (face.IsNull()) return result;
 
         BRepExtrema_ExtCF ext(edge, face);
@@ -1796,10 +1770,8 @@ int32_t OCCTShapeClassifyPoint2D(OCCTShapeRef shape, int32_t faceIndex,
                                    double u, double v, double tolerance) {
     if (!shape) return 3;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return 3;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return 3;
 
         BRepClass_FaceExplorer explorer(face);
         BRepClass_FClassifier classifier(explorer, gp_Pnt2d(u, v), tolerance);
@@ -2032,7 +2004,9 @@ int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef shape, OCCTShapeRef edge,
         int32_t count = 0;
         for (auto it = faces.cbegin(); it != faces.cend() && count < maxFaces; ++it) {
             int fi = faceMap.FindIndex(*it);
-            if (fi > 0) faceIndices[count++] = (int32_t)fi;
+            // #541: FindIndex is 1-based; these indices address the same enumeration
+            // OCCTShapeGetFaceAtIndex reads 0-based, so they are reported 0-based too.
+            if (fi > 0) faceIndices[count++] = (int32_t)(fi - 1);
         }
         return count;
     } catch (...) { return 0; }
@@ -2052,7 +2026,8 @@ int32_t OCCTVertexAdjacentEdges(OCCTShapeRef shape, OCCTShapeRef vertex,
         int32_t count = 0;
         for (auto it = edges.cbegin(); it != edges.cend() && count < maxEdges; ++it) {
             int ei = edgeMap.FindIndex(*it);
-            if (ei > 0) edgeIndices[count++] = (int32_t)ei;
+            // #541: 0-based, matching OCCTShapeGetEdgeAtIndex. See OCCTEdgeAdjacentFaces.
+            if (ei > 0) edgeIndices[count++] = (int32_t)(ei - 1);
         }
         return count;
     } catch (...) { return 0; }
@@ -3915,28 +3890,25 @@ bool OCCTBRepToolSetUVPoints(OCCTShapeRef edge, OCCTShapeRef face,
 #include <BRepAdaptor_Curve.hxx>
 #include <GeomAbs_SurfaceType.hxx>
 
+// #541: this drove its own TopExp_Explorer, one entry per occurrence, while
+// OCCTShapeGetFaceCount/GetFaceAtIndex read the deduplicated map. Since Swift writes the array
+// position here into Face.index and hands it back to ~30 index-taking entry points, the two
+// enumerations had to be one. Reads occtMapSubShapes now, like every other face accessor.
 OCCTFaceRef* OCCTShapeGetFaces(OCCTShapeRef shape, int32_t* outCount) {
     if (!shape || !outCount) return nullptr;
     *outCount = 0;
 
     try {
-        // First, count faces
-        std::vector<TopoDS_Face> faces;
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            faces.push_back(TopoDS::Face(explorer.Current()));
-            explorer.Next();
+        TopTools_IndexedMapOfShape faceMap;
+        int32_t count = occtMapSubShapes(shape->shape, TopAbs_FACE, faceMap);
+        if (count == 0) return nullptr;
+
+        OCCTFaceRef* result = new OCCTFaceRef[count];
+        for (int32_t i = 0; i < count; i++) {
+            result[i] = new OCCTFace(TopoDS::Face(faceMap(i + 1)));
         }
 
-        if (faces.empty()) return nullptr;
-
-        // Allocate array
-        OCCTFaceRef* result = new OCCTFaceRef[faces.size()];
-        for (size_t i = 0; i < faces.size(); i++) {
-            result[i] = new OCCTFace(faces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(faces.size());
+        *outCount = count;
         return result;
     } catch (...) {
         return nullptr;

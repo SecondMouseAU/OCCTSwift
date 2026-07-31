@@ -1097,6 +1097,43 @@ inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int3
     return map(index + 1);  // OCCT's indexed maps are 1-based
 }
 
+// === #541: one meaning for a face index ===
+//
+// A face index crossing this bridge is a 0-based position in the enumeration above -- the one
+// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
+// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
+// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
+// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
+// addressed the face before the one it named and could never name the last face at all.
+//
+// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
+// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
+// plane leaves two solids sharing the single cut face -- 12 occurrences over 11 distinct faces --
+// and the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
+// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
+// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
+// them moved no index on any shape without a shared sub-shape.
+//
+// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
+// "no such index", which is the only failure they have.
+
+/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
+/// negative, past the end, or names a sub-shape that is not a face.
+inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
+    return TopoDS::Face(sub);
+}
+
+/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
+/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
+/// face, whose edges are enumerated the same way.
+inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
+    return TopoDS::Edge(sub);
+}
+
 // === #405/#494: one resolution behind every GeomLProp_* local-property construction ===
 //
 // GeomLProp_SLProps / GeomLProp_CLProps / GeomLProp_CLProps2d each take a `Resolution` their own

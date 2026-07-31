@@ -1289,14 +1289,23 @@ Unlike the basic `scaled(by:)` transform, this propagates tolerance updates corr
 
 ### `buildWires(faceIndex:)`
 
-Build wires from the edges of a face.
+Build wires from the edges of one face, or of the whole shape.
 
 ```swift
-public func buildWires(faceIndex: Int32 = 0) -> [Shape]?
+public func buildWires(faceIndex: Int32 = -1) -> [Shape]?
 ```
 
-- **Parameters:** `faceIndex` — 1-based face index (`0` = all edges).
+- **Parameters:** `faceIndex` — 0-based face index, as `Face.index` and `face(at:)` use. Any
+  negative value means every edge of the shape.
 - **Returns:** Array of wire shapes, or `nil` on failure.
+- **Example:**
+  ```swift
+  let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+  let allEdges = box.buildWires(faceIndex: -1)!   // every edge of the box
+  let firstFace = box.buildWires(faceIndex: 0)!   // just face 0's edges
+  ```
+- **Note:** #541 moved this off 1-based and moved the "all edges" sentinel from `0`, which
+  collided with the first face's own index and left that face unaddressable.
 - **OCCT:** `LocOpe_BuildWires` via `OCCTLocOpeBuildWires`.
 
 ---
@@ -1309,7 +1318,9 @@ Split a face of this shape by projecting a wire onto it.
 public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape?
 ```
 
-- **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 1-based index of the face to split.
+- **Parameters:** `wire` — the splitting wire shape; `faceIndex` — 0-based index of the face to
+  split, as `Face.index` and `face(at:)` use. It was 1-based until #541, so face 0 could not be
+  named at all and the accepted domain was `1...faceCount` rather than `0..<faceCount`.
 - **Returns:** Modified shape with the face split, or `nil` on failure.
 - **OCCT:** `LocOpe_WiresOnShape` + `LocOpe_Spliter` via `OCCTLocOpeSplitByWireOnFace`.
 - **Note:** Only the **first** wire of `wire` is used. Passing a shape that holds several wires
