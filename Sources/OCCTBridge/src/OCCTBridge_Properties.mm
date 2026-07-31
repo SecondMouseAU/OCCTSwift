@@ -555,6 +555,13 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef face,
     }
 }
 
+// Shares OCCTCurve3DProjectPoint's nearest-point-on-a-range implementation since #539. The defect
+// here was the other half of that one: a bare GeomAPI_ProjectPointOnCurve honours the edge's range
+// but reports extrema rather than minima, so it answered 11 for the point (0, -6, 0) against a
+// half-circle edge whose nearest point is 7.81 away, and declined to answer at all -- isValid
+// false, surfacing as nil -- whenever the nearest point was an end rather than a perpendicular
+// foot, which is every point beyond the end of a straight edge. isValid now means what the header
+// says it means: false only for an edge with no 3D curve to project onto.
 OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
                                                 double px, double py, double pz) {
     OCCTCurveProjectionResult result = {};
@@ -566,15 +573,15 @@ OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
         Handle(Geom_Curve) curve = BRep_Tool::Curve(edge->edge, first, last);
         if (curve.IsNull()) return result;
 
-        GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve, first, last);
-        if (proj.NbPoints() == 0) return result;
-
-        gp_Pnt nearest = proj.NearestPoint();
+        gp_Pnt nearest;
+        if (!occtNearestPointOnCurveRange(curve, gp_Pnt(px, py, pz), first, last,
+                                          Precision::Confusion(),
+                                          &nearest, &result.parameter, &result.distance)) {
+            return result;
+        }
         result.px = nearest.X();
         result.py = nearest.Y();
         result.pz = nearest.Z();
-        result.parameter = proj.LowerDistanceParameter();
-        result.distance = proj.LowerDistance();
         result.isValid = true;
         return result;
     } catch (...) {

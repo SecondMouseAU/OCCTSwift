@@ -143,7 +143,25 @@ public final class Edge: @unchecked Sendable {
         return torsion
     }
 
-    /// Project a 3D point onto this edge's curve (closest point)
+    /// Project a 3D point onto this edge's curve, giving the closest point on the edge.
+    ///
+    /// The answer is always inside the edge's own parameter range (``parameterBounds``), and always
+    /// the true nearest point: where the point has no perpendicular foot on the edge, the nearest
+    /// point is one of its ends, and that is what comes back.
+    ///
+    /// ```swift
+    /// let edge = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!.edges()[0]
+    ///
+    /// let beyond = edge.project(point: SIMD3(100, 0, 0))!
+    /// #expect(beyond.point == SIMD3(8, 0, 0))   // the end of the edge
+    /// #expect(beyond.distance == 92)
+    /// ```
+    ///
+    /// Before #539 this returned `nil` for that point, because the underlying extrema search finds
+    /// no perpendicular foot there, and on an arc it could report the *far* side of the arc as the
+    /// nearest point.
+    ///
+    /// - Returns: The closest point, or nil for an edge with no 3D curve to project onto.
     public func project(point: SIMD3<Double>) -> CurveProjection? {
         let result = OCCTEdgeProjectPoint(handle, point.x, point.y, point.z)
         guard result.isValid else { return nil }
@@ -154,8 +172,11 @@ public final class Edge: @unchecked Sendable {
         )
     }
 
-    /// Shortest distance from a 3D point to this edge. Returns nil if the
-    /// projection fails (e.g. degenerate edge).
+    /// Shortest distance from a 3D point to this edge.
+    ///
+    /// A one-liner over ``project(point:)``, so it measures to the same nearest point: over the
+    /// edge's own parameter range, ends included. Returns nil only for an edge with no 3D curve
+    /// (typically a pcurve-only edge from a loft or sweep before `BuildCurves3d`).
     public func distance(to point: SIMD3<Double>) -> Double? {
         project(point: point)?.distance
     }

@@ -1208,6 +1208,123 @@ inline bool occtCurveCurvatureIsInvertible(double curvature) {
         && std::abs(curvature) > occtLocalPropsResolution();
 }
 
+// === #539: the nearest point on a curve, over the range the caller actually has ===
+//
+// For every bridge entry point that promises the CLOSEST point on a bounded curve, rather than the
+// closest of whatever an OCCT search happened to find. No single OCCT call answers this correctly,
+// which is why the two entry points that asked it had picked one each and were wrong in different
+// ways:
+//
+//   ShapeAnalysis_Curve::Project answers on any curve, but on an analytic basis (line, circle,
+//     ellipse) it solves on the basis curve and reports a parameter outside [first, last] as though
+//     it were on the curve. A segment trimmed to [3, 8] calls (100, 0, 0) distance 0; a point on
+//     the full circle but off the arc reads as distance 0 too. Passing the range does not help --
+//     the 7-argument overload documents itself as EXTENDING the range, and measured identically.
+//     Its AdjustToEnds flag, which reads like it might already cover this, changed no measured
+//     answer either way.
+//
+//   GeomAPI_ProjectPointOnCurve honours the range, but returns extrema, not minima: on a half
+//     circle the only extremum in range can be the FAR side, reported as LowerDistance (11 where
+//     the truth is 7.81), and it finds nothing at all whenever the nearest point is an end.
+//
+//   The ends themselves are the answer whenever the nearest point is not a perpendicular foot --
+//     the ordinary case for a point beyond a trimmed curve, and the one neither call covers.
+//
+// Taking the minimum over all three is correct on all 51 curve/point combinations measured for
+// #539 (line, circle, ellipse, parabola, hyperbola, Bezier, BSpline and offset curves, trimmed and
+// not), where ShapeAnalysis_Curve alone was right on 37 and GeomAPI alone on 25. The two it fixes
+// beyond the trimmed-range defect the issue named: a parabola or hyperbola whose only in-range
+// extremum is a MAXIMUM (both calls answered 20 and 27 where the truth was 19.6 and 25.5), and any
+// arc queried from outside its own span.
+//
+// Periodic bases need no special handling here, and deliberately get none. Geom_TrimmedCurve
+// normalises its own domain (trimming a circle to [-1, 1] reports [5.28, 7.28]) and Project returns
+// the periodic representative nearest that domain, so a parameter landing outside it is genuinely
+// outside the curve -- verified over ten seam-crossing and beyond-one-period cases, every one of
+// which the plain clamp below answered exactly.
+//
+// `first`/`last` are passed in rather than read off the curve because the two callers disagree
+// about where the range lives: a Curve3D carries its own, while an edge's range comes from
+// BRep_Tool::Curve and usually bounds an unbounded basis curve.
+//
+// Returns false only when there is nothing to answer with -- a null curve, or a curve on which
+// every candidate failed to evaluate. An unbounded curve with no extremum keeps the
+// ShapeAnalysis_Curve answer, so callers that always answered still always answer.
+
+#include <ShapeAnalysis_Curve.hxx>
+#include <GeomAPI_ProjectPointOnCurve.hxx>
+
+inline bool occtNearestPointOnCurveRange(const occ::handle<Geom_Curve>& curve, const gp_Pnt& point,
+                                         double first, double last, double precision,
+                                         gp_Pnt* outPoint, double* outParameter,
+                                         double* outDistance) {
+    if (curve.IsNull()) return false;
+
+    const bool firstFinite = !Precision::IsInfinite(first);
+    const bool lastFinite = !Precision::IsInfinite(last);
+
+    double bestParam = 0.0, bestDistance = RealLast();
+    gp_Pnt bestPoint;
+    bool found = false;
+
+    // A candidate parameter counts only if it lies in the range AND the curve can be evaluated
+    // there; everything else about it is decided by the distance it produces.
+    auto consider = [&](double param) {
+        if (firstFinite && param < first) return;
+        if (lastFinite && param > last) return;
+        gp_Pnt candidate;
+        try {
+            candidate = curve->Value(param);
+        } catch (...) {
+            return;
+        }
+        double distance = point.Distance(candidate);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestParam = param;
+            bestPoint = candidate;
+            found = true;
+        }
+    };
+
+    // 1. ShapeAnalysis_Curve's answer, kept when it landed inside the range.
+    gp_Pnt analysisPoint;
+    double analysisParam = 0.0, analysisDistance = RealLast();
+    bool haveAnalysis = false;
+    try {
+        ShapeAnalysis_Curve analyzer;
+        analysisDistance = analyzer.Project(curve, point, precision, analysisPoint, analysisParam);
+        haveAnalysis = true;
+        consider(analysisParam);
+    } catch (...) {
+        // Leave it to the other two sources.
+    }
+
+    // 2. Every extremum inside the range, since the nearest one is not always the first.
+    try {
+        GeomAPI_ProjectPointOnCurve projector(point, curve, first, last);
+        for (int i = 1; i <= projector.NbPoints(); i++) consider(projector.Parameter(i));
+    } catch (...) {
+        // Same.
+    }
+
+    // 3. The ends, where they are real parameters rather than OCCT's infinity sentinel.
+    if (firstFinite) consider(first);
+    if (lastFinite) consider(last);
+
+    if (!found) {
+        if (!haveAnalysis) return false;
+        bestParam = analysisParam;
+        bestDistance = analysisDistance;
+        bestPoint = analysisPoint;
+    }
+
+    if (outPoint) *outPoint = bestPoint;
+    if (outParameter) *outParameter = bestParam;
+    if (outDistance) *outDistance = bestDistance;
+    return true;
+}
+
 // === #496: the drilling preconditions, and one BRepFeat_MakeCylindricalHole skeleton ===
 //
 // OCCTSwift drills round holes two ways, and the audit read the older one as a crude

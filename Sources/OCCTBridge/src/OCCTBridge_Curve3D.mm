@@ -1238,15 +1238,24 @@ OCCTCurve3DRef OCCTCurve3DJoinCurves(const OCCTCurve3DRef* curves, int32_t count
 // MARK: - Curve3D Projection / Validate / Sample (v0.49)
 // --- ShapeAnalysis_Curve expansion ---
 
+// The nearest point over the curve's own domain, not over its basis curve (#539). Before, this was
+// a bare ShapeAnalysis_Curve::Project, which on a segment trimmed to [3, 8] reported (100, 0, 0) at
+// parameter 100, distance 0 -- so a `distance < tolerance` proximity test read a point 92 units
+// away as lying on the curve. See occtNearestPointOnCurveRange for what each of its three candidate
+// sources contributes and why none of them suffices alone.
 OCCTCurveProjectResult OCCTCurve3DProjectPoint(OCCTCurve3DRef curve,
     double px, double py, double pz, double precision) {
     OCCTCurveProjectResult result = {};
     if (!curve || curve->curve.IsNull()) return result;
     try {
-        ShapeAnalysis_Curve sac;
         gp_Pnt proj;
-        double param;
-        double dist = sac.Project(curve->curve, gp_Pnt(px, py, pz), precision, proj, param);
+        double param = 0.0, dist = 0.0;
+        if (!occtNearestPointOnCurveRange(curve->curve, gp_Pnt(px, py, pz),
+                                          curve->curve->FirstParameter(),
+                                          curve->curve->LastParameter(),
+                                          precision, &proj, &param, &dist)) {
+            return result;
+        }
         result.distance = dist;
         result.parameter = param;
         result.projX = proj.X();

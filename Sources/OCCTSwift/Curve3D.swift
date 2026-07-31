@@ -1017,9 +1017,29 @@ extension Curve3D {
         public let point: SIMD3<Double>
     }
 
-    /// Project a point onto this curve to find the closest point.
+    /// Project a point onto this curve to find the closest point on it.
     ///
-    /// Uses ShapeAnalysis_Curve::Project.
+    /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
+    /// where the point has no perpendicular foot on the curve — anything past the end of a trimmed
+    /// curve, or off to one side of an arc — the nearest point is an end, and that is what comes
+    /// back. Unlike ``nearestParameter(to:)``, this always answers.
+    ///
+    /// ```swift
+    /// let segment = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
+    ///     .trimmed(from: 3, to: 8)!
+    ///
+    /// let inside = segment.projectPoint(SIMD3(5, 2, 0))
+    /// #expect(inside.parameter == 5)         // the perpendicular foot
+    /// #expect(inside.distance == 2)
+    ///
+    /// let beyond = segment.projectPoint(SIMD3(100, 0, 0))
+    /// #expect(beyond.parameter == 8)         // the end of the curve, not of its basis line
+    /// #expect(beyond.distance == 92)
+    /// ```
+    ///
+    /// Before #539 this projected onto the curve's *underlying basis* curve, so the point above came
+    /// back at parameter 100, distance 0 — a `distance < tolerance` proximity test read a point 92
+    /// units away as lying on the curve.
     ///
     /// - Parameters:
     ///   - point: 3D point to project
@@ -1036,8 +1056,17 @@ extension Curve3D {
 
     /// Shortest distance from a 3D point to this curve.
     ///
-    /// Convenience one-liner around `projectPoint(_:)` when you only need the
-    /// scalar distance and don't care about the projected point or parameter.
+    /// Convenience one-liner around ``projectPoint(_:precision:)`` when you only need the scalar
+    /// distance and don't care about the projected point or parameter, so it measures to the same
+    /// nearest point: over this curve's own ``domain``, ends included.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(from: 0, to: .pi)!
+    ///
+    /// // On the full circle, but not on this half of it: 4.47 from the arc's start.
+    /// #expect(abs(arc.distance(to: SIMD3(3, -4, 0)) - 4.47214) < 1e-5)
+    /// ```
     public func distance(to point: SIMD3<Double>, precision: Double = 1e-6) -> Double {
         projectPoint(point, precision: precision).distance
     }
