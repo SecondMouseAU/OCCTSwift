@@ -544,8 +544,26 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
 // The same resolution for faces addressed as shape handles. Returns false when the request is
 // empty, the array itself is null, or any element is null — a null element used to be dereferenced
 // unchecked by OCCTShapeDefeature, which no try/catch could have saved.
-bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
-                                    TopTools_ListOfShape& outFaces);
+//
+// #578: each element is a face *carrier*, not necessarily a face. AddFaceToRemove takes a
+// TopoDS_Shape and its own documentation calls it "the shape to extract the faces for removal", so
+// a compound, a shell or the whole input solid is a legal way to name faces — measured, and passing
+// the faces a carrier explores to is the same request BREP for BREP. Every element is therefore
+// exploded for TopAbs_FACE and each face checked against the input's own face map. The rule, chosen
+// to match the index-addressed occtDefeaturingFacesByIndex above rather than the kernel's own:
+//
+//   every element must contribute at least one face, and every face it contributes must belong to
+//   `shape` — otherwise the whole request fails and nothing is removed.
+//
+// Membership is TopTools_ShapeMapHasher, i.e. IsSame, so a reversed face still belongs (measured)
+// while a face off an identically-built shape does not. The kernel's own rule is to ignore what does
+// not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
+// succeeds while silently leaving the named feature in place — the failure mode #497 removed from
+// the index-addressed spelling, on the entry point #536 made canonical. This changes only requests
+// that were being partly discarded: nothing whose carriers all belong behaves differently. See
+// Scripts/repro/578-defeature-face-membership/ for the whole matrix.
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces);
 
 // Run `defeaturing` over `shape`, removing `facesToRemove`. The builder is the caller's, because
 // OCCTShapeHistoryFromDefeature has to outlive this call to read its history. Returns false unless

@@ -14728,12 +14728,25 @@ extension Shape {
     /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
     /// not necessarily a caller error.
     ///
-    /// A face that is not part of this shape cannot be removed from it. OCCT drops such a face
-    /// from the request and carries on with the rest, so a request that mixes real faces with
-    /// foreign ones succeeds and removes only the real ones; a request of nothing but foreign
-    /// faces fails. Membership is by identity, not by geometry: the same face measured off an
-    /// identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is
-    /// stricter — since #497 one bad index fails the whole call.
+    /// ## What may be named, and what must belong
+    ///
+    /// Each element of `faces` names faces rather than having to be one: a compound of faces, a
+    /// shell, or this whole shape all name the faces they contain, and naming a carrier is the same
+    /// request as naming the faces it holds. The rule every element must satisfy:
+    ///
+    /// > Every element must name at least one face, and every face it names must be a face of this
+    /// > shape. Otherwise the whole call returns `nil` and nothing is removed.
+    ///
+    /// So a request that mixes this shape's faces with another shape's fails, as does one carrying
+    /// an edge or a vertex, which name no face at all. Membership is by identity, not by geometry:
+    /// the same face measured off an identically-built shape is foreign, while the same face
+    /// reversed is not — orientation is not identity.
+    ///
+    /// Until #578 a foreign face was dropped from the request and the rest proceeded, which is
+    /// OCCT's own documented rule ("those that do not belong will be ignored"). That answered a
+    /// success, with no warning, on a shape still carrying the feature the caller asked to remove —
+    /// indistinguishable from a real removal. The index-addressed ``Shape/withoutFeatures(faces:)``
+    /// has failed the whole call on one bad index since #497; both spellings now agree.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -14744,10 +14757,16 @@ extension Shape {
     /// if let plain = filleted.defeature(faces: filletFaces) {
     ///     print(plain.volume ?? 0)   // back to 8000.0, the unfilleted box
     /// }
+    ///
+    /// // A face from somewhere else fails the request rather than being ignored.
+    /// let elsewhere = Shape.box(width: 11, height: 11, depth: 11)!.subShapes(ofType: .face)[0]
+    /// print(filleted.defeature(faces: filletFaces + [elsewhere]) == nil)   // true
     /// ```
     ///
-    /// - Parameter faces: The faces to remove, as shapes belonging to this shape.
-    /// - Returns: The defeatured shape, or `nil` on failure.
+    /// - Parameter faces: The faces to remove — each element either a face of this shape, or a
+    ///   shape whose faces all belong to this shape.
+    /// - Returns: The defeatured shape, or `nil` on failure, including when the request names a
+    ///   face this shape does not have.
     public func defeature(faces: [Shape]) -> Shape? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
         return faceHandles.withUnsafeBufferPointer { buf -> Shape? in
