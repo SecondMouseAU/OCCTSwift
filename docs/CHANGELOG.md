@@ -17,6 +17,60 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The approximation consumers did move when #522 landed, and at the continuity that was supposed to be safe (#572)
+
+Patch `0019` (#522) fixed `AdvApp2Var_ApproxF2var::mma2ce1_` filling both Jacobi-maxima buffers from
+the V slot, which made every interior truncation error the surface approximator computed evaluate to
+exactly zero. #572 asked whether the five kernel classes that construct a `GeomConvert_ApproxSurface`
+and never re-check `MaxError()` moved with it, expecting that they could not have taken a wrong shape
+because they run at C1 or C2, above the collapse.
+
+They took a wrong shape. Measured on the real wrapper paths, against a stock and a `0019` kernel
+built as matching `-O0` single-TU override links:
+
+| request | before `0019` | after |
+|---|---|---|
+| the sweep's forced-C1 conversion, tol 1e-4 | reported 1.28e-5 with `isDone`, really **0.876** out | reports 2.547 with `isDone` false, **0.176** out |
+| `Surface.toBSpline()` on a trimmed offset, tol 1e-4 | reported 2.09e-5 with `isDone`, really **0.104** out | reports 0.341 with `isDone` false, **0.038** out |
+| `GeomLib::ExtendSurfByLength` on a C0-generatrix revolution, tol 1e-7 | reported 9.04e-9 with `isDone`, really **0.626** out | reports 1.887 with `isDone` false, **0.391** out |
+
+Every path that moved moved toward its tolerance, by 1.6x to 5x, and every path that did not move was
+already meeting it. None of the three reaches its tolerance even now: they cap out at degree 14 and 16
+or 24 segments. What changed is that the degree search climbs to that cap instead of stopping at the
+`NDMINU` floor with every candidate scoring zero, and that the caller is now told.
+
+**Continuity was the wrong axis to predict on.** The zeroed error does not only lower the degree
+floor, it disables the subdivision decision: `mma2ce2_`'s tolerance test can never fire on a patch
+interior, so the fit neither raises its degree nor cuts the patch at any continuity. And C0 *is*
+reachable at `GeomConvert_1.cxx:960`, which derives its request from the surface rather than
+hardcoding one (`Geom_OffsetSurface` reports `IsCNu(N)` as its basis surface's `IsCNu(N + 1)`, so an
+offset of a B-spline that is C1 but not C2 in U asks for C0) and does not collapse there. The axis
+that predicts movement is whether the site allows subdivision and whether the input needs any.
+
+Three rows of the issue's own site table did not survive measurement, which a backtrace probe in
+`GeomConvert_ApproxSurface::Approximate` settled rather than a source reading:
+
+- **`Shape.sweep` cannot reach `GeomFill_Sweep.cxx:296`.** It uses the two-argument
+  `BRepOffsetAPI_MakePipe`, and `ForceApproxC1` is only on the five-argument one.
+  `PipeShellBuilder.setForceApproxC1(true)` is the sole lever, and it additionally needs the spine's
+  tangent break to sit inside one edge, since `BRepFill_Sweep` splits the sweep at spine vertices.
+- **`BRepOffset_Offset.cxx:1626` is dead.** It sits inside `if (Polynomial)`, that argument defaults
+  to `false` on every `Init` overload, and the one in-tree caller takes the default. Neither
+  `Shape.offset` at any join type nor `Shape.thickSolid` constructs it.
+- **`GeomLib.cxx:1517` has no OCCTSwift entry point.** Its reachable-from list is wider than the
+  issue recorded (fillets through `ChFi3d`, plus `BRepFill_Sweep`, `BRepOffset_Tool` and `BRepLib`,
+  not just "GeomLib conversions"), but every one of those hands it a surface that is already a
+  B-spline, which is the branch above the construction.
+
+`ShapeUpgrade_UnifySameDomain.cxx:3629` needs a base surface that closes in a direction it is not
+periodic in and is not already a B-spline, which no `BRepPrimAPI` primitive produces (`Uperiod` comes
+from `IsUPeriodic()`). An extrusion of a closed but clamped B-spline curve reaches it, and its fit is
+exact on both kernels.
+
+Two regression suites pin the paths that moved, both checked against the released pre-`0019` kernel
+with `OCCTSWIFT_REMOTE=1`. No production code changes. Reproducer, both transcripts and the probe
+census: [`Scripts/repro/572-approx-consumer-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/572-approx-consumer-sweep).
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge
