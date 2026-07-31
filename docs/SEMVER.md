@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with three recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, and [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with four recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, and [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build.
 
 ## Rules
 
@@ -80,6 +80,26 @@ Both spellings still compile and still return a value; the deprecation attribute
 - The same forwarding fixes four cases where `TDocStd_PathParser` was wrong rather than differently formatted: an extension-less path parsed to an empty name *and* empty directory, a dotfile inside a directory returned `nil` from every accessor, a dot in a directory name was read as the file's extension, and non-ASCII paths came back mangled. Those four are ordinary PATCH-class fixes ("a method that returned `nil` when it shouldn't"); only the two formats above are a break.
 - A warning, not an error, is the weaker prompt, stated plainly here rather than claimed otherwise. It is what the API allows: Swift cannot overload on return *value*, only on type, so there is no spelling in which the old format survives alongside the new one.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with before/after code, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, one meaning for a face index (#541)
+
+**Six silent behaviour changes, none a compile error.** Every one moves an index toward the single contract now stated on `Shape.faceCount`: a sub-shape index into a shape is a 0-based position in the enumeration `faces()` / `faceCount` / `face(at:)` all read. Recorded here before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.faces()` returns one entry per *distinct* face, not per occurrence | Nothing on any shape that shares no face. On one that does — the result of a split, an imprint, a compound of a shape with itself — the array is shorter and the surplus `Face.index` values are gone. They named faces `face(at:)` could not address, and past the duplicate they named the *wrong* face |
+| `adjacentFaces(forEdge:)` / `adjacentEdges(forVertex:)` return 0-based indices | Drop the caller's own `- 1`. A caller who never subtracted was reading the neighbouring sub-shape |
+| `splitByWireOnFace(_:faceIndex:)` takes 0-based, so its domain is `0..<faceCount` not `1...faceCount` | Subtract 1 from a hand-written index |
+| `buildWires(faceIndex:)` takes 0-based; the "every edge" sentinel is any negative value, was `0` | Nothing if the default is used — it changed from `0` to `-1` and still means every edge. A caller passing `0` explicitly now gets face 0's edges |
+| `offsetPerFace(defaultOffset:faceOffsets:)` keys are 0-based, and an out-of-range key fails the call instead of being skipped | Subtract 1 from hand-written keys. A call that silently ignored a bad key now returns `nil` |
+| `EvolvingFilletEdge.edgeIndex` is 0-based; `Selector.PickResult.subShapeIndex` is 0-based with `-1`, not `0`, for the whole shape; `meshTriangleAdjacency`/`meshNodeTriangle`/`meshNodeTriangleCount` take a 0-based `faceIndex` (their triangle and node indices stay `Poly_Triangulation`-native 1-based, as do the triangle indices they return) | Subtract 1 from hand-written indices; compare `subShapeIndex` against `-1` rather than `0` |
+
+The exception was taken because:
+
+- **The disagreement is the bug, and it was not only cosmetic.** Measured on the pinned kernel (`Scripts/repro/541-face-index-contract/`): one `BRepAlgoAPI_Splitter` run cutting a box with a plane leaves 12 face occurrences over 11 distinct faces, and because the duplicate is not last, `faces()` and `face(at:)` named **different faces** from index 10 onwards. A caller selecting a face from `faces()` and passing it to `drafted(faces:)`, `shelled(openFaces:)` or `withoutFeatures(faces:)` — all map-backed — operated on a face it had not selected, with no error. Preserving any of the old conventions would have preserved that.
+- **There is no spelling in which both survive.** These are index *values*, not types or names, so Swift cannot overload on them and a deprecation attribute has nothing to attach to. The alternative to changing them is documenting that five different meanings of "face index" coexist and leaving callers to track which is which per method.
+- **On every shape that shares no sub-shape, nothing moves.** The probe checks the enumeration order face-by-face rather than by count across ten such fixtures: identical at every index. The `faces()` change is invisible to a caller whose shapes are primitives, booleans, sewn sheets or compsolids.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
 
 ### MINOR — `x.y.0`
 

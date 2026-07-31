@@ -93,14 +93,40 @@ extension Shape {
 // MARK: - Shape Face Index Access Extension
 
 extension Shape {
-    /// Get total number of faces in the shape
+    /// The number of distinct faces in this shape.
+    ///
+    /// This is the same enumeration ``faces()`` walks and ``face(at:)`` indexes: one entry per
+    /// distinct face, in `TopExp_Explorer` order, addressed from 0. A face reachable from two
+    /// parents — the wall shared by both halves of a split solid, say — counts once.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.faceCount)                     // 6
+    /// print(box.faces().count)                 // 6, the same enumeration
+    /// print(box.subShapeCount(ofType: .face))  // 6, the generic spelling
+    /// ```
     public var faceCount: Int {
         Int(OCCTShapeGetFaceCount(handle))
     }
-    
-    /// Get face by index (0-based)
-    /// - Parameter index: The face index
-    /// - Returns: Face at the given index, or nil if index is out of bounds
+
+    /// The face at a 0-based index in this shape's face enumeration.
+    ///
+    /// The index is the one ``Face/index`` carries, and the one every face-index-taking method on
+    /// `Shape` expects. It is meaningful only against the shape it came from: an index taken from
+    /// one shape and used on another names an unrelated face, or nothing at all.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// for face in box.faces() {
+    ///     // Every index faces() hands out is addressable here, and names the same face.
+    ///     let again = box.face(at: face.index)!
+    ///     print(face.index, again.area())
+    /// }
+    /// print(box.face(at: box.faceCount) as Any)   // nil — one past the end
+    /// ```
+    ///
+    /// - Parameter index: The face index, in `0..<faceCount`.
+    /// - Returns: Face at the given index, or nil if the index is out of bounds.
     public func face(at index: Int) -> Face? {
         guard let faceHandle = OCCTShapeGetFaceAtIndex(handle, Int32(index)) else {
             return nil

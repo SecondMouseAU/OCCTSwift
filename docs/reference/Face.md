@@ -41,13 +41,19 @@ Inverse of `Shape.fromFace(_:)`. Use when you have a face-typed `Shape` (e.g. fr
 
 ### `index`
 
-Index of this face within the parent shape from which it was extracted (`-1` if standalone).
+This face's 0-based position in its parent shape's face enumeration (`-1` if standalone).
 
 ```swift
 public let index: Int
 ```
 
-Set automatically when a `Face` is created via `Shape.faces()`; faces constructed via `Face(_ shape:)` get index `-1`.
+Set automatically when a `Face` is created via `Shape.faces()` or `Shape.face(at:)`; faces
+constructed via `Face(_ shape:)` get index `-1`.
+
+This is the addressing token every face-index-taking method on `Shape` expects — `face(at:)`,
+`drafted(faces:…)`, `shelled(thickness:openFaces:)`, `withoutFeatures(faces:)`,
+`edgesInFace(at:)` and the rest. It is only meaningful against the shape it came from: an index
+taken from one shape and used on another names an unrelated face, or nothing at all. (#541)
 
 - **Example:**
   ```swift
@@ -570,15 +576,26 @@ Returns all face sub-shapes of the solid as typed `Face` objects.
 public func faces() -> [Face]
 ```
 
-Each returned `Face` carries its ordinal `index` within the traversal order. Returns an empty array if the shape has no faces or `TopExp_Explorer` fails.
+Each returned `Face` carries its position as ``Face.index``. This is the same enumeration
+`Shape.faceCount` counts and `Shape.face(at:)` indexes: one entry per **distinct** face, in
+`TopExp_Explorer` order. A face reachable from two parents — the wall shared by both halves of a
+split solid, say — appears once. Returns an empty array if the shape has no faces.
 
-- **OCCT:** `TopExp_Explorer(shape, TopAbs_FACE)` — iterates all `TopoDS_Face` sub-shapes.
+- **OCCT:** `TopExp::MapShapes(shape, TopAbs_FACE, …)` via the bridge's shared sub-shape
+  enumeration.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   let faces = box.faces()
   #expect(faces.count == 6)
+  #expect(faces.count == box.faceCount)
+  // Every index handed out here is addressable, and names the same face.
+  #expect(faces.allSatisfy { box.face(at: $0.index) != nil })
   ```
+- **Note:** Until #541 this was a separate walk yielding one entry per *occurrence* in the topology
+  tree, so on a shape with a shared face it was longer than `faceCount`, its surplus indices named
+  faces `face(at:)` could not address, and past the duplicate it named a *different* face than
+  every index-taking method resolved.
 
 ---
 

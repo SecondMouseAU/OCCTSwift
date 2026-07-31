@@ -2417,9 +2417,14 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef shape, double defaultOffset,
         offset.Initialize(shape->shape, defaultOffset, tolerance,
                           BRepOffset_Skin, false, false, jt);
 
+        // #541: 0-based, matching Face.index and every sibling here. It was 1-based, so a
+        // Face.index offset the face before the one it named and index 0 was silently dropped.
+        // Out of range is a caller error rather than something to skip: skipping returned a
+        // shape offset by the default everywhere, indistinguishable from a successful run
+        // (the same failure #497 fixed for defeaturing).
         for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx < 1 || idx > faceMap.Extent()) continue;
+            int32_t idx = faceIndices[i] + 1;
+            if (idx < 1 || idx > faceMap.Extent()) return nullptr;
             const TopoDS_Face& face = TopoDS::Face(faceMap(idx));
             offset.SetOffsetOnFace(face, faceOffsets[i]);
         }
@@ -4576,16 +4581,8 @@ OCCTShapeRef OCCTLocOpeSplitShapeByWire(OCCTShapeRef shape, int32_t faceIndex, O
     try {
         LocOpe_SplitShape splitter(shape->shape);
 
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return nullptr;
 
         // Extract wire
@@ -4688,16 +4685,8 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceIndex, OCCTSh
         LocOpe_SplitDrafts splitDrafts;
         splitDrafts.Init(shape->shape);
 
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return nullptr;
 
         // Extract wire
@@ -4748,16 +4737,8 @@ int32_t OCCTLocOpeFindEdgesInFace(OCCTShapeRef shape, int32_t faceIndex,
                                    OCCTShapeRef* outEdges, int32_t maxEdges) {
     if (!shape || !outEdges || maxEdges <= 0) return 0;
     try {
-        // Find the target face
-        TopoDS_Face face;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-            if (idx == faceIndex) {
-                face = TopoDS::Face(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #541: the shared face enumeration, so this names the face face(at:) names.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
         if (face.IsNull()) return 0;
 
         LocOpe_FindEdgesInFace finder;
@@ -5629,12 +5610,13 @@ bool OCCTLocOpeBuildWires(OCCTShapeRef shape, int32_t faceIndex,
     int32_t* outCount) {
     if (!shape) return false;
     try {
+        // #541: the face index is 0-based, like Face.index. The "every edge of the shape"
+        // sentinel used to be 0, which collided with the first face's own index and made that
+        // face unaddressable; it is now any negative value.
         NCollection_List<TopoDS_Shape> edges;
-        if (faceIndex > 0) {
-            TopTools_IndexedMapOfShape faceMap;
-            TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-            if (faceIndex > faceMap.Extent()) return false;
-            TopoDS_Face face = TopoDS::Face(faceMap(faceIndex));
+        if (faceIndex >= 0) {
+            TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+            if (face.IsNull()) return false;
             TopExp_Explorer exp(face, TopAbs_EDGE);
             for (; exp.More(); exp.Next()) edges.Append(exp.Current());
         } else {
@@ -5667,10 +5649,9 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
     OCCTShapeRef wire, int32_t faceIndex) {
     if (!shape || !wire) return nullptr;
     try {
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-        if (faceIndex < 1 || faceIndex > faceMap.Extent()) return nullptr;
-        TopoDS_Face face = TopoDS::Face(faceMap(faceIndex));
+        // #541: 0-based, matching Face.index. It was 1-based, so face 0 was unaddressable.
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return nullptr;
 
         TopoDS_Wire w;
         if (wire->shape.ShapeType() == TopAbs_WIRE) {
@@ -7359,10 +7340,8 @@ void OCCTBRepAlgoImageClear(OCCTBRepAlgoImageRef img) {
 int32_t OCCTShapeBuildLoops(OCCTShapeRef shape, int32_t faceIndex) {
     if (!shape) return -1;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return -1;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return -1;
 
         BRepAlgo_Loop loop;
         loop.Init(face);
@@ -7385,10 +7364,8 @@ OCCTShapeRef OCCTShapeDraftModification(OCCTShapeRef shape, int32_t faceIndex,
                               double planeNX, double planeNY, double planeNZ) {
     if (!shape) return nullptr;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return nullptr;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return nullptr;
 
         Handle(Draft_Modification) draft = new Draft_Modification(shape->shape);
         draft->Add(face, gp_Dir(dirX, dirY, dirZ), angle,

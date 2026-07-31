@@ -309,7 +309,8 @@ public func offsetPerFace(defaultOffset: Double,
 
 - **Parameters:**
   - `defaultOffset` — Default offset distance applied to all faces not listed in `faceOffsets`.
-  - `faceOffsets` — Dictionary mapping 1-based face indices to custom offset distances.
+  - `faceOffsets` — Dictionary mapping 0-based face indices — as `Face.index` and `face(at:)` use —
+    to custom offset distances. A key outside `0..<faceCount` fails the call.
   - `tolerance` — Offset tolerance.
   - `joinType` — Join strategy for offset gaps (`.arc` or `.intersection`).
 - **Returns:** Offset shape, or `nil` on failure.
@@ -317,10 +318,13 @@ public func offsetPerFace(defaultOffset: Double,
 - **Example:**
   ```swift
   if let result = solid.offsetPerFace(defaultOffset: 1.0,
-                                       faceOffsets: [1: 2.0, 3: 0.5]) {
+                                       faceOffsets: [0: 2.0, 2: 0.5]) {
       print(result.isValid)
   }
   ```
+- **Note:** #541 moved the keys off 1-based, and made an out-of-range key fail the call. It used to
+  be skipped, which returned a shape offset by the default everywhere and looked exactly like a
+  successful run — the same silent success #497 fixed for defeaturing.
 
 ---
 

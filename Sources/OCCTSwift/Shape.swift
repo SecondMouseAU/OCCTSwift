@@ -4577,6 +4577,10 @@ extension Shape {
 // MARK: - Shape Contents (v0.30.0)
 
 /// Census of sub-shape counts in a shape.
+///
+/// These are **occurrence** counts, not the distinct-sub-shape counts ``Shape/faceCount``,
+/// ``Shape/edgeCount`` and ``Shape/subShapeCount(ofType:)`` report. See ``Shape/contents`` for
+/// what that difference means and when the two disagree.
 public struct ShapeContents: Sendable {
     public let solids: Int
     public let shells: Int
@@ -4590,10 +4594,34 @@ public struct ShapeContents: Sendable {
 }
 
 extension Shape {
-    /// Get a census of sub-shape counts in this shape.
+    /// A census of sub-shape *occurrences* in this shape, from `ShapeAnalysis_ShapeContents`.
     ///
-    /// Reports topology complexity metrics: counts of solids, shells,
-    /// faces, wires, edges, vertices, and free (unconnected) elements.
+    /// This is a complexity metric, not the addressable sub-shape enumeration. It counts one
+    /// entry per visit in the topology tree, so a sub-shape reachable from two parents is
+    /// counted twice, and every edge of a box is counted once per adjacent face:
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.edgeCount)          // 12 — the distinct edges, and the addressable ones
+    /// print(box.contents.edges)     // 24 — one per (face, edge) visit
+    /// print(box.faceCount)          // 6
+    /// print(box.contents.faces)     // 6 — a box shares no face, so these agree
+    /// ```
+    ///
+    /// **None of these numbers is an index bound.** `0..<contents.faces` overruns
+    /// ``face(at:)`` on any shape with a shared face; use ``faceCount``.
+    ///
+    /// There is a third count in play, and it is a third rule again:
+    /// ``contentsExtended()``'s `nbSharedFaces` and friends deduplicate with the location
+    /// *discarded*, so unlike ``faceCount`` — which follows `TopoDS_Shape::IsSame` and keeps
+    /// placements apart — they also collapse two instances of one body. Measured on the pinned
+    /// kernel (`Scripts/repro/541-face-index-contract/`), on a compound of a box with a
+    /// ``moved(dx:dy:dz:)`` copy of itself: `faceCount` 12, `contents.faces` 12,
+    /// `nbSharedFaces` 6. (``translated(by:)`` does not make an instance — it rebuilds through
+    /// `BRepBuilderAPI_Transform`, so the copy shares nothing and all three read 12.)
+    ///
+    /// - Returns: Counts of solids, shells, faces, wires, edges, vertices, and free
+    ///   (unconnected) elements.
     public var contents: ShapeContents {
         let c = OCCTShapeGetContents(handle)
         return ShapeContents(
@@ -6156,7 +6184,10 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - defaultOffset: Default offset distance for all faces.
-    ///   - faceOffsets: Dictionary mapping 1-based face indices to custom offset distances.
+    ///   - faceOffsets: Dictionary mapping 0-based face indices — as ``face(at:)`` and
+    ///     ``Face/index`` use — to custom offset distances. An index outside `0..<faceCount`
+    ///     fails the call; it used to be skipped, which returned a shape offset by the default
+    ///     everywhere and looked exactly like success (#541).
     ///   - tolerance: Offset tolerance (default: 1e-3).
     ///   - joinType: Join type for offset gaps (default: .arc).
     /// - Returns: Offset shape, or nil on failure.
@@ -9339,9 +9370,18 @@ extension Shape {
 
     // MARK: LocOpe_BuildWires
 
-    /// Build wires from the edges of a face.
-    /// - Parameter faceIndex: 1-based face index (0 = all edges)
-    public func buildWires(faceIndex: Int32 = 0) -> [Shape]? {
+    /// Build wires from the edges of one face, or of the whole shape.
+    ///
+    /// - Parameter faceIndex: 0-based face index, as ``face(at:)`` and ``Face/index`` use.
+    ///   Any negative value means every edge of the shape. The sentinel used to be `0`, which
+    ///   collided with the first face's own index and left that face unaddressable (#541).
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    /// let allEdges = box.buildWires(faceIndex: -1)!   // every edge of the box
+    /// let firstFace = box.buildWires(faceIndex: 0)!   // just face 0's edges
+    /// ```
+    public func buildWires(faceIndex: Int32 = -1) -> [Shape]? {
         var outWires: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
         guard OCCTLocOpeBuildWires(handle, faceIndex, &outWires, &outCount) else { return nil }
@@ -9365,7 +9405,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - wire: The splitting wire
-    ///   - faceIndex: 1-based index of the face to split
+    ///   - faceIndex: 0-based index of the face to split, as ``face(at:)`` and ``Face/index``
+    ///     use. It was 1-based, so face 0 could not be named at all (#541).
     public func splitByWireOnFace(_ wire: Shape, faceIndex: Int32) -> Shape? {
         guard let h = OCCTLocOpeSplitByWireOnFace(handle, wire.handle, faceIndex) else { return nil }
         return Shape(handle: h)

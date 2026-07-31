@@ -56,8 +56,12 @@ public final class Selector: @unchecked Sendable {
         /// The type of sub-shape that was hit.
         public let subShapeType: SubShapeType
 
-        /// 1-based index of the sub-shape within its parent shape.
-        /// Zero if the whole shape was selected (mode 0).
+        /// 0-based index of the sub-shape within its parent shape, addressable with
+        /// ``Shape/face(at:)`` or ``Shape/subShape(type:index:)``.
+        ///
+        /// `-1` when the whole shape was selected (mode 0). It used to be 1-based with `0` as
+        /// that sentinel, so a picked sub-shape's index named the one before it and the sentinel
+        /// was indistinguishable from a hit on sub-shape 0 (#541).
         public let subShapeIndex: Int32
     }
 

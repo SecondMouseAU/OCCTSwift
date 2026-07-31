@@ -1333,7 +1333,12 @@ int32_t OCCTShapeRaycast(
     int32_t maxHits
 );
 
-/// Get total number of faces in a shape
+/// Get total number of faces in a shape.
+///
+/// #541: this count, OCCTShapeGetFaceAtIndex, OCCTShapeGetFaces and every entry point in this
+/// header that takes a face index all read ONE enumeration: TopExp::MapShapes, one entry per
+/// distinct face (TopoDS_Shape::IsSame -- same TShape and location, orientation ignored),
+/// addressed 0-based. A face index is meaningful only against the shape it came from.
 int32_t OCCTShapeGetFaceCount(OCCTShapeRef shape);
 
 /// Get face by index (0-based)
@@ -2169,7 +2174,7 @@ typedef struct {
     double depth;
     double pointX, pointY, pointZ;
     int32_t subShapeType;   // TopAbs_ShapeEnum: 7=VERTEX, 6=EDGE, 5=WIRE, 4=FACE, 8=SHAPE
-    int32_t subShapeIndex;  // 1-based index of sub-shape within parent, 0 if whole shape
+    int32_t subShapeIndex;  // 0-based index of sub-shape within parent, -1 if whole shape (#541)
 } OCCTPickResult;
 
 OCCTSelectorRef OCCTSelectorCreate(void);
@@ -5306,7 +5311,8 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
 /// Offset a shape with per-face variable distances.
 /// @param shape The shape to offset
 /// @param defaultOffset Default offset distance for all faces
-/// @param faceIndices Array of 1-based face indices with custom offsets
+/// @param faceIndices Array of 0-based face indices with custom offsets; an index outside
+///        0..<faceCount fails the call rather than being skipped (#541)
 /// @param faceOffsets Array of offset values for those faces
 /// @param faceCount Number of custom face offsets
 /// @param tolerance Offset tolerance
@@ -8422,7 +8428,7 @@ OCCTShapeRef _Nullable OCCTShapeCustomTrsfModificationScale(OCCTShapeRef shape, 
 
 /// Build wires from loose edges of a shape.
 /// @param shape The shape whose edges to build into wires
-/// @param faceIndex 1-based face index to get edges from (0 = all edges)
+/// @param faceIndex 0-based face index to get edges from (negative = every edge of the shape)
 /// @param outWires Output array of wire shapes — caller must release each
 /// @param outCount Number of wires built
 /// @return true on success
@@ -8435,7 +8441,7 @@ bool OCCTLocOpeBuildWires(OCCTShapeRef shape, int32_t faceIndex,
 /// Split a shape by projecting a wire onto a face and splitting along it.
 /// @param shape The shape to split
 /// @param wire The splitting wire
-/// @param faceIndex 1-based index of the face to split
+/// @param faceIndex 0-based index of the face to split
 /// @return The split shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTLocOpeSplitByWireOnFace(OCCTShapeRef shape,
     OCCTShapeRef wire, int32_t faceIndex);
@@ -14235,11 +14241,14 @@ int32_t OCCTEdgeFaceAdjacency(OCCTShapeRef _Nonnull shape, int32_t* _Nullable ad
 int32_t OCCTVertexEdgeAdjacency(OCCTShapeRef _Nonnull shape, int32_t* _Nullable adjacentEdgeCounts);
 
 /// Get adjacent faces for a specific edge within a shape. Returns count of faces found.
-/// faceIndices is an output array of face indices (1-based, into indexed map). Caller allocates (max 64).
+/// faceIndices is an output array of 0-based face indices, addressable with
+/// OCCTShapeGetFaceAtIndex. Caller allocates (max 64).
 int32_t OCCTEdgeAdjacentFaces(OCCTShapeRef _Nonnull shape, OCCTShapeRef _Nonnull edge,
                               int32_t* _Nonnull faceIndices, int32_t maxFaces);
 
 /// Get adjacent edges for a specific vertex within a shape. Returns count of edges found.
+/// edgeIndices is an output array of 0-based edge indices, addressable with
+/// OCCTShapeGetEdgeAtIndex. Caller allocates (max 64).
 int32_t OCCTVertexAdjacentEdges(OCCTShapeRef _Nonnull shape, OCCTShapeRef _Nonnull vertex,
                                 int32_t* _Nonnull edgeIndices, int32_t maxEdges);
 

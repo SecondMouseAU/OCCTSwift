@@ -1987,15 +1987,11 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, 
     try {
         BRepCheck_Analyzer analyzer(parentShape->shape, true);
 
-        TopAbs_ShapeEnum type = (TopAbs_ShapeEnum)subShapeType;
-        int idx = 0;
-        for (TopExp_Explorer exp(parentShape->shape, type); exp.More(); exp.Next()) {
-            if (idx == subShapeIndex) {
-                return analyzer.IsValid(exp.Current());
-            }
-            idx++;
-        }
-        return false;
+        // #541: the shared enumeration, so this names the same sub-shape every other
+        // type+index entry point does.
+        TopoDS_Shape sub = occtSubShapeAt(parentShape->shape, subShapeType, subShapeIndex);
+        if (sub.IsNull()) return false;
+        return analyzer.IsValid(sub);
     } catch (...) {
         return false;
     }
@@ -3507,15 +3503,12 @@ bool OCCTShapeFixEdgeProjAux(OCCTShapeRef shape, int32_t faceIndex, int32_t edge
                               double precision, double* outFirst, double* outLast) {
     if (!shape) return false;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return false;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return false;
 
-        TopExp_Explorer edgeExp(face, TopAbs_EDGE);
-        for (int i = 0; i < edgeIndex && edgeExp.More(); i++) edgeExp.Next();
-        if (!edgeExp.More()) return false;
-        TopoDS_Edge edge = TopoDS::Edge(edgeExp.Current());
+        // The edge index is into the face's own edge enumeration, read the same way.
+        TopoDS_Edge edge = occtEdgeAt(face, edgeIndex);
+        if (edge.IsNull()) return false;
 
         Handle(ShapeFix_EdgeProjAux) aux = new ShapeFix_EdgeProjAux(face, edge);
         aux->Compute(precision);
@@ -3533,10 +3526,8 @@ int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef shape, int32_t faceIndex,
                                     OCCTShapeRef* outFaces, int32_t maxFaces) {
     if (!shape) return -1;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return -1;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return -1;
 
         BRepAlgo_FaceRestrictor restrictor;
         restrictor.Init(face, false, true);
@@ -3572,10 +3563,8 @@ int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef shape, int32_t faceIndex,
 bool OCCTShapeFixIntersectingWires(OCCTShapeRef shape, int32_t faceIndex, double precision) {
     if (!shape) return false;
     try {
-        TopExp_Explorer faceExp(shape->shape, TopAbs_FACE);
-        for (int i = 0; i < faceIndex && faceExp.More(); i++) faceExp.Next();
-        if (!faceExp.More()) return false;
-        TopoDS_Face face = TopoDS::Face(faceExp.Current());
+        TopoDS_Face face = occtFaceAt(shape->shape, faceIndex);
+        if (face.IsNull()) return false;
 
         Handle(ShapeBuild_ReShape) ctx = new ShapeBuild_ReShape();
         ShapeFix_IntersectionTool tool(ctx, precision, 1.0);

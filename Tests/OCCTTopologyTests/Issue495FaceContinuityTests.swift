@@ -16,15 +16,19 @@ import Testing
 struct Issue495FaceContinuityTests {
 
     /// Every (edge, faceA, faceB) triple in `shape` where exactly two faces share the edge.
+    ///
+    /// `adjacentFaces(forEdge:)` returns 0-based indices into the same enumeration
+    /// `subShapes(ofType: .face)` walks, so they index it directly. They were 1-based until #541,
+    /// which is why this helper used to subtract one.
     private func sharedEdgeTriples(in shape: Shape) -> [(Shape, Shape, Shape)] {
         let faces = shape.subShapes(ofType: .face)
         return shape.subShapes(ofType: .edge).compactMap { edge in
-            let adjacent = shape.adjacentFaces(forEdge: edge)   // 1-based
+            let adjacent = shape.adjacentFaces(forEdge: edge)
             guard adjacent.count == 2,
                   let a = adjacent.first, let b = adjacent.last,
-                  a >= 1, a <= faces.count, b >= 1, b <= faces.count
+                  a >= 0, a < faces.count, b >= 0, b < faces.count
             else { return nil }
-            return (edge, faces[a - 1], faces[b - 1])
+            return (edge, faces[a], faces[b])
         }
     }
 

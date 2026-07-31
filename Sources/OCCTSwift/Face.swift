@@ -6,7 +6,11 @@ import OCCTBridge
 public final class Face: @unchecked Sendable {
     internal let handle: OCCTFaceRef
 
-    /// Index of this face within the parent shape (-1 if standalone)
+    /// This face's 0-based position in its parent shape's face enumeration, or -1 when the face
+    /// was not produced from a parent.
+    ///
+    /// The same token ``Shape/face(at:)`` takes, and the one every face-index-taking method on
+    /// `Shape` expects. It is only meaningful against the shape it came from.
     public let index: Int
 
     internal init(handle: OCCTFaceRef, index: Int = -1) {
@@ -236,7 +240,23 @@ public final class Face: @unchecked Sendable {
 // MARK: - Shape Extension for Face Analysis
 
 extension Shape {
-    /// Get all faces from the solid
+    /// Every distinct face of this shape, in enumeration order.
+    ///
+    /// Each returned ``Face`` carries its own ``Face/index``, which is its position here and the
+    /// token ``Shape/face(at:)``, ``Shape/drafted(faces:direction:angle:neutralPlane:)``,
+    /// ``Shape/shelled(thickness:openFaces:)`` and ``Shape/withoutFeatures(faces:)`` all address.
+    ///
+    /// This is the enumeration ``Shape/faceCount`` counts. Before #541 it was a separate walk that
+    /// yielded one entry per *occurrence* in the topology tree, so a face reachable from two
+    /// parents appeared twice and the surplus indices named faces nothing else could address.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let top = box.faces().filter { $0.isUpwardFacing() }
+    /// if let hollow = box.shelled(thickness: 1.0, openFaces: top) {
+    ///     print(hollow.faceCount)   // the open box
+    /// }
+    /// ```
     public func faces() -> [Face] {
         var count: Int32 = 0
         guard let faceArray = OCCTShapeGetFaces(handle, &count) else {
