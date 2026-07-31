@@ -386,6 +386,73 @@ one-family drift fails the parity suite, while a defect inside the shared `build
 families identically and leaves the parity suite entirely green, failing only the geometry suite.
 A parity assertion stops being evidence the moment the thing it compares becomes shared.
 
+#### The other half of the null-handle sweep, and a checker so it stays swept (#556)
+
+#478 fixed the 14 bridge functions that guard the wrapper pointer and then **dereference** the
+`Handle` it carries. #556 is the class it deliberately left behind: functions that guard the wrapper
+and then **pass** the unchecked handle to an OCCT API which dereferences it internally.
+
+**60 functions, 73 (function, argument) pairs**, all now opening with
+`if (!x || x->handle.IsNull())`:
+
+| file | functions |
+|---|---|
+| `OCCTBridge_Surface.mm` | 22 |
+| `OCCTBridge_Curve3D.mm` | 17 |
+| `OCCTBridge_Geom2d.mm` | 14 |
+| `OCCTBridge_Modeling.mm` | 4 |
+| `OCCTBridge_Topology.mm` | 2 |
+| `OCCTBridge_ProjLib_NLPlate.mm` | 1 |
+
+The issue counted 49 functions across 5 files; the same walk, run again, finds 61 across 6.
+
+**The issue's headline example is a false positive, twice over.** #556 opens with
+`makeQualifiedCurve` (`Geom2dAdaptor_Curve adaptor(c->curve)`, "no guard at all"), and argues from
+`Geom2dAdaptor_Curve.cxx:272` that `load` "has **no** null precondition at all [...] it is an
+unconditional dereference in every build configuration". Lowercase `load` is private. Every caller
+reaches it through the public `Load`, header-inline at `Geom2dAdaptor_Curve.hxx:108`, which opens
+with a bare `if (theCurve.IsNull()) throw Standard_NullObject();`, not macro-guarded, so unlike the
+kernel's precompiled `.cxx` preconditions it is *not* compiled out by `No_Exception`, which only
+ever applied to the Release kernel build and never to bridge translation units. And all 12 of
+`makeQualifiedCurve`'s call sites, across 7 functions, already reject both the null pointer and the
+null handle before calling it. It is the one site in the whole sweep left unguarded, now with a
+comment saying why: its return type (`Geom2dGcc_QualifiedCurve`, by value) has no null-safe
+fallback, so the precondition has to live in the callers.
+
+**The class is worse than "latent" elsewhere, though.**
+[`Scripts/repro/556-null-handle-guard-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/556-null-handle-guard-sweep)
+drives a null handle into all **35** distinct OCCT entry points these 60 functions call, each in a
+forked child: **24 crash with an uncatchable signal**, 5 raise a catchable `Standard_Failure`, 6
+return normally. `Geom2dAdaptor_Curve` is in the mild group. `new Geom_TrimmedCurve`,
+`new Geom_OffsetCurve`, `new Geom_RectangularTrimmedSurface`, `ShapeAnalysis_Curve::IsPeriodic`,
+`BRepLib_MakeEdge2d`, `GeomConvert::CurveToBSplineCurve`, `BRepAlgoAPI_Section` and
+`ShapeConstruct_Curve::ConvertToBSpline` are not. `ShapeAnalysis_Surface` is the one to remember:
+constructing it from a null handle returns normally and the crash lands at the first `ValueOfUV`, so
+a probe that only constructed it would have cleared that entire 11-function family.
+
+**Three findings the issue's own reproduction recipe could not reach**, because it walks scalar
+parameters only:
+
+- `OCCTCurve2DPointAt` is a **dereference** site (`curve->curve->D0(t, pt)`, with no guard at all)
+  that #478's sweep missed outright. Fixed here rather than left for a third pass.
+- Five functions take an *array* of wrappers. `OCCTGeomFillGordon` and `OCCTGeomFillGordonReport`
+  checked `!profiles[i]` and passed the handle unchecked; `OCCTConcatenateCurves3D`,
+  `OCCTConcatenateCurves2D` and `OCCTCurve3DJoinCurves` checked `curves[i]` inside the loop but
+  never `curves[0]`, the element every one of them handles separately to seed the accumulator.
+- `OCCTBridge_ProjLib_NLPlate.mm` was not in the issue's file list at all.
+
+**The deliverable is the invariant, so it is now checked rather than remembered.**
+`Scripts/check-null-handle-guards.py` is the same walk that produced both #478's list and this one,
+committed alongside `check-bridge-index.py` and gating on exit status. Verified against two injected
+regressions: reverting one guard, and adding a new function that checks only the pointer. It reports
+both, and reports nothing on the fixed tree. `DownCast(x->handle)` is excluded as a use, since
+down-casting a null handle returns null and every such site checks the cast result. Without that
+exclusion the walk reports several hundred false positives.
+
+Still latent: #478's classification of all 228 wrapper-producing sites holds, so no bridge call can
+hand back a wrapper carrying a null handle today. What changed is the measured cost of weakening
+that invariant later.
+
 #### Fix: arc-length sampling aborted the process on a sample count it could not allocate (#479)
 
 `EdgeCurve`/`WireCurve` `points(spacing:)` derived its sample count from the caller's spacing with a

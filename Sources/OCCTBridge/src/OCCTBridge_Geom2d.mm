@@ -715,7 +715,7 @@ bool OCCTCurve2DIsLinear(OCCTCurve2DRef curve2D, double tolerance, double* devia
 OCCTCurve2DRef _Nullable OCCTCurve2DConvertToLine(OCCTCurve2DRef curve2D,
     double first, double last, double tolerance,
     double* newFirst, double* newLast, double* deviation) {
-    if (!curve2D || !newFirst || !newLast || !deviation) return nullptr;
+    if (!curve2D || curve2D->curve.IsNull() || !newFirst || !newLast || !deviation) return nullptr;
     try {
         Handle(Geom2d_Line) line = ShapeCustom_Curve2d::ConvertToLine2d(
             curve2D->curve, first, last, tolerance, *newFirst, *newLast, *deviation);
@@ -745,7 +745,7 @@ bool OCCTCurve2DSimplifyBSpline(OCCTCurve2DRef curve2D, double tolerance) {
 OCCTCurve2DRef _Nullable OCCTApproxCurve2d(OCCTCurve2DRef curve2D,
     double first, double last, double tolU, double tolV,
     int32_t maxDegree, int32_t maxSegments) {
-    if (!curve2D) return nullptr;
+    if (!curve2D || curve2D->curve.IsNull()) return nullptr;
     try {
         Handle(Adaptor2d_Curve2d) adaptor = new Geom2dAdaptor_Curve(curve2D->curve, first, last);
         Approx_Curve2d approx(adaptor, first, last, tolU, tolV, GeomAbs_C2, maxDegree, maxSegments);
@@ -772,6 +772,9 @@ static GccEnt_Position toGccPosition(int32_t q) {
     }
 }
 
+// #556: no guard here by design. The return type has no null-safe value to fall back to, so the
+// precondition lives in the callers: every one of them rejects a null pointer and a null handle
+// before calling. Keep that true when adding a caller: Geom2dAdaptor_Curve::load() dereferences.
 static Geom2dGcc_QualifiedCurve makeQualifiedCurve(OCCTCurve2DRef c, int32_t q) {
     Geom2dAdaptor_Curve adaptor(c->curve);
     return Geom2dGcc_QualifiedCurve(adaptor, toGccPosition(q));
@@ -1335,6 +1338,7 @@ int32_t OCCTGeom2dGccLin2dTanObl(OCCTCurve2DRef curve, int32_t qualifier,
                                  double lpx, double lpy, double ldx, double ldy,
                                  double tolerance, double angle,
                                  OCCTGccLineSolution* out, int32_t max) {
+    if (!curve || curve->curve.IsNull()) return 0;
     try {
         Geom2dAdaptor_Curve adaptor(curve->curve);
         Geom2dGcc_QualifiedCurve qc(adaptor, toGccPosition(qualifier));
@@ -1412,6 +1416,8 @@ int32_t OCCTGeom2dGccCirc2d2TanOn(OCCTCurve2DRef c1, int32_t q1,
                                   double tolerance,
                                   double initParam1, double initParam2, double initParamOn,
                                   OCCTGccCircleSolution* out, int32_t max) {
+    if (!c1 || !c2 || !onCurve) return 0;
+    if (c1->curve.IsNull() || c2->curve.IsNull() || onCurve->curve.IsNull()) return 0;
     try {
         Geom2dAdaptor_Curve ac1(c1->curve), ac2(c2->curve), aon(onCurve->curve);
         Geom2dGcc_QualifiedCurve qc1(ac1, toGccPosition(q1));
@@ -1435,6 +1441,7 @@ int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef curve, int32_t qualifier,
                                     OCCTCurve2DRef onCurve,
                                     double radius, double tolerance,
                                     OCCTGccCircleSolution* out, int32_t max) {
+    if (!curve || !onCurve || curve->curve.IsNull() || onCurve->curve.IsNull()) return 0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve), aon(onCurve->curve);
         Geom2dGcc_QualifiedCurve qc(ac, toGccPosition(qualifier));
@@ -1631,6 +1638,7 @@ int32_t OCCTExtremaExtPElC2dLin(double px, double py,
 int32_t OCCTExtremaExtCC2d(OCCTCurve2DRef c1, double first1, double last1,
                            OCCTCurve2DRef c2, double first2, double last2,
                            OCCTExtrema2dResult* out, int32_t max) {
+    if (!c1 || !c2 || c1->curve.IsNull() || c2->curve.IsNull()) return -1;
     try {
         Geom2dAdaptor_Curve ac1(c1->curve, first1, last1);
         Geom2dAdaptor_Curve ac2(c2->curve, first2, last2);
@@ -1658,6 +1666,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurveCurve(
     double px, double py,
     double v1x, double v1y, double v2x, double v2y,
     double sense, double tolerance) {
+    if (!curve1 || !curve2 || curve1->curve.IsNull() || curve2->curve.IsNull()) return nullptr;
     try {
         Handle(Bisector_BisecAna) bisec = new Bisector_BisecAna();
         bisec->Perform(curve1->curve, curve2->curve,
@@ -1677,6 +1686,7 @@ OCCTCurve2DRef _Nullable OCCTBisectorBisecAnaCurvePoint(
     double px, double py,
     double v1x, double v1y, double v2x, double v2y,
     double sense, double tolerance) {
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         Handle(Geom2d_Point) geomPt = new Geom2d_CartesianPoint(gp_Pnt2d(ptx, pty));
         Handle(Bisector_BisecAna) bisec = new Bisector_BisecAna();
@@ -2158,6 +2168,7 @@ int32_t OCCTLPropAnalyticCurInf(int32_t curveType, double first, double last,
 // --- Curve2D ↔ Point2D integration ---
 
 OCCTPoint2DRef _Nullable OCCTCurve2DPointAt(OCCTCurve2DRef _Nonnull curve, double t) {
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         gp_Pnt2d pt;
         curve->curve->D0(t, pt);
@@ -2458,7 +2469,7 @@ int32_t OCCTIntfSelfInterferencePolygon2d(
 // MARK: - ShapeConstruct Curve2D Convert + Adjust (v0.76)
 OCCTCurve2DRef _Nullable OCCTShapeConstructConvertToBSpline2D(OCCTCurve2DRef _Nonnull curve,
                                                                 double first, double last, double precision) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         ShapeConstruct_Curve scc;
         Handle(Geom2d_BSplineCurve) bsp = scc.ConvertToBSpline(curve->curve, first, last, precision);
@@ -2473,7 +2484,7 @@ OCCTCurve2DRef _Nullable OCCTShapeConstructConvertToBSpline2D(OCCTCurve2DRef _No
 bool OCCTShapeConstructAdjustCurve2D(OCCTCurve2DRef _Nonnull curve,
                                       double p1x, double p1y,
                                       double p2x, double p2y) {
-    if (!curve) return false;
+    if (!curve || curve->curve.IsNull()) return false;
     try {
         ShapeConstruct_Curve scc;
         return scc.AdjustCurve2d(curve->curve, gp_Pnt2d(p1x, p1y), gp_Pnt2d(p2x, p2y));
@@ -3260,6 +3271,7 @@ OCCTCurve2DRef OCCTCurve2DMakeParabolaDirectrixFocus(double dx, double dy,
 OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, double tolerance) {
     if (!curves || count <= 0) return nullptr;
     try {
+        if (!curves[0] || curves[0]->curve.IsNull()) return nullptr;
         Handle(Geom2d_BoundedCurve) first = Handle(Geom2d_BoundedCurve)::DownCast(curves[0]->curve);
         if (first.IsNull()) {
             double f = curves[0]->curve->FirstParameter();
@@ -3268,6 +3280,7 @@ OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, do
         }
         Geom2dConvert_CompCurveToBSplineCurve comp(first);
         for (int32_t i = 1; i < count; i++) {
+            if (!curves[i] || curves[i]->curve.IsNull()) return nullptr;
             Handle(Geom2d_BoundedCurve) bc = Handle(Geom2d_BoundedCurve)::DownCast(curves[i]->curve);
             if (bc.IsNull()) {
                 double f = curves[i]->curve->FirstParameter();
@@ -3363,7 +3376,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipseArc(double cx, double cy, double dx, double dy
 }
 
 OCCTShapeRef OCCTMakeEdge2dCurve(OCCTCurve2DRef curve) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         BRepLib_MakeEdge2d me(curve->curve);
         if (!me.IsDone()) return nullptr;
@@ -3374,7 +3387,7 @@ OCCTShapeRef OCCTMakeEdge2dCurve(OCCTCurve2DRef curve) {
 }
 
 OCCTShapeRef OCCTMakeEdge2dCurveRange(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve) return nullptr;
+    if (!curve || curve->curve.IsNull()) return nullptr;
     try {
         BRepLib_MakeEdge2d me(curve->curve, u1, u2);
         if (!me.IsDone()) return nullptr;

@@ -1006,7 +1006,7 @@ OCCTCurve2DRef _Nullable OCCTProjectCurveOnSurface(OCCTCurve3DRef _Nonnull curve
                                                      double firstParam,
                                                      double lastParam,
                                                      double precision) {
-    if (!curve || !surface) return nullptr;
+    if (!curve || !surface || curve->curve.IsNull() || surface->surface.IsNull()) return nullptr;
     try {
         Handle(ShapeConstruct_ProjectCurveOnSurface) projector =
             new ShapeConstruct_ProjectCurveOnSurface();

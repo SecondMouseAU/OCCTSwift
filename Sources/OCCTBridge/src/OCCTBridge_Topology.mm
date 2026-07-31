@@ -1609,7 +1609,7 @@ OCCTCurveSurfaceInterRef _Nullable OCCTCurveSurfaceInterCreateCurve(
     OCCTShapeRef _Nonnull shape,
     OCCTCurve3DRef _Nonnull curve,
     double tolerance) {
-    if (!shape || !curve) return nullptr;
+    if (!shape || !curve || curve->curve.IsNull()) return nullptr;
     try {
         auto* ref = new OCCTCurveSurfaceInter();
         GeomAdaptor_Curve gac(curve->curve);
@@ -3806,7 +3806,7 @@ double OCCTBRepToolMaxTolerance(OCCTShapeRef shape, int32_t subShapeType) {
 
 OCCTCurve2DRef OCCTBRepToolCurveOnPlane(OCCTShapeRef edge, OCCTSurfaceRef surface,
                                          double* outFirst, double* outLast) {
-    if (!edge || !surface || !outFirst || !outLast) return nullptr;
+    if (!edge || !surface || surface->surface.IsNull() || !outFirst || !outLast) return nullptr;
     try {
         TopoDS_Edge e = TopoDS::Edge(edge->shape);
         TopLoc_Location loc;

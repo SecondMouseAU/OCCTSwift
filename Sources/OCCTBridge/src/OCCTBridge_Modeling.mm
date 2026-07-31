@@ -7695,7 +7695,7 @@ bool OCCTDraftEdgeInfoSetTangent(double dx, double dy, double dz) {
 }
 
 bool OCCTDraftFaceInfoFromSurface(OCCTSurfaceRef surface) {
-    if (!surface) return false;
+    if (!surface || surface->surface.IsNull()) return false;
     try {
         Draft_FaceInfo fi(surface->surface, false);
         return true;
@@ -9750,7 +9750,7 @@ OCCTShapeRef OCCTShapeSectionWithPlane(OCCTShapeRef shape,
 }
 
 OCCTShapeRef OCCTShapeSectionWithSurface(OCCTShapeRef shape, OCCTSurfaceRef surface) {
-    if (!shape || !surface) return nullptr;
+    if (!shape || !surface || surface->surface.IsNull()) return nullptr;
     try {
         BRepAlgoAPI_Section section(shape->shape, surface->surface);
         section.Build();
@@ -9802,7 +9802,7 @@ void OCCTSectionBuilderInit1Plane(OCCTSectionBuilderRef builder,
 }
 
 void OCCTSectionBuilderInit1Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
-    if (!builder || !surface) return;
+    if (!builder || !surface || surface->surface.IsNull()) return;
     try { builder->section.Init1(surface->surface); } catch (...) {}
 }
 
@@ -9821,7 +9821,7 @@ void OCCTSectionBuilderInit2Plane(OCCTSectionBuilderRef builder,
 }
 
 void OCCTSectionBuilderInit2Surface(OCCTSectionBuilderRef builder, OCCTSurfaceRef surface) {
-    if (!builder || !surface) return;
+    if (!builder || !surface || surface->surface.IsNull()) return;
     try { builder->section.Init2(surface->surface); } catch (...) {}
 }
 
