@@ -986,6 +986,13 @@ OCCTShapeRef OCCTImportSTEP(const char* path);
 // Cancellation: if shouldCancel returns true, OCCT stops at the next polling
 // boundary. The *Progress entry points return NULL and set *outCancelled=true.
 // If the import otherwise fails, NULL is returned and *outCancelled stays false.
+//
+// Both halves of that hold on every exit path, not only at the bridge's own
+// checkpoints (#525): a break during a transfer surfaces as zero transferred
+// roots, a null shape, a non-Done status or an exception depending on where it
+// lands, and each of those is still reported as a cancellation rather than as a
+// failure. One true from shouldCancel is also enough -- it is latched, so a
+// caller that answers true once and false afterwards still stops the call.
 
 typedef struct OCCTImportProgress {
     /// Called as the importer advances. fraction is 0.0...1.0; step is a
