@@ -418,7 +418,7 @@ a map of the major areas, and the `Total` as the count.
 | **Extrema_ExtPElC** | 4 | pointToLine, pointToCircle, pointToEllipse, pointToParabola |
 | **Extrema_ExtPElS** | 5 | pointToPlane, pointToSphere, pointToCylinder, pointToCone, pointToTorus |
 | **math_TrigonometricFunctionRoots** | 2 | solve, hasInfiniteRoots |
-| **IntAna2d_Conic** | 4 | fromCircle, fromLine, fromEllipse, lineCircleIntersection |
+| **IntAna2d_Conic** | 7 | circle, line, ellipse, lineCircleIntersection, + deprecated fromCircle / fromLine / fromEllipse |
 | **BRepAlgo_NormalProjection** | 5 | create, release, add, build, result |
 | **OSD_Disk** | 4 | size, freeSpace, isValid, name |
 | **OSD_SharedLibrary** | 5 | create, release, open, close, name |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,295** | |
+| **Total** | **4,298** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 

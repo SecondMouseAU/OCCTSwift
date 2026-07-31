@@ -3025,6 +3025,7 @@ static OCCTCurve2DRef buildCurve2DFromConic(const Convert_ConicToBSplineCurve& c
 OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx, double cy,
                                                double majorRadius, double minorRadius,
                                                double u1, double u2) {
+    if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
     try {
         gp_Elips2d e(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), majorRadius, minorRadius);
         Convert_EllipseToBSplineCurve conv(e, u1, u2);
@@ -3035,6 +3036,7 @@ OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx, double cy,
 OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
                                                  double majorRadius, double minorRadius,
                                                  double u1, double u2) {
+    if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
     try {
         gp_Hypr2d h(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), majorRadius, minorRadius);
         Convert_HyperbolaToBSplineCurve conv(h, u1, u2);
@@ -3044,6 +3046,9 @@ OCCTCurve2DRef OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
 
 OCCTCurve2DRef OCCTConvertParabolaToBSpline2D(double cx, double cy, double focal,
                                                 double u1, double u2) {
+    // Measured (#514): focal 0 does not fail here, it produces a 3-pole degree-2 BSpline whose
+    // poles are NaN, so everything downstream of it evaluates to NaN.
+    if (!occtValidParabolaFocal(focal)) return nullptr;
     try {
         gp_Parab2d p(gp_Ax22d(gp_Pnt2d(cx,cy), gp_Dir2d(1,0), gp_Dir2d(0,1)), focal);
         Convert_ParabolaToBSplineCurve conv(p, u1, u2);
@@ -3058,6 +3063,7 @@ OCCTCurve2DRef OCCTConvertParabolaToBSpline2D(double cx, double cy, double focal
 
 OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
                                               double u1, double u2) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Circ2d circle(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), radius);
         Convert_CircleToBSplineCurve conv(circle, u1, u2);
@@ -3310,8 +3316,13 @@ void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef curve, int32_t continuity,
 #include <BRepLib_MakeEdge2d.hxx>
 #include <gp_Elips2d.hxx>
 
+// BRepLib_MakeEdge2d reports IsDone() for a degenerate conic rather than refusing it: measured
+// (#514), a zero-radius ellipse yields a zero-length edge with both vertices at the centre, and a
+// zero minor radius yields a segment doubled back along the major axis. Neither is an edge the
+// caller asked for, so the dimensions are checked before OCCT sees them.
 OCCTShapeRef OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy,
                                        double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Circ2d circ(ax, radius);
@@ -3325,6 +3336,7 @@ OCCTShapeRef OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy
 
 OCCTShapeRef OCCTMakeEdge2dEllipse(double cx, double cy, double dx, double dy,
                                     double major, double minor) {
+    if (!occtValidEllipseRadii(major, minor)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Elips2d elips(ax, major, minor);
@@ -3338,6 +3350,7 @@ OCCTShapeRef OCCTMakeEdge2dEllipse(double cx, double cy, double dx, double dy,
 
 OCCTShapeRef OCCTMakeEdge2dEllipseArc(double cx, double cy, double dx, double dy,
                                        double major, double minor, double u1, double u2) {
+    if (!occtValidEllipseRadii(major, minor)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         gp_Elips2d elips(ax, major, minor);
@@ -3838,52 +3851,63 @@ OCCTCurve2DRef OCCTCurve2DOffsetBasisCurve(OCCTCurve2DRef curve) {
 #include <gp_Circ2d.hxx>
 #include <gp_Elips2d.hxx>
 
-void OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
+// The three OCCTConic2dFrom* entry points share one failure encoding: the six coefficients are
+// zeroed and false returned. Zeroing alone could not carry it: 0 = 0 holds at every point of the
+// plane, so an all-zero result reads as a conic rather than as no answer, and a degenerate ellipse
+// produced exactly that (#514).
+static bool occtConic2dCoefficients(const IntAna2d_Conic& conic, double* coeffs) {
+    double A, B, C, D, E, F;
+    conic.Coefficients(A, B, C, D, E, F);
+    coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
+    coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+    return true;
+}
+
+static bool occtConic2dFailed(double* coeffs) {
+    for (int i = 0; i < 6; i++) coeffs[i] = 0;
+    return false;
+}
+
+bool OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
                             double* coeffs) {
+    if (!occtValidCircleRadius(radius)) return occtConic2dFailed(coeffs);
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
-        IntAna2d_Conic conic(circ);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(circ), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
-void OCCTConic2dFromLine(double px, double py, double dx, double dy,
+bool OCCTConic2dFromLine(double px, double py, double dx, double dy,
                           double* coeffs) {
     try {
         gp_Lin2d line(gp_Pnt2d(px, py), gp_Dir2d(dx, dy));
-        IntAna2d_Conic conic(line);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(line), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
-void OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
+bool OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
                              double majorRadius, double minorRadius,
                              double* coeffs) {
+    if (!occtValidEllipseRadii(majorRadius, minorRadius)) return occtConic2dFailed(coeffs);
     try {
         gp_Elips2d elips(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), majorRadius, minorRadius);
-        IntAna2d_Conic conic(elips);
-        double A, B, C, D, E, F;
-        conic.Coefficients(A, B, C, D, E, F);
-        coeffs[0] = A; coeffs[1] = B; coeffs[2] = C;
-        coeffs[3] = D; coeffs[4] = E; coeffs[5] = F;
+        return occtConic2dCoefficients(IntAna2d_Conic(elips), coeffs);
     } catch (...) {
-        for (int i = 0; i < 6; i++) coeffs[i] = 0;
+        return occtConic2dFailed(coeffs);
     }
 }
 
 int32_t OCCTConic2dLineCircleIntersect(double lpx, double lpy, double ldx, double ldy,
                                         double cx, double cy, double cdx, double cdy, double radius,
                                         double* xs, double* ys, int32_t max) {
+    // Same circle contract as OCCTConic2dFromCircle above: intersecting against a radius-0 circle
+    // is a point-on-line test, not an intersection, and asking it here would be the one place in
+    // this block that still accepted a degenerate circle.
+    if (!occtValidCircleRadius(radius)) return -1;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(cdx, cdy)), radius);

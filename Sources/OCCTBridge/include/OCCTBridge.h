@@ -13399,6 +13399,7 @@ void OCCTEnvironmentFreeString(const char* _Nullable str);
 // MARK: - Convert_EllipseToBSplineCurve (v0.95.0)
 
 /// Convert a 2D ellipse arc to a BSpline curve.
+/// Requires 0 < minorRadius <= majorRadius (#514); returns NULL otherwise.
 OCCTCurve2DRef _Nullable OCCTConvertEllipseToBSpline2D(double cx, double cy,
                                                          double majorRadius, double minorRadius,
                                                          double u1, double u2);
@@ -13406,6 +13407,7 @@ OCCTCurve2DRef _Nullable OCCTConvertEllipseToBSpline2D(double cx, double cy,
 // MARK: - Convert_HyperbolaToBSplineCurve (v0.95.0)
 
 /// Convert a 2D hyperbola arc to a BSpline curve.
+/// Requires both radii > 0, in either order (#514); returns NULL otherwise.
 OCCTCurve2DRef _Nullable OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
                                                            double majorRadius, double minorRadius,
                                                            double u1, double u2);
@@ -13413,6 +13415,7 @@ OCCTCurve2DRef _Nullable OCCTConvertHyperbolaToBSpline2D(double cx, double cy,
 // MARK: - Convert_ParabolaToBSplineCurve (v0.95.0)
 
 /// Convert a 2D parabola arc to a BSpline curve.
+/// Requires focal > 0 (#514): at focal 0 the conversion succeeds with NaN poles.
 OCCTCurve2DRef _Nullable OCCTConvertParabolaToBSpline2D(double cx, double cy, double focal,
                                                           double u1, double u2);
 
@@ -14908,15 +14911,18 @@ OCCTSurfaceRef _Nullable OCCTGCMakeTrimmedCylinder3Pts(double x1, double y1, dou
 
 // MARK: - BRepLib_MakeEdge2d extensions (v0.106.0)
 
-/// Create a 2D edge from a full circle.
+/// Create a 2D edge from a full circle. Requires radius > 0 (#514).
 OCCTShapeRef _Nullable OCCTMakeEdge2dFullCircle(double cx, double cy, double dx, double dy,
                                                   double radius);
 
-/// Create a 2D edge from an ellipse.
+/// Create a 2D edge from an ellipse. Requires 0 < minor <= major (#514):
+/// BRepLib_MakeEdge2d reports IsDone() for a degenerate ellipse and builds a zero-length or
+/// doubled-back edge from it.
 OCCTShapeRef _Nullable OCCTMakeEdge2dEllipse(double cx, double cy, double dx, double dy,
                                                double major, double minor);
 
 /// Create a 2D edge from an ellipse arc with parameter range.
+/// Requires 0 < minor <= major (#514).
 OCCTShapeRef _Nullable OCCTMakeEdge2dEllipseArc(double cx, double cy, double dx, double dy,
                                                   double major, double minor, double u1, double u2);
 
@@ -15971,20 +15977,27 @@ bool OCCTTrigRootsInfinite(double A, double B, double C, double D, double E,
 
 // MARK: - IntAna2d_Conic (v0.109.0)
 
-/// Get 6 conic coefficients from a 2D circle: A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
-void OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
+/// Get 6 conic coefficients from a 2D circle: A*x^2 + B*y^2 + 2C*x*y + 2D*x + 2E*y + F = 0.
+/// Requires radius > 0 (#514). The coefficients are zeroed and false returned otherwise.
+/// @return true when the coefficients were computed.
+bool OCCTConic2dFromCircle(double cx, double cy, double dx, double dy, double radius,
                             double* _Nonnull coeffs);
 
-/// Get 6 conic coefficients from a 2D line.
-void OCCTConic2dFromLine(double px, double py, double dx, double dy,
+/// Get 6 conic coefficients from a 2D line, in the same order as OCCTConic2dFromCircle.
+/// @return true when the coefficients were computed (false for a zero direction).
+bool OCCTConic2dFromLine(double px, double py, double dx, double dy,
                           double* _Nonnull coeffs);
 
-/// Get 6 conic coefficients from a 2D ellipse.
-void OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
+/// Get 6 conic coefficients from a 2D ellipse, in the same order as OCCTConic2dFromCircle.
+/// Requires 0 < minorRadius <= majorRadius (#514): all-zero coefficients are the equation
+/// 0 = 0, which holds everywhere, so a degenerate ellipse cannot be reported through them.
+/// @return true when the coefficients were computed.
+bool OCCTConic2dFromEllipse(double cx, double cy, double dx, double dy,
                              double majorRadius, double minorRadius,
                              double* _Nonnull coeffs);
 
 /// Intersect a 2D line with a 2D circle conic. Returns intersection points.
+/// Requires radius > 0 (#514).
 /// @return Number of intersection points (-1 on error)
 int32_t OCCTConic2dLineCircleIntersect(double lpx, double lpy, double ldx, double ldy,
                                         double cx, double cy, double cdx, double cdy, double radius,

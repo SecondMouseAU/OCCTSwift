@@ -1345,8 +1345,8 @@ public static func fromCircleArc(centerX: Double, centerY: Double, radius: Doubl
                                   u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `centerX`, `centerY` — arc centre; `radius` — circle radius; `u1`, `u2` — start and end parameter (in radians).
-- **Returns:** The BSpline representation, or `nil` on failure.
+- **Parameters:** `centerX`, `centerY`: arc centre; `radius`: circle radius, must be greater than zero; `u1`, `u2`: start and end parameter (in radians).
+- **Returns:** The BSpline representation, or `nil` on failure or a degenerate radius.
 - **OCCT:** `Convert_CircleToBSplineCurve` (via `OCCTConvertCircleToBSpline2D`).
 - **Example:**
   ```swift
@@ -1386,6 +1386,11 @@ public static func fromSphere(origin: SIMD3<Double>, axis: SIMD3<Double>, radius
 
 Extensions on `Curve2D` for exact BSpline representations of 2D conics.
 
+Every one of these returns `nil` for a degenerate dimension. None of the `Convert_*` algorithms
+refuses one on its own: measured (#514), a zero-radius ellipse converts to a degree-2 curve that
+evaluates to its own centre at every parameter, and a zero focal length converts to a curve whose
+poles are all NaN.
+
 ### `Curve2D.fromEllipseArc(centerX:centerY:majorRadius:minorRadius:u1:u2:)`
 
 Convert a 2D ellipse arc to a BSpline curve.
@@ -1396,8 +1401,8 @@ public static func fromEllipseArc(centerX: Double, centerY: Double,
                                    u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `centerX`, `centerY` — ellipse centre; `majorRadius`, `minorRadius` — semi-axes; `u1`, `u2` — parameter range.
-- **Returns:** BSpline curve, or `nil` on failure.
+- **Parameters:** `centerX`, `centerY`: ellipse centre; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius` (equal radii are a circle and are valid); `u1`, `u2`: parameter range.
+- **Returns:** BSpline curve, or `nil` on failure or a degenerate ellipse.
 - **OCCT:** `Convert_EllipseToBSplineCurve` (via `OCCTConvertEllipseToBSpline2D`).
 - **Example:**
   ```swift
@@ -1418,7 +1423,15 @@ public static func fromHyperbolaArc(centerX: Double, centerY: Double,
                                      u1: Double, u2: Double) -> Curve2D?
 ```
 
+- **Parameters:** `majorRadius`, `minorRadius`: both greater than zero, in either order. A hyperbola puts no ordering on its radii, so a minor radius larger than the major is an ordinary hyperbola, not an inverted one.
+- **Returns:** BSpline curve, or `nil` on failure or a degenerate hyperbola.
 - **OCCT:** `Convert_HyperbolaToBSplineCurve` (via `OCCTConvertHyperbolaToBSpline2D`).
+- **Example:**
+  ```swift
+  if let h = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
+                                       majorRadius: 10, minorRadius: 5,
+                                       u1: -1, u2: 1) { }
+  ```
 
 ---
 
@@ -1431,8 +1444,13 @@ public static func fromParabolaArc(centerX: Double, centerY: Double, focal: Doub
                                     u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focal` — focal distance of the parabola.
+- **Parameters:** `focal`: focal distance of the parabola, must be greater than zero.
+- **Returns:** BSpline curve, or `nil` on failure or a zero focal length, which OCCT converts into a curve with NaN poles rather than rejecting.
 - **OCCT:** `Convert_ParabolaToBSplineCurve` (via `OCCTConvertParabolaToBSpline2D`).
+- **Example:**
+  ```swift
+  if let p = Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 5, u1: -2, u2: 2) { }
+  ```
 
 ---
 

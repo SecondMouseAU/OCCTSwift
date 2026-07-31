@@ -5756,6 +5756,15 @@ public enum MathJacobi {
 extension Curve2D {
 
     /// Convert a 2D circle arc to a BSpline curve.
+    ///
+    /// - Parameter radius: circle radius. Must be greater than zero.
+    /// - Returns: the converted curve, or `nil` if the circle is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromCircleArc(centerX: 0, centerY: 0, radius: 5, u1: 0, u2: .pi) {
+    ///     print(c.degree)
+    /// }
+    /// ```
     public static func fromCircleArc(centerX: Double, centerY: Double, radius: Double,
                                       u1: Double, u2: Double) -> Curve2D? {
         guard let ref = OCCTConvertCircleToBSpline2D(centerX, centerY, radius, u1, u2) else { return nil }
@@ -5804,6 +5813,20 @@ public enum Environment {
 extension Curve2D {
 
     /// Convert a 2D ellipse arc to a BSpline curve.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the converted curve, or `nil` if the ellipse is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
+    ///                                   majorRadius: 20, minorRadius: 10,
+    ///                                   u1: 0, u2: .pi) {
+    ///     print(c.degree)
+    /// }
+    /// ```
     public static func fromEllipseArc(centerX: Double, centerY: Double,
                                        majorRadius: Double, minorRadius: Double,
                                        u1: Double, u2: Double) -> Curve2D? {
@@ -5812,6 +5835,20 @@ extension Curve2D {
     }
 
     /// Convert a 2D hyperbola arc to a BSpline curve.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: major radius. Must be greater than zero.
+    ///   - minorRadius: minor radius. Must be greater than zero. A hyperbola puts no ordering on
+    ///     its radii, so a minor radius larger than the major is an ordinary hyperbola.
+    /// - Returns: the converted curve, or `nil` if the hyperbola is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
+    ///                                     majorRadius: 10, minorRadius: 5,
+    ///                                     u1: -1, u2: 1) {
+    ///     print(c.degree)
+    /// }
+    /// ```
     public static func fromHyperbolaArc(centerX: Double, centerY: Double,
                                          majorRadius: Double, minorRadius: Double,
                                          u1: Double, u2: Double) -> Curve2D? {
@@ -5820,6 +5857,16 @@ extension Curve2D {
     }
 
     /// Convert a 2D parabola arc to a BSpline curve.
+    ///
+    /// - Parameter focal: focal length. Must be greater than zero: OCCT converts a focal length of
+    ///   zero without complaint, into a curve whose poles are all NaN.
+    /// - Returns: the converted curve, or `nil` if the parabola is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 5, u1: -2, u2: 2) {
+    ///     print(c.degree)
+    /// }
+    /// ```
     public static func fromParabolaArc(centerX: Double, centerY: Double, focal: Double,
                                         u1: Double, u2: Double) -> Curve2D? {
         guard let ref = OCCTConvertParabolaToBSpline2D(centerX, centerY, focal, u1, u2) else { return nil }
@@ -8640,6 +8687,15 @@ extension Surface {
 
 extension Shape {
     /// Create a 2D edge from a full circle.
+    ///
+    /// - Parameter radius: circle radius. Must be greater than zero.
+    /// - Returns: the edge, or `nil` if the circle is degenerate.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dFullCircle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
     public static func edge2dFullCircle(center: SIMD2<Double>, direction: SIMD2<Double>,
                                          radius: Double) -> Shape? {
         guard let h = OCCTMakeEdge2dFullCircle(center.x, center.y,
@@ -8649,6 +8705,20 @@ extension Shape {
     }
 
     /// Create a 2D edge from an ellipse.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
+    ///   from a zero-radius ellipse, and a doubled-back segment from a zero minor radius.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dEllipse(center: .zero, direction: SIMD2(1, 0),
+    ///                                majorRadius: 5, minorRadius: 3) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
     public static func edge2dEllipse(center: SIMD2<Double>, direction: SIMD2<Double>,
                                       majorRadius: Double, minorRadius: Double) -> Shape? {
         guard let h = OCCTMakeEdge2dEllipse(center.x, center.y,
@@ -8658,6 +8728,19 @@ extension Shape {
     }
 
     /// Create a 2D edge from an ellipse arc.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the edge, or `nil` if the ellipse is degenerate.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dEllipseArc(center: .zero, direction: SIMD2(1, 0),
+    ///                                   majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
     public static func edge2dEllipseArc(center: SIMD2<Double>, direction: SIMD2<Double>,
                                          majorRadius: Double, minorRadius: Double,
                                          u1: Double, u2: Double) -> Shape? {
@@ -10258,43 +10341,144 @@ public enum TrigRoots {
 // MARK: - IntAna2d_Conic (v0.109.0)
 
 /// 2D conic section coefficient representation.
+///
+/// The coefficients are OCCT's, in OCCT's order: the conic is the point set satisfying
+/// `a·x² + b·y² + 2c·x·y + 2d·x + 2e·y + f = 0`. Note that `b` is the `y²` coefficient and `c`
+/// the `x·y` one, and that the cross and linear terms carry a factor of 2.
+///
+/// ```swift
+/// // The circle of radius 5 about the origin: x² + y² - 25 = 0
+/// if let c = Conic2D.circle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
+///     print(c.a, c.b, c.c, c.f)   // 1.0 1.0 0.0 -25.0
+/// }
+/// ```
 public struct Conic2D: Sendable {
-    /// Coefficients A, B, C, D, E, F of A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
+    /// Coefficients a, b, c, d, e, f of `a*x^2 + b*y^2 + 2c*x*y + 2d*x + 2e*y + f = 0`.
     public let a, b, c, d, e, f: Double
 
+    /// The implicit conic of a 2D circle, or `nil` if the circle is degenerate.
+    ///
+    /// - Parameters:
+    ///   - center: circle centre.
+    ///   - direction: local X axis direction. Must be non-zero.
+    ///   - radius: circle radius. Must be greater than zero.
+    /// - Returns: the six implicit coefficients, or `nil` when a dimension is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Conic2D.circle(center: .zero, direction: SIMD2(1, 0), radius: 3) {
+    ///     print(c.a, c.b, c.f)   // 1.0 1.0 -9.0
+    /// }
+    /// ```
+    public static func circle(
+        center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
+    ) -> Conic2D? {
+        var coeffs = [Double](repeating: 0, count: 6)
+        guard OCCTConic2dFromCircle(center.x, center.y, direction.x, direction.y,
+                                     radius, &coeffs) else { return nil }
+        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
+                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+    }
+
+    /// The implicit conic of a 2D line, or `nil` if the direction is degenerate.
+    ///
+    /// - Parameters:
+    ///   - point: any point on the line.
+    ///   - direction: line direction. Must be non-zero.
+    /// - Returns: the six implicit coefficients, or `nil` for a zero direction.
+    ///
+    /// ```swift
+    /// if let l = Conic2D.line(point: .zero, direction: SIMD2(1, 0)) {
+    ///     print(l.e)   // non-zero: the y term of the line y = 0
+    /// }
+    /// ```
+    public static func line(
+        point: SIMD2<Double>, direction: SIMD2<Double>
+    ) -> Conic2D? {
+        var coeffs = [Double](repeating: 0, count: 6)
+        guard OCCTConic2dFromLine(point.x, point.y, direction.x, direction.y,
+                                   &coeffs) else { return nil }
+        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
+                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+    }
+
+    /// The implicit conic of a 2D ellipse, or `nil` if the ellipse is degenerate.
+    ///
+    /// - Parameters:
+    ///   - center: ellipse centre.
+    ///   - direction: local X axis, along the major radius. Must be non-zero.
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the six implicit coefficients, or `nil` when a dimension is degenerate.
+    ///
+    /// ```swift
+    /// if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
+    ///                            majorRadius: 5, minorRadius: 3) {
+    ///     print(e.a, e.b, e.f)   // 0.04 0.111... -1.0  (x²/25 + y²/9 - 1 = 0)
+    /// }
+    /// ```
+    public static func ellipse(
+        center: SIMD2<Double>, direction: SIMD2<Double>,
+        majorRadius: Double, minorRadius: Double
+    ) -> Conic2D? {
+        var coeffs = [Double](repeating: 0, count: 6)
+        guard OCCTConic2dFromEllipse(center.x, center.y, direction.x, direction.y,
+                                      majorRadius, minorRadius, &coeffs) else { return nil }
+        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
+                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+    }
+
     /// Create from a 2D circle.
+    ///
+    /// Returns an all-zero `Conic2D` when the circle is degenerate, which no real conic ever is.
+    /// Use ``circle(center:direction:radius:)``, which returns `nil` instead.
+    @available(*, deprecated, renamed: "circle(center:direction:radius:)")
     public static func fromCircle(
         center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
     ) -> Conic2D {
-        var coeffs = [Double](repeating: 0, count: 6)
-        OCCTConic2dFromCircle(center.x, center.y, direction.x, direction.y, radius, &coeffs)
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        circle(center: center, direction: direction, radius: radius) ?? .degenerate
     }
 
     /// Create from a 2D line.
+    ///
+    /// Returns an all-zero `Conic2D` when the direction is degenerate, which no real conic ever
+    /// is. Use ``line(point:direction:)``, which returns `nil` instead.
+    @available(*, deprecated, renamed: "line(point:direction:)")
     public static func fromLine(
         point: SIMD2<Double>, direction: SIMD2<Double>
     ) -> Conic2D {
-        var coeffs = [Double](repeating: 0, count: 6)
-        OCCTConic2dFromLine(point.x, point.y, direction.x, direction.y, &coeffs)
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        line(point: point, direction: direction) ?? .degenerate
     }
 
     /// Create from a 2D ellipse.
+    ///
+    /// Returns an all-zero `Conic2D` when the ellipse is degenerate, which no real conic ever is.
+    /// Use ``ellipse(center:direction:majorRadius:minorRadius:)``, which returns `nil` instead.
+    @available(*, deprecated, renamed: "ellipse(center:direction:majorRadius:minorRadius:)")
     public static func fromEllipse(
         center: SIMD2<Double>, direction: SIMD2<Double>,
         majorRadius: Double, minorRadius: Double
     ) -> Conic2D {
-        var coeffs = [Double](repeating: 0, count: 6)
-        OCCTConic2dFromEllipse(center.x, center.y, direction.x, direction.y,
-                                majorRadius, minorRadius, &coeffs)
-        return Conic2D(a: coeffs[0], b: coeffs[1], c: coeffs[2],
-                        d: coeffs[3], e: coeffs[4], f: coeffs[5])
+        ellipse(center: center, direction: direction,
+                majorRadius: majorRadius, minorRadius: minorRadius) ?? .degenerate
     }
 
-    /// Intersect a 2D line with a 2D circle. Returns intersection points.
+    /// The all-zero coefficients the deprecated `from*` spellings return on failure. The equation
+    /// `0 = 0` holds at every point of the plane, so this describes no conic at all.
+    private static let degenerate = Conic2D(a: 0, b: 0, c: 0, d: 0, e: 0, f: 0)
+
+    /// Intersect a 2D line with a 2D circle.
+    ///
+    /// - Parameter radius: circle radius. Must be greater than zero; a radius of zero is a
+    ///   point-on-line test, not an intersection, and returns an empty array.
+    /// - Returns: 0, 1, or 2 intersection points.
+    ///
+    /// ```swift
+    /// let pts = Conic2D.lineCircleIntersection(
+    ///     linePoint: SIMD2(-5, 0), lineDir: SIMD2(1, 0),
+    ///     circleCenter: .zero, circleDir: SIMD2(1, 0), radius: 3)
+    /// // pts.count == 2 → [-3, 0] and [3, 0]
+    /// ```
     public static func lineCircleIntersection(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleDir: SIMD2<Double>, radius: Double
