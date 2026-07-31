@@ -692,7 +692,7 @@ public func edgePoints(at index: Int, maxPoints: Int = 20) -> [SIMD3<Double>]
 
 Points are uniformly sampled from start to end of the edge curve.
 
-- **Parameters:** `index` — edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints` — maximum points to return (capped at 20 internally).
+- **Parameters:** `index` — edge index (0 to `subShapeCount(ofType: .edge) − 1`); `maxPoints` — output *capacity* (capped at 20 internally), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points along the edge curve.
 - **OCCT:** `BRep_Tool::Curve` + `GCPnts_UniformParameter` (via `OCCTShapeGetEdgePoints`).
 
@@ -708,7 +708,7 @@ public func contourPoints(maxPoints: Int = 1000) -> [SIMD3<Double>]
 
 Returns edge **start** vertices only, not intermediate curve samples. For curved edges use `edgePoints(at:maxPoints:)` instead. Suitable for simple polygon contours from Z-plane slices.
 
-- **Parameters:** `maxPoints` — maximum number of points to return.
+- **Parameters:** `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points (one per edge start vertex).
 - **OCCT:** `TopExp_Explorer` over `TopAbs_EDGE` (via `OCCTShapeGetContourPoints`).
 

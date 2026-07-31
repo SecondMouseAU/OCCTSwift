@@ -1347,7 +1347,7 @@ Adaptively samples points along a B-Rep edge using curvature-based deflection co
 - **Parameters:**
   - `index` — edge index (0-based).
   - `deflection` — maximum chord deviation.
-  - `maxPoints` — maximum number of points to return.
+  - `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points along the edge, or `nil` if the edge is not found.
 - **OCCT:** `GCPnts_TangentialDeflection` / `BRep_Tool::Curve` (via `OCCTShapeGetEdgePolyline`).
 - **Example:**
@@ -1376,7 +1376,7 @@ Discretises every edge in a single bridge pass, building the shape's edge map on
 
 - **Parameters:**
   - `deflection` — maximum chord deviation per edge.
-  - `maxPointsPerEdge` — maximum points per edge (values below 2 return `[]`).
+  - `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped — the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
 - **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTBRepLibBuildCurves3dForShape` and `OCCTShapeComputeAllEdgePolylines`).
 - **Performance:** Prefer this over a `for i in 0..<shape.edgeCount { shape.edgePolyline(at: i) }` loop. `edgePolyline(at:)` rebuilds the edge map on every call, so that loop is O(edges²) — 15 s for a 12k-edge shape, versus 0.02 s here ([#275](https://github.com/SecondMouseAU/OCCTSwift/issues/275)).

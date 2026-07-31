@@ -5,11 +5,11 @@ parent: API Reference
 
 # Curve Adaptors & Wire Ordering
 
-`WireCurve` and `EdgeCurve` wrap `BRepAdaptor_CompCurve` and `BRepAdaptor_Curve` respectively, exposing arc-length parameterization and uniform sampling over a multi-edge wire or a single edge. `WireOrder` wraps `ShapeAnalysis_WireOrder` to determine the connection order and required reversals for a set of disconnected edges.
+`WireCurve` and `EdgeCurve` wrap `BRepAdaptor_CompCurve` and `BRepAdaptor_Curve` respectively, exposing arc-length parameterization and uniform sampling over a multi-edge wire or a single edge. `WireOrder` wraps `ShapeAnalysis_WireOrder` to determine the connection order and required reversals for a set of disconnected edges. `Sampling` holds the one sample-count ceiling every sampling entry point in the package measures against.
 
 ## Topics
 
-- [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder)
+- [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
 
 ---
 
@@ -233,8 +233,10 @@ Pure-Swift: derives the sample count from `length / spacing` and delegates to `p
 
 The largest sample count either adaptor will produce: 10 million points. Shared by `WireCurve` and `EdgeCurve`, since it is declared once on `ArcLengthCurveAdaptor`.
 
+Since #558 the number itself lives on `Sampling.maximumSampleCount`, where the other 26 sampling entry points that had the same defect can see it; both spellings below resolve to it and stay the ones these two types' own documentation uses.
+
 ```swift
-public static var maximumSampleCount: Int  // 10_000_000
+public static var maximumSampleCount: Int  // 10_000_000, == Sampling.maximumSampleCount
 ```
 
 `count` sizes a Swift allocation and is then cast to the `int32_t` the bridge takes its count in, so an unbounded count is a process abort rather than a failed call: before #479 a `points(spacing:)` small enough to imply 10<sup>11</sup> points asked for a ~2.4 TB array, and one small enough to overflow `Int` trapped in the conversion itself. Both entry points now return `[]` above the ceiling instead, with no clamping: a request the ceiling cannot honour fails visibly rather than coming back silently coarser than what was asked for.
@@ -465,7 +467,7 @@ Pure-Swift: derives the sample count from `length / spacing` and delegates to `p
 
 ### `maximumSampleCount`
 
-The same ceiling `WireCurve` applies; see [maximumSampleCount](#maximumsamplecount) above. It is declared once on `ArcLengthCurveAdaptor`, so `EdgeCurve.maximumSampleCount == WireCurve.maximumSampleCount`.
+The same ceiling `WireCurve` applies; see [maximumSampleCount](#maximumsamplecount) above. It is declared once on `ArcLengthCurveAdaptor` and, since #558, forwards to `Sampling.maximumSampleCount`, so `EdgeCurve.maximumSampleCount == WireCurve.maximumSampleCount == Sampling.maximumSampleCount`.
 
 ```swift
 public static var maximumSampleCount: Int  // 10_000_000
@@ -620,4 +622,47 @@ Extracts edge endpoint coordinates from the wire via the bridge (up to 1000 edge
   if let wo = WireOrder.analyze(wire: wire) {
       print(wo.status)       // .closed or .open depending on wire
   }
+  ```
+
+---
+
+## Sampling
+
+The one ceiling every sampling entry point in the package measures a caller-supplied count against. Not a curve-adaptor type — it lives on this page because this is where the ceiling's rationale is written down, and `WireCurve`/`EdgeCurve` were the first two types to get it (#479) before the other 26 followed (#558).
+
+```swift
+public enum Sampling
+```
+
+---
+
+### `maximumSampleCount`
+
+The largest sample count any sampling entry point will produce: 10 million points.
+
+```swift
+public static let maximumSampleCount = 10_000_000
+```
+
+A sampling count arrives from the caller, sizes a Swift allocation, and is then cast to the `int32_t` the bridge takes its count in. Both ends abort the process rather than failing a call: `[Double](repeating:count:)` traps on a negative and `Int32(_:)` traps past `Int32.max`. Before #479/#558 that was live at 28 public entry points across `Curve3D`, `Curve2D`, `Edge`, `Surface`, `Shape`, `Wire`, `BRepGraph`, `MedialAxis` and `QuadricIntersection`.
+
+The number is measured, not round: sampling costs about 4.5 µs per point, and one sample costs 24 bytes in the bridge's packed buffer plus 32 in the returned array, so the ceiling itself is already about 625 MB resident and 45 seconds of work. It is also two orders of magnitude below the `int32_t` the bridge counts in. See [the `WireCurve` discussion](#maximumsamplecount) for the full cost curve.
+
+**The ceiling drives three different decisions, because the parameters do not mean one thing:**
+
+| kind | parameter | behaviour |
+|---|---|---|
+| **request** | `count`, `pointCount`, `sampleCount` | Rejected outside `2...maximumSampleCount` (empty / `nil`). Never clamped — the caller asked for exactly this many, and returning fewer is the silent-coarsening defect [#501](https://github.com/SecondMouseAU/OCCTSwift/issues/501) found. |
+| **capacity** | `maxPoints` on an adaptive sampler | Clamped into `0...maximumSampleCount`. The deflection criterion decides the point count and the capacity only truncates, so clamping returns the *same* points. A capacity of 0 or less yields the entry point's own empty value. |
+| **grid** | `uCount`×`vCount`, `evalU`×`evalV`, `(uLineCount + vLineCount)`×`pointsPerLine` | The **product** is bounded, and each factor checked on its own — two negatives multiply to a plausible positive total, which is why `drawMesh(uCount: -1, vCount: -1)` looked well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process. Multiplications are overflow-checked. |
+
+The parameter's *name* does not settle which it is: `MedialAxis.drawArc(at:maxPoints:)` says capacity but fills its buffer exactly, so it is a request.
+
+- **Example:**
+  ```swift
+  let curve = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+
+  curve.drawUniform(pointCount: Sampling.maximumSampleCount + 1).isEmpty   // true: a request, rejected
+  curve.drawAdaptive(maxPoints: Sampling.maximumSampleCount + 1).count     // 2: a capacity, clamped
+  curve.drawUniform(pointCount: Int(Int32.max) + 1).isEmpty                // true, no trap
   ```

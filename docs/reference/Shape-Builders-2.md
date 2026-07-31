@@ -125,7 +125,7 @@ Evaluate sample points along a U-iso curve on a face.
 public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `u` — U parameter value. `count` — number of sample points.
+- **Parameters:** `u` — U parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 0 = U)
 - **Example:**
@@ -143,7 +143,7 @@ Evaluate sample points along a V-iso curve on a face.
 public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `v` — V parameter value. `count` — number of sample points.
+- **Parameters:** `v` — V parameter value. `count` — number of sample points, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the iso curve.
 - **OCCT:** `Adaptor3d_IsoCurve` (iso kind 1 = V)
 - **Example:**

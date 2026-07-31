@@ -498,7 +498,7 @@ public func quasiUniformParameters(count: Int) -> [Double]
 
 Uses `GCPnts_QuasiUniformAbscissa` to space `count` parameters approximately evenly along the arc length of the curve. The result is suitable for passing to `evaluateGrid(_:)`. The first parameter is always the start of the curve's domain and the last is always its end.
 
-- **Parameters:** `count`, the desired number of sample parameters. Must be at least 2; below that the result is empty. OCCT documents the same precondition but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so the bridge applies it (#501).
+- **Parameters:** `count`, the desired number of sample parameters — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty. OCCT documents the lower bound but enforces it with a `Raise_if`, which the pinned Release kernel compiles out, so this layer applies it (#501); the upper bound is this layer's too, since `count` sizes a Swift allocation and is cast to the bridge's `int32_t`, and both ends used to abort the process (#558).
 - **Returns:** Array of parameter values of length up to `count`, never more; empty on failure.
 - **OCCT:** `GCPnts_QuasiUniformAbscissa`. It can compute one point beyond the request on a poorly-conditioned curve (measured on a 1e6 x 1e-3 ellipse); the surplus is dropped, but the curve's end parameter is kept in the last slot rather than truncated away.
 - **Example:**
@@ -521,7 +521,7 @@ public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 50
 
 Uses `GCPnts_QuasiUniformDeflection`. Tighter curves produce more points; straighter segments produce fewer. The result is suitable for polygon rendering.
 
-- **Parameters:** `deflection` — maximum allowed chord deviation from the curve; `maxPoints` — upper bound on returned points (default 500).
+- **Parameters:** `deflection` — maximum allowed chord deviation from the curve; `maxPoints` — output *capacity* (default 500), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points (may be empty on failure).
 - **OCCT:** `GCPnts_QuasiUniformDeflection`.
 - **Example:**
@@ -654,7 +654,7 @@ public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> 
 
 Uses `ShapeAnalysis_Curve::GetSamplePoints`. The distribution is chosen internally by OCCT for good geometric coverage, not strict arc-length uniformity. For uniform spacing see `quasiUniformParameters(count:)`.
 
-- **Parameters:** `first` — start parameter; `last` — end parameter; `maxPoints` — upper bound on returned points (default 1000).
+- **Parameters:** `first` — start parameter; `last` — end parameter; `maxPoints` — output *capacity* (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D sample points (may be empty on failure).
 - **OCCT:** `ShapeAnalysis_Curve::GetSamplePoints`.
 - **Example:**

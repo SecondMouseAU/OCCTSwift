@@ -594,14 +594,25 @@ public final class Surface: @unchecked Sendable {
 
     /// Draw iso-parameter grid lines for Metal visualization
     /// - Parameters:
-    ///   - uLineCount: Number of U-iso lines
-    ///   - vLineCount: Number of V-iso lines
-    ///   - pointsPerLine: Points per iso line
-    /// - Returns: Array of polylines, each a [SIMD3<Double>]
+    ///   - uLineCount: Number of U-iso lines, at least 0.
+    ///   - vLineCount: Number of V-iso lines, at least 0.
+    ///   - pointsPerLine: Points per iso line, at least 1.
+    /// - Returns: Array of polylines, each a [SIMD3<Double>], or empty if the grid cannot be
+    ///   served. The bound is on the total: `(uLineCount + vLineCount) * pointsPerLine` must not
+    ///   exceed ``Sampling/maximumSampleCount`` (#558). Each factor is also checked on its own,
+    ///   since a negative line count used to abort the process unless the other count happened to
+    ///   outweigh it.
     public func drawGrid(uLineCount: Int = 10, vLineCount: Int = 10,
                          pointsPerLine: Int = 50) -> [[SIMD3<Double>]] {
+        // Bound each line count before adding: the sum is what sizes `lineLengths`, and two counts
+        // near `Int.max` overflow the addition itself into a trap before any ceiling is consulted.
+        guard uLineCount >= 0, uLineCount <= Sampling.maximumSampleCount,
+              vLineCount >= 0, vLineCount <= Sampling.maximumSampleCount
+        else { return [] }
         let maxLines = uLineCount + vLineCount
-        let maxPoints = maxLines * pointsPerLine
+        guard let maxPoints = Sampling.gridTotal(maxLines, pointsPerLine, atLeast: 0),
+              maxPoints > 0
+        else { return [] }
         var buffer = [Double](repeating: 0, count: maxPoints * 3)
         var lineLengths = [Int32](repeating: 0, count: maxLines)
 
@@ -630,14 +641,22 @@ public final class Surface: @unchecked Sendable {
 
     /// Sample a uniform mesh grid of points for Metal visualization.
     ///
-    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails.
+    /// - Parameters:
+    ///   - uCount: Samples in U, at least 1.
+    ///   - vCount: Samples in V, at least 1.
+    /// - Returns: A ``SurfaceGrid`` indexed `.at(u:v:)`, or an empty grid if sampling fails or the
+    ///   grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed
+    ///   ``Sampling/maximumSampleCount`` (#558). Each factor is also checked on its own, which is
+    ///   not redundant — two negative counts multiply to a plausible positive total, so
+    ///   `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while
+    ///   `drawMesh(uCount: -1, vCount: 3)` aborted the process.
     ///
     /// ```swift
     /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
     /// let p = grid.at(u: 5, v: 3)
     /// ```
     public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
-        let total = uCount * vCount
+        guard let total = Sampling.gridTotal(uCount, vCount) else { return .empty }
         var buffer = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceDrawMesh(handle, Int32(uCount), Int32(vCount), &buffer))
         guard n == total else { return .empty }

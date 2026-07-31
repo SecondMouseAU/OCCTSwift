@@ -965,7 +965,7 @@ public func orderedEdgePoints(at index: Int, maxPoints: Int? = nil) -> [SIMD3<Do
 
 When `maxPoints` is `nil`, allocates a buffer sized to all discretised points (no truncation). When provided, limits the returned array to `maxPoints` elements.
 
-- **Parameters:** `index` — 0-based edge index; `maxPoints` — optional upper limit on returned points.
+- **Parameters:** `index` — 0-based edge index; `maxPoints` — optional output capacity, honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `nil` (#558).
 - **Returns:** Array of 3D points along the edge, or `nil` if the index is out of range or the edge is degenerate.
 - **OCCT:** `BRepTools_WireExplorer` + `BRepAdaptor_Curve` + `GCPnts_TangentialDeflection`.
 - **Example:**
@@ -1016,7 +1016,7 @@ public func allEdgePolylines(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.allEdgePolylines(deflection:maxPointsPerEdge:)`.
 
-- **Parameters:** `deflection` — maximum chord deviation; `maxPointsPerEdge` — maximum points per edge.
+- **Parameters:** `deflection` — maximum chord deviation; `maxPointsPerEdge` — per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines (one per edge), or `[]` on failure.
 - **OCCT:** Delegates to `Shape.allEdgePolylines`.
 - **Example:**
@@ -1040,7 +1040,7 @@ public func edgePolyline(
 
 Convenience wrapper: converts to `Shape`, then calls `shape.edgePolyline(at:deflection:maxPoints:)`.
 
-- **Parameters:** `index` — 0-based edge index; `deflection` — chord deviation; `maxPoints` — point limit.
+- **Parameters:** `index` — 0-based edge index; `deflection` — chord deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558).
 - **Returns:** Polyline for the edge, or `nil` if index is out of range.
 - **OCCT:** Delegates to `Shape.edgePolyline`.
 - **Example:**

@@ -185,9 +185,18 @@ public final class MedialAxis: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - index: 1-based arc index.
-    ///   - maxPoints: Maximum number of sample points (default 32).
+    ///   - maxPoints: Desired number of sample points (default 32), honoured within `2...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
+    ///
+    ///     The name says capacity but the contract is a *request*: the bridge samples the arc's
+    ///     parameter range at exactly `maxPoints` evenly-spaced values rather than letting a
+    ///     deflection criterion pick the count, so it always returns exactly this many points
+    ///     (and nothing at all below 2). That is why an unservable count is rejected here rather
+    ///     than clamped the way the genuinely adaptive samplers clamp theirs — clamping this one
+    ///     would hand back a different, coarser sampling than the caller asked for.
     /// - Returns: Array of 2D points along the arc, or empty on error.
     public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>] {
+        guard let maxPoints = Sampling.requested(maxPoints) else { return [] }
         var xy = [Double](repeating: 0, count: maxPoints * 2)
         let count = OCCTMedialAxisDrawArc(handle, Int32(index), &xy, Int32(maxPoints))
         return (0..<Int(count)).map { i in
@@ -197,11 +206,18 @@ public final class MedialAxis: @unchecked Sendable {
 
     /// Sample points along all bisector arcs.
     ///
-    /// - Parameter maxPointsPerArc: Maximum points per arc (default 32).
+    /// - Parameter maxPointsPerArc: Points requested per arc (default 32), at least 2 — the same
+    ///   fill-exactly request ``drawArc(at:maxPoints:)`` takes, not a capacity. The bound is on
+    ///   the **total**: `arcCount * maxPointsPerArc` must not exceed
+    ///   ``Sampling/maximumSampleCount``, else the result is empty (#558). Checking
+    ///   `maxPointsPerArc` on its own is not redundant, since a negative count on a graph with no
+    ///   arcs multiplies to a plausible total.
     /// - Returns: Array of polylines, one per arc.
     public func drawAll(maxPointsPerArc: Int = 32) -> [[SIMD2<Double>]] {
-        let totalMax = arcCount * maxPointsPerArc
-        guard totalMax > 0 else { return [] }
+        guard maxPointsPerArc >= 2,
+              let totalMax = Sampling.gridTotal(arcCount, maxPointsPerArc, atLeast: 0),
+              totalMax > 0
+        else { return [] }
         var xy = [Double](repeating: 0, count: totalMax * 2)
         var lineStarts = [Int32](repeating: 0, count: arcCount)
         var lineLengths = [Int32](repeating: 0, count: arcCount)

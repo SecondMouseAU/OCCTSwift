@@ -629,7 +629,7 @@ public func drawArc(at index: Int, maxPoints: Int = 32) -> [SIMD2<Double>]
 
 Evaluates the arc's bisector curve (`BRepMAT2d_BisectingLocus::GeomBis`) at uniformly spaced parameters. Infinite curve parameters are clamped to ±1000.
 
-- **Parameters:** `index` — 1-based arc index; `maxPoints` — maximum number of sample points (default 32).
+- **Parameters:** `index` — 1-based arc index; `maxPoints` — sample points *requested* (default 32), honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The name says capacity but the contract is a request: the bridge samples the arc at exactly `maxPoints` evenly-spaced parameters and always returns that many, so an unservable count is rejected rather than clamped — clamping would hand back a coarser sampling than asked for.
 - **Returns:** Array of 2D points along the arc; empty on error.
 - **OCCT:** `MAT_Graph::Arc` + `BRepMAT2d_BisectingLocus::GeomBis` + `Geom2d_TrimmedCurve::Value`.
 - **Example:**
@@ -652,7 +652,7 @@ public func drawAll(maxPointsPerArc: Int = 32) -> [[SIMD2<Double>]]
 
 Calls `OCCTMedialAxisDrawAll` which fills a flat XY buffer and per-arc start/length arrays in one pass. More efficient than calling `drawArc(at:)` in a loop.
 
-- **Parameters:** `maxPointsPerArc` — maximum sample points per arc (default 32).
+- **Parameters:** `maxPointsPerArc` — sample points *requested* per arc (default 32), at least 2. The bound is on the total: `arcCount * maxPointsPerArc` must not exceed `Sampling.maximumSampleCount` (10,000,000), else the result is empty; `maxPointsPerArc` is checked on its own too, since a negative count on a graph with no arcs multiplies to a plausible total (#558).
 - **Returns:** Array of polylines, one per arc; empty if `arcCount == 0`.
 - **OCCT:** `BRepMAT2d_BisectingLocus::GeomBis` (per arc) + `Geom2d_TrimmedCurve::Value`.
 - **Example:**

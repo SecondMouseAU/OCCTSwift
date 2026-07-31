@@ -1986,10 +1986,13 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - faceIndex: Face definition index.
     ///   - uSamples: Number of samples in U direction (must be >= 1).
     ///   - vSamples: Number of samples in V direction (must be >= 1).
-    /// - Returns: Grid sample data, or nil if face has no surface or sampling fails.
+    /// - Returns: Grid sample data, or nil if face has no surface, sampling fails, or the grid
+    ///   cannot be served: the bound is on the **product**, which must not exceed
+    ///   ``Sampling/maximumSampleCount`` (#558). This sampler fills four buffers per point
+    ///   (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost
+    ///   sooner than the point-only samplers do.
     public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> FaceGridSample? {
-        guard uSamples >= 1, vSamples >= 1 else { return nil }
-        let total = uSamples * vSamples
+        guard let total = Sampling.gridTotal(uSamples, vSamples) else { return nil }
         var posBuffer = [Double](repeating: 0, count: total * 3)
         var nrmBuffer = [Double](repeating: 0, count: total * 3)
         var gaussBuffer = [Double](repeating: 0, count: total)
@@ -2034,10 +2037,11 @@ public final class BRepGraph: @unchecked Sendable {
     /// Sample evenly-spaced points along an edge curve.
     /// - Parameters:
     ///   - edgeIndex: Edge definition index.
-    ///   - count: Number of points to sample (must be >= 1).
+    ///   - count: Number of points to sample, honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     /// - Returns: Array of 3D points along the edge, empty if edge has no curve.
     public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>] {
-        guard count >= 1 else { return [] }
+        guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var buffer = [Double](repeating: 0, count: count * 3)
         let result = buffer.withUnsafeMutableBufferPointer { buf in
             OCCTBRepGraphSampleEdgeCurve(handle, Int32(edgeIndex), Int32(count), buf.baseAddress!)

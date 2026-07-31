@@ -916,7 +916,7 @@ public func drawAdaptive(angularDeflection: Double = 0.1,
 
 Concentrates sample points where the curve bends sharply, producing an efficient polyline for Metal rendering. Returns an empty array if the curve cannot be discretized.
 
-- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `angularDeflection` — maximum angle between consecutive tangents (radians); `chordalDeflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558). The deflection criteria decide the actual point count.
 - **Returns:** Array of 3D points along the curve; never force-unwrap.
 - **OCCT:** `GCPnts_TangentialDeflection(adaptor, angularDefl, chordalDefl)`.
 - **Example:**
@@ -938,7 +938,7 @@ public func drawUniform(pointCount: Int) -> [SIMD3<Double>]
 
 All consecutive point pairs are separated by the same arc-length. Good for even distribution of sample points regardless of curvature. The first point is always the start of the curve and the last is always its end.
 
-- **Parameters:** `pointCount`, the desired number of output points. Must be at least 2; below that the result is empty (#501).
+- **Parameters:** `pointCount`, the desired number of output points — a *request*, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#501, #558). Not clamped: a count past the ceiling fails visibly rather than coming back coarser than what was asked for. Before #558 a negative aborted the process rather than returning empty.
 - **Returns:** Array of 3D points, never more than `pointCount`, or empty array on failure.
 - **OCCT:** `GCPnts_UniformAbscissa(adaptor, pointCount)`. It sizes its own array at `pointCount + 5` and can report more points than requested on a poorly-conditioned curve; the surplus is dropped and the curve's end point kept (#501).
 - **Example:**
@@ -959,7 +959,7 @@ public func drawDeflection(deflection: Double = 0.01,
                            maxPoints: Int = 4096) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — buffer size limit.
+- **Parameters:** `deflection` — maximum chord-to-curve deviation; `maxPoints` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns empty (#558).
 - **Returns:** Array of 3D points; empty on failure.
 - **OCCT:** `GCPnts_UniformDeflection(adaptor, deflection)`.
 - **Example:**

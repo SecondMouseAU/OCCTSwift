@@ -227,6 +227,62 @@ tests); the only fallout was one existing test whose helper subtracted 1 from
 Not an upstream defect — both OCCT primitives behave exactly as documented, and the kernel is not
 involved in the base convention at all. No kernel patch, no xcframework rebuild.
 
+#### Every sampling entry point now bounds the count a caller can supply (#558)
+
+#479 bounded two entry points and recorded that "the same shape is live at fourteen other sampling
+entry points". Measuring the family before fixing it found **twenty-eight**, not fourteen: a caller
+supplies a count, it sizes a Swift allocation, and it is then cast to the `int32_t` the bridge takes
+its count in. `[Double](repeating:count:)` traps on a negative and `Int32(_:)` traps past
+`Int32.max`, so both ends abort the process rather than returning the documented empty value.
+
+Measured one case per process, since a trap takes the whole harness down with it. Every one of the
+28 either trapped or ground on an unservable allocation past 30 s at `Int(Int32.max) + 1`, and 20 of
+them trapped on `-1`. The fourteen the issue did not name are `Edge.quasiUniformParameters(count:)`
+(the same method, on the same `GCPnts_QuasiUniformAbscissa`, as the `Curve3D` one that *was* named),
+`Curve3D.samplePoints(first:last:maxPoints:)`, `Surface.drawGrid(uLineCount:vLineCount:pointsPerLine:)`,
+`Shape`'s `edgePolyline`, `allEdgePolylines`, `edgePoints`, `contourPoints`, `uIsoCurvePoints`,
+`vIsoCurvePoints` and `coonsAlgPatch`, `Wire.orderedEdgePoints(at:maxPoints:)`, both `MedialAxis`
+drawers, and `QuadricIntersection.coneSpherePoints`.
+
+The ceiling moves out of `ArcLengthCurveAdaptor` into **`Sampling.maximumSampleCount`**, still
+10,000,000 and still the measured number #479 justified. `EdgeCurve.maximumSampleCount` /
+`WireCurve.maximumSampleCount` keep working and resolve to it, so nothing #479 shipped breaks.
+
+The bound is not one rule, because the parameters do not mean one thing:
+
+| kind | parameter | decision | why |
+|---|---|---|---|
+| **request** | `count`, `pointCount`, `sampleCount` | rejected outside `2...ceiling` (empty / `nil`) | the caller asked for exactly this many; returning fewer is the silent-coarsening defect #501 found |
+| **capacity** | `maxPoints` on an adaptive sampler | clamped into `0...ceiling` | the deflection criterion decides the count and the capacity only truncates, so clamping returns the *same* points, not coarser ones |
+| **grid** | `uCount`×`vCount`, `evalU`×`evalV`, `(uLineCount + vLineCount)`×`pointsPerLine` | the **product** is bounded, and each factor checked on its own | see below |
+
+Two things the measurement changed about the fix as the issue specified it:
+
+- **The issue recorded `Surface.drawMesh` as returning `.empty` for a negative count. It does, but
+  only when the negative goes to both factors.** `(-1) * (-1)` is `1`, a perfectly plausible total,
+  so the allocation succeeds and the bridge rejects the counts on its own. `drawMesh(uCount: -1,
+  vCount: 3)` is `-3` and aborts the process. Bounding only the product would have left that live,
+  so each factor is checked individually as well. Confirmed by injection: with the per-factor check
+  removed, the new suite aborts with `Fatal error: Can't construct Array with count < 0` at exactly
+  that case. The same masking applies to `Surface.drawGrid` and `MedialAxis.drawAll`.
+- **`MedialAxis.drawArc`'s parameter is named `maxPoints`, but it is a request.** The bridge does
+  `numPoints = maxPoints` and fills the buffer exactly, so it returns precisely the count asked for
+  (and nothing at all below 2), unlike the genuinely adaptive samplers that share the name. It was
+  written as a capacity first; the verification sweep caught it returning a full 10,000,000 points
+  for a clamped absurd input, which is the coarsening the clamp was supposed to be immune to. It
+  rejects instead.
+
+The multiplications are overflow-checked rather than assumed in range: `Int` wraps into a trap of
+its own well before the ceiling is reached, and `drawGrid`'s two line counts are bounded before
+being added for the same reason.
+
+Regression suite: `Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift`, 21 tests. They run
+in-process only because the fix is what lets them: before it, every assertion in them would have
+aborted the test harness rather than failing. They compare `.count == 0` rather than reading
+`.isEmpty` because Swift Testing prints the captured sub-expression on failure, and a regression
+returning 10 million points would print all 10 million (measured at over 5 GB while injecting a
+deliberate bug to confirm the suite catches it; #479 hit the same hazard at 880 MB).
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
@@ -737,6 +793,12 @@ itself, despite documenting "must be at least 2, else empty". Measured one case 
 assumed. Filed as #558 rather than widened into this fix: `maxPoints` on an adaptive algorithm is a
 capacity rather than a request, and `uSamples`/`vSamples` bound a product, so those need a contract
 decision per parameter rather than this one's ceiling applied uniformly.
+
+> **Corrected by #558**: the family is twenty-eight entry points, not fourteen — this census missed
+> half of it, including `Edge.quasiUniformParameters(count:)`, the same method on the same OCCT
+> class as the `Curve3D` one it did name. The `drawMesh` row of its table is also wrong: a negative
+> count only survives when it is passed to *both* factors, where the two negatives multiply to a
+> plausible positive total. See the #558 entry above.
 
 #### The knot-splitting continuity cap, on the four fifths of the family #398 did not reach (#480)
 

@@ -695,7 +695,9 @@ public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> Fa
   - `faceIndex` — face definition index.
   - `uSamples` — number of samples in U direction (must be ≥ 1).
   - `vSamples` — number of samples in V direction (must be ≥ 1).
-- **Returns:** `FaceGridSample` with `uSamples × vSamples` entries, or `nil` if the face has no surface or sampling fails.
+
+  The bound is on the **product**: `uSamples * vSamples` must not exceed `Sampling.maximumSampleCount` (10,000,000), and each factor is checked on its own, since two negatives multiply to a plausible positive total (#558). This sampler fills four buffers per point (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost sooner than the point-only samplers do.
+- **Returns:** `FaceGridSample` with `uSamples × vSamples` entries, or `nil` if the face has no surface, sampling fails, or the grid cannot be served.
 - **OCCT:** `GeomLProp_SLProps` (position, normal, curvature evaluation) via `OCCTBRepGraphSampleFaceUVGrid`.
 - **Example:**
   ```swift
@@ -724,7 +726,7 @@ public func sampleEdgeCurve(edgeIndex: Int, count: Int) -> [SIMD3<Double>]
 
 - **Parameters:**
   - `edgeIndex` — edge definition index.
-  - `count` — number of points to sample (must be ≥ 1).
+  - `count` — number of points to sample, a *request* honoured within `1...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558).
 - **Returns:** Array of 3D points along the edge curve, in parameter order; empty if the edge has no curve or sampling fails.
 - **OCCT:** `GeomAdaptor_Curve` (via `OCCTBRepGraphSampleEdgeCurve`).
 - **Example:**
