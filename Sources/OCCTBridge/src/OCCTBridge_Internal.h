@@ -769,6 +769,31 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
     return nbPoints >= 2;
 }
 
+/// The parameter-range precondition every ranged arc-length entry point has to apply itself:
+/// both bounds finite. `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not check, and what a
+/// non-finite bound produces is curve-type dependent, so without this the "nil means the
+/// computation failed" contract of Curve3D/Curve2D.length(from:to:) held only for some curves.
+///
+/// Measured on the pinned kernel (Scripts/repro/548-nonfinite-length-bounds/): on a line, a
+/// segment, a circle and a Bezier a NaN bound propagates to NaN, which the `l >= 0` guard reads
+/// as failure -- but on a 5-point interpolated BSpline `length(from: f, to: .nan)` returned 0
+/// (the encoding of a genuine zero-width interval) and `length(from: .nan, to: l)` returned the
+/// curve's entire length, indistinguishable from a valid measurement. An infinite bound is worse:
+/// on the line, segment and circle it returns +inf, which passes `l >= 0` and reaches the caller.
+///
+/// The mechanism is not the domain clamping #477 describes. Curves with more than one GeomAbs_CN
+/// interval take GCPnts_AbscissaPoint::length's `GCPnts_AbsComposite` branch, which reduces the
+/// caller's bounds with `std::min`/`std::max`. Those return their *first* argument when the
+/// comparison is false, so `std::min(u, NaN) == std::max(u, NaN) == u` while
+/// `std::min(NaN, u) == std::max(NaN, u) == NaN`: a NaN upper bound collapses the interval to
+/// [u1, u1] and measures 0, and a NaN lower bound makes both bounds NaN, which turns every
+/// per-span skip test (`aTI(i) > aUU2`, `aTI(i+1) < aUU1`) false and integrates every span in
+/// full. Single-span curves take the branches that propagate NaN instead, which is the only
+/// reason the existing parity test (built on a segment) passed. #548.
+inline bool occtValidParameterRange(double u1, double u2) {
+    return std::isfinite(u1) && std::isfinite(u2);
+}
+
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
 //
 // Three bridge functions fillet a caller-supplied list of edge indices and differ only in what

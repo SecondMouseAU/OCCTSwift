@@ -838,15 +838,22 @@ rather than a range-checked one.
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite
+  (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** `.nan` and `±.infinity` report `nil` on every curve type. They are rejected in the
+  bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
+  bound measured `0` and a NaN lower bound the curve's whole length — see
+  [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
   ```
 
 ---

@@ -448,18 +448,29 @@ public final class Curve3D: @unchecked Sendable {
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`. Parameters outside the curve's domain are clamped to it, so a
-    /// range wholly outside measures `0` rather than extrapolating the curve's polynomial.
+    /// parameters measure `0`.
+    ///
+    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
+    /// itself does not check, and answered them differently per curve type — on an interpolated
+    /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
+    /// length, neither distinguishable from a real result (#548).
+    ///
+    /// A finite range reaching outside the curve's domain is *not* rejected, and what it measures
+    /// depends on the curve: a multi-span BSpline is confined to its knots (a range wholly outside
+    /// measures `0`), while a line, circle or Bezier measures the range as given — which is what a
+    /// periodic curve needs, since a circle over `[0, 4π]` genuinely travels two turns (#600).
     ///
     /// - Parameters:
-    ///   - u1: Start parameter.
-    ///   - u2: End parameter.
-    /// - Returns: Arc length in model units, or `nil` if the OCCT computation fails.
+    ///   - u1: Start parameter. Must be finite.
+    ///   - u2: End parameter. Must be finite.
+    /// - Returns: Arc length in model units, or `nil` if a bound is not finite or the OCCT
+    ///   computation fails.
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 1)!
     /// let d = circle.domain
     /// let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)  // ~= pi
+    /// let bad = circle.length(from: d.lowerBound, to: .nan)                 // nil, not a number
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)
@@ -2065,10 +2076,10 @@ extension Curve3D {
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if the underlying computation fails — arc length is otherwise always non-negative, so
-    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
-    /// result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional
-    /// rather than a sentinel value.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)`
+    /// directly if you need an optional rather than a sentinel value.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         length(from: u1, to: u2) ?? -1.0
     }
@@ -2098,10 +2109,10 @@ extension Curve3D {
     /// Arc length between two parameters.
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if the underlying computation fails — arc length is otherwise always non-negative, so
-    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
-    /// interval (e.g. `param1 == param2`). Use `length(from:to:)` directly if you need an
-    /// optional rather than a sentinel value.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length interval (e.g. `param1 == param2`). Use
+    /// `length(from:to:)` directly if you need an optional rather than a sentinel value.
     public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double {
         length(from: param1, to: param2) ?? -1.0
     }

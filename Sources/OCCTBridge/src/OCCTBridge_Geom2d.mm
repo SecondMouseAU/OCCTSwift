@@ -4203,6 +4203,10 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
 // unrestricted adaptor, which tolerates either order.
 double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
     if (!curve || curve->curve.IsNull()) return -1.0;
+    // The pre-bounded adaptor happens to propagate a NaN bound already (it never reaches the
+    // composite branch's std::min/std::max reduction), but it returns +inf for an infinite one.
+    // Rejected here so both spellings answer a non-finite range the same way. #548.
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
         return GCPnts_AbscissaPoint::Length(ac);
@@ -5552,8 +5556,12 @@ double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
     }
 }
 
+// Same non-finite-bound rejection as the 3D sibling: Geom2dAdaptor_Curve reaches the very same
+// GCPnts_AbscissaPoint::length template, so a 2D BSpline measured 0 (NaN upper) or its whole
+// length (NaN lower) too. See occtValidParameterRange (OCCTBridge_Internal.h). #548.
 double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
         return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);

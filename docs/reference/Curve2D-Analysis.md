@@ -1034,11 +1034,15 @@ drop the order validation.
 public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`.
-- **Returns:** Arc length value, or `-1.0` on failure (e.g. a reversed range) — arc length is
-  otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
-  zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
+- **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`. Both must be finite.
+- **Returns:** Arc length value, or `-1.0` on failure (e.g. a reversed range, or a non-finite
+  bound) — arc length is otherwise always non-negative, so `-1.0` is unambiguous and never
+  collides with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly
+  if you need an optional.
 - **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **Note:** `.nan` and `±.infinity` return `-1.0`. The pre-bounded adaptor propagated NaN on its
+  own, but returned `+infinity` for an infinite bound on a segment or a circle, and `+infinity`
+  passes the bridge's non-negative check (#548).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {

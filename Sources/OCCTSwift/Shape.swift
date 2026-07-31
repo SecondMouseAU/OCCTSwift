@@ -14404,11 +14404,33 @@ extension Shape {
     }
 
     /// Compute total arc length of this edge.
+    ///
+    /// Returns `-1.0` if the computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, matching ``Curve3D/totalArcLength``. It used to
+    /// return `0`, which a genuinely zero-length edge also measures (#548).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let total = edge.edgeArcLength   // 10.0
+    /// ```
     public var edgeArcLength: Double {
         OCCTEdgeArcLength(handle)
     }
 
     /// Compute arc length between two parameters on this edge.
+    ///
+    /// Both bounds must be finite. `.nan` and `±.infinity` return `-1.0` rather than reaching
+    /// OCCT's integrator, which answered them per curve type: a NaN bound on a straight edge came
+    /// back as NaN itself, and on a multi-span edge as `0` (a NaN upper bound) or the edge's whole
+    /// length (a NaN lower one). `-1.0` is also the sentinel for any other failure, replacing the
+    /// `0` this returned before — that value is what a genuine zero-width interval measures (#548).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let d = edge.edgeAdaptorDomain
+    /// let half = edge.edgeArcLength(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+    /// let bad = edge.edgeArcLength(from: d.lowerBound, to: .nan)   // -1.0
+    /// ```
     public func edgeArcLength(from u1: Double, to u2: Double) -> Double {
         OCCTEdgeArcLengthBetween(handle, u1, u2)
     }

@@ -516,6 +516,17 @@ public final class Curve2D: @unchecked Sendable {
     /// greater than `u2` (order doesn't affect the result). Returns `nil` on failure (e.g. a
     /// released curve), never a sentinel value that could be mistaken for a real zero-length
     /// segment.
+    ///
+    /// Both bounds must be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator does
+    /// not check them, and on a multi-span BSpline a NaN upper bound measured `0` and a NaN lower
+    /// bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the mechanism (#548).
+    ///
+    /// ```swift
+    /// let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 5), SIMD2(20, 0)])!
+    /// let d = c.domain
+    /// let half = c.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+    /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
+    /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
         return l >= 0 ? l : nil
@@ -2667,10 +2678,11 @@ extension Curve2D {
     ///
     /// Unlike `length(from:to:)`, `u1` must not exceed `u2` — the underlying computation uses a
     /// range-checked adaptor that fails on a reversed range. Returns `-1.0` on failure (a
-    /// reversed range, a released curve, or any other computation error) — arc length is
-    /// otherwise always non-negative, so this is an unambiguous failure sentinel, never
-    /// confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use `length(from:to:)`
-    /// directly if you need an optional rather than a sentinel value (and order tolerance).
+    /// reversed range, a non-finite bound, a released curve, or any other computation error) —
+    /// arc length is otherwise always non-negative, so this is an unambiguous failure sentinel,
+    /// never confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use
+    /// `length(from:to:)` directly if you need an optional rather than a sentinel value (and
+    /// order tolerance).
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         let l = OCCTCurve2DLength(handle, u1, u2)
         return l >= 0 ? l : -1.0

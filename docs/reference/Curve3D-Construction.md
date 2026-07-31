@@ -365,13 +365,16 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
 Non-optional; delegates to `length(from:to:)` (the failure-distinguishing entry point on the
-main page) and returns `-1.0` if the curve is invalid or the computation fails. Arc length is
-otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
-zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
+main page) and returns `-1.0` if the curve is invalid, a bound is not finite, or the computation
+fails. Arc length is otherwise always non-negative, so `-1.0` is unambiguous and never collides
+with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need
+an optional.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (must satisfy `u1 ≤ u2`).
+- **Parameters:** `u1` — start parameter; `u2` — end parameter. Either order; both must be finite.
 - **Returns:** Arc length in model units, or `-1.0` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve, u1, u2))` (via `length(from:to:)`).
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` (via `length(from:to:)`).
+- **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type. See
+  [`length(from:to:)`](Curve3D.md#lengthfromto) for what OCCT did with them (#548).
 - **Example:**
   ```swift
   if let curve = Curve3D.interpolate(
@@ -445,9 +448,10 @@ Like `arcLength(from:to:)` but with unlabelled parameters. Delegates to `length(
 returns `-1.0` on failure, never `0.0` (which would collide with a genuine zero-length interval,
 e.g. `param1 == param2`).
 
-- **Parameters:** `param1` — first parameter; `param2` — second parameter.
+- **Parameters:** `param1` — first parameter; `param2` — second parameter. Both must be finite.
 - **Returns:** Arc length between the two parameters, or `-1.0` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, param1, param2)` (via `length(from:to:)`).
+- **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type (#548).
 - **Example:**
   ```swift
   let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
