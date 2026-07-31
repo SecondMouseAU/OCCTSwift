@@ -1007,8 +1007,8 @@ public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 The major axis direction is determined by OCCT's `gp_Ax2` construction from `normal`. Angles are measured from the major axis in the ellipse plane.
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius` — semi-major axis; `minorRadius` — semi-minor axis; `startAngle`/`endAngle` — arc bounds in radians; `counterclockwise` — winding direction.
-- **Returns:** Elliptical arc curve, or `nil` on failure.
+- **Parameters:** `center`: ellipse centre; `normal`: plane normal; `majorRadius`: semi-major axis, must be `> 0`; `minorRadius`: semi-minor axis, must be `> 0` and no larger than `majorRadius`; `startAngle`/`endAngle`: arc bounds in radians; `counterclockwise`: winding direction.
+- **Returns:** Elliptical arc curve, or `nil` on failure, including when the radii do not describe an ellipse.
 - **OCCT:** `GC_MakeArcOfEllipse(elips, angle1, angle2, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
   ```swift
@@ -1016,6 +1016,12 @@ The major axis direction is determined by OCCT's `gp_Ax2` construction from `nor
       center: .zero, normal: SIMD3(0, 0, 1),
       majorRadius: 10, minorRadius: 5,
       startAngle: 0, endAngle: .pi)
+
+  // A zero minor radius would otherwise build an arc that evaluates onto the major axis.
+  #expect(Curve3D.arcOfEllipse(
+      center: .zero, normal: SIMD3(0, 0, 1),
+      majorRadius: 10, minorRadius: 0,
+      startAngle: 0, endAngle: .pi) == nil)
   ```
 
 ---
@@ -1033,8 +1039,8 @@ public static func arcOfEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
 
 Both `from` and `to` must lie on the ellipse (within tolerance). Use this form when angles are not known but the endpoint coordinates are.
 
-- **Parameters:** `center` — ellipse centre; `normal` — plane normal; `majorRadius`/`minorRadius` — ellipse radii; `from` — start point on the ellipse; `to` — end point on the ellipse; `counterclockwise` — winding direction.
-- **Returns:** Elliptical arc curve, or `nil` if points do not lie on the ellipse or construction fails.
+- **Parameters:** `center`: ellipse centre; `normal`: plane normal; `majorRadius`/`minorRadius`: ellipse radii, both `> 0` with minor no larger than major; `from`: start point on the ellipse; `to`: end point on the ellipse; `counterclockwise`: winding direction.
+- **Returns:** Elliptical arc curve, or `nil` if the radii do not describe an ellipse, the points do not lie on it, or construction fails.
 - **OCCT:** `GC_MakeArcOfEllipse(elips, from, to, sense)` → `Geom_TrimmedCurve`.
 - **Example:**
   ```swift
@@ -1043,6 +1049,18 @@ Both `from` and `to` must lie on the ellipse (within tolerance). Use this form w
       majorRadius: 10, minorRadius: 5,
       from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0))
   ```
+
+The radius check matters more in this form than in the angular one. Converting each endpoint back to
+a parameter divides by the minor radius, so at zero both bounds come back `NaN` — and OCCT reports
+that construction as *done*. Before #554 this returned a live curve whose parameter range and every
+evaluation were `NaN`:
+
+```swift
+#expect(Curve3D.arcOfEllipse(
+    center: .zero, normal: SIMD3(0, 0, 1),
+    majorRadius: 10, minorRadius: 0,
+    from: SIMD3(10, 0, 0), to: SIMD3(-10, 0, 0)) == nil)
+```
 
 ---
 

@@ -7805,6 +7805,25 @@ extension Curve3D {
 
 extension Curve3D {
     /// Create a 3D ellipse from axis and major/minor radii.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
+    /// - Returns: The ellipse, or `nil` if the radii do not describe one.
+    ///
+    /// `GC_MakeEllipse` reports `!IsDone()` for negative and inverted radii on its own, but
+    /// accepts zero; the radii are checked here so every route to an ellipse enforces the same
+    /// contract as `Curve3D.ellipse(center:normal:majorRadius:minorRadius:)`.
+    ///
+    /// ```swift
+    /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
                                   majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let ref = OCCTGCMakeEllipse(center.x, center.y, center.z,
@@ -7822,6 +7841,16 @@ extension Curve3D {
     }
 
     /// Create a 3D ellipse from full Ax2 (center + normal + X direction) and radii.
+    ///
+    /// Same radius contract as `gcEllipse(center:normal:majorRadius:minorRadius:)`; this overload
+    /// only adds control over where the major axis points.
+    ///
+    /// ```swift
+    /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           xDirection: SIMD3(1, 0, 0),
+    ///                           majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// ```
     public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>,
                                   majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let ref = OCCTGCMakeEllipseFromElips(center.x, center.y, center.z,
@@ -7836,6 +7865,21 @@ extension Curve3D {
 
 extension Curve3D {
     /// Create a 3D hyperbola from axis and major/minor radii.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`. No ordering constraint against the major.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// ```swift
+    /// let h = Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                             majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                             majorRadius: 0, minorRadius: 3) == nil)
+    /// ```
     public static func gcHyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
                                     majorRadius: Double, minorRadius: Double) -> Curve3D? {
         guard let ref = OCCTGCMakeHyperbola(center.x, center.y, center.z,
@@ -9936,6 +9980,18 @@ public enum ExtremaElC {
     }
 
     /// Distance between a 3D line and ellipse.
+    ///
+    /// `majorRadius` and `minorRadius` must describe an ellipse (both `> 0`, minor no larger than
+    /// major). A degenerate ellipse returns `[]`: measured, `Extrema_ExtElC` reports
+    /// `IsParallel()` against a zero-radius ellipse whatever the line does (#554).
+    ///
+    /// ```swift
+    /// let ex = ExtremaElC.lineToEllipse(linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(1, 0, 1),
+    ///                                   center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                   xDir: SIMD3(1, 0, 0),
+    ///                                   majorRadius: 5, minorRadius: 3)
+    /// #expect(!ex.isEmpty)
+    /// ```
     public static func lineToEllipse(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
@@ -10159,6 +10215,19 @@ public enum ExtremaPointCurve {
     }
 
     /// Distance from a point to a 3D ellipse.
+    ///
+    /// `majorRadius` and `minorRadius` must describe an ellipse (both `> 0`, minor no larger than
+    /// major). A degenerate ellipse returns `[]`, because OCCT does not answer the degenerate
+    /// question here: measured, `Extrema_ExtPElC` reports no extrema at all against a zero-radius
+    /// ellipse rather than the one at its centre (#554).
+    ///
+    /// ```swift
+    /// let ex = ExtremaPointCurve.pointToEllipse(point: SIMD3(10, 0, 0),
+    ///                                           center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                           xDir: SIMD3(1, 0, 0),
+    ///                                           majorRadius: 5, minorRadius: 3)
+    /// #expect(ex.count == 2)
+    /// ```
     public static func pointToEllipse(
         point: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
@@ -10185,6 +10254,15 @@ public enum ExtremaPointCurve {
     }
 
     /// Distance from a point to a 3D parabola.
+    ///
+    /// `focal` must be `> 0`; a degenerate parabola returns `[]`.
+    ///
+    /// ```swift
+    /// let ex = ExtremaPointCurve.pointToParabola(point: SIMD3(10, 0, 0),
+    ///                                            center: .zero, normal: SIMD3(0, 0, 1),
+    ///                                            xDir: SIMD3(1, 0, 0), focal: 2)
+    /// #expect(!ex.isEmpty)
+    /// ```
     public static func pointToParabola(
         point: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
@@ -12046,6 +12124,22 @@ extension Surface {
 extension Shape {
 
     /// Create a full ellipse edge.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
+    /// - Returns: The edge, or `nil` if the radii do not describe an ellipse.
+    ///
+    /// `BRepBuilderAPI_MakeEdge` reports `IsDone()` for a degenerate conic, so without the radius
+    /// check this returned a live edge carrying a curve that is really a point (#554).
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
     public static func edgeFromEllipse(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
                                         majorRadius: Double, minorRadius: Double) -> Shape? {
         guard let ref = OCCTMakeEdgeFromEllipse(center.x, center.y, center.z,
@@ -12055,6 +12149,14 @@ extension Shape {
     }
 
     /// Create an ellipse arc edge.
+    ///
+    /// Same radius contract as `edgeFromEllipse(center:normal:majorRadius:minorRadius:)`.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 5, u1: 0, u2: .pi)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 0, u1: 0, u2: .pi) == nil)
+    /// ```
     public static func edgeFromEllipseArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
                                            majorRadius: Double, minorRadius: Double,
                                            u1: Double, u2: Double) -> Shape? {
@@ -12065,6 +12167,14 @@ extension Shape {
     }
 
     /// Create a hyperbola arc edge.
+    ///
+    /// Both radii must be `> 0`, with no ordering constraint between them.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 3, u1: 0, u2: 1)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 0, u1: 0, u2: 1) == nil)
+    /// ```
     public static func edgeFromHyperbolaArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
                                              majorRadius: Double, minorRadius: Double,
                                              u1: Double, u2: Double) -> Shape? {
@@ -12075,6 +12185,14 @@ extension Shape {
     }
 
     /// Create a parabola arc edge.
+    ///
+    /// `focalLength` must be `> 0`; at zero the parabola is a straight line along its own axis.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromParabolaArc(focalLength: 4, u1: 0, u2: 1)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromParabolaArc(focalLength: 0, u1: 0, u2: 1) == nil)
+    /// ```
     public static func edgeFromParabolaArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
                                             focalLength: Double, u1: Double, u2: Double) -> Shape? {
         guard let ref = OCCTMakeEdgeFromParabolaArc(center.x, center.y, center.z,
