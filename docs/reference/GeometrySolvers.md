@@ -402,6 +402,31 @@ stateful form (build up constraints one call at a time, inspect per-build error 
 the `Shape.fill` overloads are one-shot convenience calls over an array of boundaries or
 constraints.
 
+### Refused constraints
+
+An `add` that returns `false` did not add its constraint, and that refusal is *sticky*: `build()`
+then returns nil however many other constraints succeeded, rather than fitting a surface to a
+subset the caller never asked for (#482). This is what `Shape.fill(constraints:parameters:)` has
+always done for the same input; `build()` used to succeed here instead, returning a plausible face
+that neither passed through nor was bounded by the refused constraint's edge.
+
+Since every `add` is `@discardableResult`, the refusal is recorded whether or not the return value
+was read. [`hasRefusedConstraint`](#hasrefusedconstraint) separates it from an ordinary fitting
+failure. Both return nil from `build()`.
+
+```swift
+let filling = FillingSurface()
+filling.add(edge: e1, continuity: .g0)
+filling.add(edge: rim, support: importedWall, continuity: .g1)  // false: no pcurve there
+
+filling.hasRefusedConstraint   // true
+filling.build()                // nil, not a face fitted to e1 alone
+```
+
+To attempt a constraint speculatively and carry on regardless, use
+[`add(edge:continuity:)`](#addedgecontinuity), which derives the continuity reference from the edge
+itself and so has nothing to refuse.
+
 ### `FillingContinuity`
 
 > **Deprecated in #398.** `FillingContinuity` was one of three copies of the same geometric
@@ -453,7 +478,8 @@ public func add(edge: Edge, continuity: SurfaceContinuity = .g0) -> Bool
   - `continuity` — continuity order at this edge (default `.g0`).
 - **Returns:** `true` if the edge was added successfully. This says nothing about whether the
   order is usable: `Add` only appends, so a bad order surfaces later as a `nil` `build()` that
-  takes every other constraint with it.
+  takes every other constraint with it. With no support face to validate, this overload only
+  refuses a constraint OCCT itself throws on; see [Refused constraints](#refused-constraints).
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (boundary edge variant), via the same
   `occtFillingContinuityToGeomAbs` order mapping `Shape.fill` uses — see
   [Shape-Features](Shape-Features.md#surface-filling) for why `.g1` is not `GeomAbs_G1` and `.g2`
@@ -482,6 +508,10 @@ Mirrors `FillConstraint`'s support-face semantics: a face named here is used or 
 fails, rather than silently falling back to another surface. Use `add(edge:continuity:)` to
 accept whichever surface the edge itself resolves instead.
 
+The failure is not confined to this call. A refusal here poisons `build()`, which then returns nil
+whatever else succeeded: the same answer `Shape.fill(constraints:parameters:)` gives for the same
+input (#482). See [Refused constraints](#refused-constraints).
+
 `support` is only meaningful above `.g0` — a positional constraint has nothing to be tangent or
 curvature-continuous *with*, so at `.g0` it is never read. `continuity` defaults to `.g1` rather
 than `.g0` for this reason, matching `FillConstraint`'s own default.
@@ -491,7 +521,8 @@ than `.g0` for this reason, matching `FillConstraint`'s own default.
   - `support` — face to be continuous with. Used or the constraint fails: if it carries no
     pcurve for `edge` it cannot serve as the continuity reference.
   - `continuity` — continuity order at this edge (default `.g1`).
-- **Returns:** `true` if the edge was added successfully.
+- **Returns:** `true` if the edge was added successfully. `false` means the constraint is not in
+  the builder and `build()` will return nil.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Add` (edge + support face variant).
 - **Example:**
   ```swift
@@ -544,7 +575,12 @@ Build the filling surface and return the resulting shape.
 public func build() -> Shape?
 ```
 
-- **Returns:** The filled face as a `Shape`, or `nil` if building failed.
+Returns nil without attempting the build if any `add` was refused (#482). Fitting a surface to the
+constraints that did make it in would answer a different question than the one the caller posed, so
+the refusal takes the whole build with it, matching `Shape.fill(constraints:parameters:)`.
+
+- **Returns:** The filled face as a `Shape`, or `nil` if a constraint was refused or the fit failed.
+  [`hasRefusedConstraint`](#hasrefusedconstraint) tells the two apart.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::Build`, `BRepOffsetAPI_MakeFilling::Shape`.
 - **Example:**
   ```swift
@@ -568,7 +604,57 @@ Whether the filling surface has been successfully built.
 public var isDone: Bool { get }
 ```
 
+- Stays `false` after a refused `add`, since `build()` never attempts the fit in that case.
 - **OCCT:** `BRepOffsetAPI_MakeFilling::IsDone`.
+
+---
+
+### `refusedConstraintCount`
+
+Number of `add` calls this builder refused (#482).
+
+```swift
+public var refusedConstraintCount: Int { get }
+```
+
+A refused constraint is one that is *not* in the builder: a nominated `support` face carrying no
+pcurve for its edge, or a constraint OCCT threw on. Only ever increases: a later successful `add`
+does not clear it, because the refused constraint is still missing from the surface that would be
+fitted.
+
+- **OCCT:** none. Bridge state, counting constraints never passed to
+  `BRepOffsetAPI_MakeFilling::Add`.
+- **Example:**
+  ```swift
+  let filling = FillingSurface()
+  filling.add(edge: rim, support: importedWall, continuity: .g1)
+
+  if filling.refusedConstraintCount > 0 {
+      // build() will return nil; the wall carries no pcurve for the rim
+  }
+  ```
+
+---
+
+### `hasRefusedConstraint`
+
+Whether any `add` was refused, which makes `build()` return nil (#482).
+
+```swift
+public var hasRefusedConstraint: Bool { get }
+```
+
+The one signal that separates "a constraint never made it in" from "the fit was attempted and
+failed". Both return nil from `build()`.
+
+- **OCCT:** none. Bridge state: `refusedConstraintCount > 0`.
+- **Example:**
+  ```swift
+  guard let face = filling.build() else {
+      print(filling.hasRefusedConstraint ? "a constraint was refused" : "the fit failed")
+      return
+  }
+  ```
 
 ---
 

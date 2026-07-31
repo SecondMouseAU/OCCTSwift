@@ -5608,6 +5608,9 @@ OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t max
 void OCCTFillingRelease(OCCTFillingRef filling);
 
 /// Add a boundary edge constraint, deriving the continuity reference from the edge's own pcurve.
+///
+/// With no nominated support face to validate, this only refuses a constraint OCCT itself throws
+/// on. A refusal is sticky either way; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
@@ -5626,6 +5629,7 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
 /// `support` is used or the constraint fails: if it carries no pcurve for `edge` it cannot
 /// serve as the continuity reference, matching OCCTShapeFillConstraints' per-constraint
 /// contract. Pass NULL to derive the reference from the edge itself, same as OCCTFillingAddEdge.
+/// A refusal is sticky; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param support Face to be continuous with, or NULL to derive one from the edge
@@ -5640,7 +5644,21 @@ bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
 /// @return true if point was added
 bool OCCTFillingAddPoint(OCCTFillingRef filling, double x, double y, double z);
 
+/// Number of OCCTFillingAdd* calls this builder refused (#482).
+///
+/// A refused constraint is one that is NOT in the builder, so it distinguishes a poisoned
+/// OCCTFillingBuild from an ordinary fitting failure. Only ever increases; a later successful
+/// Add does not clear it.
+/// @param filling Filling handle
+/// @return Refusal count, or 0 for a NULL handle
+int32_t OCCTFillingRefusedConstraintCount(OCCTFillingRef filling);
+
 /// Build the filling surface.
+///
+/// Fails immediately, without attempting the build, if any OCCTFillingAdd* was refused (#482).
+/// Fitting a surface to the constraints that did make it in would answer a different question
+/// than the caller asked. Matches OCCTShapeFillConstraints, which returns NULL on the same
+/// refusal. Use OCCTFillingRefusedConstraintCount to tell the two failures apart.
 /// @param filling Filling handle
 /// @return true if build succeeded
 bool OCCTFillingBuild(OCCTFillingRef filling);
