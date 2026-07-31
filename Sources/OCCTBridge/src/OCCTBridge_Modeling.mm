@@ -1842,11 +1842,11 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
-        occtFilletAddEdges(*op, shape->shape, edgeIndices, count,
-                           [radius](BRepFilletAPI_MakeFillet& fillet,
-                                    const TopoDS_Edge& edge, int32_t) {
+        if (!occtFilletAddEdges(*op, shape->shape, edgeIndices, count,
+                                [radius](BRepFilletAPI_MakeFillet& fillet,
+                                         const TopoDS_Edge& edge, int32_t) {
             fillet.Add(radius, edge);
-        });
+        })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -2353,44 +2353,45 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
 
 // MARK: - Multi-Edge Evolving Fillet (v0.38.0)
 
+// The multi-edge member of the radius-law pair. It shares occtFilletAddEdges with the other four
+// entry points and occtFilletSetRadiusProfile with OCCTShapeFilletVariable (OCCTBridge_Healing.mm).
+//
+// Two contract changes, #520. `edgeIndices` is 0-based, as it is for every sibling; it was the one
+// 1-based edge index in the family. And a per-edge point count below 1 is now rejected: it used to
+// take neither branch, leaving a contour with no radius at all, which SIGSEGVs in Build() rather
+// than failing IsDone(). Reachable from Swift as EvolvingFilletEdge(edge:radiusPoints: []).
 OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
                                       const int32_t* edgeIndices, int32_t edgeCount,
                                       const OCCTFilletRadiusPoint* radiusPoints,
                                       const int32_t* pointCounts) {
     if (!shape || !edgeIndices || edgeCount <= 0 || !radiusPoints || !pointCounts) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
         BRepFilletAPI_MakeFillet fillet(shape->shape);
 
-        int rpOffset = 0;
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t edgeIdx = edgeIndices[i];
-            if (edgeIdx < 1 || edgeIdx > edgeMap.Extent()) return nullptr;
-            const TopoDS_Edge& edge = TopoDS::Edge(edgeMap(edgeIdx));
-
-            fillet.Add(edge);
-            int contourIndex = fillet.NbContours();
-
-            int32_t nPts = pointCounts[i];
-            if (nPts >= 2) {
-                // Build array of (parameter, radius) pairs
-                TColgp_Array1OfPnt2d UandR(1, nPts);
-                for (int32_t j = 0; j < nPts; j++) {
-                    UandR.SetValue(j + 1, gp_Pnt2d(radiusPoints[rpOffset + j].parameter,
-                                                     radiusPoints[rpOffset + j].radius));
-                }
-                fillet.SetRadius(UandR, contourIndex, 1);
-            } else if (nPts == 1) {
-                fillet.SetRadius(radiusPoints[rpOffset].radius, contourIndex, 1);
-            }
-            rpOffset += nPts;
-        }
+        // The profile of edge i starts where the profiles of edges 0..i-1 end, so the offset walks
+        // forward with the loop inside occtFilletAddEdges rather than being indexable from `entry`.
+        int32_t offset = 0;
+        bool profilesOk = true;
+        bool indicesOk = occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount,
+                                            [&](BRepFilletAPI_MakeFillet& f,
+                                                const TopoDS_Edge& edge, int32_t entry) {
+            if (!profilesOk) return;
+            f.Add(edge);
+            const OCCTFilletRadiusPoint* points = radiusPoints + offset;
+            profilesOk = occtFilletSetRadiusProfile(f, f.NbContours(), pointCounts[entry],
+                                                    [points](int32_t j) {
+                return gp_Pnt2d(points[j].parameter, points[j].radius);
+            });
+            offset += pointCounts[entry];
+        });
+        if (!indicesOk || !profilesOk) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
-        return new OCCTShape(fillet.Shape());
+
+        TopoDS_Shape result = fillet.Shape();
+        if (result.IsNull()) return nullptr;
+        return new OCCTShape(result);
     } catch (...) {
         return nullptr;
     }

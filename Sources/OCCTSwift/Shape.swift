@@ -2676,10 +2676,18 @@ extension Shape {
 
     /// Fillet specific edges with uniform radius
     ///
+    /// Every edge must belong to this shape: only ``Edge/index`` is carried across, so an edge
+    /// whose index names nothing here rejects the whole call rather than being skipped.
+    ///
+    /// ```swift
+    /// let bracket = Shape.box(width: 40, height: 20, depth: 10)!
+    /// let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 2)
+    /// ```
+    ///
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
-    ///   - radius: Fillet radius
-    /// - Returns: Filleted shape, or nil on failure
+    ///   - radius: Fillet radius; must be > 0
+    /// - Returns: Filleted shape, or nil on failure, including an edge that is not this shape's
     public func filleted(edges: [Edge], radius: Double) -> Shape? {
         guard !edges.isEmpty, radius > 0 else { return nil }
 
@@ -2701,11 +2709,19 @@ extension Shape {
 
     /// Fillet specific edges with linear radius interpolation
     ///
+    /// Every edge must belong to this shape, on the same all-or-nothing basis as
+    /// ``filleted(edges:radius:)``.
+    ///
+    /// ```swift
+    /// let bar = Shape.box(width: 40, height: 20, depth: 10)!
+    /// let tapered = bar.filleted(edges: [bar.edges()[0]], startRadius: 1, endRadius: 3)
+    /// ```
+    ///
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
-    ///   - startRadius: Radius at start of each edge
-    ///   - endRadius: Radius at end of each edge
-    /// - Returns: Filleted shape, or nil on failure
+    ///   - startRadius: Radius at start of each edge; must be > 0
+    ///   - endRadius: Radius at end of each edge; must be > 0
+    /// - Returns: Filleted shape, or nil on failure, including an edge that is not this shape's
     public func filleted(edges: [Edge], startRadius: Double, endRadius: Double) -> Shape? {
         guard !edges.isEmpty, startRadius > 0, endRadius > 0 else { return nil }
 
@@ -3540,9 +3556,13 @@ extension Shape {
     /// The radius varies along the edge according to the given radius/parameter pairs.
     /// Parameters are normalized from 0.0 (start of edge) to 1.0 (end of edge).
     ///
+    /// Every radius must be positive, the parameters must lie in `0...1` and strictly increase, and
+    /// `edgeIndex` must name an edge of this shape; otherwise the call returns `nil`.
+    ///
     /// - Parameters:
-    ///   - edgeIndex: Index of the edge to fillet
-    ///   - radiusProfile: Array of (parameter, radius) pairs defining the radius along the edge
+    ///   - edgeIndex: 0-based index of the edge to fillet, as reported by ``Edge/index``
+    ///   - radiusProfile: Array of (parameter, radius) pairs defining the radius along the edge;
+    ///     at least two
     /// - Returns: Filleted shape, or nil on failure
     ///
     /// ## Example
@@ -3559,7 +3579,18 @@ extension Shape {
     ///     edgeIndex: 0,
     ///     radiusProfile: [(0.0, 1.0), (0.5, 2.0), (1.0, 1.0)]
     /// )
+    ///
+    /// // Rejected: a descending parameter would silently reverse the law
+    /// let invalid = shape.filletedVariable(
+    ///     edgeIndex: 0,
+    ///     radiusProfile: [(1.0, 1.0), (0.0, 3.0)]
+    /// )  // nil
     /// ```
+    ///
+    /// > Note: OCCT stretches the profile across the whole edge, so it cannot fillet part of one
+    /// > and leave the rest alone. With exactly two points the parameters are ignored and only the
+    /// > endpoint radii are used; with three or more only the *relative* spacing of the interior
+    /// > points survives, because OCCT renormalises the first parameter to 0 and the last to 1.
     public func filletedVariable(
         edgeIndex: Int,
         radiusProfile: [(parameter: Double, radius: Double)]
@@ -3590,12 +3621,13 @@ extension Shape {
     ///
     /// Every radius must be positive: one non-positive (or NaN) radius rejects the whole batch,
     /// the same contract ``filleted(edges:radius:)`` and
-    /// ``filleted(edges:startRadius:endRadius:)`` apply to theirs. An out-of-range `edgeIndex` is
-    /// skipped, so the fillet is applied to whichever indices resolve on this shape.
+    /// ``filleted(edges:startRadius:endRadius:)`` apply to theirs. Every index must name an edge of
+    /// this shape, on the same all-or-nothing basis: one that does not rejects the batch rather
+    /// than being skipped, so a result is never a partial fillet reported as a complete one.
     ///
-    /// - Parameter edgeRadii: Array of (edgeIndex, radius) pairs; each radius must be > 0
+    /// - Parameter edgeRadii: Array of (0-based edgeIndex, radius) pairs; each radius must be > 0
     /// - Returns: Filleted shape, or nil on failure, including an empty array, a non-positive
-    ///   radius anywhere in the array, or no index resolving to an edge of this shape
+    ///   radius anywhere in the array, or an index that names no edge of this shape
     ///
     /// ## Example
     ///
@@ -3609,6 +3641,9 @@ extension Shape {
     ///
     /// // Rejected: a radius of zero is not a fillet, so the batch returns nil
     /// let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
+    ///
+    /// // Rejected: 99_999 names no edge, so the batch returns nil rather than filleting edge 0
+    /// let outOfRange = shape.blendedEdges([(0, 1.0), (99_999, 2.0)])  // nil
     /// ```
     public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape? {
         guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
@@ -6024,12 +6059,54 @@ extension Shape {
 // MARK: - Multi-Edge Evolving Fillet (v0.38.0)
 
 /// Describes an evolving radius along an edge for filleting.
+///
+/// The radius follows the `radiusPoints` law, whose parameters are *relative*: 0.0 is the start of
+/// the edge and 1.0 its end, the same convention ``Shape/filletedVariable(edgeIndex:radiusProfile:)``
+/// uses. Every radius must be positive, and the parameters must lie in `0...1` and strictly
+/// increase, or ``Shape/filletEvolving(_:)`` returns `nil`.
+///
+/// ```swift
+/// let box = Shape.box(width: 20, height: 20, depth: 20)!
+/// let spec = EvolvingFilletEdge(edge: box.edges()[0],
+///                               radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
+/// let tapered = box.filletEvolving([spec])
+/// ```
+///
+/// > Note: OCCT stretches the law across the whole edge. With one or two points the parameters are
+/// > ignored entirely (a single point is a constant radius); with three or more only the *relative*
+/// > spacing of the interior points survives, because OCCT renormalises the first parameter to 0
+/// > and the last to 1. A profile cannot fillet part of an edge and leave the rest alone.
 public struct EvolvingFilletEdge: Sendable {
-    /// 1-based edge index.
+    /// 0-based index of the edge to fillet, as reported by ``Edge/index``.
+    ///
+    /// This was 1-based until #520, the one edge index in the fillet family that was. It now
+    /// matches ``Edge/index``, ``Shape/filletedVariable(edgeIndex:radiusProfile:)`` and
+    /// ``Shape/blendedEdges(_:)``.
     public var edgeIndex: Int
     /// Array of (parameter, radius) pairs defining the radius evolution along the edge.
     public var radiusPoints: [(parameter: Double, radius: Double)]
 
+    /// Fillet `edge` with an evolving radius.
+    ///
+    /// - Parameters:
+    ///   - edge: The edge to fillet; it must belong to the shape being filleted, since only its
+    ///     ``Edge/index`` is carried across.
+    ///   - radiusPoints: The radius law, as (relative parameter, radius) pairs.
+    public init(edge: Edge, radiusPoints: [(parameter: Double, radius: Double)]) {
+        self.edgeIndex = edge.index
+        self.radiusPoints = radiusPoints
+    }
+
+    /// Unavailable: this initializer took a **1-based** edge index, and `edgeIndex` is now 0-based.
+    ///
+    /// Passing the same numbers to a 0-based API would fillet the neighbouring edge without any
+    /// diagnostic, so the spelling was retired rather than reinterpreted. Build the spec from the
+    /// `Edge` itself — `EvolvingFilletEdge(edge: shape.edges()[0], radiusPoints: …)` — or, if you
+    /// only hold an index, construct from any edge and assign ``edgeIndex`` (0-based).
+    @available(*, unavailable, message: """
+        edgeIndex was 1-based and is now 0-based (#520). Use init(edge:radiusPoints:) with the Edge \
+        itself, or assign the 0-based edgeIndex property, after re-checking the index you pass.
+        """)
     public init(edgeIndex: Int, radiusPoints: [(parameter: Double, radius: Double)]) {
         self.edgeIndex = edgeIndex
         self.radiusPoints = radiusPoints
@@ -6038,6 +6115,19 @@ public struct EvolvingFilletEdge: Sendable {
 
 extension Shape {
     /// Apply evolving-radius fillets to multiple edges simultaneously.
+    ///
+    /// Every edge is filleted or none is: an `edgeIndex` naming no edge of this shape returns `nil`
+    /// rather than filleting the rest, and so does any radius that is not positive, any parameter
+    /// outside `0...1`, any non-increasing parameter sequence, and an empty `radiusPoints`.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let edges = box.edges()
+    /// let filleted = box.filletEvolving([
+    ///     EvolvingFilletEdge(edge: edges[0], radiusPoints: [(0.0, 1.0), (1.0, 3.0)]),
+    ///     EvolvingFilletEdge(edge: edges[2], radiusPoints: [(0.0, 1.0), (0.5, 4.0), (1.0, 1.0)]),
+    /// ])
+    /// ```
     ///
     /// - Parameter edges: Array of edge specifications with radius evolution.
     /// - Returns: Filleted shape, or nil on failure.

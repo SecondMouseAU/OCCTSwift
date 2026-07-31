@@ -2197,12 +2197,12 @@ struct EvolvingFilletTests {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         // Try multiple edges until one succeeds (edge ordering can vary)
         var result: Shape? = nil
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 2.0)
             ])
-            result = box.filletEvolving([edge])
+            result = box.filletEvolving([spec])
             if result != nil { break }
         }
         #expect(result != nil)
@@ -2213,25 +2213,25 @@ struct EvolvingFilletTests {
     func multiEdgeEvolving() {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         // Find two edges that work
-        var workingEdges: [Int] = []
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        var workingEdges: [Edge] = []
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 1.0)
             ])
-            if box.filletEvolving([edge]) != nil {
-                workingEdges.append(idx)
+            if box.filletEvolving([spec]) != nil {
+                workingEdges.append(edge)
                 if workingEdges.count >= 2 { break }
             }
         }
         guard workingEdges.count >= 2 else { return }
-        let edges = workingEdges.map { idx in
-            EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        let specs = workingEdges.map { edge in
+            EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 1.0),
                 (parameter: 1.0, radius: 1.5)
             ])
         }
-        let result = box.filletEvolving(edges)
+        let result = box.filletEvolving(specs)
         #expect(result != nil)
         if let r = result { #expect(r.isValid) }
     }
@@ -2240,12 +2240,12 @@ struct EvolvingFilletTests {
     func constantRadiusViaEvolving() {
         let box = Shape.box(width: 40, height: 40, depth: 40)!
         var result: Shape? = nil
-        for idx in 0..<box.edges().count {
-            let edge = EvolvingFilletEdge(edgeIndex: idx, radiusPoints: [
+        for edge in box.edges() {
+            let spec = EvolvingFilletEdge(edge: edge, radiusPoints: [
                 (parameter: 0.0, radius: 2.0),
                 (parameter: 1.0, radius: 2.0)
             ])
-            result = box.filletEvolving([edge])
+            result = box.filletEvolving([spec])
             if result != nil { break }
         }
         #expect(result != nil)

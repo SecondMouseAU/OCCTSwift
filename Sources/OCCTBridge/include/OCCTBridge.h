@@ -1630,9 +1630,10 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 ///
 /// One of three entry points sharing occtShapeFilletEdgeList (OCCTBridge_Internal.h) with
 /// OCCTShapeFilletEdgesLinear and OCCTShapeBlendEdges: same edge map, same 0-based index bounds
-/// check (an out-of-range index is skipped), same positive-radius precondition. #489
+/// check, same positive-radius precondition. #489
 /// @param shape The shape to fillet
-/// @param edgeIndices Array of edge indices (0-based)
+/// @param edgeIndices Array of edge indices (0-based; an index naming no edge of `shape` rejects
+///   the whole call, #520)
 /// @param edgeCount Number of edges to fillet
 /// @param radius Fillet radius; must be > 0, or the call fails without touching OCCT
 /// @return Filleted shape, or NULL on failure
@@ -1643,7 +1644,8 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
 ///
 /// Shares occtShapeFilletEdgeList with OCCTShapeFilletEdges and OCCTShapeBlendEdges. #489
 /// @param shape The shape to fillet
-/// @param edgeIndices Array of edge indices (0-based)
+/// @param edgeIndices Array of edge indices (0-based; an index naming no edge of `shape` rejects
+///   the whole call, #520)
 /// @param edgeCount Number of edges to fillet
 /// @param startRadius Radius at start of each edge; must be > 0
 /// @param endRadius Radius at end of each edge; must be > 0
@@ -2350,11 +2352,17 @@ void OCCTZLayerSettingsGetOrigin(OCCTZLayerSettingsRef settings, double* x, doub
 // MARK: - Advanced Blends & Surface Filling (v0.14.0)
 
 /// Apply variable radius fillet to a specific edge
+///
+/// One of the two radius-law entry points, with OCCTShapeFilletEvolving: both resolve their edges
+/// through occtFilletAddEdges and apply their profile through occtFilletSetRadiusProfile
+/// (OCCTBridge_Internal.h), which is where the profile contract is documented and enforced. #520
 /// @param shape The shape to fillet
-/// @param edgeIndex Index of the edge to fillet
-/// @param radii Array of radius values along the edge
-/// @param params Array of parameter values (0-1) where radii apply
-/// @param count Number of radius/parameter pairs
+/// @param edgeIndex Index of the edge to fillet (0-based; an index naming no edge of `shape`
+///   rejects the call)
+/// @param radii Array of radius values along the edge; every element must be > 0
+/// @param params Array of relative parameters where those radii apply; each must lie in [0, 1] and
+///   they must strictly increase
+/// @param count Number of radius/parameter pairs; at least 2
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
                                       const double* radii, const double* params, int32_t count);
@@ -2393,7 +2401,8 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance);
 /// while the other two are in OCCTBridge_Modeling.mm, which is how it came to be the one without
 /// a radius precondition. #489
 /// @param shape The shape to blend
-/// @param edgeIndices Array of edge indices (0-based; an out-of-range index is skipped)
+/// @param edgeIndices Array of edge indices (0-based; an index naming no edge of `shape` rejects
+///   the whole call, #520)
 /// @param radii Array of radii (one per edge); every element must be > 0, or the whole call fails
 /// @param count Number of edges
 /// @return Blended shape, or NULL on failure
@@ -5273,11 +5282,18 @@ typedef struct {
 } OCCTFilletRadiusPoint;
 
 /// Apply evolving-radius fillets to multiple edges simultaneously.
+///
+/// The multi-edge radius-law entry point, sharing occtFilletAddEdges with the other four fillet
+/// edge-list functions and occtFilletSetRadiusProfile with OCCTShapeFilletVariable
+/// (OCCTBridge_Internal.h). Its indices were 1-based until #520 made the family agree.
 /// @param shape The shape
-/// @param edgeIndices Array of 1-based edge indices
+/// @param edgeIndices Array of edge indices (0-based since #520; an index naming no edge of
+///   `shape` rejects the whole call)
 /// @param edgeCount Number of edges
-/// @param radiusPoints Array of parameter-radius pairs per edge (flattened: edge0[rp0,rp1,...], edge1[rp0,...], ...)
-/// @param pointCounts Array of how many radius points per edge
+/// @param radiusPoints Array of parameter-radius pairs per edge (flattened: edge0[rp0,rp1,...], edge1[rp0,...], ...);
+///   every radius must be > 0, and each edge's parameters must lie in [0, 1] and strictly increase
+/// @param pointCounts Array of how many radius points per edge; fewer than 1 for any edge rejects
+///   the call, since a contour with no radius SIGSEGVs in Build()
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
                                       const int32_t* edgeIndices, int32_t edgeCount,

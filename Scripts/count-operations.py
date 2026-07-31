@@ -45,6 +45,12 @@ INIT = re.compile(r'^\s*public\s+(?:convenience\s+)?init[?!]?\s*\(')
 # or `public var x = 0` has no brace and is data, not an entry point.
 CVAR = re.compile(r'^\s*public\s+(?:static\s+)?var\s+([A-Za-z_][A-Za-z0-9_]*)\b[^=]*\{')
 SUBS = re.compile(r'^\s*public\s+(?:static\s+)?subscript\s*\(')
+# An @available(..., unavailable, ...) attribute: the declaration below it is a retired spelling
+# kept only so an old call site fails to build with an explanation, so it is not an entry point.
+# A `deprecated` one still is — it can still be called. Only the attribute's opening line is
+# matched, which is where `unavailable` sits; a multi-line `message:` body below it matches none
+# of the declaration patterns above (#520).
+UNAVAILABLE = re.compile(r'^\s*@available\s*\([^)]*\bunavailable\b')
 # reference docs use both ### and #### for entry points
 DOC_HEADING = re.compile(r'^#{3,4} `([^`]+)`')
 
@@ -80,22 +86,33 @@ def count_entry_points():
         rel = os.path.relpath(f, ROOT)
         stack = []      # [(type_name, brace_depth_at_open)]
         depth = 0
+        unavailable = False   # an @available(*, unavailable) seen; it applies to the next decl
         for i, line in enumerate(open(f, encoding="utf-8", errors="replace"), 1):
             code = re.sub(r'//.*', '', line)   # crude line-comment strip for brace counting
             enc = _enclosing_type(stack)
+            if UNAVAILABLE.match(line):
+                unavailable = True
             m = FUNC.match(line)
             if m:
-                breakdown["func"] += 1
-                ops.setdefault((enc, m.group(1)), (rel, i))
+                if not unavailable:
+                    breakdown["func"] += 1
+                    ops.setdefault((enc, m.group(1)), (rel, i))
+                unavailable = False
             elif INIT.match(line):
-                breakdown["init"] += 1
+                if not unavailable:
+                    breakdown["init"] += 1
+                unavailable = False
             else:
                 m = CVAR.match(line)
                 if m:
-                    breakdown["computed var"] += 1
-                    ops.setdefault((enc, m.group(1)), (rel, i))
+                    if not unavailable:
+                        breakdown["computed var"] += 1
+                        ops.setdefault((enc, m.group(1)), (rel, i))
+                    unavailable = False
                 elif SUBS.match(line):
-                    breakdown["subscript"] += 1
+                    if not unavailable:
+                        breakdown["subscript"] += 1
+                    unavailable = False
 
             # maintain the enclosing-type stack
             td = TYPE_DECL.match(line)

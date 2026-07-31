@@ -69,6 +69,8 @@
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <TColgp_Array1OfPnt2d.hxx>
+#include <gp_Pnt2d.hxx>
 // These four serve the local-properties helpers (occtSurfaceLocalProps and friends).
 #include <GeomLProp_SLProps.hxx>
 #include <GeomLProp_CLProps.hxx>
@@ -810,16 +812,19 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 }
 
 // Add the edges named by `edgeIndices` (0-based, indexing `shape`'s own TopExp edge map) to
-// `fillet`, through whichever Add overload the caller's radius law needs.
+// `fillet`, through whichever Add overload the caller's radius law needs. Returns false, having
+// added nothing further, when an index does not name an edge of `shape`.
 //
 // `addEdge(fillet, edge, entry)` is the only part that varies between the callers: `entry` is the
 // index into the caller's own arrays, so a per-edge radius list can read its own element. It is
 // called only for indices that resolve to a real edge.
 //
-// An out-of-range index is skipped rather than rejected, which is the behaviour every caller had
-// before they shared this loop. When that leaves no contour at all, the subsequent Build() throws
-// "There are no suitable edges for chamfer or fillet", so a caller's catch(...) still reports
-// failure; nothing here has to detect the empty case itself.
+// #520 made an out-of-range index reject the call. It used to be skipped here, so a batch with one
+// bad index filleted the rest and reported success: a request honoured in part, presented as
+// honoured in full, the same defect class as #439/#442/#443. The two radius-law entry points
+// (OCCTShapeFilletVariable, OCCTShapeFilletEvolving) already rejected, so this is what makes all
+// five agree. A caller who wants best-effort can filter its own indices; a caller who cannot tell
+// a partial result from a complete one had no way back.
 //
 // Not folded into occtShapeFilletEdgeList below because OCCTShapeHistoryFromFilletEdges has to
 // keep its builder alive past the call, to hand back a BRepTools_History over it.
@@ -827,16 +832,70 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 // Radius validation is the caller's, since the shapes it takes (one scalar, two scalars, an array,
 // a (parameter, radius) point list) have nothing in common but occtValidFilletRadius above.
 template <class AddEdge>
-void occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
+bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
                         const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
     TopTools_IndexedMapOfShape edgeMap;
     TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
 
     for (int32_t i = 0; i < edgeCount; i++) {
         int32_t idx = edgeIndices[i];
-        if (idx < 0 || idx >= edgeMap.Extent()) continue;
+        if (idx < 0 || idx >= edgeMap.Extent()) return false;
         addEdge(fillet, TopoDS::Edge(edgeMap(idx + 1)), i);  // OCCT's map is 1-based
     }
+    return true;
+}
+
+// === #520: the radius law, for the two entry points that take one ===
+//
+// A contour added by the law-taking Add(edge) overload carries no radius of its own, and
+// BRepFilletAPI_MakeFillet::Build() **SIGSEGVs** on a contour that never receives one — an OS
+// signal, so no catch(...) on this side of the bridge can turn it into nullptr. Every path that
+// calls Add(edge) therefore has to reach a successful SetRadius, or return before Build().
+// Measured in Scripts/repro/520-fillet-edge-index-contracts/ (`no-radius`, `radius-dropped`).
+//
+// Applying the law is one SetRadius(UandR, contour, 1) call, which is what makes the validation
+// below worth sharing. OCCT's own contract for that array (BRepFilletAPI_MakeFillet.hxx):
+//
+//   - X is a *relative* parameter on the contour, between 0 and 1; Y is the radius there.
+//   - With 1 point the X is ignored and the radius is constant; with 2 the X values are ignored
+//     too and only the endpoint radii are used; with 3 or more OCCT renormalises via
+//     (U - Uf) / (Ul - Uf), so the profile always spans the whole contour whatever the caller
+//     wrote, and only the *relative* placement of the interior points survives.
+//
+// So the [0,1] range is not load-bearing inside OCCT, and that is exactly why it is checked here:
+// a profile written outside it is silently reinterpreted rather than rejected, e.g.
+// [(-5, 1), (0, 4), (7, 1)] puts its peak at 41.7% of the contour rather than at the start. The
+// two degenerate orderings are worse than reinterpreted: equal parameters divide by zero, and
+// descending ones reverse the law the caller wrote (measured: 7960.426609 against 7963.730821 for
+// the ascending equivalent).
+//
+// Unlike the Add(radius, edge) path #489 measured, a non-positive radius here is not caught by
+// OCCT at all: a profile containing -3.0 reports IsDone() == 1 and hands back a shape
+// BRepCheck_Analyzer rejects. This predicate is the only thing standing between that and a caller.
+//
+// `pointAt(i)` returns the i-th point as a gp_Pnt2d(relative parameter, radius); the two callers
+// hold their profiles in different layouts (parallel arrays, and an array of OCCTFilletRadiusPoint)
+// and neither is worth copying to share this.
+template <class PointAt>
+bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, int32_t contourIndex,
+                                int32_t pointCount, PointAt pointAt) {
+    if (pointCount < 1) return false;
+
+    TColgp_Array1OfPnt2d UandR(1, pointCount);
+    double previous = 0;
+    for (int32_t i = 0; i < pointCount; i++) {
+        gp_Pnt2d point = pointAt(i);
+        if (!occtValidFilletRadius(point.Y())) return false;
+        // Written as a positive test so NaN, which compares false against everything, is rejected
+        // by the same expression rather than needing its own.
+        if (!(point.X() >= 0.0 && point.X() <= 1.0)) return false;
+        if (i > 0 && !(point.X() > previous)) return false;
+        previous = point.X();
+        UandR.SetValue(i + 1, point);
+    }
+
+    fillet.SetRadius(UandR, contourIndex, 1);
+    return true;
 }
 
 // occtFilletAddEdges plus the build-and-wrap half: the guard, the perform/check/result triad, and
@@ -850,7 +909,9 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
 
     try {
         BRepFilletAPI_MakeFillet fillet(shape->shape);
-        occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge);
+        if (!occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge)) {
+            return nullptr;
+        }
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;

@@ -250,12 +250,23 @@ Describes an evolving radius along an edge for filleting.
 public struct EvolvingFilletEdge: Sendable {
     public var edgeIndex: Int
     public var radiusPoints: [(parameter: Double, radius: Double)]
-    public init(edgeIndex: Int, radiusPoints: [(parameter: Double, radius: Double)])
+    public init(edge: Edge, radiusPoints: [(parameter: Double, radius: Double)])
 }
 ```
 
-- `edgeIndex` — 1-based edge index.
-- `radiusPoints` — Array of `(parameter, radius)` pairs defining the radius evolution along the edge.
+- `edgeIndex` — 0-based edge index, as reported by `Edge.index`. **This was 1-based until #520**,
+  the one edge index in the fillet family that was; `init(edgeIndex:radiusPoints:)` is now
+  `unavailable` rather than silently reinterpreted, so an old call site fails to build with an
+  explanation instead of quietly filleting the neighbouring edge. Build the spec from the `Edge`
+  itself, or assign `edgeIndex` after re-checking the index you pass.
+- `radiusPoints` — Array of `(parameter, radius)` pairs defining the radius evolution along the
+  edge. Parameters are relative: `0.0` is the start of the edge, `1.0` its end. Every radius must
+  be positive, and the parameters must lie in `0...1` and strictly increase.
+
+> OCCT stretches the law across the whole edge, so a profile cannot fillet part of one and leave
+> the rest alone. With one or two points the parameters are ignored entirely (a single point is a
+> constant radius); with three or more only the *relative* spacing of the interior points survives,
+> because OCCT renormalises the first parameter to 0 and the last to 1.
 
 ---
 
@@ -268,11 +279,14 @@ public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape?
 ```
 
 - **Parameters:** `edges` — Array of edge specifications with radius evolution; must not be empty.
-- **Returns:** Filleted shape, or `nil` on failure.
+- **Returns:** Filleted shape, or `nil` on failure. Every edge is filleted or none is: an
+  `edgeIndex` naming no edge of this shape returns `nil` rather than filleting the rest, and so
+  does a non-positive radius, a parameter outside `0...1`, a non-increasing parameter sequence, or
+  an empty `radiusPoints` (#520).
 - **OCCT:** `BRepFilletAPI_MakeFillet` with evolving law (via `OCCTShapeFilletEvolving`).
 - **Example:**
   ```swift
-  let spec = EvolvingFilletEdge(edgeIndex: 1, radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
+  let spec = EvolvingFilletEdge(edge: box.edges()[0], radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
   if let filled = box.filletEvolving([spec]) {
       print(filled.isValid)
   }

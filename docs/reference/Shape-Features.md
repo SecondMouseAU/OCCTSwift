@@ -1042,12 +1042,15 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 ```
 
 - **Parameters:** `edges` — edges to fillet (must have valid `index` values from this shape); `radius` — fillet radius (must be > 0).
-- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius.
+- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius and
+  an edge whose `index` names no edge of this shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`).
 - **Notes:** shares one bridge implementation with
   [`filleted(edges:startRadius:endRadius:)`](#filletededgesstartradiusendradius) and
-  [`blendedEdges(_:)`](#blendededges_), so all three apply the same positive-radius precondition and
-  the same skip-an-out-of-range-index behaviour (#489).
+  [`blendedEdges(_:)`](#blendededges_), so all three apply the same positive-radius precondition
+  (#489) and the same all-or-nothing index contract (#520): an edge that does not resolve rejects
+  the call rather than being skipped, so a result is never a partial fillet reported as a complete
+  one.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)
@@ -1072,7 +1075,8 @@ The radius varies linearly from `startRadius` at the start of each edge to `endR
   either end.
 - **OCCT:** `BRepFilletAPI_MakeFillet` with law-driven radius (via `OCCTShapeFilletEdgesLinear`).
 - **Notes:** shares one bridge implementation with [`filleted(edges:radius:)`](#filletededgesradius)
-  and [`blendedEdges(_:)`](#blendededges_) (#489).
+  and [`blendedEdges(_:)`](#blendededges_) (#489), including their all-or-nothing index contract
+  (#520).
 
 ---
 
@@ -1605,9 +1609,18 @@ public func filletedVariable(
 
 Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile points are required.
 
-- **Parameters:** `edgeIndex` — index of the edge to fillet; `radiusProfile` — array of `(parameter, radius)` pairs (minimum 2).
-- **Returns:** Filleted shape, or `nil` on failure.
+- **Parameters:** `edgeIndex` — 0-based index of the edge to fillet, as reported by `Edge.index`;
+  `radiusProfile` — array of `(parameter, radius)` pairs (minimum 2).
+- **Returns:** Filleted shape, or `nil` on failure, which includes an `edgeIndex` naming no edge of
+  this shape, a non-positive or NaN radius anywhere in the profile, a parameter outside `0...1`,
+  and a non-increasing parameter sequence (#520).
 - **OCCT:** `BRepFilletAPI_MakeFillet` with law-driven radius (via `OCCTShapeFilletVariable`).
+- **Notes:** the profile is applied through `SetRadius(UandR, contour, 1)`, the same OCCT overload
+  [`filletEvolving(_:)`](Shape-Measurement#filletevolving_) uses, so the same profile gives the
+  same shape through either entry point. **Until #520 the profile was never applied at all**: the
+  bridge mapped each relative parameter onto the edge's own curve range and passed it where OCCT
+  wanted a contour index, which truncated it to an `int`, so the result was a constant radius (and,
+  for an edge whose parameter range does not start at 0, a `SIGSEGV`).
 - **Example:**
   ```swift
   // Radius varies from 1 mm at start to 3 mm at end
@@ -1615,7 +1628,18 @@ Parameters are normalised from 0.0 (start) to 1.0 (end). At least two profile po
       edgeIndex: 0,
       radiusProfile: [(0.0, 1.0), (1.0, 3.0)]
   )
+
+  // Rejected: a descending parameter would silently reverse the law
+  let invalid = shape.filletedVariable(
+      edgeIndex: 0,
+      radiusProfile: [(1.0, 1.0), (0.0, 3.0)]
+  )  // nil
   ```
+
+> OCCT stretches the profile across the whole edge, so it cannot fillet part of one and leave the
+> rest alone. With exactly two points the parameters are ignored and only the endpoint radii are
+> used; with three or more only the *relative* spacing of the interior points survives, because
+> OCCT renormalises the first parameter to 0 and the last to 1.
 
 ---
 
@@ -1629,14 +1653,14 @@ Applies fillets to multiple edges, each with its own radius.
 public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Shape?
 ```
 
-- **Parameters:** `edgeRadii` — array of `(edgeIndex, radius)` pairs. Every radius must be > 0.
+- **Parameters:** `edgeRadii` — array of `(0-based edgeIndex, radius)` pairs. Every radius must be > 0.
 - **Returns:** Filleted shape with per-edge radii applied, or `nil` on failure, which includes an
-  empty array, a non-positive or NaN radius anywhere in it, and no index resolving to an edge of
-  this shape.
+  empty array, a non-positive or NaN radius anywhere in it, and an index that names no edge of this
+  shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeBlendEdges`).
 - **Notes:** one non-positive radius rejects the whole batch, the same contract
-  [`filleted(edges:radius:)`](#filletededgesradius) applies to its single radius (#489). An
-  out-of-range `edgeIndex` is skipped, so the fillet is applied to whichever indices resolve.
+  [`filleted(edges:radius:)`](#filletededgesradius) applies to its single radius (#489), and one
+  index that does not resolve rejects it too rather than being skipped (#520).
 - **Example:**
   ```swift
   let blended = shape.blendedEdges([
@@ -1647,6 +1671,9 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 
   // Rejected: a radius of zero is not a fillet
   let invalid = shape.blendedEdges([(0, 1.0), (1, 0.0)])  // nil
+
+  // Rejected: 99_999 names no edge, so the batch fails rather than filleting edge 0
+  let outOfRange = shape.blendedEdges([(0, 1.0), (99_999, 2.0)])  // nil
   ```
 
 ---

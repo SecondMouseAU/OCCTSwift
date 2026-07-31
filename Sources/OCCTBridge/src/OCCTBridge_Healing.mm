@@ -469,35 +469,32 @@ OCCTShapeRef OCCTShapeSimplify(OCCTShapeRef shape, double tolerance) {
 
 // MARK: - Advanced Blends & Surface Filling (v0.14.0)
 
+// The single-edge member of the radius-law pair, sharing occtFilletAddEdges (the edge lookup and
+// its bounds check) and occtFilletSetRadiusProfile (the law itself) with OCCTShapeFilletEvolving in
+// OCCTBridge_Modeling.mm. See OCCTBridge_Internal.h for what OCCT does with a profile.
+//
+// This used to map each relative parameter onto the edge's own curve parameter range and pass the
+// result to SetRadius(radii[i], param, 1). BRepFilletAPI_MakeFillet has no (Real, Real, Integer)
+// overload: `param` was truncated to an int and taken as the *contour* index, so the profile was
+// never applied. What the caller got was a constant radius, whichever profile point happened to
+// truncate to a live contour index — and, for any edge whose parameter range does not start at 0,
+// no radius at all, which SIGSEGVs in Build(). Both measured in
+// Scripts/repro/520-fillet-edge-index-contracts/. #520
 OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
                                       const double* radii, const double* params, int32_t count) {
-    if (!shape || !radii || !params || count < 2 || edgeIndex < 0) return nullptr;
+    if (!shape || !radii || !params || count < 2) return nullptr;
 
     try {
-        // Get the edge at the specified index
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
-        if (edgeIndex >= edgeMap.Extent()) return nullptr;
-
-        TopoDS_Edge edge = TopoDS::Edge(edgeMap(edgeIndex + 1));  // OCCT uses 1-based indexing
-
-        // Create fillet maker
         BRepFilletAPI_MakeFillet fillet(shape->shape);
+        if (!occtFilletAddEdges(fillet, shape->shape, &edgeIndex, 1,
+                                [](BRepFilletAPI_MakeFillet& f, const TopoDS_Edge& edge, int32_t) {
+            f.Add(edge);  // the radius-law overload: the profile below supplies the radius
+        })) return nullptr;
 
-        // Add edge with variable radius
-        fillet.Add(edge);
-
-        // Get the edge length for parameter mapping
-        double first, last;
-        Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
-        if (curve.IsNull()) return nullptr;
-
-        // Set radius at each parameter point
-        for (int32_t i = 0; i < count; i++) {
-            double param = first + params[i] * (last - first);  // Map 0-1 to curve parameter range
-            fillet.SetRadius(radii[i], param, 1);  // 1 is the contour index
-        }
+        if (!occtFilletSetRadiusProfile(fillet, fillet.NbContours(), count,
+                                        [radii, params](int32_t i) {
+            return gp_Pnt2d(params[i], radii[i]);
+        })) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
