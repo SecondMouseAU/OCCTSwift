@@ -9186,6 +9186,15 @@ extension Shape {
     }
 
     /// Create a 2D edge from a circle arc with parameter bounds.
+    ///
+    /// `radius` must be positive. `BRepBuilderAPI_MakeEdge2d` reports success for a zero radius
+    /// and hands back a zero-length edge with both vertices at the centre (#553), so the radius is
+    /// checked before OCCT sees it. A non-positive radius returns nil.
+    ///
+    /// ```swift
+    /// let arc = Shape.edge2dFromCircle(center: SIMD2(0, 0), direction: SIMD2(1, 0),
+    ///                                  radius: 3, p1: 0, p2: .pi)
+    /// ```
     public static func edge2dFromCircle(
         center: SIMD2<Double>,
         direction: SIMD2<Double>,
@@ -10465,6 +10474,21 @@ extension Shape {
     }
 
     /// Find circles tangent to 3 circles.
+    ///
+    /// Every radius must be positive. A zero-radius argument is a point, and OCCT does not answer
+    /// the point question when it is given one: measured (#553), it returns each solution twice,
+    /// because tangency to a circle of radius zero satisfies both the enclosing and the outside
+    /// case at once. Use ``circleTangent2CirclesPoint(c1Center:c1Radius:c2Center:c2Radius:point:tolerance:)``,
+    /// ``circleTangentCircle2Points(circleCenter:circleRadius:p1:p2:tolerance:)`` or
+    /// ``circleThrough3Points(p1:p2:p3:tolerance:)`` to name a point as a point. A non-positive
+    /// radius returns an empty array.
+    ///
+    /// ```swift
+    /// let circles = Shape.circleTangent3Circles(c1Center: SIMD2(0, 0), c1Radius: 2,
+    ///                                           c2Center: SIMD2(10, 0), c2Radius: 2,
+    ///                                           c3Center: SIMD2(5, 8), c3Radius: 2)
+    /// print(circles.count)   // 8
+    /// ```
     public static func circleTangent3Circles(
         c1Center: SIMD2<Double>, c1Radius: Double,
         c2Center: SIMD2<Double>, c2Radius: Double,
@@ -10482,6 +10506,16 @@ extension Shape {
     }
 
     /// Find circles tangent to 2 circles through 1 point.
+    ///
+    /// Both radii must be positive. With a zero radius the solution set comes back padded with
+    /// repeats (#553): measured, four solutions holding two distinct circles. A non-positive
+    /// radius returns an empty array.
+    ///
+    /// ```swift
+    /// let circles = Shape.circleTangent2CirclesPoint(c1Center: SIMD2(0, 0), c1Radius: 2,
+    ///                                                c2Center: SIMD2(10, 0), c2Radius: 2,
+    ///                                                point: SIMD2(5, 8))
+    /// ```
     public static func circleTangent2CirclesPoint(
         c1Center: SIMD2<Double>, c1Radius: Double,
         c2Center: SIMD2<Double>, c2Radius: Double,
@@ -10497,6 +10531,16 @@ extension Shape {
     }
 
     /// Find circles tangent to 1 circle through 2 points.
+    ///
+    /// `circleRadius` must be positive. This is the case where reading a zero-radius circle as a
+    /// point fails outright: measured (#553), the solver finds nothing at all, where
+    /// ``circleThrough3Points(p1:p2:p3:tolerance:)`` on the same three positions finds the circle
+    /// through them. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let circles = Shape.circleTangentCircle2Points(circleCenter: SIMD2(0, 0), circleRadius: 2,
+    ///                                                p1: SIMD2(10, 0), p2: SIMD2(5, 8))
+    /// ```
     public static func circleTangentCircle2Points(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         p1: SIMD2<Double>, p2: SIMD2<Double>, tolerance: Double = 1e-6
@@ -12630,6 +12674,16 @@ public struct Circle2DSolution: Sendable {
 }
 
 /// Find circles tangent to two lines with given radius.
+///
+/// `radius` is the radius of the circles to find, and it must be positive. Asked for zero,
+/// `GccAna_Circ2d2TanRad` obliges and returns solution circles of radius zero (#553). A
+/// non-positive radius returns an empty array.
+///
+/// ```swift
+/// let circles = circlesTangentToLines(SIMD2(0, 0), SIMD2(1, 0),
+///                                     SIMD2(0, 0), SIMD2(0, 1), radius: 2)
+/// print(circles.count)   // 4, one per quadrant
+/// ```
 public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD2<Double>,
                                    _ l2Origin: SIMD2<Double>, _ l2Direction: SIMD2<Double>,
                                    radius: Double, tolerance: Double = 1e-6) -> [Circle2DSolution] {
@@ -12646,6 +12700,14 @@ public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD
 }
 
 /// Find circles through two points with given radius.
+///
+/// `radius` is the radius of the circles to find, and it must be positive; zero would ask for a
+/// solution circle that is a point (#553). A non-positive radius returns an empty array, as does a
+/// radius too small to reach both points.
+///
+/// ```swift
+/// let circles = circlesThroughPointsWithRadius(SIMD2(0, 0), SIMD2(4, 0), radius: 3)
+/// ```
 public func circlesThroughPointsWithRadius(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
                                             radius: Double, tolerance: Double = 1e-6) -> [Circle2DSolution] {
     var solutions = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(), count: 8)
@@ -12708,6 +12770,16 @@ public func lineThroughPoints(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
 }
 
 /// Find lines tangent to a circle through a point.
+///
+/// `circleRadius` must be positive. With a radius of zero the solver returns the single line
+/// through the centre twice (#553); ``Curve2DGcc/linesTangentToPoint(_:_:)`` and the point/point
+/// entry points answer that question once. A non-positive radius returns an empty array.
+///
+/// ```swift
+/// let tangents = linesTangentToCircleThroughPoint(circleCenter: SIMD2(0, 0), circleRadius: 3,
+///                                                 point: SIMD2(10, 0))
+/// print(tangents.count)   // 2
+/// ```
 public func linesTangentToCircleThroughPoint(circleCenter: SIMD2<Double>, circleRadius: Double,
                                               point: SIMD2<Double>,
                                               tolerance: Double = 1e-6) -> [Line2DSolution] {

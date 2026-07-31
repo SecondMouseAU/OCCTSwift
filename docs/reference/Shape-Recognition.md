@@ -476,6 +476,9 @@ public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD
 - **Parameters:** `l1Origin`, `l1Direction` — first line (point + direction); `l2Origin`, `l2Direction` — second line; `radius` — required circle radius; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to four `Circle2DSolution` values (may be empty if no solution exists).
 - **OCCT:** `GccAna_Circ2d2TanRad` (Lin+Lin variant) via `OCCTGccAnaCirc2d2TanRadLineLin`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive (#553). Asked
+  for zero, `GccAna_Circ2d2TanRad` obliges and returns solution circles of radius zero. A
+  non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let circles = circlesTangentToLines(SIMD2(0,0), SIMD2(1,0),
@@ -498,6 +501,9 @@ public func circlesThroughPointsWithRadius(_ p1: SIMD2<Double>, _ p2: SIMD2<Doub
 - **Parameters:** `p1`, `p2` — two points to pass through; `radius` — required circle radius; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to two `Circle2DSolution` values.
 - **OCCT:** `GccAna_Circ2d2TanRad` (Pnt+Pnt variant) via `OCCTGccAnaCirc2d2TanRadPntPnt`.
+- **Note:** `radius` is the radius of the circles to find, and it must be positive; zero would ask
+  for a solution circle that is a point (#553). A non-positive radius returns an empty array, as
+  does a radius too small to reach both points.
 - **Example:**
   ```swift
   let circles = circlesThroughPointsWithRadius(SIMD2(-3, 0), SIMD2(3, 0), radius: 5)
@@ -606,6 +612,8 @@ public func linesTangentToCircleThroughPoint(circleCenter: SIMD2<Double>,
 - **Parameters:** `circleCenter`, `circleRadius` — the circle; `point` — point the line must pass through; `tolerance` — geometric tolerance.
 - **Returns:** Array of up to two `Line2DSolution` values (one if the point lies on the circle).
 - **OCCT:** `GccAna_Lin2d2Tan` (Circ+Pnt variant) via `OCCTGccAnaLin2d2TanCircPnt`.
+- **Note:** `circleRadius` must be positive (#553). With a radius of zero the solver returns the
+  single line through the centre twice; the point/point entry points answer that question once.
 - **Example:**
   ```swift
   let tangents = linesTangentToCircleThroughPoint(circleCenter: .zero,

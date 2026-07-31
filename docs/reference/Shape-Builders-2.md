@@ -1230,6 +1230,11 @@ public static func circleTangent3Circles(
 
 - **Returns:** Array of up to 8 solution circles.
 - **OCCT:** `GccAna_Circ2d3Tan` (3 circles)
+- **Note:** every radius must be positive (#553). A zero-radius argument is a point, and the solver
+  does not answer the point question when it is given one: measured, it returns each solution twice,
+  because tangency to a circle of radius zero satisfies the enclosing and the outside qualifier at
+  once. Use `circleTangent2CirclesPoint`, `circleTangentCircle2Points` or `circleThrough3Points` to
+  name a point as a point. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let sols = Shape.circleTangent3Circles(
@@ -1253,6 +1258,8 @@ public static func circleTangent2CirclesPoint(
 ```
 
 - **OCCT:** `GccAna_Circ2d3Tan` (2 circles + point)
+- **Note:** both radii must be positive (#553). With a zero radius the solution set comes back
+  padded with repeats: measured, four solutions holding two distinct circles.
 - **Example:**
   ```swift
   let sols = Shape.circleTangent2CirclesPoint(
@@ -1275,6 +1282,9 @@ public static func circleTangentCircle2Points(
 ```
 
 - **OCCT:** `GccAna_Circ2d3Tan` (circle + 2 points)
+- **Note:** `circleRadius` must be positive (#553). This is the case where reading a zero-radius
+  circle as a point fails outright: measured, the solver finds nothing at all, where
+  `circleThrough3Points` on the same three positions finds the circle through them.
 - **Example:**
   ```swift
   let sols = Shape.circleTangentCircle2Points(

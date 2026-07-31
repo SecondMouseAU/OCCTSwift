@@ -1390,6 +1390,24 @@ public enum GccAnaBisector {
     /// Bisectors between two circles.
     ///
     /// Returns curves equidistant from both circles (up to 4 solutions).
+    ///
+    /// Both radii must be positive. A radius of zero describes a point rather than a circle, and
+    /// the solver does not answer the point question when it is given one: measured (#553), it
+    /// returns each solution twice, and with both radii zero two of the three solutions are
+    /// hyperbolas of major radius zero, a conic this API refuses to construct. Ask about points
+    /// through ``ofPoints(_:_:)`` or ``ofCircleAndPoint(center:radius:point:)`` instead. A
+    /// non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let bisectors = GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 3,
+    ///                                          center2: SIMD2(10, 0), radius2: 2)
+    /// print(bisectors.count)   // 4
+    ///
+    /// // A point is not a zero-radius circle here:
+    /// GccAnaBisector.ofCircles(center1: SIMD2(0, 0), radius1: 0,
+    ///                          center2: SIMD2(10, 0), radius2: 2)   // []
+    /// GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(10, 0))            // the perpendicular bisector
+    /// ```
     public static func ofCircles(
         center1: SIMD2<Double>, radius1: Double,
         center2: SIMD2<Double>, radius2: Double
@@ -1407,6 +1425,17 @@ public enum GccAnaBisector {
     }
 
     /// Bisectors between a circle and a line.
+    ///
+    /// The radius must be positive. With a radius of zero the solver returns the point/line
+    /// parabola twice rather than once (#553); ask about a point through
+    /// ``ofLineAndPoint(linePoint:lineDir:point:)``. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let bisectors = GccAnaBisector.ofCircleAndLine(center: SIMD2(0, 5), radius: 2,
+    ///                                                linePoint: SIMD2(0, 0),
+    ///                                                lineDir: SIMD2(1, 0))
+    /// print(bisectors.count)   // 2 parabolas
+    /// ```
     public static func ofCircleAndLine(
         center: SIMD2<Double>, radius: Double,
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>
@@ -1424,6 +1453,17 @@ public enum GccAnaBisector {
     }
 
     /// Bisectors between a circle and a point.
+    ///
+    /// The radius must be positive. This is the family where a zero radius is furthest from the
+    /// point reading: measured (#553), it returns two hyperbolas of major radius zero, where the
+    /// bisector of two points is a straight line. Use ``ofPoints(_:_:)`` for that. A non-positive
+    /// radius returns an empty array.
+    ///
+    /// ```swift
+    /// let bisectors = GccAnaBisector.ofCircleAndPoint(center: SIMD2(0, 0), radius: 2,
+    ///                                                 point: SIMD2(6, 0))
+    /// print(bisectors.count)   // 2 hyperbola branches
+    /// ```
     public static func ofCircleAndPoint(
         center: SIMD2<Double>, radius: Double,
         point: SIMD2<Double>
@@ -1461,6 +1501,18 @@ extension Curve2DGcc {
     }
 
     /// Lines tangent to a circle, parallel to a reference line.
+    ///
+    /// `circleRadius` must be positive. With a radius of zero the solver returns the single line
+    /// through the centre twice (#553); ``lineParallelThrough(point:parallelTo:lineDir:)`` is the
+    /// entry point for that question and returns it once. A non-positive radius returns an empty
+    /// array.
+    ///
+    /// ```swift
+    /// let tangents = Curve2DGcc.linesTangentParallel(circleCenter: SIMD2(0, 0), circleRadius: 4,
+    ///                                                parallelTo: SIMD2(0, 0),
+    ///                                                lineDir: SIMD2(1, 0))
+    /// print(tangents.count)   // 2, at y = 4 and y = -4
+    /// ```
     public static func linesTangentParallel(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         qualifier: Curve2DQualifier = .unqualified,
@@ -1493,6 +1545,19 @@ extension Curve2DGcc {
     }
 
     /// Lines tangent to a circle, perpendicular to a reference line.
+    ///
+    /// `circleRadius` must be positive. With a radius of zero the solver returns the single line
+    /// through the centre twice (#553); use
+    /// ``linePerpendicularThrough(point:perpendicularTo:lineDir:)`` for the point question. A
+    /// non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let tangents = Curve2DGcc.linesTangentPerpendicular(circleCenter: SIMD2(0, 0),
+    ///                                                     circleRadius: 4,
+    ///                                                     perpendicularTo: SIMD2(0, 0),
+    ///                                                     lineDir: SIMD2(1, 0))
+    /// print(tangents.count)   // 2, at x = 4 and x = -4
+    /// ```
     public static func linesTangentPerpendicular(
         circleCenter: SIMD2<Double>, circleRadius: Double,
         qualifier: Curve2DQualifier = .unqualified,
@@ -1565,6 +1630,17 @@ extension Curve2DGcc {
     }
 
     /// Circles tangent to a line, center on a line, with given radius.
+    ///
+    /// `radius` is the radius of the circles to find, and it must be positive. Asked for zero the
+    /// solver obliges and returns solution circles of radius zero (#553), which is a point rather
+    /// than the circle the caller asked for. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let circles = Curve2DGcc.circlesTangentToLineOnLineWithRadius(
+    ///     linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+    ///     centerOnPoint: SIMD2(0, 0), centerOnDir: SIMD2(1, 1), radius: 2)
+    /// print(circles.map(\.radius))   // every solution has radius 2
+    /// ```
     public static func circlesTangentToLineOnLineWithRadius(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         qualifier: Curve2DQualifier = .unqualified,
@@ -1605,6 +1681,15 @@ extension Curve2DGcc {
     }
 
     /// Circles tangent to a curve, center on a curve, with given radius (Geom2dGcc).
+    ///
+    /// `radius` is the radius of the circles to find, and it must be positive; zero would ask for
+    /// a solution circle that is a point (#553). A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
+    ///       let centerOn = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 1)) else { return }
+    /// let circles = Curve2DGcc.circlesTangentOnCurveWithRadius(line, centerOn: centerOn, radius: 2)
+    /// ```
     public static func circlesTangentOnCurveWithRadius(
         _ curve: Curve2D, _ qualifier: Curve2DQualifier = .unqualified,
         centerOn: Curve2D,
@@ -1653,6 +1738,17 @@ public enum IntAna2d {
     }
 
     /// Intersect a 2D line and circle.
+    ///
+    /// `circleRadius` must be positive. A zero-radius circle is a point, and asking whether a
+    /// point lies on a line is not an intersection query: measured (#553), OCCT answers with the
+    /// centre and a `param2` of NaN, since a point has no parameter on a circle that is not
+    /// there. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let hits = IntAna2d.intersectLineCircle(linePoint: SIMD2(0, 0), lineDir: SIMD2(1, 0),
+    ///                                         circleCenter: SIMD2(0, 0), circleRadius: 3)
+    /// print(hits.map(\.point))   // (3, 0) and (-3, 0)
+    /// ```
     public static func intersectLineCircle(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double
@@ -1668,6 +1764,17 @@ public enum IntAna2d {
     }
 
     /// Intersect two 2D circles.
+    ///
+    /// Both radii must be positive, for the same reason as
+    /// ``intersectLineCircle(linePoint:lineDir:circleCenter:circleRadius:)``: a zero radius makes
+    /// the argument a point, not a curve to intersect (#553). A non-positive radius returns an
+    /// empty array.
+    ///
+    /// ```swift
+    /// let hits = IntAna2d.intersectCircles(center1: SIMD2(0, 0), radius1: 3,
+    ///                                      center2: SIMD2(4, 0), radius2: 3)
+    /// print(hits.count)   // 2
+    /// ```
     public static func intersectCircles(
         center1: SIMD2<Double>, radius1: Double,
         center2: SIMD2<Double>, radius2: Double
@@ -1728,6 +1835,18 @@ public enum Extrema2d {
     }
 
     /// Distance between a 2D line and circle.
+    ///
+    /// `circleRadius` must be positive. With a radius of zero the extrema come back correct but
+    /// duplicated (#553); ``distanceFromPointToLine(point:linePoint:lineDir:)`` answers the point
+    /// question directly. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let extrema = Extrema2d.distanceBetweenLineAndCircle(linePoint: SIMD2(0, 10),
+    ///                                                      lineDir: SIMD2(1, 0),
+    ///                                                      circleCenter: SIMD2(0, 0),
+    ///                                                      circleRadius: 3)
+    /// print(extrema.map(\.distance))   // 7 and 13
+    /// ```
     public static func distanceBetweenLineAndCircle(
         linePoint: SIMD2<Double>, lineDir: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double,
@@ -1747,6 +1866,17 @@ public enum Extrema2d {
     }
 
     /// Closest/farthest points on a 2D circle from a point.
+    ///
+    /// `circleRadius` must be positive. This is the family where a zero radius loses the answer
+    /// outright: measured (#553), OCCT reports no extremum at all rather than the distance to the
+    /// centre. A non-positive radius returns an empty array.
+    ///
+    /// ```swift
+    /// let extrema = Extrema2d.distanceFromPointToCircle(point: SIMD2(0, 10),
+    ///                                                   circleCenter: SIMD2(0, 0),
+    ///                                                   circleRadius: 3)
+    /// print(extrema.map(\.distance))   // 7 and 13
+    /// ```
     public static func distanceFromPointToCircle(
         point: SIMD2<Double>,
         circleCenter: SIMD2<Double>, circleRadius: Double,

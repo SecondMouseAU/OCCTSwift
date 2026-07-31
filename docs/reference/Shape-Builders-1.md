@@ -1213,6 +1213,9 @@ public static func edge2dFromCircle(
 - **Parameters:** `center` — 2D circle centre; `direction` — orientation; `radius` — radius; `p1`, `p2` — angular bounds.
 - **Returns:** 2D edge shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeEdge2d(gp_Circ2d, p1, p2)` via `OCCTMakeEdge2dFromCircle`.
+- **Note:** `radius` must be positive (#553). `BRepBuilderAPI_MakeEdge2d` reports success for a
+  zero radius and hands back a zero-length edge with both vertices at the centre, so the radius is
+  checked before OCCT sees it. A non-positive radius returns nil.
 
 ---
 

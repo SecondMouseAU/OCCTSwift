@@ -107,6 +107,59 @@
 // live in OCCTBridge_Internal.h. #411 introduced a 2D-suffixed copy of the circle one here, which
 // is how the 2D ellipse/hyperbola/parabola factories ended up skipped by both #411 and #399's
 // otherwise-identical pass over the 3D side; #487 converged them.
+//
+// #553: the same predicate now covers the solver entry points too. A circle reaches this file's
+// solvers as a centre and a radius, and there are three separate things a caller can mean by that
+// radius, which had three different contracts:
+//
+//   1. a circle the solver is GIVEN            unchecked at 13 entry points
+//   2. the radius of the circle it must FIND   checked at 3 entry points, unchecked at 4 siblings
+//   3. a circle this file is asked to BUILD    checked at 6 entry points (#514), unchecked at 4
+//
+// Negative is not the gap: gp_Circ2d's constructor is constexpr in the header, so its
+// Standard_ConstructionError_Raise_if does run in a bridge translation unit (the same finding as
+// #514's, measured again for gp_Circ2d) and the existing catch already turns it into an empty
+// result. GC_MakeCircle2d rejects a negative radius through gce_NegativeRadius, a status rather
+// than a macro, so No_Exception does not void it either. The gap is exactly zero.
+//
+// Case 1 is the one the issue held open, because a zero-radius circle handed to a tangency solver
+// is geometrically a point and several of these solvers have a documented answer for a point. The
+// probe in Scripts/repro/553-gcc-zero-radius-circle ran every family against a zero-radius
+// argument and against OCCT's own point overload of the same query. No family answers the point
+// question:
+//
+//   GccAna_Circ2dBisec        4 solutions where the point overload gives 2, each duplicated; with
+//                             both radii 0, two of the three solutions are hyperbolas of major
+//                             radius 0, which occtValidHyperbolaRadii rejects on construction
+//   GccAna_CircPnt2dBisec     2 hyperbolas of major radius 0; the point/point answer is a LINE,
+//                             so the returned type is wrong, not merely duplicated
+//   GccAna_CircLin2dBisec     the point overload's parabola, twice
+//   GccAna_Lin2dTanPar/Per    the point overload's single line, twice
+//   GccAna_Lin2d2Tan          the point overload's single line, twice
+//   GccAna_Circ2d3Tan         3 circles: the point overload's 4 solutions, each twice.
+//                             2 circles + a point: 2 distinct solutions padded to 4.
+//                             1 circle + 2 points: 0 solutions, where the all-points overload
+//                             finds the circumscribed circle - the answer is lost outright
+//   Extrema_ExtPElC2d         0 extrema; the distance the point reading asks for is lost
+//   Extrema_ExtElC2d          the right distance, twice
+//   IntAna2d_AnaIntersection  the right point, with ParamOnSecond() NaN, which the bridge writes
+//                             straight into the caller's param2
+//
+// Every one of those families already has a point entry point in this same file
+// (OCCTGccAnaPnt2dBisec, OCCTGccAnaLinPnt2dBisec, OCCTGccAnaLin2dTanParPt,
+// OCCTGccAnaLin2dTanPerPtLin, OCCTGccAnaCirc2d3TanPoints, OCCTGccAnaLin2d2TanPntPnt and the mixed
+// circle/point overloads), so the decision costs the caller no query: asking about a point has a
+// spelling, and a degenerate circle is not it. Guard, per family, on the same evidence.
+//
+// Case 2 was already decided, just not everywhere: OCCTGccCircle2d2TanRad, OCCTGccCircle2dTanPtRad
+// and OCCTGccCircle2d2PtRad each spelled `radius <= 0` inline. A requested radius of 0 makes
+// GccAna_Circ2d2TanRad and GccAna_Circ2dTanOnRad hand back solution circles of radius 0, which is
+// the degenerate geometry #514 refused to return. All seven now share one predicate.
+//
+// Case 3 is #514's decision applied to the four sites it did not reach. One of them,
+// OCCTCurve2DMakeCircleParallel, needs the offset checked as well as the radius: measured, a
+// radius-5 circle offset by -5 yields radius 0 and by -6 yields radius 1, so GC_MakeCircle2d takes
+// the absolute value rather than refusing an offset that passes through the centre.
 
 // One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
 // solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve and
@@ -865,7 +918,7 @@ int32_t OCCTGccCircle2d2TanRad(OCCTCurve2DRef c1, int32_t q1,
                                OCCTGccCircleSolution* out, int32_t max) {
     if (!c1 || !c2 || !out || max <= 0) return 0;
     if (c1->curve.IsNull() || c2->curve.IsNull()) return 0;
-    if (radius <= 0) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dGcc_QualifiedCurve qc1 = makeQualifiedCurve(c1, q1);
         Geom2dGcc_QualifiedCurve qc2 = makeQualifiedCurve(c2, q2);
@@ -890,7 +943,7 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef curve, int32_t qualifier,
                                 double radius, double tolerance,
                                 OCCTGccCircleSolution* out, int32_t max) {
     if (!curve || curve->curve.IsNull() || !out || max <= 0) return 0;
-    if (radius <= 0) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dGcc_QualifiedCurve qc = makeQualifiedCurve(curve, qualifier);
         Handle(Geom2d_CartesianPoint) point = new Geom2d_CartesianPoint(px, py);
@@ -913,7 +966,7 @@ int32_t OCCTGccCircle2dTanPtRad(OCCTCurve2DRef curve, int32_t qualifier,
 int32_t OCCTGccCircle2d2PtRad(double p1x, double p1y, double p2x, double p2y,
                               double radius, double tolerance,
                               OCCTGccCircleSolution* out, int32_t max) {
-    if (!out || max <= 0 || radius <= 0) return 0;
+    if (!out || max <= 0 || !occtValidCircleRadius(radius)) return 0;
     try {
         Handle(Geom2d_CartesianPoint) pt1 = new Geom2d_CartesianPoint(p1x, p1y);
         Handle(Geom2d_CartesianPoint) pt2 = new Geom2d_CartesianPoint(p2x, p2y);
@@ -1167,6 +1220,7 @@ bool OCCTGccAnaLinPnt2dBisec(double lpx, double lpy, double ldx, double ldy,
 int32_t OCCTGccAnaCirc2dBisec(double c1x, double c1y, double c1r,
                               double c2x, double c2y, double c2r,
                               OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax22d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax22d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -1185,6 +1239,7 @@ int32_t OCCTGccAnaCirc2dBisec(double c1x, double c1y, double c1r,
 int32_t OCCTGccAnaCircLin2dBisec(double cx, double cy, double cr,
                                  double lpx, double lpy, double ldx, double ldy,
                                  OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1203,6 +1258,7 @@ int32_t OCCTGccAnaCircLin2dBisec(double cx, double cy, double cr,
 int32_t OCCTGccAnaCircPnt2dBisec(double cx, double cy, double cr,
                                  double px, double py,
                                  OCCTBisecSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         GccAna_CircPnt2dBisec bisec(circ, gp_Pnt2d(px, py));
@@ -1242,6 +1298,7 @@ int32_t OCCTGccAnaLin2dTanParPt(double px, double py,
 int32_t OCCTGccAnaLin2dTanParCirc(double cx, double cy, double cr, int32_t qualifier,
                                   double lpx, double lpy, double ldx, double ldy,
                                   OCCTGccLineSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1289,6 +1346,7 @@ int32_t OCCTGccAnaLin2dTanPerPtLin(double px, double py,
 int32_t OCCTGccAnaLin2dTanPerCircLin(double cx, double cy, double cr, int32_t qualifier,
                                      double lpx, double lpy, double ldx, double ldy,
                                      OCCTGccLineSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         gp_Lin2d ref(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
@@ -1391,6 +1449,7 @@ int32_t OCCTGccAnaCirc2dTanOnRadLin(double lpx, double lpy, double ldx, double l
                                     double onPx, double onPy, double onDx, double onDy,
                                     double radius, double tolerance,
                                     OCCTGccCircleSolution* out, int32_t max) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Lin2d l1(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Lin2d onLine(gp_Pnt2d(onPx, onPy), gp_Dir2d(onDx, onDy));
@@ -1442,6 +1501,7 @@ int32_t OCCTGeom2dGccCirc2dTanOnRad(OCCTCurve2DRef curve, int32_t qualifier,
                                     double radius, double tolerance,
                                     OCCTGccCircleSolution* out, int32_t max) {
     if (!curve || !onCurve || curve->curve.IsNull() || onCurve->curve.IsNull()) return 0;
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         Geom2dAdaptor_Curve ac(curve->curve), aon(onCurve->curve);
         Geom2dGcc_QualifiedCurve qc(ac, toGccPosition(qualifier));
@@ -1484,6 +1544,7 @@ int32_t OCCTIntAna2dLinLin(double l1px, double l1py, double l1dx, double l1dy,
 int32_t OCCTIntAna2dLinCirc(double lpx, double lpy, double ldx, double ldy,
                             double cx, double cy, double cr,
                             OCCTIntAna2dPoint* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1505,6 +1566,7 @@ int32_t OCCTIntAna2dLinCirc(double lpx, double lpy, double ldx, double ldy,
 int32_t OCCTIntAna2dCircCirc(double c1x, double c1y, double c1r,
                              double c2x, double c2y, double c2r,
                              OCCTIntAna2dPoint* out, int32_t max) {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax22d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax22d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -1565,6 +1627,7 @@ int32_t OCCTExtremaExtElC2dLinCirc(double lpx, double lpy, double ldx, double ld
                                    double cx, double cy, double cr,
                                    double tolerance,
                                    OCCTExtrema2dResult* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return -1;
     try {
         gp_Lin2d line(gp_Pnt2d(lpx, lpy), gp_Dir2d(ldx, ldy));
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1591,6 +1654,7 @@ int32_t OCCTExtremaExtPElC2dCirc(double px, double py,
                                  double cx, double cy, double cr,
                                  double tolerance,
                                  OCCTExtrema2dResult* out, int32_t max) {
+    if (!occtValidCircleRadius(cr)) return -1;
     try {
         gp_Pnt2d pt(px, py);
         gp_Circ2d circ(gp_Ax22d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
@@ -1770,6 +1834,7 @@ OCCTShapeRef _Nullable OCCTMakeEdge2dFromPoints(double x1, double y1, double x2,
 OCCTShapeRef _Nullable OCCTMakeEdge2dFromCircle(
     double cx, double cy, double dx, double dy,
     double radius, double p1, double p2) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
         BRepBuilderAPI_MakeEdge2d me(circ, p1, p2);
@@ -2328,6 +2393,8 @@ int32_t OCCTGccAnaCirc2d3TanCircles(
     double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)
+        || !occtValidCircleRadius(c3r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax2d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax2d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -2349,6 +2416,7 @@ int32_t OCCTGccAnaCirc2d2CirclesPoint(
     double px, double py, double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(c1r) || !occtValidCircleRadius(c2r)) return 0;
     try {
         gp_Circ2d circ1(gp_Ax2d(gp_Pnt2d(c1x, c1y), gp_Dir2d(1, 0)), c1r);
         gp_Circ2d circ2(gp_Ax2d(gp_Pnt2d(c2x, c2y), gp_Dir2d(1, 0)), c2r);
@@ -2367,6 +2435,7 @@ int32_t OCCTGccAnaCirc2dCircle2Points(
     double p1x, double p1y, double p2x, double p2y, double tolerance,
     OCCTCircle2DSolution* outSolutions, int32_t maxSolutions)
 {
+    if (!occtValidCircleRadius(cr)) return 0;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), cr);
         GccAna_Circ2d3Tan solver(
@@ -2631,6 +2700,7 @@ int OCCTGccAnaCirc2d2TanRadLineLin(double l1px, double l1py, double l1dx, double
                                      double l2px, double l2py, double l2dx, double l2dy,
                                      double radius, double tolerance,
                                      OCCTCircle2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Lin2d l1(gp_Pnt2d(l1px, l1py), gp_Dir2d(l1dx, l1dy));
         gp_Lin2d l2(gp_Pnt2d(l2px, l2py), gp_Dir2d(l2dx, l2dy));
@@ -2658,6 +2728,7 @@ int OCCTGccAnaCirc2d2TanRadLineLin(double l1px, double l1py, double l1dx, double
 int OCCTGccAnaCirc2d2TanRadPntPnt(double p1x, double p1y, double p2x, double p2y,
                                     double radius, double tolerance,
                                     OCCTCircle2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         GccAna_Circ2d2TanRad solver(gp_Pnt2d(p1x, p1y), gp_Pnt2d(p2x, p2y), radius, tolerance);
         if (!solver.IsDone()) return 0;
@@ -2755,6 +2826,7 @@ int OCCTGccAnaLin2d2TanPntPnt(double p1x, double p1y, double p2x, double p2y,
 int OCCTGccAnaLin2d2TanCircPnt(double cx, double cy, double radius,
                                  double px, double py, double tolerance,
                                  OCCTLine2DSolution* _Nullable outSolutions, int maxSolutions) {
+    if (!occtValidCircleRadius(radius)) return 0;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), radius);
         GccEnt_QualifiedCirc qc(circ, GccEnt_unqualified);
@@ -3110,6 +3182,7 @@ OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
 #include <gp_Circ2d.hxx>
 
 OCCTCurve2DRef OCCTCurve2DMakeCircleCenterRadius(double cx, double cy, double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
@@ -3144,6 +3217,11 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleCenterPoint(double cx, double cy, double px,
 OCCTCurve2DRef OCCTCurve2DMakeCircleParallel(double cx, double cy,
                                              double dx, double dy,
                                              double radius, double dist) {
+    // The offset is checked as well as the radius. GC_MakeCircle2d takes the absolute value of
+    // radius + dist rather than refusing an offset that reaches or passes the centre: measured
+    // (#553), radius 5 offset by -5 gives radius 0 and by -6 gives radius 1, a circle inside the
+    // base rather than the one the caller asked for.
+    if (!occtValidCircleRadius(radius) || !occtValidCircleRadius(radius + dist)) return nullptr;
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
         GC_MakeCircle2d mc(circ, dist);
@@ -3157,6 +3235,7 @@ OCCTCurve2DRef OCCTCurve2DMakeCircleParallel(double cx, double cy,
 OCCTCurve2DRef OCCTCurve2DMakeCircleAxis(double cx, double cy,
                                          double dx, double dy,
                                          double radius) {
+    if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeCircle2d mc(ax, radius);
