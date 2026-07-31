@@ -360,8 +360,8 @@ a map of the major areas, and the `Total` as the count.
 | **GCPnts_UniformAbscissa** | 4 | uniform arc-length points by count/distance, full/subrange |
 | **GeomConvert_CompCurveToBSpline** | 1 | concatenate bounded 3D curves into BSpline |
 | **Geom2dConvert_CompCurveToBSpline** | 1 | concatenate bounded 2D curves into BSpline |
-| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | surface knot splits U/V count and values |
-| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | 2D curve knot split count and values |
+| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | *deprecated (#562)* — surface knot splits U/V count and values; forwards to `Surface.knotSplitting`, which wraps the same analyzer |
+| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | *deprecated (#562)* — 2D curve knot split count and values; forwards to `Curve2D.splitIndicesAtDiscontinuities`, which wraps the same analyzer |
 | **BndLib Extras** | 6 | ellipse, cone, circleArc, ellipseArc, parabolaArc, hyperbolaArc bounds |
 | **GProp Torus** | 2 | torus surface area, torus volume |
 | **BRepTools_ReShape** | 8 | create, release, clear, remove, replace, isRecorded, apply, value |

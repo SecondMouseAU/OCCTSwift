@@ -366,10 +366,25 @@
 // --- GeomConvert ---
 // GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DBSplineToBeziers, OCCTCurve3DSplitAtContinuity,
 //                                       OCCTSurfaceToBSpline, OCCTSurfaceToBezierPatches
+// GeomConvert_BSplineCurveKnotSplitting → OCCTCurve3DBSplineKnotSplits (the sole wrapper; #562)
+// GeomConvert_BSplineSurfaceKnotSplitting → OCCTSurfaceKnotSplitting (the sole wrapper since #562
+//                                       deleted the second family that wrapped it)
 // GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoinCurves, OCCTCurve3DJoinToBSpline,
 //                                       OCCTCurve3DConcatenateG1, OCCTConcatenateCurves3D
 // GeomConvert_CurveToAnaCurve         → OCCTGeomConvertCurveToAnalytical, OCCTGeomConvertIsLinear
 // GeomConvert_SurfToAnaSurf           → OCCTGeomConvertSurfToAnalytical*, OCCTGeomConvertIsCanonical
+//
+// --- Geom2dConvert ---
+// #562: this section did not exist, which is half of why Geom2dConvert_BSplineCurveKnotSplitting
+// could be wrapped twice without anything noticing. Census is by call site in OCCTBridge_Geom2d.mm.
+// Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
+//                                       OCCTCurve2DJoinToBSpline
+// Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments, OCCTCurve2DToArcsAndSegments
+// Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+// Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
+//                                       since #562 deleted the second family that wrapped it)
+// Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers
+// Geom2dConvert_CompCurveToBSplineCurve → OCCTConcatenateCurves2D, OCCTCurve2DJoinToBSpline
 //
 // --- Convert ---
 // Convert_CompBezierCurvesToBSplineCurve   → OCCTConvertCompBezierToBSpline (v0.99.0)
@@ -2663,6 +2678,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree);
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in OCCTBridge_Internal.h.
+// Returns the TRUE split count even when writing was truncated by `max`, so a caller that came up
+// short can retry at the size it was just told — the #481 contract the rest of this family already
+// shares. It used to return the count it had written, which is indistinguishable from a curve with
+// exactly `max` splits (#562).
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef curve, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max);
 int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef curve, double tolerance,
@@ -6832,15 +6851,20 @@ typedef struct {
 ///   cubic with simple interior knots needs 3. See the #480 note in OCCTBridge_Internal.h
 /// @param vContinuity Desired V continuity, same contract against the V degree and knots
 /// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
-/// @param maxUParams Capacity of outUParams
+/// @param outUIndices Pre-allocated array for the 1-based U knot-table indices those parameters
+///   were read from, i.e. `outUParams[i] == UKnot(outUIndices[i])` (may be NULL). #562: the
+///   analyzer reports indices and this function converts them, so the caller only ever saw the
+///   converted form and a second family of bridge functions existed to serve the raw one
+/// @param maxU Capacity of outUParams and outUIndices
 /// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
-/// @param maxVParams Capacity of outVParams
+/// @param outVIndices Pre-allocated array for the 1-based V knot-table indices (may be NULL)
+/// @param maxV Capacity of outVParams and outVIndices
 /// @return Split counts; nbUSplits/nbVSplits are the true counts even when writing
-///   was truncated by maxUParams/maxVParams, so a caller can retry with a bigger buffer
+///   was truncated by maxU/maxV, so a caller can retry with a bigger buffer
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
     int32_t uContinuity, int32_t vContinuity,
-    double* outUParams, int32_t maxUParams,
-    double* outVParams, int32_t maxVParams);
+    double* outUParams, int32_t* outUIndices, int32_t maxU,
+    double* outVParams, int32_t* outVIndices, int32_t maxV);
 
 /// Join an array of Bezier surface patches into a single BSpline surface.
 /// @param patches Array of surface handles (row-major, nRows x nCols)
@@ -14678,33 +14702,19 @@ OCCTCurve3DRef _Nullable OCCTConcatenateCurves3D(OCCTCurve3DRef _Nonnull * _Nonn
 OCCTCurve2DRef _Nullable OCCTConcatenateCurves2D(OCCTCurve2DRef _Nonnull * _Nonnull curves,
                                                    int32_t count, double tolerance);
 
-// MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
+// MARK: - GeomConvert_BSplineSurfaceKnotSplitting / Geom2dConvert_BSplineCurveKnotSplitting
 //
-// `continuity` throughout this section is the same ContinuityRange as OCCTSurfaceKnotSplitting
-// takes: a literal derivative order, splitting where `degree - multiplicity < continuity`, with
-// useful domain 0...degree. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of U-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsU(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get number of V-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsV(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get U and V knot split indices for a BSpline surface at given continuity.
-void OCCTBSplineSurfaceKnotSplitValues(OCCTSurfaceRef _Nonnull surface, int32_t continuity,
-                                        int32_t* _Nonnull uSplits, int32_t* _Nonnull vSplits);
-
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
+// #562: five functions used to live here (OCCTBSplineSurfaceKnotSplitsU/V,
+// OCCTBSplineSurfaceKnotSplitValues, OCCTBSplineCurve2dKnotSplits,
+// OCCTBSplineCurve2dKnotSplitValues), added in v0.105.0 over the same two analyzers
+// OCCTSurfaceKnotSplitting and OCCTCurve2DSplitAtDiscontinuities already drove. They are gone;
+// those two are the sole wrappers of their analyzer. Both now report the split knot-table
+// indices, which is all the deleted family carried that the survivors did not.
 //
-// Same ContinuityRange contract again: Geom2dConvert_BSplineCurveKnotSplitting runs the
-// identical algorithm on a 2D curve. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of knot splits for a 2D BSpline curve at given continuity.
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef _Nonnull curve, int32_t continuity);
-
-/// Get knot split indices for a 2D BSpline curve at given continuity.
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef _Nonnull curve, int32_t continuity,
-                                        int32_t* _Nonnull splits);
+// Two contract hazards the deleted family had, recorded so they are not reintroduced: neither
+// values function took a buffer capacity (each wrote NbSplits() entries into a buffer the caller
+// had sized from a *separate* call), and the surface one constructed the analyzer three times per
+// logical query, once per count call and once for the values.
 
 // MARK: - BndLib extras (v0.105.0)
 

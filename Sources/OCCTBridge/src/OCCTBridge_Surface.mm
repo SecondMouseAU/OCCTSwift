@@ -1812,12 +1812,14 @@ OCCTSurfaceRef OCCTSurfaceTrimmedCylinder(
 // MARK: - Surface KnotSplitting / JoinBezierPatches (v0.50)
 // #403: also fills the U/V split PARAMETER buffers (not just the counts) -- the
 // underlying GeomConvert_BSplineSurfaceKnotSplitting analyzer always computed
-// USplitValue/VSplitValue, this just wasn't surfaced. outUParams/outVParams may be
-// null (or their max 0) to skip writing either direction.
+// USplitValue/VSplitValue, this just wasn't surfaced. #562: and fills the raw knot-table
+// indices those parameters came from, which is what a second, now-deleted family of bridge
+// functions existed to return. Any out buffer may be null (or its max 0) to skip it; one
+// analyzer construction serves all four, where that family needed three.
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
     int32_t uContinuity, int32_t vContinuity,
-    double* outUParams, int32_t maxUParams,
-    double* outVParams, int32_t maxVParams) {
+    double* outUParams, int32_t* outUIndices, int32_t maxU,
+    double* outVParams, int32_t* outVIndices, int32_t maxV) {
     OCCTSurfaceKnotSplitResult result = {};
     if (!surface) return result;
     try {
@@ -1826,17 +1828,27 @@ OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
         GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, uContinuity, vContinuity);
         result.nbUSplits = splitter.NbUSplits();
         result.nbVSplits = splitter.NbVSplits();
-        if (outUParams && maxUParams > 0) {
+        if (outUParams && maxU > 0) {
             occtWriteKnotSplitParams(result.nbUSplits,
                 [&](int32_t i) { return splitter.USplitValue(i); },
                 [&](int32_t idx) { return bsurf->UKnot(idx); },
-                outUParams, maxUParams);
+                outUParams, maxU);
         }
-        if (outVParams && maxVParams > 0) {
+        if (outUIndices && maxU > 0) {
+            occtWriteKnotSplits<int32_t>(result.nbUSplits,
+                [&](int32_t i) { return (int32_t)splitter.USplitValue(i); },
+                outUIndices, maxU);
+        }
+        if (outVParams && maxV > 0) {
             occtWriteKnotSplitParams(result.nbVSplits,
                 [&](int32_t i) { return splitter.VSplitValue(i); },
                 [&](int32_t idx) { return bsurf->VKnot(idx); },
-                outVParams, maxVParams);
+                outVParams, maxV);
+        }
+        if (outVIndices && maxV > 0) {
+            occtWriteKnotSplits<int32_t>(result.nbVSplits,
+                [&](int32_t i) { return (int32_t)splitter.VSplitValue(i); },
+                outVIndices, maxV);
         }
     } catch (...) {}
     return result;
@@ -3805,47 +3817,10 @@ bool OCCTBRepGPropFaceBoundaryIntegration(OCCTShapeRef face, int32_t edgeIndex, 
     } catch (...) { return false; }
 }
 
-// MARK: - v0.105: GeomConvert_BSplineSurfaceKnotSplitting
-// MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
-
-#include <GeomConvert_BSplineSurfaceKnotSplitting.hxx>
-#include <Geom_BSplineSurface.hxx>
-
-int32_t OCCTBSplineSurfaceKnotSplitsU(OCCTSurfaceRef surface, int32_t continuity) {
-    if (!surface) return 0;
-    try {
-        Handle(Geom_BSplineSurface) bsurf = Handle(Geom_BSplineSurface)::DownCast(surface->surface);
-        if (bsurf.IsNull()) return 0;
-        GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, continuity, continuity);
-        return (int32_t)splitter.NbUSplits();
-    } catch (...) { return 0; }
-}
-
-int32_t OCCTBSplineSurfaceKnotSplitsV(OCCTSurfaceRef surface, int32_t continuity) {
-    if (!surface) return 0;
-    try {
-        Handle(Geom_BSplineSurface) bsurf = Handle(Geom_BSplineSurface)::DownCast(surface->surface);
-        if (bsurf.IsNull()) return 0;
-        GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, continuity, continuity);
-        return (int32_t)splitter.NbVSplits();
-    } catch (...) { return 0; }
-}
-
-void OCCTBSplineSurfaceKnotSplitValues(OCCTSurfaceRef surface, int32_t continuity,
-                                        int32_t* uSplits, int32_t* vSplits) {
-    if (!surface || !uSplits || !vSplits) return;
-    try {
-        Handle(Geom_BSplineSurface) bsurf = Handle(Geom_BSplineSurface)::DownCast(surface->surface);
-        if (bsurf.IsNull()) return;
-        GeomConvert_BSplineSurfaceKnotSplitting splitter(bsurf, continuity, continuity);
-        for (int i = 1; i <= splitter.NbUSplits(); i++) {
-            uSplits[i - 1] = splitter.USplitValue(i);
-        }
-        for (int i = 1; i <= splitter.NbVSplits(); i++) {
-            vSplits[i - 1] = splitter.VSplitValue(i);
-        }
-    } catch (...) {}
-}
+// #562: OCCTBSplineSurfaceKnotSplitsU/V and OCCTBSplineSurfaceKnotSplitValues stood here,
+// a second wrap of GeomConvert_BSplineSurfaceKnotSplitting added three releases after
+// OCCTSurfaceKnotSplitting (line 1817 of this file) already wrapped it. Deleted; that one now
+// reports the split knot-table indices too, which is the only thing these carried that it did not.
 
 // MARK: - v0.106: GC_MakeConical/Cylindrical/TrimmedCone/TrimmedCylinder + Surface continuity
 // MARK: - GC_MakeConicalSurface (v0.106.0)
