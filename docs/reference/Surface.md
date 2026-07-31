@@ -890,8 +890,8 @@ public func drawGrid(uLineCount: Int = 10, vLineCount: Int = 10,
 
 Samples `uLineCount` U-iso lines and `vLineCount` V-iso lines, each discretised to `pointsPerLine` 3D points. Infinite surfaces are clamped to ±100 before sampling.
 
-- **Parameters:** `uLineCount` — number of U iso-lines; `vLineCount` — number of V iso-lines; `pointsPerLine` — points per iso-line.
-- **Returns:** Array of polylines (one per iso-line), empty if the surface is null.
+- **Parameters:** `uLineCount` — number of U iso-lines, at least 0; `vLineCount` — number of V iso-lines, at least 0; `pointsPerLine` — points per iso-line, at least 1.
+- **Returns:** Array of polylines (one per iso-line), empty if the surface is null or the grid cannot be served. The bound is on the total: `(uLineCount + vLineCount) * pointsPerLine` must not exceed `Sampling.maximumSampleCount` (10,000,000), and each factor is checked on its own, since a negative line count used to abort the process unless the other count happened to outweigh it (#558).
 - **OCCT:** `Geom_Surface::Bounds` + `Geom_Surface::D0` via `OCCTSurfaceDrawGrid`.
 - **Example:**
   ```swift
@@ -969,8 +969,8 @@ Samples a uniform mesh grid of points for Metal visualisation.
 public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
 ```
 
-- **Parameters:** `uCount` — number of U sample points; `vCount` — number of V sample points.
-- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails.
+- **Parameters:** `uCount` — number of U sample points, at least 1; `vCount` — number of V sample points, at least 1.
+- **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails or the grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed `Sampling.maximumSampleCount` (10,000,000). Each factor is also checked on its own, which is not redundant — two negative counts multiply to a plausible positive total, so `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process (#558).
 - **OCCT:** `Geom_Surface::D0` sampled on a uniform UV grid.
 - **Example:**
   ```swift

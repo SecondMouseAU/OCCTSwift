@@ -913,16 +913,19 @@ public final class Shape: @unchecked Sendable {
     /// - Parameters:
     ///   - index: Edge index (0-based)
     ///   - deflection: Maximum chord deviation
-    ///   - maxPoints: Maximum number of points to return
+    ///   - maxPoints: Output *capacity*, clamped into `0`...``Sampling/maximumSampleCount``;
+    ///     a capacity of 0 or less returns nil (#558). The deflection decides the actual point count.
     /// - Returns: Array of 3D points along the edge, or nil if edge not found
     public func edgePolyline(
         at index: Int,
         deflection: Double = 0.1,
         maxPoints: Int = 1000
     ) -> [SIMD3<Double>]? {
-        var points = [Double](repeating: 0, count: maxPoints * 3)
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return nil }
+        var points = [Double](repeating: 0, count: capacity * 3)
         let numPoints = points.withUnsafeMutableBufferPointer { buffer in
-            OCCTShapeGetEdgePolyline(handle, Int32(index), deflection, buffer.baseAddress, Int32(maxPoints))
+            OCCTShapeGetEdgePolyline(handle, Int32(index), deflection, buffer.baseAddress, Int32(capacity))
         }
 
         guard numPoints > 0 else { return nil }
@@ -976,7 +979,10 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - deflection: Maximum chord deviation
-    ///   - maxPointsPerEdge: Maximum points per edge
+    ///   - maxPointsPerEdge: Per-edge output *capacity*, honoured within `2...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). This
+    ///     one keeps its existing lower bound of 2 rather than clamping to 0, since it is also
+    ///     passed straight to the bridge's bulk pass.
     /// - Returns: `(edgeIndex, points)` pairs, ascending by `edgeIndex`, one per
     ///   successfully discretized edge
     public func allEdgePolylinesIndexed(
@@ -993,7 +999,7 @@ public final class Shape: @unchecked Sendable {
         // One bulk pass: the bridge builds the edge map once. Looping `edgePolyline(at:)`
         // instead rebuilds it per call, making this O(edges²) — 20 s for a 12k-edge shell,
         // and unusable on mesh-scale shapes (issue #275).
-        guard maxPointsPerEdge >= 2,
+        guard let maxPointsPerEdge = Sampling.requested(maxPointsPerEdge),
               let polys = OCCTShapeComputeAllEdgePolylines(handle, deflection, Int32(maxPointsPerEdge))
         else { return [] }
         defer { OCCTEdgePolylinesRelease(polys) }
@@ -2264,11 +2270,14 @@ public final class Shape: @unchecked Sendable {
     ///
     /// Points are sampled uniformly along the edge curve from start to end.
     /// - Parameter index: The edge index (0 to edgeCount-1)
-    /// - Parameter maxPoints: Maximum points to return (capped at 20 internally for performance)
+    /// - Parameter maxPoints: Output *capacity* (capped at 20 internally for performance), clamped
+    ///   into `0`...``Sampling/maximumSampleCount``; 0 or less returns empty (#558)
     /// - Returns: Array of 3D points along the edge curve
     public func edgePoints(at index: Int, maxPoints: Int = 20) -> [SIMD3<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 3)
-        let count = OCCTShapeGetEdgePoints(handle, Int32(index), &buffer, Int32(maxPoints))
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 3)
+        let count = OCCTShapeGetEdgePoints(handle, Int32(index), &buffer, Int32(capacity))
         var points: [SIMD3<Double>] = []
         for i in 0..<Int(count) {
             points.append(SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]))
@@ -2282,11 +2291,14 @@ public final class Shape: @unchecked Sendable {
     /// For curved edges, use `edgePoints(at:maxPoints:)` to get curve samples.
     /// This is suitable for simple polygon contours from Z-plane slices.
     ///
-    /// - Parameter maxPoints: Maximum number of points to return
+    /// - Parameter maxPoints: Output *capacity*, clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#558)
     /// - Returns: Array of 3D points (one per edge start vertex)
     public func contourPoints(maxPoints: Int = 1000) -> [SIMD3<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 3)
-        let count = OCCTShapeGetContourPoints(handle, &buffer, Int32(maxPoints))
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 3)
+        let count = OCCTShapeGetContourPoints(handle, &buffer, Int32(capacity))
         var points: [SIMD3<Double>] = []
         for i in 0..<Int(count) {
             points.append(SIMD3(buffer[i*3], buffer[i*3+1], buffer[i*3+2]))
@@ -9838,18 +9850,24 @@ extension Shape {
 
     // MARK: - GeomFill_CoonsAlgPatch
 
-    /// Evaluate Coons algorithmic patch from 4 boundary edges
+    /// Evaluate Coons algorithmic patch from 4 boundary edges.
+    ///
+    /// - Parameters:
+    ///   - evalU: Evaluations in U, at least 1.
+    ///   - evalV: Evaluations in V, at least 1.
+    /// - Returns: The evaluated grid, or nil if the patch is degenerate or the grid cannot be
+    ///   served: the bound is on the **product**, which must not exceed
+    ///   ``Sampling/maximumSampleCount`` (#558).
     public static func coonsAlgPatch(
         edge1: Shape, edge2: Shape, edge3: Shape, edge4: Shape,
         evalU: Int = 10, evalV: Int = 10
     ) -> [SIMD3<Double>]? {
-        var outPoints = [Double](repeating: 0, count: evalU * evalV * 3)
+        guard let total = Sampling.gridTotal(evalU, evalV) else { return nil }
+        var outPoints = [Double](repeating: 0, count: total * 3)
         OCCTGeomFillCoonsAlgPatchEval(
             edge1.handle, edge2.handle, edge3.handle, edge4.handle,
             Int32(evalU), Int32(evalV), &outPoints)
-        let points = (0..<evalU * evalV).map { i in
-            SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
-        }
+        let points: [SIMD3<Double>] = unpackSIMD3(outPoints, count: total)
         // Check if any non-zero points
         guard points.contains(where: { simd_length($0) > 1e-10 }) else { return nil }
         return points
@@ -9902,22 +9920,26 @@ extension Shape {
 
     // MARK: - Adaptor3d_IsoCurve
 
-    /// Evaluate points along a U-iso curve on a face at given U parameter
+    /// Evaluate points along a U-iso curve on a face at given U parameter.
+    ///
+    /// - Parameter count: Desired number of evaluations, honoured within `1...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     public func uIsoCurvePoints(u: Double, count: Int = 20) -> [SIMD3<Double>] {
+        guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)
         OCCTAdaptor3dIsoCurveEval(handle, 0, u, Int32(count), &outPoints)
-        return (0..<count).map { i in
-            SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
-        }
+        return unpackSIMD3(outPoints, count: count)
     }
 
-    /// Evaluate points along a V-iso curve on a face at given V parameter
+    /// Evaluate points along a V-iso curve on a face at given V parameter.
+    ///
+    /// - Parameter count: Desired number of evaluations, honoured within `1...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     public func vIsoCurvePoints(v: Double, count: Int = 20) -> [SIMD3<Double>] {
+        guard let count = Sampling.requested(count, atLeast: 1) else { return [] }
         var outPoints = [Double](repeating: 0, count: count * 3)
         OCCTAdaptor3dIsoCurveEval(handle, 1, v, Int32(count), &outPoints)
-        return (0..<count).map { i in
-            SIMD3(outPoints[i*3], outPoints[i*3+1], outPoints[i*3+2])
-        }
+        return unpackSIMD3(outPoints, count: count)
     }
 
     /// Extract a U-iso curve from a face as an edge
@@ -12278,9 +12300,13 @@ extension Edge {
     /// }
     /// ```
     ///
-    /// - Parameter count: Desired number of sample points; must be at least 2, else empty.
+    /// - Parameter count: Desired number of sample points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). Shares
+    ///   the contract of ``Curve3D/quasiUniformParameters(count:)``, which wraps the same
+    ///   `GCPnts_QuasiUniformAbscissa` for the standalone-curve case.
     /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
+        guard let count = Sampling.requested(count) else { return [] }
         var params = [Double](repeating: 0, count: count)
         let n = OCCTGCPntsQuasiUniform(handle, Int32(count), &params, Int32(count))
         return Array(params.prefix(Int(n)))

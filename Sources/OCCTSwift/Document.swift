@@ -8038,10 +8038,13 @@ extension Curve2D {
 extension Shape {
     /// Uniformly sample an edge by point count. Returns parameter values.
     ///
-    /// - Parameter pointCount: Desired number of samples; must be at least 2, else `nil`. OCCT's
-    ///   sampler documents that precondition but cannot enforce it in a Release kernel, and used to
-    ///   answer a request for zero with five parameters (#501).
+    /// - Parameter pointCount: Desired number of samples, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``, else `nil`. OCCT's sampler documents the lower bound but
+    ///   cannot enforce it in a Release kernel, and used to answer a request for zero with five
+    ///   parameters (#501); the upper bound is this layer's, since `pointCount` is cast to the
+    ///   bridge's `int32_t` and used to abort the process past it (#558).
     public func uniformAbscissa(pointCount: Int) -> [Double]? {
+        guard let pointCount = Sampling.requested(pointCount) else { return nil }
         let n = Int(OCCTUniformAbscissaByCount(handle, Int32(pointCount), nil))
         guard n > 0 else { return nil }
         var params = [Double](repeating: 0, count: n)
@@ -8060,8 +8063,10 @@ extension Shape {
 
     /// Uniformly sample an edge by point count within parameter range.
     ///
-    /// - Parameter pointCount: Desired number of samples; must be at least 2, else `nil` (#501).
+    /// - Parameter pointCount: Desired number of samples, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``, else `nil` (#501, #558).
     public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]? {
+        guard let pointCount = Sampling.requested(pointCount) else { return nil }
         let n = Int(OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, nil))
         guard n > 0 else { return nil }
         var params = [Double](repeating: 0, count: n)
@@ -8465,10 +8470,14 @@ extension QuadricIntersection {
     }
 
     /// Sample points along a cone-sphere intersection curve.
+    ///
+    /// - Parameter sampleCount: Desired number of samples, honoured within `1...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558).
     public static func coneSpherePoints(semiAngle: Double, refRadius: Double,
                                          sphereCenter: SIMD3<Double>, sphereRadius: Double,
                                          tolerance: Double = 1e-6,
                                          curveIndex: Int, sampleCount: Int) -> [SIMD3<Double>] {
+        guard let sampleCount = Sampling.requested(sampleCount, atLeast: 1) else { return [] }
         var xs = [Double](repeating: 0, count: sampleCount)
         var ys = [Double](repeating: 0, count: sampleCount)
         var zs = [Double](repeating: 0, count: sampleCount)

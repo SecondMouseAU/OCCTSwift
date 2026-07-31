@@ -1182,13 +1182,16 @@ extension Wire {
     ///
     /// - Parameters:
     ///   - index: 0-based edge index in traversal order
-    ///   - maxPoints: Maximum points to return (default: all points)
+    ///   - maxPoints: Output *capacity* (default: all points), honoured within `1...`
+    ///     ``Sampling/maximumSampleCount``; outside that range the result is nil (#558). This one
+    ///     keeps its existing lower bound of 1 rather than clamping to 0, since 0 already meant
+    ///     nil here.
     /// - Returns: Array of 3D points along the edge, or nil if index is out of range
     public func orderedEdgePoints(at index: Int, maxPoints: Int? = nil) -> [SIMD3<Double>]? {
         guard index >= 0 else { return nil }
         let limit: Int
         if let maxPoints {
-            guard maxPoints > 0 else { return nil }
+            guard maxPoints > 0, maxPoints <= Sampling.maximumSampleCount else { return nil }
             limit = maxPoints
         } else {
             let count = orderedEdgePointCount(at: index)

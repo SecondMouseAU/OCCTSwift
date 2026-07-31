@@ -532,13 +532,20 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Draw (Discretization for Metal)
 
-    /// Adaptive discretization using angular and chordal deflection criteria
+    /// Adaptive discretization using angular and chordal deflection criteria.
+    ///
+    /// - Parameter maxPoints: Output *capacity*, clamped into `0...`
+    ///   ``Sampling/maximumSampleCount`` (#558). The deflection criteria decide the actual point
+    ///   count; `maxPoints` only truncates, so clamping an unservable capacity returns the same
+    ///   points rather than a coarser sampling. A capacity of 0 or less returns empty.
     public func drawAdaptive(angularDeflection: Double = 0.1,
                              chordalDeflection: Double = 0.01,
                              maxPoints: Int = 4096) -> [SIMD3<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 3)
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 3)
         let n = Int(OCCTCurve3DDrawAdaptive(handle, angularDeflection, chordalDeflection,
-                                             &buffer, Int32(maxPoints)))
+                                             &buffer, Int32(capacity)))
         return unpackSIMD3(buffer, count: n)
     }
 
@@ -552,19 +559,29 @@ public final class Curve3D: @unchecked Sendable {
     /// // pts[5] ≈ SIMD3(5, 0, 0)
     /// ```
     ///
-    /// - Parameter pointCount: Desired number of output points; must be at least 2, else empty.
+    /// - Parameter pointCount: Desired number of output points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. This is a
+    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser
+    ///   than what was asked for (#558). Before that bound the documented "at least 2, else
+    ///   empty" was only true of counts down to 0: a negative aborted the process.
     /// - Returns: Array of 3D points, never more than `pointCount` of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD3<Double>] {
+        guard let pointCount = Sampling.requested(pointCount) else { return [] }
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let n = Int(OCCTCurve3DDrawUniform(handle, Int32(pointCount), &buffer))
         return unpackSIMD3(buffer, count: n)
     }
 
-    /// Chordal deflection discretization
+    /// Chordal deflection discretization.
+    ///
+    /// - Parameter maxPoints: Output *capacity*, clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
     public func drawDeflection(deflection: Double = 0.01,
                                maxPoints: Int = 4096) -> [SIMD3<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 3)
-        let n = Int(OCCTCurve3DDrawDeflection(handle, deflection, &buffer, Int32(maxPoints)))
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 3)
+        let n = Int(OCCTCurve3DDrawDeflection(handle, deflection, &buffer, Int32(capacity)))
         return unpackSIMD3(buffer, count: n)
     }
 
@@ -791,11 +808,15 @@ extension Curve3D {
     /// }
     /// ```
     ///
-    /// - Parameter count: Desired number of sample points. Must be at least 2. OCCT's samplers
-    ///   document that precondition but cannot enforce it in a Release kernel, and below 2 they
-    ///   misbehave rather than fail, so anything smaller returns an empty array here.
+    /// - Parameter count: Desired number of sample points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. OCCT's samplers
+    ///   document the lower bound but cannot enforce it in a Release kernel, and below 2 they
+    ///   misbehave rather than fail; the upper bound is this layer's, since `count` sizes a Swift
+    ///   allocation and is cast to the bridge's `int32_t`, and both ends used to abort the
+    ///   process (#558).
     /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
     public func quasiUniformParameters(count: Int) -> [Double] {
+        guard let count = Sampling.requested(count) else { return [] }
         var params = [Double](repeating: 0, count: count)
         let n = Int(OCCTCurve3DQuasiUniformAbscissa(handle, Int32(count), &params))
         return Array(params.prefix(n))
@@ -809,14 +830,15 @@ extension Curve3D {
     ///
     /// - Parameters:
     ///   - deflection: Maximum allowed chord deviation
-    ///   - maxPoints: Maximum number of points to return
+    ///   - maxPoints: Output *capacity*, clamped into `0`...``Sampling/maximumSampleCount``;
+    ///     0 or less returns empty (#558). The deflection decides the actual point count.
     /// - Returns: Array of 3D points, or empty array on failure
     public func quasiUniformDeflectionPoints(deflection: Double, maxPoints: Int = 500) -> [SIMD3<Double>] {
-        var xyz = [Double](repeating: 0, count: maxPoints * 3)
-        let n = Int(OCCTCurve3DQuasiUniformDeflection(handle, deflection, &xyz, Int32(maxPoints)))
-        return (0..<n).map { i in
-            SIMD3<Double>(xyz[i*3], xyz[i*3+1], xyz[i*3+2])
-        }
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var xyz = [Double](repeating: 0, count: capacity * 3)
+        let n = Int(OCCTCurve3DQuasiUniformDeflection(handle, deflection, &xyz, Int32(capacity)))
+        return unpackSIMD3(xyz, count: n)
     }
 
     // MARK: - BSpline Knot Splitting (v0.40.0)
@@ -1053,11 +1075,14 @@ extension Curve3D {
     /// - Parameters:
     ///   - first: Start parameter
     ///   - last: End parameter
-    ///   - maxPoints: Maximum number of points to return (default: 1000)
+    ///   - maxPoints: Output *capacity* (default: 1000), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
     /// - Returns: Array of 3D sample points
     public func samplePoints(first: Double, last: Double, maxPoints: Int = 1000) -> [SIMD3<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 3)
-        let count = OCCTCurve3DGetSamplePoints3D(handle, first, last, &buffer, Int32(maxPoints))
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 3)
+        let count = OCCTCurve3DGetSamplePoints3D(handle, first, last, &buffer, Int32(capacity))
         return unpackSIMD3(buffer, count: Int(count))
     }
 

@@ -54,21 +54,19 @@ extension ArcLengthCurveAdaptor {
         return tangent(atParameter: u)
     }
 
-    /// The largest sample count either adaptor will produce: 10 million points.
+    /// The largest sample count either adaptor will produce: ``Sampling/maximumSampleCount``.
     ///
     /// Both ``points(count:)`` and ``points(spacing:)`` return an empty array rather than
-    /// attempting a larger request. The number is a ceiling on the *allocation*, not on what is
-    /// useful: one sample costs 24 bytes in the bridge's packed buffer plus 32 in the returned
-    /// array, so the ceiling itself is already about 625 MB resident and, measured on a two-edge
-    /// wire, about 45 seconds of sampling. It is also two orders of magnitude below the `int32_t`
-    /// the bridge takes its count in.
+    /// attempting a larger request. Declared here by #479 for these two types and now shared with
+    /// the other 26 sampling entry points that had the same defect (#558); this stays as the
+    /// spelling the adaptors' own documentation uses.
     ///
     /// ```swift
     /// let wc = WireCurve(wire)!
     /// wc.points(spacing: 1e-9).isEmpty      // true: implies 1e11 points, past the ceiling
     /// wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty   // true
     /// ```
-    public static var maximumSampleCount: Int { 10_000_000 }
+    public static var maximumSampleCount: Int { Sampling.maximumSampleCount }
 
     /// Points spaced approximately `spacing` apart along the curve (by arc length). The exact
     /// step is adjusted so the samples divide the curve evenly end-to-end.
@@ -111,7 +109,7 @@ extension ArcLengthCurveAdaptor {
         count: Int,
         _ sample: (Int32, UnsafeMutablePointer<Double>) -> Int32
     ) -> [SIMD3<Double>] {
-        guard count >= 2, count <= Self.maximumSampleCount else { return [] }
+        guard let count = Sampling.requested(count) else { return [] }
         var buffer = [Double](repeating: 0, count: count * 3)
         let written = Int(sample(Int32(count), &buffer))
         return unpackSIMD3(buffer, count: written)

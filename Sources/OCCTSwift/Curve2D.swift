@@ -234,14 +234,19 @@ public final class Curve2D: @unchecked Sendable {
     /// - Parameters:
     ///   - angularDeflection: Maximum angular deflection in radians (default 0.1)
     ///   - chordalDeflection: Maximum chordal deflection (default 0.01)
-    ///   - maxPoints: Maximum number of output points (default 4096)
+    ///   - maxPoints: Output *capacity* (default 4096), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#558). The deflection
+    ///     criteria decide the actual point count, so clamping an unservable capacity returns the
+    ///     same points rather than a coarser sampling.
     /// - Returns: Array of 2D points approximating the curve
     public func drawAdaptive(angularDeflection: Double = 0.1,
                              chordalDeflection: Double = 0.01,
                              maxPoints: Int = 4096) -> [SIMD2<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 2)
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 2)
         let n = Int(OCCTCurve2DDrawAdaptive(handle, angularDeflection, chordalDeflection,
-                                            &buffer, Int32(maxPoints)))
+                                            &buffer, Int32(capacity)))
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
@@ -255,19 +260,29 @@ public final class Curve2D: @unchecked Sendable {
     /// // pts[5] ≈ SIMD2(5, 0)
     /// ```
     ///
-    /// - Parameter pointCount: Desired number of output points; must be at least 2, else empty.
+    /// - Parameter pointCount: Desired number of output points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty. This is a
+    ///   *request*, so a count past the ceiling fails visibly rather than coming back coarser
+    ///   than what was asked for (#558). Before that bound the documented "at least 2, else
+    ///   empty" was only true of counts down to 0: a negative aborted the process.
     /// - Returns: Array of 2D points, never more than `pointCount` of them, or empty on failure
     public func drawUniform(pointCount: Int) -> [SIMD2<Double>] {
+        guard let pointCount = Sampling.requested(pointCount) else { return [] }
         var buffer = [Double](repeating: 0, count: pointCount * 2)
         let n = Int(OCCTCurve2DDrawUniform(handle, Int32(pointCount), &buffer))
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 
     /// Discretize the curve with a maximum chordal deflection.
+    ///
+    /// - Parameter maxPoints: Output *capacity* (default 4096), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#558).
     public func drawDeflection(deflection: Double = 0.01,
                                maxPoints: Int = 4096) -> [SIMD2<Double>] {
-        var buffer = [Double](repeating: 0, count: maxPoints * 2)
-        let n = Int(OCCTCurve2DDrawDeflection(handle, deflection, &buffer, Int32(maxPoints)))
+        let capacity = Sampling.capacity(maxPoints)
+        guard capacity > 0 else { return [] }
+        var buffer = [Double](repeating: 0, count: capacity * 2)
+        let n = Int(OCCTCurve2DDrawDeflection(handle, deflection, &buffer, Int32(capacity)))
         return (0..<n).map { SIMD2(buffer[$0 * 2], buffer[$0 * 2 + 1]) }
     }
 

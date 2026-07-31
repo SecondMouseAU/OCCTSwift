@@ -463,7 +463,7 @@ public func points(count: Int? = nil) -> [SIMD3<Double>]
 
 When `count` is `nil`, automatically computes a point count at approximately 0.5 model-unit spacing (`max(2, Int(length / 0.5) + 1)`). Points are evenly spaced in the OCCT parameter domain (not arc-length).
 
-- **Parameters:** `count` — number of points to generate; `nil` = automatic.
+- **Parameters:** `count` — number of points to generate; `nil` = automatic (~0.5 mm spacing). A *request*: honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is empty (#558). The automatic default is bounded the same way, since a long enough edge implies more points at 0.5 mm than the ceiling can serve.
 - **Returns:** Array of 3D points; empty on failure or for degenerate edges.
 - **OCCT:** `BRepAdaptor_Curve::Value` — samples at uniformly-spaced parameter values.
 - **Example:**

@@ -180,12 +180,25 @@ public final class Edge: @unchecked Sendable {
     // MARK: - Sampling
 
     /// Get points along the edge curve
-    /// - Parameter count: Number of points to generate (default: automatic based on length)
+    /// - Parameter count: Number of points to generate (default: automatic based on length),
+    ///   honoured within `2`...``Sampling/maximumSampleCount``; outside that range the result
+    ///   is empty (#558). The automatic default is bounded too: a long enough edge implies more
+    ///   points at 0.5mm spacing than the ceiling can serve.
     /// - Returns: Array of 3D points along the edge
     public func points(count: Int? = nil) -> [SIMD3<Double>] {
-        let pointCount = count ?? max(2, Int(length / 0.5) + 1)  // ~0.5mm spacing default
-        guard pointCount >= 2 else { return [] }
-        
+        let requested: Int
+        if let count {
+            requested = count
+        } else {
+            // ~0.5mm spacing default. Derive in Double: `Int(_:)` on a Double past Int.max is a
+            // trap rather than an error, and `length` is geometry-supplied, so the implied count
+            // is not bounded a priori (#558). A NaN length fails this guard too.
+            let implied = (length / 0.5).rounded(.down) + 1
+            guard implied <= Double(Sampling.maximumSampleCount) else { return [] }
+            requested = max(2, Int(implied))
+        }
+        guard let pointCount = Sampling.requested(requested) else { return [] }
+
         var buffer = [Double](repeating: 0, count: pointCount * 3)
         let actualCount = OCCTEdgeGetPoints(handle, Int32(pointCount), &buffer)
         
