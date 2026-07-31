@@ -17,6 +17,48 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The cross-reference index stops naming 135 symbols that never existed (#510)
+
+`OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge
+symbols that wrap it. It is the map you use to find every call site of a class, and 135 of its
+symbol references named nothing at all — so a re-audit by symbol name returned zero hits and read as
+"no call sites, nothing to check". That is not hypothetical: it is how #484's fourth, still-unpatched
+`ShapeFix_Face` call site was missed. Every one is now rewritten against a measured census of which
+bridge functions actually reference the class, or removed where no wrap exists:
+
+| shape of the staleness | example | resolution |
+|---|---|---|
+| renamed symbol | `BRepFeat_Builder → OCCTBRepFeatFuse/Cut` | `OCCTBRepFeatBuilderFuse`, `OCCTBRepFeatBuilderCut` |
+| wrong prefix convention | `XCAFDoc_ShapeTool → OCCTXCAFShape*` | the `OCCTDocument*` assembly surface — 66 call sites, and no `OCCTXCAFShape*` symbol has ever existed |
+| named one of many | `GeomLProp_CLProps → OCCTGeomLPropCurve` | `OCCTGeomLPropCLProps` plus the ten curvature/tangent/normal functions that share the class |
+| aspirational | `ShapeFix_Shell → OCCTShapeFixShell` | entry removed; the gap is recorded in [`docs/occtswift-wrapping-gaps.md`](occtswift-wrapping-gaps.md) |
+
+`ShapeFix_Shell` was the only entry with no wrap behind it. `TDataStd_NamedData → OCCTLabelNamedData*`
+looked identical — no such symbol, no obvious neighbour — but is wrapped, as `OCCTDocumentNamedData*`,
+through two lowercase static helpers. A census that only attributes a class to the enclosing
+`OCCT`-prefixed function cannot see that, so "no call site found" is a prompt to grep by hand, not a
+verdict.
+
+**The checker that was supposed to prevent this could only see 129 of the 135.** `check-bridge-index.py`
+split each entry on commas and slashes and required every piece to be a bare symbol. Anything else was
+skipped without a word: continuation lines of a wrapped entry, headings naming several classes at once
+(`RWObj_CafReader/Writer`), and any name carrying an annotation (`OCCTShapeFill* (Shape.fill)`). It now
+checks every `OCCT`-prefixed name anywhere in an entry, which raised what it actually inspects from 454
+symbols to 660 and turned up the remaining six — including
+`TDataStd_Integer/Real/AsciiString → OCCTLabel{Set,Get}Integer/Real/AsciiString` and
+`TDataStd_IntegerArray/RealArray → OCCTLabel*Array*`, naming an `OCCTLabel*` family that does not exist
+anywhere in the bridge, and `XCAFDoc_ColorTool → OCCTXCAFShape*Color*`, a second sighting of the
+`OCCTXCAFShape*` prefix that has never named anything. `--self-test` injects a fabricated name in each
+of the five shapes an entry can take and asserts it is reported; the parser this replaces catches one of
+the five and calls the other four clean. The sixth is #508's `GC_MakeLine2d → OCCTGCE2dMakeLine*`, whose
+real wrappers (`OCCTCurve2DMakeLineThroughPoints`, `OCCTCurve2DMakeLineParallel`) were already two lines
+away in the same file.
+
+A second defect class remains, filed as #565: the checker verifies that a named symbol *exists*,
+not that it wraps the class the entry files it under. A mis-attributed entry that happens to name a real
+symbol from a neighbouring class is still invisible, and it misleads exactly the way a fabricated one
+does.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
