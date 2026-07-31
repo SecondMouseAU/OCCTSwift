@@ -4670,7 +4670,7 @@ void OCCTSurfaceBounds(OCCTSurfaceRef surface,
                         double* uMin, double* uMax,
                         double* vMin, double* vMax) {
     *uMin = 0; *uMax = 0; *vMin = 0; *vMax = 0;
-    if (!surface) return;
+    if (!surface || surface->surface.IsNull()) return;   // #478
     try {
         surface->surface->Bounds(*uMin, *uMax, *vMin, *vMax);
     } catch (...) {}
@@ -4682,7 +4682,7 @@ int32_t OCCTSurfaceContinuity(OCCTSurfaceRef surface) {
 }
 
 OCCTSurfaceRef OCCTSurfaceCopy(OCCTSurfaceRef surface) {
-    if (!surface) return nullptr;
+    if (!surface || surface->surface.IsNull()) return nullptr;   // #478
     try {
         Handle(Geom_Surface) copy = Handle(Geom_Surface)::DownCast(surface->surface->Copy());
         if (copy.IsNull()) return nullptr;
@@ -5483,7 +5483,7 @@ bool OCCTSurfaceBSplineSetPoleRow(OCCTSurfaceRef surface,
 // --- Surface queries ---
 
 double OCCTSurfaceUPeriod(OCCTSurfaceRef surface) {
-    if (!surface) return 0.0;
+    if (!surface || surface->surface.IsNull()) return 0.0;   // #478
     try {
         if (!surface->surface->IsUPeriodic()) return 0.0;
         return surface->surface->UPeriod();
@@ -5491,7 +5491,7 @@ double OCCTSurfaceUPeriod(OCCTSurfaceRef surface) {
 }
 
 double OCCTSurfaceVPeriod(OCCTSurfaceRef surface) {
-    if (!surface) return 0.0;
+    if (!surface || surface->surface.IsNull()) return 0.0;   // #478
     try {
         if (!surface->surface->IsVPeriodic()) return 0.0;
         return surface->surface->VPeriod();
