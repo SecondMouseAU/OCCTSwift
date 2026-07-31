@@ -5368,6 +5368,7 @@ double OCCTExtremaPCMinDistance(OCCTCurve3DRef curve,
 //   * InterpolatePoint()/kink markers are no-ops (PointsToBSpline has no per-point exact
 //     interpolation or C0-break control). The approximation still passes near the points.
 //   * MaxError() is computed by projecting the input points back onto the fitted curve.
+//   * PerformOptimal() is identical to Perform(); maxIter is ignored (no iterative mode).
 //   * The Gauss-solver / parametrization / closed-curve tuning setters are no-ops; the
 //     convergence and projection tolerance setters drive the 3D fit tolerance.
 struct OCCTBSplineApproxInterp {

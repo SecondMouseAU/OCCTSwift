@@ -66,6 +66,45 @@ pre-bounded adaptor deliberately, documented as range-checked, so the 2D and 3D 
 call now differ on a reversed range (#549). Both are #408/#409 contract questions rather than
 duplication, so they are filed rather than folded in here.
 
+#### The PointsToBSpline index entry, and the controls it hid that do nothing (#507)
+
+`OCCTBridge.h`'s cross-reference index credited `GeomAPI_PointsToBSpline` to a single function,
+`OCCTCurve3DFit`, which does not exist anywhere in the repo. A census of what actually constructs
+that class found five call sites, not one: `OCCTCurve3DFitPoints` (the real name behind the index
+entry), `OCCTPointsToBSplineWithParams`, `OCCTPointsToBSplineWithParameters`, the 14-function
+`OCCTBSplineApproxInterp*` family, and `OCCTWireCreateBSpline`, which the issue's own site list did
+not have either. All five are now indexed.
+
+Two neighbouring entries were wrong in the same way and are corrected with them.
+`GeomAPI_PointsToBSplineSurface` credited `OCCTSurfacePlateThrough`, which does not use that class
+at all (it is `GeomPlate_BuildPlateSurface` plus `GeomPlate_MakeApprox`, and is now indexed there
+instead), and omitted `OCCTPointsToSurfaceBSpline` and four of the five `OCCTSurfaceNLPlate*`
+functions. `Geom2dAPI_PointsToBSpline` had no index entry at all despite backing three functions.
+The `GeomAPI_PointsToBSpline expansion` section header covered four functions across three
+different OCCT classes; it now names all three.
+
+The larger find was behind the mis-attribution. `Approx_BSplineApproxInterp` was removed in OCCT
+8.0.0p1 and its 14-function bridge family was reimplemented on `GeomAPI_PointsToBSpline`, but the
+header, the Swift wrapper and `docs/reference/GeometrySolvers.md` still documented the removed
+solver's controls as live. Five of them do nothing: `interpolatePoint(_:withKink:)`,
+`setParametrizationAlpha(_:)`, `setMinPivot(_:)`, `setClosedTolerance(_:)` and
+`setKnotInsertionTolerance(_:)`. `performOptimal(maxIterations:)` is `perform()` with the iteration
+count discarded. `nbControlPoints` and `continuousIfClosed` are advisory. `setConvergenceTolerance`
+and `setProjectionTolerance` are one shared tolerance, not two knobs, and the projection one can
+only tighten it. The reference page also attributed `maxError` to `GeomAPI_PointsToBSpline::MaxError`,
+a method that class does not have: the bridge computes it by projecting each input point back onto
+the fitted curve with `GeomAPI_ProjectPointOnCurve`.
+
+Every one of those claims is now a test. The existing four tests asserted only `isDone`, which is
+why the drift went unnoticed, so `BSplineApproxInterpContractTests` pins each contract by comparing
+densely sampled fits for exact agreement, with a control test proving the comparison does register
+a real change when the fit tolerance moves. Checked against a deliberate reimplementation of
+`SetAlpha` on `Approx_ParametrizationType`: the no-op test fails and the other six stay green. The
+deviation that injection produced was 2.2e-14, so exact equality rather than a tolerance is what
+catches it.
+
+No behaviour changed.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each
