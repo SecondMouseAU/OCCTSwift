@@ -192,18 +192,17 @@ struct Issue491SurfaceApproxParityTests {
         }
     }
 
-    /// `.c0` requests are excluded: `GeomConvert_ApproxSurface` at `GeomAbs_C0` can collapse a
-    /// direction to degree 1 and still report a `maxError` five orders of magnitude below the
-    /// surface it returns (a full sphere at C0 comes back as a straight line across its own
-    /// longitude, deviating by 19.9999, reported as 1.07e-4 with `isDone` true). That is an
-    /// upstream defect, tracked as #522 — it predates #491, both entry points hit it identically,
-    /// and unifying them neither causes nor fixes it. C0 stays in the *parity* requests above,
-    /// because both entry points must still return the same surface for the same request; only
-    /// this "the reported error describes the returned surface" property fails there. Drop the
-    /// exclusion when #522 is fixed.
+    /// `.c0` requests used to be excluded here: `GeomConvert_ApproxSurface` at `GeomAbs_C0` could
+    /// collapse a direction to degree 1 and still report a `maxError` five orders of magnitude
+    /// below the surface it returned (a full sphere at C0 came back as a straight line across its
+    /// own longitude, deviating by 19.9999, reported as 1.07e-4 with `isDone` true). That was an
+    /// upstream defect, #522 — it predated #491, both entry points hit it identically, and unifying
+    /// them neither caused nor fixed it. Fixed in kernel patch `0019`: `mma2ce1_` wrote the U
+    /// Jacobi maxima to the V workspace slot, leaving the U ones zero, which made every U
+    /// truncation error evaluate to 0. The exclusion is gone and every request is checked.
     @Test("maxError describes the surface both entry points return")
     func maxErrorDescribesTheSharedFit() {
-        for request in requests() where request.continuity != .c0 {
+        for request in requests() {
             let detailed = request.surface.approxWithDetails(tolerance: request.tolerance,
                                                             uContinuity: request.continuity,
                                                             vContinuity: request.continuity,

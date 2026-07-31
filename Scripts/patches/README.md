@@ -428,3 +428,30 @@ No public API signature changes.
 See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522.patch
+
+**Fixes the upstream OCCT defect behind [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522)**, found while building [#491](https://github.com/SecondMouseAU/OCCTSwift/issues/491)'s surface-approximation parity tests: `GeomConvert_ApproxSurface` asked for `GeomAbs_C0` returned a surface nowhere near its input while reporting `IsDone()` and a `MaxError()` five orders of magnitude too small.
+
+`AdvApp2Var_ApproxF2var::mma2ce1_` requests one scratch allocation and partitions it into seven consecutive buffers, of which `ipt4` holds `XMAXJU` (the maxima of the U Jacobi polynomials) and `ipt5` holds `XMAXJV` (the V ones). Both `mma2jmx_` calls that fill them target `ipt5`:
+
+```c
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
+AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+```
+
+So `XMAXJU` is never written. `mma2ce2_` still reads it at `ipt4`, where the allocation left whatever was there — in practice zeros — and passes it to `mma2er1_`/`mma2er2_`, whose entire error model is `|PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))`. A zero `XMAXJU` zeroes every term, with two silent consequences: (1) the interior approximation error of a patch is reported as exactly 0 whatever the discarded coefficients are, so `mma2ce2_`'s tolerance test can never fire on it and `MaxError()` only ever reflects the boundary-iso errors `AdvApp2Var_Patch::AddErrors` adds afterwards; (2) `mma2er2_`, asked for the lowest degree whose truncation error still fits the tolerance, always answers `NDMINU`, the floor derived from the constraint order and the neighbouring isos, because every candidate scores 0.
+
+Where that floor is low the fit collapses onto it. C0 gives `IORDRU = 0`, and a full sphere's V-boundary isos degenerate to its two poles, one coefficient each, so `NDMINU` is 1: a radius-10 sphere at tolerance 1e-3 came back as a degree-1, 2-pole-in-U B-spline — a straight line across the full `2*pi` of longitude, deviating by the sphere's own diameter of 20 — reporting `MaxError()` 1.07e-4. A bicubic Bezier at C0/C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7, because the requested tolerance was compared against a number that was always zero. C1 and C2 hid the collapse (their floor is already high) but not the misreported error.
+
+The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles and the `ipt5` slot is sized for the `ndjacv` equivalent, so a request with `MaxDegU` well above `MaxDegV` runs past `XMAXJV` into the `VECERR` slot behind it. Benign in practice — `VECERR` is re-zeroed on entry to `mma2ce2_` and the run stays inside the single allocation — but out of bounds for the buffer it was given.
+
+**Fix:** target `ipt4` from the U call. One character; the two lines then read symmetrically. `AdvApp2Var_Context`'s own two `mma2jmx_` calls (the only others in the tree) already write to separate per-direction arrays and were correct.
+
+**Validation** (fast path first, then the real binary — see the `#0001` entry above for the override-link technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): dumping `&wrkar_off[ipt4]` shows `xmaxju[8] = 0 0 0 0 0 0 0 0` on stock and `0.9682 0.986 1.078 1.173 1.265 1.352 1.434 1.513` after. Across a 98-case sweep (7 surface families x all 9 `(uCont, vCont)` combinations of C0/C1/C2, plus C0/C0 at five tolerances) the results whose real deviation exceeds the reported `MaxError` by more than 10x go from **12 to 0**, and those that exceed it at all from 17 to 1 — the survivor being a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Reported errors rise slightly everywhere, which is the interior contribution being counted for the first time. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction line for line. Full `swift test` (4842 tests / 1346 suites) clean.
+
+`GeomConvert_ApproxSurface` is not a leaf — `BRepFill_Sweep`, `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeCustom_ConvertToBSpline`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` all call it, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and two healing paths reach C0 deliberately, `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both looping the requested continuity down to 0 on failure and then accepting the result on `MaxError() <= tol`.
+
+See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup.
+
+**Retire** once the bundled OCCT includes this fix.

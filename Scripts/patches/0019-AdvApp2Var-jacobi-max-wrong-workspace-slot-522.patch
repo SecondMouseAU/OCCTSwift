@@ -1,0 +1,69 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - write the U Jacobi maxima to the U workspace
+ slot in mma2ce1_
+
+mma2ce1_ partitions one scratch allocation into seven consecutive buffers, of
+which ipt4 holds XMAXJU (the maxima of the U Jacobi polynomials) and ipt5 holds
+XMAXJV (the V ones). Both mma2jmx_ calls that fill them target ipt5:
+
+    mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);   /* -> should be ipt4 */
+    mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+
+So XMAXJU is never written. mma2ce2_ still reads it at ipt4, where the
+allocation left whatever was there -- in practice zeros -- and passes it to
+mma2er1_/mma2er2_, whose entire error model is
+
+    error += |PATJAC(i,j)| * XMAXJU(i - 2*(IORDRU+1)) * XMAXJV(j - 2*(IORDRV+1))
+
+A zero XMAXJU makes every term zero. Two consequences, both silent:
+
+1. The approximation error of a patch is reported as exactly 0 no matter what
+   the discarded Jacobi coefficients are, so the tolerance test in mma2ce2_
+   ("if (errmax[nd] > epsapr[nd])") can never fail on the patch interior.
+   AdvApp2Var_ApproxAFunc2Var::MaxError then reflects only the boundary-iso
+   errors AdvApp2Var_Patch::AddErrors adds afterwards.
+
+2. mma2er2_, asked for the lowest degree whose truncation error still fits the
+   tolerance, always answers NDMINU -- the floor derived from the constraint
+   order and the neighbouring isos -- because every candidate scores 0. Where
+   that floor is low the fit collapses to it and the caller is handed a surface
+   nowhere near its input, with IsDone() true.
+
+GeomConvert_ApproxSurface at GeomAbs_C0 is where both surface. C0 gives
+IORDRU = 0, and a full sphere's V-boundary isos degenerate to its two poles, one
+coefficient each, so NDMINU is 1: approximating a radius-10 sphere at tolerance
+1e-3 returns a degree-1, 2-pole-in-U B-spline -- a straight line across the full
+2*pi of longitude, deviating by the sphere's own diameter of 20 -- while
+reporting MaxError() = 1.07e-4. A bicubic Bezier at C0/C0 collapses to a 2x2
+bilinear patch reporting 4.08e-15, unchanged from tolerance 1e-1 down to 1e-7,
+because the requested tolerance is compared against a number that is always
+zero. C1 and C2 hide the collapse (their NDMINU floor is already high) but not
+the misreported error.
+
+The write also overruns: mma2jmx_ writes ndjacu + 1 - 2*(IORDRU+1) doubles, and
+the ipt5 slot is sized for the ndjacv equivalent, so a request with MaxDegU well
+above MaxDegV runs past XMAXJV into the VECERR slot behind it. That one is
+benign in practice -- VECERR is re-zeroed on entry to mma2ce2_, and the whole
+run stays inside the single allocation -- but it is out of bounds for the
+buffer it was given.
+
+Fixing the target restores both properties. Across a 98-case sweep (7 surface
+families x 9 (u,v) continuity combinations, plus C0/C0 at five tolerances) the
+number of results whose real deviation exceeds the reported MaxError goes from
+17 to 1 -- and that one is a Bezier reproduced exactly, off by 0.2% at 1e-14.
+The 12 that exceeded it by more than 10x go to 0. Reported errors rise slightly
+everywhere, which is the interior contribution being counted for the first time.
+
+diff --git a/src/ModelingData/TKGeomBase/AdvApp2Var/AdvApp2Var_ApproxF2var.cxx b/src/ModelingData/TKGeomBase/AdvApp2Var/AdvApp2Var_ApproxF2var.cxx
+index 885a9a16..563c8ba9 100644
+--- a/src/ModelingData/TKGeomBase/AdvApp2Var/AdvApp2Var_ApproxF2var.cxx
++++ b/src/ModelingData/TKGeomBase/AdvApp2Var/AdvApp2Var_ApproxF2var.cxx
+@@ -3949,7 +3949,7 @@ int AdvApp2Var_ApproxF2var::mma2ce1_(int*    numdec,
+   /* ------------------- Return max polynoms of  Jacobi ------------
+    */
+
+-  AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]);
++  AdvApp2Var_ApproxF2var::mma2jmx_(ndjacu, iordru, &wrkar_off[ipt4]);
+   AdvApp2Var_ApproxF2var::mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+
+   /* ------ Calculate the coefficients and their contribution to the error ----

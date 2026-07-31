@@ -1601,7 +1601,7 @@ the truncation broke.
 ### `OCCT.xcframework` rebuilt: the #484 null-context guard is now in the kernel binary (#512)
 
 A carried patch does nothing until the xcframework is rebuilt from source, so `0017` above was inert
-on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **18** carried patches:
+on merge. The kernel is now rebuilt from `V8_0_0_p1` + all **19** carried patches:
 `ShapeFix_ComposeShell::Perform()`, `ShapeFix_ComposeShell::SplitEdges()` and
 `ShapeUpgrade_WireDivide::Perform()` no longer SIGSEGV when the caller never set a
 `ShapeBuild_ReShape` context.
@@ -1627,8 +1627,8 @@ URL still gets the previously released kernel, while this checkout and every sib
 path-depending on its `Libraries/OCCT.xcframework` get the new one. `docs/guides/building-occt.md`
 gained a "Shipping a rebuild" section covering that sequence, which until now existed only as
 hand-written checklists in issues. Patch `0016` (#374) also gained the
-`Scripts/patches/README.md` entry it never got. The rebuild carries `0018` (#555) as well, added
-after this entry was first written.
+`Scripts/patches/README.md` entry it never got. The rebuild carries `0018` (#555) and `0019` (#522)
+as well, both added after this entry was first written.
 
 ### `Storage_Schema`'s scratch state becomes a member instead of a guarded global (#518)
 
@@ -1697,6 +1697,52 @@ parameter still exactly the end on the changed ones. Reproducers, including the 
 built without `-DNo_Exception` measures a kernel nobody ships:
 [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract).
 Filed upstream as [OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417).
+
+### Surface approximation at C0 stops collapsing, and its reported error starts being true (#522)
+
+New carried patch `0019`, behind `Surface.approximated(tolerance:continuity:)` and
+`Surface.approxWithDetails(tolerance:uContinuity:vContinuity:)` — and behind a good deal of the OCCT
+kernel besides.
+
+A radius-10 sphere approximated at C0 and tolerance 1e-3 came back as a **degree-1, 2-pole-in-U
+B-spline**: a straight line across the full `2*pi` of its longitude, deviating by the sphere's own
+diameter of 20, while `isDone` said the tolerance was met and `maxError` said 1.07e-4. A bicubic
+Bezier at C0 collapsed to a 2x2 bilinear patch reporting 4.08e-15 at every tolerance from 1e-1 down
+to 1e-7 — tightening the request changed nothing.
+
+One line in `AdvApp2Var_ApproxF2var::mma2ce1_` explains both. It partitions a single scratch
+allocation into seven buffers, `ipt4` for `XMAXJU` (the maxima of the U Jacobi polynomials) and
+`ipt5` for `XMAXJV`, then fills **both from `ipt5`**, leaving `XMAXJU` unwritten and in practice
+zero. Every truncation error the approximator computes is
+`|coefficient| * XMAXJU(i) * XMAXJV(j)`, so a zero `XMAXJU` makes the interior error of every patch
+evaluate to exactly 0. From there: the tolerance test can never fire on the interior, `maxError`
+only ever describes the boundary iso-curves, and the degree-reduction search — asked for the lowest
+degree whose truncation error still fits — always answers with its floor, because every candidate
+scores 0. C0 is where that floor is low (a full sphere's V-boundary isos are its two poles, one
+coefficient each), which is why C0 collapsed and C1/C2 did not. The misreported error was never
+specific to C0.
+
+Across a 98-case sweep (7 surface families x all 9 (uContinuity, vContinuity) combinations of
+C0/C1/C2, plus C0/C0 at five tolerances), results whose real deviation exceeds the reported
+`maxError` by more than 10x go from **12 to 0**, and those exceeding it at all from 17 to 1 — the
+survivor a Bezier reproduced exactly, reporting 9.95221e-15 against a measured 9.96978e-15. Every
+reported error rises slightly, which is the interior contribution being counted for the first time.
+Degrees rise only where the collapse was happening: a cylinder trimmed in V still fits at degree 1 in
+V, because it *is* linear there.
+
+`GeomConvert_ApproxSurface` is not a leaf. `BRepFill_Sweep`, `GeomFill_Sweep`, `BRepOffset_Offset`,
+`GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeCustom_ConvertToBSpline`, `ShapeConstruct`,
+`ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` all call it, and `GeomPlate_MakeApprox` drives the
+same approximator directly. Most request C1 or C2, so the collapse could not reach them, but the
+always-zero interior error could — and two healing paths reach C0 on purpose:
+`ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the
+requested continuity down to 0 on failure, then accept the result on `MaxError() <= tol`.
+
+`Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift`'s `maxErrorDescribesTheSharedFit`
+had to exclude `.c0` requests when it was written, because "sampled deviation <= reported maxError"
+failed there on OCCT's own numbers. That exclusion is gone. Reproducers, the root-cause walkthrough
+and the before/after sweep transcripts:
+[`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse).
 
 ---
 
