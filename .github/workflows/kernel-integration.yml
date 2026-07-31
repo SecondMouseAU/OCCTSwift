@@ -65,6 +65,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-kernel-
 
+      # The one third-party product this build enables (every other USE_* is OFF). Without it cmake
+      # fails configure outright with "Could not find headers of used third-party products".
+      - name: Install rapidjson
+        if: steps.occt-cache.outputs.cache-hit != 'true'
+        run: brew install rapidjson
+
       - name: Build OCCT from source (cache miss only)
         if: steps.occt-cache.outputs.cache-hit != 'true'
         run: ./Scripts/build-occt.sh
