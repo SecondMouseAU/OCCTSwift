@@ -2553,7 +2553,6 @@ double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape, OCCTShapeRef faceS
 // v0.65.0: Shape Processing Completions + Boolean Completions
 // ============================================================
 
-#include <BOPAlgo_RemoveFeatures.hxx>
 #include <BOPAlgo_Section.hxx>
 #include <BOPAlgo_BuilderFace.hxx>
 #include <BOPAlgo_BuilderSolid.hxx>

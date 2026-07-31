@@ -82,7 +82,10 @@
 // BOPAlgo_MakeConnected               → OCCTShapeMakeConnected
 // BOPAlgo_MakePeriodic                → OCCTShapeMakePeriodic, OCCTShapeRepeat
 // BOPAlgo_MakerVolume                 → OCCTShapeMakeVolume
-// BOPAlgo_RemoveFeatures              → OCCTBOPAlgoRemoveFeatures
+// BOPAlgo_RemoveFeatures              → OCCTShapeDefeature, OCCTShapeRemoveFeatures,
+//                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
+//                                       (reached through BRepAlgoAPI_Defeaturing, a forwarder to
+//                                       it; #536 deleted the direct wrap that duplicated them)
 // BOPAlgo_Section                     → OCCTBOPAlgoSection
 // BOPAlgo_ShellSplitter               → OCCTBOPAlgoShellSplitter
 // BOPAlgo_Splitter                    → OCCTBOPAlgoSplit
@@ -8706,14 +8709,9 @@ double OCCTShapeAnalysisTransferParam(OCCTShapeRef edgeShape, OCCTShapeRef faceS
 
 // MARK: - v0.65.0: Shape Processing Completions + Boolean Completions
 
-// --- BOPAlgo_RemoveFeatures ---
-/// Remove features (faces) from a solid shape.
-/// @param shape Input solid shape
-/// @param facesToRemove Array of face shapes to remove
-/// @param faceCount Number of faces to remove
-/// @return Result shape with features removed, or NULL on failure
-OCCTShapeRef _Nullable OCCTBOPAlgoRemoveFeatures(OCCTShapeRef shape,
-    const OCCTShapeRef _Nonnull * _Nonnull facesToRemove, int32_t faceCount);
+// OCCTBOPAlgoRemoveFeatures was declared here. It drove BOPAlgo_RemoveFeatures directly, which is
+// the algorithm BRepAlgoAPI_Defeaturing forwards to — so it was OCCTShapeDefeature one OCCT layer
+// down, with the same forwarded option defaults. #536
 
 // --- BOPAlgo_Section ---
 /// Compute section (intersection curves/vertices) between shapes.

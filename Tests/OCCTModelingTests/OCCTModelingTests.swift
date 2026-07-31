@@ -2922,6 +2922,10 @@ struct BRepOffsetOffsetFaceTests {
 
 // MARK: - BOPAlgo_RemoveFeatures
 
+// These used to call removeFeatures(faces:), which drove BOPAlgo_RemoveFeatures directly. It is now
+// a deprecated forwarder to defeature(faces:), the same algorithm through BRepAlgoAPI_Defeaturing,
+// so they call the survivor. Issue536DefeaturingSpellingsTests holds the forwarder itself to
+// account. #536
 @Suite("BOPAlgo RemoveFeatures")
 struct BOPAlgoRemoveFeaturesTests {
     @Test("Remove fillet from box")
@@ -2933,7 +2937,7 @@ struct BOPAlgoRemoveFeaturesTests {
             // Fillet adds faces, try removing the last face
             guard filletedFaces.count > 6 else { return }
             let lastFace = filletedFaces[filletedFaces.count - 1]
-            if let result = filleted.removeFeatures(faces: [lastFace]) {
+            if let result = filleted.defeature(faces: [lastFace]) {
                 #expect(result.isValid)
                 let resultFaces = result.subShapes(ofType: .face)
                 #expect(resultFaces.count <= filletedFaces.count)
@@ -2944,7 +2948,7 @@ struct BOPAlgoRemoveFeaturesTests {
     @Test("Remove features returns nil for empty faces")
     func removeFeaturesEmptyFaces() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
-        let result = box.removeFeatures(faces: [])
+        let result = box.defeature(faces: [])
         #expect(result == nil)
     }
 
@@ -2955,7 +2959,7 @@ struct BOPAlgoRemoveFeaturesTests {
         guard !faces.isEmpty else { return }
         // Removing a face from a box may or may not succeed
         // depending on topology — just verify it doesn't crash
-        let _ = box.removeFeatures(faces: [faces[0]])
+        let _ = box.defeature(faces: [faces[0]])
     }
 }
 

@@ -9972,17 +9972,30 @@ extension Shape {
 
     /// Remove features (faces) from a solid shape.
     ///
-    /// Uses BOPAlgo_RemoveFeatures to remove specified faces (e.g., fillets, holes)
-    /// from a solid, healing the resulting shape.
+    /// Deprecated: this is ``defeature(faces:)`` under a second name, and always was.
+    /// `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API wrapper over
+    /// `BOPAlgo_RemoveFeatures`: its `Build()` hands the shape, the faces, the history flag and the
+    /// parallel flag to a `BOPAlgo_RemoveFeatures` member and takes that member's result. The two
+    /// spellings therefore drove one algorithm object, one of them through an extra layer, and the
+    /// defaults they inherited for those forwarded flags are the same.
+    ///
+    /// Measured rather than argued, over every face of a filleted box, a through hole, a boss, a
+    /// two-hole solid, and the requests that fail (no faces, a face from another shape, an input
+    /// that is not a solid): identical results, BREP byte for byte, in every case — see
+    /// `Scripts/repro/536-defeature-removefeatures-unify/`. Nothing about the result changes when
+    /// you switch.
+    ///
+    /// ```swift
+    /// let old = shape.removeFeatures(faces: filletFaces)
+    /// let new = shape.defeature(faces: filletFaces)   // the same shape, exactly
+    /// ```
     ///
     /// - Parameter faces: Array of face shapes to remove
     /// - Returns: Shape with features removed, or nil on failure
+    @available(*, deprecated, renamed: "defeature(faces:)",
+               message: "the same BRepAlgoAPI_Defeaturing operation one OCCT layer down. Use defeature(faces:).")
     public func removeFeatures(faces: [Shape]) -> Shape? {
-        let handles = faces.map { $0.handle as OCCTShapeRef }
-        guard let ref = handles.withUnsafeBufferPointer({ buf in
-            OCCTBOPAlgoRemoveFeatures(handle, buf.baseAddress!, Int32(buf.count))
-        }) else { return nil }
-        return Shape(handle: ref)
+        defeature(faces: faces)
     }
 
     // MARK: - BOPAlgo_Section

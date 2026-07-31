@@ -14673,11 +14673,20 @@ extension Shape {
     /// The canonical defeaturing call. `withoutFeatures(faces:)` is the same operation addressing
     /// its faces by index instead of by shape, and `defeaturedWithFullHistory(faces:)` is the same
     /// operation again with the removal history retained; all three run one shared
-    /// `BRepAlgoAPI_Defeaturing` path in the bridge.
+    /// `BRepAlgoAPI_Defeaturing` path in the bridge. `removeFeatures(faces:)` was a fourth spelling
+    /// of this call, reaching the same algorithm one OCCT layer down, and is deprecated in favour
+    /// of this one (#536).
     ///
     /// Returns `nil` when `faces` is empty, and when the operation itself fails — defeaturing
     /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
     /// not necessarily a caller error.
+    ///
+    /// A face that is not part of this shape cannot be removed from it. OCCT drops such a face
+    /// from the request and carries on with the rest, so a request that mixes real faces with
+    /// foreign ones succeeds and removes only the real ones; a request of nothing but foreign
+    /// faces fails. Membership is by identity, not by geometry: the same face measured off an
+    /// identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is
+    /// stricter — since #497 one bad index fails the whole call.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!

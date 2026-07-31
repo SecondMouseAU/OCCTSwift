@@ -342,6 +342,57 @@ New suite `Issue539NearestPointOnCurveTests` (`OCCTCurveTests`), 12 tests. Prove
 assumed: reinstating the two original implementations fails 9 of the 12, and the 3 that still pass
 are exactly the three asserting what was meant to stay the same.
 
+#### One defeaturing operation, not one per OCCT layer (#536)
+
+`Shape.removeFeatures(faces:)` and `Shape.defeature(faces:)` took the same arguments, returned the
+same type, and neither doc comment mentioned the other. They were the same operation: `defeature`
+drove `BRepAlgoAPI_Defeaturing`, `removeFeatures` drove `BOPAlgo_RemoveFeatures`, and
+`BRepAlgoAPI_Defeaturing::Build` is a 30-line forwarder that hands its shape, its faces, its history
+flag and its parallel flag to a `BOPAlgo_RemoveFeatures` member and returns that member's result —
+with `Modified`, `Generated`, `IsDeleted`, `HasModified`, `HasGenerated`, `HasDeleted` and `History`
+all one-line delegations to the same member. The bridge had wrapped both layers of one algorithm and
+given each its own Swift name. This is the sixth spelling of the operation #497 consolidated, left
+out of that pass because it reached a different OCCT class.
+
+**Measured, not read off the source.** A deprecation has to answer "is there any input on which they
+can differ", not "do they agree on a box", so both paths were driven exactly the way their bridge
+wrappers drove them — including the different completion tests, `IsDone()` against `!HasErrors()` —
+over every face of a filleted box in turn, a through hole, a boss, two holes at once, and the
+requests that fail (no faces, a face from another shape, a mixed request, an input that is not a
+solid, the same face twice). Identical in every case, compared as full BREP serialisations rather
+than volumes. The option defaults the forwarding depends on match too (`myFillHistory` true on both
+constructors, `myRunParallel` false from the shared `BOPAlgo_Options` base), which is what made the
+two unconfigured objects the same object. Probe and full output at
+[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify).
+
+`defeature(faces:)` survives — it is the class OCCT documents for application use, it is where the
+history-carrying sibling already lives, and since #497 it shares one bridge skeleton with the rest of
+the family. `removeFeatures(faces:)` is deprecated and forwards to it, with a `renamed:` fix-it.
+`OCCTBOPAlgoRemoveFeatures` is deleted rather than kept for a future caller: `OCCTBridge` is a
+target, not a product, so nothing outside this package can link it, and #506 measured what keeping an
+orphan costs — it freezes whatever contract it had, and this one had drifted already, silently
+skipping a null entry in the faces array where the surviving path fails the call. That particular
+drift was not reachable from Swift, since `[Shape]` has no null elements; it is what an orphaned copy
+looks like after one side gets a fix, which is the argument against keeping it.
+
+**Not fixed, and now written down.** A face that is not part of the input is dropped from the request
+rather than refused: a request mixing one real face with one foreign face succeeds, removes the real
+one, and emits no warning at all, while a request of nothing but foreign faces fails because nothing
+is left to remove. That is more forgiving than the index-addressed `withoutFeatures(faces:)`, which
+since #497 fails the whole call on one bad index. Making the two agree is not a line of validation:
+`AddFaceToRemove` takes a `TopoDS_Shape` and its own documentation calls it "the shape to extract the
+faces for removal", and the kernel duly accepts a compound, a shell or the whole input solid as a
+face carrier — measured. Deciding what a membership rule does with those is its own question, so it
+is filed separately; the behaviour is documented on `defeature(faces:)` in the meantime, along with
+the fact that membership is identity, not geometry (a face measured off a separately built but
+identical shape is foreign).
+
+New suite `Issue536DefeaturingSpellingsTests` (`OCCTModelingTests`) compares the two spellings face
+by face on three fixtures, pins all four spellings of one removal against each other, and pins the
+membership contract above. Proved against three injections rather than assumed: a forwarder that
+returns its input unchanged, one that drops the last requested face, and a `defeature` that reports
+failure as the input shape each fail the tests that cover them, and only those.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
