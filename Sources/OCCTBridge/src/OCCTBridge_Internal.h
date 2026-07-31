@@ -604,39 +604,71 @@ int32_t occtWriteKnotSplitParams(int32_t nbSplits, SplitIndexAt splitIndexAt, Kn
         [&](int32_t i) { return knotAt(splitIndexAt(i)); }, outParams, maxParams);
 }
 
-// === #399/#411/#487: conic dimension preconditions ===
+// === #399/#411/#487/#514/#554: conic dimension preconditions ===
 //
 // The dimensions a circle, ellipse, hyperbola or parabola needs in order to be that curve rather
 // than a degenerate stand-in for a point or a line. Not dimension-specific: whether the conic is
 // built in a plane or in space changes nothing about which radii describe one, so these four
 // predicates serve both the Curve3D and the Curve2D factories.
 //
-// Two families build each curve type from caller-supplied dimensions, and every one of them needs
-// the same answer: the direct family (OCCTCurve3DCreate*, OCCTCurve2DCreate*, including the ArcOf*
-// variants) constructing a Geom_* / Geom2d_* object outright, and the gce family (OCCTGceMake*,
-// OCCTGceMake*2d) going through a gce_Make* algorithm first.
+// Four routes reach a conic from caller-supplied dimensions, and every one of them needs the same
+// answer: the direct family (OCCTCurve3DCreate*, OCCTCurve2DCreate*, including the ArcOf* variants)
+// constructing a gp_* / Geom_* / Geom2d_* object outright, the gce family (OCCTGceMake*) and the GC
+// family (OCCTGCMake*, OCCTCurve3DMake*) going through an algorithm class first, and the setters
+// (OCCTCurve3D{Ellipse,Hyperbola,Parabola,Circle}Set*) rewriting one dimension of a live curve.
 //
-// They must be checked here, in the bridge, and not left to OCCT. Every OCCT precondition is
+// They must be checked here, in the bridge, and not left to OCCT. Most OCCT preconditions are
 // written as a *_Raise_if macro, and the pinned OCCT.xcframework is a Release build, where OCCT's
 // own BUILD_RELEASE_DISABLE_EXCEPTIONS (default ON) defines No_Exception and expands all of those
-// macros to nothing inside OCCT's translation units. So the checks OCCT documents in its headers do
-// not run in this build; measured consequences (#487):
+// macros to nothing inside OCCT's translation units. Which checks survive therefore depends on
+// *where the check is written*, and the three cases behave differently (measured, #487/#514/#554):
 //
-//   - gce_MakeElips2d(ax, 5, -3) reports gce_Done and yields a live Geom2d_Ellipse whose
-//     MinorRadius() is -3. Its own two checks (MajorRadius < 0, MajorRadius < MinorRadius) do not
-//     cover that input, and gp_Elips2d's check, which would, is compiled out.
-//   - gce_MakeHypr2d(ax, 0, 0, true) and gce_MakeParab2d(ax, 0) both succeed, as do the
-//     corresponding direct Geom2d_Hyperbola / Geom2d_Parabola constructors. OCCT accepts these
-//     through every route; rejecting them is entirely this bridge's contract.
+//   - A macro inside OCCT's own .cxx is gone. gce_MakeElips2d(ax, 5, -3) reports gce_Done and
+//     yields a live Geom2d_Ellipse whose MinorRadius() is -3; gce_MakeHypr2d(ax, 0, 0, true) and
+//     gce_MakeParab2d(ax, 0) both succeed. OCCT accepts these through every route.
+//   - A macro in a header the bridge includes still runs, because it is compiled in *our* TU.
+//     gp_Elips/gp_Hypr/gp_Parab (and their 2d counterparts) are constexpr in the header, so
+//     gp_Elips(ax, 5, -3), gp_Elips(ax, 3, 5), gp_Hypr(ax, -5, 3) and gp_Parab(ax, -2) all raise
+//     and the surrounding catch already turns them into a failure.
+//   - A hand-written `if (...) throw` is not a macro and survives everywhere. Geom_Ellipse's
+//     setters are spelled that way, so SetMinorRadius(-3) and SetMajorRadius below the current
+//     minor both raise from inside OCCT's TU.
+//
+// The residue those three leave is the same in every family: ZERO. It satisfies every check
+// written (`minor < 0 || major < minor` is false for (0, 0)), so it is the one degenerate input
+// that arrives intact by every route, and it is what these predicates exist to reject.
 //
 // A degenerate conic is not a harmless curve either: a zero-radius ellipse evaluates to its own
 // centre at every parameter while still reporting a [0, 2pi] range, so it reads as a curve
-// everywhere downstream and behaves as a point.
+// everywhere downstream and behaves as a point. The sharpest measured case is
+// GC_MakeArcOfEllipse's two-point form, where a zero minor radius makes the ElCLib::Parameter
+// inversion return NaN for both bounds: IsDone() still reports true, so the `if (!IsDone())` guard
+// a bridge function would normally rely on passes, and the caller receives a live curve whose
+// every evaluation is NaN.
 //
 // One definition each, because the alternative is what the audit found: #399 added these four to
 // OCCTBridge_Curve3D.mm, #411 added a byte-equivalent occtValidCircle2dRadius to
 // OCCTBridge_Geom2d.mm, and the 2D direct factories spelled the same conditions inline in six more
 // places, which is how the 2D gce factories came to be skipped by both passes.
+//
+// Whether a *query* taking these dimensions needs the same guard is decided per site by the test
+// #553 settled on: probe whether OCCT actually returns the degenerate answer. Being a read-only
+// query is not the criterion, since that is exactly where a wrong answer hides quietly.
+//
+// Guarded, because OCCT does not answer the degenerate question (#554):
+//
+//   - OCCTExtremaExtPElCElips / OCCTExtremaExtPElCParab: Extrema_ExtPElC reports NbExt() == 0
+//     against a (0, 0) ellipse rather than the one extremum at its centre.
+//   - OCCTExtremaElCLinElips: Extrema_ExtElC reports IsParallel() whatever the line does.
+//
+// Not guarded, because OCCT does answer it, and neither has a channel to report a rejection
+// through without widening its signature:
+//
+//   - OCCTElCLibValueOnEllipse evaluates the degenerate conic exactly as it is defined
+//     (ElCLib::Value(1.0, gp_Elips(ax, 5, 0)) is (2.70151, 0, 0), a point on the collapsed
+//     segment), and returns void.
+//   - The OCCTBndLib* conic entry points return the true bounding box of the degenerate curve
+//     (a tolerance-sized box at the centre for (0, 0)), and return void.
 
 // A circle needs a positive radius. Zero collapses it to its own centre.
 inline bool occtValidCircleRadius(double radius) {

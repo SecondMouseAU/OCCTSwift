@@ -1137,6 +1137,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipse(double centerX, double centerY, double ce
                                          double majorRadius, double minorRadius,
                                          double angle1, double angle2, bool sense) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(centerX, centerY, centerZ), gp_Dir(normalX, normalY, normalZ));
         gp_Elips elips(ax, majorRadius, minorRadius);
         GC_MakeArcOfEllipse maker(elips, angle1, angle2, sense);
@@ -1153,6 +1154,9 @@ OCCTCurve3DRef OCCTCurve3DArcOfEllipsePoints(double centerX, double centerY, dou
                                                double p1X, double p1Y, double p1Z,
                                                double p2X, double p2Y, double p2Z, bool sense) {
     try {
+        // Not redundant with the IsDone() check below: a zero minor radius makes the two-point
+        // form's ElCLib::Parameter inversion NaN, and IsDone() still reports true (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(centerX, centerY, centerZ), gp_Dir(normalX, normalY, normalZ));
         gp_Elips elips(ax, majorRadius, minorRadius);
         GC_MakeArcOfEllipse maker(elips, gp_Pnt(p1X, p1Y, p1Z), gp_Pnt(p2X, p2Y, p2Z), sense);
@@ -1301,6 +1305,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfHyperbola(
     double dirX, double dirY, double dirZ,
     double alpha1, double alpha2, bool sense) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(axisX, axisY, axisZ), gp_Dir(dirX, dirY, dirZ));
         gp_Hypr hypr(ax, majorRadius, minorRadius);
         GC_MakeArcOfHyperbola maker(hypr, alpha1, alpha2, sense ? Standard_True : Standard_False);
@@ -1321,6 +1326,7 @@ OCCTCurve3DRef OCCTCurve3DArcOfParabola(
     double dirX, double dirY, double dirZ,
     double alpha1, double alpha2, bool sense) {
     try {
+        if (!occtValidParabolaFocal(focalDistance)) return nullptr;
         gp_Ax2 ax(gp_Pnt(axisX, axisY, axisZ), gp_Dir(dirX, dirY, dirZ));
         gp_Parab parab(ax, focalDistance);
         GC_MakeArcOfParabola maker(parab, alpha1, alpha2, sense ? Standard_True : Standard_False);
@@ -1390,6 +1396,7 @@ bool OCCTCurve3DSplitAt(OCCTCurve3DRef curve, double splitParam,
 OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipse(double cx, double cy, double cz,
     double dx, double dy, double dz, double majorRadius, double minorRadius) {
     try {
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(dx, dy, dz));
         GC_MakeEllipse me(ax, majorRadius, minorRadius);
         if (!me.IsDone()) return nullptr;
@@ -1422,6 +1429,7 @@ OCCTCurve3DRef _Nullable OCCTCurve3DMakeEllipseThreePoints(
 OCCTCurve3DRef _Nullable OCCTCurve3DMakeHyperbola(double cx, double cy, double cz,
     double dx, double dy, double dz, double majorRadius, double minorRadius) {
     try {
+        if (!occtValidHyperbolaRadii(majorRadius, minorRadius)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(dx, dy, dz));
         GC_MakeHyperbola mh(ax, majorRadius, minorRadius);
         if (!mh.IsDone()) return nullptr;
@@ -2918,6 +2926,7 @@ OCCTCurve3DRef OCCTGCMakeEllipse(double cx, double cy, double cz,
                                    double nx, double ny, double nz,
                                    double major, double minor) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         GC_MakeEllipse me(ax, major, minor);
         if (!me.IsDone()) return nullptr;
@@ -2944,6 +2953,7 @@ OCCTCurve3DRef OCCTGCMakeEllipseFromElips(double cx, double cy, double cz,
                                             double xdx, double xdy, double xdz,
                                             double major, double minor) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         GC_MakeEllipse me(ax, major, minor);
         if (!me.IsDone()) return nullptr;
@@ -2959,6 +2969,7 @@ OCCTCurve3DRef OCCTGCMakeHyperbola(double cx, double cy, double cz,
                                      double nx, double ny, double nz,
                                      double major, double minor) {
     try {
+        if (!occtValidHyperbolaRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         GC_MakeHyperbola mh(ax, major, minor);
         if (!mh.IsDone()) return nullptr;
@@ -3385,6 +3396,7 @@ bool OCCTCurve3DCircleSetRadius(OCCTCurve3DRef curve, double radius) {
     try {
         Handle(Geom_Circle) c = Handle(Geom_Circle)::DownCast(curve->curve);
         if (c.IsNull()) return false;
+        if (!occtValidCircleRadius(radius)) return false;
         c->SetRadius(radius);
         return true;
     } catch (...) { return false; }
@@ -3459,6 +3471,9 @@ bool OCCTCurve3DEllipseSetMajorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Ellipse) e = Handle(Geom_Ellipse)::DownCast(curve->curve);
         if (e.IsNull()) return false;
+        // The pair has to stay a valid ellipse, so the new value is judged against the radius
+        // already on the curve, not on its own (#554).
+        if (!occtValidEllipseRadii(r, e->MinorRadius())) return false;
         e->SetMajorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3469,6 +3484,7 @@ bool OCCTCurve3DEllipseSetMinorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Ellipse) e = Handle(Geom_Ellipse)::DownCast(curve->curve);
         if (e.IsNull()) return false;
+        if (!occtValidEllipseRadii(e->MajorRadius(), r)) return false;
         e->SetMinorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3560,6 +3576,7 @@ bool OCCTCurve3DHyperbolaSetMajorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Hyperbola) h = Handle(Geom_Hyperbola)::DownCast(curve->curve);
         if (h.IsNull()) return false;
+        if (!occtValidHyperbolaRadii(r, h->MinorRadius())) return false;
         h->SetMajorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3570,6 +3587,7 @@ bool OCCTCurve3DHyperbolaSetMinorRadius(OCCTCurve3DRef curve, double r) {
     try {
         Handle(Geom_Hyperbola) h = Handle(Geom_Hyperbola)::DownCast(curve->curve);
         if (h.IsNull()) return false;
+        if (!occtValidHyperbolaRadii(h->MajorRadius(), r)) return false;
         h->SetMinorRadius(r);
         return true;
     } catch (...) { return false; }
@@ -3632,6 +3650,7 @@ bool OCCTCurve3DParabolaSetFocal(OCCTCurve3DRef curve, double focal) {
     try {
         Handle(Geom_Parabola) p = Handle(Geom_Parabola)::DownCast(curve->curve);
         if (p.IsNull()) return false;
+        if (!occtValidParabolaFocal(focal)) return false;
         p->SetFocal(focal);
         return true;
     } catch (...) { return false; }
@@ -3851,6 +3870,9 @@ int32_t OCCTExtremaElCLinElips(double lpx, double lpy, double lpz, double ldx, d
                                 double tolerance,
                                 OCCTExtremaElResult* out, int32_t max) {
     try {
+        // A degenerate ellipse does not give a degenerate answer here, it gives a wrong one:
+        // Extrema_ExtElC reports IsParallel() against a (0, 0) ellipse (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return -1;
         gp_Lin l(gp_Pnt(lpx, lpy, lpz), gp_Dir(ldx, ldy, ldz));
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Elips elips(ax, majorRadius, minorRadius);
@@ -4009,6 +4031,10 @@ int32_t OCCTExtremaExtPElCElips(double px, double py, double pz,
                                   double tolerance,
                                   OCCTExtremaElResult* out, int32_t max) {
     try {
+        // Extrema_ExtPElC reports NbExt() == 0 against a (0, 0) ellipse rather than the one
+        // extremum at its centre, so "no extrema" would be a wrong answer, not a degenerate
+        // one (#554).
+        if (!occtValidEllipseRadii(majorRadius, minorRadius)) return -1;
         gp_Pnt p(px, py, pz);
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Elips elips(ax, majorRadius, minorRadius);
@@ -4034,6 +4060,7 @@ int32_t OCCTExtremaExtPElCParab(double px, double py, double pz,
                                   double tolerance,
                                   OCCTExtremaElResult* out, int32_t max) {
     try {
+        if (!occtValidParabolaFocal(focal)) return -1;
         gp_Pnt p(px, py, pz);
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz), gp_Dir(xdx, xdy, xdz));
         gp_Parab parab(ax, focal);

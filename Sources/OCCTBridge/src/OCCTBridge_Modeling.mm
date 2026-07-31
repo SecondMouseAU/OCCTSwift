@@ -8081,6 +8081,9 @@ OCCTShapeRef OCCTMakeEdgeFromEllipse(double cx, double cy, double cz,
                                       double nx, double ny, double nz,
                                       double major, double minor) {
     try {
+        // BRepBuilderAPI_MakeEdge reports IsDone() for every degenerate conic, so without this
+        // the caller gets a live edge carrying a curve that is really a point (#554).
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Elips elips(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(elips);
@@ -8096,6 +8099,7 @@ OCCTShapeRef OCCTMakeEdgeFromEllipseArc(double cx, double cy, double cz,
                                           double major, double minor,
                                           double u1, double u2) {
     try {
+        if (!occtValidEllipseRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Elips elips(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(elips, u1, u2);
@@ -8111,6 +8115,7 @@ OCCTShapeRef OCCTMakeEdgeFromHyperbolaArc(double cx, double cy, double cz,
                                             double major, double minor,
                                             double u1, double u2) {
     try {
+        if (!occtValidHyperbolaRadii(major, minor)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Hypr hypr(ax, major, minor);
         BRepBuilderAPI_MakeEdge me(hypr, u1, u2);
@@ -8125,6 +8130,7 @@ OCCTShapeRef OCCTMakeEdgeFromParabolaArc(double cx, double cy, double cz,
                                            double nx, double ny, double nz,
                                            double focal, double u1, double u2) {
     try {
+        if (!occtValidParabolaFocal(focal)) return nullptr;
         gp_Ax2 ax(gp_Pnt(cx, cy, cz), gp_Dir(nx, ny, nz));
         gp_Parab parab(ax, focal);
         BRepBuilderAPI_MakeEdge me(parab, u1, u2);
