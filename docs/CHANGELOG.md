@@ -17,6 +17,64 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
+
+`Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and
+`Edge.project(point:)` make, and #539 fixed those two while leaving this one open on a contract
+question. That question is now measured, and the answer carried two defects rather than one.
+
+**It reported the minimum over `BRepExtrema_ExtPC`'s extrema, which is not the minimum over the
+edge.** Extrema are perpendicular feet, so they exclude the edge's own two ends, and the one in
+range can be a *maximum*:
+
+| edge | query point | was | truth |
+|---|---|---|---|
+| half circle r=5, `[0, π]` | `(0, -6, 0)` | **11** (the far side) | 7.81025 |
+| half circle r=5, `[0, π]` | `(3, -4, 0)` (on the circle, off the arc) | **10** | 4.47214 |
+| segment `[3, 8]` along +X | `(100, 0, 0)` | `nil` | 92 |
+| segment `[3, 8]` along +X | `(0, 0, 0)` | `nil` | 3 |
+
+Over 189 edge/point combinations against a dense brute-force reference, it was right 101 times,
+wrong 34 and silent 54. The measured trap: filtering the extrema to the `IsMin` ones scores 101 —
+*exactly what it already scored* — because the cases that filter drops are the ones it then leaves
+with no candidate at all. Adding the ends is what fixes it.
+
+It now routes through #539's `occtNearestPointOnCurveRange`, so all three entry points reach one
+implementation and cannot disagree about the same edge and the same point: 189/189. Repairing in
+place with `BRepExtrema_ExtPC::TrimmedSquareDistances` was the smaller diff and tops out at 188 —
+`Extrema_ExtPC` does not converge on a BSpline queried from `(2, 0, 0)`, leaving the nearer end to
+answer 2 against a truth of 1.996434, where `GeomAPI_ProjectPointOnCurve` finds the interior
+minimum.
+
+**`solutionCount` keeps its meaning, its source and its value; the `nil` guard is what changed.**
+OCCT models the extrema and the ends as separate things on one object, so "how many extrema were
+found" was never the wrong number — the ends were simply never consulted. It is no longer a success
+flag: zero now travels to the caller as the informative state it is (the nearest point is an end)
+instead of erasing the answer. Note that a *non-zero* count does not mean the nearest point is one
+of those feet — the half-circle row above reports `solutionCount == 1`, and that one extremum is the
+maximum it used to answer with.
+
+**And the second defect, found while fixing the first.** `edgeIndex` walked a bare
+`TopExp_Explorer`, which counts one entry per *occurrence*: a box's 12 edges are 24 occurrences,
+since each belongs to two faces. Measured on the pinned kernel, that diverges from the enumeration
+`Shape.edges()` and `Shape.edge(at:)` read (#541's contract) **from index 9 onwards** — `edgeIndex:
+9` measured to the edge through `(10, 0, 5)` where every other entry point names the one through
+`(5, 0, 10)`. Not a shared-sub-shape curiosity like #541's splitter fixture: a plain box.
+
+**Behaviour changes for callers.** `nil` now means only "no such edge index, or an edge with no 3D
+curve", matching what #539 settled for `Edge.project(point:)`. `solutionCount` is no longer usable
+as a success test — it never was, since the guard made `solutionCount > 0` unfalsifiable for any
+non-`nil` result. `edgeIndex` 9 and above name different edges on any shape whose edges are shared
+between faces, which is every solid.
+
+New suite `Issue580PointEdgeExtremaTests` (`OCCTAnalysisTests`), 8 tests, plus the pre-existing
+`BRepExtremaExtPCTests.pointToEdge` rewritten — its "loop until we find one that gives a valid
+extremum" was itself a workaround for this defect, and its `#expect(result.solutionCount > 0)` was
+unfalsifiable under the guard it was testing. Proved rather than assumed: reinstating the old
+implementation fails 7 of the 10, and the 3 that pass are exactly the deliberately-unchanged ones
+(a point with a perpendicular foot, an out-of-range index, and the pre-existing in-range case).
+Bridge-only — no kernel patch, no `OCCT.xcframework` rebuild.
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge
@@ -329,14 +387,12 @@ points above. The two are different questions — the nearest point, which exist
 point, versus the nearest perpendicular foot, which does not — and `Issue500Curve3DNearestParameterTests`
 pins the distinction, updated here to the corrected answer it recorded as-is.
 
-**Measured, not fixed.** `Shape.pointEdgeExtrema(point:edgeIndex:)` (`BRepExtrema_ExtPC`) is a third
-entry point documented as finding "the closest point on the edge" with the same defect: 11 for the
-half-circle query above, and `IsDone()` false for both trimmed-segment queries. It is left alone
-because fixing it means first deciding what its `solutionCount`, which is the extrema count it
-deliberately exposes, should say when the answer is an end. Filed as #580 — with that decision
-measured rather than left open: `solutionCount` keeps its meaning (OCCT models the ends separately
-from the extrema, via `BRepExtrema_ExtPC::TrimmedSquareDistances`), the `nil` guard is what changes,
-and routing through this PR's shared helper scores 189/189 against the in-place repair's 188/189.
+**Measured here, fixed in #580.** `Shape.pointEdgeExtrema(point:edgeIndex:)` (`BRepExtrema_ExtPC`) is
+a third entry point documented as finding "the closest point on the edge" with the same defect: 11
+for the half-circle query above, and `IsDone()` false for both trimmed-segment queries. It was left
+out of this change because fixing it meant first deciding what its `solutionCount`, the extrema
+count it deliberately exposes, should say when the answer is an end — so that decision was measured
+here rather than left open, and acted on in #580 above, in the same release.
 
 New suite `Issue539NearestPointOnCurveTests` (`OCCTCurveTests`), 12 tests. Proved rather than
 assumed: reinstating the two original implementations fails 9 of the 12, and the 3 that still pass
