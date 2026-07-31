@@ -15,6 +15,64 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix, a refused `FillingSurface.add` still let `build()` return a face (#482)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+#434 converged `FillingSurface` and `Shape.fill(constraints:)` onto one builder and one shared
+`occtFillingAddConstraint`, but left them disagreeing about what a *refused* constraint means, and
+the disagreement favoured the wrong outcome on the incremental API.
+
+`occtFillingAddConstraint` refuses a constraint when a **nominated** support face carries no pcurve
+for its edge, which is routine on imported or sewn shapes. It does not call `Add`, so that
+constraint simply does not exist. `Shape.fill(constraints:)` has always treated that as fatal and
+returned nil. `FillingSurface.add(edge:support:continuity:)` returned `false` and left the builder
+usable, so `build()` went on to fit a surface to whatever constraints did make it in. Since every
+`add` is `@discardableResult`, ignoring the signal was the default at the call site:
+
+```swift
+let f = FillingSurface()
+f.add(edge: e1, continuity: .g0)
+f.add(edge: rim, support: importedWall, continuity: .g1)   // false, silently dropped
+let face = f.build()                                       // succeeded
+```
+
+That face was fitted to `e1` alone. It neither passed through nor was bounded by `rim`, the edge
+the caller cared most about, and it reported a healthy G0 error (measured 2.8e-05 on the
+truncated-sphere fixture) while doing so: a plausible wrong answer, not a visible failure. The
+same geometry through `Shape.fill(constraints:)` returned nil.
+
+The refusal is now **sticky**: the builder records it, and `build()` returns nil however many other
+constraints succeeded, without attempting the fit at all, so `isDone` stays false and the face and
+error accessors keep reporting "not built" rather than describing a surface no caller asked for.
+The two entry points now answer the same for the same input, which is what the #434 convergence was
+for. `@discardableResult` becomes harmless: the refusal is reported whether or not the return value
+was read.
+
+New: `FillingSurface.refusedConstraintCount` and `FillingSurface.hasRefusedConstraint`, which
+separate "a constraint never made it in" from "the fit was attempted and failed". Both return nil
+from `build()`:
+
+```swift
+guard let face = filling.build() else {
+    print(filling.hasRefusedConstraint ? "a constraint was refused" : "the fit failed")
+    return
+}
+```
+
+**Source-compatible, behaviour-breaking.** No signature changed, but a caller who was relying on
+`build()` succeeding after a refused `add` now gets nil. To attempt a constraint speculatively and
+carry on, use `add(edge:continuity:)`, which derives the continuity reference from the edge itself
+and so has nothing to refuse.
+
+Two doc comments promised this behaviour before anything enforced it: `add(edge:support:)`'s "used
+or the constraint fails" and `OCCTFillingAddEdgeWithSupport`'s "the caller should treat the whole
+fill as failed". Both are now true.
+
+Also fixed: the derived operation total in `README.md` / `docs/API_REFERENCE.md` was 4,266 against a
+derived 4,268 before this change, a pre-existing two-entry-point drift unrelated to #482.
+`Scripts/count-operations.py --fix` takes it to 4,270, of which two are the properties above.
+
 ### Unreleased: chore, every build of this package emitted an unhandled-file warning (#440)
 
 > Version and date deliberately unset; whoever tags stamps them.
