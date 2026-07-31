@@ -393,6 +393,108 @@ membership contract above. Proved against three injections rather than assumed: 
 returns its input unchanged, one that drops the last requested face, and a `defeature` that reports
 failure as the input shape each fail the tests that cover them, and only those.
 
+#### Breaking: one resolution behind the adaptor-backed local properties too, and the raycast normal it was quietly erasing (#529)
+
+#494 converged all 28 `GeomLProp_SLProps` / `GeomLProp_CLProps` / `GeomLProp_CLProps2d` constructions
+in the bridge onto `Precision::Confusion()` and recorded the `BRepLProp_*` half as a separate job on
+the grounds that it is "a different class family". It is not. In OCCT 8.0 `BRepLProp_SLProps.hxx` is
+nine lines long:
+
+```cpp
+using BRepLProp_SLProps = GeomLProp_SLPropsBase<BRepAdaptor_Surface>;
+```
+
+The same header-only template `GeomLProp_SLProps` aliases, over an adaptor instead of a
+`Geom_Surface` handle. Same `Resolution` argument, same meaning, so the 18 sites passing a literal
+`1e-6` were asking whether a quantity exists at a threshold a decade looser than the sites they sit
+beside. Measured on the pinned kernel, that decade is exactly where they disagreed: on a cone face
+approaching its apex, `Shape.faceLPropMeanCurvature(u: 0, v: 1e-6)` returned `0` — its spelling of
+"undefined" — where `Face.meanCurvature(atU: 0, v: 1e-6)` returned `-8.66e5` for the same point of
+the same face, and the disagreement ran down to `v = 3e-7`. All 18 now build through
+`occtFaceLocalProps` / `occtEdgeLocalProps`, alongside #494's `occtSurfaceLocalProps` and friends.
+
+**The census in the issue was three counts off**, in the direction of more work rather than less:
+
+| the issue says | measured |
+|---|---|
+| 19 literal-`1e-6` sites, 16 in `OCCTBridge_Properties.mm` | 18, of which 15 are in `Properties.mm` |
+| a different class family, so #494's factories are not reusable | the same two templates, one adaptor argument apart |
+| all three `Topology.mm` sites decide face *orientation*, not reported values | one of them is `OCCTFaceGetNormal`, which backs `Face.normal` and every `isHorizontal` / `isUpwardFacing` / `isVertical` predicate |
+| `OCCTShapeRaycast`'s caller-supplied tolerance is "not obviously wrong" | it is the worst site of the 19 (below) |
+
+**`raycast(tolerance:)` was erasing its own normals.** `OCCTShapeRaycast` forwarded the caller's
+tolerance twice: to `IntCurvesFace_ShapeIntersector::Load`, where it is the intersection distance it
+is documented as, and to `BRepLProp_SLProps`, where it becomes the resolution — which
+`CSLib::Normal` uses as a **sine** tolerance on the angle between the two parametric directions.
+That quantity is dimensionless and saturates. Measured: `raycast(tolerance: 1.0)` against a sphere
+reported no normal for either hit, so both fell back to `(0, 0, 1)`; at `5.0` a box's *downward*
+face came back pointing up. The intersection tolerance now stops at `Load`. `RayHit` also gains
+`normalDefined`, because the `(0, 0, 1)` fallback is otherwise indistinguishable from a real upward
+normal at a genuinely singular hit point. (Additive: `RayHit`'s memberwise initialiser is internal,
+so no caller constructs one.)
+
+**The curvature-inversion defect #494 found is on this side too, and `1e-6` made its window a decade
+wider.** `LProp_CurveUtils::Curvature()` returns `RealLast()` to mean infinite curvature at a cusp,
+on a path that never assigns the `myCurvature` field; `CentreOfCurvature()` tests only
+`|Curvature()| <= resolution`, which the sentinel passes, and then divides by that unassigned field.
+`Normal()` rejects the sentinel by name and throws; `CentreOfCurvature()` hands back a point of
+`(nan, inf, nan)` as a success. Both edge entry points that invert a curvature now gate on
+`occtCurveCurvatureIsInvertible`, the predicate #494 added. Measured on a cubic Bezier whose first
+two poles sit a controlled distance apart, at `u = 0`:
+
+| pole spacing | at `1e-6` (before) | at `Precision::Confusion()` (after) |
+|---|---|---|
+| 1e-3 … 1e-6 | real centre | real centre |
+| 3e-7 | `(nan, inf, nan)` reported as a point | real centre `(0, 1.35e-13, 0)` |
+| 1e-7 | `(inf, inf, nan)` reported as a point | real centre `(2.8e-30, 1.5e-14, 0)` |
+| 1e-8 … 1e-12 | `(nan, inf, nan)` reported as a point | `nil` — no centre of curvature at a cusp |
+| 0 (exactly coincident) | `(0, 0, 0)`, from the absorbed throw | `nil` |
+
+**Source-breaking, in four places**, all of them entry points that could not previously say "there
+is nothing here": `Shape.edgeNormalLP(at:)` and `Shape.edgeCentreOfCurvature(at:)` return
+`SIMD3<Double>?` rather than `SIMD3<Double>` (they returned `(0, 0, 0)` — not a direction, not a
+point — where the quantity does not exist), and `Shape.edgeLPropD1(at:)` joins them. Not a signature
+change but a behaviour one: `Shape.edgeLPropValue(at:)` was already declared optional and never
+returned `nil`; now it does.
+
+**Two of the three `Topology.mm` sites were orphans and are deleted rather than converged.**
+`OCCTShapeGetHorizontalFaces` and `OCCTShapeGetUpwardFaces` reimplemented `Face.isHorizontal` /
+`Face.isUpwardFacing` over the same midpoint normal, and nothing called them: `Shape.horizontalFaces`
+and `Shape.upwardFaces` filter `faces()` through the `Face` predicates. Same reasoning as #506 —
+`OCCTBridge` is a target, not a product, and an orphan freezes whatever contract it had when it was
+orphaned, so leaving them would have meant maintaining a second `1e-6` behind a symbol with no
+callers.
+
+**The surviving `Topology.mm` site's change is inert, and that is a measurement, not an assumption.**
+`CSLib::Normal` tests the two first derivatives for nullity against `gp::Resolution()` — a fixed
+~1e-300 epsilon, not the caller's value — and uses the caller's value only as the sine tolerance
+above. A surface whose derivatives merely shrink keeps a defined normal all the way down, which is
+why tightening the value changes nothing for the normal-only sites. Swept over every face of a box,
+cylinder, sphere, apex cone, frustum, torus, hemisphere, a fully filleted box and the 662 faces of
+`unify-crash-mmd-kiha10-body5.brep`: zero faces changed definedness, zero changed direction, and the
+horizontal (18) and upward (9) counts on the real fixture are identical before and after. The one
+geometry that does move is a nearly *singular parameterisation* — a linear extrusion skewed by 5e-7
+radians, whose normal is undefined at `1e-6` and defined at `Precision::Confusion()`.
+
+New suites `AdaptorLocalPropsParityTests` and `AdaptorNormalDecisionTests` (`OCCTAnalysisTests`), 11
+tests, following #494's `LocalPropsParityTests` pattern: each adaptor-backed entry point is asserted
+to agree with its `Geom_`-backed counterpart about definedness exactly, and about value to a
+relative tolerance — not bit for bit, because a `BRepAdaptor_Curve` evaluates a Bezier or BSpline
+through a cache the raw handle does not use, which moves the last ULP (measured: 0.67461923686773151
+against 0.6746192368677314 for the same curvature). Proved against three separate injections rather
+than assumed: restoring the `1e-6` resolution fails 4 tests, removing the two invertibility gates
+fails 1 (on the `(nan, inf, nan)` centre), and restoring the raycast tolerance forwarding fails 2.
+Four tests are controls and pass under all three.
+
+Probes and full figures at
+[`Scripts/repro/529-breplprop-resolution/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/529-breplprop-resolution).
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
+
+**Noticed, not fixed.** The face-side curvature getters (`faceLPropMaxCurvature` and its four
+siblings) still spell "undefined" as `0`, where the `Face` counterparts return `nil` — the
+silent-zero class #486 and #494 have both hit, and a wider change than a resolution. Filed rather
+than folded in.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed

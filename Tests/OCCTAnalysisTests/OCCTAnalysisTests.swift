@@ -4767,9 +4767,10 @@ struct BRepLPropEdgeTests {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let edges = box.subShapes(ofType: .edge)
             if edges.count > 0 {
-                let d1 = edges[0].edgeLPropD1(at: 0.5)
-                let len = sqrt(d1.x * d1.x + d1.y * d1.y + d1.z * d1.z)
-                #expect(len > 0.0)
+                if let d1 = edges[0].edgeLPropD1(at: 0.5) {
+                    let len = sqrt(d1.x * d1.x + d1.y * d1.y + d1.z * d1.z)
+                    #expect(len > 0.0)
+                }
             }
         }
     }
@@ -6117,5 +6118,331 @@ struct ShapeMeasurementsTests {
             }
         }
         #expect(capCount == 2, "cylinder has 2 circular caps, found \(capCount)")
+    }
+}
+
+// MARK: - #529: the adaptor-backed local-properties family agrees with the Geom_-backed one
+
+/// `Shape.faceLProp*` / `Shape.edge*LP` read a face or an edge through a `BRepAdaptor_Surface` /
+/// `BRepAdaptor_Curve`; `Face.meanCurvature(atU:v:)` / `Edge.curvature(at:)` and their siblings read
+/// the surface or curve underneath directly. In OCCT 8.0 both go through the *same* header-only
+/// templates — `BRepLProp_SLProps` is a nine-line `using` alias for the template
+/// `GeomLProp_SLProps` also aliases — so the `Resolution` they pass means the same thing, and two
+/// entry points passing different values disagree about whether a quantity exists at all.
+///
+/// #494 converged all 28 `GeomLProp_*` constructions onto `Precision::Confusion()` and left the 18
+/// `BRepLProp_*` ones on a literal `1e-6`, a decade looser. Measured on the pinned kernel, that
+/// decade is exactly where they disagreed: on a cone face approaching its apex,
+/// `faceLPropMeanCurvature` returned 0 (undefined) at `v = 1e-6` where `Face.meanCurvature` returned
+/// -8.66e5 for the same point of the same face, and the disagreement ran down to `v = 3e-7`.
+///
+/// Probes: `Scripts/repro/529-breplprop-resolution/`.
+@Suite("BRepLProp/GeomLProp local-properties parity (#529)")
+struct AdaptorLocalPropsParityTests {
+
+    /// A cone with `radius: 0` — the apex sits at `v = 0`, and |dS/du| falls off linearly with `v`,
+    /// so sweeping `v` walks smoothly through both resolutions' thresholds. The face keeps the apex
+    /// out of its own `v` range so the sampled points are all interior.
+    private static func apexConeFace() -> (Shape, Face)? {
+        guard let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
+                                      radius: 0, semiAngle: .pi / 6),
+              let shape = Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0),
+              let face = Face(shape) else { return nil }
+        return (shape, face)
+    }
+
+    /// A cubic Bezier edge whose first two poles sit `spacing` apart, so `|D1(0)| = 3 * spacing`.
+    private static func cuspBezierEdge(spacing: Double) -> (Shape, Edge)? {
+        guard let bez = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
+                                               SIMD3(1, 1, 0), SIMD3(2, 0, 0)]),
+              let shape = Shape.edgeFromCurve(bez),
+              let edge = Edge(shape) else { return nil }
+        return (shape, edge)
+    }
+
+    /// Relative comparison. The two families are not required to agree bit for bit: a
+    /// `BRepAdaptor_Curve` evaluates a Bezier or BSpline through an evaluation cache the raw
+    /// `Geom_Curve` handle does not use, which moves the last ULP (measured: 0.67461923686773151 vs
+    /// 0.6746192368677314 for the same curvature). Definedness, the thing #529 is about, is asserted
+    /// exactly.
+    private func expectClose(_ lhs: Double, _ rhs: Double, _ label: Comment) {
+        let scale = max(abs(lhs), abs(rhs), 1.0)
+        #expect(abs(lhs - rhs) <= 1e-9 * scale, label)
+    }
+
+    // MARK: Face
+
+    /// The regression proper, on the surface side. Every `v` from 3e-7 up to 1e-6 lands between
+    /// `Precision::Confusion()` and the old `1e-6`, so pre-fix `faceLPropMeanCurvature` returned 0
+    /// for a point where `Face.meanCurvature` returned a large negative number.
+    @Test("Inside the old 1e-6 window the two face families agree")
+    func faceToleranceWindowAgrees() {
+        guard let (shape, face) = Self.apexConeFace() else {
+            Issue.record("could not build the apex cone face")
+            return
+        }
+
+        for v in [3e-7, 5e-7, 1e-6, 1.5e-6, 3e-6, 1e-5, 1e-2, 1.0] {
+            let label: Comment = "cone v=\(v)"
+            guard let mean = face.meanCurvature(atU: 0, v: v),
+                  let gaussian = face.gaussianCurvature(atU: 0, v: v) else {
+                Issue.record("Face.meanCurvature undefined at v=\(v), which the probe reports as defined")
+                continue
+            }
+            // Non-zero is what makes this discriminating: the adaptor family reports 0 both for
+            // "flat here" and for "undefined here", so a zero expectation would pass pre-fix too.
+            #expect(mean != 0, label)
+            expectClose(shape.faceLPropMeanCurvature(u: 0, v: v), mean, label)
+            expectClose(shape.faceLPropGaussianCurvature(u: 0, v: v), gaussian, label)
+        }
+    }
+
+    @Test("Principal curvatures agree wherever the Geom_ family defines them")
+    func facePrincipalCurvaturesAgree() {
+        guard let (shape, face) = Self.apexConeFace() else {
+            Issue.record("could not build the apex cone face")
+            return
+        }
+        for v in [5e-7, 1e-6, 1e-3, 2.0] {
+            guard let principal = face.principalCurvatures(atU: 0.4, v: v) else { continue }
+            expectClose(shape.faceLPropMaxCurvature(u: 0.4, v: v), principal.kMax, "cone v=\(v)")
+            expectClose(shape.faceLPropMinCurvature(u: 0.4, v: v), principal.kMin, "cone v=\(v)")
+        }
+    }
+
+    /// A well-conditioned control, so the suite is not only about degenerate points.
+    @Test("Ordinary points on a sphere and a cylinder agree")
+    func ordinaryFacePointsAgree() {
+        let shapes: [(String, Shape?)] = [
+            ("sphere", Shape.sphere(radius: 5)),
+            ("cylinder", Shape.cylinder(radius: 3, height: 12)),
+        ]
+        for (name, solid) in shapes {
+            guard let solid else {
+                Issue.record("\(name) returned nil")
+                continue
+            }
+            for faceShape in solid.subShapes(ofType: .face) {
+                guard let face = Face(faceShape) else { continue }
+                for (u, v) in [(0.3, 0.2), (1.1, -0.4), (2.0, 0.9)] {
+                    let label: Comment = "\(name) u=\(u) v=\(v)"
+                    let mean = face.meanCurvature(atU: u, v: v)
+                    // Definedness has to match; the adaptor family spells "undefined" as 0.
+                    if let mean {
+                        expectClose(faceShape.faceLPropMeanCurvature(u: u, v: v), mean, label)
+                    }
+                    // The normal is reported by both, but only the Geom_ spelling applies the
+                    // face's orientation, so they agree up to sign — a contract difference, not
+                    // drift, and worth pinning so it is not mistaken for one later.
+                    let adaptorNormal = faceShape.faceLPropNormal(u: u, v: v)
+                    let orientedNormal = face.normal(atU: u, v: v)
+                    #expect((adaptorNormal != nil) == (orientedNormal != nil), label)
+                    if let adaptorNormal, let orientedNormal {
+                        let dot = simd_dot(adaptorNormal, orientedNormal)
+                        #expect(abs(abs(dot) - 1.0) < 1e-9, label)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Edge
+
+    /// The curve-side regression. At a pole spacing of 3e-7 the first derivative at `u = 0` is
+    /// 9e-7: significant at `Precision::Confusion()`, null at `1e-6`. Pre-fix the adaptor family
+    /// answered `RealLast()` (infinite curvature, the cusp sentinel) where the Geom_ family answered
+    /// 7.4e12.
+    @Test("Inside the old 1e-6 window the two edge families agree")
+    func edgeToleranceWindowAgrees() {
+        for spacing in [3e-7, 5e-7, 1e-6, 1e-5, 1e-3] {
+            guard let (shape, edge) = Self.cuspBezierEdge(spacing: spacing) else {
+                Issue.record("could not build the Bezier edge at spacing \(spacing)")
+                continue
+            }
+            let label: Comment = "spacing=\(spacing)"
+            guard let curvature = edge.curvature(at: 0) else {
+                Issue.record("Edge.curvature undefined at spacing \(spacing)")
+                continue
+            }
+            #expect(curvature != .greatestFiniteMagnitude, label)
+            expectClose(shape.edgeCurvatureLP(at: 0), curvature, label)
+
+            let adaptorCentre = shape.edgeCentreOfCurvature(at: 0)
+            let geomCentre = edge.centerOfCurvature(at: 0)
+            #expect((adaptorCentre != nil) == (geomCentre != nil), label)
+            if let adaptorCentre, let geomCentre {
+                expectClose(adaptorCentre.x, geomCentre.x, label)
+                expectClose(adaptorCentre.y, geomCentre.y, label)
+                expectClose(adaptorCentre.z, geomCentre.z, label)
+            }
+        }
+    }
+
+    /// The `RealLast()` defect, on the adaptor side this time. `CentreOfCurvature()` tests only
+    /// `|Curvature()| <= resolution`, which the infinite-curvature sentinel passes, and then divides
+    /// by the `myCurvature` field the sentinel path never assigned — so a near-cusp came back as a
+    /// point of `(nan, inf, nan)`, reported as a success.
+    @Test("A cusp has no centre of curvature and no normal, and does not fake one")
+    func cuspHasNoCentreOfCurvature() {
+        for spacing in [0.0, 1e-12, 1e-9, 1e-8] {
+            guard let (shape, edge) = Self.cuspBezierEdge(spacing: spacing) else {
+                Issue.record("could not build the Bezier edge at spacing \(spacing)")
+                continue
+            }
+            let label: Comment = "spacing=\(spacing)"
+            #expect(shape.edgeCentreOfCurvature(at: 0) == nil, label)
+            #expect(shape.edgeNormalLP(at: 0) == nil, label)
+            // Both families agree it is a cusp rather than an ordinary point.
+            #expect(edge.centerOfCurvature(at: 0) == nil, label)
+            #expect(shape.edgeCurvatureLP(at: 0) == .greatestFiniteMagnitude, label)
+        }
+    }
+
+    @Test("A straight edge has no centre of curvature and no normal")
+    func straightEdgeHasNoCentreOfCurvature() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
+        let edges = box.subShapes(ofType: .edge)
+        #expect(!edges.isEmpty)
+        for edgeShape in edges {
+            #expect(edgeShape.edgeCentreOfCurvature(at: 5.0) == nil)
+            #expect(edgeShape.edgeNormalLP(at: 5.0) == nil)
+            #expect(edgeShape.edgeCurvatureLP(at: 5.0) == 0.0)
+            // The point and the derivative are still perfectly well defined there.
+            #expect(edgeShape.edgeLPropValue(at: 5.0) != nil)
+            #expect(edgeShape.edgeLPropD1(at: 5.0) != nil)
+        }
+    }
+
+    /// A circle is the case where the centre of curvature has one obvious right answer.
+    @Test("A circular edge's centre of curvature is its centre")
+    func circleCentreOfCurvature() {
+        guard let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 4),
+              let edge = Shape.edgeFromCurve(circle) else {
+            Issue.record("could not build the circular edge")
+            return
+        }
+        for u in [0.0, 1.0, 2.5, 4.0] {
+            guard let centre = edge.edgeCentreOfCurvature(at: u) else {
+                Issue.record("no centre of curvature at u=\(u)")
+                continue
+            }
+            #expect(abs(centre.x - 1) < 1e-9, "u=\(u)")
+            #expect(abs(centre.y - 2) < 1e-9, "u=\(u)")
+            #expect(abs(centre.z) < 1e-9, "u=\(u)")
+            #expect(abs(edge.edgeCurvatureLP(at: u) - 0.25) < 1e-9, "u=\(u)")
+        }
+    }
+}
+
+/// The two `BRepLProp_SLProps` sites that are not curvature reporting: the midpoint normal behind
+/// `Face.normal` (and so behind every `isHorizontal` / `isUpwardFacing` / `isVertical` predicate),
+/// and the per-hit normal `Shape.raycast` returns.
+///
+/// The face-normal change is inert, which is a measurement rather than an assumption: `CSLib::Normal`
+/// tests the two first derivatives for nullity against `gp::Resolution()`, a fixed ~1e-300 epsilon,
+/// and uses the caller's value only as a **sine** tolerance on the angle between them. That test is
+/// scale-invariant, so a surface whose derivatives merely shrink keeps a defined normal all the way
+/// down. Swept over 662 faces of a real sewn solid plus every primitive here, not one face changed
+/// definedness or direction (`Scripts/repro/529-breplprop-resolution/occt_529_face_normal_decisions.cpp`).
+///
+/// The raycast change is not inert at all. A sine tolerance is dimensionless and saturates, and
+/// `raycast` was passing its caller's *intersection* tolerance into that slot.
+@Suite("Midpoint and raycast normals under the shared resolution (#529)")
+struct AdaptorNormalDecisionTests {
+
+    @Test("Primitive face normals and orientation predicates are unchanged")
+    func primitiveFaceNormalsUnchanged() {
+        let cases: [(String, Shape?, Int, Int)] = [
+            // shape, expected horizontal faces, expected upward faces
+            ("box", Shape.box(width: 10, height: 20, depth: 30), 2, 1),
+            ("cylinder", Shape.cylinder(radius: 5, height: 20), 2, 1),
+            ("cone", Shape.cone(bottomRadius: 5, topRadius: 0, height: 12), 1, 0),
+            ("sphere", Shape.sphere(radius: 7), 0, 0),
+        ]
+        for (name, solid, horizontal, upward) in cases {
+            guard let solid else {
+                Issue.record("\(name) returned nil")
+                continue
+            }
+            let faces = solid.faces()
+            #expect(faces.allSatisfy { $0.normal != nil || !$0.isPlanar },
+                    "\(name): a planar face with no normal")
+            #expect(solid.horizontalFaces().count == horizontal, "\(name) horizontal")
+            #expect(solid.upwardFaces().count == upward, "\(name) upward")
+        }
+    }
+
+    /// A face whose two parametric directions are *nearly parallel* is the one shape the sine
+    /// tolerance actually rejects. Skewing a linear extrusion by 5e-7 radians puts it between the
+    /// two values: the normal is undefined at `1e-6` and defined at `Precision::Confusion()`.
+    @Test("A nearly-degenerate parameterisation now reports its normal")
+    func skewedExtrusionHasANormal() {
+        guard let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) else {
+            Issue.record("Curve3D.line returned nil")
+            return
+        }
+        let skew = 5e-7
+        guard let surface = Surface.extrusion(profile: line,
+                                              direction: SIMD3(cos(skew), sin(skew), 0)),
+              let shape = Shape.face(from: surface, uRange: 0...10, vRange: 0...10),
+              let face = Face(shape) else {
+            Issue.record("could not build the skewed extrusion face")
+            return
+        }
+        guard let normal = face.normal else {
+            Issue.record("the skewed extrusion face reports no normal")
+            return
+        }
+        #expect(abs(abs(normal.z) - 1.0) < 1e-6, "normal \(normal)")
+        #expect(face.isHorizontal())
+    }
+
+    /// The raycast regression. `tolerance` is documented as the intersection tolerance and it used
+    /// to double as the props resolution, where it is a dimensionless sine tolerance — so any value
+    /// at or above 1 rejected every normal there is, and `RayHit.normal` fell back to `(0, 0, 1)`
+    /// for every hit on every shape.
+    @Test("Raising the intersection tolerance does not erase the hit normals")
+    func raycastNormalsSurviveALooseTolerance() {
+        guard let sphere = Shape.sphere(radius: 5) else {
+            Issue.record("Shape.sphere returned nil")
+            return
+        }
+        for tolerance in [0.001, 0.1, 1.0, 2.0, 5.0] {
+            let hits = sphere.raycast(origin: SIMD3(-20, 0, 0),
+                                      direction: SIMD3(1, 0, 0),
+                                      tolerance: tolerance)
+            let label: Comment = "tolerance=\(tolerance)"
+            #expect(hits.count == 2, label)
+            for hit in hits {
+                #expect(hit.normalDefined, label)
+                // A sphere's normal is radial: parallel to the hit point itself.
+                let radial = simd_normalize(hit.point)
+                #expect(abs(abs(simd_dot(radial, hit.normal)) - 1.0) < 1e-6,
+                        "\(label) hit \(hit.point) normal \(hit.normal)")
+            }
+        }
+    }
+
+    @Test("A box's downward face still reports a downward normal at a loose tolerance")
+    func raycastKeepsFaceOrientationAtALooseTolerance() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
+        for tolerance in [0.001, 1.0, 5.0] {
+            let hits = box.raycast(origin: SIMD3(0, 0, 40),
+                                   direction: SIMD3(0, 0, -1),
+                                   tolerance: tolerance)
+            let label: Comment = "tolerance=\(tolerance)"
+            #expect(hits.count == 2, label)
+            guard hits.count == 2 else { continue }
+            #expect(hits.allSatisfy { $0.normalDefined }, label)
+            // Nearest hit is the top face, pointing up; the far one is the bottom, pointing down.
+            #expect(hits[0].normal.z > 0.99, "\(label) near \(hits[0].normal)")
+            #expect(hits[1].normal.z < -0.99, "\(label) far \(hits[1].normal)")
+        }
     }
 }
