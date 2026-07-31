@@ -1300,29 +1300,21 @@ bool OCCTFaceIsPlanar(OCCTFaceRef face);
 /// @return true if face is horizontal and Z was computed, false otherwise
 bool OCCTFaceGetZLevel(OCCTFaceRef face, double* outZ);
 
-/// Get horizontal faces from a shape (faces with normals pointing up or down)
-/// @param shape The shape to search
-/// @param tolerance Angle tolerance in radians (e.g., 0.01 for ~0.5 degrees)
-/// @param outCount Output: number of faces returned
-/// @return Array of face references for horizontal faces only
-OCCTFaceRef* OCCTShapeGetHorizontalFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount);
-
-/// Get upward-facing horizontal faces (potential pocket floors)
-/// @param shape The shape to search
-/// @param tolerance Angle tolerance in radians
-/// @param outCount Output: number of faces returned
-/// @return Array of face references for upward-facing horizontal faces
-OCCTFaceRef* OCCTShapeGetUpwardFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount);
+/// OCCTShapeGetHorizontalFaces and OCCTShapeGetUpwardFaces were declared here: second copies of
+/// the Face.isHorizontal / Face.isUpwardFacing predicates over the same midpoint normal
+/// OCCTFaceGetNormal returns, which Shape.horizontalFaces / Shape.upwardFaces use instead. Neither
+/// was called from anywhere. Removed by #529.
 
 // MARK: - Ray Casting & Selection (Issues #12, #13, #14)
 
 /// Ray hit result structure
 typedef struct {
     double point[3];        // 3D intersection point
-    double normal[3];       // Surface normal at hit
+    double normal[3];       // Surface normal at hit, (0,0,1) when normalDefined is false
     int32_t faceIndex;      // Index of hit face
     double distance;        // Distance from ray origin
     double uv[2];           // UV parameters on surface
+    bool normalDefined;     // False at a singular point, where `normal` is the (0,0,1) fallback
 } OCCTRayHit;
 
 /// Cast ray against shape and return all intersections
@@ -16455,28 +16447,39 @@ bool OCCTMathNewtonFuncSetRoot(int32_t nVars, int32_t nEqs,
 // (Curve3D/Curve2D.gridEvalD0/D1, Surface.gridEvalD0/D1) forward to the v0.29.0 family.
 
 // MARK: - BRepLProp_CLProps (v0.111.0)
+//
+// Every function in this section and the SLProps one below builds its props through
+// occtEdgeLocalProps / occtFaceLocalProps, so it asks whether a quantity exists at the same
+// resolution as the GeomLProp_*-backed OCCTEdgeGet*3D / OCCTFaceGet* entry points (#529).
 
 /// Get point on edge at parameter using local properties.
-void OCCTEdgeLPropValue(OCCTShapeRef _Nonnull edge, double param,
+/// Returns true if the point was computed, false for a null edge or a parameter the edge's curve
+/// cannot be evaluated at.
+bool OCCTEdgeLPropValue(OCCTShapeRef _Nonnull edge, double param,
                           double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
 
 /// Get tangent direction on edge at parameter. Returns true if tangent is defined.
 bool OCCTEdgeLPropTangent(OCCTShapeRef _Nonnull edge, double param,
                             double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
-/// Get curvature on edge at parameter.
+/// Get curvature on edge at parameter. Returns 0 where the tangent is undefined, and OCCT's
+/// RealLast() where the curvature is infinite (a cusp), matching OCCTEdgeGetCurvature3D.
 double OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param);
 
 /// Get normal direction on edge at parameter.
-void OCCTEdgeLPropNormal(OCCTShapeRef _Nonnull edge, double param,
+/// Returns false where there is no normal to report: an undefined tangent, or a curvature that
+/// cannot be inverted (null on a straight stretch, RealLast() at a cusp).
+bool OCCTEdgeLPropNormal(OCCTShapeRef _Nonnull edge, double param,
                            double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
 /// Get centre of curvature on edge at parameter.
-void OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef _Nonnull edge, double param,
+/// Returns false under the same conditions as OCCTEdgeLPropNormal. In particular a near-cusp used
+/// to be reported as a successfully computed point of (nan, inf, nan) (#529, and #494 before it).
+bool OCCTEdgeLPropCentreOfCurvature(OCCTShapeRef _Nonnull edge, double param,
                                        double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
 
-/// Get first derivative on edge at parameter.
-void OCCTEdgeLPropD1(OCCTShapeRef _Nonnull edge, double param,
+/// Get first derivative on edge at parameter. Returns true if it was computed.
+bool OCCTEdgeLPropD1(OCCTShapeRef _Nonnull edge, double param,
                        double* _Nonnull d1x, double* _Nonnull d1y, double* _Nonnull d1z);
 
 // MARK: - BRepLProp_SLProps (v0.111.0)

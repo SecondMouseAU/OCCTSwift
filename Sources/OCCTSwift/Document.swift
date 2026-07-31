@@ -11389,14 +11389,30 @@ extension PolynomialSolver {
 }
 
 // MARK: - BRepLProp Edge Extensions (v0.111.0)
+//
+// These read an edge through a `BRepAdaptor_Curve`, where `Curve3D.localCurvature` and friends read
+// the curve underneath directly. Since #529 both spellings decide whether a quantity exists at the
+// same resolution (`Precision::Confusion()`), so they agree about definedness at every parameter of
+// every edge; they still differ in the last bits of the values themselves, because the adaptor
+// evaluates a Bezier or BSpline through a cache the raw handle does not use.
 
 extension Shape {
 
-    /// Get point on an edge at parameter using local properties (BRepLProp_CLProps).
+    /// Point on an edge at `param`, through the edge's own adaptor (`BRepLProp_CLProps`).
+    ///
+    /// Returns nil for a parameter the edge cannot be evaluated at. Before #529 it returned
+    /// `(0, 0, 0)` there, wrapped in a non-nil optional.
+    ///
+    /// ```swift
+    /// let edge = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .edge)[0]
+    /// if let p = edge.edgeLPropValue(at: 5.0) {
+    ///     print("point at t=5: \(p)")
+    /// }
+    /// ```
     public func edgeLPropValue(at param: Double) -> SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTEdgeLPropValue(handle, param, &x, &y, &z)
-        return SIMD3(x, y, z)
+        let ok = OCCTEdgeLPropValue(handle, param, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
     }
 
     /// Get tangent direction on an edge at parameter. Returns nil if tangent is undefined.
@@ -11406,30 +11422,61 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get curvature on an edge at parameter using local properties.
+    /// Curvature on an edge at `param`, through the edge's own adaptor.
+    ///
+    /// Returns 0 where the tangent is undefined, and `Double.greatestFiniteMagnitude` (OCCT's
+    /// `RealLast()`, meaning infinite curvature) at a cusp — the same two sentinels
+    /// ``Curve3D/curvature(at:)`` reports for the curve underneath.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// let k = edge.edgeCurvatureLP(at: 0.5)   // 0.25, the reciprocal of the radius
+    /// ```
     public func edgeCurvatureLP(at param: Double) -> Double {
         return OCCTEdgeLPropCurvature(handle, param)
     }
 
-    /// Get normal direction on an edge at parameter.
-    public func edgeNormalLP(at param: Double) -> SIMD3<Double> {
+    /// Normal direction on an edge at `param`.
+    ///
+    /// Returns nil where the curvature cannot be inverted into a direction: a straight stretch has
+    /// no normal, and neither does a cusp. Before #529 both cases returned `(0, 0, 0)`, which is
+    /// not a direction.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// if let n = edge.edgeNormalLP(at: 0) { print("points at the centre: \(n)") }
+    /// ```
+    public func edgeNormalLP(at param: Double) -> SIMD3<Double>? {
         var dx = 0.0, dy = 0.0, dz = 0.0
-        OCCTEdgeLPropNormal(handle, param, &dx, &dy, &dz)
-        return SIMD3(dx, dy, dz)
+        let ok = OCCTEdgeLPropNormal(handle, param, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get centre of curvature on an edge at parameter.
-    public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double> {
+    /// Centre of curvature on an edge at `param` — the centre of the circle that osculates the edge
+    /// there.
+    ///
+    /// Returns nil wherever there is no such circle, on the same terms as ``edgeNormalLP(at:)``.
+    /// Before #529 a near-cusp returned `(nan, inf, nan)` as though it were a point.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// if let c = edge.edgeCentreOfCurvature(at: 0) { print(c) }   // ~ (1, 2, 0)
+    /// ```
+    public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTEdgeLPropCentreOfCurvature(handle, param, &x, &y, &z)
-        return SIMD3(x, y, z)
+        let ok = OCCTEdgeLPropCentreOfCurvature(handle, param, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
     }
 
-    /// Get first derivative on an edge at parameter.
-    public func edgeLPropD1(at param: Double) -> SIMD3<Double> {
+    /// First derivative on an edge at `param`. Returns nil for a parameter the edge cannot be
+    /// evaluated at.
+    public func edgeLPropD1(at param: Double) -> SIMD3<Double>? {
         var d1x = 0.0, d1y = 0.0, d1z = 0.0
-        OCCTEdgeLPropD1(handle, param, &d1x, &d1y, &d1z)
-        return SIMD3(d1x, d1y, d1z)
+        let ok = OCCTEdgeLPropD1(handle, param, &d1x, &d1y, &d1z)
+        return ok ? SIMD3(d1x, d1y, d1z) : nil
     }
 }
 

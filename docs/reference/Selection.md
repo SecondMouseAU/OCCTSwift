@@ -300,6 +300,7 @@ public struct RayHit: Sendable {
     public let faceIndex: Int
     public let distance: Double
     public let uv: SIMD2<Double>
+    public let normalDefined: Bool
 }
 ```
 
@@ -308,6 +309,8 @@ public struct RayHit: Sendable {
 - `faceIndex` — 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`.
 - `distance` — signed ray parameter (distance from origin along the ray direction).
 - `uv` — UV surface parameters at the intersection point.
+- `normalDefined` — whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which
+  is otherwise indistinguishable from a real upward normal (added by #529).
 
 ---
 
@@ -331,10 +334,14 @@ The direction vector is automatically normalised by `gp_Dir`. Intersections beyo
 - **Parameters:**
   - `origin` — ray start point in world space.
   - `direction` — ray direction (normalised internally).
-  - `tolerance` — intersection tolerance (default 0.001).
+  - `tolerance` — intersection tolerance (default 0.001). Bounds the intersection only. Until #529
+    it was also passed to `BRepLProp_SLProps` as the local-property resolution, where it is a
+    dimensionless *sine* tolerance: any value at or above 1 rejected every hit normal, so
+    `raycast(tolerance: 1.0)` on a sphere reported `(0, 0, 1)` for both hits, and at 5.0 a box's
+    downward face came back pointing up.
   - `maxHits` — maximum number of hits to collect (default 100).
 - **Returns:** Array of `RayHit` sorted by ascending `distance`; empty if no intersection.
-- **OCCT:** `IntCurvesFace_ShapeIntersector::Load` / `Perform` / `NbPnt` / `Pnt` / `WParameter` / `Face` / `UParameter` / `VParameter`; normals via `BRepAdaptor_Surface` + `BRepLProp_SLProps`.
+- **OCCT:** `IntCurvesFace_ShapeIntersector::Load` / `Perform` / `NbPnt` / `Pnt` / `WParameter` / `Face` / `UParameter` / `VParameter`; normals via `BRepAdaptor_Surface` + `BRepLProp_SLProps` at the shared `occtLocalPropsResolution()`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!

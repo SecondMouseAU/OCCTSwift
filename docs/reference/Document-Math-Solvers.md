@@ -1020,6 +1020,12 @@ public static func quinticRoots(a: Double, b: Double, c: Double, d: Double, e: D
 
 Extension on `Shape` for edge-level local geometric properties using `BRepLProp_CLProps`.
 
+These read an edge through a `BRepAdaptor_Curve`; [`Edge.curvature(at:)`](Edge.md) and its siblings
+read the curve underneath directly. Since #529 both decide whether a quantity exists at the same
+resolution (`Precision::Confusion()`), so the two spellings agree about definedness at every
+parameter of every edge. The values themselves can still differ in the last bits, because the
+adaptor evaluates a Bezier or B-spline through a cache the raw handle does not use.
+
 ### `Shape.edgeLPropValue(at:)`
 
 Evaluate the 3D point on an edge at the given parameter.
@@ -1028,7 +1034,8 @@ Evaluate the 3D point on an edge at the given parameter.
 public func edgeLPropValue(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Point on the edge curve at `param`.
+- **Returns:** Point on the edge curve at `param`, or `nil` for a parameter the edge cannot be
+  evaluated at. Before #529 the failure case returned `(0, 0, 0)` inside a non-`nil` optional.
 - **OCCT:** `BRepLProp_CLProps::Value` via `OCCTEdgeLPropValue`.
 
 ---
@@ -1054,7 +1061,9 @@ Scalar curvature on an edge at the given parameter.
 public func edgeCurvatureLP(at param: Double) -> Double
 ```
 
-- **Returns:** Signed curvature value (0 for a straight edge).
+- **Returns:** Curvature magnitude: `0` for a straight edge or a parameter with no tangent, and
+  `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) at a cusp —
+  the same two sentinels [`Edge.curvature(at:)`](Edge.md) reports for the curve underneath.
 - **OCCT:** `BRepLProp_CLProps::Curvature` via `OCCTEdgeLPropCurvature`.
 
 ---
@@ -1064,10 +1073,12 @@ public func edgeCurvatureLP(at param: Double) -> Double
 Normal direction on an edge at the given parameter.
 
 ```swift
-public func edgeNormalLP(at param: Double) -> SIMD3<Double>
+public func edgeNormalLP(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** Normal vector in the osculating plane.
+- **Returns:** Unit normal in the osculating plane, or `nil` where the curvature cannot be inverted
+  into a direction — a straight stretch has no normal, and neither does a cusp. Before #529 both
+  cases returned `(0, 0, 0)`, which is not a direction (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::Normal` via `OCCTEdgeLPropNormal`.
 
 ---
@@ -1077,10 +1088,14 @@ public func edgeNormalLP(at param: Double) -> SIMD3<Double>
 Centre of curvature on an edge at the given parameter.
 
 ```swift
-public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>
+public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** The centre of the osculating circle at `param`.
+- **Returns:** The centre of the osculating circle at `param`, or `nil` where there is no such
+  circle (a straight stretch, or a cusp). Before #529 a near-cusp returned `(nan, inf, nan)` as
+  though it were a point: `CentreOfCurvature()` tests only `|Curvature()| <= resolution`, which
+  OCCT's infinite-curvature sentinel passes, and then divides by a field that path never assigned
+  (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::CentreOfCurvature` via `OCCTEdgeLPropCentreOfCurvature`.
 
 ---
@@ -1090,10 +1105,11 @@ public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>
 First derivative vector on an edge at the given parameter.
 
 ```swift
-public func edgeLPropD1(at param: Double) -> SIMD3<Double>
+public func edgeLPropD1(at param: Double) -> SIMD3<Double>?
 ```
 
-- **Returns:** The first derivative `C'(param)`.
+- **Returns:** The first derivative `C'(param)`, or `nil` for a parameter the edge cannot be
+  evaluated at (#529, source-breaking).
 - **OCCT:** `BRepLProp_CLProps::D1` via `OCCTEdgeLPropD1`.
 - **Example:**
   ```swift
@@ -1107,6 +1123,13 @@ public func edgeLPropD1(at param: Double) -> SIMD3<Double>
 ## BRepLProp Face Extensions
 
 Extension on `Shape` for face-level local surface properties using `BRepLProp_SLProps`.
+
+The `Face` counterparts ([`Face.meanCurvature(atU:v:)`](Face.md) and siblings) read the surface
+under the face directly rather than through a `BRepAdaptor_Surface`. Since #529 both use the same
+resolution, so they agree about whether a curvature exists at a given `(u, v)`; the curvature
+getters here still spell "undefined" as `0`, where the `Face` spellings return `nil`. One contract
+difference is deliberate: `faceLPropNormal(u:v:)` reports the *surface* normal, while
+[`Face.normal(atU:v:)`](Face.md) applies the face's orientation, so the two agree up to sign.
 
 ### `Shape.faceLPropValue(u:v:)`
 

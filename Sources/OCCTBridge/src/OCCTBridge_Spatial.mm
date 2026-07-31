@@ -2538,10 +2538,18 @@ int32_t OCCTShapeRaycast(
             double u = intersector.UParameter(i);
             double v = intersector.VParameter(i);
             
-            // Get surface normal at intersection point
+            // Get surface normal at intersection point.
+            //
+            // #529: this used to pass `tolerance` -- the caller's *intersection* tolerance, which
+            // IntCurvesFace_ShapeIntersector::Load takes as a distance -- as the props Resolution,
+            // which CSLib::Normal takes as a SINE tolerance on the angle between the two parametric
+            // directions. A sine tolerance is dimensionless and saturates: measured on the pinned
+            // kernel, raycast(tolerance: 1.0) reported every hit on a sphere as having no normal,
+            // and at 5.0 a box's downward face came back pointing up, because the fallback below is
+            // (0, 0, 1). The intersection tolerance now stops at Load, where it belongs.
             BRepAdaptor_Surface adaptor(hitFace);
-            BRepLProp_SLProps props(adaptor, u, v, 1, tolerance);
-            
+            BRepLProp_SLProps props = occtFaceLocalProps(adaptor, u, v, 1);
+
             OCCTRayHit& hit = outHits[hitCount];
             hit.point[0] = pt.X();
             hit.point[1] = pt.Y();
@@ -2551,6 +2559,8 @@ int32_t OCCTShapeRaycast(
             hit.uv[0] = u;
             hit.uv[1] = v;
             
+            // A hit on a genuinely singular point of a surface still has no normal, and the (0,0,1)
+            // fallback is indistinguishable from a real upward normal, so say which one it is.
             if (props.IsNormalDefined()) {
                 gp_Dir normal = props.Normal();
                 if (hitFace.Orientation() == TopAbs_REVERSED) {
@@ -2559,10 +2569,12 @@ int32_t OCCTShapeRaycast(
                 hit.normal[0] = normal.X();
                 hit.normal[1] = normal.Y();
                 hit.normal[2] = normal.Z();
+                hit.normalDefined = true;
             } else {
                 hit.normal[0] = 0;
                 hit.normal[1] = 0;
                 hit.normal[2] = 1;
+                hit.normalDefined = false;
             }
             
             hitCount++;

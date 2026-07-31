@@ -74,6 +74,8 @@
 // These four serve the local-properties helpers (occtSurfaceLocalProps and friends).
 #include <GeomLProp_SLProps.hxx>
 #include <GeomLProp_CLProps.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
 #include <cmath>
 
@@ -1156,9 +1158,11 @@ inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
 // third value in play, the 1e-6 of OCCTGeomLPropCLProps/OCCTGeomLPropSLProps, was the same value
 // #405 removed from OCCTSurfaceCurvatures.
 //
-// The 19 BRepLProp_SLProps/BRepLProp_CLProps constructions elsewhere in the bridge still pass a
-// literal 1e-6. They are a different (adaptor-based) class family asking the same question of a
-// face rather than a surface, tracked separately -- this accessor is the value they should adopt.
+// #529 finished the job on the adaptor side. BRepLProp_SLProps and BRepLProp_CLProps are not a
+// different class family at all: in OCCT 8.0 they are `using` aliases for the very templates
+// GeomLProp_SLProps/GeomLProp_CLProps alias, instantiated over BRepAdaptor_Surface/BRepAdaptor_Curve
+// instead of a Geom_ handle (BRepLProp_SLProps.hxx is nine lines long). Same Resolution, same
+// meaning, so the same value -- see occtFaceLocalProps/occtEdgeLocalProps below.
 inline double occtLocalPropsResolution() { return Precision::Confusion(); }
 
 // Construct the local-properties object for a surface at (u, v), computing derivatives up to
@@ -1180,6 +1184,30 @@ inline GeomLProp_CLProps occtCurveLocalProps(const occ::handle<Geom_Curve>& curv
 inline GeomLProp_CLProps2d occtCurve2dLocalProps(const occ::handle<Geom2d_Curve>& curve,
                                                   double u, int order) {
     return GeomLProp_CLProps2d(curve, u, order, occtLocalPropsResolution());
+}
+
+// The topological counterparts (#529). A face and the surface under it are the same geometry asked
+// the same question, so OCCTFaceLPropMeanCurvature and OCCTFaceGetMeanCurvature have to agree about
+// whether the curvature exists at a given (u, v); the adaptor these read through changes how the
+// derivatives are fetched, not what counts as a null one.
+//
+// Measured on the pinned kernel (Scripts/repro/529-breplprop-resolution/), the two values disagree
+// exactly where the derivative magnitude falls between them: on a cone face approaching its apex,
+// 1e-6 reports the curvature undefined at v = 1e-6 where every Geom_-side entry point reports mean
+// curvature -8.66e5, and the disagreement runs down to v = 3e-7.
+//
+// The adaptor is the caller's, not built here: every one of these call sites needs it for something
+// else too -- its parameter bounds, or a second props object at a different order.
+inline BRepLProp_SLProps occtFaceLocalProps(const BRepAdaptor_Surface& surface,
+                                             double u, double v, int order) {
+    return BRepLProp_SLProps(surface, u, v, order, occtLocalPropsResolution());
+}
+
+// Edge counterpart, over BRepAdaptor_Curve. As with occtCurveLocalProps the parameter is bound in
+// the constructor rather than through a later SetParameter() call.
+inline BRepLProp_CLProps occtEdgeLocalProps(const BRepAdaptor_Curve& curve,
+                                             double u, int order) {
+    return BRepLProp_CLProps(curve, u, order, occtLocalPropsResolution());
 }
 
 // Whether a curvature reported by GeomLProp_CLProps/CLProps2d can be turned into a radius, and so

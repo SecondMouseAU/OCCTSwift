@@ -3950,8 +3950,10 @@ bool OCCTFaceGetNormal(OCCTFaceRef face, double* outNx, double* outNy, double* o
         double uMid = (uMin + uMax) / 2.0;
         double vMid = (vMin + vMax) / 2.0;
 
-        // Get surface properties at center
-        BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
+        // Get surface properties at center. Shares its resolution with OCCTFaceGetNormalAtUV, which
+        // answers the same question about the same face at a caller-chosen (u, v) rather than the
+        // parametric midpoint (#529).
+        BRepLProp_SLProps props = occtFaceLocalProps(adaptor, uMid, vMid, 1);
         if (!props.IsNormalDefined()) return false;
 
         gp_Dir normal = props.Normal();
@@ -4035,98 +4037,12 @@ bool OCCTFaceGetZLevel(OCCTFaceRef face, double* outZ) {
     }
 }
 
-OCCTFaceRef* OCCTShapeGetHorizontalFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount) {
-    if (!shape || !outCount) return nullptr;
-    *outCount = 0;
-
-    try {
-        std::vector<TopoDS_Face> horizontalFaces;
-
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
-
-            // Get normal at face center
-            BRepAdaptor_Surface adaptor(face);
-            double uMid = (adaptor.FirstUParameter() + adaptor.LastUParameter()) / 2.0;
-            double vMid = (adaptor.FirstVParameter() + adaptor.LastVParameter()) / 2.0;
-
-            BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
-            if (props.IsNormalDefined()) {
-                gp_Dir normal = props.Normal();
-                if (face.Orientation() == TopAbs_REVERSED) {
-                    normal.Reverse();
-                }
-
-                // Check if horizontal (normal is nearly parallel to Z axis)
-                double angleToZ = std::abs(normal.Z());
-                if (angleToZ > std::cos(tolerance)) {
-                    horizontalFaces.push_back(face);
-                }
-            }
-
-            explorer.Next();
-        }
-
-        if (horizontalFaces.empty()) return nullptr;
-
-        OCCTFaceRef* result = new OCCTFaceRef[horizontalFaces.size()];
-        for (size_t i = 0; i < horizontalFaces.size(); i++) {
-            result[i] = new OCCTFace(horizontalFaces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(horizontalFaces.size());
-        return result;
-    } catch (...) {
-        return nullptr;
-    }
-}
-
-OCCTFaceRef* OCCTShapeGetUpwardFaces(OCCTShapeRef shape, double tolerance, int32_t* outCount) {
-    if (!shape || !outCount) return nullptr;
-    *outCount = 0;
-
-    try {
-        std::vector<TopoDS_Face> upwardFaces;
-
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
-
-            // Get normal at face center
-            BRepAdaptor_Surface adaptor(face);
-            double uMid = (adaptor.FirstUParameter() + adaptor.LastUParameter()) / 2.0;
-            double vMid = (adaptor.FirstVParameter() + adaptor.LastVParameter()) / 2.0;
-
-            BRepLProp_SLProps props(adaptor, uMid, vMid, 1, 1e-6);
-            if (props.IsNormalDefined()) {
-                gp_Dir normal = props.Normal();
-                if (face.Orientation() == TopAbs_REVERSED) {
-                    normal.Reverse();
-                }
-
-                // Check if upward-facing (normal Z > 0 and nearly vertical)
-                if (normal.Z() > std::cos(tolerance)) {
-                    upwardFaces.push_back(face);
-                }
-            }
-
-            explorer.Next();
-        }
-
-        if (upwardFaces.empty()) return nullptr;
-
-        OCCTFaceRef* result = new OCCTFaceRef[upwardFaces.size()];
-        for (size_t i = 0; i < upwardFaces.size(); i++) {
-            result[i] = new OCCTFace(upwardFaces[i]);
-        }
-
-        *outCount = static_cast<int32_t>(upwardFaces.size());
-        return result;
-    } catch (...) {
-        return nullptr;
-    }
-}
+// OCCTShapeGetHorizontalFaces and OCCTShapeGetUpwardFaces were implemented here: second copies
+// of Face.isHorizontal / Face.isUpwardFacing (|n.Z| > cos(tolerance) and n.Z > cos(tolerance) over
+// the midpoint normal OCCTFaceGetNormal already returns), declared, compiled, and reachable from
+// nothing. Shape.horizontalFaces / Shape.upwardFaces filter faces() through those two Face
+// predicates and never called either. Removed by #529, which would otherwise have had to converge
+// their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
 
 // MARK: - Edge Structure
 // OCCTEdge is now defined in OCCTBridge_Internal.h.

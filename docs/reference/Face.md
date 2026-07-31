@@ -78,7 +78,11 @@ public var normal: SIMD3<Double>? { get }
 Evaluates the surface normal at the midpoint of the face's UV parameter range. Respects face orientation (`TopAbs_REVERSED` flips the result).
 
 - **Returns:** Unit normal vector, or `nil` if the normal is undefined at the centre (e.g. degenerate face or singular parametric point).
-- **OCCT:** `BRepAdaptor_Surface` + `BRepLProp_SLProps::Normal` — adapts the face, evaluates at `(uMid, vMid)`.
+- **OCCT:** `BRepAdaptor_Surface` + `BRepLProp_SLProps::Normal` — adapts the face, evaluates at `(uMid, vMid)`, at the same `Precision::Confusion()` resolution as [`normal(atU:v:)`](#normalatuv) since #529.
+- **Note:** that resolution reaches `CSLib::Normal` as a *sine* tolerance on the angle between the
+  two parametric directions, not as a length. A surface whose derivatives merely shrink (a cone at
+  its apex, a sphere at its pole) therefore keeps a defined normal; only a nearly *singular
+  parameterisation*, where the two directions become parallel, returns `nil`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!

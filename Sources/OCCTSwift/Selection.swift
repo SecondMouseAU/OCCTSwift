@@ -8,28 +8,48 @@ import OCCTBridge
 public struct RayHit: Sendable {
     /// 3D point where ray intersects surface
     public let point: SIMD3<Double>
-    
-    /// Surface normal at intersection point
+
+    /// Surface normal at intersection point.
+    ///
+    /// `(0, 0, 1)` where the surface has no normal at the hit point — check ``normalDefined``
+    /// rather than reading an upward normal as a fact about the geometry.
     public let normal: SIMD3<Double>
-    
+
     /// Index of the face that was hit (0-based)
     public let faceIndex: Int
-    
+
     /// Distance from ray origin to intersection point
     public let distance: Double
-    
+
     /// UV parameters on the surface at intersection
     public let uv: SIMD2<Double>
+
+    /// Whether ``normal`` is the surface's own normal or the `(0, 0, 1)` fallback.
+    ///
+    /// False only at a genuinely singular point of the surface. Until #529 it was also false
+    /// whenever `tolerance` was raised past about 1, because the intersection tolerance doubled as
+    /// the local-property resolution, where it is a dimensionless sine tolerance.
+    public let normalDefined: Bool
 }
 
 // MARK: - Shape Ray Casting Extension
 
 extension Shape {
     /// Cast a ray against the shape and find all intersections
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)
+    /// for hit in box.raycast(origin: SIMD3(0, 0, 20), direction: SIMD3(0, 0, -1)) {
+    ///     print("\(hit.distance) away, normal \(hit.normalDefined ? "\(hit.normal)" : "undefined")")
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - origin: Starting point of the ray
     ///   - direction: Direction of the ray (will be normalized)
-    ///   - tolerance: Intersection tolerance (default: 0.001)
+    ///   - tolerance: Intersection tolerance (default: 0.001). Since #529 this bounds the
+    ///     intersection only; the surface normal reported for each hit is computed at the same
+    ///     resolution as every other local-property call, so raising it no longer erases normals.
     ///   - maxHits: Maximum number of hits to return (default: 100)
     /// - Returns: Array of ray hits sorted by distance
     public func raycast(
@@ -65,7 +85,8 @@ extension Shape {
                 normal: SIMD3(hit.normal.0, hit.normal.1, hit.normal.2),
                 faceIndex: Int(hit.faceIndex),
                 distance: hit.distance,
-                uv: SIMD2(hit.uv.0, hit.uv.1)
+                uv: SIMD2(hit.uv.0, hit.uv.1),
+                normalDefined: hit.normalDefined
             ))
         }
         
