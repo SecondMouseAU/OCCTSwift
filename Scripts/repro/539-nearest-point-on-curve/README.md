@@ -27,6 +27,7 @@ the returned parameter into the domain is the fix. These probes ask what the hea
 | `periodic-and-types.mm` | (2), (3), and whether the `Edge` path reports a maximum as the nearest point |
 | `sweep.mm` | the 51-case matrix: both current implementations and the proposed one against a dense brute-force reference |
 | `extpc-sibling.mm` | whether `BRepExtrema_ExtPC` (`Shape.pointEdgeExtrema`) shares the defect — it does, filed as #580 |
+| `580-repair-options.mm` | scores #580's repair options over 189 edge/point combinations, so that issue ships with its own answer rather than an open question |
 
 ## Build and run
 
@@ -81,6 +82,27 @@ curve's own domain:
 | minimum over both plus the range's ends (shipped) | **51 / 51** |
 
 The 26 the `Edge` path missed split into 9 wrong numbers and 17 refusals to answer.
+
+## The sibling entry point (#580)
+
+`Shape.pointEdgeExtrema` (`BRepExtrema_ExtPC`) makes the same promise and has the same defect, but
+was left out of #539 because fixing it needs a decision about its `solutionCount` field.
+`580-repair-options.mm` measures that decision rather than leaving it open. Over 189 edge/point
+combinations:
+
+| candidate set | correct distances |
+|---|---|
+| all extrema, `nil` when `IsDone()` is false (today) | 101 correct, 34 wrong, 54 `nil` |
+| extrema flagged `IsMin` only, no ends | 101 |
+| all extrema + the two ends (`TrimmedSquareDistances`) | 188 |
+| #539's `occtNearestPointOnCurveRange` | **189** |
+
+Two findings worth carrying: `BRepExtrema_ExtPC::TrimmedSquareDistances` is valid **even when
+`IsDone()` is false**, so the ends are always available; and filtering the extrema to `IsMin` ones
+**without** adding the ends scores exactly what today scores, so the obvious-looking fix is a no-op.
+The 188/189 miss is `Extrema_ExtPC` failing to converge on a BSpline where
+`GeomAPI_ProjectPointOnCurve` succeeds, which is why the recommendation is to reuse the helper below
+rather than repair in place.
 
 ## What shipped
 

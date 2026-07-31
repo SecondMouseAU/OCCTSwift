@@ -333,7 +333,10 @@ pins the distinction, updated here to the corrected answer it recorded as-is.
 entry point documented as finding "the closest point on the edge" with the same defect: 11 for the
 half-circle query above, and `IsDone()` false for both trimmed-segment queries. It is left alone
 because fixing it means first deciding what its `solutionCount`, which is the extrema count it
-deliberately exposes, should say when the answer is an end. Filed as #580.
+deliberately exposes, should say when the answer is an end. Filed as #580 — with that decision
+measured rather than left open: `solutionCount` keeps its meaning (OCCT models the ends separately
+from the extrema, via `BRepExtrema_ExtPC::TrimmedSquareDistances`), the `nil` guard is what changes,
+and routing through this PR's shared helper scores 189/189 against the in-place repair's 188/189.
 
 New suite `Issue539NearestPointOnCurveTests` (`OCCTCurveTests`), 12 tests. Proved rather than
 assumed: reinstating the two original implementations fails 9 of the 12, and the 3 that still pass
