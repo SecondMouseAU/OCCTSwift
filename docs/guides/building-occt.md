@@ -331,6 +331,13 @@ not re-run `build-occt.sh`, which `rm -rf`s each slice's build dir before starti
 xcframework with **no** override-linked TUs, and re-check whatever "no behaviour change" evidence
 the patch's `Scripts/repro/<issue>/README.md` recorded. Then a full `swift test`.
 
+Pushing a commit that touches `Scripts/patches/**` also triggers `.github/workflows/
+kernel-integration.yml` (#585), which rebuilds from source in CI and runs `swift test` against
+that binary. `ci.yml`'s own macOS check still runs too and will fail any new regression test that
+asserts the patch's fixed behaviour, since it always resolves the pinned *released* kernel; that
+failure is expected until a release ships this patch, not a sign the patch is broken — read
+`kernel-integration.yml`'s result for the real signal.
+
 **4. Package and pin.** The zip is the release asset; its checksum is what SwiftPM verifies.
 
 ```bash
@@ -362,7 +369,9 @@ If you don't want to build OCCT yourself:
 
 1. **This package's own release asset**: the normal path, and the one that carries our patches.
    `OCCT.xcframework.zip` is attached to each release that rebuilt the kernel, and `Package.swift`
-   resolves it by `url:`/`checksum:` automatically on any checkout with no local `Libraries/`. There
-   is no CI job that builds OCCT; the rebuild is the manual local run documented above.
+   resolves it by `url:`/`checksum:` automatically on any checkout with no local `Libraries/`. The
+   rebuild itself is the manual local run documented above; `kernel-integration.yml` (#585) builds
+   from source too, but only to validate a carried patch in CI before release, not to produce the
+   shipped release asset.
 2. **Open Cascade Commercial**: Contact sales@opencascade.com for pre-built iOS libraries
 3. **Community Builds**: Check OCCT forum for community-provided builds

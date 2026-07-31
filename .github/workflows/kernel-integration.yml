@@ -1,0 +1,73 @@
+name: Kernel Integration
+
+# Validates a carried OCCT kernel patch against the actual patched binary. ci.yml deliberately
+# never rebuilds OCCT from source (a clean checkout has no local Libraries/, so Package.swift's
+# binaryTarget resolves the pinned, released OCCT.xcframework), so a PR that adds regression tests
+# for a not-yet-released kernel patch fails ci.yml's macOS check indistinguishably from a real
+# regression (#585, surfaced by #519). This workflow only runs when Scripts/patches/ or the build
+# script itself changes, builds OCCT from source with those patches applied, and runs swift test
+# against that binary instead of the pinned release.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'refactor/**'
+    paths:
+      - 'Scripts/patches/**'
+      - 'Scripts/build-occt.sh'
+  push:
+    branches:
+      - main
+      - 'refactor/**'
+    paths:
+      - 'Scripts/patches/**'
+      - 'Scripts/build-occt.sh'
+  workflow_dispatch:
+
+concurrency:
+  group: kernel-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: swift test against patched kernel (macOS)
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      # Cache the FINAL xcframework only, never the intermediate occt-build-*/occt-src trees:
+      # CMakeCache bakes in an absolute build-tree path, which a fresh runner never reuses across
+      # runs, so caching the half-built tree would just restore an unusable cache every time (same
+      # gotcha as caching a local build directory across sibling checkouts on one machine). The key
+      # is the patch set plus the build script itself, so a pinned-OCCT-version bump also
+      # invalidates it.
+      - name: Cache OCCT.xcframework
+        id: occt-cache
+        uses: actions/cache@v4
+        with:
+          path: Libraries/OCCT.xcframework
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-kernel-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-kernel-
+
+      - name: Build OCCT from source (cache miss only)
+        if: steps.occt-cache.outputs.cache-hit != 'true'
+        run: ./Scripts/build-occt.sh
+
+      - name: swift test
+        run: swift test
