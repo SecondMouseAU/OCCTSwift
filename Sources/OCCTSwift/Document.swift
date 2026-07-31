@@ -11484,11 +11484,23 @@ extension Shape {
 
 extension Shape {
 
-    /// Get point on a face at (u, v) using local surface properties (BRepLProp_SLProps).
-    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double> {
+    /// Point on a face at (u, v), through the face's own adaptor (`BRepLProp_SLProps`).
+    ///
+    /// Returns nil if the receiver is not a single face, the same contract
+    /// ``faceLPropMeanCurvature(u:v:)`` and its siblings use, except that the point does not depend
+    /// on the curvature gate, so it is still reported at a cone apex or a sphere pole. Before #583
+    /// a non-face `Shape` came back as `(0, 0, 0)`, which is a real point of most surfaces.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!
+    /// if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+    ///     print(p)
+    /// }
+    /// ```
+    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
-        return SIMD3(x, y, z)
+        let ok = OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
     }
 
     /// Get normal on a face at (u, v). Returns nil if normal is undefined.
@@ -11498,29 +11510,84 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get maximum principal curvature on a face at (u, v).
-    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMaxCurvature(handle, u, v)
+    /// Maximum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil is a cone apex, a sphere pole, or a receiver that is not a face. `0` is a value in its
+    /// own right: it is the maximum curvature at every point of a cylinder or a cone. Before #583
+    /// the two were the same answer.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMax = cylinder.faceLPropMaxCurvature(u: 1.1, v: 6)   // 0, along the axis, not nil
+    /// ```
+    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMaxCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get minimum principal curvature on a face at (u, v).
-    public func faceLPropMinCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMinCurvature(handle, u, v)
+    /// Minimum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil on the same terms as ``faceLPropMaxCurvature(u:v:)``.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6)   // -1/3, the reciprocal radius
+    /// ```
+    public func faceLPropMinCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMinCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get mean curvature on a face at (u, v).
-    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMeanCurvature(handle, u, v)
+    /// Mean curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/meanCurvature(atU:v:)``, which has always been
+    /// optional; since #529 the two agree about where curvature exists, and since #583 both can
+    /// say so.
+    ///
+    /// ```swift
+    /// let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+    /// if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+    /// ```
+    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMeanCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get Gaussian curvature on a face at (u, v).
-    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropGaussianCurvature(handle, u, v)
+    /// Gaussian curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/gaussianCurvature(atU:v:)``. `0` is the answer at
+    /// every point of any developable surface (a cylinder, a cone, a plane), so this getter
+    /// returned the pre-#583 "undefined" sentinel for whole faces at a time.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+    /// ```
+    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropGaussianCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Check if a face is umbilic at (u, v) (all principal curvatures equal).
-    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool {
-        return OCCTFaceLPropIsUmbilic(handle, u, v)
+    /// Whether a face is umbilic at (u, v), meaning both principal curvatures are equal, or nil
+    /// where there are no principal curvatures to compare.
+    ///
+    /// OCCT's test is one ULP wide rather than a geometric tolerance, so a plane qualifies
+    /// everywhere but an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`. Before #583 a cone apex answered `false`, claiming the two
+    /// curvatures differ there.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+    /// ```
+    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool? {
+        var isUmbilic = false
+        let ok = OCCTFaceLPropIsUmbilic(handle, u, v, &isUmbilic)
+        return ok ? isUmbilic : nil
     }
 
     /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.

@@ -546,10 +546,66 @@ Probes and full figures at
 [`Scripts/repro/529-breplprop-resolution/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/529-breplprop-resolution).
 Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
 
-**Noticed, not fixed.** The face-side curvature getters (`faceLPropMaxCurvature` and its four
-siblings) still spell "undefined" as `0`, where the `Face` counterparts return `nil` — the
-silent-zero class #486 and #494 have both hit, and five more source-breaking signatures on top of
-the four here. Filed as #583 rather than folded in.
+**Noticed, and fixed separately.** The face-side curvature getters (`faceLPropMaxCurvature` and its
+four siblings) still spelled "undefined" as `0`, where the `Face` counterparts return `nil`: the
+silent-zero class #486 and #494 have both hit, and more source-breaking signatures on top of the
+four here. Filed as #583 rather than folded in; see the next entry.
+
+#### Breaking: a curvature of zero and no curvature at all stop being the same answer (#583)
+
+`Shape.faceLPropMaxCurvature(u:v:)` and its four siblings returned the value bare and used `0` (or
+`(0, 0, 0)` for `faceLPropValue(u:v:)`) to mean three different things at once: the curvature is
+undefined at this point, the handle was null, and this `Shape` is not a face. #529 had just made
+them agree with `Face.meanCurvature(atU:v:)` and friends about *whether* a quantity exists; they
+still had no way to say so.
+
+That encoding has no spare value to spend, which is a measurement rather than a style objection.
+Read through the same `BRepLProp_SLProps` the bridge builds:
+
+| geometry | `IsCurvatureDefined()` | what came back |
+|---|---|---|
+| cylinder, **any** point | true | Gaussian and maximum curvature both exactly `0` |
+| cone, any point | true | the same two, exactly `0` |
+| plane, any point | true | all four scalars exactly `0`; at `(0, 0)` of a plane through the origin, a point of `(0, 0, 0)` too |
+| cone apex, sphere pole | **false** | `0` / `(0, 0, 0)` |
+| a `Shape` that is not a face | n/a | `0` / `(0, 0, 0)` |
+
+So the sentinel collided with the answer across whole faces of the two commonest solids in the test
+suite, not at some pathological parameter; and `faceLPropIsUmbilic(u:v:)` answered `false`, "the
+principal curvatures differ here", at points with no principal curvatures to compare.
+
+**Source-breaking, in six places.** The five the issue names return an optional:
+`Shape.faceLPropValue(u:v:)` → `SIMD3<Double>?`, and `faceLPropMaxCurvature(u:v:)`,
+`faceLPropMinCurvature(u:v:)`, `faceLPropMeanCurvature(u:v:)`, `faceLPropGaussianCurvature(u:v:)` →
+`Double?`. **The census turned up a sixth in the same block**: `faceLPropIsUmbilic(u:v:)` →
+`Bool?`, whose `false` was the same conflation one type down. `faceLPropValue` is the one whose
+contract narrows rather than changes: the point does not depend on the curvature gate, so it is
+still reported at a cone apex and a sphere pole, and `nil` there means only "not a face".
+
+Migration is `if let` at the call site; the previous behaviour is `?? 0`, which is what every caller
+that ignored the distinction was already getting.
+
+New suite `AdaptorCurvatureDefinednessTests` (`OCCTAnalysisTests`), 4 tests, and the three
+`AdaptorLocalPropsParityTests` workarounds come out: the parity claim is now
+`(adaptor != nil) == (geom != nil)` on every sampled point, the way the edge half of that suite
+already asserted it, instead of comparing values only where the `Geom_` side happened to report one.
+Proved against two injections rather than assumed: making the curvature gate unreportable (undefined
+comes back as a successful `0`) fails 2 tests, and making the `catch` unreportable (a non-face
+`Shape` comes back as a successful `0`) fails 1. Seventeen and eighteen tests respectively are
+controls and pass under both.
+
+**Not changed, and filed as its own follow-up.** Six entry points on other types keep the same bare
+double: `Curve3D.curvature(at:)`, `Curve3D.localCurvature(at:)`, `Curve2D.curvature(at:)`,
+`Shape.edgeCurvatureLP(at:)`, `Surface.gaussianCurvature(atU:v:)` and `Surface.meanCurvature(atU:v:)`.
+The last two disagree with both `Face.gaussianCurvature(atU:v:)`/`meanCurvature(atU:v:)` and with
+their own neighbour `Surface.principalCurvatures(atU:v:)`, which is already optional. A straight
+edge's curvature is genuinely `0` and a fully degenerate curve's is undefined, so the collision is
+identical; each is a separate public type with its own break surface, so folding them in would have
+repeated exactly the mistake this issue exists to avoid.
+
+Probe and full figures at
+[`Scripts/repro/583-lprop-zero-sentinel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/583-lprop-zero-sentinel).
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
 
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 

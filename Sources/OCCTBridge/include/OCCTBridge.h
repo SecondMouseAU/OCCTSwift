@@ -16502,29 +16502,43 @@ bool OCCTEdgeLPropD1(OCCTShapeRef _Nonnull edge, double param,
                        double* _Nonnull d1x, double* _Nonnull d1y, double* _Nonnull d1z);
 
 // MARK: - BRepLProp_SLProps (v0.111.0)
+//
+// #583: the six value-reporting entry points below report definedness the way OCCTFaceGetMeanCurvature
+// and its siblings do: bool return, value in an out-parameter. They used to return the value bare and
+// spell "undefined here" as 0, which is not a spare encoding, because a cylinder's Gaussian and
+// maximum curvature are exactly 0 at every point with the curvature perfectly well defined.
 
 /// Get point on face at (u, v) using local surface properties.
-void OCCTFaceLPropValue(OCCTShapeRef _Nonnull face, double u, double v,
+/// Returns false for a null handle or a shape that is not a face; the point itself does not depend on
+/// the curvature gate, so it is reported at a cone apex and a sphere pole too.
+bool OCCTFaceLPropValue(OCCTShapeRef _Nonnull face, double u, double v,
                           double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
 
 /// Get normal on face at (u, v). Returns true if normal is defined.
 bool OCCTFaceLPropNormal(OCCTShapeRef _Nonnull face, double u, double v,
                            double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
-/// Get maximum curvature on face at (u, v).
-double OCCTFaceLPropMaxCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get maximum curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMaxCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                 double* _Nonnull curvature);
 
-/// Get minimum curvature on face at (u, v).
-double OCCTFaceLPropMinCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get minimum curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMinCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                 double* _Nonnull curvature);
 
-/// Get mean curvature on face at (u, v).
-double OCCTFaceLPropMeanCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get mean curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMeanCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                  double* _Nonnull curvature);
 
-/// Get Gaussian curvature on face at (u, v).
-double OCCTFaceLPropGaussianCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get Gaussian curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropGaussianCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                      double* _Nonnull curvature);
 
 /// Check if face at (u, v) is umbilic (all curvatures equal).
-bool OCCTFaceLPropIsUmbilic(OCCTShapeRef _Nonnull face, double u, double v);
+/// Returns true if curvature is defined there, i.e. if the question has an answer at all; the answer
+/// itself goes to isUmbilic. A false return used to be indistinguishable from "not umbilic".
+bool OCCTFaceLPropIsUmbilic(OCCTShapeRef _Nonnull face, double u, double v,
+                              bool* _Nonnull isUmbilic);
 
 /// Get tangent in U direction on face at (u, v). Returns true if tangent is defined.
 bool OCCTFaceLPropTangentU(OCCTShapeRef _Nonnull face, double u, double v,
