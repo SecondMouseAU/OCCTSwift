@@ -36,7 +36,13 @@ def index_entries(lines):
         m = ENTRY.match(line)
         if not m:
             continue
-        cls, syms = m.group(1), re.sub(r'\(v[\d.]+\)', '', m.group(2))
+        # Strip any parenthetical annotation, not just `(vX.Y.Z)`: a prose aside
+        # such as `OCCTFoo* (historical name)` otherwise leaves the symbol glued
+        # to the prose, failing the fullmatch below and silently skipping the
+        # entry. That is how #508's fabricated `OCCTGCE2dMakeLine*` survived the
+        # #510 sweep. The `)` is optional because an aside may wrap to the next
+        # line, which this line-at-a-time scan never sees.
+        cls, syms = m.group(1), re.sub(r'\([^)]*\)?', '', m.group(2))
         for sym in re.split(r'[,/]', syms):
             sym = sym.strip()
             if re.fullmatch(r'OCCT\w+\*?', sym):

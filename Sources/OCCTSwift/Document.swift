@@ -7811,37 +7811,37 @@ extension Curve3D {
 extension Curve2D {
     /// Create a 2D circle from center and radius.
     public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeCircleCenterRadius(center.x, center.y, radius) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleCenterRadius(center.x, center.y, radius) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle through 3 points.
     public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeCircle3Points(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircle3Points(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle from center and point on circle.
     public static func gceCircle(center: SIMD2<Double>, pointOn: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeCircleCenterPoint(center.x, center.y, pointOn.x, pointOn.y) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleCenterPoint(center.x, center.y, pointOn.x, pointOn.y) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle parallel to existing circle at distance.
     public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Double>,
                                           radius: Double, distance: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeCircleParallel(center.x, center.y,
-                                                     direction.x, direction.y,
-                                                     radius, distance) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleParallel(center.x, center.y,
+                                                      direction.x, direction.y,
+                                                      radius, distance) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D circle from axis and radius.
     public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Double>,
                                   radius: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeCircleAxis(axisCenter.x, axisCenter.y,
-                                                 axisDirection.x, axisDirection.y,
-                                                 radius) else { return nil }
+        guard let ref = OCCTCurve2DMakeCircleAxis(axisCenter.x, axisCenter.y,
+                                                  axisDirection.x, axisDirection.y,
+                                                  radius) else { return nil }
         return Curve2D(handle: ref)
     }
 }
@@ -7852,15 +7852,15 @@ extension Curve2D {
     /// Create a 2D ellipse from axis and radii.
     public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                    majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeEllipse(center.x, center.y,
-                                              xDirection.x, xDirection.y,
-                                              majorRadius, minorRadius) else { return nil }
+        guard let ref = OCCTCurve2DMakeEllipse(center.x, center.y,
+                                               xDirection.x, xDirection.y,
+                                               majorRadius, minorRadius) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D ellipse from 3 points (S1, S2, center).
     public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeEllipse3Points(s1.x, s1.y, s2.x, s2.y,
+        guard let ref = OCCTCurve2DMakeEllipse3Points(s1.x, s1.y, s2.x, s2.y,
                                                       center.x, center.y) else { return nil }
         return Curve2D(handle: ref)
     }
@@ -7869,7 +7869,7 @@ extension Curve2D {
     public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                    yDirection: SIMD2<Double>,
                                    majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeEllipseAxis22d(center.x, center.y,
+        guard let ref = OCCTCurve2DMakeEllipseAxis22d(center.x, center.y,
                                                       xDirection.x, xDirection.y,
                                                       yDirection.x, yDirection.y,
                                                       majorRadius, minorRadius) else { return nil }
@@ -7883,15 +7883,15 @@ extension Curve2D {
     /// Create a 2D hyperbola from axis and radii.
     public static func gceHyperbola(center: SIMD2<Double>, xDirection: SIMD2<Double>,
                                      majorRadius: Double, minorRadius: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeHyperbola(center.x, center.y,
-                                                xDirection.x, xDirection.y,
-                                                majorRadius, minorRadius) else { return nil }
+        guard let ref = OCCTCurve2DMakeHyperbola(center.x, center.y,
+                                                 xDirection.x, xDirection.y,
+                                                 majorRadius, minorRadius) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D hyperbola from 3 points (S1, S2, center).
     public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeHyperbola3Points(s1.x, s1.y, s2.x, s2.y,
+        guard let ref = OCCTCurve2DMakeHyperbola3Points(s1.x, s1.y, s2.x, s2.y,
                                                         center.x, center.y) else { return nil }
         return Curve2D(handle: ref)
     }
@@ -7903,17 +7903,17 @@ extension Curve2D {
     /// Create a 2D parabola from axis and focal distance.
     public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
                                     focalDistance: Double) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeParabola(center.x, center.y,
-                                               direction.x, direction.y, focalDistance) else { return nil }
+        guard let ref = OCCTCurve2DMakeParabola(center.x, center.y,
+                                                direction.x, direction.y, focalDistance) else { return nil }
         return Curve2D(handle: ref)
     }
 
     /// Create a 2D parabola from directrix and focus.
     public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection: SIMD2<Double>,
                                     focus: SIMD2<Double>) -> Curve2D? {
-        guard let ref = OCTGCE2dMakeParabolaDirectrixFocus(directrixPoint.x, directrixPoint.y,
-                                                             directrixDirection.x, directrixDirection.y,
-                                                             focus.x, focus.y) else { return nil }
+        guard let ref = OCCTCurve2DMakeParabolaDirectrixFocus(directrixPoint.x, directrixPoint.y,
+                                                              directrixDirection.x, directrixDirection.y,
+                                                              focus.x, focus.y) else { return nil }
         return Curve2D(handle: ref)
     }
 }

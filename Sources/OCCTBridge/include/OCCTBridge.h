@@ -244,7 +244,11 @@
 // GC_MakeTranslation                  → OCCTGCMakeTranslation
 //
 // --- GC 2D ---
-// GC_MakeLine2d                       → OCCTGCE2dMakeLine* (bridge symbols retain GCE2d historical name)
+// GC_MakeCircle2d                     → OCCTCurve2DMakeCircle*
+// GC_MakeEllipse2d                    → OCCTCurve2DMakeEllipse*
+// GC_MakeHyperbola2d                  → OCCTCurve2DMakeHyperbola*
+// GC_MakeLine2d                       → OCCTCurve2DMakeLine*
+// GC_MakeParabola2d                   → OCCTCurve2DMakeParabola*
 //
 // --- GCPnts ---
 // GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
@@ -6807,7 +6811,7 @@ typedef struct {
 OCCTSurfaceContinuitySplitResult OCCTSurfaceSplitByContinuity(OCCTSurfaceRef surface,
     int32_t criterion, double tolerance);
 
-// MARK: - v0.51.0: BRepLib makers, GC geometry, GCE2d, ChFi2d_AnaFilletAlgo
+// MARK: - v0.51.0: BRepLib makers, GC geometry, GC 2D, ChFi2d_AnaFilletAlgo
 
 // --- BRepLib_MakePolygon ---
 
@@ -14461,67 +14465,67 @@ OCCTCurve3DRef _Nullable OCCTGCMakeHyperbola3Points(double x1, double y1, double
 // MARK: - GC_MakeCircle2d (v0.105.0)
 
 /// Create a 2D circle from center and radius.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeCircleCenterRadius(double cx, double cy, double radius);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeCircleCenterRadius(double cx, double cy, double radius);
 
 /// Create a 2D circle through 3 points.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeCircle3Points(double x1, double y1,
-                                                     double x2, double y2,
-                                                     double x3, double y3);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeCircle3Points(double x1, double y1,
+                                                      double x2, double y2,
+                                                      double x3, double y3);
 
 /// Create a 2D circle from center and point on circle.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeCircleCenterPoint(double cx, double cy, double px, double py);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeCircleCenterPoint(double cx, double cy, double px, double py);
 
 /// Create a 2D circle parallel to existing circle at distance.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeCircleParallel(double cx, double cy,
-                                                      double dx, double dy,
-                                                      double radius, double dist);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeCircleParallel(double cx, double cy,
+                                                       double dx, double dy,
+                                                       double radius, double dist);
 
 /// Create a 2D circle from axis and radius.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeCircleAxis(double cx, double cy,
-                                                  double dx, double dy,
-                                                  double radius);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeCircleAxis(double cx, double cy,
+                                                   double dx, double dy,
+                                                   double radius);
 
 // MARK: - GC_MakeEllipse2d (v0.105.0)
 
 /// Create a 2D ellipse from axis and radii.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeEllipse(double cx, double cy,
-                                               double dx, double dy,
-                                               double major, double minor);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeEllipse(double cx, double cy,
+                                                double dx, double dy,
+                                                double major, double minor);
 
 /// Create a 2D ellipse from 3 points (S1, S2, center).
-OCCTCurve2DRef _Nullable OCTGCE2dMakeEllipse3Points(double x1, double y1,
-                                                      double x2, double y2,
-                                                      double x3, double y3);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeEllipse3Points(double x1, double y1,
+                                                       double x2, double y2,
+                                                       double x3, double y3);
 
 /// Create a 2D ellipse from full Ax22d and radii.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeEllipseAxis22d(double cx, double cy,
-                                                      double xdx, double xdy,
-                                                      double ydx, double ydy,
-                                                      double major, double minor);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeEllipseAxis22d(double cx, double cy,
+                                                       double xdx, double xdy,
+                                                       double ydx, double ydy,
+                                                       double major, double minor);
 
 // MARK: - GC_MakeHyperbola2d (v0.105.0)
 
 /// Create a 2D hyperbola from axis and radii.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeHyperbola(double cx, double cy,
-                                                 double dx, double dy,
-                                                 double major, double minor);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeHyperbola(double cx, double cy,
+                                                  double dx, double dy,
+                                                  double major, double minor);
 
 /// Create a 2D hyperbola from 3 points (S1, S2, center).
-OCCTCurve2DRef _Nullable OCTGCE2dMakeHyperbola3Points(double x1, double y1,
-                                                        double x2, double y2,
-                                                        double x3, double y3);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeHyperbola3Points(double x1, double y1,
+                                                         double x2, double y2,
+                                                         double x3, double y3);
 
 // MARK: - GC_MakeParabola2d (v0.105.0)
 
 /// Create a 2D parabola from axis and focal distance.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeParabola(double cx, double cy,
-                                                double dx, double dy,
-                                                double focal);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeParabola(double cx, double cy,
+                                                 double dx, double dy,
+                                                 double focal);
 
 /// Create a 2D parabola from directrix and focus.
-OCCTCurve2DRef _Nullable OCTGCE2dMakeParabolaDirectrixFocus(double dx, double dy,
-                                                              double ddx, double ddy,
-                                                              double fx, double fy);
+OCCTCurve2DRef _Nullable OCCTCurve2DMakeParabolaDirectrixFocus(double dx, double dy,
+                                                               double ddx, double ddy,
+                                                               double fx, double fy);
 
 // MARK: - GCPnts_UniformAbscissa (v0.105.0)
 

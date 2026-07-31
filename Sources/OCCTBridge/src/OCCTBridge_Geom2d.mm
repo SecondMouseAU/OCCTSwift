@@ -3092,7 +3092,7 @@ OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
 #include <gp_Ax22d.hxx>
 #include <gp_Circ2d.hxx>
 
-OCCTCurve2DRef OCTGCE2dMakeCircleCenterRadius(double cx, double cy, double radius) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleCenterRadius(double cx, double cy, double radius) {
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(cx, cy), radius);
         if (!mc.IsDone()) return nullptr;
@@ -3102,9 +3102,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleCenterRadius(double cx, double cy, double radiu
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircle3Points(double x1, double y1,
-                                           double x2, double y2,
-                                           double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeCircle3Points(double x1, double y1,
+                                            double x2, double y2,
+                                            double x3, double y3) {
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!mc.IsDone()) return nullptr;
@@ -3114,7 +3114,7 @@ OCCTCurve2DRef OCTGCE2dMakeCircle3Points(double x1, double y1,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleCenterPoint(double cx, double cy, double px, double py) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleCenterPoint(double cx, double cy, double px, double py) {
     try {
         GC_MakeCircle2d mc(gp_Pnt2d(cx, cy), gp_Pnt2d(px, py));
         if (!mc.IsDone()) return nullptr;
@@ -3124,9 +3124,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleCenterPoint(double cx, double cy, double px, do
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleParallel(double cx, double cy,
-                                            double dx, double dy,
-                                            double radius, double dist) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleParallel(double cx, double cy,
+                                             double dx, double dy,
+                                             double radius, double dist) {
     try {
         gp_Circ2d circ(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy)), radius);
         GC_MakeCircle2d mc(circ, dist);
@@ -3137,9 +3137,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleParallel(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeCircleAxis(double cx, double cy,
-                                        double dx, double dy,
-                                        double radius) {
+OCCTCurve2DRef OCCTCurve2DMakeCircleAxis(double cx, double cy,
+                                         double dx, double dy,
+                                         double radius) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeCircle2d mc(ax, radius);
@@ -3152,9 +3152,9 @@ OCCTCurve2DRef OCTGCE2dMakeCircleAxis(double cx, double cy,
 
 // MARK: - GC_MakeEllipse2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeEllipse(double cx, double cy,
-                                     double dx, double dy,
-                                     double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipse(double cx, double cy,
+                                      double dx, double dy,
+                                      double major, double minor) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeEllipse2d me(ax, major, minor);
@@ -3165,9 +3165,9 @@ OCCTCurve2DRef OCTGCE2dMakeEllipse(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeEllipse3Points(double x1, double y1,
-                                            double x2, double y2,
-                                            double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipse3Points(double x1, double y1,
+                                             double x2, double y2,
+                                             double x3, double y3) {
     try {
         GC_MakeEllipse2d me(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!me.IsDone()) return nullptr;
@@ -3177,10 +3177,10 @@ OCCTCurve2DRef OCTGCE2dMakeEllipse3Points(double x1, double y1,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeEllipseAxis22d(double cx, double cy,
-                                            double xdx, double xdy,
-                                            double ydx, double ydy,
-                                            double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeEllipseAxis22d(double cx, double cy,
+                                             double xdx, double xdy,
+                                             double ydx, double ydy,
+                                             double major, double minor) {
     try {
         gp_Ax22d ax(gp_Pnt2d(cx, cy), gp_Dir2d(xdx, xdy), gp_Dir2d(ydx, ydy));
         GC_MakeEllipse2d me(ax, major, minor);
@@ -3193,9 +3193,9 @@ OCCTCurve2DRef OCTGCE2dMakeEllipseAxis22d(double cx, double cy,
 
 // MARK: - GC_MakeHyperbola2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeHyperbola(double cx, double cy,
-                                       double dx, double dy,
-                                       double major, double minor) {
+OCCTCurve2DRef OCCTCurve2DMakeHyperbola(double cx, double cy,
+                                        double dx, double dy,
+                                        double major, double minor) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeHyperbola2d mh(ax, major, minor);
@@ -3206,9 +3206,9 @@ OCCTCurve2DRef OCTGCE2dMakeHyperbola(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeHyperbola3Points(double x1, double y1,
-                                              double x2, double y2,
-                                              double x3, double y3) {
+OCCTCurve2DRef OCCTCurve2DMakeHyperbola3Points(double x1, double y1,
+                                               double x2, double y2,
+                                               double x3, double y3) {
     try {
         GC_MakeHyperbola2d mh(gp_Pnt2d(x1, y1), gp_Pnt2d(x2, y2), gp_Pnt2d(x3, y3));
         if (!mh.IsDone()) return nullptr;
@@ -3220,9 +3220,9 @@ OCCTCurve2DRef OCTGCE2dMakeHyperbola3Points(double x1, double y1,
 
 // MARK: - GC_MakeParabola2d (v0.105.0)
 
-OCCTCurve2DRef OCTGCE2dMakeParabola(double cx, double cy,
-                                      double dx, double dy,
-                                      double focal) {
+OCCTCurve2DRef OCCTCurve2DMakeParabola(double cx, double cy,
+                                       double dx, double dy,
+                                       double focal) {
     try {
         gp_Ax2d ax(gp_Pnt2d(cx, cy), gp_Dir2d(dx, dy));
         GC_MakeParabola2d mp(ax, focal, true);
@@ -3233,9 +3233,9 @@ OCCTCurve2DRef OCTGCE2dMakeParabola(double cx, double cy,
     } catch (...) { return nullptr; }
 }
 
-OCCTCurve2DRef OCTGCE2dMakeParabolaDirectrixFocus(double dx, double dy,
-                                                    double ddx, double ddy,
-                                                    double fx, double fy) {
+OCCTCurve2DRef OCCTCurve2DMakeParabolaDirectrixFocus(double dx, double dy,
+                                                     double ddx, double ddy,
+                                                     double fx, double fy) {
     try {
         gp_Ax2d directrix(gp_Pnt2d(dx, dy), gp_Dir2d(ddx, ddy));
         GC_MakeParabola2d mp(directrix, gp_Pnt2d(fx, fy));
