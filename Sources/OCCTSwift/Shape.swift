@@ -6079,7 +6079,7 @@ extension Shape {
 public struct EvolvingFilletEdge: Sendable {
     /// 0-based index of the edge to fillet, as reported by ``Edge/index``.
     ///
-    /// This was 1-based before v1.16.2, the one edge index in the fillet family that was. It now
+    /// This was 1-based until #520, the one edge index in the fillet family that was. It now
     /// matches ``Edge/index``, ``Shape/filletedVariable(edgeIndex:radiusProfile:)`` and
     /// ``Shape/blendedEdges(_:)``.
     public var edgeIndex: Int

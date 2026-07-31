@@ -59,6 +59,86 @@ not that it wraps the class the entry files it under. A mis-attributed entry tha
 symbol from a neighbouring class is still invisible, and it misleads exactly the way a fabricated one
 does.
 
+#### One edge-index contract and one radius law for all five fillet entry points (#520)
+
+The five `BRepFilletAPI_MakeFillet` edge-list functions disagreed on what an edge index means, on
+what an unresolvable one does, and two validated no radius at all. Settling those three questions
+turned up two defects the issue did not know were there.
+
+**`filletedVariable` never applied its radius profile.** It mapped each relative parameter onto the
+edge's own curve parameter range and called `SetRadius(radii[i], param, 1)`. There is no
+`(Real, Real, Integer)` overload of `SetRadius`, so `param` was truncated to an `int` and taken as
+the *contour* index; the profile was discarded and the caller got a constant radius. Measured on a
+20mm box, edge 0:
+
+| call | before | now |
+|---|---|---|
+| `filletedVariable(edgeIndex: 0, radiusProfile: [(0, 1.0), (1, 3.0)])` | volume 7995.707963, **exactly** the constant-1.0 result | 7981.047467, the profile OCCT was asked for |
+| `filletedVariable(edgeIndex: 0, radiusProfile: [(0, 1.0), (0.5, 4.0), (1, 1.0)])` (30mm box) | 26993.561945, exactly the constant-1.0 result | 26947.284023 |
+
+**Two live SIGSEGV paths.** A contour added by the law-taking `Add(edge)` overload that never
+receives a radius crashes `Build()`. It is an OS signal, so the bridge's `catch (...)` never saw it
+and no `nil` could come back. Both routes were reachable from Swift: `filletEvolving` with an empty
+`radiusPoints` (the old code took neither of its two branches for a count of 0), and
+`filletedVariable` on any edge whose curve parameter range does not start at 0, where every
+truncated contour index exceeded `NbElements()` and every `SetRadius` was silently dropped. Box
+edges all start at 0, which is why the existing tests never saw it; the edges a boolean cut
+produces do not (6 of the 21 edges of one box cut by another).
+
+Both radius-law entry points now resolve their edges through `occtFilletAddEdges` and apply their
+profile through the new `occtFilletSetRadiusProfile` (`OCCTBridge_Internal.h`), the same
+`SetRadius(UandR, contour, 1)` call `OCCTShapeHistoryFromFilletEdgeVariable` was already making
+correctly two functions away. So the same profile now gives the same shape through either entry
+point, which is pinned by a test.
+
+**Three contract changes.**
+
+*Radius and parameter validation on the two radius-law functions.* Neither inspected a single
+element before. This is not the redundant guard #489 measured for `Add(radius, edge)`: through the
+profile overload a negative radius is not caught by OCCT at all, reporting `IsDone() == 1` and
+handing back a shape `BRepCheck_Analyzer` rejects. The parameters are checked against the `[0, 1]`
+contract both doc comments already stated, and required to strictly increase, because OCCT
+renormalises a 3+ point profile with `(U - Uf) / (Ul - Uf)`: equal parameters divide by zero, and
+descending ones silently reverse the law (7960.426609 against 7963.730821 for the ascending
+equivalent).
+
+*An index that names no edge of the shape rejects the call.* Three of the five skipped it and
+reported success, filleting fewer edges than the caller asked for — a request honoured in part,
+presented as honoured in full, the same defect class as #439/#442/#443. The other two already
+rejected, so this is what makes the family agree.
+
+| call | before | now |
+|---|---|---|
+| `blendedEdges([(0, 2.0), (99999, 2.0)])` | edge 0 filleted, reported as success | `nil` |
+| `filleted(edges: [ownEdge, edgeOfAnotherShape], radius: 1.0)` | `ownEdge` filleted, reported as success | `nil` |
+| `filletedWithFullHistory(radius: 1.0, edges: [0, 99999])` | edge 0 filleted, reported as success | `nil` |
+
+*`EvolvingFilletEdge.edgeIndex` is 0-based*, matching `Edge.index` and every sibling; it was the
+one 1-based edge index in the family. Reinterpreting the same numbers would have quietly filleted
+the neighbouring edge for every existing caller, so the old spelling is
+`@available(*, unavailable)` instead: `init(edgeIndex:radiusPoints:)` fails to build with a message
+naming the base change, and `init(edge:radiusPoints:)` takes the `Edge` itself, the idiom
+`filleted(edges:radius:)` already uses. The four call sites in this repo's own tests failed exactly
+that way and were migrated.
+
+Ground truth for all of the above is in
+[`Scripts/repro/520-fillet-edge-index-contracts/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/520-fillet-edge-index-contracts).
+The new `Issue520FilletContractTests` suite was run against unmodified code first (#489's lesson):
+10 of its 13 then-runnable cases failed, 1 took the test process down with a SIGSEGV, and 2 passed —
+one of those for the wrong reason, since a 0-based index was out of range under the 1-based
+contract. Each guard was then re-checked by injecting the mistake back: the index guard fails 3
+tests, the radius guard 2, the parameter guards 2, the empty-law guard SIGSEGVs 3 runs out of 3, and
+restoring the truncating loop both fails the profile test and SIGSEGVs the re-parameterised-edge
+test.
+
+Bridge-only: no kernel patch, no xcframework rebuild, nothing filed upstream — passing a `double`
+where OCCT's signature takes an `int` is our defect, not OCCT's. `Scripts/count-operations.py` now
+skips `@available(*, unavailable)` declarations, which are retired spellings rather than entry
+points; the total stays 4295. The skip-an-out-of-range-index idiom survives outside this family, in
+`OCCTShapeHistoryFromChamferEdges`, `OCCTShapeOffsetPerFace` and the 2D fillet/chamfer vertex
+functions; those are a separate family and are left for their own issue rather than widened into
+this one.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
