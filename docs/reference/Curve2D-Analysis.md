@@ -540,6 +540,9 @@ public static func distanceBetweenLineAndCircle(
 
 - **Returns:** Array of extrema results (min and/or max distance points; may be empty on failure).
 - **OCCT:** `Extrema_ExtElC2d` (line–circle).
+- **Note:** `circleRadius` must be positive (#553). With a radius of zero the extrema come back
+  correct but duplicated; `distanceFromPointToLine(point:linePoint:lineDir:)` answers the point
+  question directly. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let extrema = Extrema2d.distanceBetweenLineAndCircle(
@@ -563,6 +566,9 @@ public static func distanceFromPointToCircle(
 
 - **Returns:** Array of up to 2 results (min and max distance to the circle).
 - **OCCT:** `Extrema_ExtPElC2d` (point–circle).
+- **Note:** `circleRadius` must be positive (#553). This is the family where a zero radius loses
+  the answer outright: measured, OCCT reports no extremum at all rather than the distance to the
+  centre. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let extrema = Extrema2d.distanceFromPointToCircle(
@@ -772,6 +778,9 @@ Returns 0, 1 (tangent), or 2 intersection points.
 
 - **Returns:** Array of 0–2 `Intersection2DPoint` values.
 - **OCCT:** `IntAna2d_AnaIntersection` (line–circle).
+- **Note:** `circleRadius` must be positive (#553). A zero-radius circle is a point, and whether a
+  point lies on a line is not an intersection query: measured, OCCT answers with the centre and a
+  `param2` of NaN. A non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let pts = IntAna2d.intersectLineCircle(
@@ -797,6 +806,8 @@ Returns 0 (disjoint or concentric), 1 (tangent), or 2 intersection points.
 
 - **Returns:** Array of 0–2 `Intersection2DPoint` values.
 - **OCCT:** `IntAna2d_AnaIntersection` (circle–circle).
+- **Note:** both radii must be positive, for the same reason as `intersectLineCircle` (#553). A
+  non-positive radius returns an empty array.
 - **Example:**
   ```swift
   let pts = IntAna2d.intersectCircles(

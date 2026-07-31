@@ -2199,6 +2199,9 @@ public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D?
 ```
 
 - **OCCT:** `GC_MakeCircle2d` via `OCCTCurve2DMakeCircleCenterRadius`.
+- **Note:** `radius` must be positive (#553). `GC_MakeCircle2d` reports `gce_NegativeRadius` for a
+  negative radius but succeeds for zero, returning a circle that behaves as its own centre. A
+  non-positive radius returns nil.
 
 ---
 
@@ -2236,6 +2239,10 @@ public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Dou
 ```
 
 - **OCCT:** `GC_MakeCircle2d` (parallel) via `OCCTCurve2DMakeCircleParallel`.
+- **Note:** `radius` must be positive, and so must `radius + distance` (#553). `GC_MakeCircle2d`
+  takes the absolute value rather than refusing an offset that reaches or passes the centre:
+  measured, radius 5 offset by -5 gives radius 0 and by -6 gives radius 1, a circle inside the base
+  rather than the one asked for. Either violation returns nil.
 
 ---
 
@@ -2249,6 +2256,7 @@ public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Dou
 ```
 
 - **OCCT:** `GC_MakeCircle2d` (axis) via `OCCTCurve2DMakeCircleAxis`.
+- **Note:** `radius` must be positive (#553); a non-positive radius returns nil.
 - **Example:**
   ```swift
   if let c = Curve2D.gceCircle(center: SIMD2(0, 0), radius: 5) {

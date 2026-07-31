@@ -186,6 +186,79 @@ all. They assert measured geometry rather than non-nil, and were verified to fai
 defects — a flipped parallel-offset sign, and swapped `S1`/`S2` apex points. No public Swift API
 changed; `OCCTBridge` is not an SPM product, so the C-layer rename reaches no consumer.
 
+#### The 2D solvers' circle radius: measured per family, guarded in all of them (#553)
+
+The last unresolved part of the 2D circle-radius family, split out of #514. About 25 sites in
+`OCCTBridge_Geom2d.mm` build a `gp_Circ2d` from caller-supplied doubles as an **input** to a
+tangency, bisector, intersection or extrema solver rather than as geometry being returned. #514
+stopped there on purpose: a zero-radius circle handed to such a solver is geometrically a point, and
+several of them have a documented answer for a point argument, so guarding blindly could have
+removed a query some callers were legitimately making.
+
+So it was measured, per family, against OCCT's own point overload of the same query. The probe is at
+[`Scripts/repro/553-gcc-zero-radius-circle/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/553-gcc-zero-radius-circle).
+**No family answers the point question:**
+
+| family | a zero-radius argument gives | OCCT's own point overload gives |
+|---|---|---|
+| `GccAna_Circ2dBisec` | 4 solutions, each duplicated; with **both** radii 0, two of the three are hyperbolas of **major radius 0** | `GccAna_CircPnt2dBisec` gives 2; `GccAna_Pnt2dBisec` gives the perpendicular bisector line |
+| `GccAna_CircPnt2dBisec` | 2 hyperbolas of **major radius 0** | a **line** — so the returned *type* is wrong, not merely duplicated |
+| `GccAna_CircLin2dBisec` | the point overload's parabola, twice | it once |
+| `GccAna_Lin2dTanPar` / `Lin2dTanPer` | the point overload's line, twice | it once |
+| `GccAna_Lin2d2Tan` | the point overload's line, twice | it once |
+| `GccAna_Circ2d3Tan`, three circles | 8 solutions: the point overload's 4, each twice | 4, tangency residuals < 1e-14 |
+| `GccAna_Circ2d3Tan`, one circle + two points | **0 solutions** | the circle circumscribing the three positions |
+| `Extrema_ExtPElC2d` | **0 extrema** — the distance is lost outright | — |
+| `Extrema_ExtElC2d` | the right distance, twice | — |
+| `IntAna2d_AnaIntersection` | the right point, with `ParamOnSecond()` **NaN**, written straight into the caller's `param2` | — |
+
+The duplication has a cause worth recording: tangency to a circle of radius 0 satisfies the
+enclosing and the outside qualifier at once, so the solver enumerates each solution twice. And the
+hyperbolas of major radius 0 are the same degenerate conic `occtValidHyperbolaRadii` refuses to
+construct on the other side of this file, so the bisector families were handing back curves the
+construction API would not accept.
+
+Every one of those families already has a point entry point in the same API — `GccAnaBisector.ofPoints`,
+`ofLineAndPoint`, `Curve2DGcc.lineParallelThrough`, `linePerpendicularThrough`,
+`Shape.circleThrough3Points`, the point/point line solvers, and the mixed circle/point overloads.
+Naming a point as a point already has a spelling, and a degenerate circle is not it. **Guard, in
+every family** — a decision reached per family, which converged.
+
+**Negative was never the gap.** `gp_Circ2d`'s constructor is `constexpr` in the header, so its
+`Standard_ConstructionError_Raise_if(theRadius < 0.0, …)` does run in a bridge translation unit —
+the same finding #514 made for `gp_Elips2d` — and the existing `catch` already turned it into an
+empty result. `GC_MakeCircle2d` reports `gce_NegativeRadius`, a status rather than a macro, so
+`No_Exception` does not void that either. The new guards change what **zero** does, nothing else.
+
+Two more radius contracts in the same file were converged onto the same predicate while the family
+was open:
+
+- **The radius of the circle a solver must find.** `OCCTGccCircle2d2TanRad`,
+  `OCCTGccCircle2dTanPtRad` and `OCCTGccCircle2d2PtRad` each spelled `radius <= 0` inline; four
+  siblings did not check at all. Measured, `GccAna_Circ2d2TanRad` and `GccAna_Circ2dTanOnRad` asked
+  for radius 0 return solution circles of radius 0. All seven now share `occtValidCircleRadius`.
+- **Four producer sites #514 did not reach.** `BRepBuilderAPI_MakeEdge2d` reports `IsDone()` for a
+  zero-radius arc and returns a zero-length edge with both vertices at the centre;
+  `GC_MakeCircle2d(ax, 0)` succeeds. `Curve2D.gceCircleParallel` needed the offset checked as well:
+  measured, `GC_MakeCircle2d` takes the **absolute value** of `radius + dist`, so radius 5 offset by
+  -5 gives radius 0 and by -6 gives radius 1 — a circle the caller did not ask for, not a refusal.
+
+Every affected Swift entry point now documents its radius contract with a runnable snippet; none of
+them mentioned it before. A rejected radius returns an empty array (or `nil` for the producers),
+which is what these entry points already returned for "no solutions", so no call site has to move.
+
+22 tests in `Tests/OCCTGeom2dTests/Issue553GccZeroRadiusTests.swift`, run against a build with the
+zero rejection removed: **16 fail**, and the 6 that do not are the four valid-input controls, the
+negative-radius test, and the two cases where OCCT's own wrong answer is itself an empty set
+(`circleTangentCircle2Points` and `distanceFromPointToCircle`), which no assertion can discriminate.
+Both are noted as such in the test file.
+
+Not changed: `extractBisecSolution`'s `default` branch writes `(0, 0)` for a `GccInt_Pnt` solution
+instead of its coordinates. Section 13 of the probe hunts for one — identical, concentric,
+externally tangent, internally tangent and crossing circles, a point on the circle, a point at the
+centre — and none of them, nor any zero-radius case, produces one. Left alone rather than fixed
+speculatively.
+
 #### The nine 2D conic sites that took a dimension and never checked it (#514)
 
 Split out of #487, which fixed the three `gce_Make*2d` factories and converged the four conic
