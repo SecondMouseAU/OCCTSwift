@@ -1696,7 +1696,7 @@ are exactly the 232 that were over-requesting**, every other line byte-identical
 parameter still exactly the end on the changed ones. Reproducers, including the trap that a repro
 built without `-DNo_Exception` measures a kernel nobody ships:
 [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract).
-Not yet filed upstream.
+Filed upstream as [OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417).
 
 ---
 

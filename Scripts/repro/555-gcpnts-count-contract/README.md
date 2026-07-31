@@ -74,7 +74,8 @@ points with five is not a defensible result.
   test is gated behind a cheap `aUU2 - aUi < aDelta` check so it runs on the final step rather than
   every step.
 
-Nothing in either class' public API changes.
+Nothing in either class' public API changes. Filed upstream as
+[Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417).
 
 ## Building and running
 
