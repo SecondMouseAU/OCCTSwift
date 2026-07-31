@@ -624,7 +624,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `edge.parameterBounds` / `edge.curveType` | `BRep_Tool` / `GeomAdaptor_Curve` |
 | `edge.point(at:)` / `edge.tangent(at:)` / `edge.normal(at:)` | `GeomLProp_CLProps` |
 | `edge.curvature(at:)` / `edge.centerOfCurvature(at:)` / `edge.torsion(at:)` | `GeomLProp_CLProps` |
-| `edge.project(point:)` | `GeomAPI_ProjectPointOnCurve` |
+| `edge.project(point:)` / `edge.distance(to:)` — and `curve3d.projectPoint(_:precision:)` / `curve3d.distance(to:precision:)`, one shared implementation since #539 | `ShapeAnalysis_Curve::Project` + `GeomAPI_ProjectPointOnCurve`, minimised together with the range's ends |
 
 #### Shape Proximity (v0.18.0)
 | Swift API | OCCT Class |

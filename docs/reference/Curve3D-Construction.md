@@ -485,9 +485,10 @@ public func nearestParameter(to point: SIMD3<Double>) -> Double?
   }
   ```
 
-Contrast [`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which runs a
-different OCCT algorithm (`ShapeAnalysis_Curve::Project`) that always answers, adjusting to the
-curve's ends rather than reporting that there is no projection.
+Contrast [`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which asks a
+different question and so always answers: the nearest point on the curve, which exists for every
+query point, rather than the nearest perpendicular foot, which does not. For the trimmed segment
+above it reports the curve's end, parameter `8` at distance `92` (#539).
 
 `closestParameter(to:)` is the deprecated spelling of this method. It returns `.nan` where this
 one returns `nil`; before #500 it returned `0`, which is not even inside the domain of a curve

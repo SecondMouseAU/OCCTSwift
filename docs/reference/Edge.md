@@ -386,11 +386,11 @@ Projects a 3D point onto this edge's curve, returning the closest point.
 public func project(point: SIMD3<Double>) -> CurveProjection?
 ```
 
-Uses OCCT's `GeomAPI_ProjectPointOnCurve` bounded to the edge's parameter range, ensuring the projected point lies within the edge bounds.
+The answer is always inside the edge's own parameter range (`parameterBounds`), and always the true nearest point. Where the query point has no perpendicular foot on the edge, the nearest point is one of its ends, and that is what comes back.
 
 - **Parameters:** `point` — query point in 3D space.
-- **Returns:** `CurveProjection` with the closest point, its parameter, and the distance; or `nil` if the edge has no curve or projection fails.
-- **OCCT:** `BRep_Tool::Curve` + `GeomAPI_ProjectPointOnCurve`.
+- **Returns:** `CurveProjection` with the closest point, its parameter, and the distance; or `nil` only for an edge with no 3D curve to project onto.
+- **OCCT:** `BRep_Tool::Curve`, then `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve` minimised together with the range's ends — no one of the three is correct alone (#539). Shares `Curve3D.projectPoint(_:precision:)`'s implementation.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -401,23 +401,35 @@ Uses OCCT's `GeomAPI_ProjectPointOnCurve` bounded to the edge's parameter range,
           print(proj.distance)  // ≈ √3
       }
   }
+
+  // Past the end: the end of the edge, rather than nil.
+  let edge = Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!.edges()[0]
+  if let proj = edge.project(point: SIMD3(100, 0, 0)) {
+      print(proj.point)     // SIMD3(8, 0, 0)
+      print(proj.distance)  // 92.0
+  }
   ```
+
+> **Before #539** the bare `GeomAPI_ProjectPointOnCurve` behind this returned extrema
+> rather than minima, which cost it two ways: it returned `nil` whenever the nearest point was an
+> end rather than a perpendicular foot (the case above), and on an arc it could report the *far*
+> side as the nearest point — 11 for a query whose nearest point on a half circle is 7.81 away.
 
 ---
 
 ### `distance(to:)`
 
-The shortest distance from a 3D point to this edge. Returns `nil` if the projection fails.
+The shortest distance from a 3D point to this edge.
 
 ```swift
 public func distance(to point: SIMD3<Double>) -> Double?
 ```
 
-Pure-Swift convenience — delegates to `project(point:)?.distance`.
+Pure-Swift convenience — delegates to `project(point:)?.distance`, so it measures to the same nearest point: over the edge's own parameter range, ends included.
 
 - **Parameters:** `point` — query point.
-- **Returns:** Distance to the nearest point on the edge, or `nil` on failure.
-- **OCCT:** Delegates to `project(point:)` → `GeomAPI_ProjectPointOnCurve`.
+- **Returns:** Distance to the nearest point on the edge, or `nil` only for an edge with no 3D curve.
+- **OCCT:** Delegates to `project(point:)`, and inherits its #539 fix.
 - **Example:**
   ```swift
   if let d = edge.distance(to: SIMD3(5, 5, 5)) {

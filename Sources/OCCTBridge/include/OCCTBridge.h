@@ -349,8 +349,11 @@
 //                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
-//                                       OCCTEdgeProjectPoint
-//                                       (NOT OCCTCurve3DProjectPoint; see ShapeAnalysis_Curve)
+//                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint
+//                                       (the last two only as one of the three candidate sources
+//                                       occtNearestPointOnCurveRange takes a minimum over; see
+//                                       ShapeAnalysis_Curve for the other, and #539 for why
+//                                       neither class answers correctly on its own)
 // GeomAPI_ProjectPointOnSurf          → OCCTSurfaceProjectPoint, OCCTFaceProject*
 //
 // --- GeomConvert ---
@@ -476,7 +479,10 @@
 // --- ShapeAnalysis ---
 // ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
 //                                       OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
-//                                       OCCTCurve3DIsPeriodicSA
+//                                       OCCTCurve3DIsPeriodicSA, OCCTEdgeProjectPoint
+//                                       (the two projection entry points reach ::Project through
+//                                       occtNearestPointOnCurveRange, which does not trust its
+//                                       answer alone; see GeomAPI_ProjectPointOnCurve)
 // ShapeAnalysis_FreeBounds            → OCCTShapeFreeBounds, OCCTShapeFreeBoundsClosedCount,
 //                                       OCCTShapeFreeBoundsClosed, OCCTShapeFreeBoundsOpen
 // ShapeAnalysis_FreeBoundsProperties  → OCCTFreeBoundsProps* (one family since #504; the stateless
@@ -2942,12 +2948,14 @@ int32_t OCCTFaceProjectPointAll(OCCTFaceRef face,
 /// Projection result for point-on-curve
 typedef struct {
     double px, py, pz;   // closest 3D point on curve
-    double parameter;     // curve parameter
+    double parameter;     // curve parameter, always within the edge's own range
     double distance;      // distance from original point
-    bool isValid;
+    bool isValid;         // false only for an edge with no 3D curve
 } OCCTCurveProjectionResult;
 
-/// Project point onto edge curve (closest point)
+/// Project point onto edge curve, giving the closest point over the edge's own parameter range.
+/// Where the point has no perpendicular foot on the edge, the closest point is one of its ends
+/// (#539). Shares OCCTCurve3DProjectPoint's implementation.
 OCCTCurveProjectionResult OCCTEdgeProjectPoint(OCCTEdgeRef edge,
                                                 double px, double py, double pz);
 
@@ -6627,11 +6635,13 @@ OCCTSurfaceUVResult OCCTSurfaceNextValueOfUV(OCCTSurfaceRef surface,
 /// Curve point projection result
 typedef struct {
     double distance;            // Distance from original point to projection
-    double parameter;           // Parameter on curve at closest point
+    double parameter;           // Parameter on curve at closest point, always within its domain
     double projX, projY, projZ; // Projected point coordinates
 } OCCTCurveProjectResult;
 
-/// Project a point onto a 3D curve.
+/// Project a point onto a 3D curve, giving the closest point over the curve's own domain.
+/// Where the point has no perpendicular foot on the curve, the closest point is one of its ends
+/// (#539). Shares OCCTEdgeProjectPoint's implementation.
 /// @param curve Curve to project onto
 /// @param px,py,pz Point to project
 /// @param precision Projection precision

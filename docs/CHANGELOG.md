@@ -283,6 +283,65 @@ aborted the test harness rather than failing. They compare `.count == 0` rather 
 returning 10 million points would print all 10 million (measured at over 5 GB while injecting a
 deliberate bug to confirm the suite catches it; #479 hit the same hazard at 880 MB).
 
+#### The closest point on a curve is now on the curve (#539)
+
+`Curve3D.projectPoint(_:precision:)`, `Curve3D.distance(to:precision:)`, `Edge.project(point:)` and
+`Edge.distance(to:)` all promise the closest point, and none of them delivered it. They had picked a
+different OCCT call each, and each call is wrong in its own way about a curve that has ends:
+
+| | `ShapeAnalysis_Curve::Project` (was behind `Curve3D`) | `GeomAPI_ProjectPointOnCurve`, ranged (was behind `Edge`) |
+|---|---|---|
+| segment trimmed to `[3, 8]`, point `(100, 0, 0)` | parameter 100, **distance 0** | no answer (`nil`) |
+| half circle r=5, point `(0, -6, 0)` | **distance 1** (the far half) | **distance 11** (the far side) |
+| point on the full circle, off the arc | **distance 1.6e-15** | **distance 10** |
+| parabola over `[0, 2]`, point `(20, 0, 0)` | **distance 20** (the vertex) | **distance 20** |
+
+Truth for those four rows: 92, 7.81, 4.47, 19.60. A `distance < tolerance` proximity test read the
+first three as "the point lies on the curve".
+
+Three distinct defects, not one. `ShapeAnalysis_Curve::Project` solves on the *basis* curve for an
+analytic type, so a parameter outside the domain comes back as though it were on the curve — passing
+the range does not help, the 7-argument overload documents itself as *extending* it, and its
+`AdjustToEnds` flag changed no measured answer either way. `GeomAPI_ProjectPointOnCurve` honours the
+range but returns extrema rather than minima, so the only extremum in range can be a maximum, and it
+finds nothing at all when the nearest point is an end. And on a parabola or hyperbola both answered
+with the worst point in range — the defect a parameter clamp, which is what the issue proposed,
+would not have touched.
+
+Both entry points now share one `occtNearestPointOnCurveRange`, which takes the minimum over three
+candidate sources: `ShapeAnalysis_Curve`'s answer where it landed inside the range, every extremum
+`GeomAPI` finds inside the range, and the range's own ends. Correct on all 51 curve/point
+combinations swept against a dense brute-force reference (line, circle, ellipse, parabola,
+hyperbola, Bezier, BSpline and offset curves, trimmed and not), where `ShapeAnalysis_Curve` alone
+was right on 37 and `GeomAPI` alone on 25. Periodic bases need no special handling and get none:
+`Geom_TrimmedCurve` normalises its own domain and `Project` returns the representative nearest it,
+verified over ten seam-crossing and beyond-one-period cases.
+
+**Behaviour changes for callers.** `Edge.project(point:)` and `Edge.distance(to:)` stop returning
+`nil` for a point with no perpendicular foot — every one of a box's twelve edges used to answer
+`nil` for a corner probe outside the box. `nil` now means what the documentation always said it
+meant: an edge with no 3D curve. Ordinary in-range projections, unbounded curves and closed curves
+are unchanged, which is why no pre-existing test moved: every one of them queried a point that has a
+perpendicular foot.
+
+`Curve3D.nearestParameter(to:)` (#500) is deliberately untouched and still reports `nil` for the
+points above. The two are different questions — the nearest point, which exists for every query
+point, versus the nearest perpendicular foot, which does not — and `Issue500Curve3DNearestParameterTests`
+pins the distinction, updated here to the corrected answer it recorded as-is.
+
+**Measured, not fixed.** `Shape.pointEdgeExtrema(point:edgeIndex:)` (`BRepExtrema_ExtPC`) is a third
+entry point documented as finding "the closest point on the edge" with the same defect: 11 for the
+half-circle query above, and `IsDone()` false for both trimmed-segment queries. It is left alone
+because fixing it means first deciding what its `solutionCount`, which is the extrema count it
+deliberately exposes, should say when the answer is an end. Filed as #580 — with that decision
+measured rather than left open: `solutionCount` keeps its meaning (OCCT models the ends separately
+from the extrema, via `BRepExtrema_ExtPC::TrimmedSquareDistances`), the `nil` guard is what changes,
+and routing through this PR's shared helper scores 189/189 against the in-place repair's 188/189.
+
+New suite `Issue539NearestPointOnCurveTests` (`OCCTCurveTests`), 12 tests. Proved rather than
+assumed: reinstating the two original implementations fails 9 of the 12, and the 3 that still pass
+are exactly the three asserting what was meant to stay the same.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed

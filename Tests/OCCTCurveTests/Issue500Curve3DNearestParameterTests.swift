@@ -74,10 +74,15 @@ struct Issue500Curve3DNearestParameterTests {
         }
     }
 
-    /// `projectPoint(_:precision:)` is deliberately *not* part of this family: it runs
-    /// `ShapeAnalysis_Curve::Project`, which adjusts to the curve's ends rather than reporting that
-    /// there is no projection, and so always answers. Pinned here so a later pass does not
-    /// "unify" two entry points that genuinely compute different things.
+    /// `projectPoint(_:precision:)` is deliberately *not* part of this family, and asks a different
+    /// question: the nearest point on the curve, which exists for every point, rather than the
+    /// nearest *perpendicular foot*, which does not. Pinned here so a later pass does not "unify"
+    /// two entry points that genuinely compute different things.
+    ///
+    /// When #500 shipped, its answer here was parameter 100, distance 0 — it projected onto the
+    /// curve's underlying unbounded line, recorded as-is rather than asserted correct. #539 fixed
+    /// that: the answer is now the curve's own end. The contracts still differ, but only in whether
+    /// a point with no perpendicular foot gets an answer, not in whether the answer is true.
     @Test("projectPoint runs a different algorithm and keeps its own contract")
     func projectPointIsADifferentAlgorithm() throws {
         let curve = try #require(Self.trimmedSegment())
@@ -85,11 +90,9 @@ struct Issue500Curve3DNearestParameterTests {
 
         #expect(curve.nearestParameter(to: p) == nil)
 
-        // It answers where nearestParameter does not. Its answer is *not* clamped to [3, 8]:
-        // measured against the pinned kernel, it reports the point as lying on the curve's
-        // underlying unbounded line. Recorded as-is; see the note in the #500 PR.
+        // It answers where nearestParameter does not, with the end of the curve (#539).
         let projected = curve.projectPoint(p)
-        #expect(projected.parameter == 100)
-        #expect(projected.distance == 0)
+        #expect(projected.parameter == 8)
+        #expect(projected.distance == 92)
     }
 }

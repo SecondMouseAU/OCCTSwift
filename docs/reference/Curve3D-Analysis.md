@@ -566,11 +566,13 @@ Projects a 3D point onto this curve to find the closest point.
 public func projectPoint(_ point: SIMD3<Double>, precision: Double = 1e-6) -> PointProjection
 ```
 
-Uses `ShapeAnalysis_Curve::Project`. Always returns a result (never `nil`); a non-zero `distance` indicates the query point was not on the curve.
+Always returns a result (never `nil`); a non-zero `distance` indicates the query point was not on the curve.
+
+The answer is always inside the curve's own `domain`, and always the true nearest point. Where the query point has no perpendicular foot on the curve — anything past the end of a trimmed curve, or off to one side of an arc — the nearest point is an end, and that is what comes back. Contrast [`nearestParameter(to:)`](Curve3D-Construction.md#nearestparameterto), which reports `nil` for exactly those points instead.
 
 - **Parameters:** `point` — 3D point to project; `precision` — projection precision (default `1e-6`).
 - **Returns:** `PointProjection` with distance, parameter, and closest curve point.
-- **OCCT:** `ShapeAnalysis_Curve::Project`.
+- **OCCT:** `ShapeAnalysis_Curve::Project` and `GeomAPI_ProjectPointOnCurve`, minimised together with the domain's ends — no one of the three is correct alone (#539).
 - **Example:**
   ```swift
   if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
@@ -578,7 +580,19 @@ Uses `ShapeAnalysis_Curve::Project`. Always returns a result (never `nil`); a no
       print(proj.point)     // ≈ SIMD3(5, 0, 0)
       print(proj.distance)  // ≈ 3.0
   }
+
+  // Past the end of a trimmed curve: the end, not the basis line.
+  if let seg = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))?.trimmed(from: 3, to: 8) {
+      let proj = seg.projectPoint(SIMD3(100, 0, 0))
+      print(proj.parameter)  // 8.0
+      print(proj.distance)   // 92.0
+  }
   ```
+
+> **Before #539** this projected onto the curve's *underlying basis* curve, so
+> the trimmed-segment case above reported parameter `100`, distance `0` — a `distance < tolerance`
+> proximity test read a point 92 units away as lying on the curve. A point on a full circle but
+> outside an arc's own span read as distance 0 for the same reason.
 
 ---
 
@@ -590,11 +604,11 @@ Returns the shortest distance from a 3D point to this curve.
 public func distance(to point: SIMD3<Double>, precision: Double = 1e-6) -> Double
 ```
 
-Convenience wrapper over `projectPoint(_:precision:)` when only the scalar distance is needed.
+Convenience wrapper over `projectPoint(_:precision:)` when only the scalar distance is needed, so it measures to the same nearest point: over the curve's own `domain`, ends included.
 
 - **Parameters:** `point` — query point; `precision` — projection precision (default `1e-6`).
 - **Returns:** Shortest distance from `point` to the curve.
-- **OCCT:** Delegates to `ShapeAnalysis_Curve::Project` via `projectPoint(_:precision:)`.
+- **OCCT:** Delegates to `projectPoint(_:precision:)`, and inherits its #539 fix.
 - **Example:**
   ```swift
   if let c = Curve3D.line(from: .zero, to: SIMD3(10, 0, 0)) {
