@@ -366,17 +366,14 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
 
         BRepOffsetAPI_DraftAngle draft(shape->shape);
 
-        // Build face index map
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                TopoDS_Face face = TopoDS::Face(faceMap(idx + 1));
-                draft.Add(face, pullDir, angle, neutralPlane);
-            }
-        }
+        // #568: a face index naming no face of this shape rejects the whole draft. It used to be
+        // skipped, and BRepOffsetAPI_DraftAngle reports IsDone() for a request it was handed no
+        // faces for at all, so a draft naming only foreign faces returned the input shape,
+        // undrafted, presented as a successful draft. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, faceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            draft.Add(TopoDS::Face(face), pullDir, angle, neutralPlane);
+        })) return nullptr;
 
         draft.Build();
         if (!draft.IsDone()) return nullptr;
@@ -692,20 +689,18 @@ OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef shape, double thickness,
     if (!shape || !openFaceIndices || faceCount < 1) return nullptr;
 
     try {
-        // Get indexed map of faces
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        // Build list of faces to remove (open faces)
+        // #568: a face index naming no face of this shape rejects the whole call. It used to be
+        // skipped, and the only thing that caught it was a `facesToRemove.IsEmpty()` check here --
+        // which fires only when *every* index is unresolvable. A list mixing one real open face
+        // with one foreign one shelled the solid with fewer openings than asked for and reported
+        // success. That check is gone rather than kept: the helper refuses a count below 1 and
+        // appends for every index it does resolve, so an empty list is now unreachable.
+        // See OCCTBridge_Internal.h.
         TopTools_ListOfShape facesToRemove;
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = openFaceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                facesToRemove.Append(faceMap(idx + 1));  // 1-based indexing
-            }
-        }
-
-        if (facesToRemove.IsEmpty()) return nullptr;
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, openFaceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            facesToRemove.Append(face);
+        })) return nullptr;
 
         // Create thick solid (shell) with open faces
         BRepOffsetAPI_MakeThickSolid thickSolid;
@@ -1892,14 +1887,16 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef shape,
     if (outResult) *outResult = nullptr;
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
         std::unique_ptr<BRepFilletAPI_MakeChamfer> op(new BRepFilletAPI_MakeChamfer(shape->shape));
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i] + 1;
-            if (idx < 1 || idx > edgeMap.Extent()) continue;
-            op->Add(distance, TopoDS::Edge(edgeMap(idx)));
-        }
+        // #568: the chamfer counterpart of occtFilletAddEdges, which the fillet sibling two
+        // functions up already shares. Same builder shape, same contract: an edge index naming no
+        // edge of this shape rejects the call rather than chamfering the rest. It cannot use that
+        // helper itself, which is BRepFilletAPI_MakeFillet-typed, but both now resolve their
+        // indices through the same occtUseSubShapesByIndex. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, count,
+                                     [&](const TopoDS_Shape& edge, int32_t) {
+            op->Add(distance, TopoDS::Edge(edge));
+        })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -4210,14 +4207,13 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
 
         BRepFilletAPI_MakeFillet2d fillet(face);
 
-        TopTools_IndexedMapOfShape vertMap;
-        TopExp::MapShapes(face, TopAbs_VERTEX, vertMap);
-
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = vertexIndices[i] + 1; // Convert to 1-based
-            if (idx < 1 || idx > vertMap.Extent()) continue;
-            fillet.AddFillet(TopoDS::Vertex(vertMap(idx)), radii[i]);
-        }
+        // #568: a vertex index naming no vertex of that first face rejects the whole call. It used
+        // to be skipped, so a list mixing real corners with unresolvable ones rounded the corners
+        // that resolved and reported success. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(face, TopAbs_VERTEX, vertexIndices, count,
+                                     [&](const TopoDS_Shape& vertex, int32_t i) {
+            fillet.AddFillet(TopoDS::Vertex(vertex), radii[i]);
+        })) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
@@ -4239,17 +4235,20 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
 
         BRepFilletAPI_MakeFillet2d chamfer(face);
 
+        // #568: either half of a pair naming no edge of that first face rejects the whole call. It
+        // used to drop just that pair, so a list mixing real pairs with unresolvable ones chamfered
+        // the corners that resolved and reported success. This is the one site whose entries name
+        // two sub-shapes each, so it reads the map directly rather than through
+        // occtUseSubShapesByIndex; the map and the lookup are the same ones. See
+        // OCCTBridge_Internal.h.
         TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
+        occtMapSubShapes(face, TopAbs_EDGE, edgeMap);
 
         for (int32_t i = 0; i < count; i++) {
-            int32_t idx1 = edge1Indices[i] + 1;
-            int32_t idx2 = edge2Indices[i] + 1;
-            if (idx1 < 1 || idx1 > edgeMap.Extent()) continue;
-            if (idx2 < 1 || idx2 > edgeMap.Extent()) continue;
-            chamfer.AddChamfer(TopoDS::Edge(edgeMap(idx1)),
-                               TopoDS::Edge(edgeMap(idx2)),
-                               distances[i], distances[i]);
+            TopoDS_Shape e1 = occtMappedSubShapeAt(edgeMap, edge1Indices[i]);
+            TopoDS_Shape e2 = occtMappedSubShapeAt(edgeMap, edge2Indices[i]);
+            if (e1.IsNull() || e2.IsNull()) return nullptr;
+            chamfer.AddChamfer(TopoDS::Edge(e1), TopoDS::Edge(e2), distances[i], distances[i]);
         }
 
         chamfer.Build();

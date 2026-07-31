@@ -1667,7 +1667,10 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeI
 /// @param angle Draft angle in radians
 /// @param planeX, planeY, planeZ Point on neutral plane
 /// @param planeNx, planeNy, planeNz Normal of neutral plane
-/// @return Drafted shape, or NULL on failure
+/// @return Drafted shape, or NULL on failure, including when an index names no face of `shape`,
+///         which since #568 fails the call rather than being skipped. Skipping was worse here than
+///         anywhere else in that sweep: BRepOffsetAPI_DraftAngle reports IsDone() for a request it
+///         was handed no faces for, so a wholly unresolvable list returned `shape` undrafted.
 OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount,
                             double dirX, double dirY, double dirZ, double angle,
                             double planeX, double planeY, double planeZ,
@@ -1836,7 +1839,9 @@ OCCTShapeRef OCCTShapeCreateRuled(OCCTWireRef wire1, OCCTWireRef wire2);
 /// @param thickness Shell wall thickness (positive = inward, negative = outward)
 /// @param openFaceIndices Array of face indices to leave open (0-based)
 /// @param faceCount Number of faces to leave open
-/// @return Shelled shape, or NULL on failure
+/// @return Shelled shape, or NULL on failure, including when an index names no face of `shape`,
+///         which since #568 fails the call rather than being skipped. Only a list where *every*
+///         index was unresolvable used to be caught, by the resulting empty face list.
 OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef shape, double thickness,
                                           const int32_t* openFaceIndices, int32_t faceCount);
 
@@ -5016,6 +5021,11 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromFilletEdgeVariable(OCCTShape
                                                                          OCCTShapeRef _Nullable * _Nullable outResult);
 
 /// Uniform chamfer on the given edges, with retained history.
+///
+/// Edge indices are 0-based into the shape's own edge map, and one naming no edge fails the call
+/// rather than being skipped: the same contract #520 gave the fillet siblings, extended to this
+/// family by #568. Both resolve their indices through occtUseSubShapesByIndex
+/// (OCCTBridge_Internal.h).
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromChamferEdges(OCCTShapeRef _Nonnull shape,
                                                                    const int32_t* _Nonnull edgeIndices,
                                                                    int32_t count,
@@ -5609,6 +5619,7 @@ OCCTWireRef OCCTWireCreateFastPolygon(const double* coords, int32_t pointCount, 
 /// @param radii Array of fillet radii (one per vertex)
 /// @param count Number of fillets to add
 /// @return Filleted face shape, or NULL on failure
+/// A vertex index naming no vertex of that face fails the call rather than being skipped (#568).
 OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
                                const double* radii, int32_t count);
 
@@ -5618,7 +5629,8 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
 /// @param edge2Indices Array of second edge indices (0-based)
 /// @param distances Array of chamfer distances
 /// @param count Number of chamfers to add
-/// @return Chamfered face shape, or NULL on failure
+/// @return Chamfered face shape, or NULL on failure, including when *either* half of a pair names
+///         no edge of that face, which since #568 fails the call rather than dropping the pair
 OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
                                 const int32_t* edge1Indices, const int32_t* edge2Indices,
                                 const double* distances, int32_t count);

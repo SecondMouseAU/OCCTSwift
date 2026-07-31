@@ -2140,6 +2140,8 @@ public func chamferedWithFullHistory(distance: Double, edges: [Int])
   - `edges` — 0-based edge indices to chamfer.
 - **Returns:** Result shape and history, or nil on failure or empty edge list.
 - **OCCT:** `BRepFilletAPI_MakeChamfer` (via `OCCTShapeHistoryFromChamferEdges`).
+- **Note:** an index naming no edge of this shape fails the whole call rather than being skipped
+  (#568), matching `filletedWithFullHistory(radius:edges:)` (#520).
 - **Example:**
   ```swift
   if let (chamfered, history) = part.chamferedWithFullHistory(distance: 1, edges: [4, 5]) { }

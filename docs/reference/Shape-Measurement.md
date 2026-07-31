@@ -823,6 +823,9 @@ public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape?
 - **Note:** Only the **first** face of the receiver is filleted, and the result is that face
   alone; the other faces of a multi-face shape are neither filleted nor carried through. Vertex
   indices are numbered within that first face. Call this on one face at a time. (#443 audit)
+- **Note:** an index naming no vertex of that first face fails the whole call rather than being
+  skipped (#568); previously it was dropped and the corners that did resolve were rounded, reported
+  as a complete result.
 
 ---
 
@@ -842,6 +845,9 @@ public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape?
 - **Note:** Only the **first** face of the receiver is chamfered, and the result is that face
   alone; the other faces of a multi-face shape are neither chamfered nor carried through. Edge
   indices are numbered within that first face. Call this on one face at a time. (#443 audit)
+- **Note:** *either* half of a pair naming no edge of that first face fails the whole call rather
+  than being skipped (#568); previously the pair was dropped and the corners that did resolve were
+  cut, reported as a complete result.
 
 ---
 

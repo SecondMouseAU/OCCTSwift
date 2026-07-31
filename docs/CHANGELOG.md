@@ -495,6 +495,70 @@ siblings) still spell "undefined" as `0`, where the `Face` counterparts return `
 silent-zero class #486 and #494 have both hit, and five more source-breaking signatures on top of
 the four here. Filed as #583 rather than folded in.
 
+#### Breaking: the last five entry points that quietly dropped an unresolvable index (#568)
+
+A sub-shape index naming nothing now rejects the request everywhere, not just in the fillet family.
+#520 settled that for the five `BRepFilletAPI_MakeFillet` edge-list functions and #541 for
+`Shape.offsetPerFace`; five sites in the neighbouring families still skipped the entry and built
+from whatever resolved.
+
+| entry point | index | before | now |
+|---|---|---|---|
+| `Shape.drafted(faces:direction:angle:neutralPlane:)` | face | drafts the faces that resolve | `nil` |
+| `Shape.shelled(thickness:openFaces:)` | face | opens the faces that resolve | `nil` |
+| `Shape.chamferedWithFullHistory(distance:edges:)` | edge | chamfers the edges that resolve | `nil` |
+| `Shape.fillet2D(vertexIndices:radii:)` | vertex | rounds the corners that resolve | `nil` |
+| `Shape.chamfer2D(edgePairs:distances:)` | edge (either half of a pair) | cuts the pairs that resolve | `nil` |
+
+**Why this is not tidiness.** Measured on the pinned kernel
+([`Scripts/repro/568-index-skip-idiom/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/568-index-skip-idiom)),
+every builder behind these sites reports an ordinary success for a batch it was never told was
+short. The partial result is `IsDone`, non-null and `BRepCheck_Analyzer`-valid; it differs from the
+complete one only in geometry the caller has no reason to re-measure:
+
+| builder, on a 20mm box | whole request | partial request |
+|---|---|---|
+| `BRepFilletAPI_MakeChamfer`, 3 edges | volume 7885.333333 | 2 of 3: volume 7922.666667, valid |
+| `BRepOffsetAPI_DraftAngle`, 4 faces | volume 6681.349269 | 2 of 4: volume 7299.820338, valid |
+| `BRepOffsetAPI_MakeThickSolid`, 2 open faces | volume 2880.000000 | 1 of 2: volume 3392.000000, valid |
+| `BRepFilletAPI_MakeFillet2d`, 4 vertices | area 1178.539816 | 2 of 4: area 1189.269908, valid |
+
+**`Shape.drafted` was the worst of the five, and only the measurement showed it.** Handed *no*
+faces at all, `BRepOffsetAPI_DraftAngle` still reports `IsDone()` and returns the input shape
+unchanged (volume 8000 for the same box). So a draft naming only faces the shape does not have (the
+ordinary result of passing `Face` values taken from a different shape) succeeded and drafted
+nothing. The other four at least fail an empty batch (`MakeChamfer` throws "There are no suitable
+edges for chamfer or fillet"; `MakeFillet2d` fails `IsDone`), and `Shape.shelled` had its own empty
+check, which is why for those the *mixed* batch was the only case that escaped.
+
+**The census the issue filed was three ways off**, each found by measuring rather than reading:
+
+- `Shape.offsetPerFace` was on the list but had already been fixed by #541, which also settled the
+  "is a dictionary of overrides different?" question the issue asked: an override naming no face is
+  an invalid request, not an absent override.
+- Two entries were filed against `OCCTWireFilletAll2D` / `OCCTWireChamferAll2D`, which take no
+  indices at all. Their line numbers pointed at `OCCTFace2DFillet` / `OCCTFace2DChamfer`, which do,
+  and those are what is fixed here. Same failure mode as #565's own mis-filing: trust the line, not
+  the name.
+- Two sites the issue did not list, `OCCTShapeDraft` and `OCCTShapeShellWithOpenFaces`, spell the
+  skip as an `if (idx >= 0 && idx < map.Extent()) { … }` wrap rather than a `continue`, so a census
+  grepping for the `continue` spelling missed them, including the draft, the most severe of the
+  five.
+
+**One resolution helper, not five loops** (the issue's second question). `occtUseSubShapesByIndex`
+and `occtMappedSubShapeAt` (`OCCTBridge_Internal.h`) resolve a caller's index array through
+`occtMapSubShapes`, the enumeration #502 and #541 already made canonical, and refuse on the first
+index that names nothing. `occtFilletAddEdges` is now a five-line wrapper over it, since only the
+`TopoDS_Edge` cast was ever fillet-specific, so the fillet family and these five share one
+statement of the contract rather than agreeing by coincidence. `OCCTFace2DChamfer` is the one site
+whose entries name two sub-shapes each, so it reads the map through `occtMappedSubShapeAt` directly.
+
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild. No operation count change.
+
+**Migration.** A call that used to succeed by dropping indices now returns `nil`. Filter your own
+indices against `Shape.faces().count` / `Shape.edges().count` / `face.vertices().count` if you want
+the old best-effort behaviour. The difference is that you now choose it.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
