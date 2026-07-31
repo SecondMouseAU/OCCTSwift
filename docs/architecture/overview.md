@@ -150,6 +150,27 @@ OCCT operations can fail (e.g., self-intersecting boolean). Current strategy:
 
 Future consideration: Swift `throws` for explicit error handling.
 
+### 6. The Bridge Is Internal: No Frozen C ABI
+
+`OCCTBridge` is a *target*, not a product. `Package.swift` declares exactly one product,
+`.library(name: "OCCTSwift")`, so no external package can `import OCCTBridge` or link its symbols
+through SwiftPM. The C surface in `OCCTBridge.h` therefore carries no compatibility promise of its
+own: renaming, merging, or deleting a bridge function is an internal refactor, and the only
+stability contract is the Swift API's, governed by [`SEMVER.md`](../SEMVER.md).
+
+Two practical consequences:
+
+- **A bridge function with no Swift caller is deleted, not retained.** "Keep it exported for C
+  consumers" is not a reason this repo recognises, because the packaging gives it no C consumers to
+  keep it for. Retaining one instead preserves whatever contract it had at the moment it was
+  orphaned, which is how #506 came to hold three arc-length functions that still returned `0` on
+  failure years after the Swift layer moved to a `-1.0` sentinel, and still extrapolated past a
+  curve's knots after #477 fixed that everywhere reachable.
+- **The published `OCCTBridge.xcframework` is a per-release artifact, not an ABI.** The
+  `OCCTSWIFT_BRIDGE_PREBUILT=1` path (see `Package.swift`) resolves a version-pinned URL, so the
+  binary and the headers of any one release stay self-consistent. That is reproducibility within a
+  release, not a promise across releases.
+
 ## Memory Management
 
 ### OCCT Handles

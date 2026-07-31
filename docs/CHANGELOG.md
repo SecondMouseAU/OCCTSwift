@@ -17,6 +17,55 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
+
+`OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
+`totalArcLength`, `arcLength(from:to:)` and `arcLengthBetween(_:_:)` through `length` /
+`length(from:to:)`, which call `OCCTCurve3DGetLength` / `OCCTCurve3DGetLengthBetween`, leaving all
+three declared, compiled, and unreachable from Swift. #461 kept them "for C-ABI stability". That
+rationale does not survive contact with the packaging: `OCCTBridge` is a target, not a product, so
+nothing outside this package can link those symbols through SwiftPM. The layer's actual stability
+contract is now written down rather than asserted per PR, in
+[`docs/architecture/overview.md`](architecture/overview.md) under design decision 6.
+
+Keeping them was not free. Retaining an orphan freezes whatever contract it had when it was
+orphaned, and these three were frozen before two separate fixes. All three returned `0` on failure,
+the collapse of "the computation failed" into "the curve is genuinely zero length" that #408 fixed.
+`OCCTCurve3DLength` also measured through a pre-bounded `GeomAdaptor_Curve(curve, u1, u2)` instead
+of passing the range to `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, and the two forms disagree
+wherever the range is not an ordinary in-domain interval. Measured against the pinned kernel on a
+5-point interpolated BSpline, 360.99 long:
+
+| range | pre-bounded (deleted) | ranged (live) |
+|---|---|---|
+| in domain, forward | 173.76 | 173.76 |
+| in domain, reversed | raises, reported as `0` | 173.76 |
+| overshooting both ends by a domain width | 8489.78 | 360.99 |
+| wholly outside the domain | 1.34 | 0 |
+| equal parameters, periodic seam, unbounded sub-range | agree | agree |
+
+So the "dead copy" still extrapolated a BSpline's polynomial past its knots, the behaviour #477
+removed from every reachable path, and still read a reversed range as zero length. One rewire or one
+copy-paste and both defects were back, with no test anywhere to catch it. Probe and full figures at
+[`Scripts/repro/506-arclength-adaptor-divergence/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/506-arclength-adaptor-divergence).
+
+New suite `Issue506ArcLengthBridgeContractTests` (`OCCTCurveTests`) pins the surviving behaviour on
+exactly the four ranges where the forms diverge, with the clamping assertions checked against a
+chord-sum reference rather than against the implementation's own answer for the whole domain. Proved
+against two injections rather than assumed: restoring the pre-#408 wiring fails the cross-spelling
+test on all three divergent ranges (0 against 173.76, 8489.78 against 360.99, 1.34 against 0), and
+rewiring `length(from:to:)` itself onto the pre-bounded form, the accidental-rewire case, fails all
+four tests.
+
+**Noticed, not fixed.** `length(from:to:)`'s NaN handling is curve-type dependent: a NaN bound
+reports `nil` on a line, a segment and a circle, but on a BSpline `GCPnts_AbscissaPoint::Length`
+returns a plausible number (`0` for a NaN upper bound, the whole length for a NaN lower bound), so
+the failure-versus-zero distinction #408 established holds for the curve types its own tests use and
+not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` still measures through the 2D
+pre-bounded adaptor deliberately, documented as range-checked, so the 2D and 3D spellings of the same
+call now differ on a reversed range (#549). Both are #408/#409 contract questions rather than
+duplication, so they are filed rather than folded in here.
+
 #### One pipe shell, and the sweep mode it was quietly discarding (#503)
 
 Four bridge functions each built their own single-profile `BRepOffsetAPI_MakePipeShell`, and each
@@ -1343,6 +1392,9 @@ direct C consumers, but they are no longer reached from Swift: #408 routed `tota
 `arcLength(from:to:)` and `arcLengthBetween(_:_:)` through `length`/`length(from:to:)`, so every
 Swift spelling now lands on `OCCTCurve3DGetLength`/`OCCTCurve3DGetLengthBetween`. Nothing in
 `Sources/OCCTSwift` references the older three.
+(Superseded: all three were deleted outright by #506, which also found that `OCCTCurve3DLength`'s
+pre-bounded adaptor extrapolated past the knots rather than clamping, so it had not in fact
+inherited this entry's fix. See the #506 entry.)
 
 New suite `Issue477ArcLengthAccuracyTests` (`OCCTCurveTests`) pins all five Swift spellings against
 an independently computed reference (a Richardson-extrapolated polyline, not the implementation's
@@ -1501,6 +1553,8 @@ restored and `length`/`length(from:to:)` gain it as well. Note the consequence f
 `OCCTCurve3DArcLength`, `OCCTCurve3DLength` and `OCCTCurve3DArcLengthBetween` are no longer reached
 from Swift at all (nothing in `Sources/OCCTSwift` references them), though they remain exported for
 direct C consumers.
+(Superseded: #506 deleted all three. `OCCTBridge` is a target and not a product, so there were no
+direct C consumers to export them for.)
 
 #### Public Swift API
 

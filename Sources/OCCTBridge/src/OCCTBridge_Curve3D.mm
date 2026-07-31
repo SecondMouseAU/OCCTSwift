@@ -4596,13 +4596,11 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 #include <GCPnts_AbscissaPoint.hxx>
 #include <GeomAdaptor_Curve.hxx>
 
-double OCCTCurve3DLength(OCCTCurve3DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return 0;
-    try {
-        GeomAdaptor_Curve ac(curve->curve, u1, u2);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// GeomAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as zero length) and extrapolates past the curve's knots instead of clamping to
+// its domain. Removed by #506; Curve3D.arcLength(from:to:) has routed through
+// OCCTCurve3DGetLengthBetween, which does neither, since #408.
 
 // OCCTCurve3DClosestParameter lived here: the same projection as OCCTCurve3DNearestParameter,
 // differing only in reporting no-projection as 0 rather than FirstParameter(). Removed by #500;
@@ -4619,21 +4617,12 @@ double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, doub
     } catch (...) { return 0; }
 }
 
-double OCCTCurve3DArcLength(OCCTCurve3DRef curve) {
-    if (!curve) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
-    } catch (...) { return 0; }
-}
-
-double OCCTCurve3DArcLengthBetween(OCCTCurve3DRef curve, double param1, double param2) {
-    if (!curve) return 0;
-    try {
-        GeomAdaptor_Curve adaptor(curve->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, param1, param2);
-    } catch (...) { return 0; }
-}
+// OCCTCurve3DArcLength and OCCTCurve3DArcLengthBetween lived here: the same two
+// GCPnts_AbscissaPoint::Length calls OCCTCurve3DGetLength / OCCTCurve3DGetLengthBetween make,
+// differing only in returning 0 on failure (indistinguishable from a genuine zero-length result)
+// and in guarding the wrapper pointer without also guarding the curve handle it holds. Removed
+// by #506; Curve3D.totalArcLength and arcLengthBetween(_:_:) have routed through the -1.0
+// spellings since #408.
 
 // MARK: - v0.116: HelixGeom (BuilderHelix/Coil + HelixCurve eval/D1/D2 + ApproxToBSpline)
 #include <math_IntegerVector.hxx>

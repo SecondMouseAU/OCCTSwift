@@ -17574,11 +17574,9 @@ double OCCTEdgeArcLength(OCCTShapeRef _Nonnull edge);
 /// Find parameter on a 3D curve at a given arc length from startParam.
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef _Nonnull curve, double arcLength, double fromParam);
 
-/// Compute total arc length of a 3D curve within its domain.
-double OCCTCurve3DArcLength(OCCTCurve3DRef _Nonnull curve);
-
-/// Compute arc length of a 3D curve between two parameters.
-double OCCTCurve3DArcLengthBetween(OCCTCurve3DRef _Nonnull curve, double param1, double param2);
+/// OCCTCurve3DArcLength and OCCTCurve3DArcLengthBetween were declared here: second spellings
+/// of OCCTCurve3DGetLength / OCCTCurve3DGetLengthBetween that returned 0 rather than -1.0 on
+/// failure. Removed by #506.
 
 /// Compute arc length between two parameters on an edge.
 double OCCTEdgeArcLengthBetween(OCCTShapeRef _Nonnull edge, double u1, double u2);
@@ -17645,8 +17643,9 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 
 // --- Curve3D/2D additional (v0.115.0) ---
 
-/// Compute the length of a 3D curve between parameters u1 and u2.
-double OCCTCurve3DLength(OCCTCurve3DRef _Nonnull curve, double u1, double u2);
+/// OCCTCurve3DLength was declared here: a third spelling of OCCTCurve3DGetLengthBetween that
+/// measured through a pre-bounded GeomAdaptor_Curve, so it extrapolated past the curve's knots
+/// instead of clamping and read a reversed range as zero length. Removed by #506.
 
 /// OCCTCurve3DClosestParameter was declared here: a second spelling of the projection
 /// OCCTCurve3DNearestParameter now performs. Removed by #500.
