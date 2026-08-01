@@ -116,6 +116,61 @@ A second defect class remains, filed as #565: the checker verifies that a named 
 not that it wraps the class the entry files it under. A mis-attributed entry that happens to name a real
 symbol from a neighbouring class is still invisible, and it misleads exactly the way a fabricated one
 does.
+#### The cylindrical-hole drill selected parts of the cut result, not parts of its tool (#532)
+
+Kernel patch `0020`. Every `BRepFeat_MakeCylindricalHole` mode that chooses which piece of the
+drilling tool to keep — `PerformThruNext`, `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)`
+and `PerformBlind` — drove `BRepFeat_Builder` with `SetOperation(Fuse)`, i.e. `BOPAlgo_CUT`, and then
+called `PartsOfTool()`. That method collects the solids of the builder's shape, which holds the tool
+split by the object only after the **COMMON** pass; after a CUT it is the finished workpiece. So the
+selection loops compared barycentres of bored plates and registered those plates as "kept parts of the
+tool", and `PerformResult()` then took the kept-parts path with a keep set containing no tool part at
+all. The caller got the input back with the cylinder's faces imprinted on it — reported as
+`BRepFeat_NoError` throughout.
+
+`BRepFeat_Form` and `BRepFeat_RibSlot`, the kernel's other two users of the same builder, both call
+the two-argument `SetOperation(myFuse, bFlag)` with `bFlag` true. The patch is that call at the four
+part-selecting sites. `Perform(Radius)` selects no parts and is untouched, which is why `.throughAll`
+was the one extent that already drilled a stack correctly, and why the defect read as "multi-body"
+rather than "part selection".
+
+Two corrections to how #532 was originally scoped. **`PerformBlind` is affected too** — it was not
+named because the report came out of #496, which had newly wrapped only the other two extents. And
+the trigger is not "more than one body": it is "the cut result has two solids", which **a single
+solid reaches** — an 8mm bar drilled at r = 5 is severed by its own bore, and every part-selecting
+mode then removed nothing from it.
+
+Measured on a compound of two 50 × 50 × 20 plates on the drill axis, where one bore removes
+1570.7963:
+
+| call | before | after |
+|---|---|---|
+| `.throughAll` | 3141.5927 | 3141.5927 |
+| `.untilEnd` | **0.0000** | 3141.5927 |
+| `.thruNext` | 1570.7963 | 1570.7963 |
+| `.blind(depth: 20)` | **0.0000** | 1178.0972 |
+| `.range(from: 0, to: 70)` | **0.0000** | 3141.5927 |
+| `.range(from: 0, to: 30)` | 1570.7963 | 1570.7963 |
+
+A single plate is byte-identical before and after — its cut result was one solid, so the branch never
+ran. A channel and a hollow box, both one solid with two spans on the axis, give the same answer
+before and after while the selection loop goes from one part to two real tool parts.
+
+**One behaviour change beyond the bug.** A radius so large the bore swallows the whole solid used to
+be `.invalidPlacement` for `.untilEnd` and `.thruNext`: under CUT the oversized tool emptied the
+builder's shape, so `nbparts` was 0 and the "the tool meets nothing" guard fired. Under COMMON
+`nbparts` is 1 and both extents now return the empty result `.throughAll` and
+`drilled(at:direction:radius:depth:)` always returned. The #496 divergence "through-all status is a
+false green for the thru-next drill" was that accident, not a contract, and its test now pins the
+converged answer.
+
+`Issue532CylindricalHolePartSelectionTests` (`Tests/OCCTModelingTests`), 7 tests, three of which
+deliberately cover geometry the fix must not disturb. Run against the last released kernel first: the
+four that pin the defect fail there and the three non-regression tests pass, which is the proof the
+suite is measuring the patch. Reproducer and full before/after tables in
+[`Scripts/repro/532-cylindrical-hole-part-selection/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/532-cylindrical-hole-part-selection);
+a second, unreachable-as-written defect in `PerformThruNext`'s fallback brace nesting is reported
+there rather than changed.
 
 #### One edge-index contract and one radius law for all five fillet entry points (#520)
 
@@ -2237,13 +2292,12 @@ stock-bounded through hole callers reach for `.throughAll` expecting) and `.rang
 ranged `Perform`). The four v0.71.0 methods are unchanged in behaviour and now forward onto the
 unified spelling; no existing call site needs editing.
 
-**A wrong answer found and documented, not fixed.** `PerformUntilEnd` and the ranged `Perform` both
-end in an `nbparts >= 2` branch that keeps exactly one part of the cutting tool. Across a stack of two
-solids the kept part can be one that intersects nothing, and the operation then reports
+**A wrong answer found and documented, not fixed here.** `PerformUntilEnd` and the ranged `Perform`
+both end in an `nbparts >= 2` branch that keeps exactly one part of the cutting tool. Across a stack
+of two solids the kept part can be one that intersects nothing, and the operation then reports
 `BRepFeat_NoError` while removing **no material at all**, having only imprinted the cylinder's faces.
-`Perform` and the boolean drill both cut every body. This is kernel behaviour and out of scope here,
-filed as #532; it carries a `- Warning:` on both extents and is pinned by a test so a kernel bump is
-noticed. The
+`Perform` and the boolean drill both cut every body. Kernel behaviour and out of scope here, filed as
+#532 and **since fixed** — see the entry below. The
 ranged overload's parameters were also measured rather than assumed: the window selects **which
 entry/exit face pair** bounds the hole, it does not trim the cut, so a window strictly inside one body
 still drills through all of it.

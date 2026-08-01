@@ -11203,12 +11203,9 @@ extension Shape {
         case throughAll
         /// `PerformUntilEnd(R)` — bounded by the stock's own first and last faces along the axis.
         ///
-        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting.
-        ///
-        /// - Warning: On input with more than one body on the axis (a compound, a multi-solid),
-        ///   OCCT keeps a single part of its cutting tool and can end up removing **no material at
-        ///   all** while still reporting ``CylindricalHoleStatus/noError``. Use ``throughAll`` or
-        ///   ``Shape/drilled(at:direction:radius:depth:)`` for a stack. Tracked as #532.
+        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting. Every
+        /// body the axis crosses beyond the entry face is drilled, so a stack of plates is bored
+        /// all the way through.
         case untilEnd
         /// `PerformThruNext(R)` — stops at the next face after the origin.
         case thruNext
@@ -11226,10 +11223,8 @@ extension Shape {
         /// The window **chooses a face pair; it does not trim the cut**. A window lying strictly
         /// inside one body still drills all the way through that body, and a window that names no
         /// face pair — the gap between two plates, say — is ``CylindricalHoleStatus/invalidPlacement``.
-        /// Its use is picking *which* body to drill in a stack.
-        ///
-        /// - Warning: A window spanning more than one body hits the same OCCT behaviour as
-        ///   ``untilEnd``: ``CylindricalHoleStatus/noError``, and no material removed (#532).
+        /// Its use is picking *which* body to drill in a stack: a window over one plate drills that
+        /// plate, and a window spanning several drills all of them.
         case range(from: Double, to: Double)
 
         /// The (mode, p0, p1) triple the bridge reads.
