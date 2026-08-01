@@ -147,7 +147,11 @@ def real_symbols(lines):
     Comments are stripped from the header (otherwise every index entry trivially finds
     itself) and from the sources too: a tombstone comment such as `// OCCTCurve3DLength
     lived here: ...`, left where a deleted function used to be, otherwise reads as a live
-    definition and keeps a removed symbol passing this check forever (#549).
+    definition and keeps a removed symbol passing this check forever. The sources were
+    read whole until #549, which meant three entries in the GCPnts_AbscissaPoint line
+    stayed "real" long after their functions were removed, propped up only by their own
+    tombstone comments (the tombstone idiom itself, #500/#506, puts that name in a
+    comment on purpose).
     """
     code = '\n'.join(l for l in lines if not l.lstrip().startswith('//'))
     found = set(SYMBOL.findall(code))
@@ -324,6 +328,11 @@ SELF_TEST = [
         '//                                       (NOT OCCTCurve3DProjectPointNope; see below)']),
     ('annotated family prefix', [
         '// BRepOffsetAPI_MakeFilling           → OCCTShapeFillNope* (Shape.fill)']),
+    # Not a fabricated name: OCCTCurve2DLength was a real function until #549 removed it, and
+    # its tombstone comment still names it in both the header and OCCTBridge_Geom2d.mm. This
+    # case fails the moment real_symbols() reads a source comment as a definition again.
+    ('symbol surviving only in a tombstone comment', [
+        '// GCPnts_AbscissaPoint                → OCCTCurve2DLength'], 'OCCTCurve2DLength'),
 ]
 
 # Each case is an entry filed under the wrong class — the four shapes #565 found. Every
@@ -362,8 +371,9 @@ INDIRECTION_TEST = [
 def self_test(known, reach):
     """Prove each failure mode this script covers is caught, and each correct shape is not."""
     failed = 0
-    for name, lines in SELF_TEST:
-        flagged = [s for _, _, s, _ in stale_entries(index_entries(lines), known) if 'Nope' in s]
+    for name, lines, *expected in SELF_TEST:
+        marker = expected[0] if expected else 'Nope'
+        flagged = [s for _, _, s, _ in stale_entries(index_entries(lines), known) if marker in s]
         failed += not flagged
         print(f'  {"ok  " if flagged else "MISS"} stale, {name}: '
               f'{", ".join(flagged) or "injected name not reported"}')

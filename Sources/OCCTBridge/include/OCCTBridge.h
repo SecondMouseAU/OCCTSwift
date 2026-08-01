@@ -274,10 +274,9 @@
 //
 // --- GCPnts ---
 // GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength,
-//                                       OCCTCurve2DLength, OCCTCurve2DGetLength*,
-//                                       OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*,
-//                                       OCCTEdgeParameterAt*, OCCTWireGetLength
-//                                       (two further spellings were deleted by #506/#549; their
+//                                       OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength,
+//                                       OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+//                                       (three further spellings were deleted by #506/#549; their
 //                                       tombstones sit at the old declaration sites)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
@@ -17913,9 +17912,10 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 /// Create a trimmed copy of a 2D curve between parameters u1 and u2.
 OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
-/// Compute the length of a 2D curve between parameters u1 and u2 (u1 must not exceed u2).
-/// Returns -1.0 on failure (null curve, reversed range, or any other computation error).
-double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
+/// OCCTCurve2DLength was declared here: a second spelling of OCCTCurve2DGetLengthBetween that
+/// measured through a pre-bounded Geom2dAdaptor_Curve, so it extrapolated past a multi-span
+/// curve's knots instead of clamping and reported a reversed range as a failure. Removed by
+/// #549, matching what #506 did to the 3D spelling.
 
 // --- Surface additional (v0.115.0) ---
 
