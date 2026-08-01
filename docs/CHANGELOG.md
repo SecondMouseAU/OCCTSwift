@@ -128,6 +128,56 @@ which stopped being evidence the moment one started forwarding to the other. Thr
 should catch them; the last is caught by the new suite alone and by none of the existing #403 or
 #480 coverage.
 
+#### The healing conversions were returning a straight chord through an offset sphere (#570)
+
+[#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522) fixed the kernel writing the U Jacobi
+maxima into the V workspace slot, which zeroed every patch's **interior** truncation error, so
+`GeomConvert_ApproxSurface::MaxError()` only ever described the boundary iso-curves. That established
+the number was wrong. Three kernel healing sites make an accept/reject decision on it, which is where
+a zero stops being a wrong diagnostic and becomes a wrong shape — and nobody had checked them, because
+every existing test of those entry points uses a box or a cylinder.
+
+Measured against a stock and a patched kernel across ten fixtures, **two of the three returned a
+materially wrong surface**:
+
+| entry point | before | after |
+|---|---|---|
+| `ShapeCustom::ConvertToBSpline` | degree 1, 2 poles, **deviating by 24** | degree 13x10, 14x11 poles, deviating 1.2e-7 |
+| `ShapeCustom::BSplineRestriction` | degree 1x7, **one pole in U**, deviating 23.9999 | degree 9x7, 9x8 poles, deviating 5.1e-4 |
+
+The fixture is a face on an offset sphere over its full domain. 24 is the offset sphere's own
+diameter: the fit was a straight chord across the full 2π of longitude, accepted as meeting a
+`Precision::Approximation()` tolerance of 1e-6. The restriction result was worse — a single pole in a
+periodic direction is the whole U direction collapsed to a point, accepted against a 0.01 tolerance
+it missed by three orders of magnitude — and it was **identical at C0, C1 and C2**, because the
+degree-priority loop degrades continuity toward 0 whenever the requested one cannot meet the tolerance
+within `maxDegree`. Requesting C2 was not protection.
+
+Six public entry points reached it, all confirmed against the released kernel:
+`Shape.convertedToBSpline()`, `Shape.withSurfacesAsBSpline(offset:)`,
+`Shape.convertToBSplineAdvanced(_:offsetMode:)` and all three `bsplineRestriction*` overloads.
+
+**The third site is why the other two were reachable at all.** `ShapeCustom_ConvertToBSpline` does not
+build an approximation itself — it calls `ShapeConstruct::ConvertSurfaceToBSpline`, forcing
+`GeomAbs_C0` for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`, a 1999 workaround for a
+hang). So that path did not degrade into the collapsing continuity; it started there. Requesting the
+offset surface's own continuity instead returns identical results before and after the patch — the
+collapse never reaches C2/C3.
+
+**No code changed.** Patch `0019` already fixes every row above, so what this issue ships is the
+measurement, the reproducer at
+[`Scripts/repro/570-healing-approx-accept/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/570-healing-approx-accept),
+and seven regression tests pinning the corrected values. Run against the last released kernel, six of
+the seven fail with exactly the figures above and the seventh — an offset sphere trimmed clear of its
+poles, which was never affected — passes.
+
+**The 1999 workaround stays.** Timed on both kernels, the request it suppresses completes in under
+5 ms on all seven offset fixtures with no hang, and its results are identical either side of `0019`.
+That is not evidence the hang is gone; it is no evidence the hang ever existed for these inputs. The
+comment blames a hang, #522 is not a hang, and retiring a hang guard needs a reproduction of the hang.
+Post-`0019` the workaround also costs nothing measurable — forced C0 returns a slightly coarser fit
+(1.2e-7 against 1.4e-8) that is comfortably inside tolerance either way.
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge
