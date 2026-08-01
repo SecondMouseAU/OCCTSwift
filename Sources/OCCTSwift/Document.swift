@@ -8108,64 +8108,57 @@ extension Curve2D {
     }
 }
 
-// MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
+// MARK: - Knot splitting, the v0.105.0 spellings (deprecated, #562)
 
-// `continuity` throughout both sections below is the same derivative-order ContinuityRange
-// `Surface.knotSplitting` documents: a knot splits only when `degree - multiplicity <
-// continuity`, so the meaningful range is 0...degree and it saturates there. These five
-// entry points drive the same two OCCT analyzers as `Surface.knotSplitting` and
-// `Curve2D.splitIndicesAtDiscontinuities` and differ only in what they return. #480.
+// These five entry points were added over `GeomConvert_BSplineSurfaceKnotSplitting` and
+// `Geom2dConvert_BSplineCurveKnotSplitting` three releases after `Surface.knotSplitting` and
+// `Curve2D.splitIndicesAtDiscontinuities` already wrapped those same two analyzers. Nothing
+// reconciled them, so the same question had two spellings that could not be asked to differ:
+// both of these take one continuity for both parametric directions where the surface's canonical
+// call takes one per direction, and neither reaches a knot the canonical call cannot.
+//
+// Each now forwards to its canonical sibling. Their own five bridge functions are gone.
+// `continuity` is the same derivative-order ContinuityRange throughout: a knot splits only when
+// `degree - multiplicity < continuity`, so the meaningful range is 0...degree and it saturates
+// there (#480).
 
 extension Surface {
     /// Get number of U-direction knot splits for a BSpline surface at given continuity.
-    ///
-    /// Same count as `knotSplitting(uContinuity:vContinuity:)`'s `uSplitCount`.
+    @available(*, deprecated,
+               message: "Use knotSplitting(uContinuity:vContinuity:).uSplitCount, which asks the same analyzer once instead of three times and can ask U and V different questions (#562)")
     public func bsplineKnotSplitsU(continuity: ParametricContinuity) -> Int {
-        Int(OCCTBSplineSurfaceKnotSplitsU(handle, continuity.rawValue))
+        knotSplitting(uContinuity: continuity, vContinuity: continuity).uSplitCount
     }
 
     /// Get number of V-direction knot splits for a BSpline surface at given continuity.
-    ///
-    /// Same count as `knotSplitting(uContinuity:vContinuity:)`'s `vSplitCount`.
+    @available(*, deprecated,
+               message: "Use knotSplitting(uContinuity:vContinuity:).vSplitCount, which asks the same analyzer once instead of three times and can ask U and V different questions (#562)")
     public func bsplineKnotSplitsV(continuity: ParametricContinuity) -> Int {
-        Int(OCCTBSplineSurfaceKnotSplitsV(handle, continuity.rawValue))
+        knotSplitting(uContinuity: continuity, vContinuity: continuity).vSplitCount
     }
 
     /// Get U and V knot split index arrays.
-    ///
-    /// Indices are 1-based into the surface's own U/V knot tables; `bsplineUKnot(index:)` and
-    /// `bsplineVKnot(index:)` turn them into parameters, which is what
-    /// `knotSplitting(uContinuity:vContinuity:)` returns directly.
+    @available(*, deprecated,
+               message: "Use knotSplitting(uContinuity:vContinuity:), whose uSplitIndices/vSplitIndices are these same indices and which also gives you the parameters they resolve to (#562)")
     public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> (uSplits: [Int32], vSplits: [Int32]) {
-        let nu = bsplineKnotSplitsU(continuity: continuity)
-        let nv = bsplineKnotSplitsV(continuity: continuity)
-        var uSplits = [Int32](repeating: 0, count: max(nu, 1))
-        var vSplits = [Int32](repeating: 0, count: max(nv, 1))
-        OCCTBSplineSurfaceKnotSplitValues(handle, continuity.rawValue, &uSplits, &vSplits)
-        return (Array(uSplits.prefix(nu)), Array(vSplits.prefix(nv)))
+        let result = knotSplitting(uContinuity: continuity, vContinuity: continuity)
+        return (result.uSplitIndices.map(Int32.init), result.vSplitIndices.map(Int32.init))
     }
 }
 
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
-
 extension Curve2D {
     /// Get number of knot splits for a 2D BSpline curve at given continuity.
-    ///
-    /// Same count as `splitIndicesAtDiscontinuities(continuity:)`'s array length.
+    @available(*, deprecated,
+               message: "Use splitIndicesAtDiscontinuities(continuity:)?.count, the same analyzer under one spelling (#562)")
     public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int {
-        Int(OCCTBSplineCurve2dKnotSplits(handle, continuity.rawValue))
+        splitIndicesAtDiscontinuities(continuity: continuity)?.count ?? 0
     }
 
     /// Get knot split indices for a 2D BSpline curve at given continuity.
-    ///
-    /// The same indices `splitIndicesAtDiscontinuities(continuity:)` returns, as `[Int32]`
-    /// and empty rather than `nil` for a non-BSpline curve.
+    @available(*, deprecated,
+               message: "Use splitIndicesAtDiscontinuities(continuity:), which returns these same indices as [Int] and nil rather than [] for a non-BSpline curve (#562)")
     public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32] {
-        let n = bsplineKnotSplits(continuity: continuity)
-        guard n > 0 else { return [] }
-        var splits = [Int32](repeating: 0, count: n)
-        OCCTBSplineCurve2dKnotSplitValues(handle, continuity.rawValue, &splits)
-        return splits
+        splitIndicesAtDiscontinuities(continuity: continuity)?.map(Int32.init) ?? []
     }
 }
 
@@ -11484,11 +11477,23 @@ extension Shape {
 
 extension Shape {
 
-    /// Get point on a face at (u, v) using local surface properties (BRepLProp_SLProps).
-    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double> {
+    /// Point on a face at (u, v), through the face's own adaptor (`BRepLProp_SLProps`).
+    ///
+    /// Returns nil if the receiver is not a single face, the same contract
+    /// ``faceLPropMeanCurvature(u:v:)`` and its siblings use, except that the point does not depend
+    /// on the curvature gate, so it is still reported at a cone apex or a sphere pole. Before #583
+    /// a non-face `Shape` came back as `(0, 0, 0)`, which is a real point of most surfaces.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!
+    /// if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+    ///     print(p)
+    /// }
+    /// ```
+    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
-        return SIMD3(x, y, z)
+        let ok = OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
     }
 
     /// Get normal on a face at (u, v). Returns nil if normal is undefined.
@@ -11498,29 +11503,84 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get maximum principal curvature on a face at (u, v).
-    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMaxCurvature(handle, u, v)
+    /// Maximum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil is a cone apex, a sphere pole, or a receiver that is not a face. `0` is a value in its
+    /// own right: it is the maximum curvature at every point of a cylinder or a cone. Before #583
+    /// the two were the same answer.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMax = cylinder.faceLPropMaxCurvature(u: 1.1, v: 6)   // 0, along the axis, not nil
+    /// ```
+    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMaxCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get minimum principal curvature on a face at (u, v).
-    public func faceLPropMinCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMinCurvature(handle, u, v)
+    /// Minimum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil on the same terms as ``faceLPropMaxCurvature(u:v:)``.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6)   // -1/3, the reciprocal radius
+    /// ```
+    public func faceLPropMinCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMinCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get mean curvature on a face at (u, v).
-    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMeanCurvature(handle, u, v)
+    /// Mean curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/meanCurvature(atU:v:)``, which has always been
+    /// optional; since #529 the two agree about where curvature exists, and since #583 both can
+    /// say so.
+    ///
+    /// ```swift
+    /// let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+    /// if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+    /// ```
+    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMeanCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get Gaussian curvature on a face at (u, v).
-    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropGaussianCurvature(handle, u, v)
+    /// Gaussian curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/gaussianCurvature(atU:v:)``. `0` is the answer at
+    /// every point of any developable surface (a cylinder, a cone, a plane), so this getter
+    /// returned the pre-#583 "undefined" sentinel for whole faces at a time.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+    /// ```
+    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropGaussianCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Check if a face is umbilic at (u, v) (all principal curvatures equal).
-    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool {
-        return OCCTFaceLPropIsUmbilic(handle, u, v)
+    /// Whether a face is umbilic at (u, v), meaning both principal curvatures are equal, or nil
+    /// where there are no principal curvatures to compare.
+    ///
+    /// OCCT's test is one ULP wide rather than a geometric tolerance, so a plane qualifies
+    /// everywhere but an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`. Before #583 a cone apex answered `false`, claiming the two
+    /// curvatures differ there.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+    /// ```
+    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool? {
+        var isUmbilic = false
+        let ok = OCCTFaceLPropIsUmbilic(handle, u, v, &isUmbilic)
+        return ok ? isUmbilic : nil
     }
 
     /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.

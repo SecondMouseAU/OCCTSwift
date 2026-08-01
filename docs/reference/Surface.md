@@ -697,11 +697,21 @@ Converts this surface to a BSpline representation.
 public func toBSpline() -> Surface?
 ```
 
-Uses OCCT's exact conversion for analytic surfaces. Infinite surfaces must be trimmed first. The result is a `Geom_BSplineSurface`.
+Uses OCCT's exact conversion where one exists, and approximates where it does not. Infinite surfaces must be trimmed first. The result is a `Geom_BSplineSurface`.
 
 - **Returns:** BSpline surface, or `nil` if conversion fails (e.g. surface is already a non-convertible type).
 - **OCCT:** `GeomConvert::SurfaceToBSplineSurface`.
 - **Note:** Infinite surfaces (planes, full cylinders) will cause conversion to fail — trim the domain first with `trimmed(u1:u2:v1:v2:)`.
+- **Note:** **This is not an exactness guarantee, and it takes no tolerance.** Analytic families
+  (plane, cylinder, cone, sphere, torus, surface of revolution) plus Bezier and BSpline surfaces
+  convert exactly. Everything else, including an offset surface with no analytic equivalent, is
+  handed to `GeomConvert_ApproxSurface` at a tolerance OCCT hardcodes to `1e-4`
+  (`GeomConvert_1.cxx:786` for a trimmed surface, `:960` otherwise), with a continuity derived from
+  the surface's own `IsCNu`/`IsCNv`, and the fit is returned whether or not that tolerance was met.
+  Measured on a trimmed offset of a BSpline that is C1 but not C2 in U, it caps out at degree 14 and
+  sits 0.038 from its source (#572; before the `0019` kernel patch it stopped at degree 12x9 and sat
+  0.104 out while reporting success internally). Use `approximated(tolerance:...)` to name the
+  tolerance and `approxWithDetails(...)` to learn whether it was reached.
 - **Example:**
   ```swift
   let sphere = Surface.sphere(center: .zero, radius: 10)!

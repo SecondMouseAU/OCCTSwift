@@ -1157,6 +1157,9 @@ public final class Shape: @unchecked Sendable {
     /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
     /// throws rather than returning the partially-repaired shape.
     ///
+    /// Cancelling *anywhere* throws ``ImportError/cancelled``, including during the transfer, which
+    /// used to report `ImportError.importFailed` instead (#525).
+    ///
     /// ```swift
     /// final class Deadline: ImportProgress, @unchecked Sendable {
     ///     private let start = Date()
@@ -4057,9 +4060,22 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert BSpline surfaces to their closest analytical form
+    /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// Attempts to convert BSpline surfaces to planes, cylinders, cones, spheres, or tori.
+    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
+    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
+    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
+    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    ///
+    /// Continuity is fixed at C1 here; use
+    /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
+    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
+    ///
+    /// ```swift
+    /// let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001)
+    /// ```
     ///
     /// - Parameters:
     ///   - surfaceTolerance: Tolerance for surface approximation (default: 0.01)
@@ -8012,27 +8028,56 @@ extension Shape {
 
     /// Result of point-edge distance extrema computation
     public struct PointEdgeExtrema: Sendable {
-        /// Minimum distance from the point to the edge
+        /// Minimum distance from the point to the edge, over the whole edge including its ends
         public let distance: Double
-        /// Parameter on edge at closest point
+        /// Parameter on the edge at the nearest point
         public let parameter: Double
-        /// Closest point on edge
+        /// The nearest point on the edge
         public let pointOnEdge: SIMD3<Double>
-        /// Number of extrema solutions found
+        /// How many perpendicular feet the point has on this edge (`BRepExtrema_ExtPC`'s extrema).
+        ///
+        /// Zero is an ordinary, informative answer rather than a failure: it means the nearest
+        /// point is one of the edge's two ends. A non-zero count does *not* mean the nearest point
+        /// is one of those feet — an extremum can be a maximum — so read `distance`, `parameter`
+        /// and `pointOnEdge` for the answer and this only for the count.
         public let solutionCount: Int
     }
 
-    /// Compute minimum distance from a point to an edge of this shape.
+    /// Compute the minimum distance from a point to an edge of this shape.
     ///
-    /// Uses BRepExtrema_ExtPC to find the closest point on the specified edge.
+    /// The answer is the nearest point over the whole edge, its two ends included, and matches
+    /// ``Edge/project(point:)`` on the same edge and the same point — both take a minimum over
+    /// `ShapeAnalysis_Curve`, `GeomAPI_ProjectPointOnCurve` and the edge's ends.
+    ///
+    /// ```swift
+    /// let arc = Shape.fromWire(Wire.arc(
+    ///     center: SIMD3(0, 0, 0), radius: 5, startAngle: 0, endAngle: .pi)!)!
+    ///
+    /// // Below the arc, the nearest point is an end — the only extremum is the far side of it.
+    /// if let hit = arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0) {
+    ///     print(hit.distance)       // 7.81, to the end at (5, 0, 0). Was 11, the far side.
+    ///     print(hit.solutionCount)  // 1 — and that one extremum is a maximum
+    /// }
+    ///
+    /// let segment = Shape.fromWire(Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!)!
+    /// if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
+    ///     print(hit.distance)       // 92. Was nil: no extremum exists past the end.
+    ///     print(hit.solutionCount)  // 0 — no perpendicular foot, not a failure
+    /// }
+    /// ```
+    ///
+    /// Before #580 this reported the smallest of `BRepExtrema_ExtPC`'s extrema, which excludes the
+    /// edge's ends and can be a single *maximum*: the arc above answered 11 (the far side), and a
+    /// point beyond the end of a trimmed segment answered `nil`.
     ///
     /// - Parameters:
     ///   - point: 3D point
-    ///   - edgeIndex: 0-based edge index
-    /// - Returns: Extrema result, or nil if computation fails
+    ///   - edgeIndex: 0-based edge index, in the enumeration ``edges()`` reads
+    /// - Returns: The nearest-point result, or nil if there is no such edge index or that edge has
+    ///   no 3D curve.
     public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeExtrema? {
         let result = OCCTBRepExtremaExtPC(point.x, point.y, point.z, handle, Int32(edgeIndex))
-        guard result.solutionCount > 0 else { return nil }
+        guard result.isValid else { return nil }
         return PointEdgeExtrema(
             distance: result.distance,
             parameter: result.parameter,
@@ -8146,7 +8191,10 @@ extension Shape {
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum.
+    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
+    ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
+    ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
+    ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
@@ -9075,11 +9123,25 @@ extension Shape {
     /// Creates a smooth BSpline surface that passes through or near the given points.
     /// Useful for creating surfaces from scattered point data.
     ///
+    /// The fit subdivides into more Bezier patches until it is within `tolerance` of the plate.
+    /// `maxSegments` caps that subdivision; **1 is clamped to 2**, because a single patch cannot be
+    /// cut and the approximator then ignores its own error criterion entirely, which makes
+    /// `tolerance` unenforceable rather than merely coarse (#571).
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = [
+    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),
+    /// ]
+    /// if let face = Shape.plateSurface(points: points, tolerance: 1e-3) {
+    ///     print(face.surfaceArea ?? 0)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - points: Array of 3D points to fit the surface through
     ///   - tolerance: Approximation tolerance (default 1e-3)
     ///   - maxDegree: Maximum BSpline degree (default 8)
-    ///   - maxSegments: Maximum BSpline segments (default 20)
+    ///   - maxSegments: Maximum BSpline segments (default 20; values below 2 are clamped to 2)
     /// - Returns: Face with plate surface, or nil on failure
     public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-3,
                                      maxDegree: Int = 8, maxSegments: Int = 20) -> Shape? {
@@ -11175,12 +11237,9 @@ extension Shape {
         case throughAll
         /// `PerformUntilEnd(R)` — bounded by the stock's own first and last faces along the axis.
         ///
-        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting.
-        ///
-        /// - Warning: On input with more than one body on the axis (a compound, a multi-solid),
-        ///   OCCT keeps a single part of its cutting tool and can end up removing **no material at
-        ///   all** while still reporting ``CylindricalHoleStatus/noError``. Use ``throughAll`` or
-        ///   ``Shape/drilled(at:direction:radius:depth:)`` for a stack. Tracked as #532.
+        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting. Every
+        /// body the axis crosses beyond the entry face is drilled, so a stack of plates is bored
+        /// all the way through.
         case untilEnd
         /// `PerformThruNext(R)` — stops at the next face after the origin.
         case thruNext
@@ -11198,10 +11257,8 @@ extension Shape {
         /// The window **chooses a face pair; it does not trim the cut**. A window lying strictly
         /// inside one body still drills all the way through that body, and a window that names no
         /// face pair — the gap between two plates, say — is ``CylindricalHoleStatus/invalidPlacement``.
-        /// Its use is picking *which* body to drill in a stack.
-        ///
-        /// - Warning: A window spanning more than one body hits the same OCCT behaviour as
-        ///   ``untilEnd``: ``CylindricalHoleStatus/noError``, and no material removed (#532).
+        /// Its use is picking *which* body to drill in a stack: a window over one plate drills that
+        /// plate, and a window spanning several drills all of them.
         case range(from: Double, to: Double)
 
         /// The (mode, p0, p1) triple the bridge reads.
@@ -13115,7 +13172,9 @@ extension Shape {
     /// - Parameters:
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has.
+    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
+    ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(_ shape: Shape,

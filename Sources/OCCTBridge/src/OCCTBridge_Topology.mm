@@ -1207,39 +1207,64 @@ OCCTFaceFaceExtremaResult OCCTBRepExtremaExtFF(OCCTShapeRef shape1, int32_t face
 }
 
 // MARK: - BRepExtrema Ext PC/CF (v0.49)
+
+// #580: the nearest point on the edge, not the nearest of BRepExtrema_ExtPC's extrema.
+//
+// BRepExtrema_ExtPC searches for perpendicular feet, so it excludes the edge's own two ends and
+// makes no distinction between a minimum and a maximum. Reporting the smallest of what it found is
+// therefore not the smallest distance to the edge, and measurably so: over 189 edge/point
+// combinations (Scripts/repro/539-nearest-point-on-curve/580-repair-options.mm) it answered 101
+// correctly, 34 with a distance that was too large -- a point below a half circle of radius 5 read
+// as 11 rather than 7.81, because the sole extremum in range is the far side of the arc -- and
+// refused 54 outright, IsDone() being false whenever no foot exists at all.
+//
+// The measured trap: filtering the extrema to the IsMin ones scores 101, exactly what it scored
+// before. The cases that filter drops are precisely the ones it leaves with no candidate.
+//
+// occtNearestPointOnCurveRange (#539) is what answers this, so both this entry point and
+// OCCTEdgeProjectPoint reach one implementation and cannot disagree about the same edge and the
+// same point. Adding BRepExtrema_ExtPC's own ends via TrimmedSquareDistances would be the smaller
+// diff but tops out at 188/189: on a BSpline queried from (2, 0, 0) Extrema_ExtPC does not
+// converge, leaving the nearer end to answer 2 against a truth of 1.996434, where the helper's
+// GeomAPI_ProjectPointOnCurve finds the interior minimum.
 OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
                                                  OCCTShapeRef shape, int32_t edgeIndex) {
     OCCTPointEdgeExtremaResult result = {};
     if (!shape) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #541's enumeration, which is the one Shape.edges() and Shape.edge(at:) read. This used to
+        // walk its own bare explorer, which counts one entry per *occurrence*: a box's 12 edges are
+        // 24 occurrences, since each belongs to two faces, and measured on the pinned kernel the two
+        // orders diverge from index 9 onwards -- edgeIndex 9 was the edge through (10, 0, 5) here
+        // and the edge through (5, 0, 10) to every other entry point. A caller holding an index from
+        // edges() measured to an edge it had not selected, on the most ordinary shape there is.
+        TopoDS_Edge edge = occtEdgeAt(shape->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
-        TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
-        BRepExtrema_ExtPC ext(vertex, edge);
-        if (!ext.IsDone()) return result;
+        Standard_Real first, last;
+        Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+        if (curve.IsNull()) return result;
 
-        result.solutionCount = ext.NbExt();
-        if (result.solutionCount >= 1) {
-            // Find minimum distance
-            double minDist2 = ext.SquareDistance(1);
-            int minIdx = 1;
-            for (int i = 2; i <= ext.NbExt(); i++) {
-                if (ext.SquareDistance(i) < minDist2) {
-                    minDist2 = ext.SquareDistance(i);
-                    minIdx = i;
-                }
-            }
-            result.distance = sqrt(minDist2);
-            result.parameter = ext.Parameter(minIdx);
-            gp_Pnt pt = ext.Point(minIdx);
-            result.ptx = pt.X(); result.pty = pt.Y(); result.ptz = pt.Z();
+        gp_Pnt nearest;
+        if (!occtNearestPointOnCurveRange(curve, gp_Pnt(px, py, pz), first, last,
+                                          Precision::Confusion(),
+                                          &nearest, &result.parameter, &result.distance)) {
+            return result;
         }
+        result.ptx = nearest.X(); result.pty = nearest.Y(); result.ptz = nearest.Z();
+
+        // Still BRepExtrema_ExtPC's own count, reported for its own sake: how many perpendicular
+        // feet the point has on this edge. Zero now travels to the caller instead of erasing the
+        // answer, and a search that cannot finish leaves it zero rather than failing the call.
+        try {
+            TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
+            BRepExtrema_ExtPC ext(vertex, edge);
+            if (ext.IsDone()) result.solutionCount = ext.NbExt();
+        } catch (...) {
+            // A count we could not take is zero feet reported, not a failed distance.
+        }
+
+        result.isValid = true;
         return result;
     } catch (...) {
         return result;

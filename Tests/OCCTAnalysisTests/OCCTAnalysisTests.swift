@@ -2440,23 +2440,29 @@ struct BRepExtremaExtFFTests {
 
 @Suite("BRepExtrema_ExtPC Tests")
 struct BRepExtremaExtPCTests {
+    /// Every edge answers. This used to loop "until we find one that gives a valid extremum", a
+    /// workaround for how often a point with no perpendicular foot came back nil, and asserted
+    /// `solutionCount > 0` — which the guard it was testing made unfalsifiable. See #580.
     @Test("Point to edge distance on box")
     func pointToEdge() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let edgeCount = box.edges().count
-        #expect(edgeCount > 0)
+        #expect(edgeCount == 12)
 
-        // Try each edge until we find one that gives a valid extremum
-        var foundResult = false
         for i in 0..<edgeCount {
-            if let result = box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: i) {
-                #expect(result.distance >= 0)
-                #expect(result.solutionCount > 0)
-                foundResult = true
-                break
-            }
+            let result = try #require(box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: i))
+            // Every edge of the box is a bounded segment, so no answer can exceed the box's
+            // diagonal plus the probe's own offset from it.
+            #expect(result.distance > 0)
+            #expect(result.distance < 30)
         }
-        #expect(foundResult)
+
+        // The box is centred on the origin, so (5, 5, 15) is the corner (5, 5, 5) plus 10 in z: the
+        // nearest edge point is that corner itself.
+        let nearest = (0..<edgeCount).compactMap {
+            box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: $0)?.distance
+        }.min()
+        #expect(abs(try #require(nearest) - 10) < 1e-9)
     }
 
     @Test("Point to wire edge — known distance")
@@ -2730,7 +2736,10 @@ struct GeomLPropSLPropsTests {
         let faces = sph.subShapes(ofType: .face)
         guard !faces.isEmpty else { return }
         // Use faceLProp methods instead
-        let maxCurv = faces[0].faceLPropMaxCurvature(u: 0, v: 0.5)
+        guard let maxCurv = faces[0].faceLPropMaxCurvature(u: 0, v: 0.5) else {
+            Issue.record("max curvature undefined on a sphere away from its poles")
+            return
+        }
         #expect(abs(abs(maxCurv) - 0.1) < 0.02)
     }
 
@@ -2739,7 +2748,12 @@ struct GeomLPropSLPropsTests {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return }
         let faces = box.subShapes(ofType: .face)
         guard !faces.isEmpty else { return }
-        let maxCurv = faces[0].faceLPropMaxCurvature(u: 0, v: 0)
+        // A plane's maximum curvature is 0 and defined, the collision #583 is about, so the
+        // unwrap carries as much of the assertion as the magnitude does.
+        guard let maxCurv = faces[0].faceLPropMaxCurvature(u: 0, v: 0) else {
+            Issue.record("max curvature undefined on a planar face")
+            return
+        }
         #expect(abs(maxCurv) < 0.001)
     }
 }
@@ -4782,10 +4796,13 @@ struct BRepLPropFaceTests {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
-                let p = faces[0].faceLPropValue(u: 0.5, v: 0.5)
-                let dist = sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
-                // Point on sphere should be at distance ~5
-                #expect(abs(dist - 5.0) < 1.0)
+                if let p = faces[0].faceLPropValue(u: 0.5, v: 0.5) {
+                    let dist = sqrt(p.x * p.x + p.y * p.y + p.z * p.z)
+                    // Point on sphere should be at distance ~5
+                    #expect(abs(dist - 5.0) < 1.0)
+                } else {
+                    Issue.record("faceLPropValue nil on an ordinary point of a sphere face")
+                }
             }
         }
     }
@@ -4807,8 +4824,11 @@ struct BRepLPropFaceTests {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
-                let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5)
-                let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5)
+                guard let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5),
+                      let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5) else {
+                    Issue.record("principal curvatures undefined away from the sphere's poles")
+                    return
+                }
                 #expect(abs(abs(maxK) - 0.2) < 0.05)
                 #expect(abs(abs(minK) - 0.2) < 0.05)
             }
@@ -4820,8 +4840,11 @@ struct BRepLPropFaceTests {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
-                let mean = faces[0].faceLPropMeanCurvature(u: 0.5, v: 0.5)
-                let gauss = faces[0].faceLPropGaussianCurvature(u: 0.5, v: 0.5)
+                guard let mean = faces[0].faceLPropMeanCurvature(u: 0.5, v: 0.5),
+                      let gauss = faces[0].faceLPropGaussianCurvature(u: 0.5, v: 0.5) else {
+                    Issue.record("mean/Gaussian curvature undefined away from the sphere's poles")
+                    return
+                }
                 #expect(abs(abs(mean) - 0.2) < 0.05)
                 #expect(abs(abs(gauss) - 0.04) < 0.02)
             }
@@ -4834,10 +4857,16 @@ struct BRepLPropFaceTests {
         if let sphere = Shape.sphere(radius: 5) {
             let faces = sphere.subShapes(ofType: .face)
             if faces.count > 0 {
-                let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5)
-                let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5)
+                guard let maxK = faces[0].faceLPropMaxCurvature(u: 0.5, v: 0.5),
+                      let minK = faces[0].faceLPropMinCurvature(u: 0.5, v: 0.5) else {
+                    Issue.record("principal curvatures undefined away from the sphere's poles")
+                    return
+                }
                 // On a sphere, max and min curvatures should be approximately equal
                 #expect(abs(maxK - minK) < 0.01)
+                // ...and the umbilic getter has an answer to give, whatever it is (#583). OCCT's
+                // test is one ULP wide, so which answer depends on the parameter (see #494).
+                #expect(faces[0].faceLPropIsUmbilic(u: 0.5, v: 0.5) != nil)
             }
         }
     }
@@ -6170,6 +6199,14 @@ struct AdaptorLocalPropsParityTests {
         #expect(abs(lhs - rhs) <= 1e-9 * scale, label)
     }
 
+    /// Definedness first, then the value. Since #583 both families can say "no value here", so the
+    /// two halves of the parity claim are separable: the suite used to be able to assert only the
+    /// second, and only where the `Geom_` side happened to report one.
+    private func expectAgree(_ adaptor: Double?, _ geom: Double?, _ label: Comment) {
+        #expect((adaptor != nil) == (geom != nil), label)
+        if let adaptor, let geom { expectClose(adaptor, geom, label) }
+    }
+
     // MARK: Face
 
     /// The regression proper, on the surface side. Every `v` from 3e-7 up to 1e-6 lands between
@@ -6189,25 +6226,26 @@ struct AdaptorLocalPropsParityTests {
                 Issue.record("Face.meanCurvature undefined at v=\(v), which the probe reports as defined")
                 continue
             }
-            // Non-zero is what makes this discriminating: the adaptor family reports 0 both for
-            // "flat here" and for "undefined here" (#583), so a zero expectation would pass pre-fix
-            // too.
             #expect(mean != 0, label)
-            expectClose(shape.faceLPropMeanCurvature(u: 0, v: v), mean, label)
-            expectClose(shape.faceLPropGaussianCurvature(u: 0, v: v), gaussian, label)
+            expectAgree(shape.faceLPropMeanCurvature(u: 0, v: v), mean, label)
+            expectAgree(shape.faceLPropGaussianCurvature(u: 0, v: v), gaussian, label)
         }
     }
 
-    @Test("Principal curvatures agree wherever the Geom_ family defines them")
+    /// Both directions now, at every `v`, including the ones past the gate, where the claim is
+    /// that *neither* family reports a value. The `continue` this used to take when the `Geom_`
+    /// side returned nil was the workaround: it skipped exactly the rows the fix is about.
+    @Test("Principal curvatures agree, including about where they stop existing")
     func facePrincipalCurvaturesAgree() {
         guard let (shape, face) = Self.apexConeFace() else {
             Issue.record("could not build the apex cone face")
             return
         }
-        for v in [5e-7, 1e-6, 1e-3, 2.0] {
-            guard let principal = face.principalCurvatures(atU: 0.4, v: v) else { continue }
-            expectClose(shape.faceLPropMaxCurvature(u: 0.4, v: v), principal.kMax, "cone v=\(v)")
-            expectClose(shape.faceLPropMinCurvature(u: 0.4, v: v), principal.kMin, "cone v=\(v)")
+        for v in [-1e-9, 0.0, 1e-9, 5e-7, 1e-6, 1e-3, 2.0] {
+            let label: Comment = "cone v=\(v)"
+            let principal = face.principalCurvatures(atU: 0.4, v: v)
+            expectAgree(shape.faceLPropMaxCurvature(u: 0.4, v: v), principal?.kMax, label)
+            expectAgree(shape.faceLPropMinCurvature(u: 0.4, v: v), principal?.kMin, label)
         }
     }
 
@@ -6227,12 +6265,10 @@ struct AdaptorLocalPropsParityTests {
                 guard let face = Face(faceShape) else { continue }
                 for (u, v) in [(0.3, 0.2), (1.1, -0.4), (2.0, 0.9)] {
                     let label: Comment = "\(name) u=\(u) v=\(v)"
-                    let mean = face.meanCurvature(atU: u, v: v)
-                    // Definedness has to match; the adaptor family spells "undefined" as 0, so this
-                    // half can only be asserted one way until #583 makes it optional.
-                    if let mean {
-                        expectClose(faceShape.faceLPropMeanCurvature(u: u, v: v), mean, label)
-                    }
+                    expectAgree(faceShape.faceLPropMeanCurvature(u: u, v: v),
+                                face.meanCurvature(atU: u, v: v), label)
+                    expectAgree(faceShape.faceLPropGaussianCurvature(u: u, v: v),
+                                face.gaussianCurvature(atU: u, v: v), label)
                     // The normal is reported by both, but only the Geom_ spelling applies the
                     // face's orientation, so they agree up to sign — a contract difference, not
                     // drift, and worth pinning so it is not mistaken for one later.
@@ -6335,6 +6371,134 @@ struct AdaptorLocalPropsParityTests {
             #expect(abs(centre.y - 2) < 1e-9, "u=\(u)")
             #expect(abs(centre.z) < 1e-9, "u=\(u)")
             #expect(abs(edge.edgeCurvatureLP(at: u) - 0.25) < 1e-9, "u=\(u)")
+        }
+    }
+}
+
+// MARK: - #583: the face-side getters can tell a curvature of zero from no curvature
+
+/// #529 made `Shape.faceLProp*` agree with `Face.*` about *whether* a quantity exists at a point.
+/// Six of them still could not say so: they returned the value bare and used `0` (or `(0, 0, 0)`
+/// for the point, or `false` for the umbilic predicate) to mean "undefined here", "the handle was
+/// null" and "this `Shape` is not a face" all at once.
+///
+/// That encoding has no spare value to spend, which is a measurement and not a style objection.
+/// Read through the same `BRepLProp_SLProps` the bridge builds
+/// (`Scripts/repro/583-lprop-zero-sentinel/`), a cylinder's Gaussian curvature and its *maximum*
+/// curvature are exactly `0` at every point of the surface with `IsCurvatureDefined()` true, and a
+/// plane's four curvature scalars are all exactly `0` everywhere. So the sentinel collided with the
+/// answer across whole faces of the two commonest solids in this suite, not at some pathological
+/// parameter.
+///
+/// Same class as #486's zero-filled `SurfaceGrid` rows and the `curvatureDefined` flag #494 restored
+/// to `SurfaceLocalProperties`.
+@Suite("Zero curvature is a value, not a sentinel (#583)")
+struct AdaptorCurvatureDefinednessTests {
+
+    /// The cone from the parity suite above: apex radius 0, so `v` sweeps smoothly out of the
+    /// curvature's domain of definition.
+    private static func apexConeFace() -> Shape? {
+        guard let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1),
+                                      radius: 0, semiAngle: .pi / 6) else { return nil }
+        return Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0)
+    }
+
+    /// The headline. A cylinder is developable, so its Gaussian curvature is zero everywhere and its
+    /// maximum principal curvature (the one along the axis) is zero everywhere too. Both are
+    /// perfectly well defined, and both used to come back as the "undefined" sentinel.
+    @Test("A cylinder's zero curvatures are reported as zero, not as absent")
+    func cylinderZeroCurvaturesAreDefined() {
+        guard let cylinder = Shape.cylinder(radius: 3, height: 12) else {
+            Issue.record("Shape.cylinder returned nil")
+            return
+        }
+        var lateralFaces = 0
+        for faceShape in cylinder.subShapes(ofType: .face) {
+            // The two planar caps have zero curvature in every direction; the lateral face is the
+            // one with a non-zero minimum, and it is the one worth pinning.
+            guard let kMin = faceShape.faceLPropMinCurvature(u: 1.1, v: 6), kMin != 0 else { continue }
+            lateralFaces += 1
+            #expect(abs(kMin + 1.0 / 3) < 1e-9)
+            #expect(faceShape.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)
+            #expect(faceShape.faceLPropMaxCurvature(u: 1.1, v: 6) == 0)
+            #expect(faceShape.faceLPropMeanCurvature(u: 1.1, v: 6) != nil)
+            // Defined, and the answer is "no": the two principal curvatures genuinely differ here.
+            #expect(faceShape.faceLPropIsUmbilic(u: 1.1, v: 6) == false)
+        }
+        #expect(lateralFaces == 1, "expected exactly one curved face on a cylinder")
+    }
+
+    /// A plane is the total collision: all four scalars are zero, the point at `(0, 0)` of a plane
+    /// through the origin is `(0, 0, 0)`, and every one of them is defined.
+    @Test("A planar face reports four zeros and a point, all of them defined")
+    func planarFaceZerosAreDefined() {
+        guard let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+              let face = Shape.face(from: plane, uRange: (-10.0)...10.0, vRange: (-10.0)...10.0) else {
+            Issue.record("could not build the planar face")
+            return
+        }
+        #expect(face.faceLPropMaxCurvature(u: 0, v: 0) == 0)
+        #expect(face.faceLPropMinCurvature(u: 0, v: 0) == 0)
+        #expect(face.faceLPropMeanCurvature(u: 0, v: 0) == 0)
+        #expect(face.faceLPropGaussianCurvature(u: 0, v: 0) == 0)
+        // A plane is umbilic everywhere: both curvatures are exactly zero, so OCCT's one-ULP test
+        // passes trivially (#494).
+        #expect(face.faceLPropIsUmbilic(u: 0, v: 0) == true)
+        // And the point that is the origin is still a point.
+        if let p = face.faceLPropValue(u: 0, v: 0) {
+            #expect(p == SIMD3(0, 0, 0))
+        } else {
+            Issue.record("faceLPropValue nil at the origin of a plane through the origin")
+        }
+    }
+
+    /// The other side of the same coin: where the curvature really is undefined, all five say so.
+    @Test("A cone apex and a sphere pole report nil, not zero")
+    func degeneratePointsReportNil() {
+        guard let cone = Self.apexConeFace() else {
+            Issue.record("could not build the apex cone face")
+            return
+        }
+        guard let sphere = Shape.sphere(radius: 5) else {
+            Issue.record("Shape.sphere returned nil")
+            return
+        }
+        // The apex sits at v = 0; a sphere's poles at v = +/- pi/2.
+        var cases: [(Comment, Shape, Double, Double)] = [("cone apex", cone, 0.0, 0.0)]
+        for faceShape in sphere.subShapes(ofType: .face) {
+            cases.append(("sphere pole", faceShape, 0.0, .pi / 2))
+            cases.append(("sphere pole", faceShape, 0.0, -.pi / 2))
+        }
+        for (label, shape, u, v) in cases {
+            #expect(shape.faceLPropMaxCurvature(u: u, v: v) == nil, label)
+            #expect(shape.faceLPropMinCurvature(u: u, v: v) == nil, label)
+            #expect(shape.faceLPropMeanCurvature(u: u, v: v) == nil, label)
+            #expect(shape.faceLPropGaussianCurvature(u: u, v: v) == nil, label)
+            // No principal curvatures to compare, so no answer, distinct from the cylinder's
+            // "defined, and not umbilic" above.
+            #expect(shape.faceLPropIsUmbilic(u: u, v: v) == nil, label)
+            // The point does not depend on the curvature gate, so it survives the degeneracy.
+            #expect(shape.faceLPropValue(u: u, v: v) != nil, label)
+        }
+    }
+
+    /// The third thing `0` used to mean. `TopoDS::Face` throws on a `Shape` that is not one, the
+    /// bridge catches it, and pre-#583 the caller got the origin and four zeros back.
+    @Test("A Shape that is not a face reports nil from all six getters")
+    func nonFaceShapeReportsNil() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
+        let edges = box.subShapes(ofType: .edge)
+        #expect(!edges.isEmpty)
+        for shape in [box] + Array(edges.prefix(1)) {
+            #expect(shape.faceLPropValue(u: 0.5, v: 0.5) == nil)
+            #expect(shape.faceLPropMaxCurvature(u: 0.5, v: 0.5) == nil)
+            #expect(shape.faceLPropMinCurvature(u: 0.5, v: 0.5) == nil)
+            #expect(shape.faceLPropMeanCurvature(u: 0.5, v: 0.5) == nil)
+            #expect(shape.faceLPropGaussianCurvature(u: 0.5, v: 0.5) == nil)
+            #expect(shape.faceLPropIsUmbilic(u: 0.5, v: 0.5) == nil)
         }
     }
 }
