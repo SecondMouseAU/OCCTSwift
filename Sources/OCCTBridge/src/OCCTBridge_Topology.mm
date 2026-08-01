@@ -3099,20 +3099,29 @@ double OCCTEdgeParameterAtArcLength(OCCTShapeRef edge, double arcLength, double 
     } catch (...) { return 0; }
 }
 
+// Both edge arc-length entry points report failure as -1.0, matching every other arc-length
+// function in the bridge (OCCTCurve3DGetLength/GetLengthBetween, OCCTCurve2D*): arc length is
+// never negative, so -1.0 cannot be confused with a measurement, while the 0 these two used to
+// return is exactly what a genuine zero-width interval measures. #548.
 double OCCTEdgeArcLength(OCCTShapeRef edge) {
-    if (!edge) return 0;
+    if (!edge) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
         return GCPnts_AbscissaPoint::Length(adaptor);
-    } catch (...) { return 0; }
+    } catch (...) { return -1.0; }
 }
 
+// A non-finite bound was the worst case of the three ranged entry points: with no sentinel at all
+// here, `Length(adaptor, u1, .nan)` on a straight edge returned NaN straight through to Swift, and
+// on a multi-span edge the plausible 0 / whole-length answers of #548. See
+// occtValidParameterRange (OCCTBridge_Internal.h).
 double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
-    if (!edge) return 0;
+    if (!edge) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
         return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
-    } catch (...) { return 0; }
+    } catch (...) { return -1.0; }
 }
 
 double OCCTEdgeParameterAtFraction(OCCTShapeRef edge, double fraction) {

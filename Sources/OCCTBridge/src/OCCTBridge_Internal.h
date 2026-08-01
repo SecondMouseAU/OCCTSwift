@@ -510,6 +510,78 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               GeomAbs_Shape order,
                               bool isBound);
 
+// === #571: one GeomPlate_MakeApprox contract behind all six plate entry points ===
+
+class GeomPlate_Surface;
+class Geom_BSplineSurface;
+
+//
+// GeomPlate_MakeApprox is the one consumer of AdvApp2Var_ApproxAFunc2Var that does not go through
+// GeomConvert_ApproxSurface — it drives the approximator directly — so it sat outside every census
+// built by grepping for GeomConvert_ApproxSurface, including the PrecisCode census in
+// OCCTBridge_Surface.mm. Six bridge functions construct it: OCCTShapePlatePoints and
+// OCCTShapePlateCurves (OCCTBridge_Healing.mm), OCCTShapePlatePointsAdvanced, OCCTShapePlateMixed,
+// OCCTSurfacePlateThrough and OCCTGeomPlateSurface (OCCTBridge_ProjLib_NLPlate.mm). Five of them
+// hard-coded `Nbmax = 1, dmax = tolerance * 10`; the sixth passed the caller's maxSegments and
+// `dmax = tolerance * 0.1`. Definition lives in OCCTBridge_ProjLib_NLPlate.mm.
+//
+// The two arguments that differed are the two that decide whether `tolerance` means anything:
+//
+//   Nbmax caps the number of Bezier patches, and 1 is the one value that breaks the algorithm.
+//   AdvApp2Var_ApproxAFunc2Var::ComputePatches derives its cut decision NumDec from myMaxPatches,
+//   and at 1 every branch leaves NumDec = 0; AdvApp2Var_Patch::CutSense then returns 0 whether or
+//   not the criterion is satisfied, so "the fit missed" and "the fit is fine" issue the same
+//   instruction — keep this patch. The criterion is still evaluated and still reported through
+//   CriterionError(), it just cannot act. Measured on a 25-point wavy plate at tolerance 1e-2:
+//   Nbmax = 1 returns a 9x9 surface deviating 9.8e-2, i.e. 9.8x the tolerance it was given, with
+//   the criterion violated (critErr 9.8e-2 against a 1e-2 threshold) and ignored; Nbmax = 2 or
+//   more returns 16x16 deviating 4.4e-3, inside tolerance. Sweeping dmax across nine orders of
+//   magnitude at Nbmax = 1 yields bit-identical control nets — a dead argument in the sense of
+//   #497's inert SetFuzzyValue.
+//
+//   dmax sets the criterion threshold, as seuil = max(Tol3d, 10 * dmax) (GeomPlate_MakeApprox.cxx).
+//   So `dmax = tolerance * 10` asks the G0 criterion to accept 100x the tolerance the caller
+//   requested — and it is not merely dead weight once Nbmax allows subdivision: at Nbmax = 20 that
+//   value reproduces the bad 9x9 answer exactly, while tolerance * 0.1 gives the good 16x16 one.
+//   tolerance * 0.1 makes 10 * dmax == Tol3d, so seuil is the caller's own tolerance. It is the
+//   value the sixth site already used, and measurement picks it over the other five.
+//
+// CritOrder stays 0. The G0 criterion measures the distance between the fitted patch and the plate
+// at the plate's own order-0 constraint UVs, which is exactly what `tolerance` promises for a
+// surface built to pass through points. CritOrder = -1 disables the criterion outright (and flips
+// the Jacobi precision, myPrec 0 -> 1); CritOrder = 1 measures normals instead of positions.
+//
+// `continuity` is the continuity of the joins BETWEEN patches, a different axis from the
+// constraint order handed to GeomPlate_PointConstraint/GeomPlate_CurveConstraint — which is why
+// OCCTShapePlateCurves' caller-supplied order is NOT forwarded here. It was implicit at all six
+// sites (GeomPlate_MakeApprox.hxx defaults it to GeomAbs_C1); passing it explicitly keeps that
+// value while making it reviewable, and it is not cosmetic — C0/C1/C2 give 17x17, 16x16 and 21x21
+// control nets on the fixture above. Only those three are accepted: G1, G2, C3 and CN all throw
+// Standard_Failure ("AdvApp2Var_ApproxAFunc2Var : UContinuity Error"), measured, so callers must
+// clamp into the parametric ladder rather than reach for occtGeomAbsFromSurfaceContinuity, whose
+// order-1 answer is GeomAbs_G1.
+//
+// Returns a null handle when the approximation cannot be built; callers treat that as failure.
+occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPlate_Surface>& plate,
+                                                        double tolerance,
+                                                        int32_t maxDegree,
+                                                        int32_t maxSegments,
+                                                        GeomAbs_Shape continuity);
+
+// The patch-join continuity every plate entry point asks for unless told otherwise. C1 is what all
+// six sites got from GeomPlate_MakeApprox's own default before #571 made it explicit.
+inline GeomAbs_Shape occtPlateApproxDefaultContinuity() { return GeomAbs_C1; }
+
+// The largest number of Bezier patches a plate approximation may use unless the caller names one.
+// A cap, not a target: the approximator stops as soon as the criterion is met, and on the #571
+// fixture everything from 2 upwards produces the identical surface. Matches the `maxSegments: 20`
+// default that Shape.plateSurface(points:) already exposed.
+inline int32_t occtPlateApproxDefaultMaxSegments() { return 20; }
+
+// The largest Bezier degree a plate approximation may use unless the caller names one. All six
+// sites already used 8.
+inline int32_t occtPlateApproxDefaultMaxDegree() { return 8; }
+
 // === #497: one BRepAlgoAPI_Defeaturing skeleton ===
 //
 // Four entry points remove faces with BRepAlgoAPI_Defeaturing: OCCTShapeRemoveFeatures and
@@ -544,8 +616,26 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
 // The same resolution for faces addressed as shape handles. Returns false when the request is
 // empty, the array itself is null, or any element is null — a null element used to be dereferenced
 // unchecked by OCCTShapeDefeature, which no try/catch could have saved.
-bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
-                                    TopTools_ListOfShape& outFaces);
+//
+// #578: each element is a face *carrier*, not necessarily a face. AddFaceToRemove takes a
+// TopoDS_Shape and its own documentation calls it "the shape to extract the faces for removal", so
+// a compound, a shell or the whole input solid is a legal way to name faces — measured, and passing
+// the faces a carrier explores to is the same request BREP for BREP. Every element is therefore
+// exploded for TopAbs_FACE and each face checked against the input's own face map. The rule, chosen
+// to match the index-addressed occtDefeaturingFacesByIndex above rather than the kernel's own:
+//
+//   every element must contribute at least one face, and every face it contributes must belong to
+//   `shape` — otherwise the whole request fails and nothing is removed.
+//
+// Membership is TopTools_ShapeMapHasher, i.e. IsSame, so a reversed face still belongs (measured)
+// while a face off an identically-built shape does not. The kernel's own rule is to ignore what does
+// not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
+// succeeds while silently leaving the named feature in place — the failure mode #497 removed from
+// the index-addressed spelling, on the entry point #536 made canonical. This changes only requests
+// that were being partly discarded: nothing whose carriers all belong behaves differently. See
+// Scripts/repro/578-defeature-face-membership/ for the whole matrix.
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces);
 
 // Run `defeaturing` over `shape`, removing `facesToRemove`. The builder is the caller's, because
 // OCCTShapeHistoryFromDefeature has to outlive this call to read its history. Returns false unless
@@ -769,6 +859,179 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
     return nbPoints >= 2;
 }
 
+/// The parameter-range precondition every ranged arc-length entry point has to apply itself:
+/// both bounds finite. `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not check, and what a
+/// non-finite bound produces is curve-type dependent, so without this the "nil means the
+/// computation failed" contract of Curve3D/Curve2D.length(from:to:) held only for some curves.
+///
+/// Measured on the pinned kernel (Scripts/repro/548-nonfinite-length-bounds/): on a line, a
+/// segment, a circle and a Bezier a NaN bound propagates to NaN, which the `l >= 0` guard reads
+/// as failure -- but on a 5-point interpolated BSpline `length(from: f, to: .nan)` returned 0
+/// (the encoding of a genuine zero-width interval) and `length(from: .nan, to: l)` returned the
+/// curve's entire length, indistinguishable from a valid measurement. An infinite bound is worse:
+/// on the line, segment and circle it returns +inf, which passes `l >= 0` and reaches the caller.
+///
+/// The mechanism is not the domain clamping #477 describes. Curves with more than one GeomAbs_CN
+/// interval take GCPnts_AbscissaPoint::length's `GCPnts_AbsComposite` branch, which reduces the
+/// caller's bounds with `std::min`/`std::max`. Those return their *first* argument when the
+/// comparison is false, so `std::min(u, NaN) == std::max(u, NaN) == u` while
+/// `std::min(NaN, u) == std::max(NaN, u) == NaN`: a NaN upper bound collapses the interval to
+/// [u1, u1] and measures 0, and a NaN lower bound makes both bounds NaN, which turns every
+/// per-span skip test (`aTI(i) > aUU2`, `aTI(i+1) < aUU1`) false and integrates every span in
+/// full. Single-span curves take the branches that propagate NaN instead, which is the only
+/// reason the existing parity test (built on a segment) passed. #548.
+inline bool occtValidParameterRange(double u1, double u2) {
+    return std::isfinite(u1) && std::isfinite(u2);
+}
+
+// === #502: one sub-shape enumeration ===
+//
+// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
+// primitives that answer differently:
+//
+//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
+//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
+//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
+//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
+//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
+//
+// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
+// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
+// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
+// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
+// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
+// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
+// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
+// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
+// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
+// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
+//
+// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
+// is the answer all of it gives now. What made the choice cheap is that the two primitives
+// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
+// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
+// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
+
+/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
+/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
+/// TShape and location, orientation ignored). Returns the number of entries.
+///
+/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
+/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
+/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
+/// SOLID answers 1.
+inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
+                                TopTools_IndexedMapOfShape& outMap) {
+    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
+    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
+    return outMap.Extent();
+}
+
+/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
+/// the index is negative or past the end. Callers that want the whole set should map once and
+/// read the map, rather than calling this in a loop.
+inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
+    if (index < 0) return TopoDS_Shape();
+    TopTools_IndexedMapOfShape map;
+    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+// === #541: one meaning for a face index ===
+//
+// A face index crossing this bridge is a 0-based position in the enumeration above, the one
+// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
+// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
+// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
+// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
+// addressed the face before the one it named and could never name the last face at all.
+//
+// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
+// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
+// plane leaves two solids sharing the single cut face (12 occurrences over 11 distinct faces), and
+// the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
+// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
+// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
+// them moved no index on any shape without a shared sub-shape.
+//
+// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
+// "no such index", which is the only failure they have.
+
+/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
+/// negative, past the end, or names a sub-shape that is not a face.
+inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
+    return TopoDS::Face(sub);
+}
+
+/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
+/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
+/// face, whose edges are enumerated the same way.
+inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
+    return TopoDS::Edge(sub);
+}
+
+// === #568: one answer for an index that names no sub-shape ===
+//
+// A batch entry point takes an array of 0-based indices into the enumeration above and hands each
+// resolved sub-shape to some OCCT builder. What it does with an index that resolves to nothing is
+// the contract question #520 settled for the fillet family and #541 for OCCTShapeOffsetPerFace:
+// the whole request is refused. Six sites disagreed with them, dropping the unresolvable entry and
+// building from the rest.
+//
+// The reason to refuse rather than skip is that the partial result is not distinguishable from the
+// complete one. Measured on the pinned kernel (Scripts/repro/568-index-skip-idiom/), every builder
+// behind those sites reports an ordinary success for a batch it was never told was short:
+//
+//   BRepFilletAPI_MakeChamfer, 2 of 3 edges     IsDone, valid, volume 7922.666667 (3 of 3: 7885.33)
+//   BRepOffsetAPI_DraftAngle, 2 of 4 faces      IsDone, valid, volume 7299.820338 (4 of 4: 6681.35)
+//   BRepOffsetAPI_MakeThickSolid, 1 of 2 open   IsDone, valid, volume 3392.000000 (2 of 2: 2880.00)
+//   BRepFilletAPI_MakeFillet2d, 2 of 4 vertices IsDone, valid, area 1189.269908 (4 of 4: 1178.54)
+//
+// BRepOffsetAPI_DraftAngle is the one that shows why this is not merely untidy: handed *no* faces
+// at all it still reports IsDone() and returns the input shape unchanged, so a draft naming only
+// faces the shape does not have used to succeed and draft nothing. The others at least fail an
+// empty batch (MakeChamfer throws "There are no suitable edges for chamfer or fillet";
+// MakeFillet2d fails IsDone), which is why only the *mixed* batch escaped for them.
+//
+// A caller who wants best-effort can filter its own indices against the counts this API already
+// exposes. A caller who cannot tell a partial result from a complete one had no way back.
+
+/// The sub-shape at 0-based `index` in an already-built enumeration map, or a null TopoDS_Shape
+/// when the index is negative or past the end. This is the read half of occtSubShapeAt, for the
+/// callers that resolve several indices against one map rather than mapping per lookup.
+inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, int32_t index) {
+    if (index < 0 || index >= map.Extent()) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+/// Resolve all `count` 0-based `indices` against `shape`'s sub-shapes of TopAbs type `type` and
+/// hand each to `use(sub, i)`, where `i` is the caller's own array position so it can read a
+/// parallel array of its own (a per-entry radius, distance or offset). Returns false, having used
+/// nothing further, when an index names no such sub-shape, and false outright for a null array or
+/// a count below 1.
+///
+/// `type` is passed through occtMapSubShapes, so the enumeration is exactly the one Shape.faces(),
+/// Shape.edges() and Face.index read; an index out of range here is out of range there too.
+template <class Use>
+bool occtUseSubShapesByIndex(const TopoDS_Shape& shape, int32_t type,
+                             const int32_t* indices, int32_t count, Use use) {
+    if (!indices || count < 1) return false;
+
+    TopTools_IndexedMapOfShape map;
+    occtMapSubShapes(shape, type, map);
+
+    for (int32_t i = 0; i < count; i++) {
+        TopoDS_Shape sub = occtMappedSubShapeAt(map, indices[i]);
+        if (sub.IsNull()) return false;
+        use(sub, i);
+    }
+    return true;
+}
+
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
 //
 // Three bridge functions fillet a caller-supplied list of edge indices and differ only in what
@@ -825,8 +1088,8 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 // bad index filleted the rest and reported success: a request honoured in part, presented as
 // honoured in full, the same defect class as #439/#442/#443. The two radius-law entry points
 // (OCCTShapeFilletVariable, OCCTShapeFilletEvolving) already rejected, so this is what makes all
-// five agree. A caller who wants best-effort can filter its own indices; a caller who cannot tell
-// a partial result from a complete one had no way back.
+// five agree. #568 finished the sweep, and this is now a thin wrapper over the resolution helper
+// the five remaining sites share: only the TopoDS_Edge cast is specific to the fillet family.
 //
 // Not folded into occtShapeFilletEdgeList below because OCCTShapeHistoryFromFilletEdges has to
 // keep its builder alive past the call, to hand back a BRepTools_History over it.
@@ -836,15 +1099,10 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 template <class AddEdge>
 bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
                         const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
-    TopTools_IndexedMapOfShape edgeMap;
-    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
-
-    for (int32_t i = 0; i < edgeCount; i++) {
-        int32_t idx = edgeIndices[i];
-        if (idx < 0 || idx >= edgeMap.Extent()) return false;
-        addEdge(fillet, TopoDS::Edge(edgeMap(idx + 1)), i);  // OCCT's map is 1-based
-    }
-    return true;
+    return occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                   [&](const TopoDS_Shape& edge, int32_t i) {
+        addEdge(fillet, TopoDS::Edge(edge), i);
+    });
 }
 
 // === #520: the radius law, for the two entry points that take one ===
@@ -1044,96 +1302,6 @@ inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, do
     } catch (...) {
         return false;
     }
-}
-
-// === #502: one sub-shape enumeration ===
-//
-// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
-// primitives that answer differently:
-//
-//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
-//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
-//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
-//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
-//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
-//
-// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
-// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
-// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
-// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
-// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
-// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
-// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
-// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
-// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
-// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
-//
-// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
-// is the answer all of it gives now. What made the choice cheap is that the two primitives
-// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
-// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
-// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
-
-/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
-/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
-/// TShape and location, orientation ignored). Returns the number of entries.
-///
-/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
-/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
-/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
-/// SOLID answers 1.
-inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
-                                TopTools_IndexedMapOfShape& outMap) {
-    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
-    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
-    return outMap.Extent();
-}
-
-/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
-/// the index is negative or past the end. Callers that want the whole set should map once and
-/// read the map, rather than calling this in a loop.
-inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
-    if (index < 0) return TopoDS_Shape();
-    TopTools_IndexedMapOfShape map;
-    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
-    return map(index + 1);  // OCCT's indexed maps are 1-based
-}
-
-// === #541: one meaning for a face index ===
-//
-// A face index crossing this bridge is a 0-based position in the enumeration above -- the one
-// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
-// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
-// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
-// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
-// addressed the face before the one it named and could never name the last face at all.
-//
-// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
-// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
-// plane leaves two solids sharing the single cut face -- 12 occurrences over 11 distinct faces --
-// and the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
-// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
-// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
-// them moved no index on any shape without a shared sub-shape.
-//
-// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
-// "no such index", which is the only failure they have.
-
-/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
-/// negative, past the end, or names a sub-shape that is not a face.
-inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
-    return TopoDS::Face(sub);
-}
-
-/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
-/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
-/// face, whose edges are enumerated the same way.
-inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
-    return TopoDS::Edge(sub);
 }
 
 // === #405/#494: one resolution behind every GeomLProp_* local-property construction ===

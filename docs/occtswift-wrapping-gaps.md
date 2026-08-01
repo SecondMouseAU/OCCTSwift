@@ -55,6 +55,21 @@ These require implementing C++ abstract classes, which the bridge architecture d
   claimed an `OCCTShapeFixShell` wrapper until #510 measured it and removed the entry. Wrapping it
   directly would mean exposing per-shell orientation/mode control (`FixFaceOrientation`,
   `SetNonManifoldFlag`) that `ShapeFix_Shape` currently chooses for the caller.
+- `ShapeUpgrade_ConvertCurve3dToBezier`, `ShapeUpgrade_ConvertSurfaceToBezierBasis` — reached
+  through `ShapeUpgrade_ShapeConvertToBezier`, the shape-level driver that owns both. The index
+  entries carry a `(via …)` aside naming that driver.
+- `BOPAlgo_RemoveFeatures` — reached through `BRepAlgoAPI_Defeaturing`, a forwarder to it. #536
+  deleted the direct wrap that duplicated the forwarder.
+- `LProp_AnalyticCurInf` — `OCCTLPropAnalyticCurInf` fills a `LProp_CurAndInf` from an inline scan
+  of the analytic curve types rather than constructing the OCCT class.
+
+### Classes Not Wrapped At All
+
+- `Geom2d_Direction`, `Geom2d_VectorWithMagnitude` — the headers are `#include`d but never used.
+  `OCCTDirection2D*` and `OCCTVector2D*` are `gp_Dir2d`/`gp_Vec2d` arithmetic on bare doubles, not
+  wrappers for the `Geom2d_` handle types; the cross-reference index claimed otherwise until #565
+  measured it. Wrapping them would mean exposing a reference-counted handle for what is currently
+  a value-type calculation.
 
 ### Constraint Solver Infrastructure (Complete)
 

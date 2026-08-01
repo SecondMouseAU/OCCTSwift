@@ -1100,6 +1100,11 @@ public func drafted(
   - `neutralPlane` — point and normal of the plane where draft angle is zero.
 - **Returns:** Drafted shape, or `nil` on failure.
 - **OCCT:** `OCCTShapeDraft` (internal `Draft_MakeDraft`-based implementation).
+- **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
+  here fails the whole call rather than being skipped (#568). Skipping was worse here than anywhere
+  else in that sweep: `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no
+  faces for at all, so a list of faces taken from a different shape used to return this shape
+  undrafted, presented as a successful draft.
 
 ---
 
@@ -1120,7 +1125,8 @@ Useful for simplifying imported geometry or removing small features before analy
 - **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveFeatures`). Corrected here: this row
   previously named `BOPAlgo_Defeaturing`, which is not an OCCT class.
 - **See also:** [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces), the same
-  operation addressing its faces as shapes, and the rest of the defeaturing family listed there.
+  operation addressing its faces as shapes, and the rest of the defeaturing family listed there. Since
+  #578 it applies the same rule to a face this shape does not have: the whole call fails.
 
 ---
 
@@ -1376,6 +1382,9 @@ public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
 - **Parameters:** `thickness` — wall thickness (positive = inward, negative = outward); `openFaces` — faces to leave open (must have valid `index` values).
 - **Returns:** Shelled shape with specified faces open, or `nil` on failure.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin` (via `OCCTShapeShellWithOpenFaces`).
+- **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
+  here fails the whole call rather than being skipped (#568); previously such a face was dropped and
+  the solid was shelled with fewer openings than asked for.
 - **Example:**
   ```swift
   let box = Shape.box(width: 20, height: 20, depth: 20)

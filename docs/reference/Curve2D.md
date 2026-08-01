@@ -830,23 +830,35 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
-`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
-rather than a range-checked one.
+Arc length between two parameter values. This is the canonical, failure-distinguishing entry
+point: `arcLength(from:to:)` delegates to it and collapses `nil` to a `-1.0` sentinel for source
+compatibility (#549).
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite
+  (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
+  with more than one span (an interpolation, an approximation, any multi-span BSpline) the range
+  is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
+  of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
+  interior knots to clamp against and measures the range as given.
+- **Note:** `.nan` and `±.infinity` also report `nil`, on every curve type. They are rejected in
+  the bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
+  bound measured `0` and a NaN lower bound the curve's whole length — see
+  [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
   ```
 
 ---
@@ -964,11 +976,16 @@ a parameter. The first and last knots are always included, so a curve that never
 
 - **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity drops below the requested level, or `nil` if not a BSpline or no discontinuities found.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`).
+- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`) —
+  the sole wrapper of it, since #562 deleted the second pair (`bsplineKnotSplits`,
+  `bsplineKnotSplitValues`) that also drove it.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
   `degree - multiplicity < continuity`, so the meaningful range is `0...degree` and it saturates
   there. A cubic with simple interior knots is already C2 there, which means `.c0`, `.c1` and `.c2`
   all report just the two end knots and `.c3` is the order that reports the interior ones.
+- **All splits, however many (#562):** this used to read a fixed 256 entries and take whatever came
+  back, so a curve with more splits than that was cut off at 256 with nothing to notice it by. It
+  now re-reads at the true count when the first pass came up short.
 - **Example:**
   ```swift
   if let bsp = Curve2D.bspline(poles: [...], knots: [...], multiplicities: [...], degree: 3) {

@@ -1026,28 +1026,34 @@ public static func approximate(
 
 ### `arcLength(from:to:)`
 
-Computes the arc length of this curve between two parameter values (non-optional). `u1` must not
-exceed `u2` — unlike `length(from:to:)`, which tolerates either order — since this entry point is
-backed by `Geom2dAdaptor_Curve`'s range-checked constructor. Unlike `Curve3D.arcLength(from:to:)`,
-this does not delegate to `length(from:to:)`: the two use genuinely different adaptor
-constructions (range-checked vs. unrestricted), so collapsing them onto one call would silently
-drop the order validation.
+Computes the arc length of this curve between two parameter values (non-optional). Delegates to
+[`length(from:to:)`](Curve2D.md), the failure-distinguishing entry point, and shares its contract:
+either parameter order, `0` for equal parameters, and clamping to the curve's own knots on a
+multi-span curve. `Curve3D.arcLength(from:to:)` has had the same shape since #408.
 
 ```swift
 public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`.
-- **Returns:** Arc length value, or `-1.0` on failure (e.g. a reversed range) — arc length is
+- **Parameters:** `u1`/`u2`: parameter range, in either order. Both must be finite.
+- **Returns:** Arc length value, or `-1.0` on failure (e.g. a non-finite bound). Arc length is
   otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
   zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
-- **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** `.nan` and `±.infinity` return `-1.0` rather than propagating into the result. The
+  pre-#548 unranged path could return `+infinity` for an infinite bound on a segment or a circle,
+  which passed the bridge's non-negative check unnoticed (#548).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
-      let halfCircumference = circle.arcLength(from: 0, to: .pi)  // ≈ 15.71
+      let halfCircumference = circle.arcLength(from: 0, to: .pi)   // ≈ 15.71
+      let same = circle.arcLength(from: .pi, to: 0)                // the same 15.71
   }
   ```
+- **History:** until #549 this measured through `Geom2dAdaptor_Curve(curve, u1, u2)`, a
+  range-checked constructor that reported a reversed range as `-1.0` and extrapolated past a
+  multi-span curve's knots (8082 for a curve 353.5 long). #506 removed the same adaptor from the
+  3D path.
 
 ---
 

@@ -205,6 +205,42 @@ bool OCCTSurfaceProjectPoint(OCCTSurfaceRef surface,
 #include <GeomAPI_PointsToBSplineSurface.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 
+// === #571: the one GeomPlate_MakeApprox call ===
+//
+// See OCCTBridge_Internal.h for why Nbmax, dmax and continuity are what they are, and for the
+// measurements behind each. In short: Nbmax = 1 makes the criterion unable to act and the
+// tolerance unreachable, and dmax = tolerance * 10 sets the criterion threshold to 100x the
+// tolerance the caller asked for. Five of the six sites had both.
+occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPlate_Surface>& plate,
+                                                        double tolerance,
+                                                        int32_t maxDegree,
+                                                        int32_t maxSegments,
+                                                        GeomAbs_Shape continuity) {
+    if (plate.IsNull() || !(tolerance > 0)) return occ::handle<Geom_BSplineSurface>();
+
+    // A single patch cannot be cut, so the criterion's verdict is discarded and `tolerance` stops
+    // being enforceable at all. Two is the smallest cap that lets the approximator honour it.
+    int32_t nbMax = maxSegments < 2 ? 2 : maxSegments;
+    int32_t dgMax = maxDegree < 1 ? occtPlateApproxDefaultMaxDegree() : maxDegree;
+
+    // AdvApp2Var accepts C0, C1 and C2 only; G1/G2/C3/CN each throw. Clamp into that ladder
+    // rather than let a caller's continuity turn the whole call into a nullptr.
+    GeomAbs_Shape cont = continuity;
+    if (cont == GeomAbs_G1) cont = GeomAbs_C1;
+    else if (cont == GeomAbs_G2) cont = GeomAbs_C2;
+    else if (cont == GeomAbs_C3 || cont == GeomAbs_CN) cont = GeomAbs_C2;
+
+    // seuil = max(Tol3d, 10 * dmax), so this makes the criterion threshold the caller's tolerance.
+    const double dmax = tolerance * 0.1;
+
+    try {
+        GeomPlate_MakeApprox approx(plate, tolerance, nbMax, dgMax, dmax, 0, cont);
+        return approx.Surface();
+    } catch (...) {
+        return occ::handle<Geom_BSplineSurface>();
+    }
+}
+
 OCCTShapeRef OCCTShapePlatePointsAdvanced(const double* points, int32_t pointCount,
                                            const int32_t* orders, int32_t degree,
                                            int32_t nbPtsOnCur, int32_t nbIter,
@@ -229,8 +265,10 @@ OCCTShapeRef OCCTShapePlatePointsAdvanced(const double* points, int32_t pointCou
         Handle(GeomPlate_Surface) plateSurface = plateBuilder.Surface();
         if (plateSurface.IsNull()) return nullptr;
 
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         BRepBuilderAPI_MakeFace makeFace(bsplineSurf, tolerance);
@@ -289,8 +327,10 @@ OCCTShapeRef OCCTShapePlateMixed(const double* points, const int32_t* pointOrder
         Handle(GeomPlate_Surface) plateSurface = plateBuilder.Surface();
         if (plateSurface.IsNull()) return nullptr;
 
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         BRepBuilderAPI_MakeFace makeFace(bsplineSurf, tolerance);
@@ -321,8 +361,10 @@ OCCTSurfaceRef OCCTSurfacePlateThrough(const double* points, int32_t pointCount,
         Handle(GeomPlate_Surface) plateSurface = plateBuilder.Surface();
         if (plateSurface.IsNull()) return nullptr;
 
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         return new OCCTSurface(bsplineSurf);
@@ -534,9 +576,9 @@ OCCTShapeRef OCCTGeomPlateSurface(const double* points, int32_t ptCount,
         if (plateSurf.IsNull()) return nullptr;
 
         // Convert to BSpline for use as a face
-        GeomPlate_MakeApprox approx(plateSurf, tolerance, maxSegments, maxDegree,
-                                     tolerance * 0.1, 0);
-        Handle(Geom_BSplineSurface) bspline = approx.Surface();
+        Handle(Geom_BSplineSurface) bspline = occtPlateApproxSurface(
+            plateSurf, tolerance, maxDegree, maxSegments,
+            occtPlateApproxDefaultContinuity());
         if (bspline.IsNull()) return nullptr;
 
         BRepBuilderAPI_MakeFace faceMaker(bspline, tolerance);

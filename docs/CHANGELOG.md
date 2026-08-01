@@ -17,6 +17,277 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### A NaN parameter bound stops being a plausible arc length (#548)
+
+`Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
+measurement, and #408 built the `-1.0` sentinel of `arcLength(from:to:)` / `arcLengthBetween(_:_:)`
+on top of that guarantee. It held for the curve types the tests used.
+
+`GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not validate its bounds, and what it does with
+a non-finite one depends on which of its three internal branches the curve takes. Measured against
+the pinned kernel (`Scripts/repro/548-nonfinite-length-bounds/`), on a 5-point interpolated BSpline
+(domain `[0, 485.39]`, length 528.75) and the analytic types:
+
+| bounds | segment / line / circle | Bezier | multi-span BSpline |
+|---|---|---|---|
+| `(f, .nan)` | `nan` → `nil` | `nan` → `nil` | **`0`** — what a zero-width interval measures |
+| `(.nan, l)` | `nan` → `nil` | `nan` → `nil` | **`528.75`** — the whole length |
+| `(f, .infinity)` | **`+inf`** — passes `l >= 0` | `nan` → `nil` | `528.75` |
+
+**The discriminator is not "spline" but "composite".** A 4-pole Bezier propagates NaN like a
+circle; what separates the BSpline is `NbIntervals(GeomAbs_CN) == 4`, which sends it down
+`GCPnts_AbscissaPoint::length`'s `GCPnts_AbsComposite` branch. That branch reduces the caller's
+range with `std::min`/`std::max`, and those return their *first* argument when the comparison is
+false: a NaN upper bound collapses the interval onto the start parameter (hence `0`), and a NaN
+lower bound makes both bounds NaN, which turns every per-span skip test false and integrates every
+span in full (hence the whole length). Not the domain clamping the issue supposed.
+
+**Both bounds must now be finite**, checked in the bridge by `occtValidParameterRange` before any
+adaptor is built, so the contract no longer depends on the integrator's own NaN handling.
+`.nan` and `±.infinity` report `nil` from `Curve3D.length(from:to:)` and `Curve2D.length(from:to:)`,
+and `-1.0` from `Curve3D.arcLength(from:to:)` / `arcLengthBetween(_:_:)`,
+`Curve2D.arcLength(from:to:)` and `Shape.edgeArcLength(from:to:)`. Finite ranges are untouched,
+including the reversed, overshooting and wholly-outside ones #506 pinned.
+
+**`Shape.edgeArcLength` gains a failure sentinel.** It was the only member of the family with
+neither an optional nor a sentinel, so a NaN bound on a straight edge returned NaN itself into
+caller arithmetic. Both spellings (`edgeArcLength` and `edgeArcLength(from:to:)`) now report `-1.0`
+on failure instead of `0`, matching every other arc-length function in the bridge — `0` is what a
+genuine zero-width interval measures.
+
+**Also measured, not changed:** the documented "parameters outside the curve's domain are clamped
+to it" holds only on composite curves. A 10-long segment measures 20 over `[f, l + span]`, a circle
+measures two turns, and a Bezier 122.14 long measures 1002.29 — polynomial extrapolation past its
+poles. For a periodic curve, measuring past the domain is meaningful, so this is a contract
+decision rather than a guard: filed as #600, and the doc comments now describe what is measured.
+
+#### The 2D arc length that measured 8082 for a curve 353 long (#549)
+
+`Curve2D.arcLength(from:to:)` and `Curve2D.length(from:to:)` answered differently on a reversed
+range: the first reported `-1.0`, the second measured the span. #506 removed the 3D spelling of that
+divergence and filed this one as the 2D half, a consistency question rather than a bug report, since
+both behaviours were documented and each doc page was accurate about itself. Measuring the pair
+first, as the issue asked, made it a correctness question as well. On a 5-point 2D interpolation
+(domain `[0, 318.433]`, length 353.508):
+
+| range | pre-bounded (`arcLength`) | ranged (`length`) |
+|---|---|---|
+| in domain, forward | 169.457 | 169.457 |
+| in domain, reversed | raises, reported as `-1.0` | 169.457 |
+| overshooting both ends by a domain width | **8082.404** | 353.508 |
+| overshooting the upper end only | **2549.691** | 353.508 |
+| wholly outside the domain | **1.259** | 0 |
+| equal parameters, periodic seam, two full periods, unbounded sub-range | agree | agree |
+
+The reversed-range rejection was the visible half of a pre-bounded `Geom2dAdaptor_Curve(curve, u1,
+u2)`. The other half was that it evaluated a multi-span curve's polynomial past its knots and
+reported the result as an ordinary success: the defect #477 removed from the 3D path, still live in
+2D because the two dimensions were fixed one at a time.
+
+`OCCTCurve2DLength` is gone, with tombstone comments naming the survivor, and
+`Curve2D.arcLength(from:to:)` now delegates to `length(from:to:)`, the shape
+`Curve3D.arcLength(from:to:)` has had since #408. That was the last pre-bounded arc-length call site
+in the bridge. New suite `Issue549Curve2DArcLengthRangeTests` (`OCCTGeom2dTests`) pins the divergent
+ranges against a chord-sum reference and checks the 2D answers against the 3D ones on the same points
+in the z = 0 plane; #409's suite keeps the `-1.0`-not-`0.0` sentinel it was written for, on an input
+that still fails. Proved by injection: restoring the pre-bounded call reproduces the figures above
+through the public Swift API and fails 7 of the 11 tests across the two suites. Probe and full
+figures at
+[`Scripts/repro/549-curve2d-arclength-range-order/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/549-curve2d-arclength-range-order).
+
+**Two things the measurement corrected on the way past.** `Curve3D.length(from:to:)` documented its
+clamping unconditionally ("Parameters outside the curve's domain are clamped to it"), which holds
+only for a curve with more than one `GeomAbs_CN` interval: `GCPnts_AbscissaPoint::length` intersects
+each interval with the requested range there, but a line, a circle or a 2-pole spline returns
+`|u2 - u1| * ratio` and a single-span Bezier integrates the range as given, both unclamped. Measured
+on four curve types in both dimensions (a Bezier reports 41.256 for a range wholly outside its
+domain), and the 2D and 3D wording now say so. Separately,
+`Scripts/check-bridge-index.py` read the sources whole, so a *removed* function still counted as
+existing as long as its tombstone comment named it, which the tombstone idiom (#500, #506) puts there
+on purpose. It strips comment lines from the sources now, which surfaced three stale entries in the
+`GCPnts_AbscissaPoint` index line, all three of them removed arc-length spellings. The new
+`--self-test` case is exactly that: a real symbol that survives only in a tombstone.
+
+**Noticed, not fixed.** Routing 2D onto the ranged form gives it #548's NaN hole too: on a multi-span
+2D curve a NaN bound lands on a domain bound instead of poisoning the integral, so
+`length(from: f, to: .nan)` reports `0` and `length(from: .nan, to: l)` the whole length. On a line,
+a circle, a segment or a Bezier the NaN propagates and both spellings report failure, which is what
+the new suite pins. Noted on #548 so one fix covers both dimensions.
+
+#### Breaking: defeaturing refuses a face the shape does not have, instead of dropping it (#578)
+
+`Shape.defeature(faces:)` inherited OCCT's own rule for a face that is not part of the input:
+`BRepAlgoAPI_Defeaturing.hxx` says "those that do not belong will be ignored", and it means it. A
+request mixing one of this shape's faces with another shape's succeeded, removed the one that
+belonged, and raised no warning of any kind — a success indistinguishable from a real removal, handed
+back on a shape still carrying the feature the caller asked to remove. The index-addressed spelling of
+the same operation, `withoutFeatures(faces:)`, has failed the whole call on one bad index since #497;
+#536 made `defeature(faces:)` canonical without closing that gap, because a membership rule turned out
+not to be the line of validation it looks like.
+
+**Why it needed measuring first.** `AddFaceToRemove` takes a `TopoDS_Shape`, and its own documentation
+calls it "the shape to extract the faces for removal" — the argument need not be a face. Measured on
+the pinned kernel: a compound holding a face, the input's own shell and the whole input solid are all
+accepted and each means the faces it contains, while an edge, a vertex and an empty compound are
+refused because they contain none. So a rule cannot ask that each element *be* one of this shape's
+faces; it has to explore first, and then decide what a carrier mixing belonging and foreign faces
+means. Two further measurements make the check implementable and exact: replacing a carrier with the
+faces it explores to is the same request BREP for BREP, and the input's own `TopExp` face map hashes on
+`IsSame`, so it accepts the fillet face reversed and rejects the same face measured off an
+identically-built twin. Probe, full matrix and the rejected alternative at
+[`Scripts/repro/578-defeature-face-membership/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/578-defeature-face-membership).
+
+**The rule now applied**, in `occtDefeaturingFacesFromShapes` (the #497 skeleton, which now takes the
+input shape so it can build that map):
+
+> Every element of the request must name at least one face, and every face it names must be a face of
+> this shape. Otherwise the whole call returns `nil` and nothing is removed.
+
+The alternative the issue posed — accept a carrier yielding *some* belonging faces and quietly keep
+those — was rejected because it preserves the exact failure mode being removed, one level further down
+where it is harder to see. Exactly four kinds of request change, and all four were being partly
+discarded in silence: a foreign face alongside a real one, a compound mixing the two, and an edge or an
+empty compound alongside a real face. Nothing whose elements all belong behaves differently, carriers
+included — the whole-solid and shell forms stay accepted, and stay a no-op, because "remove every face"
+is a question about the algorithm rather than about membership and the kernel's answer to it is to hand
+the input back unchanged.
+
+Nothing is filed upstream: the kernel documents what it does and does it. The strictness is this
+bridge's contract, and it is now the same contract at both spellings.
+
+New suite `Issue578DefeatureFaceMembershipTests` (`OCCTModelingTests`) pins the whole matrix, and
+`Issue536DefeaturingSpellingsTests`' two membership tests — which pinned the old behaviour — are
+replaced by one that holds the two spellings to the new rule together. Proved against two injections:
+restoring the pass-through fails six tests across both suites, and injecting the *rejected* alternative
+fails exactly one, the mixed-carrier test that exists to pin the design decision.
+
+#### The index entries that named a real symbol belonging to a different class (#565)
+
+#510 fixed the 135 index entries in `OCCTBridge.h` that named symbols which never existed. This is
+the second defect class in the same index: an entry naming a real symbol **from a neighbouring
+class**. It passes an existence check and misleads exactly the way a fabrication does — you look up
+a class, get sent to a function that has nothing to do with it, and conclude the class is wrapped
+there. #501 hit it directly (`GCPnts_UniformAbscissa → OCCTCPntsUniformDeflection*`, a symbol that
+exists and wraps `CPnts_UniformDeflection`).
+
+**17 entries corrected.** Every one named a symbol that exists, so the #510 gate called them all
+clean:
+
+| entry | named | actually drives |
+|---|---|---|
+| `BOPAlgo_CellsBuilder` | `OCCTBOPAlgoSplit` | `BOPAlgo_Splitter` — already the entry two rows down |
+| `ShapeFix_Wire` | `OCCTShapeFixWire*` | that prefix is `ShapeFix_WireVertex` + `ShapeFix_Wireframe` |
+| `BRepOffsetAPI_MakePipe` | `OCCTShapePipe*` | that prefix is `BRepFeat_MakePipe` |
+| `BRepFill_OffsetWire` | `OCCTWireOffset` | `BRepOffsetAPI_MakeOffset` |
+| `BRepOffset_Analyse` | `OCCTEdgeGetConvexity` | nothing — convexity is computed by hand |
+| `GC_MakeCircle` / `GC_MakeSegment` | `OCCTWireCreateCircle` / `OCCTWireCreateLine` | `BRepBuilderAPI_MakeEdge` from a `gp_Circ`/`gp_Lin` |
+| `ShapeAnalysis_WireOrder` | `OCCTWireAnalyze` | `ShapeAnalysis_Wire` |
+| `LProp_AnalyticCurInf` | `OCCTLPropAnalyticCurInf` | `LProp_CurAndInf`; the analytic scan is reimplemented inline |
+| `Law_Interpol` | `OCCTLawInterpolate` | `Law_Interpolate` — a different class, one letter apart |
+| `Geom2d_Direction` / `Geom2d_VectorWithMagnitude` | `OCCTDirection2D*` / `OCCTVector2D*` | `gp_Dir2d`/`gp_Vec2d`; neither `Geom2d_` class is wrapped at all |
+| `ShapeUpgrade_ConvertCurve3dToBezier` (+`…SurfaceToBezierBasis`) | — | reached via `ShapeUpgrade_ShapeConvertToBezier`; now says so |
+| `BRepCheck_Edge/Face/Shell/Solid` | `OCCTBRepCheckSubShapeValid` | `BRepCheck_Analyzer` |
+| `BRepOffsetAPI_MakePipeShell` | `OCCTPipeShell*` | `BRepFill_PipeShell` |
+| `BRepGProp` | `OCCTShapeGetCenterOfMass` | `BRepBndLib` — see below |
+
+Six classes had **no entry at all** because a wrong one was standing in for them:
+`ShapeAnalysis_Wire` (39 call sites), `BRepFill_PipeShell` (24), `BRepOffsetAPI_MakeOffsetShape`,
+`BRepOffset_MakeOffset`, `Law_Interpolate`, `LProp_CurAndInf`. `Geom2d_Direction` and
+`Geom2d_VectorWithMagnitude` moved to `docs/occtswift-wrapping-gaps.md` as genuinely unwrapped.
+
+**The direction check now gates, per symbol rather than per entry.** An entry-level rule ("at least
+one of these reaches the class") lets a wrong symbol hide behind its correct neighbours — which is
+the whole shape of the defect, and `GCPnts_UniformAbscissa` was only caught in #501 because it
+happened to be its entry's sole symbol. Two injected mistakes proved this: adding
+`OCCTShapeFixWireframe` to the correct `ShapeFix_Face` entry went unreported until the rule changed.
+
+Four forms of indirection had to be resolved first, because a check that cannot tell "wrong class"
+from "reached indirectly" fails on correct entries and gets switched off: wrapper-type fields
+(`XCAFDoc_ShapeTool` is `OCCTDocument::shapeTool`, 66 call sites), file-local `static` helpers
+(`TDataStd_NamedData`, the near-miss that almost got its entry wrongly deleted in #510), static
+facades (`ShapeCustom::SweptToElementary` is how `ShapeCustom_SweptToElementary` is reached), and
+multi-class headings (`RWObj_CafReader/Writer` covers `RWObj_CafWriter`, not `RWObj_Writer`). Where
+a class is genuinely reached only through *another OCCT class*, the entry carries a `(via X)` aside
+— and that aside is itself checked, not a silent skip. `--self-test` grew from 5 cases to 15: five
+existence shapes, four mis-attribution shapes, and six correct shapes asserted **not** reported.
+
+**A parenthesised aside is commentary, not an attribution.** The existence check reads names inside
+asides by design (that is how #508's `OCCTGCE2dMakeLine*` was caught), but the direction check must
+not: `(OCCTWireOffset drives BRepOffsetAPI_MakeOffset, not this)` names a symbol precisely to say it
+does *not* wrap the class.
+
+**A tombstone comment was resurrecting two deleted symbols.** `real_symbols` stripped comments from
+the header but not from the sources, so `// OCCTCurve3DLength lived here: …` — left where #506/#549
+deleted the function — kept a removed symbol passing the existence check forever. Stripping source
+comments too flags exactly the two names it should (`OCCTCurve3DArcLength*`, `OCCTCurve3DLength`,
+both still listed under `GCPnts_AbscissaPoint`) and nothing else.
+
+**Filed out of this, not fixed here: `Shape.centerOfMass` returns the bounding-box centre (#605).**
+`OCCTShapeGetCenterOfMass` was filed under `BRepGProp` and does not use it — it takes the midpoint
+of `BRepBndLib`'s bounding box, under a comment claiming `GProp_GProps::CentreOfMass()` "appears to
+return (0,0,0) for some shapes". Ground truth on the pinned kernel says otherwise: for a 10-cube at
+the origin plus a 2-cube 20 units away, `CentreOfMass()` returns `0.158730159`, the analytic answer
+to nine digits, while both `Shape.centerOfMass` and `properties().centerOfMass` return `8.0` — the
+bounding-box midpoint, off by 50x. The workaround was reading a *correct* zero (a box centred at the
+origin) as the bug it was working around; every existing test uses a box, where the two coincide.
+
+Comment-only change to `OCCTBridge.h` (index block) plus `Scripts/check-bridge-index.py` and
+`docs/occtswift-wrapping-gaps.md`; no declaration, no `.mm`, no kernel patch, no xcframework rebuild.
+
+#### The approximation consumers did move when #522 landed, and at the continuity that was supposed to be safe (#572)
+
+Patch `0019` (#522) fixed `AdvApp2Var_ApproxF2var::mma2ce1_` filling both Jacobi-maxima buffers from
+the V slot, which made every interior truncation error the surface approximator computed evaluate to
+exactly zero. #572 asked whether the five kernel classes that construct a `GeomConvert_ApproxSurface`
+and never re-check `MaxError()` moved with it, expecting that they could not have taken a wrong shape
+because they run at C1 or C2, above the collapse.
+
+They took a wrong shape. Measured on the real wrapper paths, against a stock and a `0019` kernel
+built as matching `-O0` single-TU override links:
+
+| request | before `0019` | after |
+|---|---|---|
+| the sweep's forced-C1 conversion, tol 1e-4 | reported 1.28e-5 with `isDone`, really **0.876** out | reports 2.547 with `isDone` false, **0.176** out |
+| `Surface.toBSpline()` on a trimmed offset, tol 1e-4 | reported 2.09e-5 with `isDone`, really **0.104** out | reports 0.341 with `isDone` false, **0.038** out |
+| `GeomLib::ExtendSurfByLength` on a C0-generatrix revolution, tol 1e-7 | reported 9.04e-9 with `isDone`, really **0.626** out | reports 1.887 with `isDone` false, **0.391** out |
+
+Every path that moved moved toward its tolerance, by 1.6x to 5x, and every path that did not move was
+already meeting it. None of the three reaches its tolerance even now: they cap out at degree 14 and 16
+or 24 segments. What changed is that the degree search climbs to that cap instead of stopping at the
+`NDMINU` floor with every candidate scoring zero, and that the caller is now told.
+
+**Continuity was the wrong axis to predict on.** The zeroed error does not only lower the degree
+floor, it disables the subdivision decision: `mma2ce2_`'s tolerance test can never fire on a patch
+interior, so the fit neither raises its degree nor cuts the patch at any continuity. And C0 *is*
+reachable at `GeomConvert_1.cxx:960`, which derives its request from the surface rather than
+hardcoding one (`Geom_OffsetSurface` reports `IsCNu(N)` as its basis surface's `IsCNu(N + 1)`, so an
+offset of a B-spline that is C1 but not C2 in U asks for C0) and does not collapse there. The axis
+that predicts movement is whether the site allows subdivision and whether the input needs any.
+
+Three rows of the issue's own site table did not survive measurement, which a backtrace probe in
+`GeomConvert_ApproxSurface::Approximate` settled rather than a source reading:
+
+- **`Shape.sweep` cannot reach `GeomFill_Sweep.cxx:296`.** It uses the two-argument
+  `BRepOffsetAPI_MakePipe`, and `ForceApproxC1` is only on the five-argument one.
+  `PipeShellBuilder.setForceApproxC1(true)` is the sole lever, and it additionally needs the spine's
+  tangent break to sit inside one edge, since `BRepFill_Sweep` splits the sweep at spine vertices.
+- **`BRepOffset_Offset.cxx:1626` is dead.** It sits inside `if (Polynomial)`, that argument defaults
+  to `false` on every `Init` overload, and the one in-tree caller takes the default. Neither
+  `Shape.offset` at any join type nor `Shape.thickSolid` constructs it.
+- **`GeomLib.cxx:1517` has no OCCTSwift entry point.** Its reachable-from list is wider than the
+  issue recorded (fillets through `ChFi3d`, plus `BRepFill_Sweep`, `BRepOffset_Tool` and `BRepLib`,
+  not just "GeomLib conversions"), but every one of those hands it a surface that is already a
+  B-spline, which is the branch above the construction.
+
+`ShapeUpgrade_UnifySameDomain.cxx:3629` needs a base surface that closes in a direction it is not
+periodic in and is not already a B-spline, which no `BRepPrimAPI` primitive produces (`Uperiod` comes
+from `IsUPeriodic()`). An extrusion of a closed but clamped B-spline curve reaches it, and its fit is
+exact on both kernels.
+
+Two regression suites pin the paths that moved, both checked against the released pre-`0019` kernel
+with `OCCTSWIFT_REMOTE=1`. No production code changes. Reproducer, both transcripts and the probe
+census: [`Scripts/repro/572-approx-consumer-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/572-approx-consumer-sweep).
+
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 
 `Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and
@@ -75,6 +346,167 @@ implementation fails 7 of the 10, and the 3 that pass are exactly the deliberate
 (a point with a perpendicular foot, an out-of-range index, and the pre-existing in-range case).
 Bridge-only — no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### Five knot-splitting spellings collapse onto two, and the "strictly weaker" duplicate turned out to be the stronger one (#562)
+
+`GeomConvert_BSplineSurfaceKnotSplitting` and `Geom2dConvert_BSplineCurveKnotSplitting` were each
+wrapped twice, by two families added three releases apart: `Surface.knotSplitting` and
+`Curve2D.splitIndicesAtDiscontinuities` (canonical), and a v0.105.0 set of five
+(`Surface.bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`,
+`Curve2D.bsplineKnotSplits`/`bsplineKnotSplitValues`). All five are now deprecated and forward to
+their canonical sibling; their five bridge functions are deleted.
+
+**The premise that the five were strictly weaker did not survive measurement.**
+`Curve2D.bsplineKnotSplitValues` sized its buffer from the analyzer's own count, where
+`splitIndicesAtDiscontinuities` read a fixed 256 entries and took whatever came back — and the
+bridge returned the count it had *written*, so truncation was indistinguishable from a curve with
+exactly 256 splits. On a cubic with 300 interior knots at multiplicity 3 (302 splits):
+
+| call | before | now |
+|---|---|---|
+| `splitIndicesAtDiscontinuities(continuity: .c1)` | 256 indices, last `256` | 302 indices, last `302` |
+| `bsplineKnotSplitValues(continuity: .c1)` | 302 | 302 |
+
+Forwarding without fixing that would have regressed the deprecated spelling, so
+`OCCTCurve2DSplitAtDiscontinuities` now reports the true count and the Swift caller re-reads at it —
+the #481 contract every other member of this family already shared. That is a **C-layer contract
+change**: a direct bridge caller that treated the return as "how many were written" must now clamp
+it. `OCCTBridge` is not an SPM product, so no Swift package is affected.
+
+**What the deleted family carried that the canonical calls did not: the raw knot-table indices.**
+The analyzer reports indices and `OCCTSurfaceKnotSplitting` converted them to parameters, so the raw
+form was reachable only through `bsplineKnotSplitValues` — which constructed the analyzer three more
+times to get it, once per count call and once for the values. `KnotSplitResult` now carries
+`uSplitIndices`/`vSplitIndices` alongside the parameters, from the one construction that was already
+happening, with `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])` by construction. That
+answers the issue's open question about whether the index-returning form was worth keeping: the
+information was, the three extra entry points were not.
+
+Both deleted values functions also took no buffer capacity at all — each wrote `NbSplits()` entries
+into a buffer the caller had sized from a *separate* call, which was only safe because the analyzer
+is deterministic. Recorded in the bridge header so it is not reintroduced.
+
+`OCCTBridge.h`'s cross-reference index named none of the three `*KnotSplitting` conversion classes,
+which is half of why the double-wrap went unnoticed for three releases — the index is the map used
+to find every call site of a class (#510). It gains `GeomConvert_BSplineCurveKnotSplitting`,
+`GeomConvert_BSplineSurfaceKnotSplitting`, and a `--- Geom2dConvert ---` section that did not exist
+at all, censused by call site across its six classes.
+
+Tests: `Issue562Curve2DKnotSplitDuplicateTests` (`OCCTGeom2dTests`, 4 tests) and
+`Issue562SurfaceKnotSplitDuplicateTests` (`OCCTSurfaceTests`, 5 tests). Expectations are absolute —
+the fixture's own knot indices and knot table — rather than agreement between the two spellings,
+which stopped being evidence the moment one started forwarding to the other. Three injected defects
+(written-count truncation, 0-based indices, V continuity collapsed onto U) each fail the tests that
+should catch them; the last is caught by the new suite alone and by none of the existing #403 or
+#480 coverage.
+
+#### The healing conversions were returning a straight chord through an offset sphere (#570)
+
+[#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522) fixed the kernel writing the U Jacobi
+maxima into the V workspace slot, which zeroed every patch's **interior** truncation error, so
+`GeomConvert_ApproxSurface::MaxError()` only ever described the boundary iso-curves. That established
+the number was wrong. Three kernel healing sites make an accept/reject decision on it, which is where
+a zero stops being a wrong diagnostic and becomes a wrong shape — and nobody had checked them, because
+every existing test of those entry points uses a box or a cylinder.
+
+Measured against a stock and a patched kernel across ten fixtures, **two of the three returned a
+materially wrong surface**:
+
+| entry point | before | after |
+|---|---|---|
+| `ShapeCustom::ConvertToBSpline` | degree 1, 2 poles, **deviating by 24** | degree 13x10, 14x11 poles, deviating 1.2e-7 |
+| `ShapeCustom::BSplineRestriction` | degree 1x7, **one pole in U**, deviating 23.9999 | degree 9x7, 9x8 poles, deviating 5.1e-4 |
+
+The fixture is a face on an offset sphere over its full domain. 24 is the offset sphere's own
+diameter: the fit was a straight chord across the full 2π of longitude, accepted as meeting a
+`Precision::Approximation()` tolerance of 1e-6. The restriction result was worse — a single pole in a
+periodic direction is the whole U direction collapsed to a point, accepted against a 0.01 tolerance
+it missed by three orders of magnitude — and it was **identical at C0, C1 and C2**, because the
+degree-priority loop degrades continuity toward 0 whenever the requested one cannot meet the tolerance
+within `maxDegree`. Requesting C2 was not protection.
+
+Six public entry points reached it, all confirmed against the released kernel:
+`Shape.convertedToBSpline()`, `Shape.withSurfacesAsBSpline(offset:)`,
+`Shape.convertToBSplineAdvanced(_:offsetMode:)` and all three `bsplineRestriction*` overloads.
+
+**The third site is why the other two were reachable at all.** `ShapeCustom_ConvertToBSpline` does not
+build an approximation itself — it calls `ShapeConstruct::ConvertSurfaceToBSpline`, forcing
+`GeomAbs_C0` for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`, a 1999 workaround for a
+hang). So that path did not degrade into the collapsing continuity; it started there. Requesting the
+offset surface's own continuity instead returns identical results before and after the patch — the
+collapse never reaches C2/C3.
+
+**No code changed.** Patch `0019` already fixes every row above, so what this issue ships is the
+measurement, the reproducer at
+[`Scripts/repro/570-healing-approx-accept/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/570-healing-approx-accept),
+and seven regression tests pinning the corrected values. Run against the last released kernel, six of
+the seven fail with exactly the figures above and the seventh — an offset sphere trimmed clear of its
+poles, which was never affected — passes.
+
+**The 1999 workaround stays.** Timed on both kernels, the request it suppresses completes in under
+5 ms on all seven offset fixtures with no hang, and its results are identical either side of `0019`.
+That is not evidence the hang is gone; it is no evidence the hang ever existed for these inputs. The
+comment blames a hang, #522 is not a hang, and retiring a hang guard needs a reproduction of the hang.
+Post-`0019` the workaround also costs nothing measurable — forced C0 returns a slightly coarser fit
+(1.2e-7 against 1.4e-8) that is comfortably inside tolerance either way.
+
+#### Breaking: plate surfaces honour the tolerance they were given (#571)
+
+Six bridge functions build a surface with `GeomPlate_MakeApprox` — `Shape.plateSurface(through:)`,
+`plateSurface(constrainedBy:)`, `plateSurface(through:orders:)`, `plateSurface(through:curves:)`,
+`plateSurface(points:)` and `Surface.plateThrough(_:)`. Five of them passed `Nbmax = 1` and
+`dmax = tolerance * 10`, and between them those two arguments made `tolerance` unenforceable.
+
+`Nbmax` caps the number of Bezier patches, and **1 is the one value that disarms the algorithm**.
+`AdvApp2Var_ApproxAFunc2Var::ComputePatches` derives its cut decision from that cap; at 1 every
+branch leaves it at "do not cut", so `AdvApp2Var_Patch::CutSense` returns the same answer whether or
+not the G0 criterion was satisfied. The criterion is still evaluated and still reported through
+`CriterionError()` — it simply cannot act. Measured on a 25-point wavy plate at `tolerance: 0.01`:
+the criterion came back at `0.098` against its own `0.01` threshold, violated, and the surface was
+returned unchanged. `Nbmax = 2` or more fits the same plate to `0.0044`.
+
+`dmax` sets that threshold, as `seuil = max(Tol3d, 10 * dmax)`. `tolerance * 10` therefore asked the
+criterion to accept **100x the tolerance the caller requested** — and it is not merely dead weight
+once subdivision is allowed: at `Nbmax = 20` that value reproduces the bad single-patch answer
+exactly, while `tolerance * 0.1` gives the good one. `tolerance * 0.1` makes `10 * dmax == Tol3d`,
+so the threshold is the caller's own tolerance. It is the value the sixth site already used.
+
+All six now share one helper (`occtPlateApproxSurface`) with one contract. What changes for callers:
+
+| | before | after |
+|---|---|---|
+| worst deviation, 25-point wavy plate at `tolerance: 0.01` | `0.0724` (7.2x the request) | `0.0032` |
+| control points in U | 9 (a single degree-8 patch) | 16 |
+| `plateSurface(through:)` vs `plateSurface(points:)`, same input | 22x apart on accuracy | identical |
+
+Surfaces from these six entry points therefore **move**, and callers who stored derived geometry
+should regenerate it. Two related contracts are now explicit rather than implicit:
+
+- **`maxSegments: 1` is clamped to 2.** `Shape.plateSurface(points:maxSegments:)` is the one entry
+  point that exposes the cap, and 1 there is not a coarser request but the value that voids
+  `tolerance` entirely.
+- **The approximation's continuity is passed explicitly, and stays `GeomAbs_C1`.** It is the
+  continuity of the joins *between* patches, a different axis from the constraint order handed to
+  `GeomPlate_PointConstraint`/`GeomPlate_CurveConstraint` — so `plateSurface(constrainedBy:continuity:)`
+  still applies the caller's `.g0`/`.g1`/`.g2` to the boundary constraints only, and does not forward
+  it to the fit. Only `C0`, `C1` and `C2` are accepted there at all: `G1`, `G2`, `C3` and `CN` each
+  throw `AdvApp2Var_ApproxAFunc2Var : UContinuity Error` (measured), which is why
+  `occtGeomAbsFromSurfaceContinuity` — whose order-1 answer is `GeomAbs_G1` — must not feed it.
+
+**This is not fallout from [#522](https://github.com/SecondMouseAU/OCCTSwift/issues/522), though
+that is what prompted the audit.** `GeomPlate_MakeApprox` is the one consumer of the defective
+approximator that does not go through `GeomConvert_ApproxSurface`, so it took #522's always-zero
+interior error without appearing in any census built by grepping for that class. Fingerprinting the
+control net of 54 plate fits either side of the `0019` patch — a stock override-link against the
+patched kernel — shows **every one identical**. Only the reported `ApproxError()` moved, rising
+1.03x to 5.37x as the interior contribution is counted for the first time. At the implicit `C1`
+default the degree floor is already 8, so #522's collapse could not reach these sites, exactly as
+#571 predicted.
+
+Two plate suites carrying `.disabled("Plate surface operations cause segfault in OCCT")` are
+re-enabled: 18 tests, 13 consecutive clean runs, and they pass against the pre-fix arguments too, so
+the annotation was stale rather than describing something this change cured. They cover two of the
+six sites. Reproducers and both transcripts: [`Scripts/repro/571-plate-approx-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/571-plate-approx-contract).
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge
@@ -116,6 +548,61 @@ A second defect class remains, filed as #565: the checker verifies that a named 
 not that it wraps the class the entry files it under. A mis-attributed entry that happens to name a real
 symbol from a neighbouring class is still invisible, and it misleads exactly the way a fabricated one
 does.
+#### The cylindrical-hole drill selected parts of the cut result, not parts of its tool (#532)
+
+Kernel patch `0020`. Every `BRepFeat_MakeCylindricalHole` mode that chooses which piece of the
+drilling tool to keep — `PerformThruNext`, `PerformUntilEnd`, the ranged `Perform(Radius, PFrom, PTo)`
+and `PerformBlind` — drove `BRepFeat_Builder` with `SetOperation(Fuse)`, i.e. `BOPAlgo_CUT`, and then
+called `PartsOfTool()`. That method collects the solids of the builder's shape, which holds the tool
+split by the object only after the **COMMON** pass; after a CUT it is the finished workpiece. So the
+selection loops compared barycentres of bored plates and registered those plates as "kept parts of the
+tool", and `PerformResult()` then took the kept-parts path with a keep set containing no tool part at
+all. The caller got the input back with the cylinder's faces imprinted on it — reported as
+`BRepFeat_NoError` throughout.
+
+`BRepFeat_Form` and `BRepFeat_RibSlot`, the kernel's other two users of the same builder, both call
+the two-argument `SetOperation(myFuse, bFlag)` with `bFlag` true. The patch is that call at the four
+part-selecting sites. `Perform(Radius)` selects no parts and is untouched, which is why `.throughAll`
+was the one extent that already drilled a stack correctly, and why the defect read as "multi-body"
+rather than "part selection".
+
+Two corrections to how #532 was originally scoped. **`PerformBlind` is affected too** — it was not
+named because the report came out of #496, which had newly wrapped only the other two extents. And
+the trigger is not "more than one body": it is "the cut result has two solids", which **a single
+solid reaches** — an 8mm bar drilled at r = 5 is severed by its own bore, and every part-selecting
+mode then removed nothing from it.
+
+Measured on a compound of two 50 × 50 × 20 plates on the drill axis, where one bore removes
+1570.7963:
+
+| call | before | after |
+|---|---|---|
+| `.throughAll` | 3141.5927 | 3141.5927 |
+| `.untilEnd` | **0.0000** | 3141.5927 |
+| `.thruNext` | 1570.7963 | 1570.7963 |
+| `.blind(depth: 20)` | **0.0000** | 1178.0972 |
+| `.range(from: 0, to: 70)` | **0.0000** | 3141.5927 |
+| `.range(from: 0, to: 30)` | 1570.7963 | 1570.7963 |
+
+A single plate is byte-identical before and after — its cut result was one solid, so the branch never
+ran. A channel and a hollow box, both one solid with two spans on the axis, give the same answer
+before and after while the selection loop goes from one part to two real tool parts.
+
+**One behaviour change beyond the bug.** A radius so large the bore swallows the whole solid used to
+be `.invalidPlacement` for `.untilEnd` and `.thruNext`: under CUT the oversized tool emptied the
+builder's shape, so `nbparts` was 0 and the "the tool meets nothing" guard fired. Under COMMON
+`nbparts` is 1 and both extents now return the empty result `.throughAll` and
+`drilled(at:direction:radius:depth:)` always returned. The #496 divergence "through-all status is a
+false green for the thru-next drill" was that accident, not a contract, and its test now pins the
+converged answer.
+
+`Issue532CylindricalHolePartSelectionTests` (`Tests/OCCTModelingTests`), 7 tests, three of which
+deliberately cover geometry the fix must not disturb. Run against the last released kernel first: the
+four that pin the defect fail there and the three non-regression tests pass, which is the proof the
+suite is measuring the patch. Reproducer and full before/after tables in
+[`Scripts/repro/532-cylindrical-hole-part-selection/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/532-cylindrical-hole-part-selection);
+a second, unreachable-as-written defect in `PerformThruNext`'s fallback brace nesting is reported
+there rather than changed.
 
 #### One edge-index contract and one radius law for all five fillet entry points (#520)
 
@@ -439,9 +926,9 @@ since #497 fails the whole call on one bad index. Making the two agree is not a 
 `AddFaceToRemove` takes a `TopoDS_Shape` and its own documentation calls it "the shape to extract the
 faces for removal", and the kernel duly accepts a compound, a shell or the whole input solid as a
 face carrier — measured. Deciding what a membership rule does with those is its own question, so it
-is filed separately; the behaviour is documented on `defeature(faces:)` in the meantime, along with
-the fact that membership is identity, not geometry (a face measured off a separately built but
-identical shape is foreign).
+was filed separately as #578 and settled there; the behaviour was documented on `defeature(faces:)`
+in the meantime, along with the fact that membership is identity, not geometry (a face measured off a
+separately built but identical shape is foreign).
 
 New suite `Issue536DefeaturingSpellingsTests` (`OCCTModelingTests`) compares the two spellings face
 by face on three fixtures, pins all four spellings of one removal against each other, and pins the
@@ -698,6 +1185,104 @@ Probe and full figures at
 [`Scripts/repro/595-curvature-zero-sentinel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/595-curvature-zero-sentinel).
 Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### The `PrecisCode` census counted a commented-out call site and missed a live one (#573)
+
+`OCCTBridge_Surface.mm` carries a census of how OCCT itself splits on `GeomConvert_ApproxSurface`'s
+`PrecisCode` argument. It is load-bearing: it is the stated justification for #491 settling both
+surface approximation entry points on `0`. It was built by grepping for the class rather than by
+reading each hit, so it counted `BRepFill_Sweep.cxx:1162`, which sits inside a `/* */` block
+spanning `:1064` to `:1179` and is not compiled, and it missed `BRepOffset_Offset.cxx:1626` and the
+second `GeomConvert_1` site (`:960`) entirely. The live set is 2 sites passing `0` and 6 passing
+`1`:
+
+| passes `0`, re-checks `MaxError()` | passes `1`, never reads `MaxError()` |
+|---|---|
+| `ShapeCustom_BSplineRestriction.cxx:852` | `GeomConvert_1.cxx:786`, `:960` |
+| `ShapeConstruct.cxx:265` | `ShapeUpgrade_UnifySameDomain.cxx:3629` |
+| | `GeomFill_Sweep.cxx:296` |
+| | `GeomLib.cxx:1517` |
+| | `BRepOffset_Offset.cxx:1626` |
+
+**#491's conclusion is unchanged, but its stated reason was slightly wrong.** The split is not
+"caller's tolerance versus hardcoded internal tolerance": `BRepOffset_Offset` takes the caller's
+`TolApp` and still passes `1`, because it gates on `IsDone()` and never checks the fit against the
+tolerance it was given. What the two groups actually divide on is whether the site verifies the
+result, which is the property that puts this bridge in the `0` group. The comment now records that,
+names both commented-out mentions so the next reader does not re-add them, and says why the two
+Draw/QA harness sites and `GeomPlate_MakeApprox` (which drives `AdvApp2Var_ApproxAFunc2Var` directly
+and has no `PrecisCode`, see #571) are outside the list.
+
+Comment-only, no behaviour change. The same correction is applied to
+[`Scripts/repro/491-approx-wrapper-drift/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/491-approx-wrapper-drift)
+and to #491's entry below; #522's own notes had already been corrected. The eight other bridge
+comments that cite OCCT source (13 line references between them) were checked the same way and all
+point at live code that says what the comment claims, including the one that correctly describes
+`AdvApprox_ApproxAFunction.cxx:550` as commented out upstream.
+
+#### Breaking: the last five entry points that quietly dropped an unresolvable index (#568)
+
+A sub-shape index naming nothing now rejects the request everywhere, not just in the fillet family.
+#520 settled that for the five `BRepFilletAPI_MakeFillet` edge-list functions and #541 for
+`Shape.offsetPerFace`; five sites in the neighbouring families still skipped the entry and built
+from whatever resolved.
+
+| entry point | index | before | now |
+|---|---|---|---|
+| `Shape.drafted(faces:direction:angle:neutralPlane:)` | face | drafts the faces that resolve | `nil` |
+| `Shape.shelled(thickness:openFaces:)` | face | opens the faces that resolve | `nil` |
+| `Shape.chamferedWithFullHistory(distance:edges:)` | edge | chamfers the edges that resolve | `nil` |
+| `Shape.fillet2D(vertexIndices:radii:)` | vertex | rounds the corners that resolve | `nil` |
+| `Shape.chamfer2D(edgePairs:distances:)` | edge (either half of a pair) | cuts the pairs that resolve | `nil` |
+
+**Why this is not tidiness.** Measured on the pinned kernel
+([`Scripts/repro/568-index-skip-idiom/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/568-index-skip-idiom)),
+every builder behind these sites reports an ordinary success for a batch it was never told was
+short. The partial result is `IsDone`, non-null and `BRepCheck_Analyzer`-valid; it differs from the
+complete one only in geometry the caller has no reason to re-measure:
+
+| builder, on a 20mm box | whole request | partial request |
+|---|---|---|
+| `BRepFilletAPI_MakeChamfer`, 3 edges | volume 7885.333333 | 2 of 3: volume 7922.666667, valid |
+| `BRepOffsetAPI_DraftAngle`, 4 faces | volume 6681.349269 | 2 of 4: volume 7299.820338, valid |
+| `BRepOffsetAPI_MakeThickSolid`, 2 open faces | volume 2880.000000 | 1 of 2: volume 3392.000000, valid |
+| `BRepFilletAPI_MakeFillet2d`, 4 vertices | area 1178.539816 | 2 of 4: area 1189.269908, valid |
+
+**`Shape.drafted` was the worst of the five, and only the measurement showed it.** Handed *no*
+faces at all, `BRepOffsetAPI_DraftAngle` still reports `IsDone()` and returns the input shape
+unchanged (volume 8000 for the same box). So a draft naming only faces the shape does not have (the
+ordinary result of passing `Face` values taken from a different shape) succeeded and drafted
+nothing. The other four at least fail an empty batch (`MakeChamfer` throws "There are no suitable
+edges for chamfer or fillet"; `MakeFillet2d` fails `IsDone`), and `Shape.shelled` had its own empty
+check, which is why for those the *mixed* batch was the only case that escaped.
+
+**The census the issue filed was three ways off**, each found by measuring rather than reading:
+
+- `Shape.offsetPerFace` was on the list but had already been fixed by #541, which also settled the
+  "is a dictionary of overrides different?" question the issue asked: an override naming no face is
+  an invalid request, not an absent override.
+- Two entries were filed against `OCCTWireFilletAll2D` / `OCCTWireChamferAll2D`, which take no
+  indices at all. Their line numbers pointed at `OCCTFace2DFillet` / `OCCTFace2DChamfer`, which do,
+  and those are what is fixed here. Same failure mode as #565's own mis-filing: trust the line, not
+  the name.
+- Two sites the issue did not list, `OCCTShapeDraft` and `OCCTShapeShellWithOpenFaces`, spell the
+  skip as an `if (idx >= 0 && idx < map.Extent()) { … }` wrap rather than a `continue`, so a census
+  grepping for the `continue` spelling missed them, including the draft, the most severe of the
+  five.
+
+**One resolution helper, not five loops** (the issue's second question). `occtUseSubShapesByIndex`
+and `occtMappedSubShapeAt` (`OCCTBridge_Internal.h`) resolve a caller's index array through
+`occtMapSubShapes`, the enumeration #502 and #541 already made canonical, and refuse on the first
+index that names nothing. `occtFilletAddEdges` is now a five-line wrapper over it, since only the
+`TopoDS_Edge` cast was ever fillet-specific, so the fillet family and these five share one
+statement of the contract rather than agreeing by coincidence. `OCCTFace2DChamfer` is the one site
+whose entries name two sub-shapes each, so it reads the map through `occtMappedSubShapeAt` directly.
+
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild. No operation count change.
+
+**Migration.** A call that used to succeed by dropping indices now returns `nil`. Filter your own
+indices against `Shape.faces().count` / `Shape.edges().count` / `face.vertices().count` if you want
+the old best-effort behaviour. The difference is that you now choose it.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
@@ -742,10 +1327,11 @@ four tests.
 reports `nil` on a line, a segment and a circle, but on a BSpline `GCPnts_AbscissaPoint::Length`
 returns a plausible number (`0` for a NaN upper bound, the whole length for a NaN lower bound), so
 the failure-versus-zero distinction #408 established holds for the curve types its own tests use and
-not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` still measures through the 2D
+not for BSplines (#548). Separately, `Curve2D.arcLength(from:to:)` measured through the 2D
 pre-bounded adaptor deliberately, documented as range-checked, so the 2D and 3D spellings of the same
-call now differ on a reversed range (#549). Both are #408/#409 contract questions rather than
-duplication, so they are filed rather than folded in here.
+call differed on a reversed range (#549, fixed above in this same release once the 2D form turned out
+to extrapolate as well). Both are #408/#409 contract questions rather than duplication, so they were
+filed rather than folded in here.
 
 #### The PointsToBSpline index entry, and the controls it hid that do nothing (#507)
 
@@ -1909,9 +2495,11 @@ Three divergences resolved, plus one that turned out to be paper-only:
   `maxError` in all 72 — smaller with `0` in 64 of them — and in the one layout-differing case (an
   offset sphere at tolerance `1e-5`) `0` met the requested tolerance with 27x15 poles where `1`
   needed 27x23. A caller who states a tolerance wants the lightest surface that meets it. OCCT itself
-  splits along that same line: its tolerance-honouring conversion loops pass `0`
-  (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `BRepFill_Sweep`), its fixed-internal-tolerance
-  conversions pass `1` (`GeomConvert_1`, `GeomLib`, `GeomFill_Sweep`, `ShapeUpgrade_UnifySameDomain`).
+  splits along that same line: the two sites that re-check `MaxError()` against a tolerance they must
+  honour pass `0` (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`), and the six that never look
+  at it pass `1` (`GeomConvert_1` twice, `ShapeUpgrade_UnifySameDomain`, `GeomFill_Sweep`, `GeomLib`,
+  `BRepOffset_Offset`). That census is #573's correction of this one, which listed a commented-out
+  `BRepFill_Sweep` site and missed `BRepOffset_Offset`.
 - **`Surface`: default continuity C2 vs C1.** `Surface.approxWithDetails` defaulted `uContinuity` and
   `vContinuity` to `.c1` while `Surface.approximated` defaulted to C2, so the two
   no-continuity-argument calls fitted to different smoothness and returned different surfaces (15 vs
@@ -2384,13 +2972,12 @@ stock-bounded through hole callers reach for `.throughAll` expecting) and `.rang
 ranged `Perform`). The four v0.71.0 methods are unchanged in behaviour and now forward onto the
 unified spelling; no existing call site needs editing.
 
-**A wrong answer found and documented, not fixed.** `PerformUntilEnd` and the ranged `Perform` both
-end in an `nbparts >= 2` branch that keeps exactly one part of the cutting tool. Across a stack of two
-solids the kept part can be one that intersects nothing, and the operation then reports
+**A wrong answer found and documented, not fixed here.** `PerformUntilEnd` and the ranged `Perform`
+both end in an `nbparts >= 2` branch that keeps exactly one part of the cutting tool. Across a stack
+of two solids the kept part can be one that intersects nothing, and the operation then reports
 `BRepFeat_NoError` while removing **no material at all**, having only imprinted the cylinder's faces.
-`Perform` and the boolean drill both cut every body. This is kernel behaviour and out of scope here,
-filed as #532; it carries a `- Warning:` on both extents and is pinned by a test so a kernel bump is
-noticed. The
+`Perform` and the boolean drill both cut every body. Kernel behaviour and out of scope here, filed as
+#532 and **since fixed** — see the entry below. The
 ranged overload's parameters were also measured rather than assumed: the window selects **which
 entry/exit face pair** bounds the hole, it does not trim the cut, so a window strictly inside one body
 still drills through all of it.
@@ -2675,6 +3262,153 @@ gotcha `docs/guides/building-occt.md` already documents for resuming an interrup
 ---
 
 ## Release History
+
+### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`OCCTImportSTEPRobustProgress` set `*outCancelled` only at its own explicit `UserBreak()`
+checkpoints, so which error a cancelled import reported depended on which phase the cancellation
+happened to land in. A break during the transfer leaves `TransferRoots` reporting zero transferred
+roots, and that exit returned "failed" with the flag still false:
+
+```swift
+// Deadline expires while the transfer is still running
+catch ImportError.importFailed("Failed to import: /tmp/part.step")   // was: for a readable file
+catch ImportError.cancelled                                          // now
+```
+
+Found as a flake in #300's own regression test, which set its deadline at 0.75 × a wall-clock
+measurement of a preceding uncancelled import: machine load, not the bridge, decided which phase
+the deadline fell in, and about 1 run in 9 fell in the transfer. Any caller whose deadline expires
+early reaches the same path.
+
+Every failure exit below the indicator's construction now reports cancellation if a break was
+observed — the zero-roots exit, a null shape, a non-`Done` status, and the `catch (...)` handler
+(which needed the indicator hoisted out of the `try`). Applied across all twelve `*Progress` entry
+points in `OCCTBridge_IO.mm`, not only the two robust importers, since they share the shape.
+
+A second defect surfaced while probing the first: `BridgeProgressIndicator::UserBreak()` re-asked
+the caller at every checkpoint and believed the latest answer, so a caller that answers `true`
+**once** — a one-shot flag, an already-consumed `Task.isCancelled` — had that answer overwritten.
+OCCT aborted the phase, the next poll said "no break", and the half-repaired shape came back as a
+*success*. The break is now latched (`std::atomic<bool>`, since OCCT documents `UserBreak()` as
+callable concurrently), which is what `ImportProgress.shouldCancel` always documented.
+
+Both `#300` regression tests were rewritten off the clock. That the repair phase lies inside the
+caller's progress range is now checked by the silence that would follow the last progress report
+if it did not: measured at 1.3% (STEP) and 3.4% (IGES) of the call with the fix, 35–40% with the
+#300 defect reintroduced. That a cancellation there *stops* the repair is checked against the
+uncancelled run's poll count — a count of work items, not a duration, and identical on a loaded and
+an idle machine. Progress *names* cannot substitute for the phase, tempting as they look: both
+readers run a `ShapeFix_Shape` of their own during the transfer, so `Fixing face` / `Fixing edge` /
+`Update tolerances` are already being reported from fraction ~0.09.
+
+Bridge-only change: no OCCT kernel patch, no `OCCT.xcframework` rebuild; `OCCTBridge.xcframework`
+needs one since `OCCTBridge_IO.mm` changed. The previously flaky suites ran 12/12 clean; each new
+test was verified to fail against the defect it covers, re-injected one at a time.
+
+### Unreleased: fix, a refused `FillingSurface.add` still let `build()` return a face (#482)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+#434 converged `FillingSurface` and `Shape.fill(constraints:)` onto one builder and one shared
+`occtFillingAddConstraint`, but left them disagreeing about what a *refused* constraint means, and
+the disagreement favoured the wrong outcome on the incremental API.
+
+`occtFillingAddConstraint` refuses a constraint when a **nominated** support face carries no pcurve
+for its edge, which is routine on imported or sewn shapes. It does not call `Add`, so that
+constraint simply does not exist. `Shape.fill(constraints:)` has always treated that as fatal and
+returned nil. `FillingSurface.add(edge:support:continuity:)` returned `false` and left the builder
+usable, so `build()` went on to fit a surface to whatever constraints did make it in. Since every
+`add` is `@discardableResult`, ignoring the signal was the default at the call site:
+
+```swift
+let f = FillingSurface()
+f.add(edge: e1, continuity: .g0)
+f.add(edge: rim, support: importedWall, continuity: .g1)   // false, silently dropped
+let face = f.build()                                       // succeeded
+```
+
+That face was fitted to `e1` alone. It neither passed through nor was bounded by `rim`, the edge
+the caller cared most about, and it reported a healthy G0 error (measured 2.8e-05 on the
+truncated-sphere fixture) while doing so: a plausible wrong answer, not a visible failure. The
+same geometry through `Shape.fill(constraints:)` returned nil.
+
+The refusal is now **sticky**: the builder records it, and `build()` returns nil however many other
+constraints succeeded, without attempting the fit at all, so `isDone` stays false and the face and
+error accessors keep reporting "not built" rather than describing a surface no caller asked for.
+The two entry points now answer the same for the same input, which is what the #434 convergence was
+for. `@discardableResult` becomes harmless: the refusal is reported whether or not the return value
+was read.
+
+New: `FillingSurface.refusedConstraintCount` and `FillingSurface.hasRefusedConstraint`, which
+separate "a constraint never made it in" from "the fit was attempted and failed". Both return nil
+from `build()`:
+
+```swift
+guard let face = filling.build() else {
+    print(filling.hasRefusedConstraint ? "a constraint was refused" : "the fit failed")
+    return
+}
+```
+
+**Source-compatible, behaviour-breaking.** No signature changed, but a caller who was relying on
+`build()` succeeding after a refused `add` now gets nil. To attempt a constraint speculatively and
+carry on, use `add(edge:continuity:)`, which derives the continuity reference from the edge itself
+and so has nothing to refuse.
+
+Two doc comments promised this behaviour before anything enforced it: `add(edge:support:)`'s "used
+or the constraint fails" and `OCCTFillingAddEdgeWithSupport`'s "the caller should treat the whole
+fill as failed". Both are now true.
+
+Also fixed: the derived operation total in `README.md` / `docs/API_REFERENCE.md` was 4,266 against a
+derived 4,268 before this change, a pre-existing two-entry-point drift unrelated to #482.
+`Scripts/count-operations.py --fix` takes it to 4,270, of which two are the properties above.
+
+### Unreleased: chore, every build of this package emitted an unhandled-file warning (#440)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`swift build` emitted `found 1 file(s) which are unhandled; explicitly declare them as resources or
+exclude from the target` on every build of this package.
+
+The file was `Tests/OCCTStressTests/Fixtures/unify-crash-mmd-kiha10-body5.brep`, the 600 KB
+mesh-sewn solid backing #348's null-pcurve regression test. It is read straight from the source tree
+via `#filePath`, never through `Bundle.module`, so it is neither a build input nor a resource to
+copy. `OCCTStressTests` now declares `exclude: ["Fixtures"]`, which is the accurate description of
+what it is. Declaring it as a resource instead would have embedded 600 KB in the test bundle that
+nothing reads.
+
+**Who saw it:** builds of this package as the *root* package, which means our own dev loop and CI,
+plus anyone who clones OCCTSwift and builds it directly. It did **not** reach downstream consumers.
+SwiftPM does not construct test targets for non-root packages, so a consumer's build never had a
+target that owned `Tests/` to diagnose. Measured on Swift 6.3.3 against a synthetic package: the
+same stray file warns while its package is the root, stays silent through a path-dependency
+consumer's `swift build` and `swift test`, and does propagate to that consumer once moved into a
+*source* target. #440 claimed the warning reached every downstream consumer; that part of the issue
+was wrong too, and the fix is worth having for the root-build noise alone.
+
+**Correcting #440's own diagnosis:** the issue attributed the warning to
+`Tests/occt_parallel_crash_portable.cpp` sitting unclaimed at the `Tests/` root. That file is not the
+cause and never was: no target declares `path: "Tests"`, so SwiftPM does not scan the directory root
+at all and never diagnosed it. Removing it changes nothing, and the warning names the `.brep` and
+only the `.brep`. The fixture predates the issue by five days, so the misattribution was present from
+filing.
+
+The move #440 also asked for was still worth doing on its own merit, since a reproducer does not
+belong in the package's test tree, but not to the suggested destination. That file is the
+[OCCT#1179](https://github.com/Open-Cascade-SAS/OCCT/issues/1179) parallel-crash sweep (11
+operation groups built around `Extrema_ExtElCS` and `ShapeUpgrade_FaceDivide`, committed April 2026,
+three months before #342, with one boolean group out of eleven), so filing it under
+`Scripts/repro/342-boolean-ops/` as "the same family of work" would have mislabelled it. It now has
+its own `Scripts/repro/occt1179-parallel-crash/`, with a README covering what it sweeps, why it is
+kept now that OCCT#1179 is fixed (our own [OCCT#1203](https://github.com/Open-Cascade-SAS/OCCT/pull/1203),
+shipped in `V8_0_0`), and what distinguishes it from its boolean-concurrency siblings: it is the only
+reproducer here driven by CI, on both Windows and macOS. The two paths in
+`.github/workflows/occt-parallel-crash-test.yml` follow it.
+
+No API change, no behaviour change, no kernel change.
 
 ### v1.17.0 (July 2026): pass 1a of the #377 duplication audit, and two source-breaking changes in a minor release
 

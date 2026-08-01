@@ -1159,6 +1159,9 @@ The total arc length of this edge.
 public var edgeArcLength: Double { get }
 ```
 
+- **Returns:** Arc length in model units, or `-1.0` on failure. Arc length is otherwise always
+  non-negative, so this is an unambiguous sentinel; it used to be `0`, which a genuinely
+  zero-length edge also measures (#548).
 - **OCCT:** `GCPnts_AbscissaPoint` / `BRepAdaptor_Curve`.
 
 ---
@@ -1171,7 +1174,21 @@ Computes the arc length of this edge between two parameter values.
 public func edgeArcLength(from u1: Double, to u2: Double) -> Double
 ```
 
+- **Parameters:** `u1`/`u2` — parameter range, either order. Both must be finite.
+- **Returns:** Arc length in model units, or `-1.0` if a bound is not finite or the computation
+  fails.
 - **OCCT:** `GCPnts_AbscissaPoint`.
+- **Note:** `.nan` and `±.infinity` are rejected before OCCT sees them. This entry point used to
+  hand a NaN bound's result straight back: on a straight edge that was NaN itself, and on a
+  multi-span edge `0` (a NaN upper bound) or the edge's whole length (a NaN lower one) — see
+  [`Curve3D.length(from:to:)`](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Example:**
+  ```swift
+  let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+  let d = edge.edgeAdaptorDomain
+  let half = edge.edgeArcLength(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+  // half == 5.0
+  ```
 
 ---
 
