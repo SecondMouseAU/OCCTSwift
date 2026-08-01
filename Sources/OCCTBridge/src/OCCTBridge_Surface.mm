@@ -607,7 +607,7 @@ OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
 // (Surface.approxWithDetails) are two views of the same approximation: the first returns the fitted
 // BSpline surface, the second returns it alongside the diagnostics OCCT already computed for it.
 // They were written independently and passed different values for GeomConvert_ApproxSurface's
-// eighth constructor argument — 0 here, 1 there — so they returned measurably different surfaces
+// eighth constructor argument (0 here, 1 there), so they returned measurably different surfaces
 // for the same request. They run through this one helper instead.
 //
 // That argument is PrecisCode, "the index of precision", and it is a real algorithm knob rather
@@ -619,19 +619,51 @@ OCCTSurfaceRef OCCTSurfaceToBSpline(OCCTSurfaceRef s) {
 //
 // The shared value is 0. Measured over 72 bounded cases (8 surface families x 6 tolerances, plus
 // C0/C1 and maxDegree 10 variants): the two codes never disagreed on IsDone, and produced the same
-// knot/pole layout in 71 of 72 — but a different maxError in all 72, smaller with 0 in 64 of them,
+// knot/pole layout in 71 of 72, but a different maxError in all 72: smaller with 0 in 64 of them,
 // and in the single layout-differing case (an offset sphere at tolerance 1e-5) 0 met the requested
 // tolerance with 27x15 poles where 1 needed 27x23. A caller asking for a tolerance wants the
 // lightest surface that meets it, which is what 0 delivered.
 //
-// OCCT itself is split on the value, and splits along that same line: the sites that honour a
-// caller's tolerance and re-check MaxError() themselves pass 0 (ShapeCustom_BSplineRestriction.cxx:852,
-// ShapeConstruct.cxx:265, BRepFill_Sweep.cxx:1162), while the sites that convert with their own
-// hardcoded internal tolerance pass 1 (GeomConvert_1.cxx:786, GeomLib.cxx:1517,
-// GeomFill_Sweep.cxx:296, ShapeUpgrade_UnifySameDomain.cxx:3629). This bridge is in the first group.
+// OCCT itself is split on the value, and splits along that same line. Every live construction of
+// GeomConvert_ApproxSurface in the pinned p1 kernel, counted by reading each site rather than by
+// grepping filenames (#573):
+//
+//   PrecisCode 0, both accepting the fit only when MaxError() clears a tolerance they must honour:
+//     ShapeCustom_BSplineRestriction.cxx:852  (ConvertSurface; on a miss it re-fits, raising the
+//                                              approximation tolerance, doubling MaxSeg or dropping
+//                                              a continuity, until the error stops improving)
+//     ShapeConstruct.cxx:265                  (ConvertSurfaceToBSpline; on a miss it returns the
+//                                              over-tolerance surface, and drops a continuity only
+//                                              when the fit throws)
+//
+//   PrecisCode 1, none of which look at MaxError() at all:
+//     GeomConvert_1.cxx:786, :960             (SurfaceToBSplineSurface, its trimmed and its direct
+//                                              branch; both take Surface() unconditionally)
+//     ShapeUpgrade_UnifySameDomain.cxx:3629   (IntUnifyFaces; unconditional)
+//     GeomFill_Sweep.cxx:296                  (BuildAll; gates on HasResult only)
+//     GeomLib.cxx:1517                        (ExtendSurfByLength; gates on HasResult only, then
+//                                              falls back to GeomConvert::SurfaceToBSplineSurface)
+//     BRepOffset_Offset.cxx:1626              (Init, the spherical vertex face; gates on IsDone
+//                                              only, then falls back to the exact sphere)
+//
+// The discriminator is what a site does with the answer, not where its tolerance came from:
+// BRepOffset_Offset passes the caller's TolApp (1e-4 by default) and still passes 1, because it
+// never checks the fit against it. This bridge takes a caller's tolerance and hands MaxError()
+// straight back, so it is in the first group.
+//
+// Two kernel files name the class and are not call sites. BRepFill_Sweep.cxx:1162 sits inside a
+// /* */ block spanning :1064 to :1179 and BRepFill_Filling.cxx:712 is a //-commented line; neither
+// is compiled. An earlier revision of this census listed the BRepFill_Sweep one in the 0 group,
+// which is what #573 corrects, so do not re-add either from a filename-level grep. The two Draw/QA
+// harness sites (GeomliteTest_SurfaceCommands.cxx:1044, which takes PrecisCode from the command
+// line, and QABugs_19.cxx:244) are test code and are excluded deliberately.
+//
+// GeomPlate_MakeApprox has no PrecisCode to census: it drives AdvApp2Var_ApproxAFunc2Var directly
+// instead of going through GeomConvert_ApproxSurface, which is why it sits outside this list and
+// needed its own contract (#571).
 //
 // Note both entry points have always gated on HasResult(), which OCCT documents as true even for a
-// result "not NECESSARILY within the required tolerance" — unlike the curve pair, the surface pair
+// result "not NECESSARILY within the required tolerance". Unlike the curve pair, the surface pair
 // never drifted on that, and unlike the curve class, this one really can report HasResult without
 // IsDone (a torus at tolerance 1e-9 does). Reporting that through isDone is what approxWithDetails
 // is for.

@@ -821,6 +821,40 @@ siblings) still spell "undefined" as `0`, where the `Face` counterparts return `
 silent-zero class #486 and #494 have both hit, and five more source-breaking signatures on top of
 the four here. Filed as #583 rather than folded in.
 
+#### The `PrecisCode` census counted a commented-out call site and missed a live one (#573)
+
+`OCCTBridge_Surface.mm` carries a census of how OCCT itself splits on `GeomConvert_ApproxSurface`'s
+`PrecisCode` argument. It is load-bearing: it is the stated justification for #491 settling both
+surface approximation entry points on `0`. It was built by grepping for the class rather than by
+reading each hit, so it counted `BRepFill_Sweep.cxx:1162`, which sits inside a `/* */` block
+spanning `:1064` to `:1179` and is not compiled, and it missed `BRepOffset_Offset.cxx:1626` and the
+second `GeomConvert_1` site (`:960`) entirely. The live set is 2 sites passing `0` and 6 passing
+`1`:
+
+| passes `0`, re-checks `MaxError()` | passes `1`, never reads `MaxError()` |
+|---|---|
+| `ShapeCustom_BSplineRestriction.cxx:852` | `GeomConvert_1.cxx:786`, `:960` |
+| `ShapeConstruct.cxx:265` | `ShapeUpgrade_UnifySameDomain.cxx:3629` |
+| | `GeomFill_Sweep.cxx:296` |
+| | `GeomLib.cxx:1517` |
+| | `BRepOffset_Offset.cxx:1626` |
+
+**#491's conclusion is unchanged, but its stated reason was slightly wrong.** The split is not
+"caller's tolerance versus hardcoded internal tolerance": `BRepOffset_Offset` takes the caller's
+`TolApp` and still passes `1`, because it gates on `IsDone()` and never checks the fit against the
+tolerance it was given. What the two groups actually divide on is whether the site verifies the
+result, which is the property that puts this bridge in the `0` group. The comment now records that,
+names both commented-out mentions so the next reader does not re-add them, and says why the two
+Draw/QA harness sites and `GeomPlate_MakeApprox` (which drives `AdvApp2Var_ApproxAFunc2Var` directly
+and has no `PrecisCode`, see #571) are outside the list.
+
+Comment-only, no behaviour change. The same correction is applied to
+[`Scripts/repro/491-approx-wrapper-drift/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/491-approx-wrapper-drift)
+and to #491's entry below; #522's own notes had already been corrected. The eight other bridge
+comments that cite OCCT source (13 line references between them) were checked the same way and all
+point at live code that says what the comment claims, including the one that correctly describes
+`AdvApprox_ApproxAFunction.cxx:550` as commented out upstream.
+
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)
 
 `OCCTCurve3DArcLength`, `OCCTCurve3DArcLengthBetween` and `OCCTCurve3DLength` are gone. #408 routed
@@ -2032,9 +2066,11 @@ Three divergences resolved, plus one that turned out to be paper-only:
   `maxError` in all 72 — smaller with `0` in 64 of them — and in the one layout-differing case (an
   offset sphere at tolerance `1e-5`) `0` met the requested tolerance with 27x15 poles where `1`
   needed 27x23. A caller who states a tolerance wants the lightest surface that meets it. OCCT itself
-  splits along that same line: its tolerance-honouring conversion loops pass `0`
-  (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `BRepFill_Sweep`), its fixed-internal-tolerance
-  conversions pass `1` (`GeomConvert_1`, `GeomLib`, `GeomFill_Sweep`, `ShapeUpgrade_UnifySameDomain`).
+  splits along that same line: the two sites that re-check `MaxError()` against a tolerance they must
+  honour pass `0` (`ShapeCustom_BSplineRestriction`, `ShapeConstruct`), and the six that never look
+  at it pass `1` (`GeomConvert_1` twice, `ShapeUpgrade_UnifySameDomain`, `GeomFill_Sweep`, `GeomLib`,
+  `BRepOffset_Offset`). That census is #573's correction of this one, which listed a commented-out
+  `BRepFill_Sweep` site and missed `BRepOffset_Offset`.
 - **`Surface`: default continuity C2 vs C1.** `Surface.approxWithDetails` defaulted `uContinuity` and
   `vContinuity` to `.c1` while `Surface.approximated` defaulted to C2, so the two
   no-continuity-argument calls fitted to different smoothness and returned different surfaces (15 vs
