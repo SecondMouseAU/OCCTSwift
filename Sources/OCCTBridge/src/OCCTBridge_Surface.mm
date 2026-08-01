@@ -859,8 +859,8 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 // curvature is defined at all for the same surface and the same (u, v) (#405). The resolution
 // itself now comes from occtLocalPropsResolution(), shared with the Local* family that #405 left
 // on its own 1e-10 (#494).
-// Returns false (leaving the outputs untouched) where curvature is undefined; each caller
-// applies its own documented fallback.
+// Returns false (leaving the outputs untouched) where curvature is undefined. Since #595 every
+// caller passes that false straight through to its own caller instead of substituting a value.
 static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s, double u, double v,
                                       double* gaussian, double* mean) {
     if (!s || s->surface.IsNull()) return false;
@@ -875,16 +875,19 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s, double u, double v,
     }
 }
 
-double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v) {
-    double gaussian = 0.0;
-    occtSurfaceCurvaturePair(s, u, v, &gaussian, nullptr);
-    return gaussian;
+// #595: both report definedness rather than spelling its absence 0, matching their
+// OCCTFaceGetGaussianCurvature / OCCTFaceGetMeanCurvature counterparts, which read the same quantity
+// off the same surface through the face. The collision here was the widest of the family: the
+// Gaussian curvature of a plane, a cylinder and a cone is exactly 0 at every point of the surface,
+// with IsCurvatureDefined() true, so whole surfaces returned the "no answer" value.
+bool OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef s, double u, double v, double* curvature) {
+    *curvature = 0.0;
+    return occtSurfaceCurvaturePair(s, u, v, curvature, nullptr);
 }
 
-double OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef s, double u, double v) {
-    double mean = 0.0;
-    occtSurfaceCurvaturePair(s, u, v, nullptr, &mean);
-    return mean;
+bool OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef s, double u, double v, double* curvature) {
+    *curvature = 0.0;
+    return occtSurfaceCurvaturePair(s, u, v, nullptr, curvature);
 }
 
 bool OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef s, double u, double v,
@@ -5023,11 +5026,14 @@ void OCCTSurfaceNormal(OCCTSurfaceRef surface, double u, double v,
     OCCTSurfaceGetNormal(surface, u, v, nx, ny, nz);
 }
 
-void OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
+// #595: the pair form reports definedness too. Its documented contract is that it agrees with
+// OCCTSurfaceGetGaussianCurvature / GetMeanCurvature "including on whether curvature is defined at
+// all", which it could not do while the only thing it returned was a pair of doubles.
+bool OCCTSurfaceCurvatures(OCCTSurfaceRef surface, double u, double v,
                              double* gaussian, double* mean) {
-    if (!gaussian || !mean) return;
+    if (!gaussian || !mean) return false;
     *gaussian = *mean = 0;
-    occtSurfaceCurvaturePair(surface, u, v, gaussian, mean);
+    return occtSurfaceCurvaturePair(surface, u, v, gaussian, mean);
 }
 
 // end of v0.115.0 implementations

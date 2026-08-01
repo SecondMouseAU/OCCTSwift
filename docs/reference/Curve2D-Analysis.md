@@ -24,18 +24,21 @@ Differential geometry queries evaluated at a parametric point on the curve, back
 Returns the signed curvature (1 / radius of curvature) at parameter `u`.
 
 ```swift
-public func curvature(at u: Double) -> Double
+public func curvature(at u: Double) -> Double?
 ```
 
-Returns `0` for straight segments or when `Geom2dLProp_CLProps2d` cannot compute the value at the given point.
+Returns `0` for straight segments — a real answer — and `nil` where `GeomLProp_CLProps2d::IsTangentDefined()` is false. Those two used to be the same `0` (#595).
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature value; `0` on error or for a straight segment.
+- **Returns:** Curvature value, `0` for a straight segment, or `nil` where the curve has no tangent there (a Bezier whose control points all coincide) or the parameter cannot be evaluated. A **cusp** still reports `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature): an answer, not an absence.
 - **OCCT:** `Geom2dLProp_CLProps2d::Curvature`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
       let k = circle.curvature(at: 0)  // ≈ 0.2 (1/R)
+  }
+  if let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)) {
+      seg.curvature(at: 5)             // 0 — straight, and that is the answer
   }
   ```
 

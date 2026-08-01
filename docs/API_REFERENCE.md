@@ -465,7 +465,7 @@ a map of the major areas, and the `Total` as the count.
 | **MathPoly rc4** | 4 | linearRoots, quadraticRoots, cubicRoots, quarticRoots |
 | **MathInteg rc4** | 5 | integGauss, integGaussAdaptive, integKronrod, integKronrodAdaptive, integTanhSinh |
 | **UnitsMethods** | 3 | lengthFactor, lengthUnitScale, dumpLengthUnit |
-| **LProp3d Curve** | 4 | localCurvature, localTangent, localNormal, localCentreOfCurvature |
+| **LProp3d Curve** | 4 | localTangent, localNormal, localCentreOfCurvature; localCurvature *deprecated (#595)* — it forwards to `Curve3D.curvature(at:)`, the same call since #494 gave the two one resolution |
 | **LProp3d Surface** | 2 | localCurvatures, localCurvatureDirections |
 | **ProjLib Projectors** | 3 | projectLineOnPlane, projectLineOnCylinder, projectCircleOnPlane |
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
@@ -573,7 +573,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve2D.ellipse(...)` | `Geom2d_Ellipse` |
 | `Curve2D.bspline(...)` | `Geom2d_BSplineCurve` |
 | `Curve2D.interpolate(through:)` | `Geom2dAPI_Interpolate` |
-| `curve.curvature(at:)` | `Geom2dLProp_CLProps2d` |
+| `curve.curvature(at:)` — `Double?`, `nil` where no tangent is defined (#595) | `Geom2dLProp_CLProps2d` |
 | `curve.intersections(with:)` | `Geom2dAPI_InterCurveCurve` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
 | `Curve2DGcc.circlesTangentWithCenter(...)` | `Geom2dGcc_Circ2dTanCen` |
@@ -590,7 +590,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve3D.bspline(...)` | `Geom_BSplineCurve` |
 | `Curve3D.interpolate(points:...)` | `GeomAPI_Interpolate` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
-| `curve.curvature(at:)` | `GeomLProp_CLProps` |
+| `curve.curvature(at:)` / `curve.torsion(at:)` — both `Double?` since #595 | `GeomLProp_CLProps` |
 | `Curve3D.join(_:)` | `GeomConvert::ConcatG1` |
 
 #### Parametric Surfaces (v0.20.0)
@@ -605,7 +605,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Surface.pipe(path:radius:)` | `GeomFill_Pipe` |
 | `surface.uIso(at:)` / `surface.vIso(at:)` | `Geom_Surface::UIso/VIso` |
 | `surface.drawGrid(...)` / `surface.drawMesh(...)` | Grid/mesh discretization |
-| `surface.gaussianCurvature(atU:v:)` | `GeomLProp_SLProps` |
+| `surface.gaussianCurvature(atU:v:)` / `meanCurvature(atU:v:)` / `curvatures(u:v:)` — all optional since #595 | `GeomLProp_SLProps` |
 
 #### Face Surface Analysis (v0.18.0)
 | Swift API | OCCT Class |

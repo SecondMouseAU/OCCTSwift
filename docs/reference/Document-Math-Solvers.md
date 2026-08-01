@@ -1058,12 +1058,15 @@ public func edgeTangent(at param: Double) -> SIMD3<Double>?
 Scalar curvature on an edge at the given parameter.
 
 ```swift
-public func edgeCurvatureLP(at param: Double) -> Double
+public func edgeCurvatureLP(at param: Double) -> Double?
 ```
 
-- **Returns:** Curvature magnitude: `0` for a straight edge or a parameter with no tangent, and
-  `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) at a cusp —
-  the same two sentinels [`Edge.curvature(at:)`](Edge.md) reports for the curve underneath.
+- **Returns:** Curvature magnitude: `0` for a straight edge, which is a real answer, and `nil` where
+  there is none — this `Shape` is not an edge, the parameter cannot be evaluated, or the tangent is
+  undefined there. Those were the same `0` until #595, and the degeneracy is not exotic: a sphere
+  carries a **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
+  skip them. `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is
+  still reported at a cusp, matching [`Edge.curvature(at:)`](Edge.md) on the curve underneath.
 - **OCCT:** `BRepLProp_CLProps::Curvature` via `OCCTEdgeLPropCurvature`.
 
 ---
@@ -1115,7 +1118,7 @@ public func edgeLPropD1(at param: Double) -> SIMD3<Double>?
   ```swift
   let edge: Shape = ...  // an edge shape
   let tangent = edge.edgeTangent(at: 0.5)
-  let curv    = edge.edgeCurvatureLP(at: 0.5)
+  let curv    = edge.edgeCurvatureLP(at: 0.5)   // Double?
   ```
 
 ---

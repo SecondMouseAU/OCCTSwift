@@ -868,14 +868,21 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef c, double deflection,
 
 // Local Properties
 
-double OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: the curvature is reported alongside whether there is one, rather than spelled 0 when there
+// is not. A straight curve's curvature is exactly 0 with the tangent perfectly well defined, so the
+// old encoding could not tell a line from a curve with no derivatives at all. See
+// Scripts/repro/595-curvature-zero-sentinel/. A cusp is NOT an absence: OCCT reports RealLast()
+// there, meaning infinite, and that sentinel passes through unchanged.
+bool OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -928,8 +935,13 @@ bool OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef c, double u,
     }
 }
 
-double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: torsion is only defined where the curve has an osculating plane to twist out of, and the
+// same 0 used to mean both "it does not" and "it does, and the curve lies flat in it". Every planar
+// curve -- every circle and ellipse in the suite -- reports a real torsion of exactly 0, so that
+// collision is as ordinary as the curvature one a few functions above.
+bool OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u, double* torsion) {
+    *torsion = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         gp_Pnt pnt;
         gp_Vec d1, d2, d3;
@@ -937,10 +949,11 @@ double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
 
         gp_Vec cross = d1.Crossed(d2);
         double crossMag2 = cross.SquareMagnitude();
-        if (crossMag2 < Precision::Confusion()) return 0.0;
-        return cross.Dot(d3) / crossMag2;
+        if (crossMag2 < Precision::Confusion()) return false;
+        *torsion = cross.Dot(d3) / crossMag2;
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -4778,25 +4791,16 @@ OCCTCurve3DRef _Nullable OCCTHelixApproxToBSpline(double t1, double t2, double p
 
 // MARK: - v0.116: Curve3D Local Curvature/Tangent/Normal/CentreOfCurvature
 //
-// The same four GeomLProp_CLProps quantities as OCCTCurve3DGetCurvature / GetTangent / GetNormal /
-// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All four
-// used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with their
-// canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose first
-// two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical props
-// returned RealLast(). They now build props through occtCurveLocalProps (#494).
-double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u) {
-    if (curve->curve.IsNull()) return 0.0;
-    try {
-        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
-        // Curvature() reads derivatives IsTangentDefined() is what establishes as meaningful. It
-        // does raise LProp_NotDefined itself, but only through LProp_NotDefined_Raise_if, which
-        // compiles out under No_Exception — defined for the OCCT build, not for this one. Asking
-        // first, as the canonical sibling does, does not depend on which side of that macro the
-        // code lands on.
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
-    } catch (...) { return 0.0; }
-}
+// The same three GeomLProp_CLProps quantities as OCCTCurve3DGetTangent / GetNormal /
+// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All of
+// them used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with
+// their canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose
+// first two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical
+// props returned RealLast(). They now build props through occtCurveLocalProps (#494).
+//
+// There were four. OCCTCurve3DLocalCurvature was removed in #595: once #494 gave it the shared
+// resolution it was OCCTCurve3DGetCurvature line for line, and measured over the same curves the two
+// agreed on every row, degenerate ones included.
 
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
                                double* _Nonnull tx, double* _Nonnull ty, double* _Nonnull tz,

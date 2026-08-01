@@ -5761,17 +5761,21 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
 #include <Geom2dGcc_QualifiedCurve.hxx>
 #include <GccEnt_Position.hxx>
 
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: reports whether there is a curvature rather than spelling its absence 0, which is also a
+// straight 2D curve's real answer. Matches OCCTCurve3DGetCurvature, here as in #494.
+bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
         // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
         // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
