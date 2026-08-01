@@ -2782,7 +2782,15 @@ against the pinned kernel (`Scripts/repro/605-center-of-mass/`) established thre
 that enclose no volume, where they previously returned a bounding-box centre. Callers using
 `Shape.centerOfMass` as a positional key for a face, edge or vertex should move to `vertices()` for
 a vertex position, `surfaceInertia` for an area centroid, or `linearProperties()` for a length
-centroid, all of which were already correct. No API signature changed.
+centroid, all of which were already correct. No API signature changed, so this is a change of value
+rather than a compile error.
+
+**Release train.** Two consumers are affected and are filed, not fixed here. Land
+[OCCTMCP#168](https://github.com/SecondMouseAU/OCCTMCP/issues/168) *before* bumping OCCTMCP's
+OCCTSwift pin past this release: four vertex sites there read `centerOfMass ?? .zero`, and the `??`
+would swallow the new `nil` and collapse every vertex onto the origin without an error.
+[OCCTReconstruct#552](https://github.com/SecondMouseAU/OCCTReconstruct/issues/552) is a re-run only,
+no code change expected.
 
 Nine regression tests (`Tests/OCCTAnalysisTests/CenterOfMassTests.swift`), each on a shape whose
 bounding-box centre differs from its centre of mass, since every pre-existing assertion used a box
