@@ -75,6 +75,59 @@ implementation fails 7 of the 10, and the 3 that pass are exactly the deliberate
 (a point with a perpendicular foot, an out-of-range index, and the pre-existing in-range case).
 Bridge-only — no kernel patch, no `OCCT.xcframework` rebuild.
 
+#### Five knot-splitting spellings collapse onto two, and the "strictly weaker" duplicate turned out to be the stronger one (#562)
+
+`GeomConvert_BSplineSurfaceKnotSplitting` and `Geom2dConvert_BSplineCurveKnotSplitting` were each
+wrapped twice, by two families added three releases apart: `Surface.knotSplitting` and
+`Curve2D.splitIndicesAtDiscontinuities` (canonical), and a v0.105.0 set of five
+(`Surface.bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`,
+`Curve2D.bsplineKnotSplits`/`bsplineKnotSplitValues`). All five are now deprecated and forward to
+their canonical sibling; their five bridge functions are deleted.
+
+**The premise that the five were strictly weaker did not survive measurement.**
+`Curve2D.bsplineKnotSplitValues` sized its buffer from the analyzer's own count, where
+`splitIndicesAtDiscontinuities` read a fixed 256 entries and took whatever came back — and the
+bridge returned the count it had *written*, so truncation was indistinguishable from a curve with
+exactly 256 splits. On a cubic with 300 interior knots at multiplicity 3 (302 splits):
+
+| call | before | now |
+|---|---|---|
+| `splitIndicesAtDiscontinuities(continuity: .c1)` | 256 indices, last `256` | 302 indices, last `302` |
+| `bsplineKnotSplitValues(continuity: .c1)` | 302 | 302 |
+
+Forwarding without fixing that would have regressed the deprecated spelling, so
+`OCCTCurve2DSplitAtDiscontinuities` now reports the true count and the Swift caller re-reads at it —
+the #481 contract every other member of this family already shared. That is a **C-layer contract
+change**: a direct bridge caller that treated the return as "how many were written" must now clamp
+it. `OCCTBridge` is not an SPM product, so no Swift package is affected.
+
+**What the deleted family carried that the canonical calls did not: the raw knot-table indices.**
+The analyzer reports indices and `OCCTSurfaceKnotSplitting` converted them to parameters, so the raw
+form was reachable only through `bsplineKnotSplitValues` — which constructed the analyzer three more
+times to get it, once per count call and once for the values. `KnotSplitResult` now carries
+`uSplitIndices`/`vSplitIndices` alongside the parameters, from the one construction that was already
+happening, with `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])` by construction. That
+answers the issue's open question about whether the index-returning form was worth keeping: the
+information was, the three extra entry points were not.
+
+Both deleted values functions also took no buffer capacity at all — each wrote `NbSplits()` entries
+into a buffer the caller had sized from a *separate* call, which was only safe because the analyzer
+is deterministic. Recorded in the bridge header so it is not reintroduced.
+
+`OCCTBridge.h`'s cross-reference index named none of the three `*KnotSplitting` conversion classes,
+which is half of why the double-wrap went unnoticed for three releases — the index is the map used
+to find every call site of a class (#510). It gains `GeomConvert_BSplineCurveKnotSplitting`,
+`GeomConvert_BSplineSurfaceKnotSplitting`, and a `--- Geom2dConvert ---` section that did not exist
+at all, censused by call site across its six classes.
+
+Tests: `Issue562Curve2DKnotSplitDuplicateTests` (`OCCTGeom2dTests`, 4 tests) and
+`Issue562SurfaceKnotSplitDuplicateTests` (`OCCTSurfaceTests`, 5 tests). Expectations are absolute —
+the fixture's own knot indices and knot table — rather than agreement between the two spellings,
+which stopped being evidence the moment one started forwarding to the other. Three injected defects
+(written-count truncation, 0-based indices, V continuity collapsed onto U) each fail the tests that
+should catch them; the last is caught by the new suite alone and by none of the existing #403 or
+#480 coverage.
+
 #### The cross-reference index stops naming 135 symbols that never existed (#510)
 
 `OCCTBridge.h` opens with a hand-maintained index mapping each wrapped OCCT class to the bridge

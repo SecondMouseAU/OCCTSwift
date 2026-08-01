@@ -687,10 +687,21 @@ public final class Curve2D: @unchecked Sendable {
     ///   saturates there (#480).
     /// - Returns: Array of knot indices where the curve drops below the requested continuity, or nil if not a B-spline.
     public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]? {
-        var buffer = [Int32](repeating: 0, count: 256)
-        let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue, &buffer, 256))
+        // Read-then-retry, the #481 pattern the rest of this family shares: the bridge reports the
+        // true split count even when it wrote fewer, so one retry sized to it is always enough.
+        // Before #562 this read a fixed 256 entries and took whatever came back, so a curve with
+        // more splits than that was silently cut off at 256 with nothing to notice it by.
+        func read(capacity: Int) -> (count: Int, buffer: [Int32]) {
+            var buffer = [Int32](repeating: 0, count: capacity)
+            let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue,
+                                                          &buffer, Int32(capacity)))
+            return (n, buffer)
+        }
+
+        var (n, buffer) = read(capacity: 256)
         guard n > 0 else { return nil }
-        return (0..<n).map { Int(buffer[$0]) }
+        if n > 256 { (n, buffer) = read(capacity: n) }
+        return buffer.prefix(n).map(Int.init)
     }
 
     /// Approximate this curve as a sequence of arcs and line segments.

@@ -584,16 +584,20 @@ public func knotSplitting(
 ) -> KnotSplitResult
 ```
 
-Returns the number of U and V splits needed, plus the actual U/V parameter values at each
-split; does not modify the surface. Each direction's own first and last knots are always
-included, so a direction that never drops below the requested continuity reports exactly those
-two rather than nothing.
+Returns the number of U and V splits needed, the actual U/V parameter values at each split, and
+the knot-table indices those parameters were read from; does not modify the surface. Each
+direction's own first and last knots are always included, so a direction that never drops below
+the requested continuity reports exactly those two rather than nothing.
 
 - **Parameters:** `uContinuity`: minimum continuity to require of each U patch; `vContinuity`:
   the same against the V degree and V knots.
-- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount` and `uSplitParams`/`vSplitParams`
-  (ascending, bounded by the surface's own U/V domain).
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting`.
+- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount`, `uSplitParams`/`vSplitParams`
+  (ascending, bounded by the surface's own U/V domain) and `uSplitIndices`/`vSplitIndices`
+  (1-based into the surface's own knot tables, so
+  `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`).
+- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting` — the sole wrapper of it, since #562 deleted
+  the second family (`bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`) that also
+  drove it. The indices are what that family carried and this call previously discarded.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
   `degree - multiplicity < continuity`. So the meaningful range is `0...degree` and it saturates
   there. A bicubic surface with simple interior knots is already C2 at every interior knot, which
@@ -610,6 +614,9 @@ two rather than nothing.
   let result = surf.knotSplitting(uContinuity: .c3, vContinuity: .c3)
   print("U splits needed:", result.uSplitCount, result.uSplitParams)
   print("V splits needed:", result.vSplitCount, result.vSplitParams)
+
+  // The raw knot indices, and the identity that ties them to the parameters.
+  print(result.uSplitIndices.map { surf.bsplineUKnot(index: $0) } == result.uSplitParams)  // true
   ```
 
 ---
