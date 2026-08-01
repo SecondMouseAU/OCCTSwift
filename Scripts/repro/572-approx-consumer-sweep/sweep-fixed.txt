@@ -1,0 +1,79 @@
+=== OCCTSwift #572: GeomConvert_ApproxSurface consumers, fingerprinted ===
+
+### row 1 — GeomFill_Sweep.cxx:296 (pipe shell / sweep)
+sweep/MakePipe                     vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
+pipeShell/force=0/mode=0           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
+pipeShell/force=0/mode=1           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
+pipeShell/force=1/mode=0           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
+pipeShell/force=1/mode=1           vol=75.3982236862 area=163.011356951 nF=2 nE=5 nV=3 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=d8c89be882ad0032
+pipeShell/c0Spine/force=0          vol=43.8442278554 area=114.603879832 nF=1 nE=3 nV=2 bsplineF=1 maxDeg=6x4 maxPoles=6x9 faces=9cc03636c6df19ab
+pipeShell/c0Spine/force=1          vol=40.7072578548 area=139.650163212 nF=1 nE=3 nV=2 bsplineF=1 maxDeg=14x14 maxPoles=41x67 faces=13935fc8014d39ad
+pipeShell/multiSection/force=0     vol=143.881452397 area=197.769776955 nF=2 nE=6 nV=4 bsplineF=2 maxDeg=10x4 maxPoles=11x9 faces=ed88c6cd5a4cd7f0
+pipeShell/multiSection/force=1     vol=190.537620487 area=407.193903493 nF=2 nE=6 nV=4 bsplineF=2 maxDeg=14x14 maxPoles=41x67 faces=2baf9081b22a8e40
+pipeShell/arc/force=0              vol=-227.395685401 area=378.992809002 nF=1 nE=2 nV=1 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=de11ef4e8311ef8b
+pipeShell/arc/force=1              vol=-227.395685401 area=378.992809002 nF=1 nE=2 nV=1 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=de11ef4e8311ef8b
+
+### row 2 — BRepOffset_Offset.cxx:1626 (offset / thick solid)
+offsetByJoin/join=0                vol=1020.83773385 area=549.592894688 nF=26 nE=48 nV=24 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=38b8ff4d3aadb20b
+offsetByJoin/join=1                shape=NULL
+offsetByJoin/join=2                vol=1120 area=664 nF=6 nE=12 nV=8 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=68d4d1f17af6c6c7
+offsetByJoin/cylinder              vol=674.518008177 area=399.844112315 nF=5 nE=7 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=6bef7b86f6761d6d
+thickSolid/box                     vol=273.218284916 area=571.672557571 nF=23 nE=48 nV=28 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=ad3b6a27164174ae
+thickSolid/cylinder                vol=169.888729908 area=443.15250167 nF=6 nE=8 nV=5 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=23fc594f9e7e8361
+
+### row 3 — ShapeUpgrade_UnifySameDomain.cxx:3629 (unify same domain)
+unify/cylinderHalves/input         vol=226.194671058 area=207.345115137 nF=6 nE=8 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=a7fdc8924e9ff93f
+unify/cylinderHalves/concat=0      vol=226.194671058 area=207.345115137 nF=3 nE=3 nV=2 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=b8b2856a81204369
+unify/cylinderHalves/concat=1      vol=226.194671058 area=207.345115137 nF=3 nE=3 nV=2 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=b8b2856a81204369
+unify/sphere/concat=1              vol=523.598775598 area=314.159265359 nF=1 nE=3 nV=2 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=71b434f7144ae960
+unify/torus/concat=1               vol=631.65468167 area=631.65468167 nF=1 nE=2 nV=1 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=e662dd5f3450d2f2
+unify/twoBoxes/concat=1            vol=480 area=448 nF=6 nE=12 nV=8 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=68d4d1f17af6c6c7
+unify/boxPlusCylinder/concat=1     vol=426.194671058 area=430.796447372 nF=8 nE=15 nV=10 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=2a3af1a863a73aca
+unify/closedExtrusion/base         uClosed=1 uPeriodic=0
+unify/closedExtrusion/input        vol=177.520767663 area=129.664771896 nF=2 nE=6 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=e4e09cee876c3d11
+unify/closedExtrusion/concat=1     vol=177.520767663 area=129.664771896 nF=2 nE=6 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=e4e09cee876c3d11
+
+### row 4 — GeomLib.cxx:1517 (ExtendSurfByLength)
+geomLib/revolutionC2/inU=0         type=Geom_BSplineSurface                uDeg=12 vDeg=3 uPoles=13 vPoles=6 uKnots=2 vKnots=3 uPer=0 vPer=0 U[0 4] V[0 1.05324] pts=56fa89ba068acdb2
+geomLib/revolutionC2/inU=1         type=Geom_BSplineSurface                uDeg=12 vDeg=3 uPoles=24 vPoles=4 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 4.125] V[0 1] pts=5a2c0db2b3dcc079
+geomLib/revolutionC0/inU=0         type=Geom_BSplineSurface                uDeg=14 vDeg=14 uPoles=41 vPoles=80 uKnots=4 vKnots=7 uPer=0 vPer=0 U[0 4] V[0 1.08667] pts=f14d1cda3ec575ef
+geomLib/revolutionC0/inU=1         type=Geom_BSplineSurface                uDeg=14 vDeg=14 uPoles=54 vPoles=67 uKnots=5 vKnots=6 uPer=0 vPer=0 U[0 4.11911] V[0 1] pts=b6091b8a46ccd5e5
+geomLib/extrusion/inU=0            type=Geom_RectangularTrimmedSurface     U[0 1] V[-3 4] pts=623c85388dbe32af
+geomLib/extrusion/inU=1            type=Geom_BSplineSurface                uDeg=3 vDeg=3 uPoles=6 vPoles=4 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 1.05893] V[-3 3] pts=3f033a48ea5e58c1
+geomLib/offsetSphere/inU=0         type=Geom_BSplineSurface                uDeg=12 vDeg=10 uPoles=13 vPoles=20 uKnots=2 vKnots=3 uPer=0 vPer=0 U[0 4] V[-1 1.14514] pts=cddbe7ab94c28ff0
+geomLib/offsetSphere/inU=1         type=Geom_BSplineSurface                uDeg=12 vDeg=10 uPoles=24 vPoles=11 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 4.15759] V[-1 1] pts=97eccd06138481f1
+fillet/boxAllEdges                 vol=224.171087355 area=212.530964915 nF=26 nE=56 nV=24 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=f54349e8573eb09f
+fillet/cylinderAllEdges            vol=221.325293938 area=193.83125947 nF=5 nE=7 nV=4 bsplineF=0 maxDeg=0x0 maxPoles=0x0 faces=2cdde2c40cc821c5
+
+### row 5 — GeomConvert_1.cxx:786/:960 (Surface.toBSpline)
+toBSpline/revolutionC2             type=Geom_BSplineSurface                uDeg=2 vDeg=3 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[0 1] pts=b27220d92373484f
+toBSpline/revolutionC0             type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[0 1] pts=e9238edaca6b08bf
+toBSpline/trimRevolutionC2         type=Geom_BSplineSurface                uDeg=2 vDeg=3 uPoles=5 vPoles=5 uKnots=3 vKnots=3 uPer=0 vPer=0 U[0 4] V[0 1] pts=2fad9e45f705c5a0
+toBSpline/trimRevolutionC0         type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=5 vPoles=5 uKnots=3 vKnots=3 uPer=0 vPer=0 U[0 4] V[0 1] pts=46e7364c59ad92fb
+toBSpline/trimExtrusionC2          type=Geom_BSplineSurface                uDeg=3 vDeg=1 uPoles=5 vPoles=2 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 1] V[-3 3] pts=30c6df3aab4cf8e6
+toBSpline/trimExtrusionC0          type=Geom_BSplineSurface                uDeg=2 vDeg=1 uPoles=5 vPoles=2 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 1] V[-3 3] pts=278c932cd1d097d1
+toBSpline/offsetSphere             type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[-1.5708 1.5708] pts=34673c1bc502e7c1
+toBSpline/trimOffsetSphere         type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=5 vPoles=3 uKnots=3 vKnots=2 uPer=0 vPer=0 U[0 4] V[-1 1] pts=a5509801ab3e2eaa
+toBSpline/offsetRevolutionC0       CONSTRUCT-THREW Offset with no C1 Surface
+toBSpline/offsetRevolutionC2       type=Geom_BSplineSurface                uDeg=12 vDeg=12 uPoles=13 vPoles=46 uKnots=2 vKnots=5 uPer=0 vPer=0 U[0 6.28319] V[0 1] pts=abe22b5433bd9da2
+toBSpline/trimOffsetRevolutionC2   type=Geom_BSplineSurface                uDeg=10 vDeg=11 uPoles=11 vPoles=42 uKnots=2 vKnots=5 uPer=0 vPer=0 U[0 4] V[0 1] pts=892bbccaf9c3dca7
+toBSpline/c1InU/base               isCNu1=1 isCNu2=0 isCNv2=1
+toBSpline/offsetC1InU/base         isCNu1=0 isCNv1=1
+toBSpline/offsetC1InU              type=Geom_BSplineSurface                uDeg=13 vDeg=14 uPoles=66 vPoles=15 uKnots=6 vKnots=2 uPer=0 vPer=0 U[0 1] V[0 1] pts=8c06e50fc2bf6885
+toBSpline/trimOffsetC1InU          type=Geom_BSplineSurface                uDeg=14 vDeg=14 uPoles=80 vPoles=54 uKnots=7 vKnots=5 uPer=0 vPer=0 U[0.1 0.9] V[0.1 0.9] pts=c4cffb0ca2dcc92a
+toBSpline/sphere                   type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=5 uKnots=4 vKnots=3 uPer=1 vPer=0 U[0 6.28319] V[-1.5708 1.5708] pts=49d764a529c273cd
+toBSpline/torus                    type=Geom_BSplineSurface                uDeg=2 vDeg=2 uPoles=6 vPoles=6 uKnots=4 vKnots=4 uPer=1 vPer=1 U[0 6.28319] V[0 6.28319] pts=c8513263ce25ebb7
+toBSpline/trimCylinder             type=Geom_BSplineSurface                uDeg=2 vDeg=1 uPoles=7 vPoles=2 uKnots=4 vKnots=2 uPer=0 vPer=0 U[0 6] V[0 4] pts=58309131b9feaad5
+
+### direction — each reached site's own request, reported error vs real deviation
+dir/sweptSurface(C1,1e-4,nmax16)   isDone=0 tol=0.0001 maxError=2.54714 paramDev=1.76189 projDev=0.175657 ratio=0.06896 deg=14x14 poles=41x67 worstAt=(6.283,0.65) srcU[0 6.28319]V[0 1] fitU[0 6.28319]V[0 1]
+dir/revolutionC0(C1,1e-7,nmax16)   isDone=0 tol=1e-07 maxError=1.88652 paramDev=1.176 projDev=0.390783 ratio=0.2071 deg=14x14 poles=41x67 worstAt=(1,0.65) srcU[0 4]V[0 1] fitU[0 4]V[0 1]
+dir/revolutionC2(C1,1e-7,nmax16)   isDone=1 tol=1e-07 maxError=6.78222e-09 paramDev=4.46916e-09 projDev=4.40276e-09 ratio=0.6492 deg=12x3 poles=13x4 worstAt=(3.8,0.5) srcU[0 4]V[0 1] fitU[0 4]V[0 1]
+dir/offsetC1InU(C0/C2,1e-4,nmax24) isDone=1 tol=0.0001 maxError=4.14236e-05 paramDev=1.07704e-05 projDev=8.0698e-06 ratio=0.1948 deg=13x14 poles=66x15 worstAt=(0.95,0.8) srcU[0 1]V[0 1] fitU[0 1]V[0 1]
+dir/trimOffsetC1InU(C1,1e-4,nmax24) isDone=0 tol=0.0001 maxError=0.341 paramDev=0.255985 projDev=0.038364 ratio=0.1125 deg=14x14 poles=80x54 worstAt=(0.58,0.1) srcU[0.1 0.9]V[0.1 0.9] fitU[0.1 0.9]V[0.1 0.9]
+dir/closedExtrusion(C1,1e-4,nmax16) isDone=1 tol=0.0001 maxError=1.92543e-14 paramDev=1.98603e-15 projDev=1.78415e-15 ratio=0.09266 deg=3x3 poles=10x4 worstAt=(0.8,4.75) srcU[0 1]V[0 5] fitU[0 1]V[0 5]
+
+### end to end — the forced-C1 pipe shell against the un-forced one
+e2e/pipeShellForceApproxC1         devPlainToForced=0.175657 devForcedToPlain=1.44036 volPlain=43.8442279 volForced=40.7072579
+
+=== done ===

@@ -1,0 +1,240 @@
+Precision::Approximation() = 1e-06   Precision::Confusion() = 1e-07
+
+=========================================================================
+ 1. ShapeConstruct::ConvertSurfaceToBSpline (tol=Precision::Approximation(),
+    MaxSegments=10000, MaxDegree=15 — exactly what ShapeCustom_ConvertToBSpline passes)
+=========================================================================
+  offset(sphere r=10, +2) full   domain U[0 6.28319] V[-1.5708 1.5708]
+    req=C0         type=BSplineSurface               deg=13x10  poles=14x11  knots=2x2  dev=1.21031e-07
+    req=C1         type=BSplineSurface               deg=15x11  poles=16x12  knots=2x2  dev=6.46559e-09
+    req=C2         type=BSplineSurface               deg=15x12  poles=16x13  knots=2x2  dev=1.37232e-08
+
+  offset(sphere r=10, +2) V[-1,1]   domain U[0 6.28319] V[-1 1]
+    req=C0         type=BSplineSurface               deg=14x9  poles=15x10  knots=2x2  dev=1.79867e-08
+    req=C1         type=BSplineSurface               deg=14x10  poles=15x11  knots=2x2  dev=2.66697e-08
+    req=C2         type=BSplineSurface               deg=15x10  poles=16x11  knots=2x2  dev=2.26779e-08
+
+  offset(cylinder r=5, +1)   domain U[0 6.28319] V[-10 10]
+    req=C0         type=BSplineSurface               deg=14x1  poles=15x2  knots=2x2  dev=8.11891e-09
+    req=C1         type=BSplineSurface               deg=14x3  poles=15x4  knots=2x2  dev=1.26447e-08
+    req=C2         type=BSplineSurface               deg=14x5  poles=15x6  knots=2x2  dev=2.09861e-08
+
+  offset(torus 20/5, +1)   domain U[0 6.28319] V[0 6.28319]
+    req=C0         type=BSplineSurface               deg=14x14  poles=15x15  knots=2x2  dev=3.61434e-08
+    req=C1         type=BSplineSurface               deg=15x14  poles=16x15  knots=2x2  dev=1.34977e-08
+    req=C2         type=BSplineSurface               deg=15x14  poles=16x15  knots=2x2  dev=2.41279e-08
+
+  offset(cone, +1)   domain U[0 6.28319] V[0 12]
+    req=C0         type=BSplineSurface               deg=14x1  poles=15x2  knots=2x2  dev=3.90978e-08
+    req=C1         type=BSplineSurface               deg=14x3  poles=15x4  knots=2x2  dev=1.81116e-08
+    req=C2         type=BSplineSurface               deg=15x5  poles=16x6  knots=2x2  dev=1.53736e-08
+
+  offset(bicubic bspline, +1)   domain U[0 1] V[0 1]
+    req=C0         type=BSplineSurface               deg=10x10  poles=21x21  knots=3x3  dev=4.41225e-08
+    req=C1         type=BSplineSurface               deg=13x13  poles=26x26  knots=3x3  dev=1.98156e-08
+    req=C2         type=BSplineSurface               deg=15x15  poles=29x29  knots=3x3  dev=1.50518e-08
+
+  offset(revolved ellipse, +1)   domain U[0 6.28319] V[0 6.28319]
+    req=C0         type=BSplineSurface               deg=14x11  poles=15x133  knots=2x13  dev=2.84163e-08
+    req=C1         type=BSplineSurface               deg=15x12  poles=16x134  knots=2x13  dev=1.73817e-08
+    req=C2         type=BSplineSurface               deg=15x13  poles=16x135  knots=2x13  dev=2.46207e-08
+
+  revolved ellipse   domain U[0 6.28319] V[0 6.28319]
+    req=C0         type=BSplineSurface               deg=14x14  poles=15x15  knots=2x2  dev=3.02287e-08
+    req=C1         type=BSplineSurface               deg=15x14  poles=16x15  knots=2x2  dev=7.58107e-09
+    req=C2         type=BSplineSurface               deg=15x15  poles=16x16  knots=2x2  dev=1.55283e-08
+
+  bicubic bspline   domain U[0 1] V[0 1]
+    req=C0         type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=4.52884e-15
+    req=C1         type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=4.18953e-15
+    req=C2         type=BSplineSurface               deg=5x5  poles=6x6  knots=2x2  dev=1.16229e-14
+
+  sphere r=10 (elementary)   domain U[0 6.28319] V[-1.5708 1.5708]
+    req=C0         type=BSplineSurface               deg=2x2  poles=6x5  knots=4x3  dev=0.402364
+    req=C1         type=BSplineSurface               deg=2x2  poles=6x5  knots=4x3  dev=0.402364
+    req=C2         type=BSplineSurface               deg=2x2  poles=6x5  knots=4x3  dev=0.402364
+
+=========================================================================
+ 2. The accepted number: GeomConvert_ApproxSurface(surf, Tol3d/2, cnt, cnt, 15, 15,
+    10000, 0).MaxError() vs the real deviation, and whether MaxError() <= Tol3d holds
+=========================================================================
+  offset(sphere r=10, +2) full
+    req=C0  isDone=1 maxError=3.18336e-07   accepted=YES deg=13x10 poles=14x11 dev=1.21031e-07
+    req=C1  isDone=1 maxError=5.06412e-08   accepted=YES deg=15x11 poles=16x12 dev=6.46559e-09
+    req=C2  isDone=1 maxError=3.80588e-08   accepted=YES deg=15x12 poles=16x13 dev=1.37232e-08
+
+  offset(sphere r=10, +2) V[-1,1]
+    req=C0  isDone=1 maxError=5.34096e-08   accepted=YES deg=14x9 poles=15x10 dev=1.79867e-08
+    req=C1  isDone=1 maxError=6.61819e-08   accepted=YES deg=14x10 poles=15x11 dev=2.66697e-08
+    req=C2  isDone=1 maxError=5.59135e-08   accepted=YES deg=15x10 poles=16x11 dev=2.26779e-08
+
+  offset(cylinder r=5, +1)
+    req=C0  isDone=1 maxError=1.33167e-08   accepted=YES deg=14x1 poles=15x2 dev=8.11891e-09
+    req=C1  isDone=1 maxError=2.42964e-08   accepted=YES deg=14x3 poles=15x4 dev=1.26447e-08
+    req=C2  isDone=1 maxError=4.90577e-08   accepted=YES deg=14x5 poles=15x6 dev=2.09861e-08
+
+  offset(torus 20/5, +1)
+    req=C0  isDone=1 maxError=9.93559e-08   accepted=YES deg=14x14 poles=15x15 dev=3.61434e-08
+    req=C1  isDone=1 maxError=3.92784e-08   accepted=YES deg=15x14 poles=16x15 dev=1.34977e-08
+    req=C2  isDone=1 maxError=9.76473e-08   accepted=YES deg=15x14 poles=16x15 dev=2.41279e-08
+
+  offset(cone, +1)
+    req=C0  isDone=1 maxError=8.12008e-08   accepted=YES deg=14x1 poles=15x2 dev=3.90978e-08
+    req=C1  isDone=1 maxError=3.48008e-08   accepted=YES deg=14x3 poles=15x4 dev=1.81116e-08
+    req=C2  isDone=1 maxError=3.20597e-08   accepted=YES deg=15x5 poles=16x6 dev=1.53736e-08
+
+  offset(bicubic bspline, +1)
+    req=C0  isDone=1 maxError=2.12275e-07   accepted=YES deg=10x10 poles=21x21 dev=4.41225e-08
+    req=C1  isDone=1 maxError=6.93695e-08   accepted=YES deg=13x13 poles=26x26 dev=1.98156e-08
+    req=C2  isDone=1 maxError=4.39925e-08   accepted=YES deg=15x15 poles=29x29 dev=1.50518e-08
+
+  offset(revolved ellipse, +1)
+    req=C0  isDone=1 maxError=1.74925e-07   accepted=YES deg=14x11 poles=15x133 dev=2.84163e-08
+    req=C1  isDone=1 maxError=9.12055e-08   accepted=YES deg=15x12 poles=16x134 dev=1.73817e-08
+    req=C2  isDone=1 maxError=1.21439e-07   accepted=YES deg=15x13 poles=16x135 dev=2.46207e-08
+
+  revolved ellipse
+    req=C0  isDone=1 maxError=6.07623e-08   accepted=YES deg=14x14 poles=15x15 dev=3.02287e-08
+    req=C1  isDone=1 maxError=6.18682e-08   accepted=YES deg=15x14 poles=16x15 dev=7.58107e-09
+    req=C2  isDone=1 maxError=1.02599e-07   accepted=YES deg=15x15 poles=16x16 dev=1.55283e-08
+
+  bicubic bspline
+    req=C0  isDone=1 maxError=1.48435e-14   accepted=YES deg=3x3 poles=4x4 dev=4.52884e-15
+    req=C1  isDone=1 maxError=2.15259e-14   accepted=YES deg=3x3 poles=4x4 dev=4.18953e-15
+    req=C2  isDone=1 maxError=2.11677e-14   accepted=YES deg=5x5 poles=6x6 dev=1.16229e-14
+
+  sphere r=10 (elementary)
+    req=C0  isDone=1 maxError=2.6528e-07    accepted=YES deg=13x10 poles=14x11 dev=1.00859e-07
+    req=C1  isDone=1 maxError=1.00973e-07   accepted=YES deg=14x11 poles=15x12 dev=2.07919e-08
+    req=C2  isDone=1 maxError=7.33994e-08   accepted=YES deg=15x12 poles=16x13 dev=1.45869e-08
+
+=========================================================================
+ 3. ShapeCustom::ConvertToBSpline(shape, extr, revol, offset, plane)
+=========================================================================
+  offset(sphere r=10, +2) full
+    offset=true    type=BSplineSurface               deg=13x10  poles=14x11  knots=2x2  dev=1.21031e-07
+    offset=false   type=OffsetSurface                deg=--x--  poles=--x--  knots=--x--  dev=0
+
+  offset(sphere r=10, +2) V[-1,1]
+    offset=true    type=BSplineSurface               deg=14x9  poles=15x10  knots=2x2  dev=1.79867e-08
+    offset=false   type=OffsetSurface                deg=--x--  poles=--x--  knots=--x--  dev=0
+
+  offset(cylinder r=5, +1)
+    offset=true    type=BSplineSurface               deg=14x1  poles=15x2  knots=2x2  dev=8.11891e-09
+    offset=false   type=OffsetSurface                deg=--x--  poles=--x--  knots=--x--  dev=0
+
+  offset(torus 20/5, +1)
+    offset=true    type=BSplineSurface               deg=14x14  poles=15x15  knots=2x2  dev=3.61434e-08
+    offset=false   type=OffsetSurface                deg=--x--  poles=--x--  knots=--x--  dev=0
+
+  offset(cone, +1)
+    offset=true    type=BSplineSurface               deg=14x1  poles=15x2  knots=2x2  dev=3.90978e-08
+    offset=false   type=OffsetSurface                deg=--x--  poles=--x--  knots=--x--  dev=0
+
+  offset(bicubic bspline, +1)
+    offset=true    type=BSplineSurface               deg=10x10  poles=21x21  knots=3x3  dev=4.41225e-08
+    offset=false   type=OffsetSurface                deg=3x3  poles=4x4  knots=2x2  dev=0
+
+  offset(revolved ellipse, +1)
+    offset=true    type=BSplineSurface               deg=14x11  poles=15x133  knots=2x13  dev=2.84163e-08
+    offset=false   type=OffsetSurface                deg=15x15  poles=16x16  knots=2x2  dev=2.53556e-08
+
+  revolved ellipse
+    offset=true    type=BSplineSurface               deg=15x15  poles=16x16  knots=2x2  dev=1.55283e-08
+    offset=false   type=BSplineSurface               deg=15x15  poles=16x16  knots=2x2  dev=1.55283e-08
+
+  bicubic bspline
+    offset=true    type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=0
+    offset=false   type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=0
+
+  sphere r=10 (elementary)
+    offset=true    type=RectangularTrimmedSurface    deg=--x--  poles=--x--  knots=--x--  dev=0
+    offset=false   type=RectangularTrimmedSurface    deg=--x--  poles=--x--  knots=--x--  dev=0
+
+=========================================================================
+ 4. ShapeCustom::BSplineRestriction(shape, tol3d=0.01, tol2d=0.01, maxDeg=9,
+    maxSeg=10000, cont3d, cont2d, degreePriority=true, rational=true)
+=========================================================================
+  offset(sphere r=10, +2) full
+    cont=C0        type=BSplineSurface               deg=9x7  poles=9x8  knots=2x2  dev=0.000506453
+    cont=C1        type=BSplineSurface               deg=9x7  poles=9x8  knots=2x2  dev=0.000506453
+    cont=C2        type=BSplineSurface               deg=9x7  poles=9x8  knots=2x2  dev=0.000506453
+
+  offset(sphere r=10, +2) V[-1,1]
+    cont=C0        type=BSplineSurface               deg=9x5  poles=9x6  knots=2x2  dev=0.000968361
+    cont=C1        type=BSplineSurface               deg=9x5  poles=9x6  knots=2x2  dev=0.000968361
+    cont=C2        type=BSplineSurface               deg=9x5  poles=9x6  knots=2x2  dev=0.000968361
+
+  offset(cylinder r=5, +1)
+    cont=C0        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000239687
+    cont=C1        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000239687
+    cont=C2        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000239687
+
+  offset(torus 20/5, +1)
+    cont=C0        type=BSplineSurface               deg=7x9  poles=14x9  knots=3x2  dev=0.000378945
+    cont=C1        type=BSplineSurface               deg=7x9  poles=14x9  knots=3x2  dev=0.000378945
+    cont=C2        type=BSplineSurface               deg=7x9  poles=14x9  knots=3x2  dev=0.000378945
+
+  offset(cone, +1)
+    cont=C0        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000343315
+    cont=C1        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000343315
+    cont=C2        type=BSplineSurface               deg=9x1  poles=9x2  knots=2x2  dev=0.000343315
+
+  offset(bicubic bspline, +1)
+    cont=C0        type=BSplineSurface               deg=7x7  poles=8x8  knots=2x2  dev=0.000613022
+    cont=C1        type=BSplineSurface               deg=7x7  poles=8x8  knots=2x2  dev=0.000613022
+    cont=C2        type=BSplineSurface               deg=7x7  poles=8x8  knots=2x2  dev=0.000613022
+
+  offset(revolved ellipse, +1)
+    cont=C0        type=BSplineSurface               deg=7x9  poles=14x36  knots=3x5  dev=0.000414894
+    cont=C1        type=BSplineSurface               deg=7x9  poles=14x36  knots=3x5  dev=0.000414894
+    cont=C2        type=BSplineSurface               deg=7x9  poles=14x36  knots=3x5  dev=0.000414894
+
+  revolved ellipse
+    cont=C0        type=BSplineSurface               deg=7x9  poles=14x9  knots=3x2  dev=0.000278264
+    cont=C1        type=BSplineSurface               deg=7x7  poles=13x13  knots=3x3  dev=0.000393444
+    cont=C2        type=BSplineSurface               deg=8x8  poles=14x14  knots=3x3  dev=0.000218323
+
+  bicubic bspline
+    cont=C0        type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=0
+    cont=C1        type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=0
+    cont=C2        type=BSplineSurface               deg=3x3  poles=4x4  knots=2x2  dev=0
+
+  sphere r=10 (elementary)
+    cont=C0        type=RectangularTrimmedSurface    deg=--x--  poles=--x--  knots=--x--  dev=0
+    cont=C1        type=RectangularTrimmedSurface    deg=--x--  poles=--x--  knots=--x--  dev=0
+    cont=C2        type=RectangularTrimmedSurface    deg=--x--  poles=--x--  knots=--x--  dev=0
+
+=========================================================================
+ 5. What the 1999 forced-C0 workaround suppresses: ConvertSurfaceToBSpline at
+    surf->Continuity() instead of GeomAbs_C0, wall-clock timed
+=========================================================================
+  offset(sphere r=10, +2) full     Continuity()=CN
+    forced C0 (today)        0.000s  deg=13x10 poles=14x11 dev=1.21031e-07
+    own continuity           0.000s  deg=15x12 poles=16x13 dev=1.37232e-08
+
+  offset(sphere r=10, +2) V[-1,1]  Continuity()=CN
+    forced C0 (today)        0.000s  deg=14x9 poles=15x10 dev=1.79867e-08
+    own continuity           0.000s  deg=15x10 poles=16x11 dev=2.26779e-08
+
+  offset(cylinder r=5, +1)         Continuity()=CN
+    forced C0 (today)        0.000s  deg=14x1 poles=15x2 dev=8.11891e-09
+    own continuity           0.000s  deg=14x5 poles=15x6 dev=2.09861e-08
+
+  offset(torus 20/5, +1)           Continuity()=CN
+    forced C0 (today)        0.000s  deg=14x14 poles=15x15 dev=3.61434e-08
+    own continuity           0.000s  deg=15x14 poles=16x15 dev=2.41279e-08
+
+  offset(cone, +1)                 Continuity()=CN
+    forced C0 (today)        0.000s  deg=14x1 poles=15x2 dev=3.90978e-08
+    own continuity           0.000s  deg=15x5 poles=16x6 dev=1.53736e-08
+
+  offset(bicubic bspline, +1)      Continuity()=CN
+    forced C0 (today)        0.001s  deg=10x10 poles=21x21 dev=4.41225e-08
+    own continuity           0.002s  deg=15x15 poles=29x29 dev=1.50518e-08
+
+  offset(revolved ellipse, +1)     Continuity()=CN
+    forced C0 (today)        0.002s  deg=14x11 poles=15x133 dev=2.84163e-08
+    own continuity           0.005s  deg=15x13 poles=16x135 dev=2.46207e-08
+
+done

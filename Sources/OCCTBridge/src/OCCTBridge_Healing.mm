@@ -944,8 +944,10 @@ OCCTShapeRef OCCTShapePlatePoints(const double* points, int32_t pointCount, doub
         if (plateSurface.IsNull()) return nullptr;
 
         // Approximate with B-spline surface
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         // Create face from surface
@@ -991,8 +993,13 @@ OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves, int32_t curveCount,
         Handle(GeomPlate_Surface) plateSurface = plateBuilder.Surface();
         if (plateSurface.IsNull()) return nullptr;
 
-        GeomPlate_MakeApprox approx(plateSurface, tolerance, 1, 8, tolerance * 10, 0);
-        Handle(Geom_BSplineSurface) bsplineSurf = approx.Surface();
+        // The caller's `continuity` is the CONSTRAINT order (applied to each GeomPlate_CurveConstraint
+        // above); the approximation's own continuity is the join between Bezier patches, a separate
+        // axis, so it keeps the shared default rather than following it. See OCCTBridge_Internal.h.
+        Handle(Geom_BSplineSurface) bsplineSurf = occtPlateApproxSurface(
+            plateSurface, tolerance,
+            occtPlateApproxDefaultMaxDegree(), occtPlateApproxDefaultMaxSegments(),
+            occtPlateApproxDefaultContinuity());
         if (bsplineSurf.IsNull()) return nullptr;
 
         BRepBuilderAPI_MakeFace makeFace(bsplineSurf, tolerance);

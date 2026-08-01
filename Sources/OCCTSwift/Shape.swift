@@ -1157,6 +1157,9 @@ public final class Shape: @unchecked Sendable {
     /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
     /// throws rather than returning the partially-repaired shape.
     ///
+    /// Cancelling *anywhere* throws ``ImportError/cancelled``, including during the transfer, which
+    /// used to report `ImportError.importFailed` instead (#525).
+    ///
     /// ```swift
     /// final class Deadline: ImportProgress, @unchecked Sendable {
     ///     private let start = Date()
@@ -4056,9 +4059,22 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert BSpline surfaces to their closest analytical form
+    /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// Attempts to convert BSpline surfaces to planes, cylinders, cones, spheres, or tori.
+    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
+    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
+    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
+    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    ///
+    /// Continuity is fixed at C1 here; use
+    /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
+    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
+    ///
+    /// ```swift
+    /// let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001)
+    /// ```
     ///
     /// - Parameters:
     ///   - surfaceTolerance: Tolerance for surface approximation (default: 0.01)
@@ -8174,7 +8190,10 @@ extension Shape {
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum.
+    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
+    ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
+    ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
+    ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
@@ -9103,11 +9122,25 @@ extension Shape {
     /// Creates a smooth BSpline surface that passes through or near the given points.
     /// Useful for creating surfaces from scattered point data.
     ///
+    /// The fit subdivides into more Bezier patches until it is within `tolerance` of the plate.
+    /// `maxSegments` caps that subdivision; **1 is clamped to 2**, because a single patch cannot be
+    /// cut and the approximator then ignores its own error criterion entirely, which makes
+    /// `tolerance` unenforceable rather than merely coarse (#571).
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = [
+    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),
+    /// ]
+    /// if let face = Shape.plateSurface(points: points, tolerance: 1e-3) {
+    ///     print(face.surfaceArea ?? 0)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - points: Array of 3D points to fit the surface through
     ///   - tolerance: Approximation tolerance (default 1e-3)
     ///   - maxDegree: Maximum BSpline degree (default 8)
-    ///   - maxSegments: Maximum BSpline segments (default 20)
+    ///   - maxSegments: Maximum BSpline segments (default 20; values below 2 are clamped to 2)
     /// - Returns: Face with plate surface, or nil on failure
     public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-3,
                                      maxDegree: Int = 8, maxSegments: Int = 20) -> Shape? {
@@ -13138,7 +13171,9 @@ extension Shape {
     /// - Parameters:
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has.
+    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
+    ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(_ shape: Shape,

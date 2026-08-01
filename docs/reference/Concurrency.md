@@ -159,3 +159,5 @@ A default no-op implementation returning `false` is provided via a protocol exte
   }
   ```
 - **Note:** `shouldCancel()` is polled once per transferred entity in STEP/IGES — typically many times per second for large files. Keep the implementation cheap (e.g. read an atomic flag, not a lock).
+- **One `true` is enough.** The bridge latches the first `true` it sees, so a one-shot flag or an already-consumed `Task.isCancelled` is a valid canceller: the polls that follow cannot re-answer the call into a successful result. Before [#525](https://github.com/SecondMouseAU/OCCTSwift/issues/525) they could, and a caller that cancelled once got the partially-repaired shape back as a success.
+- **A cancelled call always throws `.cancelled`.** Which phase the cancellation lands in no longer decides which error you see. A break during a transfer leaves OCCT reporting zero transferred roots, which the bridge used to pass on as `ImportError.importFailed` — so an early deadline reported "failed to import" for a file that was perfectly readable (#525).

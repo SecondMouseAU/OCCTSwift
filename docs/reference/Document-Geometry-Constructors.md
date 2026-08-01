@@ -9,7 +9,7 @@ This page covers geometry construction and analysis utilities added across v0.10
 
 ## Topics
 
-- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [GeomConvert BSplineSurfaceKnotSplitting](#geomconvert-bsplinesurfaceknotsplitting) · [Geom2dConvert BSplineCurveKnotSplitting](#geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
+- [GC_MakeParabola2d](#gc_makeparabola2d) · [GCPnts_UniformAbscissa](#gcpnts_uniformabscissa) · [GeomConvert CompCurveToBSplineCurve](#geomconvert-compculvetobsplinecurve) · [Geom2dConvert CompCurveToBSplineCurve](#geom2dconvert-compcurvetobsplinecurve) · [Knot splitting, the deprecated v0.105.0 spellings](#geomconvert-bsplinesurfaceknotsplitting--geom2dconvert-bsplinecurveknotsplitting) · [BndLib extras](#bndlib-extras) · [GProp Torus](#gprop-torus) · [BRepTools_ReShape](#breptools_reshape) · [BRepTools_Substitution](#breptools_substitution) · [BRepLib_MakeVertex](#breplib_makevertex) · [BRepFill_PipeShell](#brepfill_pipeshell) · [OSD_Directory](#osd_directory) · [IntAna Cone-Sphere extensions](#intana-cone-sphere-extensions) · [XCAFPrs_DocumentExplorer extensions](#xcafprs_documentexplorer-extensions) · [Resource_Unicode](#resource_unicode) · [GProp weighted point sets](#gprop-weighted-point-sets) · [Draft info types](#draft-info-types) · [GeomLib_LogSample](#geomlib_logsample) · [GC_MakeConicalSurface](#gc_makeconicalsurface) · [GC_MakeCylindricalSurface](#gc_makecylindricalsurface) · [GC_MakeTrimmedCone](#gc_maketrimmedcone) · [GC_MakeTrimmedCylinder](#gc_maketrimmedcylinder) · [BRepLib_MakeEdge2d extensions](#breplib_makeedge2d-extensions) · [ShapeAnalysis_Wire](#shapeanalysis_wire) · [ShapeAnalysis_Edge](#shapeanalysis_edge) · [OSD_DirectoryIterator](#osd_directoryiterator) · [OSD_FileIterator](#osd_fileiterator) · [BRepFill_PipeShell extensions](#brepfill_pipeshell-extensions)
 
 ---
 
@@ -192,115 +192,39 @@ public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) ->
 
 ---
 
-## GeomConvert BSplineSurfaceKnotSplitting
+## GeomConvert BSplineSurfaceKnotSplitting / Geom2dConvert BSplineCurveKnotSplitting
 
-Extensions on `Surface` wrapping `GeomConvert_BSplineSurfaceKnotSplitting`.
+Five entry points documented here — `Surface.bsplineKnotSplitsU(continuity:)`,
+`Surface.bsplineKnotSplitsV(continuity:)`, `Surface.bsplineKnotSplitValues(continuity:)`,
+`Curve2D.bsplineKnotSplits(continuity:)` and `Curve2D.bsplineKnotSplitValues(continuity:)` — are
+**deprecated as of #562**. They were added in v0.105.0 over the same two analyzers that
+[`Surface.knotSplitting(uContinuity:vContinuity:)`](Surface-Advanced.md#knotsplittingucontinuityvcontinuity)
+and [`Curve2D.splitIndicesAtDiscontinuities(continuity:)`](Curve2D.md) had already been wrapping for
+three releases, and each took one continuity for both parametric directions where the surface's
+canonical call takes one per direction — so they could not ask a question the canonical call could
+not, only fewer of them.
 
-`continuity` throughout this section and the next is a `ParametricContinuity` read as a *derivative
-order*: a knot splits only when `degree - multiplicity < continuity`, so the meaningful range is
-`0...degree` and it saturates there. A cubic with simple interior knots is already C2 at every
-interior knot, which means `.c0`, `.c1` and `.c2` all report just the two bracketing knots and
-`.c3` is the order that reports the interior ones (#480). These five entry points drive the same
-two analyzers as [`Surface.knotSplitting`](Surface-Advanced.md) and
-[`Curve2D.splitIndicesAtDiscontinuities`](Curve2D.md), differing only in what they return.
+Each now forwards to its canonical sibling; their own bridge functions are gone. The one thing they
+carried that the canonical calls did not — the raw 1-based knot-table indices, rather than the
+parameters those indices resolve to — is now `KnotSplitResult.uSplitIndices` / `.vSplitIndices`.
 
-### `Surface.bsplineKnotSplitsU(continuity:)`
-
-Number of U-direction knot split points required to achieve the specified continuity. Same count
-as `knotSplitting(uContinuity:vContinuity:)`'s `uSplitCount`.
-
-```swift
-public func bsplineKnotSplitsU(continuity: ParametricContinuity) -> Int
-```
-
-- **Parameters:** `continuity`: minimum continuity to require of each U patch.
-- **Returns:** Count of U split indices.
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbUSplits`
-- **Example:**
-  ```swift
-  let n = bsplineSurf.bsplineKnotSplitsU(continuity: .c3)
-  ```
-
----
-
-### `Surface.bsplineKnotSplitsV(continuity:)`
-
-Number of V-direction knot split points required to achieve the specified continuity. Same count
-as `knotSplitting(uContinuity:vContinuity:)`'s `vSplitCount`.
+| deprecated | use |
+|---|---|
+| `Surface.bsplineKnotSplitsU(continuity:)` | `knotSplitting(uContinuity:vContinuity:).uSplitCount` |
+| `Surface.bsplineKnotSplitsV(continuity:)` | `knotSplitting(uContinuity:vContinuity:).vSplitCount` |
+| `Surface.bsplineKnotSplitValues(continuity:)` | `knotSplitting(uContinuity:vContinuity:).uSplitIndices` / `.vSplitIndices` |
+| `Curve2D.bsplineKnotSplits(continuity:)` | `splitIndicesAtDiscontinuities(continuity:)?.count` |
+| `Curve2D.bsplineKnotSplitValues(continuity:)` | `splitIndicesAtDiscontinuities(continuity:)` |
 
 ```swift
-public func bsplineKnotSplitsV(continuity: ParametricContinuity) -> Int
+// Was: three analyzer constructions, one continuity for both directions.
+let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: .c3)
+
+// Now: one construction, and U and V can be asked different questions.
+let splits = bsplineSurf.knotSplitting(uContinuity: .c3, vContinuity: .c1)
+let uIndices = splits.uSplitIndices               // the same 1-based knot indices
+let uParams = splits.uSplitParams                 // and what they resolve to
 ```
-
-- **Parameters:** `continuity`: minimum continuity to require of each V patch.
-- **Returns:** Count of V split indices.
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::NbVSplits`
-- **Example:**
-  ```swift
-  let n = bsplineSurf.bsplineKnotSplitsV(continuity: .c3)
-  ```
-
----
-
-### `Surface.bsplineKnotSplitValues(continuity:)`
-
-Retrieve both U and V knot-split index arrays. `bsplineUKnot(index:)` and `bsplineVKnot(index:)`
-turn them into parameters, which is what `knotSplitting(uContinuity:vContinuity:)` returns directly.
-
-```swift
-public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> (uSplits: [Int32], vSplits: [Int32])
-```
-
-- **Parameters:** `continuity`: minimum continuity to require of each patch.
-- **Returns:** Tuple of U-split and V-split knot index arrays (1-based OCCT knot indices).
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting::Splitting`
-- **Example:**
-  ```swift
-  let (uIdx, vIdx) = bsplineSurf.bsplineKnotSplitValues(continuity: .c3)
-  ```
-
----
-
-## Geom2dConvert BSplineCurveKnotSplitting
-
-Extensions on `Curve2D` wrapping `Geom2dConvert_BSplineCurveKnotSplitting`.
-
-### `Curve2D.bsplineKnotSplits(continuity:)`
-
-Number of knot split points required to achieve the specified continuity for a 2D BSpline curve.
-Same count as `splitIndicesAtDiscontinuities(continuity:)`'s array length.
-
-```swift
-public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int
-```
-
-- **Parameters:** `continuity`: minimum continuity to require of each arc.
-- **Returns:** Count of split indices.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::NbSplits`
-- **Example:**
-  ```swift
-  let n = curve2d.bsplineKnotSplits(continuity: .c3)
-  ```
-
----
-
-### `Curve2D.bsplineKnotSplitValues(continuity:)`
-
-Retrieve the knot-split index array for a 2D BSpline curve. The same indices
-`splitIndicesAtDiscontinuities(continuity:)` returns, as `[Int32]` and empty rather than `nil`
-for a non-BSpline curve.
-
-```swift
-public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32]
-```
-
-- **Parameters:** `continuity`: minimum continuity to require of each arc.
-- **Returns:** Array of knot split indices, or empty if none.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting::Splitting`
-- **Example:**
-  ```swift
-  let splits = curve2d.bsplineKnotSplitValues(continuity: .c3)
-  ```
 
 ---
 
