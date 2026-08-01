@@ -859,6 +859,154 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
     return nbPoints >= 2;
 }
 
+// === #502: one sub-shape enumeration ===
+//
+// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
+// primitives that answer differently:
+//
+//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
+//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
+//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
+//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
+//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
+//
+// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
+// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
+// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
+// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
+// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
+// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
+// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
+// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
+// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
+// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
+//
+// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
+// is the answer all of it gives now. What made the choice cheap is that the two primitives
+// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
+// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
+// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
+
+/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
+/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
+/// TShape and location, orientation ignored). Returns the number of entries.
+///
+/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
+/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
+/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
+/// SOLID answers 1.
+inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
+                                TopTools_IndexedMapOfShape& outMap) {
+    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
+    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
+    return outMap.Extent();
+}
+
+/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
+/// the index is negative or past the end. Callers that want the whole set should map once and
+/// read the map, rather than calling this in a loop.
+inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
+    if (index < 0) return TopoDS_Shape();
+    TopTools_IndexedMapOfShape map;
+    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+// === #541: one meaning for a face index ===
+//
+// A face index crossing this bridge is a 0-based position in the enumeration above, the one
+// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
+// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
+// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
+// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
+// addressed the face before the one it named and could never name the last face at all.
+//
+// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
+// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
+// plane leaves two solids sharing the single cut face (12 occurrences over 11 distinct faces), and
+// the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
+// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
+// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
+// them moved no index on any shape without a shared sub-shape.
+//
+// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
+// "no such index", which is the only failure they have.
+
+/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
+/// negative, past the end, or names a sub-shape that is not a face.
+inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
+    return TopoDS::Face(sub);
+}
+
+/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
+/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
+/// face, whose edges are enumerated the same way.
+inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
+    return TopoDS::Edge(sub);
+}
+
+// === #568: one answer for an index that names no sub-shape ===
+//
+// A batch entry point takes an array of 0-based indices into the enumeration above and hands each
+// resolved sub-shape to some OCCT builder. What it does with an index that resolves to nothing is
+// the contract question #520 settled for the fillet family and #541 for OCCTShapeOffsetPerFace:
+// the whole request is refused. Six sites disagreed with them, dropping the unresolvable entry and
+// building from the rest.
+//
+// The reason to refuse rather than skip is that the partial result is not distinguishable from the
+// complete one. Measured on the pinned kernel (Scripts/repro/568-index-skip-idiom/), every builder
+// behind those sites reports an ordinary success for a batch it was never told was short:
+//
+//   BRepFilletAPI_MakeChamfer, 2 of 3 edges     IsDone, valid, volume 7922.666667 (3 of 3: 7885.33)
+//   BRepOffsetAPI_DraftAngle, 2 of 4 faces      IsDone, valid, volume 7299.820338 (4 of 4: 6681.35)
+//   BRepOffsetAPI_MakeThickSolid, 1 of 2 open   IsDone, valid, volume 3392.000000 (2 of 2: 2880.00)
+//   BRepFilletAPI_MakeFillet2d, 2 of 4 vertices IsDone, valid, area 1189.269908 (4 of 4: 1178.54)
+//
+// BRepOffsetAPI_DraftAngle is the one that shows why this is not merely untidy: handed *no* faces
+// at all it still reports IsDone() and returns the input shape unchanged, so a draft naming only
+// faces the shape does not have used to succeed and draft nothing. The others at least fail an
+// empty batch (MakeChamfer throws "There are no suitable edges for chamfer or fillet";
+// MakeFillet2d fails IsDone), which is why only the *mixed* batch escaped for them.
+//
+// A caller who wants best-effort can filter its own indices against the counts this API already
+// exposes. A caller who cannot tell a partial result from a complete one had no way back.
+
+/// The sub-shape at 0-based `index` in an already-built enumeration map, or a null TopoDS_Shape
+/// when the index is negative or past the end. This is the read half of occtSubShapeAt, for the
+/// callers that resolve several indices against one map rather than mapping per lookup.
+inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, int32_t index) {
+    if (index < 0 || index >= map.Extent()) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+/// Resolve all `count` 0-based `indices` against `shape`'s sub-shapes of TopAbs type `type` and
+/// hand each to `use(sub, i)`, where `i` is the caller's own array position so it can read a
+/// parallel array of its own (a per-entry radius, distance or offset). Returns false, having used
+/// nothing further, when an index names no such sub-shape, and false outright for a null array or
+/// a count below 1.
+///
+/// `type` is passed through occtMapSubShapes, so the enumeration is exactly the one Shape.faces(),
+/// Shape.edges() and Face.index read; an index out of range here is out of range there too.
+template <class Use>
+bool occtUseSubShapesByIndex(const TopoDS_Shape& shape, int32_t type,
+                             const int32_t* indices, int32_t count, Use use) {
+    if (!indices || count < 1) return false;
+
+    TopTools_IndexedMapOfShape map;
+    occtMapSubShapes(shape, type, map);
+
+    for (int32_t i = 0; i < count; i++) {
+        TopoDS_Shape sub = occtMappedSubShapeAt(map, indices[i]);
+        if (sub.IsNull()) return false;
+        use(sub, i);
+    }
+    return true;
+}
+
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
 //
 // Three bridge functions fillet a caller-supplied list of edge indices and differ only in what
@@ -915,8 +1063,8 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 // bad index filleted the rest and reported success: a request honoured in part, presented as
 // honoured in full, the same defect class as #439/#442/#443. The two radius-law entry points
 // (OCCTShapeFilletVariable, OCCTShapeFilletEvolving) already rejected, so this is what makes all
-// five agree. A caller who wants best-effort can filter its own indices; a caller who cannot tell
-// a partial result from a complete one had no way back.
+// five agree. #568 finished the sweep, and this is now a thin wrapper over the resolution helper
+// the five remaining sites share: only the TopoDS_Edge cast is specific to the fillet family.
 //
 // Not folded into occtShapeFilletEdgeList below because OCCTShapeHistoryFromFilletEdges has to
 // keep its builder alive past the call, to hand back a BRepTools_History over it.
@@ -926,15 +1074,10 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 template <class AddEdge>
 bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
                         const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
-    TopTools_IndexedMapOfShape edgeMap;
-    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
-
-    for (int32_t i = 0; i < edgeCount; i++) {
-        int32_t idx = edgeIndices[i];
-        if (idx < 0 || idx >= edgeMap.Extent()) return false;
-        addEdge(fillet, TopoDS::Edge(edgeMap(idx + 1)), i);  // OCCT's map is 1-based
-    }
-    return true;
+    return occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                   [&](const TopoDS_Shape& edge, int32_t i) {
+        addEdge(fillet, TopoDS::Edge(edge), i);
+    });
 }
 
 // === #520: the radius law, for the two entry points that take one ===
@@ -1134,96 +1277,6 @@ inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, do
     } catch (...) {
         return false;
     }
-}
-
-// === #502: one sub-shape enumeration ===
-//
-// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
-// primitives that answer differently:
-//
-//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
-//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
-//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
-//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
-//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
-//
-// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
-// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
-// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
-// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
-// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
-// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
-// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
-// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
-// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
-// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
-//
-// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
-// is the answer all of it gives now. What made the choice cheap is that the two primitives
-// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
-// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
-// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
-
-/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
-/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
-/// TShape and location, orientation ignored). Returns the number of entries.
-///
-/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
-/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
-/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
-/// SOLID answers 1.
-inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
-                                TopTools_IndexedMapOfShape& outMap) {
-    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
-    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
-    return outMap.Extent();
-}
-
-/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
-/// the index is negative or past the end. Callers that want the whole set should map once and
-/// read the map, rather than calling this in a loop.
-inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
-    if (index < 0) return TopoDS_Shape();
-    TopTools_IndexedMapOfShape map;
-    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
-    return map(index + 1);  // OCCT's indexed maps are 1-based
-}
-
-// === #541: one meaning for a face index ===
-//
-// A face index crossing this bridge is a 0-based position in the enumeration above -- the one
-// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
-// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
-// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
-// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
-// addressed the face before the one it named and could never name the last face at all.
-//
-// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
-// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
-// plane leaves two solids sharing the single cut face -- 12 occurrences over 11 distinct faces --
-// and the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
-// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
-// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
-// them moved no index on any shape without a shared sub-shape.
-//
-// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
-// "no such index", which is the only failure they have.
-
-/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
-/// negative, past the end, or names a sub-shape that is not a face.
-inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
-    return TopoDS::Face(sub);
-}
-
-/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
-/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
-/// face, whose edges are enumerated the same way.
-inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
-    return TopoDS::Edge(sub);
 }
 
 // === #405/#494: one resolution behind every GeomLProp_* local-property construction ===

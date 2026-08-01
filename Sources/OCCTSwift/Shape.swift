@@ -2762,12 +2762,28 @@ extension Shape {
     /// Draft angles are used in injection molding and casting to allow parts to
     /// be released from the mold. The angle is measured from the pull direction.
     ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). It used to be dropped,
+    ///   and `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no faces for at
+    ///   all, so a draft naming only faces from another shape returned this shape undrafted.
+    ///
     /// - Parameters:
     ///   - faces: Faces to add draft to (must have valid indices from this shape)
     ///   - direction: Pull direction (typically vertical, e.g., [0, 0, 1])
     ///   - angle: Draft angle in radians (typically 1-5 degrees)
     ///   - neutralPlane: Plane where draft angle is zero (point and normal)
     /// - Returns: Drafted shape, or nil on failure
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 30)!
+    /// let sides = box.faces().filter { $0.isVertical() }
+    /// let drafted = box.drafted(
+    ///     faces: sides,
+    ///     direction: SIMD3(0, 0, 1),
+    ///     angle: 3.0 * .pi / 180.0,
+    ///     neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// )
+    /// ```
     public func drafted(
         faces: [Face],
         direction: SIMD3<Double>,
@@ -3194,6 +3210,10 @@ extension Shape {
     ///
     /// Unlike the basic `shelled(thickness:)` method, this allows you to specify
     /// which faces should be removed to create openings.
+    ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). Previously such a face
+    ///   was dropped and the solid was shelled with fewer openings than asked for.
     ///
     /// - Parameters:
     ///   - thickness: Wall thickness (positive = inward, negative = outward)
@@ -5549,6 +5569,18 @@ extension Shape {
 
     /// Apply a uniform chamfer to the given edges, returning the result and
     /// a queryable history.
+    ///
+    /// Edge indices are 0-based positions in ``edges()``. An index naming no edge of this shape
+    /// fails the whole call rather than being skipped (#568), matching
+    /// ``filletedWithFullHistory(radius:edges:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// if let (chamfered, history) = box.chamferedWithFullHistory(distance: 1.0, edges: [0, 1]),
+    ///    let edge = box.subShapes(ofType: .edge).first {
+    ///     print(chamfered.volume ?? 0, history.record(of: edge).modified.count)
+    /// }
+    /// ```
     public func chamferedWithFullHistory(distance: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
@@ -6662,10 +6694,20 @@ extension Shape {
     ///   through. Vertex indices are numbered within that first face. Call this on one face
     ///   at a time.
     ///
+    /// - Note: An index naming no vertex of that first face fails the whole call rather than being
+    ///   skipped (#568). Previously it was dropped and the corners that did resolve were rounded,
+    ///   reported as a complete result.
+    ///
     /// - Parameters:
     ///   - vertexIndices: 0-based indices of vertices to fillet
     ///   - radii: Fillet radius for each vertex (must match vertexIndices count)
     /// - Returns: Modified shape with fillets, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let rounded = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2, 2, 2, 2])
+    /// print(rounded?.edgeCount ?? 0)   // 8: four straights and four arcs
+    /// ```
     public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape? {
         guard !vertexIndices.isEmpty, vertexIndices.count == radii.count else { return nil }
         let indices = vertexIndices.map { Int32($0) }
@@ -6688,10 +6730,20 @@ extension Shape {
     ///   through. Edge indices are numbered within that first face. Call this on one face at
     ///   a time.
     ///
+    /// - Note: *Either* half of a pair naming no edge of that first face fails the whole call
+    ///   rather than being skipped (#568). Previously the pair was dropped and the corners that
+    ///   did resolve were cut, reported as a complete result.
+    ///
     /// - Parameters:
     ///   - edgePairs: Array of (edge1Index, edge2Index) pairs identifying adjacent edges
     ///   - distances: Chamfer distance for each edge pair
     /// - Returns: Modified shape with chamfers, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let cut = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2, 2])
+    /// print(cut?.edgeCount ?? 0)   // 6: two corners replaced by chamfer edges
+    /// ```
     public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape? {
         guard !edgePairs.isEmpty, edgePairs.count == distances.count else { return nil }
         let edge1Indices = edgePairs.map { Int32($0.0) }
