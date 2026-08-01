@@ -77,6 +77,7 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
+#include <GCPnts_AbscissaPoint.hxx>   // occtAdaptorLengthBetween, the shared ranged arc length
 #include <cmath>
 
 // === Foundation struct definitions ===
@@ -792,6 +793,88 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
 /// reason the existing parity test (built on a segment) passed. #548.
 inline bool occtValidParameterRange(double u1, double u2) {
     return std::isfinite(u1) && std::isfinite(u2);
+}
+
+// === #600: what a ranged arc length measures when the range reaches outside the domain ===
+//
+// One rule, applied here rather than left to whichever GCPnts branch the curve's type happens to
+// take: **a ranged arc length measures the part of the requested range that lies on the curve.**
+// A curve whose parameter domain covers a whole period exists at every parameter, so for those the
+// whole range lies on the curve and a range longer than the period winds round it again.
+//
+// GCPnts confines the range to the curve only in its `GCPnts_AbsComposite` branch (it intersects
+// the range with each GeomAbs_CN interval), so before this the answer was an accident of span
+// count. Measured on the pinned kernel over [f, l + span], one domain width past the end
+// (Scripts/repro/600-out-of-domain-length/):
+//
+//   curve                        was          now      why
+//   segment, 10 long             20           10       the line stops at the trim
+//   Bezier, 122.14 long          1002.29      122.14   extrapolated its polynomial past the poles
+//   arc, half a circle           31.42        15.71    left the arc and finished the basis circle
+//   multi-span BSpline           528.75       528.75   already confined
+//   circle                       62.83        62.83    two turns, and it really does travel them
+//   periodic BSpline, one period 548.51       1097.02  dropped the second winding silently
+//
+// The periodic BSpline is the case that makes "confine unless periodic" insufficient on its own:
+// it is periodic *and* composite, so GCPnts confined it to one period and returned less than was
+// asked for. Winding has to be computed here (whole turns times one period's length, plus the
+// remainder wrapped into the domain) rather than delegated.
+//
+// `IsPeriodic()` alone is not the test: a `Geom_TrimmedCurve` over half a circle reports
+// IsPeriodic() == true with Period() == 2*pi, because it inherits the basis curve's periodicity.
+// Its domain covers half a period, and measuring past the trim means measuring a curve the caller
+// trimmed away, so the domain must cover a whole period before the range is allowed to wind.
+
+template <class TheAdaptor>
+inline bool occtAdaptorWindsPeriodically(const TheAdaptor& adaptor) {
+    if (!adaptor.IsPeriodic()) return false;
+    const double period = adaptor.Period();
+    if (!(period > 0)) return false;
+    const double span = adaptor.LastParameter() - adaptor.FirstParameter();
+    return span >= period * (1.0 - 1e-9);
+}
+
+/// Clamp `u1`/`u2` into the adaptor's own parameter range, preserving their order (so a caller
+/// that raises on a reversed range still sees one). Used for curves that do not wind.
+template <class TheAdaptor>
+inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u2) {
+    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+    u1 = std::min(std::max(u1, first), last);
+    u2 = std::min(std::max(u2, first), last);
+}
+
+/// The one ranged arc-length measurement every entry point makes: the length of the part of
+/// [u1, u2] that lies on the curve, winding included when the curve's domain covers a period.
+/// Bounds may be given in either order. Callers keep their own try/catch and null checks.
+template <class TheAdaptor>
+inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, double u2) {
+    double lo = std::min(u1, u2), hi = std::max(u1, u2);
+
+    if (occtAdaptorWindsPeriodically(adaptor)) {
+        const double first  = adaptor.FirstParameter();
+        const double period = adaptor.Period();
+        const double seam   = first + period;
+        // One period's worth, not the whole domain: a curve trimmed to more than a period would
+        // otherwise multiply the wrong number.
+        const double perPeriod = GCPnts_AbscissaPoint::Length(adaptor, first, seam);
+        const double turns     = std::floor((hi - lo) / period);
+        double       total     = turns * perPeriod;
+        const double rest      = (hi - lo) - turns * period;
+        if (rest > 0) {
+            double start = first + std::fmod(lo - first, period);
+            if (start < first) start += period;
+            const double end = start + rest;
+            total += (end <= seam)
+                         ? GCPnts_AbscissaPoint::Length(adaptor, start, end)
+                         : GCPnts_AbscissaPoint::Length(adaptor, start, seam) +
+                               GCPnts_AbscissaPoint::Length(adaptor, first, first + (end - seam));
+        }
+        return total;
+    }
+
+    occtConfineToDomain(adaptor, lo, hi);
+    if (hi <= lo) return 0.0;
+    return GCPnts_AbscissaPoint::Length(adaptor, lo, hi);
 }
 
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===

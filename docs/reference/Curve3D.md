@@ -753,18 +753,28 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
   interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound the curve's whole
   length, neither distinguishable from a real result, while a line, segment or circle returned
   `+infinity` for an infinite bound (#548).
-- **Note:** A *finite* range reaching outside the curve's domain is not rejected, and what it
-  measures depends on the curve: a multi-span BSpline is confined to its knots (a range wholly
-  outside measures `0`), while a line, circle or Bezier measures the range as given — which is
-  what a periodic curve needs, since a circle over `[0, 4π]` genuinely travels two turns (#600).
+- **Note:** A *finite* range reaching outside the curve's domain is not rejected. It measures the
+  part of the range that lies on the curve, so a range wholly outside measures `0` and one
+  overhanging an end measures up to that end. A curve whose parameter domain covers a whole period
+  exists at every parameter, so a periodic curve measures the whole range and winds — a circle over
+  `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers half a period, so it
+  stops at its own trim. Before #600 this held only for multi-span BSplines: a 10-long segment
+  measured 20 over `[0, 20]`, a Bezier 122.14 long measured 1002.29 one domain width past its end,
+  and a *periodic* BSpline silently measured one period for a request of two.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let two = circle.length(from: 0, to: 4 * .pi)
+  // two ≈ 4π — two turns, because a circle is periodic
   let bad = circle.length(from: d.lowerBound, to: .nan)
   // bad == nil
+
+  let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+  let clipped = seg.length(from: 0, to: 20)   // 10 — the segment, not the line it lies on
+  let outside = seg.length(from: 20, to: 30)  // 0
   ```
 
 ---

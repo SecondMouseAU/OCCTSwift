@@ -3120,7 +3120,9 @@ double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
     if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        // Shared with the Curve3D/Curve2D spellings, so an edge and the curve it was built from
+        // answer an out-of-domain range identically. #600.
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) { return -1.0; }
 }
 

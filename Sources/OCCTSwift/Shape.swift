@@ -14425,11 +14425,17 @@ extension Shape {
     /// length (a NaN lower one). `-1.0` is also the sentinel for any other failure, replacing the
     /// `0` this returned before — that value is what a genuine zero-width interval measures (#548).
     ///
+    /// A range reaching outside the edge's parameter domain measures the part of it that lies on
+    /// the edge, so a range wholly outside measures `0`; a closed periodic edge (a full circle, a
+    /// closed spline) covers a whole period and so measures the whole range, winding (#600). The
+    /// answer matches ``Curve3D/length(from:to:)`` on the curve the edge was built from.
+    ///
     /// ```swift
     /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
     /// let d = edge.edgeAdaptorDomain
     /// let half = edge.edgeArcLength(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
     /// let bad = edge.edgeArcLength(from: d.lowerBound, to: .nan)   // -1.0
+    /// let clipped = edge.edgeArcLength(from: 0, to: 20)            // 10, the edge's own length
     /// ```
     public func edgeArcLength(from u1: Double, to u2: Double) -> Double {
         OCCTEdgeArcLengthBetween(handle, u1, u2)

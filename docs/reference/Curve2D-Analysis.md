@@ -1043,6 +1043,9 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
 - **Note:** `.nan` and `±.infinity` return `-1.0`. The pre-bounded adaptor propagated NaN on its
   own, but returned `+infinity` for an infinite bound on a segment or a circle, and `+infinity`
   passes the bridge's non-negative check (#548).
+- **Note:** A range reaching outside the curve's domain measures only the part that lies on the
+  curve, matching `length(from:to:)`. This spelling used to evaluate the curve past its domain:
+  4771.88 for a BSpline 457.26 long (#600).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {

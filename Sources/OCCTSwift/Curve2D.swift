@@ -521,11 +521,19 @@ public final class Curve2D: @unchecked Sendable {
     /// not check them, and on a multi-span BSpline a NaN upper bound measured `0` and a NaN lower
     /// bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the mechanism (#548).
     ///
+    /// A range reaching outside the curve's domain measures the part of it that lies on the curve,
+    /// so a range wholly outside measures `0`. A curve whose domain covers a whole period exists at
+    /// every parameter, so a periodic one measures the whole range and winds (#600). The 3D
+    /// spelling answers identically on the same geometry.
+    ///
     /// ```swift
     /// let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 5), SIMD2(20, 0)])!
     /// let d = c.domain
     /// let half = c.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
     /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
+    ///
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let two = circle.length(from: 0, to: 4 * .pi)      // two circumferences
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
@@ -2683,6 +2691,10 @@ extension Curve2D {
     /// never confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use
     /// `length(from:to:)` directly if you need an optional rather than a sentinel value (and
     /// order tolerance).
+    ///
+    /// A range reaching outside the curve's domain measures only the part that lies on the curve,
+    /// matching `length(from:to:)`; this spelling used to evaluate the curve past its domain
+    /// instead, reporting 4771.88 for a BSpline 457.26 long (#600).
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         let l = OCCTCurve2DLength(handle, u1, u2)
         return l >= 0 ? l : -1.0

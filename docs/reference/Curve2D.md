@@ -846,6 +846,10 @@ public func length(from u1: Double, to u2: Double) -> Double?
   bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
   bound measured `0` and a NaN lower bound the curve's whole length — see
   [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the curve's domain measures the part of it that lies on the
+  curve (a range wholly outside measures `0`); a curve whose domain covers a whole period measures
+  the whole range and winds. Same rule and same shared implementation as the 3D spelling, so both
+  answer identically on the same geometry (#600).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!

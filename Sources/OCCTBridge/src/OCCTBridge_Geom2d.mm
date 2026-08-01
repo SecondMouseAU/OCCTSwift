@@ -4208,7 +4208,18 @@ double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
     // Rejected here so both spellings answer a non-finite range the same way. #548.
     if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
-        Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
+        // #600: the pre-bounded adaptor extrapolates every curve type past its domain (4771.88
+        // for a BSpline 457.26 long), so confine the bounds first -- but keep this spelling's own
+        // range check by clamping each bound in place rather than routing through
+        // occtAdaptorLengthBetween: a reversed range must still raise, which is #549's decision to
+        // make, not this one's. A curve that winds is left alone, since the pre-bounded adaptor
+        // already measures its extra turns correctly (62.83 for a circle over two periods).
+        Geom2dAdaptor_Curve unrestricted(curve->curve);
+        double lo = u1, hi = u2;
+        if (!occtAdaptorWindsPeriodically(unrestricted)) {
+            occtConfineToDomain(unrestricted, lo, hi);
+        }
+        Geom2dAdaptor_Curve ac(curve->curve, lo, hi);
         return GCPnts_AbscissaPoint::Length(ac);
     } catch (...) { return -1.0; }
 }
@@ -5559,12 +5570,13 @@ double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
 // Same non-finite-bound rejection as the 3D sibling: Geom2dAdaptor_Curve reaches the very same
 // GCPnts_AbscissaPoint::length template, so a 2D BSpline measured 0 (NaN upper) or its whole
 // length (NaN lower) too. See occtValidParameterRange (OCCTBridge_Internal.h). #548.
+// Same shared measurement too, so 2D and 3D agree on an out-of-domain range. #600.
 double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
     if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
