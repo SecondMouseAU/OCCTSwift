@@ -2744,6 +2744,153 @@ gotcha `docs/guides/building-occt.md` already documents for resuming an interrup
 
 ## Release History
 
+### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`OCCTImportSTEPRobustProgress` set `*outCancelled` only at its own explicit `UserBreak()`
+checkpoints, so which error a cancelled import reported depended on which phase the cancellation
+happened to land in. A break during the transfer leaves `TransferRoots` reporting zero transferred
+roots, and that exit returned "failed" with the flag still false:
+
+```swift
+// Deadline expires while the transfer is still running
+catch ImportError.importFailed("Failed to import: /tmp/part.step")   // was: for a readable file
+catch ImportError.cancelled                                          // now
+```
+
+Found as a flake in #300's own regression test, which set its deadline at 0.75 × a wall-clock
+measurement of a preceding uncancelled import: machine load, not the bridge, decided which phase
+the deadline fell in, and about 1 run in 9 fell in the transfer. Any caller whose deadline expires
+early reaches the same path.
+
+Every failure exit below the indicator's construction now reports cancellation if a break was
+observed — the zero-roots exit, a null shape, a non-`Done` status, and the `catch (...)` handler
+(which needed the indicator hoisted out of the `try`). Applied across all twelve `*Progress` entry
+points in `OCCTBridge_IO.mm`, not only the two robust importers, since they share the shape.
+
+A second defect surfaced while probing the first: `BridgeProgressIndicator::UserBreak()` re-asked
+the caller at every checkpoint and believed the latest answer, so a caller that answers `true`
+**once** — a one-shot flag, an already-consumed `Task.isCancelled` — had that answer overwritten.
+OCCT aborted the phase, the next poll said "no break", and the half-repaired shape came back as a
+*success*. The break is now latched (`std::atomic<bool>`, since OCCT documents `UserBreak()` as
+callable concurrently), which is what `ImportProgress.shouldCancel` always documented.
+
+Both `#300` regression tests were rewritten off the clock. That the repair phase lies inside the
+caller's progress range is now checked by the silence that would follow the last progress report
+if it did not: measured at 1.3% (STEP) and 3.4% (IGES) of the call with the fix, 35–40% with the
+#300 defect reintroduced. That a cancellation there *stops* the repair is checked against the
+uncancelled run's poll count — a count of work items, not a duration, and identical on a loaded and
+an idle machine. Progress *names* cannot substitute for the phase, tempting as they look: both
+readers run a `ShapeFix_Shape` of their own during the transfer, so `Fixing face` / `Fixing edge` /
+`Update tolerances` are already being reported from fraction ~0.09.
+
+Bridge-only change: no OCCT kernel patch, no `OCCT.xcframework` rebuild; `OCCTBridge.xcframework`
+needs one since `OCCTBridge_IO.mm` changed. The previously flaky suites ran 12/12 clean; each new
+test was verified to fail against the defect it covers, re-injected one at a time.
+
+### Unreleased: fix, a refused `FillingSurface.add` still let `build()` return a face (#482)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+#434 converged `FillingSurface` and `Shape.fill(constraints:)` onto one builder and one shared
+`occtFillingAddConstraint`, but left them disagreeing about what a *refused* constraint means, and
+the disagreement favoured the wrong outcome on the incremental API.
+
+`occtFillingAddConstraint` refuses a constraint when a **nominated** support face carries no pcurve
+for its edge, which is routine on imported or sewn shapes. It does not call `Add`, so that
+constraint simply does not exist. `Shape.fill(constraints:)` has always treated that as fatal and
+returned nil. `FillingSurface.add(edge:support:continuity:)` returned `false` and left the builder
+usable, so `build()` went on to fit a surface to whatever constraints did make it in. Since every
+`add` is `@discardableResult`, ignoring the signal was the default at the call site:
+
+```swift
+let f = FillingSurface()
+f.add(edge: e1, continuity: .g0)
+f.add(edge: rim, support: importedWall, continuity: .g1)   // false, silently dropped
+let face = f.build()                                       // succeeded
+```
+
+That face was fitted to `e1` alone. It neither passed through nor was bounded by `rim`, the edge
+the caller cared most about, and it reported a healthy G0 error (measured 2.8e-05 on the
+truncated-sphere fixture) while doing so: a plausible wrong answer, not a visible failure. The
+same geometry through `Shape.fill(constraints:)` returned nil.
+
+The refusal is now **sticky**: the builder records it, and `build()` returns nil however many other
+constraints succeeded, without attempting the fit at all, so `isDone` stays false and the face and
+error accessors keep reporting "not built" rather than describing a surface no caller asked for.
+The two entry points now answer the same for the same input, which is what the #434 convergence was
+for. `@discardableResult` becomes harmless: the refusal is reported whether or not the return value
+was read.
+
+New: `FillingSurface.refusedConstraintCount` and `FillingSurface.hasRefusedConstraint`, which
+separate "a constraint never made it in" from "the fit was attempted and failed". Both return nil
+from `build()`:
+
+```swift
+guard let face = filling.build() else {
+    print(filling.hasRefusedConstraint ? "a constraint was refused" : "the fit failed")
+    return
+}
+```
+
+**Source-compatible, behaviour-breaking.** No signature changed, but a caller who was relying on
+`build()` succeeding after a refused `add` now gets nil. To attempt a constraint speculatively and
+carry on, use `add(edge:continuity:)`, which derives the continuity reference from the edge itself
+and so has nothing to refuse.
+
+Two doc comments promised this behaviour before anything enforced it: `add(edge:support:)`'s "used
+or the constraint fails" and `OCCTFillingAddEdgeWithSupport`'s "the caller should treat the whole
+fill as failed". Both are now true.
+
+Also fixed: the derived operation total in `README.md` / `docs/API_REFERENCE.md` was 4,266 against a
+derived 4,268 before this change, a pre-existing two-entry-point drift unrelated to #482.
+`Scripts/count-operations.py --fix` takes it to 4,270, of which two are the properties above.
+
+### Unreleased: chore, every build of this package emitted an unhandled-file warning (#440)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`swift build` emitted `found 1 file(s) which are unhandled; explicitly declare them as resources or
+exclude from the target` on every build of this package.
+
+The file was `Tests/OCCTStressTests/Fixtures/unify-crash-mmd-kiha10-body5.brep`, the 600 KB
+mesh-sewn solid backing #348's null-pcurve regression test. It is read straight from the source tree
+via `#filePath`, never through `Bundle.module`, so it is neither a build input nor a resource to
+copy. `OCCTStressTests` now declares `exclude: ["Fixtures"]`, which is the accurate description of
+what it is. Declaring it as a resource instead would have embedded 600 KB in the test bundle that
+nothing reads.
+
+**Who saw it:** builds of this package as the *root* package, which means our own dev loop and CI,
+plus anyone who clones OCCTSwift and builds it directly. It did **not** reach downstream consumers.
+SwiftPM does not construct test targets for non-root packages, so a consumer's build never had a
+target that owned `Tests/` to diagnose. Measured on Swift 6.3.3 against a synthetic package: the
+same stray file warns while its package is the root, stays silent through a path-dependency
+consumer's `swift build` and `swift test`, and does propagate to that consumer once moved into a
+*source* target. #440 claimed the warning reached every downstream consumer; that part of the issue
+was wrong too, and the fix is worth having for the root-build noise alone.
+
+**Correcting #440's own diagnosis:** the issue attributed the warning to
+`Tests/occt_parallel_crash_portable.cpp` sitting unclaimed at the `Tests/` root. That file is not the
+cause and never was: no target declares `path: "Tests"`, so SwiftPM does not scan the directory root
+at all and never diagnosed it. Removing it changes nothing, and the warning names the `.brep` and
+only the `.brep`. The fixture predates the issue by five days, so the misattribution was present from
+filing.
+
+The move #440 also asked for was still worth doing on its own merit, since a reproducer does not
+belong in the package's test tree, but not to the suggested destination. That file is the
+[OCCT#1179](https://github.com/Open-Cascade-SAS/OCCT/issues/1179) parallel-crash sweep (11
+operation groups built around `Extrema_ExtElCS` and `ShapeUpgrade_FaceDivide`, committed April 2026,
+three months before #342, with one boolean group out of eleven), so filing it under
+`Scripts/repro/342-boolean-ops/` as "the same family of work" would have mislabelled it. It now has
+its own `Scripts/repro/occt1179-parallel-crash/`, with a README covering what it sweeps, why it is
+kept now that OCCT#1179 is fixed (our own [OCCT#1203](https://github.com/Open-Cascade-SAS/OCCT/pull/1203),
+shipped in `V8_0_0`), and what distinguishes it from its boolean-concurrency siblings: it is the only
+reproducer here driven by CI, on both Windows and macOS. The two paths in
+`.github/workflows/occt-parallel-crash-test.yml` follow it.
+
+No API change, no behaviour change, no kernel change.
+
 ### v1.17.0 (July 2026): pass 1a of the #377 duplication audit, and two source-breaking changes in a minor release
 
 **Read this before upgrading. Two changes in this release break source compatibility, which

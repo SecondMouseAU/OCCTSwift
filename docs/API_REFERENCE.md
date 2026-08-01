@@ -900,6 +900,8 @@ aliases the input.
 | `Shape.fill(boundaries:parameters:)` | `BRepOffsetAPI_MakeFilling` |
 | `Shape.fill(boundaries:supportedBy:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order)` |
 | `Shape.fill(constraints:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order, isBound)` |
+| `FillingSurface.refusedConstraintCount` | bridge state: constraints *not* passed to `BRepOffsetAPI_MakeFilling::Add` (#482) |
+| `FillingSurface.hasRefusedConstraint` | bridge state: constraints *not* passed to `BRepOffsetAPI_MakeFilling::Add` (#482) |
 
 #### Shape Healing (v0.31.0)
 | Swift API | OCCT Class |

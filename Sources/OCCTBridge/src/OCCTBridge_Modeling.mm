@@ -4275,7 +4275,18 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
 // history for free.
 struct OCCTFilling {
     BRepOffsetAPI_MakeFilling filler;
+    // #482: how many Add* calls were refused. A refused constraint is one that is NOT in
+    // `filler`. Building over the rest would answer a different question than the caller
+    // asked, so the refusal is sticky and OCCTFillingBuild fails on it. See the note there.
+    int32_t refusedCount = 0;
 };
+
+// Record a refused constraint and report the refusal to the caller, in one expression.
+// Refusing with a null handle is not recordable, so it is only reported.
+static bool OCCTFillingRefuse(OCCTFillingRef filling) {
+    if (filling) filling->refusedCount++;
+    return false;
+}
 
 OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t maxDegree,
                                   int32_t maxSegments, double tolerance3d) {
@@ -4305,46 +4316,52 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
 // true here says nothing about the constraint's validity — a bad order still only surfaces as a
 // nil Build() later.
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
                                  occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/true);
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
 bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
                                  occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/false);
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
 // #434: gives FillingSurface the same explicit-support-face capability
 // Shape.fill(constraints:)/FillConstraint already has. A face named here is Nominated: if it
-// cannot carry `edge`'s continuity, the constraint is not added and the caller should treat the
-// whole fill as failed, matching OCCTShapeFillConstraints' per-constraint contract.
+// cannot carry `edge`'s continuity, the constraint is not added and the whole fill fails,
+// matching OCCTShapeFillConstraints, which returns NULL on that same refusal (#482).
 bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
                                     OCCTFaceRef support, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         TopoDS_Face supportFace;
         if (support) supportFace = support->face;
-        return occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
-                                        support ? OCCTFillingSupport::Nominated
-                                                : OCCTFillingSupport::Inferred,
-                                        occtGeomAbsFromSurfaceContinuity(continuity),
-                                        /*isBound=*/true);
+        if (!occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
+                                      support ? OCCTFillingSupport::Nominated
+                                              : OCCTFillingSupport::Inferred,
+                                      occtGeomAbsFromSurfaceContinuity(continuity),
+                                      /*isBound=*/true)) {
+            return OCCTFillingRefuse(filling);
+        }
+        return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
@@ -4354,12 +4371,25 @@ bool OCCTFillingAddPoint(OCCTFillingRef filling, double x, double y, double z) {
         filling->filler.Add(gp_Pnt(x, y, z));
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
+int32_t OCCTFillingRefusedConstraintCount(OCCTFillingRef filling) {
+    return filling ? filling->refusedCount : 0;
+}
+
+// #482: a refused Add* fails the build outright rather than fitting a surface to whatever did
+// make it in. The one-shot entry point has always behaved this way: OCCTShapeFillConstraints
+// returns NULL the moment occtFillingAddConstraint refuses a nominated support face. The
+// incremental one carried on, so the same geometry answered differently depending on which API
+// the caller reached for, and the difference was a plausible-looking face that neither passed
+// through nor was bounded by the constraint the caller cared most about.
+//
+// Build() is not attempted at all, so IsDone() stays false and the face/error accessors keep
+// reporting "not built" rather than describing a surface no caller asked for.
 bool OCCTFillingBuild(OCCTFillingRef filling) {
-    if (!filling) return false;
+    if (!filling || filling->refusedCount > 0) return false;
     try {
         filling->filler.Build();
         return filling->filler.IsDone();

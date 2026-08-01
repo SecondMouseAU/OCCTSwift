@@ -1157,6 +1157,9 @@ public final class Shape: @unchecked Sendable {
     /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
     /// throws rather than returning the partially-repaired shape.
     ///
+    /// Cancelling *anywhere* throws ``ImportError/cancelled``, including during the transfer, which
+    /// used to report `ImportError.importFailed` instead (#525).
+    ///
     /// ```swift
     /// final class Deadline: ImportProgress, @unchecked Sendable {
     ///     private let start = Date()
