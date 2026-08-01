@@ -594,7 +594,7 @@ comes back as a successful `0`) fails 2 tests, and making the `catch` unreportab
 `Shape` comes back as a successful `0`) fails 1. Seventeen and eighteen tests respectively are
 controls and pass under both.
 
-**Not changed, and filed as #595.** Six entry points on other types keep the same bare
+**Not changed here, and fixed as #595 (next entry).** Six entry points on other types keep the same bare
 double: `Curve3D.curvature(at:)`, `Curve3D.localCurvature(at:)`, `Curve2D.curvature(at:)`,
 `Shape.edgeCurvatureLP(at:)`, `Surface.gaussianCurvature(atU:v:)` and `Surface.meanCurvature(atU:v:)`.
 The last two disagree with both `Face.gaussianCurvature(atU:v:)`/`meanCurvature(atU:v:)` and with
@@ -605,6 +605,97 @@ repeated exactly the mistake this issue exists to avoid.
 
 Probe and full figures at
 [`Scripts/repro/583-lprop-zero-sentinel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/583-lprop-zero-sentinel).
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
+
+#### Breaking: the same zero, on four more public types (#595)
+
+The follow-up #583 filed. Nine entry points now report whether there is a curvature to report,
+instead of answering `0` when there is not:
+
+| Swift | was | now |
+|---|---|---|
+| `Curve3D.curvature(at:)` | `Double` | `Double?` |
+| `Curve3D.torsion(at:)` | `Double` | `Double?` |
+| `Curve2D.curvature(at:)` | `Double` | `Double?` |
+| `Shape.edgeCurvatureLP(at:)` | `Double` | `Double?` |
+| `Surface.gaussianCurvature(atU:v:)` | `Double` | `Double?` |
+| `Surface.meanCurvature(atU:v:)` | `Double` | `Double?` |
+| `Surface.curvatures(u:v:)` | `(gaussian: Double, mean: Double)` | `(gaussian: Double, mean: Double)?` |
+| `Wire.curvature(at:)` | `Double?` | unchanged signature, see below |
+| `Curve3D.localCurvature(at:)` | `Double` | **deprecated** onto `curvature(at:)` |
+
+Migration is `if let`; the previous behaviour is `?? 0`.
+
+**The census was six and measured nine.** Three decide "undefined" with a hand-rolled magnitude gate
+rather than an OCCT predicate, so a grep for `Is*Defined()` — which is how the issue's list was
+built — cannot see them:
+
+- **`Curve3D.torsion(at:)`** answered `0` where the first two derivatives are parallel and there is
+  no osculating plane to twist out of. A **planar** curve's torsion is genuinely `0`, and every
+  circle and ellipse is planar, so the collision runs the other way from the curvature rows and is
+  just as ordinary. It sits four lines below `curvature(at:)` on the same type; leaving it would
+  have broken `Curve3D`'s source compatibility twice for one defect.
+- **`Surface.curvatures(u:v:)`** returned a bare `(0, 0)`. Its own documented contract is that it
+  agrees with `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` "including on whether
+  curvature is defined at all" — which it shares one `GeomLProp_SLProps` with, and could not say.
+- **`Wire.curvature(at:)`** already returned `Double?`, but only its `-1.0` error path reached that
+  optional. The null-derivative branch — a cusp, where the formula divides by zero — returned `0.0`,
+  a straight wire's real answer. No signature change; the branch stops lying. It has no infinity
+  sentinel to offer instead: `BRepAdaptor_CompCurve` computes the formula directly rather than
+  through `GeomLProp_CLProps`, so nothing is the honest answer.
+
+**The collisions are ordinary geometry, not constructed pathologies.** Measured through the same
+kernel classes the bridge builds:
+
+| entry point | the real `0` | the `0` that meant "no answer" |
+|---|---|---|
+| `Curve3D` / `Curve2D.curvature(at:)` | any straight curve | a Bezier with all poles coincident |
+| `Shape.edgeCurvatureLP(at:)` | any straight edge | **a sphere's degenerate pole edge** |
+| `Surface.gaussianCurvature(atU:v:)` | **every point of every plane, cylinder and cone** | a cone apex, a sphere pole |
+| `Surface.meanCurvature(atU:v:)` | every point of every plane | the same |
+| `Curve3D.torsion(at:)` | every planar curve | any straight stretch |
+
+The edge row is the one worth reading twice: a sphere carries a degenerate edge at each pole, that
+edge has no 3D curve at all, and `Shape.edge*` traversal does not skip it.
+
+**A cusp is not an absence and is unchanged.** OCCT reports `RealLast()` there, meaning infinite
+curvature, and `Double.greatestFiniteMagnitude` still comes through as a value. It is a real, distinct
+answer that a `Double?` has no room for, and it is why the curve half of this family looked better
+covered than it was.
+
+**`Curve3D.localCurvature(at:)` is deprecated onto `curvature(at:)`, and
+`OCCTCurve3DLocalCurvature` is deleted.** #494 converged their resolutions, after which the two built
+the same `GeomLProp_CLProps` at the same `occtLocalPropsResolution()` and gated on the same
+`IsTangentDefined()`. Per #562's rule, the axis to check before collapsing is the one nobody listed:
+here that is the null-handle guard, and it is unreachable from Swift since both wrappers pass a live
+handle. Measured over the same four curves, including both degenerate rows, the two spellings
+disagreed on **0** of them.
+
+`OCCTWireGetCurvatureAt`, `OCCTCurve2DGetCurvature`, `OCCTCurve3DGetCurvature`,
+`OCCTCurve3DGetTorsion`, `OCCTEdgeLPropCurvature`, `OCCTSurfaceGetGaussianCurvature`,
+`OCCTSurfaceGetMeanCurvature` and `OCCTSurfaceCurvatures` return `bool` with the value as an
+out-parameter, the shape `OCCTFaceGetMeanCurvature` and (since #583) `OCCTFaceLPropMeanCurvature`
+already use. C-layer contract change; `OCCTBridge` is not an SPM product (#486).
+
+**Deliberately excluded.** `Edge.dihedralAngle(between:and:at:)` has the same hand-rolled shape but
+returns `-1`, outside its documented `0...2π` range, and its wrapper already maps that to `nil` — a
+distinguishable sentinel that already reaches the caller as an absence. The `Local*`/`GeomLProp*`
+families already carry an `isDefined` out-parameter (#494).
+
+**Banked, not changed.** Two thresholds stay exactly where they are, because this pass changes how an
+absence is *spelled*, not where the boundary between presence and absence falls:
+`OCCTCurve3DGetTorsion` compares a **squared** magnitude against the linear `Precision::Confusion()`
+(an effective gate of `3.16e-4` on `|d1 x d2|`), and `OCCTWireGetCurvatureAt` keeps its literal
+`1e-10` on `|d1|`, the last hand-rolled resolution in the local-properties family after #494 and #529
+converged the rest.
+
+New suite `Issue595CurvatureDefinednessTests` (`OCCTAnalysisTests`), 9 tests. Proved against two
+injections: making every definedness gate unreportable fails 8 of the 9 (the cusp test is the
+control, correctly, since a cusp is not gated); making every `catch` unreportable fails 1, the
+not-an-edge case, with 8 controls.
+
+Probe and full figures at
+[`Scripts/repro/595-curvature-zero-sentinel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/595-curvature-zero-sentinel).
 Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild.
 
 #### Three orphaned arc-length bridge functions deleted, and they were not spare copies (#506)

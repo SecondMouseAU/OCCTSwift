@@ -594,14 +594,15 @@ struct Curve2DLocalPropertiesTests {
         let r = 5.0
         let circle = Curve2D.circle(center: .zero, radius: r)!
         let k = circle.curvature(at: 0)
-        #expect(abs(k - 1.0 / r) < 1e-10)
+        if let k { #expect(abs(k - 1.0 / r) < 1e-10) } else { Issue.record("circle has curvature") }
     }
 
     @Test("Curvature of line is zero")
     func curvatureOfLine() {
         let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+        // #595: a straight segment's 0 is an answer, so this asserts a reported 0 rather than nil.
         let k = seg.curvature(at: 0.5)
-        #expect(abs(k) < 1e-10)
+        if let k { #expect(abs(k) < 1e-10) } else { Issue.record("a straight segment has curvature 0") }
     }
 
     @Test("Normal on circle points toward center")

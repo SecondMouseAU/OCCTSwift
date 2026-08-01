@@ -542,10 +542,25 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Local Properties (Curvature, Normal, Inflection)
 
-    /// The curvature (1/radius) at parameter `u`.
-    /// Returns 0 for straight segments or on error.
-    public func curvature(at u: Double) -> Double {
-        OCCTCurve2DGetCurvature(handle, u)
+    /// The curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The curvature — `0` for a straight segment, which is a real answer — or `nil` at
+    ///   a parameter the curve cannot be evaluated at and where
+    ///   `GeomLProp_CLProps2d::IsTangentDefined()` is false. Straight and undefined used to be the
+    ///   same `0` (#595).
+    ///
+    /// A **cusp** is still reported, as `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`,
+    /// meaning infinite curvature): an answer, not an absence. Matches ``Curve3D/curvature(at:)``.
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 4)!
+    /// if let k = circle.curvature(at: 1) { #expect(abs(k - 0.25) < 1e-12) }
+    /// ```
+    public func curvature(at u: Double) -> Double? {
+        var k = 0.0
+        guard OCCTCurve2DGetCurvature(handle, u, &k) else { return nil }
+        return k
     }
 
     /// The unit normal vector at parameter `u`, or `nil` if undefined (e.g. on a straight line).

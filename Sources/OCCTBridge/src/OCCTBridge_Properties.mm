@@ -829,8 +829,13 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
     }
 }
 
-double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param) {
-    if (!wire) return -1.0;
+// #595: the -1.0 error sentinel became a bool, and the degenerate branch below stopped answering 0.
+// This one already reached Swift as an optional, but only through -1.0 -- the null-derivative case
+// returned 0.0, a straight wire's real curvature, so the optional never fired for the case that
+// actually has no answer.
+bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* curvature) {
+    *curvature = 0.0;
+    if (!wire) return false;
 
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
@@ -848,11 +853,15 @@ double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param) {
         // Curvature formula: κ = |d1 × d2| / |d1|³
         gp_Vec cross = d1.Crossed(d2);
         double d1Mag = d1.Magnitude();
-        if (d1Mag < 1e-10) return 0.0;
+        // A null first derivative is a cusp: the formula divides by it, and unlike
+        // GeomLProp_CLProps this hand-rolled path has no RealLast() sentinel to report instead.
+        // Nothing is the answer here, not zero.
+        if (d1Mag < 1e-10) return false;
 
-        return cross.Magnitude() / (d1Mag * d1Mag * d1Mag);
+        *curvature = cross.Magnitude() / (d1Mag * d1Mag * d1Mag);
+        return true;
     } catch (...) {
-        return -1.0;
+        return false;
     }
 }
 
@@ -1522,14 +1531,21 @@ bool OCCTEdgeLPropTangent(OCCTShapeRef edge, double param, double* dx, double* d
     } catch (...) { return false; }
 }
 
-double OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param) {
-    if (!edge) return 0.0;
+// #595, the same change the faceLProp* block above took in #583: an undefined tangent used to be
+// spelled 0, which is a straight edge's real curvature. The degeneracy is reachable without
+// constructing anything odd -- a sphere carries a degenerate edge at each pole, with no 3D curve at
+// all, and every Shape.edge* entry point walks edges without asking. A cusp still reports
+// RealLast(), an answer rather than an absence.
+bool OCCTEdgeLPropCurvature(OCCTShapeRef edge, double param, double* curvature) {
+    *curvature = 0;
+    if (!edge) return false;
     try {
         BRepAdaptor_Curve ac(TopoDS::Edge(edge->shape));
         BRepLProp_CLProps props = occtEdgeLocalProps(ac, param, 2);
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
-    } catch (...) { return 0.0; }
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
+    } catch (...) { return false; }
 }
 
 bool OCCTEdgeLPropNormal(OCCTShapeRef edge, double param, double* dx, double* dy, double* dz) {

@@ -1423,17 +1423,19 @@ A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`)
 Computes Gaussian and mean curvature at (u, v).
 
 ```swift
-public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)
+public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)?
 ```
 
 Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that single construction — and therefore its resolution argument, `Precision::Confusion()`, which is what `IsCurvatureDefined()` tests tangent vectors against for nullity. Before #405 this method built its own `GeomLProp_SLProps` with a hardcoded `1e-6`, ten times looser, and could report `(0, 0)` at a point where its two siblings returned a real curvature.
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `(0, 0)` where curvature is undefined.
+- **Returns:** Tuple of Gaussian curvature (K = k_min × k_max) and mean curvature (H = (k_min + k_max) / 2), or `nil` where curvature is undefined. It returned `(0, 0)` there until #595 — which is also a plane's real answer, so the agreement on definedness this method's own contract claims was not one it could express.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` and `MeanCurvature` (order 2, `Precision::Confusion()`).
 - **Example:**
   ```swift
   let sphere = Surface.sphere(center: .zero, radius: 5)!
-  let (K, H) = sphere.curvatures(u: 0, v: 0)
-  // K ≈ 0.04 (= 1/25), H ≈ 0.2 (= 1/5)
+  if let (K, H) = sphere.curvatures(u: 0, v: 0) {
+      // K ≈ 0.04 (= 1/25), H ≈ 0.2 (= 1/5)
+  }
+  sphere.curvatures(u: 0, v: .pi / 2)   // nil — the pole has no curvature
   ```

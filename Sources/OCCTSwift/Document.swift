@@ -11424,17 +11424,26 @@ extension Shape {
 
     /// Curvature on an edge at `param`, through the edge's own adaptor.
     ///
-    /// Returns 0 where the tangent is undefined, and `Double.greatestFiniteMagnitude` (OCCT's
-    /// `RealLast()`, meaning infinite curvature) at a cusp — the same two sentinels
-    /// ``Curve3D/curvature(at:)`` reports for the curve underneath.
+    /// - Parameter param: Parameter on the edge's curve.
+    /// - Returns: The curvature, or `nil` where this `Shape` is not an edge, the parameter cannot
+    ///   be evaluated, or the tangent is undefined there. That last case used to be `0`, which is
+    ///   also a straight edge's real curvature (#595). It is not exotic: a sphere carries a
+    ///   **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
+    ///   skip them.
+    ///
+    /// `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is still
+    /// reported at a cusp — an answer, not an absence — matching ``Curve3D/curvature(at:)`` on the
+    /// curve underneath.
     ///
     /// ```swift
     /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
     /// let edge = Shape.edgeFromCurve(arc)!
     /// let k = edge.edgeCurvatureLP(at: 0.5)   // 0.25, the reciprocal of the radius
     /// ```
-    public func edgeCurvatureLP(at param: Double) -> Double {
-        return OCCTEdgeLPropCurvature(handle, param)
+    public func edgeCurvatureLP(at param: Double) -> Double? {
+        var k = 0.0
+        guard OCCTEdgeLPropCurvature(handle, param, &k) else { return nil }
+        return k
     }
 
     /// Normal direction on an edge at `param`.
@@ -14434,20 +14443,22 @@ extension Curve3D {
 
     /// The curvature of the curve at a parameter value.
     ///
-    /// Equivalent to ``Curve3D/curvature(at:)`` — same OCCT computation, same tolerance. The two
-    /// used to disagree near a degeneracy, because this one asked at a 1000x tighter resolution
-    /// (#494).
+    /// Not merely equivalent to ``Curve3D/curvature(at:)`` — since #494 gave the two the same
+    /// resolution it *is* the same call, and measured over the same curves the two never disagreed
+    /// on any row, degenerate ones included. So this spelling forwards rather than duplicating, and
+    /// the bridge function behind it is gone (#595).
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: Curvature (1/radius), `0` where the curve has no defined tangent, and
+    /// - Returns: Curvature (1/radius), `nil` where the curve has no defined tangent, and
     ///   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
-    /// let k = circle.localCurvature(at: 0)   // 0.2, i.e. 1/5
+    /// let k = circle.curvature(at: 0)   // 0.2, i.e. 1/5
     /// ```
-    public func localCurvature(at u: Double) -> Double {
-        OCCTCurve3DLocalCurvature(handle, u)
+    @available(*, deprecated, renamed: "curvature(at:)")
+    public func localCurvature(at u: Double) -> Double? {
+        curvature(at: u)
     }
 
     /// The unit tangent direction at a parameter value.

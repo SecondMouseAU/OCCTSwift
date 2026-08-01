@@ -668,13 +668,18 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Gaussian curvature at (u, v), or `0` where curvature is undefined.
+    /// Gaussian curvature at (u, v), or `nil` where the surface has none.
     ///
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Gaussian curvature, or `0` at a point where the tangent vectors are degenerate
+    /// - Returns: Gaussian curvature, or `nil` at a point where the tangent vectors are degenerate
     ///   (a cone apex, a sphere pole) and `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// This used to be `0` — which is also the Gaussian curvature of **every point of every plane,
+    /// cylinder and cone**, since those are developable. Whole surfaces read as "no answer" (#595).
+    /// ``Face/gaussianCurvature(atU:v:)`` reads the same quantity off the same surface through the
+    /// face and has always returned an optional; the two now agree.
     ///
     /// `curvatures(u:v:)` returns this value and `meanCurvature(atU:v:)` together from a single
     /// evaluation; all three share one `GeomLProp_SLProps` construction and therefore agree
@@ -682,29 +687,39 @@ public final class Surface: @unchecked Sendable {
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// #expect(abs(sphere.gaussianCurvature(atU: 0, v: 0) - 1.0 / 25) < 1e-12)  // 1/r²
+    /// if let k = sphere.gaussianCurvature(atU: 0, v: 0) { #expect(abs(k - 1.0 / 25) < 1e-12) }
+    ///
+    /// let cylinder = Surface.cylinder(axis: .zero, direction: SIMD3(0, 0, 1), radius: 3)!
+    /// cylinder.gaussianCurvature(atU: 1, v: 6)   // 0 — developable, and that is the answer
     /// ```
-    public func gaussianCurvature(atU u: Double, v: Double) -> Double {
-        OCCTSurfaceGetGaussianCurvature(handle, u, v)
+    public func gaussianCurvature(atU u: Double, v: Double) -> Double? {
+        var k = 0.0
+        guard OCCTSurfaceGetGaussianCurvature(handle, u, v, &k) else { return nil }
+        return k
     }
 
-    /// Mean curvature at (u, v), or `0` where curvature is undefined.
+    /// Mean curvature at (u, v), or `nil` where the surface has none.
     ///
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Mean curvature, or `0` at a point where the tangent vectors are degenerate and
+    /// - Returns: Mean curvature, or `nil` at a point where the tangent vectors are degenerate and
     ///   `GeomLProp_SLProps::IsCurvatureDefined()` is false.
+    ///
+    /// This used to be `0`, which is also every point of every plane's real mean curvature (#595),
+    /// and it disagreed with ``Face/meanCurvature(atU:v:)``, which already returned an optional.
     ///
     /// `curvatures(u:v:)` returns this value and `gaussianCurvature(atU:v:)` together from a
     /// single evaluation; all three share one `GeomLProp_SLProps` construction.
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// #expect(abs(abs(sphere.meanCurvature(atU: 0, v: 0)) - 1.0 / 5) < 1e-12)  // 1/r
+    /// if let h = sphere.meanCurvature(atU: 0, v: 0) { #expect(abs(abs(h) - 1.0 / 5) < 1e-12) }
     /// ```
-    public func meanCurvature(atU u: Double, v: Double) -> Double {
-        OCCTSurfaceGetMeanCurvature(handle, u, v)
+    public func meanCurvature(atU u: Double, v: Double) -> Double? {
+        var h = 0.0
+        guard OCCTSurfaceGetMeanCurvature(handle, u, v, &h) else { return nil }
+        return h
     }
 
     /// Principal curvature result
@@ -2717,24 +2732,27 @@ extension Surface {
     /// - Parameters:
     ///   - u: U parameter.
     ///   - v: V parameter.
-    /// - Returns: Both curvatures, or `(0, 0)` where curvature is undefined.
+    /// - Returns: Both curvatures, or `nil` where curvature is undefined.
     ///
     /// Equivalent to calling `gaussianCurvature(atU:v:)` and `meanCurvature(atU:v:)` at the same
     /// point, for one `GeomLProp_SLProps` evaluation instead of two. All three share that one
     /// construction, so they agree exactly — including on whether curvature is defined at all.
     /// Before #405 this method built its own with a resolution ten times looser than its
     /// siblings' `Precision::Confusion()`, and could report `(0, 0)` for a point where they
-    /// returned a real curvature.
+    /// returned a real curvature. It returned `(0, 0)` for the undefined case too until #595 —
+    /// which is also a plane's real answer, so the agreement this doc claims was not one it could
+    /// express.
     ///
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
-    /// let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4)
-    /// #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
-    /// #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// if let (gaussian, mean) = sphere.curvatures(u: 0, v: .pi / 4) {
+    ///     #expect(gaussian == sphere.gaussianCurvature(atU: 0, v: .pi / 4))
+    ///     #expect(mean == sphere.meanCurvature(atU: 0, v: .pi / 4))
+    /// }
     /// ```
-    public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double) {
+    public func curvatures(u: Double, v: Double) -> (gaussian: Double, mean: Double)? {
         var g = 0.0, m = 0.0
-        OCCTSurfaceCurvatures(handle, u, v, &g, &m)
+        guard OCCTSurfaceCurvatures(handle, u, v, &g, &m) else { return nil }
         return (g, m)
     }
 

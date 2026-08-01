@@ -919,25 +919,31 @@ public static func dumpLengthUnit(_ unit: OCCTLengthUnit) -> String?
 
 Extensions on `Curve3D` wrapping `LProp3d_CLProps` for local differential properties.
 
-These four are alternative spellings of `Curve3D.curvature(at:)`, `tangentDirection(at:)`,
-`normal(at:)` and `centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only
-in shape. They are guaranteed to agree with their counterparts for the same curve at the same
-parameter; before #494 they asked at a hardcoded `1e-10` resolution against the canonical family's
-`Precision::Confusion()` (`1e-7`), and the two disagreed near a degeneracy.
+These are alternative spellings of `Curve3D.tangentDirection(at:)`, `normal(at:)` and
+`centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only in shape. They are
+guaranteed to agree with their counterparts for the same curve at the same parameter; before #494
+they asked at a hardcoded `1e-10` resolution against the canonical family's `Precision::Confusion()`
+(`1e-7`), and the two disagreed near a degeneracy.
 
-### `Curve3D.localCurvature(at:)`
+There were four. `localCurvature(at:)` is **deprecated** as of #595 and forwards to
+`curvature(at:)`: once #494 gave the two the same resolution they were the same call line for line,
+and measured over the same curves — degenerate rows included — they never disagreed on any row. The
+bridge function behind it, `OCCTCurve3DLocalCurvature`, is deleted.
+
+### `Curve3D.localCurvature(at:)` (deprecated)
 
 Curvature of the curve at a parameter value.
 
 ```swift
-public func localCurvature(at u: Double) -> Double
+@available(*, deprecated, renamed: "curvature(at:)")
+public func localCurvature(at u: Double) -> Double?
 ```
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature (1/radius); `0` where the tangent is undefined, and
+- **Returns:** Whatever `curvature(at:)` returns: the curvature (1/radius), `nil` where the tangent
+  is undefined (`0` until #595, which is also every straight curve's real curvature), and
   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
-- **Equivalent to:** `Curve3D.curvature(at:)`.
-- **OCCT:** `OCCTCurve3DLocalCurvature` → `LProp3d_CLProps::Curvature`.
+- **Use instead:** `Curve3D.curvature(at:)`.
 
 ---
 
@@ -992,7 +998,7 @@ Extensions on `Surface` wrapping `LProp3d_SLProps` for local surface differentia
 
 Both report quantities `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
 `meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` also report, at the same tolerance since
-#494 — they previously asked at a hardcoded `1e-10` against those entry points'
+#494 and with the same optionality since #595 — they previously asked at a hardcoded `1e-10` against those entry points'
 `Precision::Confusion()`, so they could report curvature at a point the rest called undefined. The
 one remaining asymmetry is by design: `localCurvatureDirections` also returns `nil` at umbilic
 points, where curvature is perfectly well defined but no principal direction is distinguished.

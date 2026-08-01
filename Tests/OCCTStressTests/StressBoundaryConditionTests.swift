@@ -439,10 +439,11 @@ struct StressCurveSurfaceBoundaryTests {
     @Test func curveCurvatureAtBounds() {
         let curve = standardBSplineCurve()
         let domain = curve.domain
-        let k1 = curve.localCurvature(at: domain.lowerBound)
-        let k2 = curve.localCurvature(at: domain.upperBound)
-        #expect(k1.isFinite)
-        #expect(k2.isFinite)
+        // #595: localCurvature is deprecated onto curvature(at:), and both report definedness.
+        let k1 = curve.curvature(at: domain.lowerBound)
+        let k2 = curve.curvature(at: domain.upperBound)
+        #expect(k1?.isFinite == true)
+        #expect(k2?.isFinite == true)
     }
 
     @Test func surfaceCurvatureAtBounds() {
@@ -450,8 +451,8 @@ struct StressCurveSurfaceBoundaryTests {
         let dom = surf.domain
         let g = surf.gaussianCurvature(atU: dom.uMin, v: dom.vMin)
         let m = surf.meanCurvature(atU: dom.uMax, v: dom.vMax)
-        #expect(g.isFinite)
-        #expect(m.isFinite)
+        #expect(g?.isFinite == true)
+        #expect(m?.isFinite == true)
     }
 
     @Test func periodicCurveAtPeriodBoundary() {

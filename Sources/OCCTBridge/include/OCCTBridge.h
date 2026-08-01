@@ -1804,8 +1804,11 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
 /// Get curvature at normalized parameter
 /// @param wire The wire to sample
 /// @param param Parameter value from 0.0 to 1.0
-/// @return Curvature value (1/radius), or -1.0 on error
-double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param);
+/// @param curvature Output: curvature value (1/radius)
+/// @return true if the curvature exists there. False for a null wire, a parameter the wire cannot
+///   be evaluated at, and a point whose first derivative is null (a cusp), where the hand-rolled
+///   formula has no answer -- that last case used to return 0, a straight wire's answer (#595).
+bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* _Nonnull curvature);
 
 /// Get full curve point with position, tangent, and curvature
 /// @param wire The wire to sample
@@ -2630,7 +2633,11 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
                                         double tolerance);
 
 // Local Properties (Geom2dLProp)
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef curve, double u);
+
+/// Get curvature at parameter u. Returns true if the curvature exists there: false for a null
+/// curve, a parameter that cannot be evaluated, and a point where IsTangentDefined() is false.
+/// A cusp still reports true with OCCT's RealLast() infinity sentinel, which is an answer (#595).
+bool   OCCTCurve2DGetCurvature(OCCTCurve2DRef curve, double u, double* _Nonnull curvature);
 bool   OCCTCurve2DGetNormal(OCCTCurve2DRef curve, double u, double* nx, double* ny);
 bool   OCCTCurve2DGetTangentDir(OCCTCurve2DRef curve, double u, double* tx, double* ty);
 bool   OCCTCurve2DGetCenterOfCurvature(OCCTCurve2DRef curve, double u, double* cx, double* cy);
@@ -3127,14 +3134,25 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef curve, double deflection,
                                    double* outXYZ, int32_t maxPoints);
 
 // Local Properties
-double OCCTCurve3DGetCurvature(OCCTCurve3DRef curve, double u);
+
+/// Get curvature at parameter u. Returns true if the curvature exists there: false for a null
+/// curve, a parameter that cannot be evaluated, and a point where IsTangentDefined() is false --
+/// which used to be spelled 0, indistinguishable from a straight curve's real answer (#595).
+/// A cusp reports true with OCCT's RealLast() infinity sentinel, which is an answer, not an absence.
+bool   OCCTCurve3DGetCurvature(OCCTCurve3DRef curve, double u, double* _Nonnull curvature);
 bool   OCCTCurve3DGetTangent(OCCTCurve3DRef curve, double u,
                               double* tx, double* ty, double* tz);
 bool   OCCTCurve3DGetNormal(OCCTCurve3DRef curve, double u,
                              double* nx, double* ny, double* nz);
 bool   OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef curve, double u,
                                         double* cx, double* cy, double* cz);
-double OCCTCurve3DGetTorsion(OCCTCurve3DRef curve, double u);
+
+/// Get torsion at parameter u, the rate the curve twists out of its osculating plane. Returns true
+/// if the torsion exists there: false for a null curve, a parameter that cannot be evaluated, and a
+/// point with no osculating plane to twist out of (|d1 x d2| under the gate, e.g. a straight
+/// stretch). That last case used to be spelled 0, which is also every planar curve's real torsion,
+/// so a circle and a line were indistinguishable (#595).
+bool   OCCTCurve3DGetTorsion(OCCTCurve3DRef curve, double u, double* _Nonnull torsion);
 
 // Bounding Box
 bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef curve,
@@ -3268,8 +3286,17 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef surface,
                              double* outXYZ);
 
 // Local Properties (GeomLProp_SLProps)
-double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef surface, double u, double v);
-double OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef surface, double u, double v);
+
+/// Get Gaussian / mean curvature at (u, v). Both return true if the curvature exists there, and
+/// false for a null surface, a parameter that cannot be evaluated, and a point where
+/// IsCurvatureDefined() is false (a cone apex, a sphere pole). Each used to return the value bare
+/// with 0 for the undefined case, which is also a plane's mean curvature and the Gaussian curvature
+/// of every point of every plane, cylinder and cone -- whole surfaces reading as "no answer" (#595).
+/// Same shape as their OCCTFaceGetGaussianCurvature / OCCTFaceGetMeanCurvature counterparts.
+bool   OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef surface, double u, double v,
+                                        double* _Nonnull curvature);
+bool   OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef surface, double u, double v,
+                                    double* _Nonnull curvature);
 bool   OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef surface, double u, double v,
                                           double* kMin, double* kMax,
                                           double* d1x, double* d1y, double* d1z,
@@ -16481,9 +16508,12 @@ bool OCCTEdgeLPropValue(OCCTShapeRef _Nonnull edge, double param,
 bool OCCTEdgeLPropTangent(OCCTShapeRef _Nonnull edge, double param,
                             double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
-/// Get curvature on edge at parameter. Returns 0 where the tangent is undefined, and OCCT's
-/// RealLast() where the curvature is infinite (a cusp), matching OCCTEdgeGetCurvature3D.
-double OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param);
+/// Get curvature on edge at parameter. Returns true if the curvature exists there, and false for a
+/// null handle, a Shape that is not an edge, and an edge whose tangent is undefined at that
+/// parameter -- a degenerate edge, which every sphere carries at its poles, and which used to
+/// report 0, a straight edge's real answer (#595). A cusp reports true with OCCT's RealLast()
+/// infinity sentinel, matching OCCTEdgeGetCurvature3D.
+bool OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param, double* _Nonnull curvature);
 
 /// Get normal direction on edge at parameter.
 /// Returns false where there is no normal to report: an undefined tangent, or a curvature that
@@ -17842,8 +17872,10 @@ double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 void OCCTSurfaceNormal(OCCTSurfaceRef _Nonnull surface, double u, double v,
                          double* _Nonnull nx, double* _Nonnull ny, double* _Nonnull nz);
 
-/// Compute Gaussian and mean curvature at (u,v).
-void OCCTSurfaceCurvatures(OCCTSurfaceRef _Nonnull surface, double u, double v,
+/// Compute Gaussian and mean curvature at (u,v). Returns true if the curvature exists there, on the
+/// same terms as OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature, which it shares one
+/// GeomLProp_SLProps construction with (#595).
+bool OCCTSurfaceCurvatures(OCCTSurfaceRef _Nonnull surface, double u, double v,
                              double* _Nonnull gaussian, double* _Nonnull mean);
 
 // MARK: - HelixGeom (v0.116.0)
@@ -18195,8 +18227,10 @@ const char* _Nullable OCCTUnitsDumpLengthUnit(int32_t unit);
 
 // MARK: - LProp3d_CLProps (v0.117.0)
 
-/// Get curvature at parameter on a 3D curve.
-double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u);
+// OCCTCurve3DLocalCurvature was removed in #595. Since #494 converged its resolution it built the
+// same GeomLProp_CLProps as OCCTCurve3DGetCurvature at the same occtLocalPropsResolution() and gated
+// on the same IsTangentDefined(); measured over the same curves the two never disagreed on any row,
+// including the degenerate ones. Curve3D.localCurvature(at:) is deprecated onto curvature(at:).
 
 /// Get tangent direction at parameter on a 3D curve.
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
