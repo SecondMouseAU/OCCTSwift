@@ -510,6 +510,78 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               GeomAbs_Shape order,
                               bool isBound);
 
+// === #571: one GeomPlate_MakeApprox contract behind all six plate entry points ===
+
+class GeomPlate_Surface;
+class Geom_BSplineSurface;
+
+//
+// GeomPlate_MakeApprox is the one consumer of AdvApp2Var_ApproxAFunc2Var that does not go through
+// GeomConvert_ApproxSurface — it drives the approximator directly — so it sat outside every census
+// built by grepping for GeomConvert_ApproxSurface, including the PrecisCode census in
+// OCCTBridge_Surface.mm. Six bridge functions construct it: OCCTShapePlatePoints and
+// OCCTShapePlateCurves (OCCTBridge_Healing.mm), OCCTShapePlatePointsAdvanced, OCCTShapePlateMixed,
+// OCCTSurfacePlateThrough and OCCTGeomPlateSurface (OCCTBridge_ProjLib_NLPlate.mm). Five of them
+// hard-coded `Nbmax = 1, dmax = tolerance * 10`; the sixth passed the caller's maxSegments and
+// `dmax = tolerance * 0.1`. Definition lives in OCCTBridge_ProjLib_NLPlate.mm.
+//
+// The two arguments that differed are the two that decide whether `tolerance` means anything:
+//
+//   Nbmax caps the number of Bezier patches, and 1 is the one value that breaks the algorithm.
+//   AdvApp2Var_ApproxAFunc2Var::ComputePatches derives its cut decision NumDec from myMaxPatches,
+//   and at 1 every branch leaves NumDec = 0; AdvApp2Var_Patch::CutSense then returns 0 whether or
+//   not the criterion is satisfied, so "the fit missed" and "the fit is fine" issue the same
+//   instruction — keep this patch. The criterion is still evaluated and still reported through
+//   CriterionError(), it just cannot act. Measured on a 25-point wavy plate at tolerance 1e-2:
+//   Nbmax = 1 returns a 9x9 surface deviating 9.8e-2, i.e. 9.8x the tolerance it was given, with
+//   the criterion violated (critErr 9.8e-2 against a 1e-2 threshold) and ignored; Nbmax = 2 or
+//   more returns 16x16 deviating 4.4e-3, inside tolerance. Sweeping dmax across nine orders of
+//   magnitude at Nbmax = 1 yields bit-identical control nets — a dead argument in the sense of
+//   #497's inert SetFuzzyValue.
+//
+//   dmax sets the criterion threshold, as seuil = max(Tol3d, 10 * dmax) (GeomPlate_MakeApprox.cxx).
+//   So `dmax = tolerance * 10` asks the G0 criterion to accept 100x the tolerance the caller
+//   requested — and it is not merely dead weight once Nbmax allows subdivision: at Nbmax = 20 that
+//   value reproduces the bad 9x9 answer exactly, while tolerance * 0.1 gives the good 16x16 one.
+//   tolerance * 0.1 makes 10 * dmax == Tol3d, so seuil is the caller's own tolerance. It is the
+//   value the sixth site already used, and measurement picks it over the other five.
+//
+// CritOrder stays 0. The G0 criterion measures the distance between the fitted patch and the plate
+// at the plate's own order-0 constraint UVs, which is exactly what `tolerance` promises for a
+// surface built to pass through points. CritOrder = -1 disables the criterion outright (and flips
+// the Jacobi precision, myPrec 0 -> 1); CritOrder = 1 measures normals instead of positions.
+//
+// `continuity` is the continuity of the joins BETWEEN patches, a different axis from the
+// constraint order handed to GeomPlate_PointConstraint/GeomPlate_CurveConstraint — which is why
+// OCCTShapePlateCurves' caller-supplied order is NOT forwarded here. It was implicit at all six
+// sites (GeomPlate_MakeApprox.hxx defaults it to GeomAbs_C1); passing it explicitly keeps that
+// value while making it reviewable, and it is not cosmetic — C0/C1/C2 give 17x17, 16x16 and 21x21
+// control nets on the fixture above. Only those three are accepted: G1, G2, C3 and CN all throw
+// Standard_Failure ("AdvApp2Var_ApproxAFunc2Var : UContinuity Error"), measured, so callers must
+// clamp into the parametric ladder rather than reach for occtGeomAbsFromSurfaceContinuity, whose
+// order-1 answer is GeomAbs_G1.
+//
+// Returns a null handle when the approximation cannot be built; callers treat that as failure.
+occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPlate_Surface>& plate,
+                                                        double tolerance,
+                                                        int32_t maxDegree,
+                                                        int32_t maxSegments,
+                                                        GeomAbs_Shape continuity);
+
+// The patch-join continuity every plate entry point asks for unless told otherwise. C1 is what all
+// six sites got from GeomPlate_MakeApprox's own default before #571 made it explicit.
+inline GeomAbs_Shape occtPlateApproxDefaultContinuity() { return GeomAbs_C1; }
+
+// The largest number of Bezier patches a plate approximation may use unless the caller names one.
+// A cap, not a target: the approximator stops as soon as the criterion is met, and on the #571
+// fixture everything from 2 upwards produces the identical surface. Matches the `maxSegments: 20`
+// default that Shape.plateSurface(points:) already exposed.
+inline int32_t occtPlateApproxDefaultMaxSegments() { return 20; }
+
+// The largest Bezier degree a plate approximation may use unless the caller names one. All six
+// sites already used 8.
+inline int32_t occtPlateApproxDefaultMaxDegree() { return 8; }
+
 // === #497: one BRepAlgoAPI_Defeaturing skeleton ===
 //
 // Four entry points remove faces with BRepAlgoAPI_Defeaturing: OCCTShapeRemoveFeatures and

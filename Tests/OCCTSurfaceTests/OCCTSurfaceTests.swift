@@ -488,7 +488,7 @@ struct FillingSupportFaceTests {
     }
 }
 
-@Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Plate Surface Tests")
 struct PlateSurfaceTests {
 
     @Test("Plate surface through grid of points")
@@ -1323,7 +1323,7 @@ struct AdvancedPlateSurfaceTests {
     }
 }
 
-@Suite("Parametric Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Parametric Plate Surface Tests")
 struct ParametricPlateSurfaceTests {
 
     @Test("Plate through points returns parametric surface")
