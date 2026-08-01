@@ -11,6 +11,8 @@
 # Prerequisites:
 #   - Xcode 15+ with Command Line Tools
 #   - CMake 3.20+ (brew install cmake)
+#   - rapidjson (brew install rapidjson) — the one third-party product this build enables;
+#     every other USE_* is OFF, so it is the only one cmake will look for
 #   - ~10GB free disk space
 #
 # Build time: ~30-60 minutes depending on hardware
@@ -68,6 +70,21 @@ echo "tvOS SDK: $TVOS_SDK"
 echo "tvOS Simulator SDK: $TVSIM_SDK"
 echo ""
 
+# rapidjson is the only third-party product this build enables, and cmake fails configure outright
+# without it ("Could not find headers of used third-party products"). Ask brew where it is rather
+# than hardcoding the Apple-silicon prefix, so an Intel mac (/usr/local) works too, and name the
+# missing package instead of letting cmake report a bare variable. Checked here, before the OCCT
+# clone, so a missing prerequisite costs seconds rather than a full source download (#585).
+RAPIDJSON_DIR="${RAPIDJSON_DIR:-$(brew --prefix rapidjson 2>/dev/null)/include}"
+if [ ! -d "$RAPIDJSON_DIR" ]; then
+    echo "ERROR: rapidjson headers not found at '$RAPIDJSON_DIR'." >&2
+    echo "       Install it with 'brew install rapidjson', or set RAPIDJSON_DIR." >&2
+    exit 1
+fi
+
+# Libraries/ is gitignored in its entirety, so a clean checkout — CI, or anyone's first build —
+# does not have it. Create it rather than `cd` into nothing (#585).
+mkdir -p "$LIBRARIES_DIR"
 cd "$LIBRARIES_DIR"
 
 # --------------------
@@ -135,7 +152,7 @@ CMAKE_COMMON_OPTS=(
     -DUSE_FREETYPE=OFF
     -DUSE_FREEIMAGE=OFF
     -DUSE_RAPIDJSON=ON
-    -D3RDPARTY_RAPIDJSON_DIR=/opt/homebrew/opt/rapidjson/include
+    -D3RDPARTY_RAPIDJSON_DIR="$RAPIDJSON_DIR"
     -DUSE_TBB=OFF
     -DUSE_VTK=OFF
     -DUSE_OPENGL=OFF

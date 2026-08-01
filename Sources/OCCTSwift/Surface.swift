@@ -884,10 +884,29 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Advanced Plate Surfaces (v0.23.0)
 
-    /// Create a plate surface (parametric) interpolating through 3D points.
+    /// Create a plate surface (parametric) approximating a set of 3D points.
     ///
-    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce
-    /// a BSpline surface that passes through all given points.
+    /// Uses `GeomPlate_BuildPlateSurface` + `GeomPlate_MakeApprox` to produce a BSpline surface
+    /// through the given points. It **approximates** rather than interpolates: the fit subdivides
+    /// into more Bezier patches until it is within `tolerance` of the plate, and a cloud that
+    /// cannot be fitted that tightly still returns its best effort. Check the result:
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    ///     (0..<5).map { j in
+    ///         SIMD3(Double(i) * 4, Double(j) * 4,
+    ///               4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    ///     }
+    /// }
+    /// if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    ///     let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    ///     print(worst)              // 0.0032 — inside tolerance
+    ///     print(plate.uPoleCount)   // 16 — more than one patch, so the fit did subdivide
+    /// }
+    /// ```
+    ///
+    /// A `uPoleCount` no greater than the degree cap plus one means the fit stayed on a single
+    /// Bezier patch. Before #571 that was forced, and `tolerance` was unenforceable as a result.
     ///
     /// - Parameters:
     ///   - points: Array of 3D points (minimum 3)
@@ -1733,6 +1752,16 @@ extension Surface {
         public let uSplitParams: [Double]
         /// V parameter values (ascending, bounded by the surface's own V range) at each split
         public let vSplitParams: [Double]
+        /// 1-based indices into the surface's own U knot table, one per split:
+        /// `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`.
+        ///
+        /// The analyzer reports indices and this call converts them, so before #562 the raw form
+        /// was reachable only through a separate `bsplineKnotSplitValues(continuity:)`, which
+        /// constructed the analyzer three more times to get it.
+        public let uSplitIndices: [Int]
+        /// 1-based indices into the surface's own V knot table, one per split:
+        /// `vSplitParams[i] == bsplineVKnot(index: vSplitIndices[i])`.
+        public let vSplitIndices: [Int]
     }
 
     /// Analyze where a BSpline surface would need to be split to achieve
@@ -1755,6 +1784,10 @@ extension Surface {
     /// let all = bsplineSurface.knotSplitting(uContinuity: .c3, vContinuity: .c3)
     /// // all.uSplitParams / all.vSplitParams are real U/V parameters, usable to split the
     /// // surface into same-continuity patches.
+    ///
+    /// // The raw knot-table indices are here too, and agree with the parameters by construction.
+    /// let sameThing = all.uSplitIndices.map { bsplineSurface.bsplineUKnot(index: $0) }
+    /// // sameThing == all.uSplitParams
     /// ```
     ///
     /// - Parameters:
@@ -1766,31 +1799,37 @@ extension Surface {
     ///     API for the every-knot split at the far end of that ladder (#480).
     ///   - vContinuity: Minimum continuity to require of each V patch, against the V degree
     ///     and V knots
-    /// - Returns: Split counts plus the actual U/V parameter values, or all-empty/zero for
-    ///   a non-BSpline surface
+    /// - Returns: Split counts, the actual U/V parameter values, and the knot-table indices those
+    ///   parameters were read from, or all-empty/zero for a non-BSpline surface
     public func knotSplitting(uContinuity: ParametricContinuity = .c1,
                               vContinuity: ParametricContinuity = .c1) -> KnotSplitResult {
         // Same retry-on-truncation pattern as Curve3D.continuityBreaks: the bridge always
         // reports the true split counts even when it writes fewer, so one retry sized to
         // those counts is always enough.
-        func read(uCapacity: Int32, vCapacity: Int32) -> (OCCTSurfaceKnotSplitResult, [Double], [Double]) {
+        typealias Read = (OCCTSurfaceKnotSplitResult, [Double], [Double], [Int32], [Int32])
+        func read(uCapacity: Int32, vCapacity: Int32) -> Read {
             var uParams = [Double](repeating: 0, count: Int(uCapacity))
             var vParams = [Double](repeating: 0, count: Int(vCapacity))
+            var uIndices = [Int32](repeating: 0, count: Int(uCapacity))
+            var vIndices = [Int32](repeating: 0, count: Int(vCapacity))
             let result = OCCTSurfaceKnotSplitting(handle, uContinuity.rawValue, vContinuity.rawValue,
-                                                   &uParams, uCapacity, &vParams, vCapacity)
-            return (result, uParams, vParams)
+                                                  &uParams, &uIndices, uCapacity,
+                                                  &vParams, &vIndices, vCapacity)
+            return (result, uParams, vParams, uIndices, vIndices)
         }
 
-        var (result, uParams, vParams) = read(uCapacity: 64, vCapacity: 64)
+        var (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: 64, vCapacity: 64)
         if result.nbUSplits > 64 || result.nbVSplits > 64 {
-            (result, uParams, vParams) = read(uCapacity: max(result.nbUSplits, 1),
-                                               vCapacity: max(result.nbVSplits, 1))
+            (result, uParams, vParams, uIndices, vIndices) = read(uCapacity: max(result.nbUSplits, 1),
+                                                                  vCapacity: max(result.nbVSplits, 1))
         }
         return KnotSplitResult(
             uSplitCount: Int(result.nbUSplits),
             vSplitCount: Int(result.nbVSplits),
             uSplitParams: Array(uParams.prefix(Int(result.nbUSplits))),
-            vSplitParams: Array(vParams.prefix(Int(result.nbVSplits)))
+            vSplitParams: Array(vParams.prefix(Int(result.nbVSplits))),
+            uSplitIndices: uIndices.prefix(Int(result.nbUSplits)).map(Int.init),
+            vSplitIndices: vIndices.prefix(Int(result.nbVSplits)).map(Int.init)
         )
     }
 

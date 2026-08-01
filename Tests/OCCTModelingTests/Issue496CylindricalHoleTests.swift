@@ -89,21 +89,39 @@ struct Issue496CylindricalHoleTests {
 
     // MARK: - Misreports inside the feature family
 
-    /// The status query wraps `Perform`, so it answers for through-all no matter which mode the
-    /// caller is about to run. `Perform` tolerates a radius that swallows the whole solid;
-    /// `PerformThruNext` calls the same request `InvalidPlacement`. Pre-checking with the status
-    /// query therefore returns a green light for a drill that then fails.
-    @Test("Through-all status is a false green for the thru-next drill")
-    func statusDisagreesWithThruNext() {
+    /// A radius that swallows the whole solid is one answer for the whole family: the bore consumes
+    /// the stock and the result is empty.
+    ///
+    /// This used to be the #496 divergence "through-all status is a false green for the thru-next
+    /// drill" — `Perform` tolerated the request while `PerformThruNext` called it
+    /// `InvalidPlacement`. That refusal was an artefact of the #532 defect, not a contract:
+    /// under `BOPAlgo_CUT` an oversized tool emptied the builder's shape, so `nbparts` was 0 and the
+    /// "the tool meets nothing" guard fired. Driving the builder correctly (carried patch `0020`)
+    /// makes `nbparts` 1 — the tool meets the whole solid — and the two extents now return the empty
+    /// result `.throughAll` and ``Shape/drilled(at:direction:radius:depth:)`` always returned.
+    @Test("A radius that swallows the solid empties it, for every spelling")
+    func oversizedRadiusEmptiesTheSolid() {
         guard let box = plate() else { #expect(Bool(false), "box"); return }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
         let radius = 100.0   // wider than the 50mm plate
 
-        #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
-                                          radius: radius) == .noError)
-        #expect(box.cylindricalHoleThruNext(axisOrigin: origin, axisDirection: axis,
-                                            radius: radius) == nil)
+        // The boolean drill has always answered this way.
+        if let d = box.drilled(at: origin, direction: axis, radius: radius, depth: 0) {
+            #expect(d.subShapes(ofType: .solid).isEmpty)
+        } else { #expect(Bool(false), "boolean drill failed") }
+
+        for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .thruNext] {
+            #expect(box.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
+                                              radius: radius, extent: extent) == .noError,
+                    "\(extent) refused an oversized radius")
+            if let d = box.cylindricalHole(axisOrigin: origin, axisDirection: axis,
+                                           radius: radius, extent: extent) {
+                #expect(d.subShapes(ofType: .solid).isEmpty, "\(extent) left material behind")
+            } else {
+                #expect(Bool(false), "\(extent) failed outright")
+            }
+        }
     }
 
     /// `BRepFeat_HoleTooLong` is written in exactly two places in the kernel
@@ -318,41 +336,31 @@ struct Issue496CylindricalHoleTests {
                                             extent: .range(from: 26, to: 44)) == .invalidPlacement)
     }
 
-    /// An upstream defect this wrapping exposes, pinned so a future kernel bump is noticed.
-    ///
-    /// `PerformUntilEnd` and the ranged `Perform` both end in a `nbparts >= 2` branch
-    /// (`BRepFeat_MakeCylindricalHole.cxx:315` and `:421`) that keeps exactly one part of the
-    /// cutting tool. When the axis spans more than one body that choice can be the part that
-    /// intersects nothing — and the operation then reports `BRepFeat_NoError` while removing no
-    /// material at all, having only imprinted the cylinder's faces on the input.
-    ///
-    /// The boolean drill has no such branch and cuts both bodies. Documented rather than worked
-    /// around: this is kernel behaviour, filed as #532.
-    @Test("untilEnd and range report success but remove nothing across a multi-body stack")
-    func multiBodyExtentsRemoveNothing() {
+    /// Every spelling that claims to bound the hole by the stock's own faces removes the same
+    /// material from a stack as the boolean drill does. This was #532: `PerformUntilEnd`, the ranged
+    /// `Perform` and `PerformBlind` selected from the *cut result* rather than the split tool, kept
+    /// pieces that were not tool parts at all, and returned the input with the cylinder's faces
+    /// imprinted on it while reporting `BRepFeat_NoError`. Fixed by carried patch `0020`; see
+    /// `Issue532CylindricalHolePartSelectionTests` for the full contract.
+    @Test("Every stack-spanning extent removes what the boolean drill removes")
+    func multiBodyExtentsDrillEveryBody() {
         guard let stack = stack(), let v0 = stack.volume else { #expect(Bool(false), "stack"); return }
         let origin = SIMD3<Double>(0, 0, 15)
         let axis = SIMD3<Double>(0, 0, -1)
 
-        for extent: Shape.CylindricalHoleExtent in [.untilEnd, .range(from: 0, to: 70)] {
+        for extent: Shape.CylindricalHoleExtent in [.throughAll, .untilEnd, .range(from: 0, to: 70)] {
             #expect(stack.cylindricalHoleStatus(axisOrigin: origin, axisDirection: axis,
                                                 radius: 5, extent: extent) == .noError)
             if let d = stack.cylindricalHole(axisOrigin: origin, axisDirection: axis,
                                              radius: 5, extent: extent), let v = d.volume {
-                #expect(abs(v - v0) < 1e-6, "\(extent) unexpectedly removed \(v0 - v)")
-                #expect(d.subShapes(ofType: .face).count > stack.subShapes(ofType: .face).count)
+                #expect(abs((v0 - v) - 2 * Self.holeVolume) < 1.0,
+                        "\(extent) removed \(v0 - v), expected \(2 * Self.holeVolume)")
+                #expect(d.isValid)
             } else {
                 #expect(Bool(false), "\(extent) failed outright")
             }
         }
 
-        // Both spellings that do bound the hole themselves cut both plates.
-        for extent: Shape.CylindricalHoleExtent in [.throughAll] {
-            if let d = stack.cylindricalHole(axisOrigin: origin, axisDirection: axis,
-                                             radius: 5, extent: extent), let v = d.volume {
-                #expect(abs((v0 - v) - 2 * Self.holeVolume) < 1.0)
-            } else { #expect(Bool(false), "\(extent) failed") }
-        }
         if let d = stack.drilled(at: origin, direction: axis, radius: 5, depth: 0),
            let v = d.volume {
             #expect(abs((v0 - v) - 2 * Self.holeVolume) < 1.0)
