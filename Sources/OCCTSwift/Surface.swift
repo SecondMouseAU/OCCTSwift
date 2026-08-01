@@ -512,7 +512,30 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Conversion
 
-    /// Convert to BSpline representation
+    /// Convert to a BSpline representation, exactly where OCCT can and by approximation where it
+    /// cannot.
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let bspline = sphere.toBSpline()      // exact: degree 2, 6x5 poles
+    ///
+    /// // An offset surface with no analytic equivalent is approximated instead.
+    /// let approximated = sphere.offset(distance: 1)?.trimmed(u1: 0, u2: 4, v1: -1, v2: 1)?.toBSpline()
+    /// ```
+    ///
+    /// - Important: This is not an exactness guarantee, and it takes no tolerance. Analytic
+    ///   families (plane, cylinder, cone, sphere, torus, surface of revolution) and Bezier and
+    ///   BSpline surfaces convert exactly. Everything else, including offset surfaces with no
+    ///   analytic equivalent, is handed to `GeomConvert_ApproxSurface` at a tolerance OCCT
+    ///   hardcodes to `1e-4`, with a continuity it derives from the surface's own `IsCNu`/`IsCNv`,
+    ///   and the result is returned whether or not that tolerance was met. Measured on a trimmed
+    ///   offset of a B-spline that is C1 but not C2 in U, the conversion caps out at degree 14 and
+    ///   sits 0.038 from its source (#572). Use ``approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    ///   when you need to name the tolerance, and ``approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)``
+    ///   when you need to know whether it was reached.
+    /// - Returns: The BSpline surface, or `nil` when OCCT produced none. An unbounded surface
+    ///   throws inside OCCT and surfaces here as `nil`; trim it first with
+    ///   ``trimmed(u1:u2:v1:v2:)``.
     public func toBSpline() -> Surface? {
         guard let h = OCCTSurfaceToBSpline(handle) else { return nil }
         return Surface(handle: h)
