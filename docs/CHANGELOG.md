@@ -17,6 +17,79 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The index entries that named a real symbol belonging to a different class (#565)
+
+#510 fixed the 135 index entries in `OCCTBridge.h` that named symbols which never existed. This is
+the second defect class in the same index: an entry naming a real symbol **from a neighbouring
+class**. It passes an existence check and misleads exactly the way a fabrication does — you look up
+a class, get sent to a function that has nothing to do with it, and conclude the class is wrapped
+there. #501 hit it directly (`GCPnts_UniformAbscissa → OCCTCPntsUniformDeflection*`, a symbol that
+exists and wraps `CPnts_UniformDeflection`).
+
+**17 entries corrected.** Every one named a symbol that exists, so the #510 gate called them all
+clean:
+
+| entry | named | actually drives |
+|---|---|---|
+| `BOPAlgo_CellsBuilder` | `OCCTBOPAlgoSplit` | `BOPAlgo_Splitter` — already the entry two rows down |
+| `ShapeFix_Wire` | `OCCTShapeFixWire*` | that prefix is `ShapeFix_WireVertex` + `ShapeFix_Wireframe` |
+| `BRepOffsetAPI_MakePipe` | `OCCTShapePipe*` | that prefix is `BRepFeat_MakePipe` |
+| `BRepFill_OffsetWire` | `OCCTWireOffset` | `BRepOffsetAPI_MakeOffset` |
+| `BRepOffset_Analyse` | `OCCTEdgeGetConvexity` | nothing — convexity is computed by hand |
+| `GC_MakeCircle` / `GC_MakeSegment` | `OCCTWireCreateCircle` / `OCCTWireCreateLine` | `BRepBuilderAPI_MakeEdge` from a `gp_Circ`/`gp_Lin` |
+| `ShapeAnalysis_WireOrder` | `OCCTWireAnalyze` | `ShapeAnalysis_Wire` |
+| `LProp_AnalyticCurInf` | `OCCTLPropAnalyticCurInf` | `LProp_CurAndInf`; the analytic scan is reimplemented inline |
+| `Law_Interpol` | `OCCTLawInterpolate` | `Law_Interpolate` — a different class, one letter apart |
+| `Geom2d_Direction` / `Geom2d_VectorWithMagnitude` | `OCCTDirection2D*` / `OCCTVector2D*` | `gp_Dir2d`/`gp_Vec2d`; neither `Geom2d_` class is wrapped at all |
+| `ShapeUpgrade_ConvertCurve3dToBezier` (+`…SurfaceToBezierBasis`) | — | reached via `ShapeUpgrade_ShapeConvertToBezier`; now says so |
+| `BRepCheck_Edge/Face/Shell/Solid` | `OCCTBRepCheckSubShapeValid` | `BRepCheck_Analyzer` |
+| `BRepOffsetAPI_MakePipeShell` | `OCCTPipeShell*` | `BRepFill_PipeShell` |
+| `BRepGProp` | `OCCTShapeGetCenterOfMass` | `BRepBndLib` — see below |
+
+Six classes had **no entry at all** because a wrong one was standing in for them:
+`ShapeAnalysis_Wire` (39 call sites), `BRepFill_PipeShell` (24), `BRepOffsetAPI_MakeOffsetShape`,
+`BRepOffset_MakeOffset`, `Law_Interpolate`, `LProp_CurAndInf`. `Geom2d_Direction` and
+`Geom2d_VectorWithMagnitude` moved to `docs/occtswift-wrapping-gaps.md` as genuinely unwrapped.
+
+**The direction check now gates, per symbol rather than per entry.** An entry-level rule ("at least
+one of these reaches the class") lets a wrong symbol hide behind its correct neighbours — which is
+the whole shape of the defect, and `GCPnts_UniformAbscissa` was only caught in #501 because it
+happened to be its entry's sole symbol. Two injected mistakes proved this: adding
+`OCCTShapeFixWireframe` to the correct `ShapeFix_Face` entry went unreported until the rule changed.
+
+Four forms of indirection had to be resolved first, because a check that cannot tell "wrong class"
+from "reached indirectly" fails on correct entries and gets switched off: wrapper-type fields
+(`XCAFDoc_ShapeTool` is `OCCTDocument::shapeTool`, 66 call sites), file-local `static` helpers
+(`TDataStd_NamedData`, the near-miss that almost got its entry wrongly deleted in #510), static
+facades (`ShapeCustom::SweptToElementary` is how `ShapeCustom_SweptToElementary` is reached), and
+multi-class headings (`RWObj_CafReader/Writer` covers `RWObj_CafWriter`, not `RWObj_Writer`). Where
+a class is genuinely reached only through *another OCCT class*, the entry carries a `(via X)` aside
+— and that aside is itself checked, not a silent skip. `--self-test` grew from 5 cases to 15: five
+existence shapes, four mis-attribution shapes, and six correct shapes asserted **not** reported.
+
+**A parenthesised aside is commentary, not an attribution.** The existence check reads names inside
+asides by design (that is how #508's `OCCTGCE2dMakeLine*` was caught), but the direction check must
+not: `(OCCTWireOffset drives BRepOffsetAPI_MakeOffset, not this)` names a symbol precisely to say it
+does *not* wrap the class.
+
+**A tombstone comment was resurrecting two deleted symbols.** `real_symbols` stripped comments from
+the header but not from the sources, so `// OCCTCurve3DLength lived here: …` — left where #506/#549
+deleted the function — kept a removed symbol passing the existence check forever. Stripping source
+comments too flags exactly the two names it should (`OCCTCurve3DArcLength*`, `OCCTCurve3DLength`,
+both still listed under `GCPnts_AbscissaPoint`) and nothing else.
+
+**Filed out of this, not fixed here: `Shape.centerOfMass` returns the bounding-box centre (#605).**
+`OCCTShapeGetCenterOfMass` was filed under `BRepGProp` and does not use it — it takes the midpoint
+of `BRepBndLib`'s bounding box, under a comment claiming `GProp_GProps::CentreOfMass()` "appears to
+return (0,0,0) for some shapes". Ground truth on the pinned kernel says otherwise: for a 10-cube at
+the origin plus a 2-cube 20 units away, `CentreOfMass()` returns `0.158730159`, the analytic answer
+to nine digits, while both `Shape.centerOfMass` and `properties().centerOfMass` return `8.0` — the
+bounding-box midpoint, off by 50x. The workaround was reading a *correct* zero (a box centred at the
+origin) as the bug it was working around; every existing test uses a box, where the two coincide.
+
+Comment-only change to `OCCTBridge.h` (index block) plus `Scripts/check-bridge-index.py` and
+`docs/occtswift-wrapping-gaps.md`; no declaration, no `.mm`, no kernel patch, no xcframework rebuild.
+
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 
 `Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and

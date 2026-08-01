@@ -77,15 +77,16 @@
 // BOPAlgo_ArgumentAnalyzer            → OCCTBOPAlgoAnalyzeArguments
 // BOPAlgo_BuilderFace                 → OCCTBOPAlgoBuilderFace
 // BOPAlgo_BuilderSolid                → OCCTBOPAlgoBuilderSolid
-// BOPAlgo_CellsBuilder                → OCCTBOPAlgoSplit
+// BOPAlgo_CellsBuilder                → OCCTCellsBuilder* (the incremental builder; OCCTBOPAlgoSplit
+//                                       drives BOPAlgo_Splitter, two entries down)
 // BOPAlgo_CheckerSI                   → OCCTShapeSelfIntersects
 // BOPAlgo_MakeConnected               → OCCTShapeMakeConnected
 // BOPAlgo_MakePeriodic                → OCCTShapeMakePeriodic, OCCTShapeRepeat
 // BOPAlgo_MakerVolume                 → OCCTShapeMakeVolume
 // BOPAlgo_RemoveFeatures              → OCCTShapeDefeature, OCCTShapeRemoveFeatures,
 //                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
-//                                       (reached through BRepAlgoAPI_Defeaturing, a forwarder to
-//                                       it; #536 deleted the direct wrap that duplicated them)
+//                                       (via BRepAlgoAPI_Defeaturing, a forwarder to it;
+//                                       #536 deleted the direct wrap that duplicated them)
 // BOPAlgo_Section                     → OCCTBOPAlgoSection
 // BOPAlgo_ShellSplitter               → OCCTBOPAlgoShellSplitter
 // BOPAlgo_Splitter                    → OCCTBOPAlgoSplit
@@ -124,8 +125,9 @@
 // BRepBuilderAPI_Transform            → OCCTShapeTranslate, OCCTShapeRotate, OCCTShapeScale, OCCTShapeMirror
 //
 // --- BRepCheck ---
-// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*
-// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid, OCCTBRepCheckSubShapeValid
+// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*,
+//                                       OCCTBRepCheckSubShapeValid
+// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid
 //
 // --- BRepExtrema ---
 // BRepExtrema_DistShapeShape          → OCCTShapeDistance, OCCTShapeIntersects
@@ -155,8 +157,11 @@
 // BRepFill_CompatibleWires            → OCCTBRepFillCompatibleWires
 // BRepFill_Draft                      → OCCTBRepFillDraft
 // BRepFill_Generator                  → OCCTBRepFillGenerator
-// BRepFill_OffsetWire                 → OCCTWireOffset
+// BRepFill_OffsetWire                 → OCCTBRepFillOffsetWire, OCCTBRepFillOffsetAncestors*
+//                                       (OCCTWireOffset drives BRepOffsetAPI_MakeOffset, not this)
 // BRepFill_Pipe                       → OCCTBRepFillPipe
+// BRepFill_PipeShell                  → OCCTPipeShell* (the incremental builder — what
+//                                       BRepOffsetAPI_MakePipeShell forwards to; #503)
 //
 // --- BRepFilletAPI ---
 // BRepFilletAPI_MakeChamfer           → OCCTShapeChamfer*
@@ -164,7 +169,10 @@
 // BRepFilletAPI_MakeFillet2d          → OCCTFace2DFillet, OCCTFace2DChamfer
 //
 // --- BRepGProp ---
-// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetCenterOfMass
+// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea,
+//                                       OCCTEdgeGetLength, OCCTFaceGetArea, OCCTShapeAnalyze
+//                                       (OCCTShapeGetCenterOfMass does NOT use BRepGProp — it
+//                                       returns the bounding-box centre via BRepBndLib; #605)
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds, OCCTFaceEvaluateNormalAtUV
 // BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
@@ -185,7 +193,10 @@
 // BRepMesh_ShapeTool                  → OCCTMeshShapeTool*
 //
 // --- BRepOffset ---
-// BRepOffset_Analyse                  → OCCTEdgeGetConvexity
+// BRepOffset_Analyse                  → OCCTAnalyse*, OCCTShapeAnalyzeEdgeConcavity,
+//                                       OCCTShapeCountEdgeConcavity (OCCTEdgeGetConvexity computes
+//                                       convexity by hand from BRepAdaptor_Curve/Surface instead)
+// BRepOffset_MakeOffset               → OCCTShapeOffsetPerFace
 // BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
 // BRepOffset_Offset                   → OCCTBRepOffsetOffsetFace
 // BRepOffset_SimpleOffset             → OCCTBRepOffsetSimpleOffset
@@ -196,12 +207,16 @@
 // BRepOffsetAPI_MakeEvolved           → OCCTShapeCreateEvolved, OCCTShapeCreateEvolvedAdvanced
 // BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
 //                                       (FillingSurface) — one implementation, #434
-// BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
-// BRepOffsetAPI_MakePipe              → OCCTShapePipe*
+// BRepOffsetAPI_MakeOffset            → OCCTWireOffset, OCCTWireMultiOffset, OCCTOffsetWireOnPlane,
+//                                       OCCTOffsetFace
+// BRepOffsetAPI_MakeOffsetShape       → OCCTShapeOffset, OCCTShapeOffsetByJoin
+// BRepOffsetAPI_MakePipe              → OCCTShapeCreatePipeSweep (OCCTShapePipeFeature* is
+//                                       BRepFeat_MakePipe)
 // BRepOffsetAPI_MakePipeShell         → OCCTShapeCreatePipeShellMultiSection (every
 //                                       Add() sweep, one profile or many),
-//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw),
-//                                       OCCTPipeShell* (the incremental builder). #503
+//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw). #503
+//                                       (the OCCTPipeShell* incremental builder drives
+//                                       BRepFill_PipeShell directly — see that entry)
 // BRepOffsetAPI_MakeThickSolid        → OCCTShapeShell*, OCCTShapeMakeThickSolid, OCCTThickSolidWithOptions,
 //                                       OCCTShapeHistoryFromShell
 // BRepOffsetAPI_ThruSections          → OCCTShapeCreateLoft*, OCCTThruSections*
@@ -242,12 +257,12 @@
 //
 // --- GC ---
 // GC_MakeArcOfCircle                  → OCCTCurve3DCreateArcOfCircle, OCCTWireCreateArcThroughPoints
-// GC_MakeCircle                       → OCCTWireCreateCircle
+// GC_MakeCircle                       → OCCTGCMakeCircle*
 // GC_MakeEllipse                      → OCCTGCMakeEllipse3Points
 // GC_MakeHyperbola                    → OCCTGCMakeHyperbola3Points
 // GC_MakeMirror                       → OCCTShapeMirrorAboutAxis, OCCTShapeMirrorAboutPoint
 // GC_MakeScale                        → OCCTShapeScaleAboutPoint
-// GC_MakeSegment                      → OCCTWireCreateLine
+// GC_MakeSegment                      → OCCTCurve3DCreateSegment
 // GC_MakeTranslation                  → OCCTShapeTranslateByPoints
 //
 // --- GC 2D ---
@@ -258,7 +273,12 @@
 // GC_MakeParabola2d                   → OCCTCurve2DMakeParabola*
 //
 // --- GCPnts ---
-// GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength,
+//                                       OCCTCurve2DLength, OCCTCurve2DGetLength*,
+//                                       OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*,
+//                                       OCCTEdgeParameterAt*, OCCTWireGetLength
+//                                       (two further spellings were deleted by #506/#549; their
+//                                       tombstones sit at the old declaration sites)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
 // GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive
@@ -304,7 +324,6 @@
 // Geom2d_CartesianPoint               → OCCTPoint2D*
 // Geom2d_Circle                       → OCCTCurve2DCircle*, OCCTCurve2DCreateCircle, OCCTCurve2DCreateArcOfCircle,
 //                                       OCCTGceMakeCirc2d*
-// Geom2d_Direction                    → OCCTDirection2D*
 // Geom2d_Ellipse                      → OCCTCurve2DEllipse*
 // Geom2d_Hyperbola                    → OCCTCurve2DHyperbola*, OCCTCurve2DCreateHyperbola,
 //                                       OCCTCurve2DCreateArcOfHyperbola, OCCTGceMakeHypr2d
@@ -315,7 +334,9 @@
 //                                       OCCTCurve2DCreateArcOfParabola, OCCTGceMakeParab2d
 // Geom2d_Transformation               → OCCTTransform2D*
 // Geom2d_TrimmedCurve                 → OCCTCurve2DTrim
-// Geom2d_VectorWithMagnitude          → OCCTVector2D*
+//                                       (Geom2d_Direction and Geom2d_VectorWithMagnitude are not
+//                                       wrapped — OCCTDirection2D*/OCCTVector2D* are gp_Dir2d/
+//                                       gp_Vec2d arithmetic; see docs/occtswift-wrapping-gaps.md)
 //
 // --- Geom2dAPI ---
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DMinDistance, OCCTCurve2DAllExtrema
@@ -435,7 +456,9 @@
 // Law_BSpFunc                         → OCCTLawCreateBSpline, OCCTLawInterpolate
 // Law_BSpline                         → OCCTLawCreateBSpline, OCCTLawInterpolate, OCCTLawBSplineKnotSplit*
 // Law_Constant                        → OCCTLawCreateConstant
-// Law_Interpol                        → OCCTLawInterpolate
+// Law_Interpol                        → OCCTLawCreateInterpolate
+// Law_Interpolate                     → OCCTLawInterpolate (a different class from Law_Interpol,
+//                                       one letter apart, driven by a different bridge function)
 // Law_Linear                          → OCCTLawCreateLinear
 // Law_S                               → OCCTLawCreateS
 // Law_BSplineKnotSplitting            → OCCTLawBSplineKnotSplitting (v0.68.0)
@@ -462,7 +485,8 @@
 // LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
 //
 // --- LProp ---
-// LProp_AnalyticCurInf                → OCCTLPropAnalyticCurInf
+// LProp_CurAndInf                     → OCCTLPropAnalyticCurInf (which fills a LProp_CurAndInf from
+//                                       an inline scan — LProp_AnalyticCurInf itself is not wrapped)
 //
 // --- NLPlate ---
 // NLPlate_NLPlate                     → OCCTSurfaceNLPlate*
@@ -502,7 +526,11 @@
 //                                       OCCTSurfaceNbSingularities, OCCTSurfaceIsDegenerated,
 //                                       OCCTSurfaceIsUClosedSA, OCCTSurfaceIsVClosedSA
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
-// ShapeAnalysis_WireOrder             → OCCTWireAnalyze
+// ShapeAnalysis_Wire                  → OCCTWireAnalyze, OCCTWireAnalyzer*, OCCTWireCheck* (all but
+//                                       OCCTWireCheckOuterBound, which only explores for a wire),
+//                                       OCCTWireEdgeCount, OCCTWireMinDistance*, OCCTWireMaxDistance*,
+//                                       OCCTShapeAnalyze
+// ShapeAnalysis_WireOrder             → OCCTWireOrderAnalyze, OCCTWireOrderAnalyzeWire
 //
 // --- ShapeBuild ---
 // ShapeBuild_Edge                     → OCCTShapeBuildEdge*
@@ -534,16 +562,22 @@
 // ShapeFix_ShapeTolerance             → OCCTShapeFixLimitTolerance, OCCTShapeFixSetTolerance,
 //                                       OCCTShapeFixTolerance, OCCTShapeLimitMaxTolerance
 // ShapeFix_SplitCommonVertex          → OCCTShapeFixSplitCommonVertex
-// ShapeFix_Wire                       → OCCTShapeFixWire*
+// ShapeFix_Wire                       → OCCTWireFix, OCCTWireFixer* (OCCTShapeFixWire* is the two
+//                                       entries below: ShapeFix_WireVertex and ShapeFix_Wireframe)
 // ShapeFix_WireVertex                 → OCCTShapeFixWireVertex
 // ShapeFix_Wireframe                  → OCCTShapeFixWireframe, OCCTShapeFixWireGaps, OCCTShapeFixSmallEdges (v0.99.0)
 //
 // --- ShapeUpgrade ---
 // ShapeUpgrade_ConvertCurve3dToBezier → OCCTShapeUpgradeConvertCurves3dToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, the shape-level
+//                                       driver that owns it; no direct wrap)
 // ShapeUpgrade_ConvertSurfaceToBezierBasis → OCCTShapeUpgradeConvertSurfaceToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, as above)
 // ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
 // ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
-// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeUpgradeConvertCurves3dToBezier
+// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeConvertToBezier,
+//                                       OCCTShapeUpgradeConvertCurves3dToBezier,
+//                                       OCCTShapeUpgradeConvertSurfaceToBezier
 // ShapeUpgrade_ShapeDivideClosed      → OCCTShapeUpgradeDivideClosed
 // ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide, OCCTShapeUpgradeDivideContinuity
 // ShapeUpgrade_UnifySameDomain        → OCCTShapeUnifySameDomain, OCCTShapeSimplify, OCCTUnifySameDomainCreate
@@ -659,7 +693,7 @@
 // gp_Pnt/gp_Vec/gp_Dir               → (used throughout all bridge functions)
 // gp_Ax1/gp_Ax2/gp_Ax3               → (used throughout all bridge functions)
 // gp_Trsf/gp_Trsf2d                  → OCCTShapeTranslate/Rotate/Scale/Mirror, OCCTPoint2D*
-// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*
+// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*, OCCTDirection2D*
 //
 
 #ifdef __cplusplus
