@@ -182,11 +182,24 @@ and still reports 41.243158 for the 10 × 1 elliptical edge. `Shape.linearProper
 therefore now disagrees with `Shape.edgeArcLength` on such an edge, where before both were wrong
 together; reimplementing mass properties is separate work.
 
-Not done here either: the kernel fix. Both call sites are `math_GaussSingleIntegration` over a
-caller-supplied range, in two files in `src/ModelingData/TKGeomBase/CPnts/`, and one shared adaptive
-helper would fix them together for every OCCT consumer. That is the issue's option 2; this is
-option 1, which ships against any `OCCT.xcframework` and composes with a later kernel fix rather
-than conflicting with it.
+**The kernel fix ships too** (`Scripts/patches/0020-*`, `OCCT.xcframework` rebuilt): a new
+header-only `CPnts_AdaptiveIntegration.hxx` does the same doubling, used by all four
+`CPnts_AbscissaPoint::Length` overloads and by `CPnts_MyRootFunction::Value`/`Values`. Both, or
+neither: the root function's `Value(X)` is the same integral, so it currently inverts exactly the
+bias `Length` has — which is why `GCPnts_UniformAbscissa` spaces points uniformly in *true* arc
+(2.90e-14 on an 8 × 3 ellipse) while computing a total 0.337% wrong, and why changing `Length`
+alone would have broken the sampler. Measured both ways; changed together its spacing is unchanged
+to the digit. `CPnts_AbscissaPoint::Length` called directly, where nothing splits at all, goes from
+**1.0e-1** out on a 200-point interpolation to 2.8e-8. Kernel cost:
+`GCPnts_AbscissaPoint::Length` 0.24 µs → 7.2 µs on an ellipse, 87 µs → 444 µs on a 200-span
+BSpline, `GCPnts_UniformAbscissa` at 500 points 2.71 ms → 6.20 ms. Filed upstream as
+[Open-Cascade-SAS/OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420).
+
+**The bridge subdivision stays for now, and is redundant once that binary is pinned.** `ci.yml`
+resolves the pinned *released* kernel, which has no patch `0020` until a release ships the rebuild,
+so removing it would fail this issue's own regression tests there. Layered on the fixed kernel it
+costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer — retire it in the
+release commit that bumps `Package.swift`'s `url:`/`checksum:`.
 
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 

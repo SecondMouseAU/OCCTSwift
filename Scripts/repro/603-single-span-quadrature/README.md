@@ -145,14 +145,43 @@ Roughly 5×, with a floor of three quadratures per `GeomAbs_CN` interval where t
 Curves whose closed form is exact (`GeomAbs_Line`, `GeomAbs_Circle`, a 2-pole Bezier or BSpline)
 converge on the first split with nothing to remove and stay at the closed form's value.
 
-## Not done here
+## The kernel fix
 
-The kernel fix. Both defects live in two files in
-`src/ModelingData/TKGeomBase/CPnts/`: `CPnts_AbscissaPoint::Length`'s
-`math_GaussSingleIntegration` and `CPnts_MyRootFunction::Value`'s, which are the same call over the
-same kind of range. One shared adaptive helper would fix them together and every other OCCT
-consumer with them (including `GCPnts_UniformAbscissa`'s internals and, separately, whatever
-`BRepGProp` should do about its own). That is the issue's option 2; this branch is option 1, the
-bridge fix that ships against any `OCCT.xcframework`, and it composes with a later kernel fix rather
-than conflicting with it — a converged kernel answer simply makes the first subdivision level agree
-immediately.
+Carried as `Scripts/patches/0020-CPnts-adaptive-arc-length-integration-603.patch` and filed upstream
+as [OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420). A new header-only
+`CPnts_AdaptiveIntegration.hxx` does the same doubling, used by all four
+`CPnts_AbscissaPoint::Length` overloads and by `CPnts_MyRootFunction::Value`/`Values`.
+
+**Both, or neither.** `CPnts_MyRootFunction::Value(X)` is the same integral — one Gauss rule over
+`[myX0, X]` minus the target — so it currently inverts exactly the bias `Length` has. That is why
+`GCPnts_UniformAbscissa` spaces its points uniformly in *true* arc (2.90e-14 on an 8 × 3 ellipse)
+while computing a total that is 0.337% wrong. Fixing `Length` alone would have broken the sampler.
+Measured both ways: changed together, the sampler's spacing is unchanged to the digit
+(2.90e-14 → 2.90e-14, 1.59e-10 → 1.59e-10 on a 1 × 0.05 ellipse at 7 and 9 points).
+
+Called directly, `CPnts_AbscissaPoint::Length` is far worse than through `GCPnts` — nothing splits
+at all, and the `min(24, 2 × NbPoles − 1)` cap puts one order-24 rule across the whole domain:
+
+| curve | `CPnts::Length` | error, before → after |
+|---|---|---|
+| interpolated BSpline, 5 points | 107.021974495 | 3.6e-2 → 3.7e-11 |
+| interpolated BSpline, 40 points | 935.955911353 | 7.4e-2 → 8.6e-11 |
+| interpolated BSpline, 200 points | 4582.565404480 | **1.0e-1** → 2.8e-8 |
+
+Kernel cost: `GCPnts_AbscissaPoint::Length` 0.24 µs → 7.2 µs on an 8 × 3 ellipse, 87 µs → 444 µs on
+a 200-span BSpline, and `GCPnts_UniformAbscissa` at 500 points 2.71 ms → 6.20 ms. A line or circle
+never reaches the integrator.
+
+**The bridge subdivision above is now redundant, and is deliberately still there.** `ci.yml`
+resolves the pinned *released* kernel, which does not carry patch `0020` until a release ships the
+rebuilt binary, so removing it would fail this issue's own regression tests there. Layered on the
+fixed kernel it costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer —
+retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
+
+## Re-running this probe
+
+The `today` column is the **pre-patch** kernel. Once `Libraries/OCCT.xcframework` has been rebuilt
+with patch `0020`, `today` and `fixed` both report the accurate number and the probe stops
+demonstrating anything — build it against a kernel without the patch (`OCCTSWIFT_REMOTE=1`'s
+released binary, or `git -C Libraries/occt-src apply --reverse` the patch and rebuild) to reproduce
+the tables above.
