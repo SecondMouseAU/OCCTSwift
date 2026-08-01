@@ -2744,6 +2744,56 @@ gotcha `docs/guides/building-occt.md` already documents for resuming an interrup
 
 ## Release History
 
+### Unreleased: fix, `centerOfMass` returned the bounding-box centre (#605)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`Shape.centerOfMass` and `Shape.properties().centerOfMass` computed the midpoint of
+`BRepBndLib::Add`'s bounding box instead of calling `BRepGProp`, under a comment claiming
+`GProp_GProps::CentreOfMass()` "appears to return (0,0,0) for some shapes". Wrong since v0.7.0
+(2026-01-14) and wrong for every shape not symmetric about its bounding box: a plain cone reported
+`(0, 0, 10)` where its centre of mass is `(0, 0, 5)`, and a 10-cube unioned with a 2-cube 20 units
+away reported `8.0` against an analytic `0.1587`, off by a factor of 50. These were the only two
+bounding-box centroids in the bridge; `centroid`, `volumeInertia`, `surfaceInertia`,
+`inertiaProperties()`, `linearProperties()` and `measure().faceCentroids` were all already correct,
+so the API contradicted itself: `cone.centerOfMass` and `cone.centroid` disagreed by 2x.
+
+Fixed by following `BRepGProp` rather than inventing a dispatch OCCT does not have. Ground truth
+against the pinned kernel (`Scripts/repro/605-center-of-mass/`) established three things:
+
+- **An open shell is refused, not estimated.** `BRepGProp::VolumeProperties` defaults to
+  `OnlyClosed = false`, and the divergence integral over a surface enclosing nothing returns a
+  number anyway: 4800 with a centroid 2.6 units adrift, for five faces of a 10x20x30 box. Both sites
+  now pass `OnlyClosed = true`, matching OCCT's own `XCAFDoc_Centroid` writer (`XDEDRAW_Props.cxx`)
+  and the `c` flag on Draw's `vprops`. Closing an open shell is the caller's decision, so the API
+  declines to guess one. Closedness is computed per shell by `BRep_Tool::IsClosed` rather than read
+  from a cached flag, so a sewn-but-unflagged closed shell still counts, and a closed shell outside
+  any solid counts too: the key is closedness, not `ShapeType() == SOLID`.
+- **A zero-mass result is not a recognisable zero.** `VolumeProperties` seeds its framework with
+  `gp_Pnt(0,0,0)` transformed by the shape's location, so a face at (100,200,300) reports a
+  centre of mass of exactly that. `Mass()` is the only sound test, and both sites now use it: a
+  face, wire, edge, vertex or open shell returns `nil` rather than a plausible-looking point.
+- **The inertia tensor was never affected.** It is referenced to the centre of mass
+  (`Iyy = 16666.67` for a 10-cube at x=20, against `416666.67` about the origin) and passes through
+  unchanged. The defect was that `ShapeProperties` sat a COM-referenced tensor next to a field that
+  was not the COM; that is now coherent.
+
+**Behaviour change for consumers.** `centerOfMass` and `properties()` now return `nil` for shapes
+that enclose no volume, where they previously returned a bounding-box centre. Callers using
+`Shape.centerOfMass` as a positional key for a face, edge or vertex should move to `vertices()` for
+a vertex position, `surfaceInertia` for an area centroid, or `linearProperties()` for a length
+centroid, all of which were already correct. No API signature changed.
+
+Nine regression tests (`Tests/OCCTAnalysisTests/CenterOfMassTests.swift`), each on a shape whose
+bounding-box centre differs from its centre of mass, since every pre-existing assertion used a box
+or cylinder centred at the origin where the two coincide. Verified by injecting each wrong
+implementation in turn: the original bounding-box version fails 7 of the 9, `OnlyClosed = false`
+fails the open-shell test with the fabricated 4800, and dropping the `Mass()` guard fails 2.
+
+Not an OCCT bug, so nothing filed upstream. Sibling defect #609 (zero-mass results returned as
+successful answers across seven other surfaces, including `Shape.volume` still reporting 4800 for
+an open shell) was filed from this investigation and is not addressed here. #605.
+
 ### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
 
 > Version and date deliberately unset; whoever tags stamps them.

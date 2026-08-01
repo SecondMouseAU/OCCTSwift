@@ -1748,6 +1748,26 @@ double OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopExp.hxx>
 
+/// Volume mass properties for a shape, computed the way OCCT itself computes them.
+///
+/// `OnlyClosed = true` matches OCCT's own `XCAFDoc_Centroid` writer (`XDEDRAW_Props.cxx`) and the
+/// `c` flag on Draw's `vprops`. It explores shells and admits only those `BRep_Tool::IsClosed`
+/// accepts, so an open shell contributes nothing rather than the number the divergence integral
+/// returns over a surface that encloses nothing (measured: 4800 and a centroid 2.6 units off, for
+/// five faces of a 10x20x30 box). Closedness is computed per shell, not read from a cached flag,
+/// so a sewn-but-unflagged closed shell still counts, and a closed shell outside any solid counts
+/// too. Callers that want an answer for an open shell must close it first; there is no unambiguous
+/// centre of mass until they choose how.
+///
+/// Returns false when the framework has no mass, which is OCCT's way of saying there is no volume
+/// here to have a centre of mass. `GProp_GProps` seeds itself with `gp_Pnt(0,0,0)` transformed by
+/// the shape's location, so a zero-mass `CentreOfMass()` is a plausible-looking point rather than
+/// a recognisable sentinel; `Mass()` is the only sound test. See #605 / #609.
+static bool occtVolumeMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::VolumeProperties(shape, props, /*OnlyClosed*/ true);
+    return props.Mass() != 0.0;
+}
+
 OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     OCCTShapeProperties result = {};
     result.isValid = false;
@@ -1755,23 +1775,18 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     if (!shape) return result;
 
     try {
-        // Volume
+        // Volume + centre of mass. Without a closed volume there is no mass, no centre of mass and
+        // no inertia tensor, so the whole framework is empty and the caller gets nil.
         GProp_GProps volumeProps;
-        BRepGProp::VolumeProperties(shape->shape, volumeProps);
+        if (!occtVolumeMassProperties(shape->shape, volumeProps)) return result;
 
         result.volume = volumeProps.Mass();
         result.mass = result.volume * density;
 
-        // Center of mass from bounding box (workaround for OCCT 8.0 GProp issue)
-        Bnd_Box box;
-        BRepBndLib::Add(shape->shape, box);
-        if (!box.IsVoid()) {
-            double xmin, ymin, zmin, xmax, ymax, zmax;
-            box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-            result.centerX = (xmin + xmax) / 2.0;
-            result.centerY = (ymin + ymax) / 2.0;
-            result.centerZ = (zmin + zmax) / 2.0;
-        }
+        gp_Pnt com = volumeProps.CentreOfMass();
+        result.centerX = com.X();
+        result.centerY = com.Y();
+        result.centerZ = com.Z();
 
         // Inertia matrix (relative to center of mass)
         gp_Mat inertia = volumeProps.MatrixOfInertia();
@@ -1828,20 +1843,13 @@ bool OCCTShapeGetCenterOfMass(OCCTShapeRef shape, double* outX, double* outY, do
     if (!shape || !outX || !outY || !outZ) return false;
 
     try {
-        // Note: OCCT 8.0's GProp_GProps::CentreOfMass() appears to return (0,0,0)
-        // for some shapes. As a workaround, compute centroid from bounding box center,
-        // which is correct for solid primitives with uniform density.
-        Bnd_Box box;
-        BRepBndLib::Add(shape->shape, box);
+        GProp_GProps props;
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
-        if (box.IsVoid()) return false;
-
-        double xmin, ymin, zmin, xmax, ymax, zmax;
-        box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-
-        *outX = (xmin + xmax) / 2.0;
-        *outY = (ymin + ymax) / 2.0;
-        *outZ = (zmin + zmax) / 2.0;
+        gp_Pnt com = props.CentreOfMass();
+        *outX = com.X();
+        *outY = com.Y();
+        *outZ = com.Z();
 
         return true;
     } catch (...) {

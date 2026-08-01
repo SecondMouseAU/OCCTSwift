@@ -2479,11 +2479,31 @@ public struct DistanceResult: Sendable, Equatable {
 
 extension Shape {
 
-    /// Get full mass properties of the shape
+    /// Get full mass properties of the shape.
+    ///
+    /// These are *volume* mass properties (`BRepGProp::VolumeProperties`), so the shape must
+    /// enclose a volume: a solid, or a closed shell. A face, wire, edge, vertex or **open shell**
+    /// has no mass, no centre of mass and no inertia tensor, and this returns nil rather than an
+    /// answer derived from nothing. To measure an open shell, close it first (for example with
+    /// ``sew(shapes:tolerance:)``); which closure you want is your choice to make, not one this
+    /// method should guess. Use ``surfaceArea`` or ``surfaceInertia`` for an area measure and
+    /// ``linearProperties()`` for a length measure.
+    ///
+    /// ```swift
+    /// let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+    /// if let p = cone.properties(density: 2.7) {
+    ///     print(p.volume)        // 2094.395
+    ///     print(p.mass)          // 5654.867  (volume x density)
+    ///     print(p.centerOfMass)  // (0, 0, 5)  a cone's centroid sits at h/4, not h/2
+    /// }
+    ///
+    /// let face = Shape.fromFace(cone.faces()[0])!
+    /// face.properties()          // nil: a face encloses no volume
+    /// ```
     ///
     /// - Parameter density: Material density for mass calculation (default 1.0)
     /// - Returns: Properties including volume, surface area, center of mass, and inertia tensor,
-    ///            or nil if calculation fails
+    ///            or nil if the shape encloses no volume or the calculation fails.
     public func properties(density: Double = 1.0) -> ShapeProperties? {
         let result = OCCTShapeGetProperties(handle, density)
         guard result.isValid else { return nil }
@@ -2542,7 +2562,27 @@ extension Shape {
         return a >= 0 ? a : nil
     }
 
-    /// Center of mass (centroid) of the shape
+    /// Centre of mass of the volume this shape encloses.
+    ///
+    /// This is `BRepGProp::VolumeProperties`, so it is a *volume* measure and it is not the centre
+    /// of the bounding box: a cone's centre of mass sits at a quarter of its height, and a shape
+    /// built from parts of unequal size sits near the heavy one. It is nil for anything that
+    /// encloses no volume, which is a face, wire, edge, vertex or **open shell**. Close an open
+    /// shell first if you need a figure for it; picking a closure is your decision.
+    ///
+    /// For the other two measures OCCT offers, use ``surfaceInertia`` (area) or
+    /// ``linearProperties()`` (length). For a vertex's position use ``vertices()``.
+    ///
+    /// ```swift
+    /// let big = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let small = Shape.box(width: 2, height: 2, depth: 2)!.translated(by: SIMD3(20, 0, 0))!
+    /// let part = big.union(small)!
+    ///
+    /// part.centerOfMass       // (0.1587, 0, 0)   the small cube barely shifts it
+    /// part.boundingBox!.min   // x = -5, max x = 21, so the box centre would be 8: not this
+    ///
+    /// Shape.fromFace(part.faces()[0])!.centerOfMass   // nil: a face encloses no volume
+    /// ```
     public var centerOfMass: SIMD3<Double>? {
         var x: Double = 0, y: Double = 0, z: Double = 0
         guard OCCTShapeGetCenterOfMass(handle, &x, &y, &z) else { return nil }
