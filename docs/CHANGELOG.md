@@ -107,7 +107,86 @@ conic with one Gauss quadrature over the whole domain and lands 0.34% high on an
 2M-point Simpson quadrature of the elliptic integral), 1.49% on a 10×1 and 1.74% on a 1×0.05.
 Sub-ranges are accurate to ~1e-6 and summing two equal halves of the period recovers full accuracy,
 so it is the single quadrature — the #477 defect, on a curve type with no `GeomAbs_CN` boundaries
-to split at. Not fixed here: an accuracy question, not a range-semantics one.
+to split at. Not fixed here: an accuracy question, not a range-semantics one — fixed in the #603
+entry immediately below.
+
+#### Arc length stops being one quadrature per span (#603)
+
+`Curve3D.length` on a full ellipse was up to 1.7% wrong, and it was the *whole-curve* measurement
+that was wrong — the same ellipse's sub-ranges were exact.
+
+`CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the
+whole range it is handed (order 10 for a conic, 5 for a parabola, `2 × Degree` for a Bezier).
+#477 moved this family onto `GCPnts_AbscissaPoint::Length`, which splits at the `GeomAbs_CN`
+interval boundaries and applies that rule per interval — but a conic has exactly one interval, so
+the rule still had to cover the entire domain in one go. Measured against a 16-point composite
+Gauss-Legendre quadrature over 40,000 panels, cross-checked against a Richardson-extrapolated chord
+sum (`Scripts/repro/603-single-span-quadrature/`):
+
+| curve | was | now | error |
+|---|---|---|---|
+| ellipse 8 × 3 | 36.489427 | **36.366863** | +0.337% → 1.7e-14 |
+| ellipse 10 × 1 | 41.243158 | **40.639742** | +1.485% → 1.8e-13 |
+| ellipse 1 × 0.05 | 4.089251 | **4.019426** | +1.737% → 2.9e-14 |
+| parabola f=3 over `[-100, 100]` | 1638.523403 | **1690.708712** | −3.087% → 9.6e-14 |
+| hyperbola 5/2 over `[-4, 4]` | 285.669841 | **285.479769** | +0.067% → 2.1e-14 |
+| Bezier degree 3, whipping poles | 48.124451 | **48.215370** | −0.189% → 2.0e-14 |
+| interpolated BSpline, 5 points | 110.963893 | **110.970568** | −0.0060% → 2.5e-14 |
+| circle r=5, line | exact | exact | closed form, no quadrature |
+
+**A parabola is the worst case in the family, and the only one wrong in the other direction** — it
+gets the lowest order `CPnts_AbscissaPoint`'s `order()` hands out to anything curved. The issue
+named it as worth measuring and had not measured it.
+
+**It is not a conic defect, and not a "single span" defect either.** The error is set by how much
+`|C'|` varies across one integration interval: the 8 × 3 ellipse is 0.337% out over `[0, 2π]`,
+0.0001% over `[0, π]` and exact over `[0, π/2]`. So a *multi-span* curve is affected too wherever
+its spans are wide — a 5-point interpolation is 100× worse than the 40-point curve #477 was tested
+on. #477 is completed here, not superseded.
+
+**Each `GeomAbs_CN` interval is now measured, then halved, quartered, … until two successive levels
+agree to 1e-9 relative** (`occtAdaptorArcLength`, `Sources/OCCTBridge/src/OCCTBridge_Internal.h`).
+Subdividing the *whole range* instead does not work and fails silently: on a uniformly-knotted
+curve the domain midpoint is a knot GCPnts already splits at, so the level-2 sum repeats the level-1
+sum bit for bit and a convergence test ratifies an answer that never moved (measured: 110.963893077
+at both levels, truth 110.970568312).
+
+**The inverse moved with it, and had to.** OCCT's root finder inverts the very quadrature this
+replaces (`CPnts_MyRootFunction::Value` is one Gauss rule over `[u0, X]`), so before this the length
+and its inverse were wrong by the same amount and `parameterAtLength(length)` still landed on the
+curve's last parameter. Fixing only the length would have moved that to 6.2438 on an 8 × 3 ellipse
+whose domain ends at 6.2832, and to 6.0358 on a 10 × 1 — 0.33% and 1.0% short in arc. So
+`Curve3D.parameterAtLength`, `Curve2D.parameterAtLength`, `Shape.edgeParameterAtArcLength`,
+`Shape.edgeParameterAtFraction`, `EdgeCurve.parameter(atAbscissa:)` and
+`WireCurve.parameter(atAbscissa:)` walk the same subdivided pieces and hand the last, narrow one to
+the kernel's solver, which is accurate at that width. A target longer than the curve keeps its old
+answer (the kernel reports a parameter outside the curve's own domain, yet reports success; turning
+that into a failure is a contract change #603 has no measurement to justify).
+
+Every entry point in the family shares the measurement: `Curve3D.length`, `length(from:to:)`,
+`totalArcLength`, `arcLength(from:to:)`, `arcLengthBetween(_:_:)`, `Curve2D.length`,
+`length(from:to:)`, `arcLength(from:to:)`, `Shape.edgeArcLength` (both spellings), `Wire.length`,
+`EdgeCurve.length` and `WireCurve.length`. #600's winding is computed from an accurate period, so
+two turns is exactly twice one.
+
+**Cost**: roughly 5×, with a floor of three quadratures per interval where there was one — an
+8 × 3 ellipse goes 0.11 µs → 3.5 µs, a 200-span BSpline 89 µs → 452 µs. A line, a circle or a
+2-pole Bezier/BSpline keeps its closed form (`GCPnts_LengthParametrized`), converges on the first
+split with nothing to remove, and stays at 0.02 µs.
+
+**Measured rather than assumed, on the two neighbours the issue lists as downstream.**
+`GCPnts_UniformAbscissa` is **not** affected — on the worst ellipse its samples are uniform in true
+arc to 1.9e-10, so sampling by arc length was already right and is untouched.
+`BRepGProp::LinearProperties` **is** affected and is **not** fixed here: it runs its own integrator
+and still reports 41.243158 for the 10 × 1 elliptical edge. `Shape.linearProperties().length`
+therefore now disagrees with `Shape.edgeArcLength` on such an edge, where before both were wrong
+together; reimplementing mass properties is separate work.
+
+Not done here either: the kernel fix. Both call sites are `math_GaussSingleIntegration` over a
+caller-supplied range, in two files in `src/ModelingData/TKGeomBase/CPnts/`, and one shared adaptive
+helper would fix them together for every OCCT consumer. That is the issue's option 2; this is
+option 1, which ships against any `OCCT.xcframework` and composes with a later kernel fix rather
+than conflicting with it.
 
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 

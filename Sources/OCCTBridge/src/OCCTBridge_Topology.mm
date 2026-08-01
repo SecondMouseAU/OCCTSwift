@@ -3089,12 +3089,14 @@ OCCTShapeRef OCCTShapeEmptyCopied(OCCTShapeRef shape) {
 // MARK: - v0.115: GCPnts_AbscissaPoint expansion (edge) + BRepAdaptor exposure + Additional shape queries
 // --- GCPnts_AbscissaPoint expansion ---
 
+// occtAdaptorParameterAtLength (OCCTBridge_Internal.h), so the parameter this returns and the
+// length OCCTEdgeArcLength reports are built from the same subdivided quadratures. #603.
 double OCCTEdgeParameterAtArcLength(OCCTShapeRef edge, double arcLength, double startParam) {
     if (!edge) return 0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        GCPnts_AbscissaPoint ap(adaptor, arcLength, startParam);
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, arcLength, startParam, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
@@ -3107,7 +3109,9 @@ double OCCTEdgeArcLength(OCCTShapeRef edge) {
     if (!edge) return -1.0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        // Subdivided per GeomAbs_CN interval: an elliptical edge measured 1.485% long on the
+        // single quadrature GCPnts hands a one-interval curve. #603.
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) { return -1.0; }
 }
 
@@ -3126,14 +3130,18 @@ double OCCTEdgeArcLengthBetween(OCCTShapeRef edge, double u1, double u2) {
     } catch (...) { return -1.0; }
 }
 
+// Both halves subdivided (#603): the fraction is taken of the accurate total and then walked with
+// the same quadratures, so fraction 1.0 lands on the edge's last parameter again. On the biased
+// pair those two errors cancelled; on a mixed pair they would not.
 double OCCTEdgeParameterAtFraction(OCCTShapeRef edge, double fraction) {
     if (!edge) return 0;
     try {
         BRepAdaptor_Curve adaptor(TopoDS::Edge(edge->shape));
-        double totalLen = GCPnts_AbscissaPoint::Length(adaptor);
+        const double first = adaptor.FirstParameter();
+        double totalLen = occtAdaptorArcLength(adaptor, first, adaptor.LastParameter());
         double targetLen = totalLen * fraction;
-        GCPnts_AbscissaPoint ap(adaptor, targetLen, adaptor.FirstParameter());
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, targetLen, first, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }

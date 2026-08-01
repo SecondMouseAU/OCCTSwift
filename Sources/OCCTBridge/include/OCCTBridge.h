@@ -259,6 +259,7 @@
 //
 // --- GCPnts ---
 // GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+// CPnts_AbscissaPoint                 → the same functions, as occtArcQuadrature's per-span integrator on composite curves (#603)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
 // GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive

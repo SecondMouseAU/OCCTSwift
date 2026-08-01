@@ -653,15 +653,16 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
     }
 }
 
-// GCPnts, not CPnts: CPnts_AbscissaPoint::Length runs one Gauss quadrature over the whole
-// domain, which is measurably wrong on a multi-span BSpline (up to 5% on an interpolated
-// curve with sharply varying speed). GCPnts splits at the GeomAbs_CN interval boundaries and
-// integrates each span. #477.
+// Not one Gauss quadrature over the whole domain: that is what CPnts_AbscissaPoint::Length does,
+// and it is up to 5% wrong on a multi-span BSpline (#477). #477 moved this to GCPnts, which splits
+// at the GeomAbs_CN interval boundaries -- but a conic has one interval, so the single quadrature
+// survived there and measured a whole ellipse up to 1.7% long. occtAdaptorArcLength
+// (OCCTBridge_Internal.h) subdivides inside each interval until it converges. #603.
 double OCCTCurve3DGetLength(OCCTCurve3DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
@@ -4659,12 +4660,15 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 // Curve3D.closestParameter(to:) now shares the one implementation.
 
 
+// occtAdaptorParameterAtLength, not GCPnts_AbscissaPoint directly: the kernel's root finder
+// inverts the same single quadrature OCCTCurve3DGetLength no longer uses, so left alone it would
+// answer 6.2438 for the full length of an 8 x 3 ellipse whose domain ends at 6.2832. #603.
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, double fromParam) {
     if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
-        GCPnts_AbscissaPoint ap(adaptor, arcLength, fromParam);
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
@@ -5619,8 +5623,11 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
 #include <GCPnts_AbscissaPoint.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
 
+// Both of these share the whole-bridge arc-length measurement and its inverse rather than calling
+// GCPnts directly, so an edge or a wire measured through EdgeCurve/WireCurve agrees with the same
+// edge measured through Shape.edgeArcLength and with the curve it was built from. #603.
 static double adaptorLength(Adaptor3d_Curve& a) {
-    return GCPnts_AbscissaPoint::Length(a);
+    return occtAdaptorArcLength(a, a.FirstParameter(), a.LastParameter());
 }
 
 static void adaptorParamRange(Adaptor3d_Curve& a, double* first, double* last) {
@@ -5644,9 +5651,9 @@ static bool adaptorTangentAtParam(Adaptor3d_Curve& a, double u, double* x, doubl
 }
 
 static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outParam) {
-    GCPnts_AbscissaPoint ap(a, s, a.FirstParameter());
-    if (!ap.IsDone()) return false;
-    if (outParam) *outParam = ap.Parameter();
+    double parameter = 0;
+    if (!occtAdaptorParameterAtLength(a, s, a.FirstParameter(), parameter)) return false;
+    if (outParam) *outParam = parameter;
     return true;
 }
 

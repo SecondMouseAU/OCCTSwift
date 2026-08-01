@@ -1039,7 +1039,9 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
   bound) — arc length is otherwise always non-negative, so `-1.0` is unambiguous and never
   collides with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly
   if you need an optional.
-- **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length` per
+  `GeomAbs_CN` interval, subdivided to convergence (#603). The pre-bounded adaptor does nothing
+  about the quadrature, so this spelling measured a 2D ellipse 0.337% long too.
 - **Note:** `.nan` and `±.infinity` return `-1.0`. The pre-bounded adaptor propagated NaN on its
   own, but returned `+infinity` for an infinite bound on a segment or a circle, and `+infinity`
   passes the bridge's non-negative check (#548).

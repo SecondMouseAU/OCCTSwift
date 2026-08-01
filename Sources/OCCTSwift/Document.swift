@@ -13280,6 +13280,13 @@ extension Shape {
     }
 
     /// Get linear properties (total length and center of mass) for edges/wires.
+    ///
+    /// - Warning: `length` here comes from `BRepGProp::LinearProperties`, which runs its own
+    ///   integrator — one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
+    ///   On an elliptical edge it reports 41.243158 against a true 40.639742 (+1.485%) and so
+    ///   **disagrees with ``Shape/edgeArcLength``**, which measures 40.639742. Before #603 both
+    ///   were wrong together. Use ``Shape/edgeArcLength`` or ``Wire/length`` when you want the
+    ///   length; this call remains the way to get the centre of mass.
     public func linearProperties() -> LinearProperties {
         var cx = 0.0, cy = 0.0, cz = 0.0
         let length = OCCTShapeLinearProperties(handle, &cx, &cy, &cz)
