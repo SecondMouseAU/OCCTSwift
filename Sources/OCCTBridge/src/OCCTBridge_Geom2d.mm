@@ -3375,32 +3375,11 @@ OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, do
         return r;
     } catch (...) { return nullptr; }
 }
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
-
-#include <Geom2dConvert_BSplineCurveKnotSplitting.hxx>
-
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef curve, int32_t continuity) {
-    if (!curve) return 0;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return 0;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        return (int32_t)splitter.NbSplits();
-    } catch (...) { return 0; }
-}
-
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef curve, int32_t continuity,
-                                        int32_t* splits) {
-    if (!curve || !splits) return;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        for (int i = 1; i <= splitter.NbSplits(); i++) {
-            splits[i - 1] = splitter.SplitValue(i);
-        }
-    } catch (...) {}
-}
+// #562: OCCTBSplineCurve2dKnotSplits and OCCTBSplineCurve2dKnotSplitValues stood here, a second
+// wrap of Geom2dConvert_BSplineCurveKnotSplitting added three releases after
+// OCCTCurve2DSplitAtDiscontinuities (further down this file) already wrapped it. Deleted; that
+// one returns the same indices, and now reports the true count when truncated, which is the one
+// respect in which these were the stronger pair rather than the weaker.
 
 // MARK: - v0.106: BRepLib_MakeEdge2d extensions + Curve2D continuity
 // MARK: - BRepLib_MakeEdge2d extensions (v0.106.0)
@@ -5966,6 +5945,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c, double tolerance,
     }
 }
 
+// #562: reports the TRUE split count even when `max` truncated the write, so the Swift caller can
+// retry at the size it was just told -- the #481 contract shared by every other member of this
+// family. It used to return the written count, which capped it silently at its caller's 256-entry
+// first pass and was indistinguishable from a curve with exactly 256 splits.
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max) {
     if (!c || c->curve.IsNull() || !outKnotIndices || max <= 0) return 0;
@@ -5973,13 +5956,9 @@ int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
         Handle(Geom2d_BSplineCurve) bsp = Handle(Geom2d_BSplineCurve)::DownCast(c->curve);
         if (bsp.IsNull()) return 0;
         Geom2dConvert_BSplineCurveKnotSplitting splitter(bsp, continuity);
-        int32_t n = std::min((int32_t)splitter.NbSplits(), max);
-        TColStd_Array1OfInteger indices(1, splitter.NbSplits());
-        splitter.Splitting(indices);
-        for (int32_t i = 0; i < n; i++) {
-            outKnotIndices[i] = indices(i + 1);
-        }
-        return n;
+        return occtWriteKnotSplits<int32_t>(splitter.NbSplits(),
+            [&](int32_t i) { return (int32_t)splitter.SplitValue(i); },
+            outKnotIndices, max);
     } catch (...) {
         return 0;
     }

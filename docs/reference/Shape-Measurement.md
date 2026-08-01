@@ -2103,21 +2103,49 @@ public struct PointEdgeExtrema: Sendable {
 }
 ```
 
+`solutionCount` is how many perpendicular feet the point has on the edge — `BRepExtrema_ExtPC`'s
+extrema count, reported for its own sake. Zero means the nearest point is one of the edge's two
+ends. A non-zero count does **not** mean the nearest point is one of those feet: an extremum can be
+a maximum. Read `distance` / `parameter` / `pointOnEdge` for the answer (#580).
+
 ---
 
 ### `pointEdgeExtrema(point:edgeIndex:)`
 
-Compute minimum distance from a point to an edge of this shape.
+Compute the minimum distance from a point to an edge of this shape, over the whole edge.
 
 ```swift
 public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeExtrema?
 ```
 
+```swift
+let arc = Shape.fromWire(Wire.arc(
+    center: SIMD3(0, 0, 0), radius: 5, startAngle: 0, endAngle: .pi)!)!
+
+// Below the arc, the nearest point is an end — the only extremum is the far side of it.
+if let hit = arc.pointEdgeExtrema(point: SIMD3(0, -6, 0), edgeIndex: 0) {
+    print(hit.distance)       // 7.81, to the end at (5, 0, 0). Was 11, the far side.
+    print(hit.solutionCount)  // 1 — and that one extremum is a maximum
+}
+
+let segment = Shape.fromWire(Wire.line(from: SIMD3(3, 0, 0), to: SIMD3(8, 0, 0))!)!
+if let hit = segment.pointEdgeExtrema(point: SIMD3(100, 0, 0), edgeIndex: 0) {
+    print(hit.distance)       // 92. Was nil: no extremum exists past the end.
+}
+```
+
 - **Parameters:**
   - `point` — 3D point.
-  - `edgeIndex` — 0-based edge index.
-- **Returns:** Extrema result, or `nil` on failure.
-- **OCCT:** `BRepExtrema_ExtPC` (via `OCCTBRepExtremaExtPC`).
+  - `edgeIndex` — 0-based edge index, in the enumeration `edges()` reads.
+- **Returns:** The nearest-point result, or `nil` if there is no such edge index or that edge has no
+  3D curve.
+- **OCCT:** `ShapeAnalysis_Curve` + `GeomAPI_ProjectPointOnCurve` + the edge's ends, via
+  `occtNearestPointOnCurveRange` (the helper behind `Edge.project(point:)`, so the two agree);
+  `BRepExtrema_ExtPC` supplies `solutionCount` only.
+- **Changed in #580:** this used to report the minimum over `BRepExtrema_ExtPC`'s extrema, which
+  excludes the edge's ends, and to answer `nil` whenever no extremum existed. It also indexed edges
+  by a bare `TopExp_Explorer` walk, which counts one entry per occurrence — from index 9 a box's
+  edges disagreed with `edges()`.
 
 ---
 
@@ -2219,8 +2247,12 @@ public func bsplineRestriction(
   - `tol2d` — 2D approximation tolerance.
   - `maxDegree` — Maximum BSpline degree.
   - `maxSegments` — Maximum number of segments.
-  - `continuity3d` — 3D continuity requirement.
-  - `continuity2d` — 2D continuity requirement.
+  - `continuity3d` — 3D continuity **ceiling**, not a guarantee. `.c3` is rejected outright and
+    fails the whole call, so `.c2` is the practical maximum; below that, OCCT reduces the continuity
+    it delivers with no diagnostic whenever the requested one cannot meet `tol3d` within `maxDegree`,
+    and with `degreePriority` it degrades all the way to C0. Measured in #570, a face on an offset
+    sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
+  - `continuity2d` — 2D continuity requirement, same ceiling and same `.c3` limit.
   - `degreePriority` — If `true`, prioritize degree reduction over segment reduction.
   - `rational` — Allow rational BSplines.
 - **Returns:** Simplified shape, or `nil` on failure.

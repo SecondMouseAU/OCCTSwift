@@ -10,14 +10,14 @@ import Foundation
 //
 // Detection resolves against THIS manifest's own directory (`#filePath`), NOT the process CWD. When
 // OCCTSwift is a path dependency the manifest is evaluated with CWD = the *consumer's* root, so a
-// CWD-relative "Libraries/…" check fails and falls back to the URL — making every local consumer
+// CWD-relative "Libraries/…" check fails and falls back to the URL, making every local consumer
 // download + extract its own 1.3 GB copy. Resolving against `#filePath` lets a path-dep consumer find
 // OCCTSwift's in-place (gitignored) `Libraries/OCCT.xcframework` and SHARE the single copy. A URL
 // consumer clones OCCTSwift into .build/checkouts (no `Libraries/`), so this still falls back to the
 // remote zip there.
 //
 // ⚠️ Package.resolved FOOTGUN (#260): a consumer that reaches OCCTSwift via a LOCAL PATH dep (or a
-// local-path SPM mirror) turns it into a *local package*, which SPM does NOT pin — so the occtswift
+// local-path SPM mirror) turns it into a *local package*, which SPM does NOT pin, so the occtswift
 // pin (and its transitive OCCT-family pins) is silently dropped from the consumer's Package.resolved
 // on every build. Do NOT commit that churn: the committed Package.resolved must be the URL-pinned one
 // produced with NO local sibling present (i.e. on CI / a fresh clone). See docs/guides/sharing-the-xcframework.md.
@@ -33,14 +33,14 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.18 rebuild: OCCT 8.0.0p1 + our carried patches — 0001 (ShapeFix_Face guard, #263),
+    // v1.15.18 rebuild: OCCT 8.0.0p1 + our carried patches: 0001 (ShapeFix_Face guard, #263),
     // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
     // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
     // in FixPeriodicDegenerated, #317), 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318), 0007
     // (ShapeAnalysis_FreeBounds lwire reset, #323), 0008 (Geom_BSplineCurve O(1)
     // PeriodicNormalization, #323), 0009 (StepData_StepWriter split oversized string, #323), 0010
     // (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319), 0011
-    // (XCAFDoc_ShapeTool::OwnAutoNamingScope — per-instance override, revised per upstream review
+    // (XCAFDoc_ShapeTool::OwnAutoNamingScope, per-instance override, revised per upstream review
     // from the original global-mutex AutoNamingScope, #341/#363), 0012
     // (XCAFApp_Application::GetApplication/TDocStd_Application::Resources lazy-init races +
     // CDF_Directory/Resource_Manager/CDF_Application reader-writer map synchronization, #344),
@@ -58,9 +58,9 @@ let occtTarget: Target = useLocalBinary
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
 // it from source on every consumer of OCCTSwift (#339 measured 51.6s wall / 186.5s CPU per rebuild in
-// one path-dependency consumer worktree, on top of the ecosystem's shared-xcframework setup — see
+// one path-dependency consumer worktree, on top of the ecosystem's shared-xcframework setup; see
 // Scripts/build-occtbridge.sh). Default stays SOURCE (unchanged behaviour, and the correct choice for
-// this repo's own dev loop — every release edits Sources/OCCTBridge/src/*.mm directly, and a stale
+// this repo's own dev loop, since every release edits Sources/OCCTBridge/src/*.mm directly, and a stale
 // prebuilt binary would silently mask those edits). Set OCCTSWIFT_BRIDGE_PREBUILT=1 to opt into the
 // prebuilt binaryTarget instead: local Libraries/OCCTBridge.xcframework (built via
 // Scripts/build-occtbridge.sh) if present, else the matching release asset. Prebuilt only covers the
@@ -103,7 +103,7 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             // OCCT 8.0 deprecates its own legacy spellings (Standard_True/Standard_Real,
             // TopTools_* map/list typedefs, TColStd_Array1Of*, …) in favour of native C++ types
             // and explicit NCollection_* templates. This bridge still uses the legacy names, so
-            // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files —
+            // every consumer build inherited ~684 -Wdeprecated-declarations from our .mm files,
             // drowning out real warnings downstream (issue #281).
             //
             // OCCT_NO_DEPRECATED is OCCT's own opt-out (Standard_Macro.hxx), so this silences
@@ -112,7 +112,7 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
             // is rejected by SwiftPM for any package consumed as a dependency, which would break
             // every downstream consumer.
             //
-            // This buys quiet, not absolution — the legacy spellings are still deprecated and
+            // This buys quiet, not absolution: the legacy spellings are still deprecated and
             // will eventually be removed upstream. Migrating the call sites is tracked in #281.
             .define("OCCT_NO_DEPRECATED")
         ],
@@ -139,8 +139,8 @@ let package = Package(
         // Swift API layer - public interface
         //
         // Depends on OCCT directly (not just transitively via OCCTBridge) because a binaryTarget
-        // (the OCCTSWIFT_BRIDGE_PREBUILT path above) has no "dependencies" of its own to propagate —
-        // without this, the final link would silently drop libOCCT-*.a whenever OCCTBridge is prebuilt.
+        // (the OCCTSWIFT_BRIDGE_PREBUILT path above) has no "dependencies" of its own to propagate.
+        // Without this, the final link would silently drop libOCCT-*.a whenever OCCTBridge is prebuilt.
         .target(
             name: "OCCTSwift",
             dependencies: ["OCCTBridge", "OCCT"],
@@ -150,13 +150,13 @@ let package = Package(
             ]
         ),
 
-        // Objective-C++ bridge to OCCT — source or prebuilt, see OCCTSWIFT_BRIDGE_PREBUILT above.
+        // Objective-C++ bridge to OCCT, source or prebuilt; see OCCTSWIFT_BRIDGE_PREBUILT above.
         occtBridgeTarget,
 
         // OCCT binary framework - auto-selects local or remote
         occtTarget,
 
-        // Tests — split into per-domain targets so editing/compiling one domain
+        // Tests, split into per-domain targets so editing/compiling one domain
         // (e.g. threads) recompiles only that small module, never the whole suite.
         // `swift build --target OCCTThreadTests` type-checks just that target in seconds.
         .testTarget(name: "OCCTAnalysisTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTAnalysisTests"),
@@ -171,7 +171,15 @@ let package = Package(
         .testTarget(name: "OCCTMiscTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTMiscTests"),
         .testTarget(name: "OCCTModelingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTModelingTests"),
         .testTarget(name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTShapeHealingTests"),
-        .testTarget(name: "OCCTStressTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTStressTests"),
+        // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
+        // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without
+        // this exclude SwiftPM reports them as unhandled on every build of this package as the ROOT
+        // package (our dev loop and CI, plus anyone building a clone of OCCTSwift directly). It does
+        // NOT reach consumers: SwiftPM builds no test targets for a non-root package, so a new
+        // fixture directory under any other Tests/OCCT<Domain>Tests/ needs its own exclude here to
+        // keep our own builds quiet (#440).
+        .testTarget(name: "OCCTStressTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTStressTests",
+                    exclude: ["Fixtures"]),
         .testTarget(name: "OCCTSurfaceTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTSurfaceTests"),
         .testTarget(name: "OCCTThreadTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTThreadTests"),
         .testTarget(name: "OCCTBRepGraphTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTBRepGraphTests"),

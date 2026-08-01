@@ -1,0 +1,100 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - select parts of the tool, not parts of
+ the cut result, in BRepFeat_MakeCylindricalHole
+
+The four BRepFeat_MakeCylindricalHole modes that choose which piece of the
+drilling tool to keep -- PerformThruNext, PerformUntilEnd, the ranged
+Perform(Radius, PFrom, PTo) and PerformBlind -- all drive BRepFeat_Builder with
+the wrong operation:
+
+    SetOperation(Fuse);        // -> BOPAlgo_CUT
+    BOPAlgo_BOP::Perform();    // myShape := object CUT tool
+    PartsOfTool(parts);        // explores myShape for solids
+    ... KeepPart(chosen) ...
+
+BRepFeat_Builder::PartsOfTool() collects the solids of myShape, which is only
+the tool split by the object after the COMMON pass. After a CUT it is the cut
+result, so the selection loops compare barycentres of the finished workpiece and
+then register those pieces as "kept parts of the tool". PerformResult() takes
+the kept-parts path with a keep set containing no tool part at all, and returns
+the object with the cylinder's faces imprinted on it and no material removed --
+reporting BRepFeat_NoError throughout.
+
+The other two users of the same builder already do this correctly:
+BRepFeat_Form (BRepFeat_Form.cxx:806) and BRepFeat_RibSlot
+(BRepFeat_RibSlot.cxx:224) both call the two-argument
+SetOperation(myFuse, bFlag) with bFlag true before Perform(), so that
+PartsOfTool() means what its name says. PerformResult() resets myOperation from
+myFuse, so the operation finally built is still the CUT either way.
+
+The defect is invisible whenever the cut result happens to have one solid, which
+is the single-plate case every existing test uses. It shows up as soon as it has
+two: a drill axis crossing two bodies of a compound, or -- with no compound
+involved -- a single bar the bore severs in half.
+
+Measured on a compound of two 50x50x20 plates stacked on the drill axis (plate A
+at axis parameters 5..25, plate B at 45..65), drilled at r = 5 from (0, 0, 15)
+along -Z. One plate's bore removes 1570.7963:
+
+    call                     status   before      after
+    Perform(R)               NoError  3141.5927   3141.5927   (unaffected)
+    PerformUntilEnd          NoError     0.0000   3141.5927
+    PerformThruNext          NoError  1570.7963   1570.7963
+    PerformBlind(20)         NoError     0.0000   1178.0972
+    Perform(R, 0, 70)        NoError     0.0000   3141.5927
+    Perform(R, 0, 30)        NoError  1570.7963   1570.7963
+    Perform(R, 30, 70)       NoError  1570.7963   1570.7963
+
+and on a single 8mm-wide bar that a r = 5 bore severs, where "parts" was two
+pieces of one workpiece rather than two bodies:
+
+    PerformUntilEnd          NoError     0.0000   1407.2952
+    PerformThruNext          NoError     0.0000   1407.2952
+    Perform(R, 0, 30)        NoError     0.0000   1407.2952
+
+Perform(Radius) selects no parts and is left on the one-argument overload.
+
+One further behaviour change follows from the fix, on a radius so large the bore
+swallows the whole workpiece: under CUT that emptied myShape, so nbparts was 0
+and the mode returned BRepFeat_InvalidPlacement. Under COMMON the tool meets the
+whole workpiece, nbparts is 1, and the modes now return the empty result that
+Perform(Radius) and a plain BRepAlgoAPI_Cut against the same cylinder already
+returned. nbparts == 0 now means what the guard reads as: the tool meets nothing.
+--- a/src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_MakeCylindricalHole.cxx
++++ b/src/ModelingAlgorithms/TKFeat/BRepFeat/BRepFeat_MakeCylindricalHole.cxx
+@@ -177,7 +177,7 @@
+ 
+   bool Fuse = false;
+   AddTool(theTool);
+-  SetOperation(Fuse);
++  SetOperation(Fuse, true); // split the tool, so PartsOfTool() below has parts to select
+   BOPAlgo_BOP::Perform();
+   NCollection_List<TopoDS_Shape> parts;
+   PartsOfTool(parts);
+@@ -318,7 +318,7 @@
+ 
+   bool Fuse = false;
+   AddTool(theTool);
+-  SetOperation(Fuse);
++  SetOperation(Fuse, true); // split the tool, so PartsOfTool() below has parts to select
+   BOPAlgo_BOP::Perform();
+   NCollection_List<TopoDS_Shape> parts;
+   PartsOfTool(parts);
+@@ -434,7 +434,7 @@
+ 
+   bool Fuse = false;
+   AddTool(theTool);
+-  SetOperation(Fuse);
++  SetOperation(Fuse, true); // split the tool, so PartsOfTool() below has parts to select
+   BOPAlgo_BOP::Perform();
+   NCollection_List<TopoDS_Shape> parts;
+   PartsOfTool(parts);
+@@ -566,7 +566,7 @@
+   // myBuilder.Perform(theTool,theList,Fuse);
+   // myBuilder.BuildPartsOfTool();
+   AddTool(theTool);
+-  SetOperation(Fuse);
++  SetOperation(Fuse, true); // split the tool, so PartsOfTool() below has parts to select
+   BOPAlgo_BOP::Perform();
+   NCollection_List<TopoDS_Shape> parts;
+   PartsOfTool(parts);

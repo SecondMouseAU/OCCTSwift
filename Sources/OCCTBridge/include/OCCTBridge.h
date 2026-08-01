@@ -132,7 +132,10 @@
 // BRepExtrema_ExtCC                   → OCCTBRepExtremaExtCC
 // BRepExtrema_ExtCF                   → OCCTBRepExtremaExtCF
 // BRepExtrema_ExtFF                   → OCCTBRepExtremaExtFF
-// BRepExtrema_ExtPC                   → OCCTBRepExtremaExtPC
+// BRepExtrema_ExtPC                   → OCCTBRepExtremaExtPC (for its extrema COUNT only since
+//                                       #580; the distance/parameter/point come from
+//                                       occtNearestPointOnCurveRange, because extrema exclude the
+//                                       edge's ends and the one in range can be a maximum)
 // BRepExtrema_ExtPF                   → OCCTBRepExtremaExtPF
 // BRepExtrema_Poly                    → OCCTShapePolyhedralDistance
 //
@@ -352,8 +355,9 @@
 //                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
-//                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint
-//                                       (the last two only as one of the three candidate sources
+//                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint,
+//                                       OCCTBRepExtremaExtPC
+//                                       (the last three only as one of the three candidate sources
 //                                       occtNearestPointOnCurveRange takes a minimum over; see
 //                                       ShapeAnalysis_Curve for the other, and #539 for why
 //                                       neither class answers correctly on its own)
@@ -362,10 +366,25 @@
 // --- GeomConvert ---
 // GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DBSplineToBeziers, OCCTCurve3DSplitAtContinuity,
 //                                       OCCTSurfaceToBSpline, OCCTSurfaceToBezierPatches
+// GeomConvert_BSplineCurveKnotSplitting → OCCTCurve3DBSplineKnotSplits (the sole wrapper; #562)
+// GeomConvert_BSplineSurfaceKnotSplitting → OCCTSurfaceKnotSplitting (the sole wrapper since #562
+//                                       deleted the second family that wrapped it)
 // GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoinCurves, OCCTCurve3DJoinToBSpline,
 //                                       OCCTCurve3DConcatenateG1, OCCTConcatenateCurves3D
 // GeomConvert_CurveToAnaCurve         → OCCTGeomConvertCurveToAnalytical, OCCTGeomConvertIsLinear
 // GeomConvert_SurfToAnaSurf           → OCCTGeomConvertSurfToAnalytical*, OCCTGeomConvertIsCanonical
+//
+// --- Geom2dConvert ---
+// #562: this section did not exist, which is half of why Geom2dConvert_BSplineCurveKnotSplitting
+// could be wrapped twice without anything noticing. Census is by call site in OCCTBridge_Geom2d.mm.
+// Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
+//                                       OCCTCurve2DJoinToBSpline
+// Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments, OCCTCurve2DToArcsAndSegments
+// Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+// Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
+//                                       since #562 deleted the second family that wrapped it)
+// Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers
+// Geom2dConvert_CompCurveToBSplineCurve → OCCTConcatenateCurves2D, OCCTCurve2DJoinToBSpline
 //
 // --- Convert ---
 // Convert_CompBezierCurvesToBSplineCurve   → OCCTConvertCompBezierToBSpline (v0.99.0)
@@ -482,8 +501,9 @@
 // --- ShapeAnalysis ---
 // ShapeAnalysis_Curve                 → OCCTCurve3DProjectPoint, OCCTCurve3DValidateRange,
 //                                       OCCTCurve3DGetSamplePoints3D, OCCTCurve3DIsClosedWithPreci,
-//                                       OCCTCurve3DIsPeriodicSA, OCCTEdgeProjectPoint
-//                                       (the two projection entry points reach ::Project through
+//                                       OCCTCurve3DIsPeriodicSA, OCCTEdgeProjectPoint,
+//                                       OCCTBRepExtremaExtPC
+//                                       (the three projection entry points reach ::Project through
 //                                       occtNearestPointOnCurveRange, which does not trust its
 //                                       answer alone; see GeomAPI_ProjectPointOnCurve)
 // ShapeAnalysis_FreeBounds            → OCCTShapeFreeBounds, OCCTShapeFreeBoundsClosedCount,
@@ -1124,6 +1144,13 @@ OCCTShapeRef OCCTImportSTEP(const char* path);
 // Cancellation: if shouldCancel returns true, OCCT stops at the next polling
 // boundary. The *Progress entry points return NULL and set *outCancelled=true.
 // If the import otherwise fails, NULL is returned and *outCancelled stays false.
+//
+// Both halves of that hold on every exit path, not only at the bridge's own
+// checkpoints (#525): a break during a transfer surfaces as zero transferred
+// roots, a null shape, a non-Done status or an exception depending on where it
+// lands, and each of those is still reported as a cancellation rather than as a
+// failure. One true from shouldCancel is also enough -- it is latched, so a
+// caller that answers true once and false afterwards still stops the call.
 
 typedef struct OCCTImportProgress {
     /// Called as the importer advances. fraction is 0.0...1.0; step is a
@@ -2658,6 +2685,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree);
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in OCCTBridge_Internal.h.
+// Returns the TRUE split count even when writing was truncated by `max`, so a caller that came up
+// short can retry at the size it was just told — the #481 contract the rest of this family already
+// shares. It used to return the count it had written, which is indistinguishable from a curve with
+// exactly `max` splits (#562).
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef curve, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max);
 int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef curve, double tolerance,
@@ -5805,6 +5836,9 @@ OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t max
 void OCCTFillingRelease(OCCTFillingRef filling);
 
 /// Add a boundary edge constraint, deriving the continuity reference from the edge's own pcurve.
+///
+/// With no nominated support face to validate, this only refuses a constraint OCCT itself throws
+/// on. A refusal is sticky either way; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
@@ -5823,6 +5857,7 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
 /// `support` is used or the constraint fails: if it carries no pcurve for `edge` it cannot
 /// serve as the continuity reference, matching OCCTShapeFillConstraints' per-constraint
 /// contract. Pass NULL to derive the reference from the edge itself, same as OCCTFillingAddEdge.
+/// A refusal is sticky; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param support Face to be continuous with, or NULL to derive one from the edge
@@ -5837,7 +5872,21 @@ bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
 /// @return true if point was added
 bool OCCTFillingAddPoint(OCCTFillingRef filling, double x, double y, double z);
 
+/// Number of OCCTFillingAdd* calls this builder refused (#482).
+///
+/// A refused constraint is one that is NOT in the builder, so it distinguishes a poisoned
+/// OCCTFillingBuild from an ordinary fitting failure. Only ever increases; a later successful
+/// Add does not clear it.
+/// @param filling Filling handle
+/// @return Refusal count, or 0 for a NULL handle
+int32_t OCCTFillingRefusedConstraintCount(OCCTFillingRef filling);
+
 /// Build the filling surface.
+///
+/// Fails immediately, without attempting the build, if any OCCTFillingAdd* was refused (#482).
+/// Fitting a surface to the constraints that did make it in would answer a different question
+/// than the caller asked. Matches OCCTShapeFillConstraints, which returns NULL on the same
+/// refusal. Use OCCTFillingRefusedConstraintCount to tell the two failures apart.
 /// @param filling Filling handle
 /// @return true if build succeeded
 bool OCCTFillingBuild(OCCTFillingRef filling);
@@ -6508,17 +6557,31 @@ OCCTShapeRef _Nullable OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int3
 
 /// Point-edge extrema result
 typedef struct {
-    double distance;           // Minimum distance
-    double parameter;          // Parameter on edge at closest point
-    double ptx, pty, ptz;     // Closest point on edge
-    int32_t solutionCount;    // Number of extrema found
+    double distance;           // Minimum distance over the edge, ends included (#580)
+    double parameter;          // Parameter on edge at the nearest point
+    double ptx, pty, ptz;     // Nearest point on edge
+    int32_t solutionCount;    // Number of perpendicular feet BRepExtrema_ExtPC found; 0 is a
+                              // reportable state, not a failure -- see below
+    bool isValid;             // false only when there is no such edge, or it has no 3D curve
 } OCCTPointEdgeExtremaResult;
 
-/// Compute distance from a point to an edge.
+/// Compute the minimum distance from a point to an edge of a shape, over the whole edge.
+///
+/// The distance/parameter/point are the minimum over the edge's own range including its two ends,
+/// via occtNearestPointOnCurveRange -- the same helper behind OCCTEdgeProjectPoint, so the two
+/// cannot disagree about the same point and the same edge. This used to report the minimum over
+/// BRepExtrema_ExtPC's extrema instead, which excludes the ends and can consist of a single
+/// MAXIMUM: a point below a half circle of radius 5 read as 11 away when it is 7.81 away, and a
+/// point past the end of a trimmed segment had no answer at all (#580).
+///
+/// `solutionCount` keeps both its meaning and its source: how many extrema BRepExtrema_ExtPC found,
+/// which is how many perpendicular feet the point has on the edge. It is no longer a success flag.
+/// Zero means the nearest point is one of the ends, which is worth reporting rather than refusing.
+///
 /// @param px,py,pz Point coordinates
 /// @param shape Shape containing the edge
-/// @param edgeIndex Edge index (0-based)
-/// @return Extrema result (minimum distance solution)
+/// @param edgeIndex Edge index (0-based, in the enumeration Shape.edges() reads)
+/// @return Nearest-point result; check isValid, not solutionCount
 OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
                                                  OCCTShapeRef shape, int32_t edgeIndex);
 
@@ -6813,15 +6876,20 @@ typedef struct {
 ///   cubic with simple interior knots needs 3. See the #480 note in OCCTBridge_Internal.h
 /// @param vContinuity Desired V continuity, same contract against the V degree and knots
 /// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
-/// @param maxUParams Capacity of outUParams
+/// @param outUIndices Pre-allocated array for the 1-based U knot-table indices those parameters
+///   were read from, i.e. `outUParams[i] == UKnot(outUIndices[i])` (may be NULL). #562: the
+///   analyzer reports indices and this function converts them, so the caller only ever saw the
+///   converted form and a second family of bridge functions existed to serve the raw one
+/// @param maxU Capacity of outUParams and outUIndices
 /// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
-/// @param maxVParams Capacity of outVParams
+/// @param outVIndices Pre-allocated array for the 1-based V knot-table indices (may be NULL)
+/// @param maxV Capacity of outVParams and outVIndices
 /// @return Split counts; nbUSplits/nbVSplits are the true counts even when writing
-///   was truncated by maxUParams/maxVParams, so a caller can retry with a bigger buffer
+///   was truncated by maxU/maxV, so a caller can retry with a bigger buffer
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
     int32_t uContinuity, int32_t vContinuity,
-    double* outUParams, int32_t maxUParams,
-    double* outVParams, int32_t maxVParams);
+    double* outUParams, int32_t* outUIndices, int32_t maxU,
+    double* outVParams, int32_t* outVIndices, int32_t maxV);
 
 /// Join an array of Bezier surface patches into a single BSpline surface.
 /// @param patches Array of surface handles (row-major, nRows x nCols)
@@ -14659,33 +14727,19 @@ OCCTCurve3DRef _Nullable OCCTConcatenateCurves3D(OCCTCurve3DRef _Nonnull * _Nonn
 OCCTCurve2DRef _Nullable OCCTConcatenateCurves2D(OCCTCurve2DRef _Nonnull * _Nonnull curves,
                                                    int32_t count, double tolerance);
 
-// MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
+// MARK: - GeomConvert_BSplineSurfaceKnotSplitting / Geom2dConvert_BSplineCurveKnotSplitting
 //
-// `continuity` throughout this section is the same ContinuityRange as OCCTSurfaceKnotSplitting
-// takes: a literal derivative order, splitting where `degree - multiplicity < continuity`, with
-// useful domain 0...degree. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of U-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsU(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get number of V-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsV(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get U and V knot split indices for a BSpline surface at given continuity.
-void OCCTBSplineSurfaceKnotSplitValues(OCCTSurfaceRef _Nonnull surface, int32_t continuity,
-                                        int32_t* _Nonnull uSplits, int32_t* _Nonnull vSplits);
-
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
+// #562: five functions used to live here (OCCTBSplineSurfaceKnotSplitsU/V,
+// OCCTBSplineSurfaceKnotSplitValues, OCCTBSplineCurve2dKnotSplits,
+// OCCTBSplineCurve2dKnotSplitValues), added in v0.105.0 over the same two analyzers
+// OCCTSurfaceKnotSplitting and OCCTCurve2DSplitAtDiscontinuities already drove. They are gone;
+// those two are the sole wrappers of their analyzer. Both now report the split knot-table
+// indices, which is all the deleted family carried that the survivors did not.
 //
-// Same ContinuityRange contract again: Geom2dConvert_BSplineCurveKnotSplitting runs the
-// identical algorithm on a 2D curve. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of knot splits for a 2D BSpline curve at given continuity.
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef _Nonnull curve, int32_t continuity);
-
-/// Get knot split indices for a 2D BSpline curve at given continuity.
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef _Nonnull curve, int32_t continuity,
-                                        int32_t* _Nonnull splits);
+// Two contract hazards the deleted family had, recorded so they are not reintroduced: neither
+// values function took a buffer capacity (each wrote NbSplits() entries into a buffer the caller
+// had sized from a *separate* call), and the surface one constructed the analyzer three times per
+// logical query, once per count call and once for the values.
 
 // MARK: - BndLib extras (v0.105.0)
 

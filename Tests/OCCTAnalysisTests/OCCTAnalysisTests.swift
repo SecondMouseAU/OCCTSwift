@@ -2440,23 +2440,29 @@ struct BRepExtremaExtFFTests {
 
 @Suite("BRepExtrema_ExtPC Tests")
 struct BRepExtremaExtPCTests {
+    /// Every edge answers. This used to loop "until we find one that gives a valid extremum", a
+    /// workaround for how often a point with no perpendicular foot came back nil, and asserted
+    /// `solutionCount > 0` — which the guard it was testing made unfalsifiable. See #580.
     @Test("Point to edge distance on box")
     func pointToEdge() throws {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let edgeCount = box.edges().count
-        #expect(edgeCount > 0)
+        #expect(edgeCount == 12)
 
-        // Try each edge until we find one that gives a valid extremum
-        var foundResult = false
         for i in 0..<edgeCount {
-            if let result = box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: i) {
-                #expect(result.distance >= 0)
-                #expect(result.solutionCount > 0)
-                foundResult = true
-                break
-            }
+            let result = try #require(box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: i))
+            // Every edge of the box is a bounded segment, so no answer can exceed the box's
+            // diagonal plus the probe's own offset from it.
+            #expect(result.distance > 0)
+            #expect(result.distance < 30)
         }
-        #expect(foundResult)
+
+        // The box is centred on the origin, so (5, 5, 15) is the corner (5, 5, 5) plus 10 in z: the
+        // nearest edge point is that corner itself.
+        let nearest = (0..<edgeCount).compactMap {
+            box.pointEdgeExtrema(point: SIMD3(5, 5, 15), edgeIndex: $0)?.distance
+        }.min()
+        #expect(abs(try #require(nearest) - 10) < 1e-9)
     }
 
     @Test("Point to wire edge — known distance")

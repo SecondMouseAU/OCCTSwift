@@ -1,0 +1,28 @@
+=== which Continuity values does GeomPlate_MakeApprox accept? ===
+  cont=C0 -> OK  uDeg=8 vDeg=8 uP=17 vP=17 approxErr=0.00734231
+  cont=G1 -> THREW: AdvApp2Var_ApproxAFunc2Var : UContinuity Error
+  cont=C1 -> OK  uDeg=8 vDeg=8 uP=16 vP=16 approxErr=0.0228438
+  cont=G2 -> THREW: AdvApp2Var_ApproxAFunc2Var : UContinuity Error
+  cont=C2 -> OK  uDeg=8 vDeg=8 uP=21 vP=21 approxErr=7.90633
+  cont=C3 -> THREW: AdvApp2Var_ApproxAFunc2Var : UContinuity Error
+  cont=CN -> THREW: AdvApp2Var_ApproxAFunc2Var : UContinuity Error
+
+=== at Nbmax=1, is the criterion VIOLATED yet still ignored? ===
+(seuil = max(Tol3d, 10*dmax); criterion is satisfied iff critErr < seuil)
+  Nbmax=1 dmax=1e-09    seuil=0.01     critErr=0.0981545    violated=YES | uP=9 vP=9
+  Nbmax=1 dmax=1e-06    seuil=0.01     critErr=0.0981545    violated=YES | uP=9 vP=9
+  Nbmax=1 dmax=0.001    seuil=0.01     critErr=0.0981545    violated=YES | uP=9 vP=9
+  (same for Nbmax=2, where subdivision IS permitted)
+  Nbmax=2 dmax=1e-09    seuil=0.01     critErr=0.00484093   violated=no  | uP=16 vP=16
+  Nbmax=2 dmax=1e-06    seuil=0.01     critErr=0.00484093   violated=no  | uP=16 vP=16
+  Nbmax=2 dmax=0.001    seuil=0.01     critErr=0.00484093   violated=no  | uP=16 vP=16
+
+=== does raising Nbmax keep helping, and where does it stop? ===
+  Nbmax=1    uP=9    vP=9    approxErr=0.579399     critErr=0.0981545   
+  Nbmax=2    uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=3    uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=5    uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=10   uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=20   uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=50   uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
+  Nbmax=100  uP=16   vP=16   approxErr=0.0228438    critErr=0.00484093  
