@@ -1157,6 +1157,9 @@ public final class Shape: @unchecked Sendable {
     /// deadline in `shouldCancel()` therefore bounds the whole call, and cancelling mid-repair
     /// throws rather than returning the partially-repaired shape.
     ///
+    /// Cancelling *anywhere* throws ``ImportError/cancelled``, including during the transfer, which
+    /// used to report `ImportError.importFailed` instead (#525).
+    ///
     /// ```swift
     /// final class Deadline: ImportProgress, @unchecked Sendable {
     ///     private let start = Date()
@@ -2759,12 +2762,28 @@ extension Shape {
     /// Draft angles are used in injection molding and casting to allow parts to
     /// be released from the mold. The angle is measured from the pull direction.
     ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). It used to be dropped,
+    ///   and `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no faces for at
+    ///   all, so a draft naming only faces from another shape returned this shape undrafted.
+    ///
     /// - Parameters:
     ///   - faces: Faces to add draft to (must have valid indices from this shape)
     ///   - direction: Pull direction (typically vertical, e.g., [0, 0, 1])
     ///   - angle: Draft angle in radians (typically 1-5 degrees)
     ///   - neutralPlane: Plane where draft angle is zero (point and normal)
     /// - Returns: Drafted shape, or nil on failure
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 30)!
+    /// let sides = box.faces().filter { $0.isVertical() }
+    /// let drafted = box.drafted(
+    ///     faces: sides,
+    ///     direction: SIMD3(0, 0, 1),
+    ///     angle: 3.0 * .pi / 180.0,
+    ///     neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// )
+    /// ```
     public func drafted(
         faces: [Face],
         direction: SIMD3<Double>,
@@ -2805,7 +2824,8 @@ extension Shape {
     /// analysis or removing small features.
     ///
     /// `defeature(faces:)` is the same operation addressing its faces as shapes rather than by
-    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge.
+    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge, and since #578 both
+    /// apply the same rule to a face this shape does not have — the whole call fails.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -3190,6 +3210,10 @@ extension Shape {
     ///
     /// Unlike the basic `shelled(thickness:)` method, this allows you to specify
     /// which faces should be removed to create openings.
+    ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). Previously such a face
+    ///   was dropped and the solid was shelled with fewer openings than asked for.
     ///
     /// - Parameters:
     ///   - thickness: Wall thickness (positive = inward, negative = outward)
@@ -4056,9 +4080,22 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    /// Convert BSpline surfaces to their closest analytical form
+    /// Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
     ///
-    /// Attempts to convert BSpline surfaces to planes, cylinders, cones, spheres, or tori.
+    /// This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane,
+    /// cylinder, cone, sphere or torus (`sweptToElementary()` and `revolutionToElementary()` are the
+    /// operations that do). It approximates each geometry as a BSpline no worse than the supplied
+    /// tolerances, capped at `maxDegree` and `maxSegments`.
+    ///
+    /// Continuity is fixed at C1 here; use
+    /// ``bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
+    /// to choose it. Either way OCCT **reduces the continuity it delivers, silently, whenever the
+    /// requested one cannot meet the tolerance within `maxDegree`** — measured in #570, a face on an
+    /// offset sphere comes back at C0 no matter which of C0/C1/C2 was asked for.
+    ///
+    /// ```swift
+    /// let simplified = imported.bsplineRestriction(surfaceTolerance: 0.001, curveTolerance: 0.001)
+    /// ```
     ///
     /// - Parameters:
     ///   - surfaceTolerance: Tolerance for surface approximation (default: 0.01)
@@ -5532,6 +5569,18 @@ extension Shape {
 
     /// Apply a uniform chamfer to the given edges, returning the result and
     /// a queryable history.
+    ///
+    /// Edge indices are 0-based positions in ``edges()``. An index naming no edge of this shape
+    /// fails the whole call rather than being skipped (#568), matching
+    /// ``filletedWithFullHistory(radius:edges:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// if let (chamfered, history) = box.chamferedWithFullHistory(distance: 1.0, edges: [0, 1]),
+    ///    let edge = box.subShapes(ofType: .edge).first {
+    ///     print(chamfered.volume ?? 0, history.record(of: edge).modified.count)
+    /// }
+    /// ```
     public func chamferedWithFullHistory(distance: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
@@ -6645,10 +6694,20 @@ extension Shape {
     ///   through. Vertex indices are numbered within that first face. Call this on one face
     ///   at a time.
     ///
+    /// - Note: An index naming no vertex of that first face fails the whole call rather than being
+    ///   skipped (#568). Previously it was dropped and the corners that did resolve were rounded,
+    ///   reported as a complete result.
+    ///
     /// - Parameters:
     ///   - vertexIndices: 0-based indices of vertices to fillet
     ///   - radii: Fillet radius for each vertex (must match vertexIndices count)
     /// - Returns: Modified shape with fillets, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let rounded = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2, 2, 2, 2])
+    /// print(rounded?.edgeCount ?? 0)   // 8: four straights and four arcs
+    /// ```
     public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape? {
         guard !vertexIndices.isEmpty, vertexIndices.count == radii.count else { return nil }
         let indices = vertexIndices.map { Int32($0) }
@@ -6671,10 +6730,20 @@ extension Shape {
     ///   through. Edge indices are numbered within that first face. Call this on one face at
     ///   a time.
     ///
+    /// - Note: *Either* half of a pair naming no edge of that first face fails the whole call
+    ///   rather than being skipped (#568). Previously the pair was dropped and the corners that
+    ///   did resolve were cut, reported as a complete result.
+    ///
     /// - Parameters:
     ///   - edgePairs: Array of (edge1Index, edge2Index) pairs identifying adjacent edges
     ///   - distances: Chamfer distance for each edge pair
     /// - Returns: Modified shape with chamfers, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let cut = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2, 2])
+    /// print(cut?.edgeCount ?? 0)   // 6: two corners replaced by chamfer edges
+    /// ```
     public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape? {
         guard !edgePairs.isEmpty, edgePairs.count == distances.count else { return nil }
         let edge1Indices = edgePairs.map { Int32($0.0) }
@@ -8174,7 +8243,10 @@ extension Shape {
     ///   - maxSegments: Maximum number of segments (default: 100)
     ///   - continuity3d: 3D continuity requirement (default: .c1). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum.
+    ///     maximum. This is a **ceiling, not a guarantee** — OCCT reduces the continuity it
+    ///     delivers, with no diagnostic, whenever the requested one cannot meet `tol3d` within
+    ///     `maxDegree`, and with `degreePriority` it degrades all the way to C0. Measured in #570,
+    ///     a face on an offset sphere returns the identical C0 result for `.c0`, `.c1` and `.c2`.
     ///   - continuity2d: 2D continuity requirement (default: .c1), same `.c3` limit
     ///   - degreePriority: If true, prioritize degree over segments (default: true)
     ///   - rational: Allow rational BSplines (default: false)
@@ -9103,11 +9175,25 @@ extension Shape {
     /// Creates a smooth BSpline surface that passes through or near the given points.
     /// Useful for creating surfaces from scattered point data.
     ///
+    /// The fit subdivides into more Bezier patches until it is within `tolerance` of the plate.
+    /// `maxSegments` caps that subdivision; **1 is clamped to 2**, because a single patch cannot be
+    /// cut and the approximator then ignores its own error criterion entirely, which makes
+    /// `tolerance` unenforceable rather than merely coarse (#571).
+    ///
+    /// ```swift
+    /// let points: [SIMD3<Double>] = [
+    ///     SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(0, 10, -1), SIMD3(10, 10, 0.5),
+    /// ]
+    /// if let face = Shape.plateSurface(points: points, tolerance: 1e-3) {
+    ///     print(face.surfaceArea ?? 0)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - points: Array of 3D points to fit the surface through
     ///   - tolerance: Approximation tolerance (default 1e-3)
     ///   - maxDegree: Maximum BSpline degree (default 8)
-    ///   - maxSegments: Maximum BSpline segments (default 20)
+    ///   - maxSegments: Maximum BSpline segments (default 20; values below 2 are clamped to 2)
     /// - Returns: Face with plate surface, or nil on failure
     public static func plateSurface(points: [SIMD3<Double>], tolerance: Double = 1e-3,
                                      maxDegree: Int = 8, maxSegments: Int = 20) -> Shape? {
@@ -11203,12 +11289,9 @@ extension Shape {
         case throughAll
         /// `PerformUntilEnd(R)` — bounded by the stock's own first and last faces along the axis.
         ///
-        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting.
-        ///
-        /// - Warning: On input with more than one body on the axis (a compound, a multi-solid),
-        ///   OCCT keeps a single part of its cutting tool and can end up removing **no material at
-        ///   all** while still reporting ``CylindricalHoleStatus/noError``. Use ``throughAll`` or
-        ///   ``Shape/drilled(at:direction:radius:depth:)`` for a stack. Tracked as #532.
+        /// The forward-bounded through hole most callers reach for ``throughAll`` expecting. Every
+        /// body the axis crosses beyond the entry face is drilled, so a stack of plates is bored
+        /// all the way through.
         case untilEnd
         /// `PerformThruNext(R)` — stops at the next face after the origin.
         case thruNext
@@ -11226,10 +11309,8 @@ extension Shape {
         /// The window **chooses a face pair; it does not trim the cut**. A window lying strictly
         /// inside one body still drills all the way through that body, and a window that names no
         /// face pair — the gap between two plates, say — is ``CylindricalHoleStatus/invalidPlacement``.
-        /// Its use is picking *which* body to drill in a stack.
-        ///
-        /// - Warning: A window spanning more than one body hits the same OCCT behaviour as
-        ///   ``untilEnd``: ``CylindricalHoleStatus/noError``, and no material removed (#532).
+        /// Its use is picking *which* body to drill in a stack: a window over one plate drills that
+        /// plate, and a window spanning several drills all of them.
         case range(from: Double, to: Double)
 
         /// The (mode, p0, p1) triple the bridge reads.
@@ -13143,7 +13224,9 @@ extension Shape {
     /// - Parameters:
     ///   - continuity3d: 3D continuity requirement (default: `.c1`). `.c3` is rejected by the
     ///     underlying approximator and fails the whole call (nil), so `.c2` is the practical
-    ///     maximum — the same limit the non-advanced entry point has.
+    ///     maximum — the same limit the non-advanced entry point has. Also the same ceiling-not-a-
+    ///     guarantee: OCCT silently reduces the delivered continuity when the requested one cannot
+    ///     meet `tol3d` within `maxDegree` (#570).
     ///   - continuity2d: 2D continuity requirement (default: `.c1`), same `.c3` limit
     /// - Returns: Restricted shape, or nil on failure
     public static func bsplineRestrictionAdvanced(_ shape: Shape,

@@ -2996,12 +2996,9 @@ struct BSplineCurve2dKnotSplitTests {
     @Test func knotSplits() {
         // Create a 2D BSpline curve from interpolation
         if let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 0), SIMD2(3, 1)]) {
-            let n = c.bsplineKnotSplits(continuity: .c0)
-            #expect(n >= 0)
-            if n > 0 {
-                let vals = c.bsplineKnotSplitValues(continuity: .c0)
-                #expect(vals.count == n)
-            }
+            // #562: was bsplineKnotSplits/bsplineKnotSplitValues, both now deprecated onto this one.
+            let indices = c.splitIndicesAtDiscontinuities(continuity: .c0)
+            #expect((indices?.count ?? 0) >= 0)
         }
     }
 }

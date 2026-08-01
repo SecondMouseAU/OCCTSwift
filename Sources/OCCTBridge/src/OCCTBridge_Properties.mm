@@ -1584,15 +1584,24 @@ bool OCCTEdgeLPropD1(OCCTShapeRef edge, double param, double* d1x, double* d1y, 
 
 // MARK: - BRepLProp_SLProps (v0.111.0)
 
-void OCCTFaceLPropValue(OCCTShapeRef face, double u, double v, double* x, double* y, double* z) {
+// #583: the six entry points that report a value below used to return it bare, with 0 (or the origin,
+// for the point, or false for the umbilic predicate) standing in for every way of not having one: a
+// null handle, a Shape that is not a face, and a point where IsCurvatureDefined() is false. That
+// encoding has no spare value to spend:
+// measured on the pinned kernel, a cylinder's Gaussian curvature and its maximum curvature are exactly
+// 0 at every point of the surface, with the curvature defined, and a plane's four curvatures and its
+// point at (0, 0) are all exactly zero as well. See Scripts/repro/583-lprop-zero-sentinel/.
+
+bool OCCTFaceLPropValue(OCCTShapeRef face, double u, double v, double* x, double* y, double* z) {
     *x = 0; *y = 0; *z = 0;
-    if (!face) return;
+    if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
         BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         gp_Pnt p = props.Value();
         *x = p.X(); *y = p.Y(); *z = p.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, double* dy, double* dz) {
@@ -1608,53 +1617,65 @@ bool OCCTFaceLPropNormal(OCCTShapeRef face, double u, double v, double* dx, doub
     } catch (...) { return false; }
 }
 
-double OCCTFaceLPropMaxCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MaxCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropMinCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MinCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropMeanCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.MeanCurvature();
-    } catch (...) { return 0.0; }
-}
-
-double OCCTFaceLPropGaussianCurvature(OCCTShapeRef face, double u, double v) {
-    if (!face) return 0.0;
-    try {
-        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
-        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
-        if (!props.IsCurvatureDefined()) return 0.0;
-        return props.GaussianCurvature();
-    } catch (...) { return 0.0; }
-}
-
-bool OCCTFaceLPropIsUmbilic(OCCTShapeRef face, double u, double v) {
+bool OCCTFaceLPropMaxCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
     if (!face) return false;
     try {
         BRepAdaptor_Surface as(TopoDS::Face(face->shape));
         BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
         if (!props.IsCurvatureDefined()) return false;
-        return props.IsUmbilic();
+        *curvature = props.MaxCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropMinCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.MinCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropMeanCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.MeanCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropGaussianCurvature(OCCTShapeRef face, double u, double v, double* curvature) {
+    *curvature = 0;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        if (!props.IsCurvatureDefined()) return false;
+        *curvature = props.GaussianCurvature();
+        return true;
+    } catch (...) { return false; }
+}
+
+bool OCCTFaceLPropIsUmbilic(OCCTShapeRef face, double u, double v, bool* isUmbilic) {
+    *isUmbilic = false;
+    if (!face) return false;
+    try {
+        BRepAdaptor_Surface as(TopoDS::Face(face->shape));
+        BRepLProp_SLProps props = occtFaceLocalProps(as, u, v, 2);
+        // The return is definedness, not the answer: without this the caller could not tell a
+        // cylinder (genuinely not umbilic) from a cone apex (no principal curvatures to compare).
+        if (!props.IsCurvatureDefined()) return false;
+        *isUmbilic = props.IsUmbilic();
+        return true;
     } catch (...) { return false; }
 }
 
