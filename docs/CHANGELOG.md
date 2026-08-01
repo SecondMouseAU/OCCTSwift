@@ -15,6 +15,51 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+`OCCTImportSTEPRobustProgress` set `*outCancelled` only at its own explicit `UserBreak()`
+checkpoints, so which error a cancelled import reported depended on which phase the cancellation
+happened to land in. A break during the transfer leaves `TransferRoots` reporting zero transferred
+roots, and that exit returned "failed" with the flag still false:
+
+```swift
+// Deadline expires while the transfer is still running
+catch ImportError.importFailed("Failed to import: /tmp/part.step")   // was: for a readable file
+catch ImportError.cancelled                                          // now
+```
+
+Found as a flake in #300's own regression test, which set its deadline at 0.75 × a wall-clock
+measurement of a preceding uncancelled import: machine load, not the bridge, decided which phase
+the deadline fell in, and about 1 run in 9 fell in the transfer. Any caller whose deadline expires
+early reaches the same path.
+
+Every failure exit below the indicator's construction now reports cancellation if a break was
+observed — the zero-roots exit, a null shape, a non-`Done` status, and the `catch (...)` handler
+(which needed the indicator hoisted out of the `try`). Applied across all twelve `*Progress` entry
+points in `OCCTBridge_IO.mm`, not only the two robust importers, since they share the shape.
+
+A second defect surfaced while probing the first: `BridgeProgressIndicator::UserBreak()` re-asked
+the caller at every checkpoint and believed the latest answer, so a caller that answers `true`
+**once** — a one-shot flag, an already-consumed `Task.isCancelled` — had that answer overwritten.
+OCCT aborted the phase, the next poll said "no break", and the half-repaired shape came back as a
+*success*. The break is now latched (`std::atomic<bool>`, since OCCT documents `UserBreak()` as
+callable concurrently), which is what `ImportProgress.shouldCancel` always documented.
+
+Both `#300` regression tests were rewritten off the clock. That the repair phase lies inside the
+caller's progress range is now checked by the silence that would follow the last progress report
+if it did not: measured at 1.3% (STEP) and 3.4% (IGES) of the call with the fix, 35–40% with the
+#300 defect reintroduced. That a cancellation there *stops* the repair is checked against the
+uncancelled run's poll count — a count of work items, not a duration, and identical on a loaded and
+an idle machine. Progress *names* cannot substitute for the phase, tempting as they look: both
+readers run a `ShapeFix_Shape` of their own during the transfer, so `Fixing face` / `Fixing edge` /
+`Update tolerances` are already being reported from fraction ~0.09.
+
+Bridge-only change: no OCCT kernel patch, no `OCCT.xcframework` rebuild; `OCCTBridge.xcframework`
+needs one since `OCCTBridge_IO.mm` changed. The previously flaky suites ran 12/12 clean; each new
+test was verified to fail against the defect it covers, re-injected one at a time.
+
 ### Unreleased: fix, a refused `FillingSurface.add` still let `build()` return a face (#482)
 
 > Version and date deliberately unset; whoever tags stamps them.

@@ -55,6 +55,7 @@
 #include <APIHeaderSection_MakeHeader.hxx>
 #include <Resource_Manager.hxx>
 #include <UnitsMethods.hxx>
+#include <atomic>
 #include <sstream>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <TDF_LabelSequence.hxx>
@@ -191,15 +192,29 @@ public:
         myCtx->onProgress(fraction, name, myCtx->userData);
     }
 
+    // Latches the break rather than re-asking. OCCT polls this from every scope that guards a
+    // loop, and the bridge polls it again at each phase boundary, so a caller that answers
+    // "cancel" once -- a one-shot flag, a Task.isCancelled read that has already been consumed --
+    // used to have that answer overwritten by the next poll: the algorithm aborted, the later
+    // poll said "no break", and the call handed back its half-finished result as a success.
+    // The documented contract is that a single true stops the call (#525).
     Standard_Boolean UserBreak() override {
+        if (myBroken.load(std::memory_order_relaxed)) return Standard_True;
         if (!myCtx || !myCtx->shouldCancel) return Standard_False;
-        return myCtx->shouldCancel(myCtx->userData) ? Standard_True : Standard_False;
+        if (!myCtx->shouldCancel(myCtx->userData)) return Standard_False;
+        myBroken.store(true, std::memory_order_relaxed);
+        return Standard_True;
     }
+
+    // Whether a break was ever observed, without polling the caller again. std::atomic because
+    // OCCT documents UserBreak() as callable concurrently (Message_ProgressIndicator.hxx).
+    bool Cancelled() const { return myBroken.load(std::memory_order_relaxed); }
 
     DEFINE_STANDARD_RTTI_INLINE(BridgeProgressIndicator, Message_ProgressIndicator)
 
 private:
     const OCCTImportProgress* myCtx;
+    std::atomic<bool> myBroken{false};
 };
 
 DEFINE_STANDARD_HANDLE(BridgeProgressIndicator, Message_ProgressIndicator)
@@ -207,8 +222,18 @@ DEFINE_STANDARD_HANDLE(BridgeProgressIndicator, Message_ProgressIndicator)
 static inline void clearCancelOut(bool* outCancelled) {
     if (outCancelled) *outCancelled = false;
 }
-static inline void setCancelOut(bool* outCancelled, opencascade::handle<BridgeProgressIndicator>& ind) {
-    if (outCancelled && !ind.IsNull()) *outCancelled = ind->UserBreak() ? true : false;
+
+// Report a cancelled call as cancelled whichever exit it takes (#525).
+//
+// The explicit UserBreak() checkpoints are not the only way out of these functions: an aborted
+// TransferRoots reports zero transferred roots, an aborted transfer can leave a null shape or a
+// non-Done status behind, and a break raised inside OCCT arrives here as an exception. Those
+// paths used to return "failed" for a call the caller had explicitly cancelled, so which error a
+// caller saw depended on which phase the cancellation happened to land in. Every failure return
+// below the indicator's construction therefore passes through this, and it reads the latch rather
+// than polling again -- the answer belongs to the poll that actually stopped the work.
+static inline void setCancelOut(bool* outCancelled, const opencascade::handle<BridgeProgressIndicator>& ind) {
+    if (outCancelled) *outCancelled = !ind.IsNull() && ind->Cancelled();
 }
 
 // Turn every shell a sewing produced into a solid, rather than only the first (#302).
@@ -264,12 +289,14 @@ OCCTShapeRef OCCTImportSTEPProgress(const char* path,
     if (!path) return nullptr;
     // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) return nullptr;
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         reader.TransferRoots(range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
@@ -277,7 +304,7 @@ OCCTShapeRef OCCTImportSTEPProgress(const char* path,
         TopoDS_Shape shape = reader.OneShape();
         if (shape.IsNull()) return nullptr;
         return new OCCTShape(shape);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
@@ -287,6 +314,8 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
     if (!path) return nullptr;
     // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         STEPControl_Reader reader;
         Interface_Static::SetIVal("read.precision.mode", 0);
@@ -297,11 +326,13 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) return nullptr;
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         // Split the range: the repair phase below is comparable in cost to the transfer and
         // must stay within the caller's reach. See OCCTImportIGESRobustProgress (#300).
         Message_ProgressScope scope(indicator->Start(), "Import", 2);
-        if (reader.TransferRoots(scope.Next()) == 0) return nullptr;
+        // A break during the transfer leaves zero roots transferred, which is how a cancellation
+        // that lands in this phase reaches the caller -- as cancelled, not as a failed import (#525).
+        if (reader.TransferRoots(scope.Next()) == 0) { setCancelOut(outCancelled, indicator); return nullptr; }
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
 
         TopoDS_Shape shape = reader.OneShape();
@@ -344,7 +375,7 @@ OCCTShapeRef OCCTImportSTEPRobustProgress(const char* path,
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
         TopoDS_Shape fixed = fixer.Shape();
         return new OCCTShape(fixed.IsNull() ? shape : fixed);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char* path, double unitInMeters,
@@ -354,13 +385,15 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char* path, double unitInMeter
     if (!path) return nullptr;
     // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         STEPControl_Reader reader;
         reader.SetSystemLengthUnit(unitInMeters);
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) return nullptr;
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         reader.TransferRoots(range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
@@ -368,7 +401,7 @@ OCCTShapeRef OCCTImportSTEPWithUnitProgress(const char* path, double unitInMeter
         TopoDS_Shape shape = reader.OneShape();
         if (shape.IsNull()) return nullptr;
         return new OCCTShape(shape);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 OCCTShapeRef OCCTImportIGESProgress(const char* path,
@@ -377,12 +410,14 @@ OCCTShapeRef OCCTImportIGESProgress(const char* path,
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         IGESControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) return nullptr;
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         reader.TransferRoots(range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
@@ -390,7 +425,7 @@ OCCTShapeRef OCCTImportIGESProgress(const char* path,
         TopoDS_Shape shape = reader.OneShape();
         if (shape.IsNull()) return nullptr;
         return new OCCTShape(shape);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 OCCTShapeRef OCCTImportIGESRobustProgress(const char* path,
@@ -399,6 +434,8 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char* path,
     clearCancelOut(outCancelled);
     if (!path) return nullptr;
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         IGESControl_Reader reader;
         Interface_Static::SetIVal("read.precision.mode", 0);
@@ -407,14 +444,16 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char* path,
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) return nullptr;
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         // Healing is half the work of a robust import, not a coda to it: measured at 38-50%
         // of transfer+heal across box/sphere/cylinder/torus compounds. Giving TransferRoots
         // the whole range therefore left ~40% of the import running where the caller's
         // range could never reach it, so shouldCancel() during healing was ignored and a
         // deadline could not bound the call (#300, same family as #286). Split it evenly.
         Message_ProgressScope scope(indicator->Start(), "Import", 2);
-        if (reader.TransferRoots(scope.Next()) == 0) return nullptr;
+        // A break during the transfer leaves zero roots transferred, which is how a cancellation
+        // that lands in this phase reaches the caller -- as cancelled, not as a failed import (#525).
+        if (reader.TransferRoots(scope.Next()) == 0) { setCancelOut(outCancelled, indicator); return nullptr; }
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
 
         TopoDS_Shape shape = reader.OneShape();
@@ -427,7 +466,7 @@ OCCTShapeRef OCCTImportIGESRobustProgress(const char* path,
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return nullptr; }
         TopoDS_Shape fixed = fixer.Shape();
         return new OCCTShape(fixed.IsNull() ? shape : fixed);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char* path,
@@ -438,6 +477,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char* path,
     // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         document = new OCCTDocument();
         document->app->NewDocument("MDTV-XCAF", document->doc);
@@ -453,7 +494,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char* path,
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) { delete document; return nullptr; }
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         bool ok = reader.Transfer(document->doc, range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); delete document; return nullptr; }
@@ -463,7 +504,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPProgress(const char* path,
         document->colorTool = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
         document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
         return document;
-    } catch (...) { delete document; return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); delete document; return nullptr; }
 }
 
 // MARK: - Mesh + export progress (v0.169.0, issue #98 follow-up)
@@ -475,8 +516,10 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef shape,
                                                 bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!shape) return nullptr;
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         // The (shape, linDefl, isRelative, angDefl) ctor calls Perform() internally with a null
         // range, so it meshes uninterruptibly before any range we pass afterwards is ever polled
         // (and a following Perform(range) then meshes a second time). Only the parameters ctor
@@ -492,25 +535,27 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef shape,
         // Return a new OCCTShape wrapping the same (now-meshed) TopoDS_Shape so callers
         // can chain. The original handle is also valid.
         return new OCCTShape(shape->shape);
-    } catch (...) { return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return nullptr; }
 }
 
 bool OCCTExportSTEPProgress(OCCTShapeRef shape, const char* path,
                               const OCCTImportProgress* ctx, bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!shape || !path) return false;
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         IFSelect_ReturnStatus status = writer.Transfer(shape->shape, STEPControl_AsIs, true, range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return false; }
         if (status != IFSelect_RetDone) return false;
         return writer.Write(path) == IFSelect_RetDone;
-    } catch (...) { return false; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return false; }
 }
 
 bool OCCTExportSTEPWithModeProgress(OCCTShapeRef shape, const char* path, int32_t modelType,
@@ -519,17 +564,19 @@ bool OCCTExportSTEPWithModeProgress(OCCTShapeRef shape, const char* path, int32_
     if (!shape || !path) return false;
     // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> deLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         STEPControl_Writer writer;
         Interface_Static::SetCVal("write.step.schema", "AP214");
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         STEPControl_StepModelType mode = static_cast<STEPControl_StepModelType>(modelType);
         IFSelect_ReturnStatus status = writer.Transfer(shape->shape, mode, true, range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return false; }
         if (status != IFSelect_RetDone) return false;
         return writer.Write(path) == IFSelect_RetDone;
-    } catch (...) { return false; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return false; }
 }
 
 bool OCCTExportIGESProgress(OCCTShapeRef shape, const char* path,
@@ -537,24 +584,29 @@ bool OCCTExportIGESProgress(OCCTShapeRef shape, const char* path,
     clearCancelOut(outCancelled);
     if (!shape || !path || shape->shape.IsNull()) return false;
     std::lock_guard<std::mutex> igesLock(igesMutex());
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         BRepCheck_Analyzer analyzer(shape->shape);
         if (!analyzer.IsValid()) return false;
 
         IGESControl_Writer writer("MM", 0);
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
-        if (!writer.AddShape(shape->shape, range)) return false;
+        // AddShape reports failure for a transfer the break aborted, so ask before believing it (#525).
+        if (!writer.AddShape(shape->shape, range)) { setCancelOut(outCancelled, indicator); return false; }
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return false; }
         writer.ComputeModel();
         return writer.Write(path);
-    } catch (...) { return false; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return false; }
 }
 
 bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef doc, const char* path,
                                      const OCCTImportProgress* ctx, bool* outCancelled) {
     clearCancelOut(outCancelled);
     if (!doc || !path) return false;
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         // Serialize all DE writes: STEP/IGES share Interface_Static globals (#181-B).
         std::lock_guard<std::mutex> deLock(igesMutex());
@@ -564,7 +616,7 @@ bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef doc, const char* path,
         writer.SetLayerMode(Standard_True);
         writer.SetPropsMode(Standard_True);
         writer.SetMaterialMode(Standard_True);
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         if (!writer.Transfer(doc->doc, STEPControl_AsIs, nullptr, range)) {
             if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return false; }
@@ -573,7 +625,7 @@ bool OCCTDocumentWriteSTEPProgress(OCCTDocumentRef doc, const char* path,
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); return false; }
         IFSelect_ReturnStatus status = writer.Write(path);
         return status == IFSelect_RetDone;
-    } catch (...) { return false; }
+    } catch (...) { setCancelOut(outCancelled, indicator); return false; }
 }
 
 OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
@@ -586,6 +638,8 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
     // Serialize all DE reads: STEP/IGES share Interface_Static globals (#181-B, #359).
     std::lock_guard<std::mutex> igesLock(igesMutex());
     OCCTDocument* document = nullptr;
+    // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
+    opencascade::handle<BridgeProgressIndicator> indicator;
     try {
         document = new OCCTDocument();
         document->app->NewDocument("MDTV-XCAF", document->doc);
@@ -602,7 +656,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
         IFSelect_ReturnStatus status = reader.ReadFile(path);
         if (status != IFSelect_RetDone) { delete document; return nullptr; }
 
-        opencascade::handle<BridgeProgressIndicator> indicator = new BridgeProgressIndicator(ctx);
+        indicator = new BridgeProgressIndicator(ctx);
         Message_ProgressRange range = indicator->Start();
         bool ok = reader.Transfer(document->doc, range);
         if (indicator->UserBreak()) { setCancelOut(outCancelled, indicator); delete document; return nullptr; }
@@ -612,7 +666,7 @@ OCCTDocumentRef OCCTDocumentLoadSTEPWithModesProgress(const char* path,
         document->colorTool = XCAFDoc_DocumentTool::ColorTool(document->doc->Main());
         document->materialTool = XCAFDoc_DocumentTool::VisMaterialTool(document->doc->Main());
         return document;
-    } catch (...) { delete document; return nullptr; }
+    } catch (...) { setCancelOut(outCancelled, indicator); delete document; return nullptr; }
 }
 
 // MARK: - Import
