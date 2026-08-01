@@ -147,7 +147,7 @@ converge on the first split with nothing to remove and stay at the closed form's
 
 ## The kernel fix
 
-Carried as `Scripts/patches/0020-CPnts-adaptive-arc-length-integration-603.patch` and filed upstream
+Carried as `Scripts/patches/0021-CPnts-adaptive-arc-length-integration-603.patch` and filed upstream
 as [OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420). A new header-only
 `CPnts_AdaptiveIntegration.hxx` does the same doubling, used by all four
 `CPnts_AbscissaPoint::Length` overloads and by `CPnts_MyRootFunction::Value`/`Values`.
@@ -173,7 +173,7 @@ a 200-span BSpline, and `GCPnts_UniformAbscissa` at 500 points 2.71 ms → 6.20 
 never reaches the integrator.
 
 **The bridge subdivision above is now redundant, and is deliberately still there.** `ci.yml`
-resolves the pinned *released* kernel, which does not carry patch `0020` until a release ships the
+resolves the pinned *released* kernel, which does not carry patch `0021` until a release ships the
 rebuilt binary, so removing it would fail this issue's own regression tests there. Layered on the
 fixed kernel it costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer —
 retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
@@ -181,7 +181,7 @@ retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
 ## Re-running this probe
 
 The `today` column is the **pre-patch** kernel. Once `Libraries/OCCT.xcframework` has been rebuilt
-with patch `0020`, `today` and `fixed` both report the accurate number and the probe stops
+with patch `0021`, `today` and `fixed` both report the accurate number and the probe stops
 demonstrating anything — build it against a kernel without the patch (`OCCTSWIFT_REMOTE=1`'s
 released binary, or `git -C Libraries/occt-src apply --reverse` the patch and rebuild) to reproduce
 the tables above.

@@ -182,7 +182,7 @@ and still reports 41.243158 for the 10 × 1 elliptical edge. `Shape.linearProper
 therefore now disagrees with `Shape.edgeArcLength` on such an edge, where before both were wrong
 together; reimplementing mass properties is separate work.
 
-**The kernel fix ships too** (`Scripts/patches/0020-*`, `OCCT.xcframework` rebuilt): a new
+**The kernel fix ships too** (`Scripts/patches/0021-*`, `OCCT.xcframework` rebuilt): a new
 header-only `CPnts_AdaptiveIntegration.hxx` does the same doubling, used by all four
 `CPnts_AbscissaPoint::Length` overloads and by `CPnts_MyRootFunction::Value`/`Values`. Both, or
 neither: the root function's `Value(X)` is the same integral, so it currently inverts exactly the
@@ -196,7 +196,7 @@ BSpline, `GCPnts_UniformAbscissa` at 500 points 2.71 ms → 6.20 ms. Filed upstr
 [Open-Cascade-SAS/OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420).
 
 **The bridge subdivision stays for now, and is redundant once that binary is pinned.** `ci.yml`
-resolves the pinned *released* kernel, which has no patch `0020` until a release ships the rebuild,
+resolves the pinned *released* kernel, which has no patch `0021` until a release ships the rebuild,
 so removing it would fail this issue's own regression tests there. Layered on the fixed kernel it
 costs almost exactly 2× (8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer — retire it in the
 release commit that bumps `Package.swift`'s `url:`/`checksum:`.

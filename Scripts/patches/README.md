@@ -456,7 +456,7 @@ See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/O
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0020-CPnts-adaptive-arc-length-integration-603.patch
+## 0021-CPnts-adaptive-arc-length-integration-603.patch
 
 **Fixes the upstream OCCT defect behind [#603](https://github.com/SecondMouseAU/OCCTSwift/issues/603)**, which OCCTSwift already works around bridge-side: `CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the whole range it is handed — `order()` gives 10 to a conic, 5 to a parabola, `2 * Degree` to a Bezier, `min(24, 2 * NbPoles - 1)` to a B-spline.
 
