@@ -524,10 +524,16 @@ public final class Curve2D: @unchecked Sendable {
     /// `0` instead of extrapolating the polynomial. A single-span curve (a line, a circle, a
     /// Bezier) has no interior knots to clamp against and measures the range as given.
     ///
+    /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
+    /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
+    /// and a NaN lower bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the
+    /// mechanism (#548).
+    ///
     /// ```swift
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let quarter = circle.length(from: 0, to: .pi / 2)   // ≈ 7.854
     /// let reversed = circle.length(from: .pi / 2, to: 0)  // the same 7.854
+    /// let bad = circle.length(from: 0, to: .nan)          // nil
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
@@ -2690,8 +2696,9 @@ extension Curve2D {
     /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
     ///
     /// Delegates to ``length(from:to:)``, the failure-distinguishing entry point, and shares its
-    /// contract: the range may be given in either order, equal parameters measure `0`, and a
-    /// multi-span curve clamps an out-of-domain range to its own knots. Returns `-1.0` if the
+    /// contract: the range may be given in either order, equal parameters measure `0`, a
+    /// multi-span curve clamps an out-of-domain range to its own knots, and a non-finite bound
+    /// (`.nan` or `±.infinity`) fails rather than propagating (#548). Returns `-1.0` if the
     /// computation fails. Arc length is otherwise always non-negative, so this is an
     /// unambiguous failure sentinel, never confusable with a genuine zero-length segment. Use
     /// ``length(from:to:)`` directly if you need an optional rather than a sentinel value.

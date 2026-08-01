@@ -4180,6 +4180,9 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
 // reversed range as -1.0) and extrapolates past a multi-span curve's knots instead of clamping to
 // its domain. Removed by #549, which is what #506 did to the 3D spelling of the same call;
 // Curve2D.arcLength(from:to:) now routes through OCCTCurve2DGetLengthBetween, which does neither.
+// OCCTCurve2DGetLengthBetween (below) carries this PR's (#548) non-finite-bound rejection via
+// occtValidParameterRange, so the guard #602 originally added here now lives on the surviving
+// spelling instead of being re-added to the removed one.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
@@ -5524,8 +5527,12 @@ double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
     }
 }
 
+// Same non-finite-bound rejection as the 3D sibling: Geom2dAdaptor_Curve reaches the very same
+// GCPnts_AbscissaPoint::length template, so a 2D BSpline measured 0 (NaN upper) or its whole
+// length (NaN lower) too. See occtValidParameterRange (OCCTBridge_Internal.h). #548.
 double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
         return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);

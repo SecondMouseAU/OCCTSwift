@@ -17,6 +17,50 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### A NaN parameter bound stops being a plausible arc length (#548)
+
+`Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
+measurement, and #408 built the `-1.0` sentinel of `arcLength(from:to:)` / `arcLengthBetween(_:_:)`
+on top of that guarantee. It held for the curve types the tests used.
+
+`GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not validate its bounds, and what it does with
+a non-finite one depends on which of its three internal branches the curve takes. Measured against
+the pinned kernel (`Scripts/repro/548-nonfinite-length-bounds/`), on a 5-point interpolated BSpline
+(domain `[0, 485.39]`, length 528.75) and the analytic types:
+
+| bounds | segment / line / circle | Bezier | multi-span BSpline |
+|---|---|---|---|
+| `(f, .nan)` | `nan` → `nil` | `nan` → `nil` | **`0`** — what a zero-width interval measures |
+| `(.nan, l)` | `nan` → `nil` | `nan` → `nil` | **`528.75`** — the whole length |
+| `(f, .infinity)` | **`+inf`** — passes `l >= 0` | `nan` → `nil` | `528.75` |
+
+**The discriminator is not "spline" but "composite".** A 4-pole Bezier propagates NaN like a
+circle; what separates the BSpline is `NbIntervals(GeomAbs_CN) == 4`, which sends it down
+`GCPnts_AbscissaPoint::length`'s `GCPnts_AbsComposite` branch. That branch reduces the caller's
+range with `std::min`/`std::max`, and those return their *first* argument when the comparison is
+false: a NaN upper bound collapses the interval onto the start parameter (hence `0`), and a NaN
+lower bound makes both bounds NaN, which turns every per-span skip test false and integrates every
+span in full (hence the whole length). Not the domain clamping the issue supposed.
+
+**Both bounds must now be finite**, checked in the bridge by `occtValidParameterRange` before any
+adaptor is built, so the contract no longer depends on the integrator's own NaN handling.
+`.nan` and `±.infinity` report `nil` from `Curve3D.length(from:to:)` and `Curve2D.length(from:to:)`,
+and `-1.0` from `Curve3D.arcLength(from:to:)` / `arcLengthBetween(_:_:)`,
+`Curve2D.arcLength(from:to:)` and `Shape.edgeArcLength(from:to:)`. Finite ranges are untouched,
+including the reversed, overshooting and wholly-outside ones #506 pinned.
+
+**`Shape.edgeArcLength` gains a failure sentinel.** It was the only member of the family with
+neither an optional nor a sentinel, so a NaN bound on a straight edge returned NaN itself into
+caller arithmetic. Both spellings (`edgeArcLength` and `edgeArcLength(from:to:)`) now report `-1.0`
+on failure instead of `0`, matching every other arc-length function in the bridge — `0` is what a
+genuine zero-width interval measures.
+
+**Also measured, not changed:** the documented "parameters outside the curve's domain are clamped
+to it" holds only on composite curves. A 10-long segment measures 20 over `[f, l + span]`, a circle
+measures two turns, and a Bezier 122.14 long measures 1002.29 — polynomial extrapolation past its
+poles. For a periodic curve, measuring past the domain is meaningful, so this is a contract
+decision rather than a guard: filed as #600, and the doc comments now describe what is measured.
+
 #### The 2D arc length that measured 8082 for a curve 353 long (#549)
 
 `Curve2D.arcLength(from:to:)` and `Curve2D.length(from:to:)` answered differently on a reversed

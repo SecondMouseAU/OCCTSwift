@@ -743,8 +743,8 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 [Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
 `-1.0` sentinel for source compatibility.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter.
-- **Returns:** Arc length, or `nil` on failure.
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite.
+- **Returns:** Arc length, or `nil` if a bound is not finite or the computation fails.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
   `length`.
 - **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
@@ -752,13 +752,21 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
   is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
   of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
   interior knots to clamp against and measures the range as given. The unqualified form of this
-  claim was corrected in #549, which measured it on all four curve types.
+  claim was corrected in #549, which measured it on all four curve types. That is what a periodic
+  curve needs, not a defect — a circle over `[0, 4π]` genuinely travels two turns (#600).
+- **Note:** `.nan` and `±.infinity` are rejected before the integrator sees them, so they report
+  `nil` on every curve type. OCCT does not check them and answered them per type: on an
+  interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound the curve's whole
+  length, neither distinguishable from a real result, while a line, segment or circle returned
+  `+infinity` for an infinite bound (#548).
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
   ```
 
 ---

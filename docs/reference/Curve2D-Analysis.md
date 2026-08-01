@@ -1032,11 +1032,14 @@ multi-span curve. `Curve3D.arcLength(from:to:)` has had the same shape since #40
 public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **Parameters:** `u1`/`u2`: parameter range, in either order.
-- **Returns:** Arc length value, or `-1.0` on failure. Arc length is otherwise always
-  non-negative, so `-1.0` is unambiguous and never collides with a genuine zero-length result
-  (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
+- **Parameters:** `u1`/`u2`: parameter range, in either order. Both must be finite.
+- **Returns:** Arc length value, or `-1.0` on failure (e.g. a non-finite bound). Arc length is
+  otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
+  zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** `.nan` and `±.infinity` return `-1.0` rather than propagating into the result. The
+  pre-#548 unranged path could return `+infinity` for an infinite bound on a segment or a circle,
+  which passed the bridge's non-negative check unnoticed (#548).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
