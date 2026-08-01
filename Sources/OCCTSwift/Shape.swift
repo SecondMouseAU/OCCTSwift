@@ -2523,10 +2523,27 @@ extension Shape {
         )
     }
 
-    /// Volume of the shape in cubic units
+    /// Volume of the shape in cubic units, or nil when the shape encloses no volume.
+    ///
+    /// Only a closed shell has a volume. A face, wire, edge, vertex or **open shell** returns nil
+    /// rather than the number `BRepGProp`'s divergence integral produces over a surface that
+    /// encloses nothing (measured: 4800 for five faces of a 10x20x30 box, whose real volume is
+    /// 6000). A reversed solid returns nil too; ask ``signedVolume`` for that case.
+    ///
+    /// Closedness is topological, so geometry that merely looks watertight is not enough. Six
+    /// coincident faces assembled without sewing have no volume; sew them first.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.volume                        // 6000
+    /// box.faces()[0].asShape?.volume    // nil, a face encloses nothing
+    /// openShell.volume                  // nil, not 4800
+    /// meshFaces.sewn()?.volume          // a number, once the faces share their edges
+    /// ```
     public var volume: Double? {
-        let v = OCCTShapeGetVolume(handle)
-        return v >= 0 ? v : nil
+        var v = 0.0
+        guard OCCTShapeGetVolume(handle, &v), v >= 0 else { return nil }
+        return v
     }
 
     /// Signed volume of the shape in cubic units.
@@ -2535,8 +2552,30 @@ extension Shape {
     /// reversed-orientation solid (faces pointing inward) returns a **negative**
     /// value. Use this to detect orientation problems; use ``orientedForward()``
     /// to fix them.
+    ///
+    /// **This is an orientation signal, not a measurement.** It is the divergence integral over the
+    /// shape's faces, so its magnitude is a volume only when the surface is closed. An open shell
+    /// gets a number here where ``volume`` correctly returns nil, and that number is not a volume.
+    /// Use ``volume`` to measure; use this to ask which way the faces point.
+    ///
+    /// The sign is sound for any orientable surface, closed or not, because reversing a surface
+    /// negates the flux. That is why ``sweep(profile:along:)`` can still normalise a pipe whose
+    /// faces point inward even though the pipe it builds is an open shell (#170, #609).
+    ///
+    /// Returns `0` on an internal error. It used to return `-1` there, which ``orientedForward()``
+    /// read as "reverse me".
+    ///
+    /// ```swift
+    /// let solid = Shape.box(width: 10, height: 10, depth: 10)!
+    /// solid.signedVolume            //  1000, and here it IS the volume
+    /// solid.reversed?.signedVolume  // -1000
+    /// openShell.signedVolume        //  a signed number that is not a volume
+    /// openShell.volume              //  nil, which is the measurement answer
+    /// ```
     public var signedVolume: Double {
-        OCCTShapeGetVolume(handle)
+        var v = 0.0
+        guard OCCTShapeSignedVolumeFlux(handle, &v) else { return 0 }
+        return v
     }
 
     /// Return a copy of this solid whose faces are oriented outward (positive
@@ -2549,6 +2588,10 @@ extension Shape {
     /// orientation when, and only when, the signed volume is negative; a solid that
     /// is already forward-oriented (or a shell/face with no enclosed volume) is
     /// returned unchanged.
+    ///
+    /// This reads ``signedVolume``, which is the flux integral rather than the strict volume, so it
+    /// still normalises an open shell such as a pipe sweep. A strict volume test would report
+    /// nothing there and quietly stop normalising the exact case #170 was filed about.
     ///
     /// - Returns: An outward-oriented copy, `self` when no fix is needed, or nil if
     ///   reversal fails.
@@ -6397,7 +6440,23 @@ extension Shape {
     ///
     /// Returns volume, center of mass, 3x3 inertia tensor, principal moments,
     /// and principal axes of inertia.
-    /// - Returns: Inertia properties, or nil if computation fails
+    ///
+    /// Nil for any shape with no closed volume: a face, wire, edge, vertex or open shell. Every
+    /// field of the result is meaningless there, not merely zero. The centre of mass is the
+    /// shape's location origin, the principal axes are the identity basis that `math_Jacobi`
+    /// returns for a zero matrix, and both symmetry flags read true (#609). Use
+    /// ``surfaceInertiaProperties()`` for an area-based answer on a sheet body.
+    ///
+    /// ```swift
+    /// let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+    /// if let i = cone.inertiaProperties() {
+    ///     i.mass                // 2094.4, the volume
+    ///     i.centerOfMass        // (0, 0, -5)
+    ///     i.hasSymmetryAxis     // true
+    /// }
+    /// cone.faces()[0].asShape?.inertiaProperties()   // nil
+    /// ```
+    /// - Returns: Inertia properties, or nil when the shape has no volume or computation fails
     public func inertiaProperties() -> InertiaProperties? {
         var props = OCCTInertiaProperties()
         guard OCCTShapeInertiaProperties(handle, &props) else { return nil }
@@ -6423,7 +6482,18 @@ extension Shape {
     ///
     /// Similar to `inertiaProperties()` but uses surface area instead of volume.
     /// The `mass` field contains surface area.
-    /// - Returns: Inertia properties, or nil if computation fails
+    ///
+    /// Unlike the volume sibling this works for a face or an open shell, since an area integral is
+    /// well defined over any set of faces. It is nil for a shape with no faces at all (a wire,
+    /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
+    ///
+    /// ```swift
+    /// let sheet = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0].asShape!
+    /// sheet.surfaceInertiaProperties()?.mass   // 600, the face area
+    /// sheet.inertiaProperties()               // nil, a face has no volume
+    /// someEdge.asShape?.surfaceInertiaProperties()   // nil, no faces
+    /// ```
+    /// - Returns: Inertia properties, or nil when the shape has no area or computation fails
     public func surfaceInertiaProperties() -> InertiaProperties? {
         var props = OCCTInertiaProperties()
         guard OCCTShapeSurfaceInertiaProperties(handle, &props) else { return nil }
@@ -7170,7 +7240,17 @@ extension Shape {
     /// Returns volume, center of mass, inertia tensor, principal moments
     /// and axes of inertia, and radii of gyration.
     ///
-    /// - Returns: Volume inertia result, or nil on error
+    /// Nil for any shape with no closed volume: a face, wire, edge, vertex or open shell. See
+    /// ``inertiaProperties()`` for why every field is an artefact there rather than a zero (#609).
+    ///
+    /// ```swift
+    /// let cyl = Shape.cylinder(radius: 3, height: 10)!
+    /// cyl.volumeInertia?.volume          // 282.7
+    /// cyl.volumeInertia?.centerOfMass    // (0, 0, 5)
+    /// cyl.shells().first?.asShape        // a closed shell still answers
+    /// ```
+    ///
+    /// - Returns: Volume inertia result, or nil when the shape has no volume or on error
     public var volumeInertia: VolumeInertia? {
         var result = OCCTVolumeInertiaResult()
         guard OCCTShapeVolumeInertia(handle, &result) else { return nil }
@@ -7207,7 +7287,17 @@ extension Shape {
 
     /// Compute surface (area) inertia properties of this shape.
     ///
-    /// - Returns: Surface inertia result, or nil on error
+    /// Works for a face or an open shell, and is nil for a shape with no faces at all, where the
+    /// reported centroid would be the shape's location origin rather than a recognisable zero
+    /// (#609).
+    ///
+    /// ```swift
+    /// let sheet = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0].asShape!
+    /// sheet.surfaceInertia?.area           // 600
+    /// sheet.surfaceInertia?.centerOfMass   // the face's area centroid
+    /// ```
+    ///
+    /// - Returns: Surface inertia result, or nil when the shape has no area or on error
     public var surfaceInertia: SurfaceInertia? {
         var result = OCCTSurfaceInertiaResult()
         guard OCCTShapeSurfaceInertia(handle, &result) else { return nil }
@@ -12205,9 +12295,12 @@ extension Surface {
 // MARK: - MeshCinert (Linear Mass Properties from Mesh)
 
 /// Linear mass properties computed from mesh polygon points.
+///
+/// ``centerOfMass`` is nil when ``mass`` is 0, which covers a polygon of fewer than two points and
+/// one whose points are all coincident (#609).
 public struct MeshCinertResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 
 extension Edge {
@@ -12230,7 +12323,8 @@ public func meshCinertCompute(points: [(Double, Double, Double)]) -> MeshCinertR
         coords.append(p.0); coords.append(p.1); coords.append(p.2)
     }
     let r = OCCTMeshCinertCompute(coords, Int32(points.count))
-    return MeshCinertResult(mass: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ)
+    return MeshCinertResult(mass: r.mass,
+                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
 }
 
 // MARK: - MeshProps (Surface/Volume Properties from Mesh)
@@ -12242,17 +12336,29 @@ public enum MeshPropsType {
 }
 
 /// Mesh surface/volume properties result.
+///
+/// ``centerOfMass`` is nil when ``mass`` is 0, which covers both an untriangulated face and a
+/// volume contribution that cancels. See ``FaceVolumeInertia`` for why the mass itself stays
+/// non-optional (#609).
 public struct MeshPropsResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 
 extension Face {
     /// Compute mesh properties for a triangulated face.
+    ///
+    /// ```swift
+    /// shape.triangulate(deflection: 0.1)
+    /// let p = shape.faces()[0].meshProps(type: .surface)
+    /// p.mass            // the triangulated area
+    /// p.centerOfMass    // its centroid, nil if the face carries no triangulation
+    /// ```
     public func meshProps(type: MeshPropsType) -> MeshPropsResult {
         let t: OCCTMeshPropsType = (type == .surface) ? OCCTMeshPropsSurface : OCCTMeshPropsVolume
         let r = OCCTMeshPropsCompute(handle, t)
-        return MeshPropsResult(mass: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ)
+        return MeshPropsResult(mass: r.mass,
+                               centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
     }
 }
 
@@ -12450,61 +12556,99 @@ extension Edge {
 // MARK: - BRepGProp_Cinert (Curve Inertia per Edge)
 
 /// Curve inertia properties (length and center of mass).
+///
+/// ``centerOfMass`` is nil when ``length`` is 0, which is what OCCT reports when there is nothing
+/// to integrate. The (0,0,0) it used to expose in that case was the framework's location seed, not
+/// a point on the curve (#609).
 public struct CurveInertia {
     public let length: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 
 extension Edge {
     /// Compute curve linear inertia (length and center of mass).
+    ///
+    /// ```swift
+    /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
+    /// e.curveInertia.length          // 10
+    /// e.curveInertia.centerOfMass    // (5,0,0)
+    /// ```
     public var curveInertia: CurveInertia {
         let r = OCCTBRepGPropCinert(handle)
-        return CurveInertia(length: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ)
+        return CurveInertia(length: r.mass,
+                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
     }
 }
 
 // MARK: - BRepGProp_Sinert (Surface Inertia per Face)
 
 /// Face surface inertia properties (area and center of mass).
+///
+/// ``centerOfMass`` is nil when ``area`` is 0. See ``CurveInertia`` for why that is not a zero.
 public struct FaceSurfaceInertia {
     public let area: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
     public let epsilon: Double
 }
 
 extension Face {
     /// Compute surface inertia (area and center of mass).
+    ///
+    /// ```swift
+    /// let f = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0]
+    /// f.surfaceInertia.area          // 600
+    /// f.surfaceInertia.centerOfMass  // the face's area centroid
+    /// ```
     public var surfaceInertia: FaceSurfaceInertia {
         let r = OCCTBRepGPropSinert(handle)
-        return FaceSurfaceInertia(area: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ, epsilon: 0)
+        return FaceSurfaceInertia(area: r.mass,
+                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  epsilon: 0)
     }
 
     /// Compute surface inertia with adaptive integration.
     public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia {
         let r = OCCTBRepGPropSinertAdaptive(handle, epsilon)
-        return FaceSurfaceInertia(area: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ, epsilon: r.epsilon)
+        return FaceSurfaceInertia(area: r.mass,
+                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  epsilon: r.epsilon)
     }
 }
 
 // MARK: - BRepGProp_Vinert (Volume Inertia per Face)
 
 /// Face volume inertia contribution.
+///
+/// ``volume`` stays non-optional because a zero contribution is a real, useful answer: this is the
+/// divergence-theorem decomposition, so a face whose plane contains the reference point contributes
+/// exactly nothing and a caller summing over a shell needs that 0. ``centerOfMass`` is nil there,
+/// because a zero contribution has no centroid and the (0,0,0) reported before was the framework's
+/// location seed (#609).
 public struct FaceVolumeInertia {
     public let volume: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 
 extension Face {
     /// Compute volume inertia contribution from this face.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
+    /// coplanarFace.volumeInertia.volume                        // 0
+    /// coplanarFace.volumeInertia.centerOfMass                  // nil
+    /// ```
     public var volumeInertia: FaceVolumeInertia {
         let r = OCCTBRepGPropVinert(handle)
-        return FaceVolumeInertia(volume: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ)
+        return FaceVolumeInertia(volume: r.mass,
+                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
     }
 
     /// Compute volume inertia with reference plane.
     public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0) -> FaceVolumeInertia {
         let r = OCCTBRepGPropVinertPlane(handle, planeNormal.x, planeNormal.y, planeNormal.z, planeDistance)
-        return FaceVolumeInertia(volume: r.mass, centerX: r.centerX, centerY: r.centerY, centerZ: r.centerZ)
+        return FaceVolumeInertia(volume: r.mass,
+                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
     }
 }
 
@@ -13992,21 +14136,31 @@ extension Shape {
 
 extension Shape {
     /// Result of Gauss-Kronrod volume integration on a face.
+    ///
+    /// ``center`` is nil when ``mass`` is 0, and also when `computeCG` was false, since no centre
+    /// was asked for. Both used to report (0,0,0), which is indistinguishable from a real centroid
+    /// at the origin (#609).
     public struct VinertGKResult {
         public let mass: Double
         public let errorReached: Double
         public let absoluteError: Double
-        public let center: SIMD3<Double>
+        public let center: SIMD3<Double>?
     }
 
     /// Compute volume properties of a face using Gauss-Kronrod integration.
+    ///
+    /// ```swift
+    /// let r = face.asShape.vinertGK(tolerance: 1e-4)
+    /// r.mass      // this face's volume contribution about the location point
+    /// r.center    // its centroid, nil when the contribution is 0
+    /// ```
     public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
                          tolerance: Double = 0.001, computeCG: Bool = true) -> VinertGKResult {
         let r = OCCTBRepGPropVinertGK(handle, location.x, location.y, location.z,
                                        tolerance, computeCG)
         return VinertGKResult(mass: r.mass, errorReached: r.errorReached,
                               absoluteError: r.absoluteError,
-                              center: SIMD3(r.centerX, r.centerY, r.centerZ))
+                              center: (computeCG && r.mass != 0) ? SIMD3(r.centerX, r.centerY, r.centerZ) : nil)
     }
 }
 
@@ -14570,10 +14724,22 @@ extension Shape {
         OCCTShapeBoundingDiagonal(handle)
     }
 
-    /// Volumetric centroid of this shape.
-    public var centroid: SIMD3<Double> {
+    /// Volumetric centroid of this shape, or nil when the shape encloses no volume.
+    ///
+    /// Nil for a face, wire, edge, vertex or open shell. It used to return the shape's **location
+    /// origin** in those cases: a face moved to (100,200,300) reported exactly that, and moved
+    /// again reported (200,400,600), so the wrong answer tracked the part around and no caller
+    /// could recognise it (#609). For a sheet body use ``surfaceInertia``; for a wire or edge use
+    /// ``linearProperties()``; for a vertex position use `vertices().first`.
+    ///
+    /// ```swift
+    /// let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+    /// cone.centroid                        // (0, 0, -5)
+    /// cone.faces()[0].asShape?.centroid    // nil, was the location origin
+    /// ```
+    public var centroid: SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTShapeCentroid(handle, &x, &y, &z)
+        guard OCCTShapeCentroid(handle, &x, &y, &z) else { return nil }
         return SIMD3(x, y, z)
     }
 

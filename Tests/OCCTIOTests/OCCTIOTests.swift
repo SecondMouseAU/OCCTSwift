@@ -55,12 +55,17 @@ struct IGESTests {
         // Export
         try original.writeIGES(to: tempURL)
 
-        // Import
+        // Import. IGES carries surfaces, not solids, so this comes back as a compound of six loose
+        // faces: geometrically the box, topologically not a closed shell until it is sewn (#609).
         let imported = try Shape.loadIGES(from: tempURL)
         #expect(imported.isValid)
+        #expect(imported.solidCount == 0, "IGES has no solid concept")
+        #expect(imported.volume == nil, "loose faces do not enclose a volume until they are sewn")
 
-        // Volume should be approximately the same
-        let importedVolume = imported.volume ?? 0
+        // Sewing shares the edges, which is what makes the shell closed and the volume available.
+        let sewn = try #require(
+            Shape.sew(shapes: imported.faces().compactMap { Shape.fromFace($0) }, tolerance: 1e-6))
+        let importedVolume = sewn.volume ?? 0
         let volumeRatio = importedVolume / originalVolume
         #expect(volumeRatio > 0.99 && volumeRatio < 1.01)
     }

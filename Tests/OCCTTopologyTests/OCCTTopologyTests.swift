@@ -4026,8 +4026,7 @@ struct ShapeQueryTests {
     }
 
     @Test func centroid() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let c = box.centroid
+        if let box = Shape.box(width: 10, height: 10, depth: 10), let c = box.centroid {
             // Box centered at origin
             #expect(abs(c.x) < 1)
             #expect(abs(c.y) < 1)

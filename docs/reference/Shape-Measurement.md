@@ -485,8 +485,14 @@ Compute volume-based inertia properties.
 public func inertiaProperties() -> InertiaProperties?
 ```
 
-- **Returns:** Inertia properties, or `nil` if computation fails.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeInertiaProperties`).
+- **Returns:** Inertia properties, or `nil` when the shape has no closed volume (a face, wire, edge,
+  vertex or open shell) or computation fails.
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` plus a `Mass()` test (via
+  `OCCTShapeInertiaProperties`).
+- **Every field is an artefact outside the volume domain, not merely a zero** (#609): the centre of
+  mass is the shape's location origin, the principal axes are the identity basis that `math_Jacobi`
+  returns for a zero matrix, and both symmetry flags read `true` because all three moments are equal
+  at zero. Use `surfaceInertiaProperties()` for a sheet body.
 - **Example:**
   ```swift
   if let props = solid.inertiaProperties() {
@@ -507,8 +513,11 @@ public func surfaceInertiaProperties() -> InertiaProperties?
 
 The `mass` field contains total surface area rather than volume.
 
-- **Returns:** Inertia properties, or `nil` if computation fails.
-- **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeSurfaceInertiaProperties`).
+- **Returns:** Inertia properties, or `nil` when the shape has no faces (a wire, edge or vertex) or
+  computation fails. Unlike the volume sibling this answers for a face or an open shell, since an
+  area integral is well defined over any set of faces.
+- **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via
+  `OCCTShapeSurfaceInertiaProperties`).
 
 ---
 
@@ -1287,8 +1296,10 @@ Compute volume inertia properties of this shape.
 public var volumeInertia: VolumeInertia? { get }
 ```
 
-- **Returns:** Volume inertia result, or `nil` on error.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeVolumeInertia`).
+- **Returns:** Volume inertia result, or `nil` when the shape has no closed volume, or on error.
+  See `inertiaProperties()` for why every field is an artefact rather than a zero there (#609).
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` plus a `Mass()` test (via
+  `OCCTShapeVolumeInertia`).
 - **Example:**
   ```swift
   if let vi = solid.volumeInertia {
@@ -1322,8 +1333,8 @@ Compute surface (area) inertia properties of this shape.
 public var surfaceInertia: SurfaceInertia? { get }
 ```
 
-- **Returns:** Surface inertia result, or `nil` on error.
-- **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeSurfaceInertia`).
+- **Returns:** Surface inertia result, or `nil` when the shape has no faces, or on error (#609).
+- **OCCT:** `BRepGProp::SurfaceProperties` plus a `Mass()` test (via `OCCTShapeSurfaceInertia`).
 
 ---
 

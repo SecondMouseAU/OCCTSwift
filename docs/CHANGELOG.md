@@ -2744,6 +2744,132 @@ gotcha `docs/guides/building-occt.md` already documents for resuming an interrup
 
 ## Release History
 
+### Unreleased: fix, zero-mass `BRepGProp` results were returned as successful answers (#609)
+
+> Version and date deliberately unset; whoever tags stamps them.
+>
+> **This entry contains source-breaking changes.** They are held for the next major
+> ([`SEMVER.md`](SEMVER.md)); do not tag this into a 1.x release.
+
+`GProp_GProps` legitimately has zero mass: ask for volume properties of a face, or surface
+properties of an edge, and there is no such quantity. OCCT's contract is that the caller checks
+`Mass()`, and passes `OnlyClosed` when it wants the volume integral to refuse an open surface rather
+than estimate one. The bridge never did either, across 22 user-facing entry points. #605 fixed the
+first two; this is the rest.
+
+**The wrong answer was not a recognisable zero.** `GProp_GProps` seeds itself with `gp_Pnt(0,0,0)`
+transformed by the shape's *location*, so a face moved to (100,200,300) reported exactly that, and
+moved again reported (200,400,600). No consumer could defend itself with `if com == .zero`:
+
+```swift
+face.centroid                            // was (0,0,0)       -> now nil
+face.moved(dx: 100, dy: 200, dz: 300)!.centroid   // was (100,200,300)  -> now nil
+```
+
+**And everything derived from a zero-mass framework was an artefact, not a zero.** Measured:
+
+```swift
+sheet.radiusOfGyration(axisOrigin: .zero, direction: SIMD3(0,0,1))  // was NaN, now nil
+sheet.principalAxes()      // was (0,0,1)/(1,0,0)/(0,1,0), math_Jacobi's identity basis; now nil
+sheet.symmetryAxes()       // was 3 axes claiming SPHERICAL symmetry; now []
+sheet.inertiaProperties()?.hasSymmetryPoint   // was true for every face, edge, wire and vertex
+```
+
+**`OnlyClosed = true` also fixes a wrong answer for closed geometry.** A compound of a 10x20x30 box
+plus one loose face reported 6857.14 where the box's volume is 6000: the divergence integral runs
+over whatever faces it is given.
+
+```swift
+Shape.compound([box, someFace])?.volume   // was 6857.14, now 6000
+openShell.volume                          // was 4800,    now nil
+```
+
+That closes the inconsistency #605 left behind, where `open.volume` was 4800 while
+`open.properties()?.volume` was nil for the same shape.
+
+**`signedVolume` is deliberately excluded, and is now documented as an orientation signal rather
+than a measurement.** Reversing a surface negates the divergence integral whether or not the surface
+is closed (+4800 forward, -4800 reversed), so the sign is sound where the magnitude is not.
+`Shape.sweep` produces an **open shell** and normalises it through `orientedForward()` (#170), so
+routing this through the strict volume would have silently stopped normalising the exact case #170
+was filed about. The full-suite run is what caught that; the ground truth is in the reproducer.
+
+#### Behaviour changes without a compile error
+
+| API | was | now |
+|---|---|---|
+| `volume` | the divergence integral over any faces given | nil unless a closed shell encloses it |
+| `signedVolume` | `-1` on an internal error | `0`, so `orientedForward()` stops reading an error as "reverse me" |
+| `volumeInertia`, `inertiaProperties()` | an artefact framework | nil outside the volume domain |
+| `surfaceInertia`, `surfaceInertiaProperties()` | an artefact framework | nil for a shape with no faces |
+| `symmetryAxes()` | 3 axes for any zero-mass shape | `[]` |
+
+#### Source breaks
+
+| API | was | now |
+|---|---|---|
+| `Shape.centroid` | `SIMD3<Double>` | `SIMD3<Double>?` |
+| `Shape.linearProperties()` | `LinearProperties` | `LinearProperties?` |
+| `Shape.momentOfInertia()` | `InertiaTensor` | `InertiaTensor?` |
+| `Shape.principalAxes()` | `PrincipalAxes` | `PrincipalAxes?` |
+| `Shape.radiusOfGyration(axisOrigin:direction:)` | `Double` | `Double?` |
+| `GeometryProperties.barycentre(_:)` | `SIMD3<Double>` | `SIMD3<Double>?` |
+| `GeometryProperties.lineSegment(from:to:)` | a tuple | an optional tuple, nil for coincident endpoints |
+| `GeometryProperties.circularArc(...)` | a tuple | an optional tuple, nil for a zero normal |
+| `GeometryProperties.pointSetCentroid(_:)`, `.weightedCentroid(points:weights:)` | `centroid: SIMD3<Double>` | `centroid: SIMD3<Double>?` |
+| `CurveInertia`, `FaceSurfaceInertia`, `FaceVolumeInertia`, `MeshCinertResult`, `MeshPropsResult` | `centerX`/`centerY`/`centerZ` | `centerOfMass: SIMD3<Double>?` |
+| `Shape.VinertGKResult.center` | `SIMD3<Double>` | `SIMD3<Double>?` |
+| `ShapeMeasurements.faceCentroids` | `[SIMD3<Double>]` | `[SIMD3<Double>?]` |
+
+The mass alongside each of those stays non-optional on purpose. A zero volume contribution from one
+face of a shell is a real answer a caller summing the decomposition needs; only the centroid is
+missing.
+
+`GeometryProperties`' analytic members keep answering for a valid element measured over an empty
+range: `GProp_CelGProps` computes its centroid analytically, so an arc with `u1 == u2` has a mass of
+0 and a *correct* centre. Only inputs OCCT rejects return nil there.
+
+#### Migration
+
+Nothing changes for a solid. Outside the volume domain, ask the measure that applies:
+`surfaceInertia` for an area centroid, `linearProperties()` for a length centroid,
+`vertices().first` for a vertex position. For geometry that is closed but unsewn (mesh-derived
+imports, and every IGES import, which carries surfaces and no solid concept), sew before asking for
+a volume:
+
+```swift
+let imported = try Shape.loadIGES(from: url)
+imported.volume                                  // nil: six loose faces are not a closed shell
+Shape.sew(shapes: imported.faces().compactMap { Shape.fromFace($0) })?.volume   // 3000
+```
+
+`BRep_Tool::IsClosed` counts topological edge sharing, not geometric coincidence, so this is the
+one behaviour change with real teeth downstream. Both of our own IGES round-trip tests hit it.
+
+#### Downstream, tracked before the release train
+
+- **SecondMouseAU/OCCTReconstruct#553** (P1). Builds solids from mesh data and gates on
+  `volume`/`signedVolume` at ~25 sites, including `ReconstructBuild.swift:591` where
+  `thin.shape.volume != nil` guards a whole reconstruction tier with no `isValidSolid` beside it.
+  `signedVolume` is unaffected by design; `volume` needs a sew on any path that does not already
+  have one. A tier that stops firing will not fail a test on its own.
+- **SecondMouseAU/OCCTDesignLoop#67** (P2). `ProfileLift.swift:232` and
+  `PerpendicularBoolean.swift:134` do `volume ?? abs(signedVolume)`, a fallback that was nearly
+  unreachable and now converts "no volume" into the exact fabricated figure this fix removes.
+- **SecondMouseAU/OCCTMCP#168** (P1, already open for #605, noted there). `compute_metrics` now
+  omits `volume` / `centerOfMass` for a sheet body or unsewn import rather than reporting a figure.
+  No code change needed; it already propagates nil.
+
+**Release-train checklist:** land OCCTReconstruct#553 and OCCTDesignLoop#67 before bumping either
+repo's OCCTSwift pin past this release.
+
+Bridge and Swift only. No kernel patch, no `OCCT.xcframework` rebuild. Reproducer and full measured
+output in [`Scripts/repro/609-zero-mass/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/609-zero-mass).
+
+Closes #609
+
+---
+
 ### Unreleased: fix, `centerOfMass` returned the bounding-box centre (#605)
 
 > Version and date deliberately unset; whoever tags stamps them.

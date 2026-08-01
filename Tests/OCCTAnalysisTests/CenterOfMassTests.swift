@@ -106,7 +106,7 @@ struct CenterOfMassTests {
 
         // The measures that DO apply still work, and are the documented alternatives.
         #expect(abs((face.surfaceArea ?? 0) - 600.0) < 1e-6)
-        #expect(abs(edge.linearProperties().length - 30.0) < 1e-6)
+        #expect(abs((edge.linearProperties()?.length ?? 0) - 30.0) < 1e-6)
     }
 
     /// The case that decides the whole design. An open shell makes OCCT's divergence integral
@@ -155,8 +155,9 @@ struct CenterOfMassTests {
         for shape in [try #require(twoCubes()),
                       try #require(Shape.cone(bottomRadius: 10, topRadius: 0, height: 20))] {
             let com = try #require(shape.centerOfMass)
-            #expect(simd_distance(com, shape.centroid) < 1e-6,
-                    "centerOfMass \(com) disagrees with centroid \(shape.centroid)")
+            let centroid = try #require(shape.centroid)
+            #expect(simd_distance(com, centroid) < 1e-6,
+                    "centerOfMass \(com) disagrees with centroid \(centroid)")
         }
     }
 

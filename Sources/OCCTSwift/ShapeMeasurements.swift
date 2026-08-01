@@ -17,8 +17,13 @@ public struct ShapeMeasurements: Sendable {
     public let edgeLengths: [Double]
 
     /// `faceCentroids[i]` is the surface center-of-mass of `shape.faces()[i]`,
-    /// computed via `BRepGProp_Sinert`.
-    public let faceCentroids: [SIMD3<Double>]
+    /// computed via `BRepGProp_Sinert`, or `nil` when that face has no area to have a centroid.
+    ///
+    /// Optional since #609, and for the same reason `facePerimeters` always was: a zero-area face
+    /// reported (0,0,0), which a dimension widget cannot tell apart from a face genuinely centred
+    /// on the origin. The entry is nil rather than dropped so the array stays index-parallel with
+    /// `shape.faces()`.
+    public let faceCentroids: [SIMD3<Double>?]
 
     /// `facePerimeters[i]` is the outer-wire length of `shape.faces()[i]`, or
     /// `nil` if the face has no outer wire or wire length is unavailable.
@@ -32,7 +37,7 @@ public struct ShapeMeasurements: Sendable {
     public init(
         faceAreas: [Double],
         edgeLengths: [Double],
-        faceCentroids: [SIMD3<Double>] = [],
+        faceCentroids: [SIMD3<Double>?] = [],
         facePerimeters: [Double?] = []
     ) {
         self.faceAreas = faceAreas
@@ -60,10 +65,7 @@ extension Shape {
     public func measure(linearTolerance: Double = 1e-6) -> ShapeMeasurements {
         let faceList = faces()
         let faceAreas = faceList.map { $0.area(tolerance: linearTolerance) }
-        let faceCentroids = faceList.map { face -> SIMD3<Double> in
-            let s = face.surfaceInertia
-            return SIMD3(s.centerX, s.centerY, s.centerZ)
-        }
+        let faceCentroids = faceList.map { $0.surfaceInertia.centerOfMass }
         let facePerimeters: [Double?] = faceList.map { $0.outerWire?.length }
 
         let count = edgeCount

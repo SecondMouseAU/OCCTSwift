@@ -912,12 +912,19 @@ Returns one axis for a body with rotational symmetry (two equal principal moment
 
 - **Parameters:** `fractionalTolerance` — two moments are considered equal when their absolute difference is below this fraction of the largest moment.
 - **Returns:** Array of `ShapeAxis` values with `.kind == .symmetry`, or empty if no symmetry is detected.
-- **OCCT:** `BRepGProp::VolumeProperties` + `GProp_GProps::PrincipalProperties()` → `GProp_PrincipalProps::HasSymmetryAxis()` / `HasSymmetryPoint()`.
+- **Empty for any shape with no closed volume** (a face, wire, edge, vertex or open shell), since
+  these are the volume-based moments. Those used to report **spherical** symmetry: a zero-mass
+  framework has three equal (zero) moments, `HasSymmetryPoint()` says yes to that, and the result
+  was three orthonormal axes through the shape's location origin describing nothing (#609).
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` and a `Mass()` test, then
+  `GProp_GProps::PrincipalProperties()` → `GProp_PrincipalProps::HasSymmetryAxis()` /
+  `HasSymmetryPoint()`.
 - **Example:**
   ```swift
   let sphere = Shape.sphere(radius: 5)!
-  let axes = sphere.symmetryAxes()
-  print(axes.count)  // 3 (spherical symmetry)
+  sphere.symmetryAxes().count                       // 3 (spherical symmetry)
+  Shape.cylinder(radius: 2, height: 9)!.symmetryAxes().count   // 1
+  someFace.asShape!.symmetryAxes()                  // [], was 3
   ```
 
 ---

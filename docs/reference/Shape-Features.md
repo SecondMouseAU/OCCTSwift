@@ -822,34 +822,54 @@ public func properties(density: Double = 1.0) -> ShapeProperties?
 
 ### `volume`
 
-Volume of the shape in cubic units. Returns `nil` if the shape has no volume (e.g. a face).
+Volume of the shape in cubic units, or `nil` when the shape encloses no volume.
 
 ```swift
 public var volume: Double? { get }
 ```
 
-- **Returns:** Non-negative volume, or `nil` if OCCT returns a negative sentinel.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeGetVolume`).
+- **Returns:** Non-negative volume, or `nil` for a face, wire, edge, vertex, **open shell**, or
+  reversed solid (ask `signedVolume` for that last one).
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` (via `OCCTShapeGetVolume`),
+  matching `centerOfMass`. Without that flag the divergence integral answers over a surface that
+  encloses nothing: 4800 for five faces of a 10x20x30 box, and 6857 for that box in a compound with
+  one loose face beside it, where the answer is 6000.
+- **Closedness is topological, not geometric.** A shell counts when every non-degenerate edge is
+  shared an even number of times, so faces that merely coincide are not a closed shell. Sew them
+  first. This matters for mesh-derived and IGES geometry, neither of which arrives sewn.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  box.volume                                    // 6000
+  Shape.compound(box.faces().compactMap { Shape.fromFace($0) })?.volume   // nil, unsewn
+  Shape.sew(shapes: box.faces().compactMap { Shape.fromFace($0) })?.volume // 6000
+  ```
 
 ---
 
 ### `signedVolume`
 
-Signed volume of the shape. Negative for reversed-orientation solids.
+The signed divergence integral over the shape's faces. **An orientation signal, not a measurement.**
 
 ```swift
 public var signedVolume: Double { get }
 ```
 
-Unlike `volume`, preserves the sign. A solid whose faces point inward (e.g. produced by `sweep(profile:along:)`) has a negative `signedVolume`. Use `orientedForward()` to fix the orientation.
+The magnitude is a volume only when the surface is closed; use `volume` to measure. The *sign* is
+sound for any orientable surface, closed or not, because reversing a surface negates the flux
+(measured: +4800 forward and -4800 reversed for five faces of a box). That is why this deliberately
+keeps the unguarded integral where `volume` refuses it: `sweep(profile:along:)` produces an **open
+shell**, and normalising it (#170) depends on this sign.
 
-- **OCCT:** `BRepGProp::VolumeProperties`.
+- **Returns:** The signed flux. `0` on an internal error, where it used to return `-1`, which
+  `orientedForward()` read as "reverse me".
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed` left at its default.
 
 ---
 
 ### `orientedForward()`
 
-Returns a copy of this solid whose faces are oriented outward (positive volume).
+Returns a copy of this shape whose faces are oriented outward (positive flux).
 
 ```swift
 public func orientedForward() -> Shape?
@@ -859,6 +879,9 @@ Reverses orientation only when `signedVolume < 0`. Already-correct solids, shell
 
 - **Returns:** Outward-oriented copy, `self` if no fix needed, or `nil` if reversal fails.
 - **OCCT:** `TopoDS_Shape::Reverse` applied via `reversed` when `signedVolume < 0`.
+- **Note:** This reads `signedVolume`, the flux integral, precisely so it still normalises an open
+  shell. A strict volume test would report nothing for a pipe sweep and quietly stop normalising the
+  case it exists for.
 - **Example:**
   ```swift
   if let solid = Shape.sweep(profile: profile, along: path)?.orientedForward() {
@@ -876,7 +899,8 @@ Surface area of the shape in square units.
 public var surfaceArea: Double? { get }
 ```
 
-- **Returns:** Non-negative area, or `nil` on failure.
+- **Returns:** Non-negative area, or `nil` on failure. Unlike `volume` this answers for a face or an
+  open shell, since an area integral is well defined over any set of faces.
 - **OCCT:** `BRepGProp::SurfaceProperties` (via `OCCTShapeGetSurfaceArea`).
 
 ---

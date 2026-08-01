@@ -363,14 +363,19 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
   - `location` — the reference point for inertia computation; defaults to the origin.
   - `tolerance` — relative integration error bound; default `0.001`.
   - `computeCG` — whether to compute the centre of gravity; default `true`.
-- **Returns:** A `VinertGKResult` with `.mass`, `.errorReached`, `.absoluteError`, and `.center`.
+- **Returns:** A `VinertGKResult` with `.mass`, `.errorReached`, `.absoluteError`, and an optional
+  `.center`.
 - **OCCT:** `BRepGProp_VinertGK`.
-- **Note:** This method operates on a face shape. The `.mass` field is the signed volume contribution.
+- **Note:** This method operates on a face shape. The `.mass` field is the signed volume
+  contribution, and stays non-optional because a zero contribution is a real answer that a caller
+  summing over a shell needs. `.center` is `nil` when the contribution is 0, and when `computeCG` was
+  `false`; both used to report (0,0,0), which is indistinguishable from a real centroid at the origin
+  (#609).
 - **Example:**
   ```swift
   let face = Shape.box(dx: 10, dy: 10, dz: 10)!.faces.first!
   let gi = face.vinertGK()
-  print(gi.mass, gi.center)
+  print(gi.mass, gi.center as Any)
   ```
 
 ---
@@ -384,7 +389,7 @@ public struct VinertGKResult {
     public let mass: Double
     public let errorReached: Double
     public let absoluteError: Double
-    public let center: SIMD3<Double>
+    public let center: SIMD3<Double>?
 }
 ```
 
@@ -1357,13 +1362,20 @@ public var boundingDiagonal: Double { get }
 
 ### `centroid`
 
-Volumetric centroid of this shape.
+Volumetric centroid of this shape, or `nil` when the shape encloses no volume.
 
 ```swift
-public var centroid: SIMD3<Double> { get }
+public var centroid: SIMD3<Double>? { get }
 ```
 
-- **OCCT:** `GProp_GProps` via `BRepGProp::VolumeProperties`.
+- **Returns:** The volume centroid, or `nil` for a face, wire, edge, vertex or open shell.
+- **OCCT:** `GProp_GProps` via `BRepGProp::VolumeProperties` with `OnlyClosed = true`, plus a
+  `Mass()` test.
+- **Was non-optional before #609**, and outside the volume domain it returned the shape's *location
+  origin* rather than a recognisable zero: a face moved to (100,200,300) reported exactly that, and
+  moved again reported (200,400,600). No caller could defend itself with `if c == .zero`.
+- **See also:** `surfaceInertia` for an area centroid, `linearProperties()` for a length centroid,
+  `vertices()` for a vertex position.
 
 ---
 

@@ -3625,22 +3625,26 @@ struct GPropElementTests {
 
     @Test func lineSegmentLength() {
         let result = GeometryProperties.lineSegment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))
-        #expect(abs(result.length - 10.0) < 1e-4)
-        #expect(abs(result.center.x - 5.0) < 1e-4)
+        #expect(abs((result?.length ?? 0) - 10.0) < 1e-4)
+        #expect(abs((result?.center.x ?? 0) - 5.0) < 1e-4)
     }
 
     @Test func circularArcLength() {
         let result = GeometryProperties.circularArc(center: .zero, normal: SIMD3(0,0,1),
                                                      radius: 1.0, u1: 0, u2: .pi)
-        #expect(abs(result.arcLength - Double.pi) < 1e-4)
+        #expect(abs((result?.arcLength ?? 0) - Double.pi) < 1e-4)
     }
 
     @Test func pointSetCentroid() {
         let points: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(10,0,0), SIMD3(10,10,0), SIMD3(0,10,0)]
         let result = GeometryProperties.pointSetCentroid(points)
         #expect(abs(result.count - 4.0) < 1e-4)
-        #expect(abs(result.centroid.x - 5.0) < 1e-4)
-        #expect(abs(result.centroid.y - 5.0) < 1e-4)
+        if let c = result.centroid {
+            #expect(abs(c.x - 5.0) < 1e-4)
+            #expect(abs(c.y - 5.0) < 1e-4)
+        } else {
+            Issue.record("a four-point set has a centroid")
+        }
     }
 
     @Test func sphereSurfaceArea() {
@@ -3888,14 +3892,21 @@ struct GPropWeightedTests {
         let wts = [1.0, 3.0]
         let (mass, centroid) = GeometryProperties.weightedCentroid(points: pts, weights: wts)
         #expect(abs(mass - 4.0) < 0.01)
-        #expect(abs(centroid.x - 7.5) < 0.01)
+        if let c = centroid {
+            #expect(abs(c.x - 7.5) < 0.01)
+        } else {
+            Issue.record("two positively-weighted points have a centroid")
+        }
     }
 
     @Test func barycentre() {
         let pts = [SIMD3(0.0, 0.0, 0.0), SIMD3(10.0, 0.0, 0.0), SIMD3(0.0, 10.0, 0.0)]
-        let c = GeometryProperties.barycentre(pts)
-        #expect(abs(c.x - 10.0/3.0) < 0.1)
-        #expect(abs(c.y - 10.0/3.0) < 0.1)
+        if let c = GeometryProperties.barycentre(pts) {
+            #expect(abs(c.x - 10.0/3.0) < 0.1)
+            #expect(abs(c.y - 10.0/3.0) < 0.1)
+        } else {
+            Issue.record("a three-point set has a barycentre")
+        }
     }
 }
 
@@ -5190,32 +5201,35 @@ struct MassPropertiesTests {
         if let rect = Wire.rectangle(width: 10, height: 10),
            let wireShape = Shape.fromWire(rect) {
             let lp = wireShape.linearProperties()
-            #expect(abs(lp.length - 40.0) < 0.1) // perimeter of 10x10 rect
+            #expect(abs((lp?.length ?? 0) - 40.0) < 0.1) // perimeter of 10x10 rect
         }
     }
 
     @Test func momentOfInertia() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let moi = box.momentOfInertia()
-            #expect(moi.ixx > 0)
-            #expect(moi.iyy > 0)
-            #expect(moi.izz > 0)
+            #expect((moi?.ixx ?? 0) > 0)
+            #expect((moi?.iyy ?? 0) > 0)
+            #expect((moi?.izz ?? 0) > 0)
         }
     }
 
     @Test func principalAxes() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let pa = box.principalAxes()
-            // Principal axes should be unit vectors (or near unit)
-            let len1 = sqrt(pa.axis1.x * pa.axis1.x + pa.axis1.y * pa.axis1.y + pa.axis1.z * pa.axis1.z)
-            #expect(abs(len1 - 1.0) < 0.01)
+            if let pa = box.principalAxes() {
+                // Principal axes should be unit vectors (or near unit)
+                let len1 = sqrt(pa.axis1.x * pa.axis1.x + pa.axis1.y * pa.axis1.y + pa.axis1.z * pa.axis1.z)
+                #expect(abs(len1 - 1.0) < 0.01)
+            } else {
+                Issue.record("a box has principal axes")
+            }
         }
     }
 
     @Test func radiusOfGyration() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
             let rog = box.radiusOfGyration(axisOrigin: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
-            #expect(rog > 0)
+            #expect((rog ?? 0) > 0)
         }
     }
 }
@@ -6078,7 +6092,11 @@ struct ShapeMeasurementsTests {
         #expect(m.faceCentroids.count == 6,
                 "one centroid per face, parallel to faceAreas")
         let faceList = box.faces()
-        for (i, c) in m.faceCentroids.enumerated() {
+        for (i, maybeC) in m.faceCentroids.enumerated() {
+            guard let c = maybeC else {
+                Issue.record("face \(i) of a box has an area, so it has a centroid")
+                continue
+            }
             let b = faceList[i].bounds
             #expect(c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
                     "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")
@@ -6118,7 +6136,10 @@ struct ShapeMeasurementsTests {
         for (i, area) in m.faceAreas.enumerated() {
             if abs(area - capArea) < 1e-3 {
                 capCount += 1
-                let c = m.faceCentroids[i]
+                guard let c = m.faceCentroids[i] else {
+                    Issue.record("cap \(i) has an area, so it has a centroid")
+                    continue
+                }
                 #expect(abs(c.x) < 1e-6, "cap \(i) centroid X=\(c.x), expected 0")
                 #expect(abs(c.y) < 1e-6, "cap \(i) centroid Y=\(c.y), expected 0")
             }
