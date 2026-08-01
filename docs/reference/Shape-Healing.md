@@ -122,7 +122,7 @@ Unlike `scaled(by:)` which applies a topological `gp_Trsf`, this modifies the un
 
 ### `bsplineRestriction(surfaceTolerance:curveTolerance:maxDegree:maxSegments:)`
 
-Convert BSpline surfaces to their closest analytical form.
+Re-approximate surfaces, curves and pcurves as BSplines within a degree and segment budget.
 
 ```swift
 public func bsplineRestriction(surfaceTolerance: Double = 0.01,
@@ -131,7 +131,9 @@ public func bsplineRestriction(surfaceTolerance: Double = 0.01,
                                maxSegments: Int = 10000) -> Shape?
 ```
 
-Attempts to simplify BSpline surfaces to planes, cylinders, cones, spheres, or tori within the supplied tolerances. Surfaces that cannot be recognised remain as BSplines with degree and segment count capped at the supplied limits.
+This does **not** recognise analytic forms — nothing here converts a BSpline back to a plane, cylinder, cone, sphere or torus; [`sweptToElementary()`](#swepttoelementary) and [`revolutionToElementary()`](#revolutiontoelementary) are the operations that do. Each geometry is approximated as a BSpline no worse than the supplied tolerances, capped at `maxDegree` and `maxSegments`.
+
+Continuity is fixed at C1 here; [`bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)`](Shape-Measurement.md#bsplinerestrictiontol3dtol2dmaxdegreemaxsegmentscontinuity3dcontinuity2ddegreepriorityrational) lets you choose it. Either way the continuity is a **ceiling, not a guarantee**: OCCT reduces what it delivers, with no diagnostic, whenever the requested continuity cannot meet the tolerance within `maxDegree`. Measured in #570, a face on an offset sphere comes back at C0 whichever of C0/C1/C2 was asked for.
 
 - **Parameters:**
   - `surfaceTolerance` — maximum allowable deviation for surface approximation (default 0.01).

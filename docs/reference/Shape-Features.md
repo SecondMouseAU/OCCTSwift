@@ -1125,7 +1125,8 @@ Useful for simplifying imported geometry or removing small features before analy
 - **OCCT:** `BRepAlgoAPI_Defeaturing` (via `OCCTShapeRemoveFeatures`). Corrected here: this row
   previously named `BOPAlgo_Defeaturing`, which is not an OCCT class.
 - **See also:** [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces), the same
-  operation addressing its faces as shapes, and the rest of the defeaturing family listed there.
+  operation addressing its faces as shapes, and the rest of the defeaturing family listed there. Since
+  #578 it applies the same rule to a face this shape does not have: the whole call fails.
 
 ---
 

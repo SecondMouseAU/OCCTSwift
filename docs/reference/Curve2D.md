@@ -964,11 +964,16 @@ a parameter. The first and last knots are always included, so a curve that never
 
 - **Parameters:** `continuity`: minimum continuity to require of each arc.
 - **Returns:** Array of knot indices where continuity drops below the requested level, or `nil` if not a BSpline or no discontinuities found.
-- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`).
+- **OCCT:** `Geom2dConvert_BSplineCurveKnotSplitting` (via `OCCTCurve2DSplitAtDiscontinuities`) —
+  the sole wrapper of it, since #562 deleted the second pair (`bsplineKnotSplits`,
+  `bsplineKnotSplitValues`) that also drove it.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
   `degree - multiplicity < continuity`, so the meaningful range is `0...degree` and it saturates
   there. A cubic with simple interior knots is already C2 there, which means `.c0`, `.c1` and `.c2`
   all report just the two end knots and `.c3` is the order that reports the interior ones.
+- **All splits, however many (#562):** this used to read a fixed 256 entries and take whatever came
+  back, so a curve with more splits than that was cut off at 256 with nothing to notice it by. It
+  now re-reads at the true count when the first pass came up short.
 - **Example:**
   ```swift
   if let bsp = Curve2D.bspline(poles: [...], knots: [...], multiplicities: [...], degree: 3) {

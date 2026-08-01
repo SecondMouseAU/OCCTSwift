@@ -1126,20 +1126,35 @@ Extension on `Shape` for face-level local surface properties using `BRepLProp_SL
 
 The `Face` counterparts ([`Face.meanCurvature(atU:v:)`](Face.md) and siblings) read the surface
 under the face directly rather than through a `BRepAdaptor_Surface`. Since #529 both use the same
-resolution, so they agree about whether a curvature exists at a given `(u, v)`; the curvature
-getters here still spell "undefined" as `0`, where the `Face` spellings return `nil`. One contract
-difference is deliberate: `faceLPropNormal(u:v:)` reports the *surface* normal, while
+resolution, so they agree about whether a curvature exists at a given `(u, v)`, and since #583 both
+can say so: the getters here return an optional rather than spelling "undefined" as `0`. One
+contract difference is deliberate: `faceLPropNormal(u:v:)` reports the *surface* normal, while
 [`Face.normal(atU:v:)`](Face.md) applies the face's orientation, so the two agree up to sign.
+
+`nil` from any of them means one of: the curvature is undefined at that point (a cone apex, a sphere
+pole), or the receiver is not a single face. It never means "flat here", because `0` is a value these
+getters produce at every point of any developable surface, which is what made the old encoding
+lossy. Migration from the pre-#583 signatures is `if let`, or `?? 0` for the previous behaviour.
 
 ### `Shape.faceLPropValue(u:v:)`
 
 Evaluate the 3D point on a face at the given `(u, v)` parameter.
 
 ```swift
-public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>
+public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>?
 ```
 
+- **Returns:** The point, or `nil` if the receiver is not a single face. Unlike the curvature
+  getters this does not depend on the curvature gate, so a cone apex and a sphere pole still report
+  a point.
 - **OCCT:** `BRepLProp_SLProps::Value` via `OCCTFaceLPropValue`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!
+  if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+      print("point:", p)
+  }
+  ```
 
 ---
 
@@ -1161,10 +1176,17 @@ public func faceLPropNormal(u: Double, v: Double) -> SIMD3<Double>?
 Maximum principal curvature on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMaxCurvature(u: Double, v: Double) -> Double
+public func faceLPropMaxCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. On a cylinder or a cone the answer is
+  exactly `0` (the direction along the axis) at every point, and that is a value, not an absence.
 - **OCCT:** `BRepLProp_SLProps::MaxCurvature` via `OCCTFaceLPropMaxCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropMaxCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+  ```
 
 ---
 
@@ -1173,10 +1195,16 @@ public func faceLPropMaxCurvature(u: Double, v: Double) -> Double
 Minimum principal curvature on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMinCurvature(u: Double, v: Double) -> Double
+public func faceLPropMinCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined.
 - **OCCT:** `BRepLProp_SLProps::MinCurvature` via `OCCTFaceLPropMinCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  if let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6) { print(kMin) }   // -1/3
+  ```
 
 ---
 
@@ -1185,10 +1213,17 @@ public func faceLPropMinCurvature(u: Double, v: Double) -> Double
 Mean curvature `(κ₁ + κ₂) / 2` on a face at `(u, v)`.
 
 ```swift
-public func faceLPropMeanCurvature(u: Double, v: Double) -> Double
+public func faceLPropMeanCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. The adaptor-backed counterpart of
+  [`Face.meanCurvature(atU:v:)`](Face.md), which the two now agree with exactly about.
 - **OCCT:** `BRepLProp_SLProps::MeanCurvature` via `OCCTFaceLPropMeanCurvature`.
+- **Example:**
+  ```swift
+  let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+  if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+  ```
 
 ---
 
@@ -1197,10 +1232,18 @@ public func faceLPropMeanCurvature(u: Double, v: Double) -> Double
 Gaussian curvature `κ₁ · κ₂` on a face at `(u, v)`.
 
 ```swift
-public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double
+public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double?
 ```
 
+- **Returns:** The curvature, or `nil` where it is undefined. Every developable surface (a
+  cylinder, a cone, a plane) has Gaussian curvature `0` everywhere, so this getter returned the
+  pre-#583 "undefined" sentinel for whole faces at a time.
 - **OCCT:** `BRepLProp_SLProps::GaussianCurvature` via `OCCTFaceLPropGaussianCurvature`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+  ```
 
 ---
 
@@ -1209,10 +1252,19 @@ public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double
 Test whether a face is umbilic at `(u, v)` — both principal curvatures are equal.
 
 ```swift
-public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool
+public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool?
 ```
 
+- **Returns:** The answer, or `nil` where there are no principal curvatures to compare. OCCT's test
+  is one ULP wide rather than a geometric tolerance, so a plane qualifies everywhere but an
+  analytically-umbilic sphere qualifies only where the two computed values round to the same
+  `Double` (#494).
 - **OCCT:** `BRepLProp_SLProps::IsUmbilic` via `OCCTFaceLPropIsUmbilic`.
+- **Example:**
+  ```swift
+  let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+  #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+  ```
 
 ---
 

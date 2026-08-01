@@ -113,19 +113,34 @@ offset sphere +1.5  tol=1e-05 | P0 done=1 err=1.79952e-06 27x15 k 5x3 | P1 done=
 it, and `0` was never worse on that criterion. The residual `maxError` differences elsewhere are
 sub-1% either way, so this is a tie broken on economy rather than a quality gap.
 
-OCCT itself is split on the value, and splits along the same line:
+OCCT itself is split on the value, and splits along the same line. Every live construction of
+`GeomConvert_ApproxSurface` in the pinned p1 kernel, each one read rather than counted by filename
+(corrected in #573):
 
-| passes `0` | passes `1` |
-|---|---|
-| `ShapeCustom_BSplineRestriction.cxx:852` | `GeomConvert_1.cxx:786` (`GeomConvert::SurfaceToBSplineSurface`) |
-| `ShapeConstruct.cxx:265` | `GeomLib.cxx:1517` |
-| `BRepFill_Sweep.cxx:1162` | `GeomFill_Sweep.cxx:296` |
-| | `ShapeUpgrade_UnifySameDomain.cxx:3629` |
+| passes `0` | what it does with the result | passes `1` | what it does with the result |
+|---|---|---|---|
+| `ShapeCustom_BSplineRestriction.cxx:852` (`ConvertSurface`) | accepts on `MaxError() <= myTol3d && IsDone()`; on a miss re-fits at a looser approximation tolerance, a doubled `MaxSeg` or a lower continuity, until the error stops improving | `GeomConvert_1.cxx:786` (`SurfaceToBSplineSurface`, trimmed branch) | takes `Surface()` unconditionally |
+| `ShapeConstruct.cxx:265` (`ConvertSurfaceToBSpline`) | accepts on `MaxError() <= Tol3d && IsDone()`; on a miss returns the over-tolerance surface, and drops a continuity only when the fit throws | `GeomConvert_1.cxx:960` (`SurfaceToBSplineSurface`, direct branch) | takes `Surface()` unconditionally |
+| | | `ShapeUpgrade_UnifySameDomain.cxx:3629` (`IntUnifyFaces`) | takes `Surface()` unconditionally |
+| | | `GeomFill_Sweep.cxx:296` (`BuildAll`) | `HasResult()` only |
+| | | `GeomLib.cxx:1517` (`ExtendSurfByLength`) | `HasResult()` only, then falls back to `GeomConvert::SurfaceToBSplineSurface` |
+| | | `BRepOffset_Offset.cxx:1626` (`Init`, spherical vertex face) | `IsDone()` only, then falls back to the exact sphere |
 
-The `0` sites honour a caller-supplied tolerance and re-check `MaxError() <= tol` themselves,
-iterating on failure. The `1` sites convert with their own hardcoded internal tolerance
-(`1e-4`, `Precision::Confusion()`) and never surface a tolerance to a caller. This bridge is in the
-first group, which is the other half of the argument for `0`.
+The discriminator is the second column, not the tolerance's provenance. Five of the six `1` sites do
+convert with their own hardcoded internal tolerance (`1e-4`, `Precision::Confusion()`), but
+`BRepOffset_Offset` takes the caller's `TolApp` (`1e-4` by default) and still passes `1`, because it
+never checks the fit against it. No `1` site reads `MaxError()` at all. This bridge takes a caller's
+tolerance and hands `MaxError()` straight back, so it is in the first group, which is the other half
+of the argument for `0`.
+
+**Two mentions are not call sites.** `BRepFill_Sweep.cxx:1162` sits inside a `/* */` block spanning
+`:1064` to `:1179`, and `BRepFill_Filling.cxx:712` is a `//`-commented line. Neither is compiled. The
+first revision of this table listed `BRepFill_Sweep` as a live `0` site, and `BRepOffset_Offset` was
+missing from it entirely; #573 is that correction.
+`GeomliteTest_SurfaceCommands.cxx:1044` (Draw's `approxsurf`, which takes `PrecisCode` from the
+command line) and `QABugs_19.cxx:244` are harness code, excluded on purpose. `GeomPlate_MakeApprox`
+has no `PrecisCode` to census: it drives `AdvApp2Var_ApproxAFunc2Var` directly rather than through
+`GeomConvert_ApproxSurface` (#571).
 
 ## Note on infinite surfaces
 
