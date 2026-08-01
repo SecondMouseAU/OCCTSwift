@@ -48,6 +48,34 @@ for scattered probe data, feature points, or any unstructured point set. See als
   }
   ```
 
+#### What `tolerance` means here (#571)
+
+`tolerance` bounds the distance between the fitted BSpline and the plate at the plate's own
+constraint points, and the approximator subdivides into more Bezier patches until it is met. Before
+#571 it could not be met: five of the six plate entry points capped the approximation at a single
+patch, which is the one value that stops `AdvApp2Var_ApproxAFunc2Var` from acting on its own error
+criterion, so a violated tolerance and a satisfied one produced the same surface. A 25-point wavy
+plate asked for `tolerance: 0.01` came back deviating `0.072`.
+
+Verify it rather than assume it — the fit is a least-squares approximation, not an interpolation,
+and a plate that genuinely cannot be fitted still returns its best effort:
+
+```swift
+let points: [SIMD3<Double>] = (0..<5).flatMap { i in
+    (0..<5).map { j in
+        SIMD3(Double(i) * 4, Double(j) * 4,
+              4 * sin(Double(i) * 1.3) * cos(Double(j) * 1.1))
+    }
+}
+if let plate = Surface.plateThrough(points, degree: 3, tolerance: 0.01) {
+    let worst = points.compactMap { plate.projectPoint($0)?.distance }.max() ?? 0
+    print(worst)                // 0.0032 — inside tolerance
+    print(plate.uPoleCount)     // 16 — more than one degree-8 patch, so it did subdivide
+}
+```
+
+`uPoleCount <= degreeCap + 1` (9 at the default cap of 8) means the fit never subdivided.
+
 ---
 
 ### `nlPlateDeformed(constraints:maxIterations:tolerance:)`
@@ -584,16 +612,20 @@ public func knotSplitting(
 ) -> KnotSplitResult
 ```
 
-Returns the number of U and V splits needed, plus the actual U/V parameter values at each
-split; does not modify the surface. Each direction's own first and last knots are always
-included, so a direction that never drops below the requested continuity reports exactly those
-two rather than nothing.
+Returns the number of U and V splits needed, the actual U/V parameter values at each split, and
+the knot-table indices those parameters were read from; does not modify the surface. Each
+direction's own first and last knots are always included, so a direction that never drops below
+the requested continuity reports exactly those two rather than nothing.
 
 - **Parameters:** `uContinuity`: minimum continuity to require of each U patch; `vContinuity`:
   the same against the V degree and V knots.
-- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount` and `uSplitParams`/`vSplitParams`
-  (ascending, bounded by the surface's own U/V domain).
-- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting`.
+- **Returns:** `KnotSplitResult` with `uSplitCount`/`vSplitCount`, `uSplitParams`/`vSplitParams`
+  (ascending, bounded by the surface's own U/V domain) and `uSplitIndices`/`vSplitIndices`
+  (1-based into the surface's own knot tables, so
+  `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`).
+- **OCCT:** `GeomConvert_BSplineSurfaceKnotSplitting` — the sole wrapper of it, since #562 deleted
+  the second family (`bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues`) that also
+  drove it. The indices are what that family carried and this call previously discarded.
 - **Continuity range (#480):** the continuity is a *derivative order*, and a knot splits only when
   `degree - multiplicity < continuity`. So the meaningful range is `0...degree` and it saturates
   there. A bicubic surface with simple interior knots is already C2 at every interior knot, which
@@ -610,6 +642,9 @@ two rather than nothing.
   let result = surf.knotSplitting(uContinuity: .c3, vContinuity: .c3)
   print("U splits needed:", result.uSplitCount, result.uSplitParams)
   print("V splits needed:", result.vSplitCount, result.vSplitParams)
+
+  // The raw knot indices, and the identity that ties them to the parameters.
+  print(result.uSplitIndices.map { surf.bsplineUKnot(index: $0) } == result.uSplitParams)  // true
   ```
 
 ---

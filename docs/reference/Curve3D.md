@@ -747,16 +747,18 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 - **Returns:** Arc length, or `nil` if a bound is not finite or the computation fails.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
   `length`.
-- **Note:** The range may be given in either order, and equal parameters measure `0`.
+- **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
+  with more than one span (an interpolation, an approximation, any multi-span BSpline) the range
+  is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
+  of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
+  interior knots to clamp against and measures the range as given. The unqualified form of this
+  claim was corrected in #549, which measured it on all four curve types. That is what a periodic
+  curve needs, not a defect — a circle over `[0, 4π]` genuinely travels two turns (#600).
 - **Note:** `.nan` and `±.infinity` are rejected before the integrator sees them, so they report
   `nil` on every curve type. OCCT does not check them and answered them per type: on an
   interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound the curve's whole
   length, neither distinguishable from a real result, while a line, segment or circle returned
   `+infinity` for an infinite bound (#548).
-- **Note:** A *finite* range reaching outside the curve's domain is not rejected, and what it
-  measures depends on the curve: a multi-span BSpline is confined to its knots (a range wholly
-  outside measures `0`), while a line, circle or Bezier measures the range as given — which is
-  what a periodic curve needs, since a circle over `[0, 4π]` genuinely travels two turns (#600).
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!

@@ -448,17 +448,18 @@ public final class Curve3D: @unchecked Sendable {
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`.
+    /// parameters measure `0`. On a curve with more than one span (an interpolation, an
+    /// approximation, any multi-span BSpline) the range is clamped to the curve's own knots, so
+    /// a range wholly outside the domain measures `0` instead of extrapolating the polynomial.
+    /// A single-span curve (a line, a circle, a Bezier) has no interior knots to clamp against
+    /// and measures the range as given: measured in #549, where the claim had been unqualified.
+    /// That is what a periodic curve needs, not a defect — a circle over `[0, 4π]` genuinely
+    /// travels two turns (#600).
     ///
-    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
-    /// itself does not check, and answered them differently per curve type — on an interpolated
-    /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
-    /// length, neither distinguishable from a real result (#548).
-    ///
-    /// A finite range reaching outside the curve's domain is *not* rejected, and what it measures
-    /// depends on the curve: a multi-span BSpline is confined to its knots (a range wholly outside
-    /// measures `0`), while a line, circle or Bezier measures the range as given — which is what a
-    /// periodic curve needs, since a circle over `[0, 4π]` genuinely travels two turns (#600).
+    /// Both bounds must also be finite: `.nan` and `±.infinity` are rejected and report `nil`.
+    /// OCCT itself does not check, and answered them differently per curve type — on an
+    /// interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound measured the
+    /// curve's whole length, neither distinguishable from a real result (#548).
     ///
     /// - Parameters:
     ///   - u1: Start parameter. Must be finite.

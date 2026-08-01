@@ -366,17 +366,14 @@ OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int3
 
         BRepOffsetAPI_DraftAngle draft(shape->shape);
 
-        // Build face index map
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = faceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                TopoDS_Face face = TopoDS::Face(faceMap(idx + 1));
-                draft.Add(face, pullDir, angle, neutralPlane);
-            }
-        }
+        // #568: a face index naming no face of this shape rejects the whole draft. It used to be
+        // skipped, and BRepOffsetAPI_DraftAngle reports IsDone() for a request it was handed no
+        // faces for at all, so a draft naming only foreign faces returned the input shape,
+        // undrafted, presented as a successful draft. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, faceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            draft.Add(TopoDS::Face(face), pullDir, angle, neutralPlane);
+        })) return nullptr;
 
         draft.Build();
         if (!draft.IsDone()) return nullptr;
@@ -408,13 +405,26 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
     return true;
 }
 
-bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
-                                    TopTools_ListOfShape& outFaces) {
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces) {
     if (faces == nullptr || faceCount < 1) return false;
+
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
 
     for (int32_t i = 0; i < faceCount; i++) {
         if (faces[i] == nullptr) return false;
-        outFaces.Append(faces[i]->shape);
+
+        // Each carrier stands for the faces it contains, so explore rather than assume a face was
+        // handed over: the kernel accepts a compound, a shell or a whole solid here, and passing the
+        // faces it explores is the same request BREP for BREP (#578, section 3 of the probe).
+        int32_t contributed = 0;
+        for (TopExp_Explorer exp(faces[i]->shape, TopAbs_FACE); exp.More(); exp.Next()) {
+            if (!faceMap.Contains(exp.Current())) return false;
+            outFaces.Append(exp.Current());
+            contributed++;
+        }
+        if (contributed == 0) return false;
     }
     return true;
 }
@@ -692,20 +702,18 @@ OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef shape, double thickness,
     if (!shape || !openFaceIndices || faceCount < 1) return nullptr;
 
     try {
-        // Get indexed map of faces
-        TopTools_IndexedMapOfShape faceMap;
-        TopExp::MapShapes(shape->shape, TopAbs_FACE, faceMap);
-
-        // Build list of faces to remove (open faces)
+        // #568: a face index naming no face of this shape rejects the whole call. It used to be
+        // skipped, and the only thing that caught it was a `facesToRemove.IsEmpty()` check here --
+        // which fires only when *every* index is unresolvable. A list mixing one real open face
+        // with one foreign one shelled the solid with fewer openings than asked for and reported
+        // success. That check is gone rather than kept: the helper refuses a count below 1 and
+        // appends for every index it does resolve, so an empty list is now unreachable.
+        // See OCCTBridge_Internal.h.
         TopTools_ListOfShape facesToRemove;
-        for (int32_t i = 0; i < faceCount; i++) {
-            int32_t idx = openFaceIndices[i];
-            if (idx >= 0 && idx < faceMap.Extent()) {
-                facesToRemove.Append(faceMap(idx + 1));  // 1-based indexing
-            }
-        }
-
-        if (facesToRemove.IsEmpty()) return nullptr;
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_FACE, openFaceIndices, faceCount,
+                                     [&](const TopoDS_Shape& face, int32_t) {
+            facesToRemove.Append(face);
+        })) return nullptr;
 
         // Create thick solid (shell) with open faces
         BRepOffsetAPI_MakeThickSolid thickSolid;
@@ -1892,14 +1900,16 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef shape,
     if (outResult) *outResult = nullptr;
     if (!shape || !edgeIndices || count < 1) return nullptr;
     try {
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
         std::unique_ptr<BRepFilletAPI_MakeChamfer> op(new BRepFilletAPI_MakeChamfer(shape->shape));
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = edgeIndices[i] + 1;
-            if (idx < 1 || idx > edgeMap.Extent()) continue;
-            op->Add(distance, TopoDS::Edge(edgeMap(idx)));
-        }
+        // #568: the chamfer counterpart of occtFilletAddEdges, which the fillet sibling two
+        // functions up already shares. Same builder shape, same contract: an edge index naming no
+        // edge of this shape rejects the call rather than chamfering the rest. It cannot use that
+        // helper itself, which is BRepFilletAPI_MakeFillet-typed, but both now resolve their
+        // indices through the same occtUseSubShapesByIndex. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, count,
+                                     [&](const TopoDS_Shape& edge, int32_t) {
+            op->Add(distance, TopoDS::Edge(edge));
+        })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -4210,14 +4220,13 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
 
         BRepFilletAPI_MakeFillet2d fillet(face);
 
-        TopTools_IndexedMapOfShape vertMap;
-        TopExp::MapShapes(face, TopAbs_VERTEX, vertMap);
-
-        for (int32_t i = 0; i < count; i++) {
-            int32_t idx = vertexIndices[i] + 1; // Convert to 1-based
-            if (idx < 1 || idx > vertMap.Extent()) continue;
-            fillet.AddFillet(TopoDS::Vertex(vertMap(idx)), radii[i]);
-        }
+        // #568: a vertex index naming no vertex of that first face rejects the whole call. It used
+        // to be skipped, so a list mixing real corners with unresolvable ones rounded the corners
+        // that resolved and reported success. See OCCTBridge_Internal.h.
+        if (!occtUseSubShapesByIndex(face, TopAbs_VERTEX, vertexIndices, count,
+                                     [&](const TopoDS_Shape& vertex, int32_t i) {
+            fillet.AddFillet(TopoDS::Vertex(vertex), radii[i]);
+        })) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
@@ -4239,17 +4248,20 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
 
         BRepFilletAPI_MakeFillet2d chamfer(face);
 
+        // #568: either half of a pair naming no edge of that first face rejects the whole call. It
+        // used to drop just that pair, so a list mixing real pairs with unresolvable ones chamfered
+        // the corners that resolved and reported success. This is the one site whose entries name
+        // two sub-shapes each, so it reads the map directly rather than through
+        // occtUseSubShapesByIndex; the map and the lookup are the same ones. See
+        // OCCTBridge_Internal.h.
         TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(face, TopAbs_EDGE, edgeMap);
+        occtMapSubShapes(face, TopAbs_EDGE, edgeMap);
 
         for (int32_t i = 0; i < count; i++) {
-            int32_t idx1 = edge1Indices[i] + 1;
-            int32_t idx2 = edge2Indices[i] + 1;
-            if (idx1 < 1 || idx1 > edgeMap.Extent()) continue;
-            if (idx2 < 1 || idx2 > edgeMap.Extent()) continue;
-            chamfer.AddChamfer(TopoDS::Edge(edgeMap(idx1)),
-                               TopoDS::Edge(edgeMap(idx2)),
-                               distances[i], distances[i]);
+            TopoDS_Shape e1 = occtMappedSubShapeAt(edgeMap, edge1Indices[i]);
+            TopoDS_Shape e2 = occtMappedSubShapeAt(edgeMap, edge2Indices[i]);
+            if (e1.IsNull() || e2.IsNull()) return nullptr;
+            chamfer.AddChamfer(TopoDS::Edge(e1), TopoDS::Edge(e2), distances[i], distances[i]);
         }
 
         chamfer.Build();
@@ -4275,7 +4287,18 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
 // history for free.
 struct OCCTFilling {
     BRepOffsetAPI_MakeFilling filler;
+    // #482: how many Add* calls were refused. A refused constraint is one that is NOT in
+    // `filler`. Building over the rest would answer a different question than the caller
+    // asked, so the refusal is sticky and OCCTFillingBuild fails on it. See the note there.
+    int32_t refusedCount = 0;
 };
+
+// Record a refused constraint and report the refusal to the caller, in one expression.
+// Refusing with a null handle is not recordable, so it is only reported.
+static bool OCCTFillingRefuse(OCCTFillingRef filling) {
+    if (filling) filling->refusedCount++;
+    return false;
+}
 
 OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t maxDegree,
                                   int32_t maxSegments, double tolerance3d) {
@@ -4305,46 +4328,52 @@ void OCCTFillingRelease(OCCTFillingRef filling) {
 // true here says nothing about the constraint's validity — a bad order still only surfaces as a
 // nil Build() later.
 bool OCCTFillingAddEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
                                  occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/true);
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
 bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         occtFillingAddConstraint(filling->filler, edge->edge, TopoDS_Face(),
                                  OCCTFillingSupport::Inferred,
                                  occtGeomAbsFromSurfaceContinuity(continuity), /*isBound=*/false);
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
 // #434: gives FillingSurface the same explicit-support-face capability
 // Shape.fill(constraints:)/FillConstraint already has. A face named here is Nominated: if it
-// cannot carry `edge`'s continuity, the constraint is not added and the caller should treat the
-// whole fill as failed, matching OCCTShapeFillConstraints' per-constraint contract.
+// cannot carry `edge`'s continuity, the constraint is not added and the whole fill fails,
+// matching OCCTShapeFillConstraints, which returns NULL on that same refusal (#482).
 bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
                                     OCCTFaceRef support, int32_t continuity) {
-    if (!filling || !edge) return false;
+    if (!filling) return false;
+    if (!edge) return OCCTFillingRefuse(filling);
     try {
         TopoDS_Face supportFace;
         if (support) supportFace = support->face;
-        return occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
-                                        support ? OCCTFillingSupport::Nominated
-                                                : OCCTFillingSupport::Inferred,
-                                        occtGeomAbsFromSurfaceContinuity(continuity),
-                                        /*isBound=*/true);
+        if (!occtFillingAddConstraint(filling->filler, edge->edge, supportFace,
+                                      support ? OCCTFillingSupport::Nominated
+                                              : OCCTFillingSupport::Inferred,
+                                      occtGeomAbsFromSurfaceContinuity(continuity),
+                                      /*isBound=*/true)) {
+            return OCCTFillingRefuse(filling);
+        }
+        return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
@@ -4354,12 +4383,25 @@ bool OCCTFillingAddPoint(OCCTFillingRef filling, double x, double y, double z) {
         filling->filler.Add(gp_Pnt(x, y, z));
         return true;
     } catch (...) {
-        return false;
+        return OCCTFillingRefuse(filling);
     }
 }
 
+int32_t OCCTFillingRefusedConstraintCount(OCCTFillingRef filling) {
+    return filling ? filling->refusedCount : 0;
+}
+
+// #482: a refused Add* fails the build outright rather than fitting a surface to whatever did
+// make it in. The one-shot entry point has always behaved this way: OCCTShapeFillConstraints
+// returns NULL the moment occtFillingAddConstraint refuses a nominated support face. The
+// incremental one carried on, so the same geometry answered differently depending on which API
+// the caller reached for, and the difference was a plausible-looking face that neither passed
+// through nor was bounded by the constraint the caller cared most about.
+//
+// Build() is not attempted at all, so IsDone() stays false and the face/error accessors keep
+// reporting "not built" rather than describing a surface no caller asked for.
 bool OCCTFillingBuild(OCCTFillingRef filling) {
-    if (!filling) return false;
+    if (!filling || filling->refusedCount > 0) return false;
     try {
         filling->filler.Build();
         return filling->filler.IsDone();
@@ -8744,7 +8786,7 @@ OCCTShapeRef OCCTShapeDefeature(OCCTShapeRef shape,
     if (!shape) return nullptr;
     try {
         TopTools_ListOfShape facesToRemove;
-        if (!occtDefeaturingFacesFromShapes(faces, faceCount, facesToRemove)) return nullptr;
+        if (!occtDefeaturingFacesFromShapes(shape->shape, faces, faceCount, facesToRemove)) return nullptr;
 
         BRepAlgoAPI_Defeaturing defeaturing;
         TopoDS_Shape result;

@@ -512,20 +512,28 @@ public final class Curve2D: @unchecked Sendable {
         return l >= 0 ? l : nil
     }
 
-    /// Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be
-    /// greater than `u2` (order doesn't affect the result). Returns `nil` on failure (e.g. a
-    /// released curve), never a sentinel value that could be mistaken for a real zero-length
-    /// segment.
+    /// Arc length between two parameter values.
     ///
-    /// Both bounds must be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator does
-    /// not check them, and on a multi-span BSpline a NaN upper bound measured `0` and a NaN lower
-    /// bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the mechanism (#548).
+    /// This is the canonical, failure-distinguishing entry point: `nil` when the computation
+    /// fails, rather than a number that could be mistaken for a real zero-length segment.
+    /// `arcLength(from:to:)` delegates to this and collapses failure back to `-1.0`.
+    ///
+    /// The range may be given in either order; equal parameters measure `0`. On a curve with
+    /// more than one span (an interpolation, an approximation, any multi-span BSpline) the
+    /// range is clamped to the curve's own knots, so a range wholly outside the domain measures
+    /// `0` instead of extrapolating the polynomial. A single-span curve (a line, a circle, a
+    /// Bezier) has no interior knots to clamp against and measures the range as given.
+    ///
+    /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
+    /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
+    /// and a NaN lower bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the
+    /// mechanism (#548).
     ///
     /// ```swift
-    /// let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 5), SIMD2(20, 0)])!
-    /// let d = c.domain
-    /// let half = c.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
-    /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let quarter = circle.length(from: 0, to: .pi / 2)   // ≈ 7.854
+    /// let reversed = circle.length(from: .pi / 2, to: 0)  // the same 7.854
+    /// let bad = circle.length(from: 0, to: .nan)          // nil
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
@@ -698,10 +706,21 @@ public final class Curve2D: @unchecked Sendable {
     ///   saturates there (#480).
     /// - Returns: Array of knot indices where the curve drops below the requested continuity, or nil if not a B-spline.
     public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]? {
-        var buffer = [Int32](repeating: 0, count: 256)
-        let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue, &buffer, 256))
+        // Read-then-retry, the #481 pattern the rest of this family shares: the bridge reports the
+        // true split count even when it wrote fewer, so one retry sized to it is always enough.
+        // Before #562 this read a fixed 256 entries and took whatever came back, so a curve with
+        // more splits than that was silently cut off at 256 with nothing to notice it by.
+        func read(capacity: Int) -> (count: Int, buffer: [Int32]) {
+            var buffer = [Int32](repeating: 0, count: capacity)
+            let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue,
+                                                          &buffer, Int32(capacity)))
+            return (n, buffer)
+        }
+
+        var (n, buffer) = read(capacity: 256)
         guard n > 0 else { return nil }
-        return (0..<n).map { Int(buffer[$0]) }
+        if n > 256 { (n, buffer) = read(capacity: n) }
+        return buffer.prefix(n).map(Int.init)
     }
 
     /// Approximate this curve as a sequence of arcs and line segments.
@@ -2676,16 +2695,25 @@ extension Curve2D {
 
     /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
     ///
-    /// Unlike `length(from:to:)`, `u1` must not exceed `u2` — the underlying computation uses a
-    /// range-checked adaptor that fails on a reversed range. Returns `-1.0` on failure (a
-    /// reversed range, a non-finite bound, a released curve, or any other computation error) —
-    /// arc length is otherwise always non-negative, so this is an unambiguous failure sentinel,
-    /// never confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use
-    /// `length(from:to:)` directly if you need an optional rather than a sentinel value (and
-    /// order tolerance).
+    /// Delegates to ``length(from:to:)``, the failure-distinguishing entry point, and shares its
+    /// contract: the range may be given in either order, equal parameters measure `0`, a
+    /// multi-span curve clamps an out-of-domain range to its own knots, and a non-finite bound
+    /// (`.nan` or `±.infinity`) fails rather than propagating (#548). Returns `-1.0` if the
+    /// computation fails. Arc length is otherwise always non-negative, so this is an
+    /// unambiguous failure sentinel, never confusable with a genuine zero-length segment. Use
+    /// ``length(from:to:)`` directly if you need an optional rather than a sentinel value.
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let half = circle.arcLength(from: 0, to: .pi)      // ≈ 15.71
+    /// let same = circle.arcLength(from: .pi, to: 0)      // the same 15.71
+    /// ```
+    ///
+    /// - Note: Until #549 this measured through a pre-bounded `Geom2dAdaptor_Curve`, which
+    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots.
+    ///   `Curve3D.arcLength(from:to:)` dropped the same adaptor in #506.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
-        let l = OCCTCurve2DLength(handle, u1, u2)
-        return l >= 0 ? l : -1.0
+        length(from: u1, to: u2) ?? -1.0
     }
 
     /// Split this curve at C1 discontinuities.

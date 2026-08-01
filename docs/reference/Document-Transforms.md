@@ -1374,8 +1374,10 @@ Remove feature faces (fillets, holes, pockets) from a solid shape. The canonical
 public func defeature(faces: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `faces` — the face shapes to remove as features.
-- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty.
+- **Parameters:** `faces` — each element either a face of this shape, or a shape whose faces all
+  belong to this shape.
+- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty and when the
+  request names a face this shape does not have.
 - **OCCT:** `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`.
 - **Example:**
   ```swift
@@ -1384,13 +1386,22 @@ public func defeature(faces: [Shape]) -> Shape?
   }
   ```
 
-**Faces that are not part of this shape.** A face can only be removed from the shape it belongs to.
-OCCT drops a foreign face from the request and carries on with the rest, so a request mixing real
-faces with foreign ones succeeds and removes only the real ones, while a request of nothing but
-foreign faces fails. Membership is by identity, not geometry: the same face measured off an
-identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is stricter —
-since #497 one bad index fails the whole call. Measured in
-[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify).
+**What may be named, and what must belong.** Each element names faces rather than having to be one: a
+compound of faces, a shell, or this whole shape all name the faces they contain, and naming a carrier
+is the same request as naming the faces it holds. The rule every element must satisfy:
+
+> Every element must name at least one face, and every face it names must be a face of this shape.
+> Otherwise the whole call returns `nil` and nothing is removed.
+
+So a request mixing this shape's faces with another shape's fails, as does one carrying an edge or a
+vertex, which name no face at all. Membership is by identity, not geometry: the same face measured off
+an identically-built shape is foreign, while the same face reversed is not.
+
+Until #578 a foreign face was dropped from the request and the rest proceeded — OCCT's own documented
+rule ("those that do not belong will be ignored"), which answered a silent success on a shape still
+carrying the feature the caller asked to remove. The index-addressed `withoutFeatures(faces:)` has
+failed the whole call on one bad index since #497; both spellings now agree. Measured in
+[`Scripts/repro/578-defeature-face-membership/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/578-defeature-face-membership).
 
 **The rest of the family.** Five Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
 operation, over one shared bridge path (#497, #536):
