@@ -408,13 +408,26 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
     return true;
 }
 
-bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
-                                    TopTools_ListOfShape& outFaces) {
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces) {
     if (faces == nullptr || faceCount < 1) return false;
+
+    TopTools_IndexedMapOfShape faceMap;
+    TopExp::MapShapes(shape, TopAbs_FACE, faceMap);
 
     for (int32_t i = 0; i < faceCount; i++) {
         if (faces[i] == nullptr) return false;
-        outFaces.Append(faces[i]->shape);
+
+        // Each carrier stands for the faces it contains, so explore rather than assume a face was
+        // handed over: the kernel accepts a compound, a shell or a whole solid here, and passing the
+        // faces it explores is the same request BREP for BREP (#578, section 3 of the probe).
+        int32_t contributed = 0;
+        for (TopExp_Explorer exp(faces[i]->shape, TopAbs_FACE); exp.More(); exp.Next()) {
+            if (!faceMap.Contains(exp.Current())) return false;
+            outFaces.Append(exp.Current());
+            contributed++;
+        }
+        if (contributed == 0) return false;
     }
     return true;
 }
@@ -8774,7 +8787,7 @@ OCCTShapeRef OCCTShapeDefeature(OCCTShapeRef shape,
     if (!shape) return nullptr;
     try {
         TopTools_ListOfShape facesToRemove;
-        if (!occtDefeaturingFacesFromShapes(faces, faceCount, facesToRemove)) return nullptr;
+        if (!occtDefeaturingFacesFromShapes(shape->shape, faces, faceCount, facesToRemove)) return nullptr;
 
         BRepAlgoAPI_Defeaturing defeaturing;
         TopoDS_Shape result;

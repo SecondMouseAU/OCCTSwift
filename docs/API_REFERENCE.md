@@ -471,7 +471,7 @@ a map of the major areas, and the `Total` as the count.
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
+| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536; a face this shape does not have fails the whole request, #578), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |

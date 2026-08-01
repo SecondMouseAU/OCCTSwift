@@ -17,6 +17,53 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### Breaking: defeaturing refuses a face the shape does not have, instead of dropping it (#578)
+
+`Shape.defeature(faces:)` inherited OCCT's own rule for a face that is not part of the input:
+`BRepAlgoAPI_Defeaturing.hxx` says "those that do not belong will be ignored", and it means it. A
+request mixing one of this shape's faces with another shape's succeeded, removed the one that
+belonged, and raised no warning of any kind — a success indistinguishable from a real removal, handed
+back on a shape still carrying the feature the caller asked to remove. The index-addressed spelling of
+the same operation, `withoutFeatures(faces:)`, has failed the whole call on one bad index since #497;
+#536 made `defeature(faces:)` canonical without closing that gap, because a membership rule turned out
+not to be the line of validation it looks like.
+
+**Why it needed measuring first.** `AddFaceToRemove` takes a `TopoDS_Shape`, and its own documentation
+calls it "the shape to extract the faces for removal" — the argument need not be a face. Measured on
+the pinned kernel: a compound holding a face, the input's own shell and the whole input solid are all
+accepted and each means the faces it contains, while an edge, a vertex and an empty compound are
+refused because they contain none. So a rule cannot ask that each element *be* one of this shape's
+faces; it has to explore first, and then decide what a carrier mixing belonging and foreign faces
+means. Two further measurements make the check implementable and exact: replacing a carrier with the
+faces it explores to is the same request BREP for BREP, and the input's own `TopExp` face map hashes on
+`IsSame`, so it accepts the fillet face reversed and rejects the same face measured off an
+identically-built twin. Probe, full matrix and the rejected alternative at
+[`Scripts/repro/578-defeature-face-membership/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/578-defeature-face-membership).
+
+**The rule now applied**, in `occtDefeaturingFacesFromShapes` (the #497 skeleton, which now takes the
+input shape so it can build that map):
+
+> Every element of the request must name at least one face, and every face it names must be a face of
+> this shape. Otherwise the whole call returns `nil` and nothing is removed.
+
+The alternative the issue posed — accept a carrier yielding *some* belonging faces and quietly keep
+those — was rejected because it preserves the exact failure mode being removed, one level further down
+where it is harder to see. Exactly four kinds of request change, and all four were being partly
+discarded in silence: a foreign face alongside a real one, a compound mixing the two, and an edge or an
+empty compound alongside a real face. Nothing whose elements all belong behaves differently, carriers
+included — the whole-solid and shell forms stay accepted, and stay a no-op, because "remove every face"
+is a question about the algorithm rather than about membership and the kernel's answer to it is to hand
+the input back unchanged.
+
+Nothing is filed upstream: the kernel documents what it does and does it. The strictness is this
+bridge's contract, and it is now the same contract at both spellings.
+
+New suite `Issue578DefeatureFaceMembershipTests` (`OCCTModelingTests`) pins the whole matrix, and
+`Issue536DefeaturingSpellingsTests`' two membership tests — which pinned the old behaviour — are
+replaced by one that holds the two spellings to the new rule together. Proved against two injections:
+restoring the pass-through fails six tests across both suites, and injecting the *rejected* alternative
+fails exactly one, the mixed-carrier test that exists to pin the design decision.
+
 #### The index entries that named a real symbol belonging to a different class (#565)
 
 #510 fixed the 135 index entries in `OCCTBridge.h` that named symbols which never existed. This is
@@ -782,9 +829,9 @@ since #497 fails the whole call on one bad index. Making the two agree is not a 
 `AddFaceToRemove` takes a `TopoDS_Shape` and its own documentation calls it "the shape to extract the
 faces for removal", and the kernel duly accepts a compound, a shell or the whole input solid as a
 face carrier — measured. Deciding what a membership rule does with those is its own question, so it
-is filed separately; the behaviour is documented on `defeature(faces:)` in the meantime, along with
-the fact that membership is identity, not geometry (a face measured off a separately built but
-identical shape is foreign).
+was filed separately as #578 and settled there; the behaviour was documented on `defeature(faces:)`
+in the meantime, along with the fact that membership is identity, not geometry (a face measured off a
+separately built but identical shape is foreign).
 
 New suite `Issue536DefeaturingSpellingsTests` (`OCCTModelingTests`) compares the two spellings face
 by face on three fixtures, pins all four spellings of one removal against each other, and pins the

@@ -2808,7 +2808,8 @@ extension Shape {
     /// analysis or removing small features.
     ///
     /// `defeature(faces:)` is the same operation addressing its faces as shapes rather than by
-    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge.
+    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge, and since #578 both
+    /// apply the same rule to a face this shape does not have — the whole call fails.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!

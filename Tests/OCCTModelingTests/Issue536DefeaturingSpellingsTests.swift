@@ -11,8 +11,11 @@ import Foundation
 ///  - the forwarder answers exactly what `defeature(faces:)` answers, on features of several kinds
 ///    and on the requests that fail — not "both non-nil", the same geometry;
 ///  - the whole defeaturing family still agrees with itself across all four spellings;
-///  - the face-membership contract the shape-addressed form actually has, which is not the
-///    index-addressed form's contract and was written down nowhere before.
+///  - that the two spellings answer alike on a request naming a face from another shape. Measuring
+///    that here is what found the divergence #578 then closed: the shape-addressed form used to
+///    inherit OCCT's own rule of ignoring a face that does not belong, so it half-succeeded where
+///    the index-addressed form failed. The contract itself is pinned in
+///    `Issue578DefeatureFaceMembershipTests`.
 ///
 /// Ground truth for every claim here (BREP byte-for-byte comparison of the two OCCT paths over a
 /// matrix of fixtures, including the refusals): `Scripts/repro/536-defeature-removefeatures-unify/`.
@@ -166,12 +169,15 @@ struct Issue536DefeaturingSpellingsTests {
 
     // MARK: - What the surviving contract actually is
 
-    /// The shape-addressed form's membership rule, measured rather than assumed: OCCT drops a face
-    /// that is not part of the input and carries on with the rest, so a mixed request succeeds and
-    /// removes only what it could. The index-addressed spelling fails the whole call instead
-    /// (#497), and that difference is now documented on `defeature(faces:)` rather than latent.
-    @Test("a foreign face is dropped from a mixed request, not failed")
-    func foreignFaceInMixedRequest() {
+    /// Both spellings refuse a request that names a face this shape does not have. When #536 shipped
+    /// they did not: the shape-addressed form inherited OCCT's own rule of ignoring what does not
+    /// belong, so a mixed request succeeded and removed only what it could, while the index-addressed
+    /// form had failed the whole call since #497. #578 gave the shape-addressed form the strict rule
+    /// as well, and the full membership contract lives in `Issue578DefeatureFaceMembershipTests`;
+    /// what this pins is that the two spellings of the one operation still answer alike.
+    @available(*, deprecated, message: "exercises the deprecated spelling on purpose")
+    @Test("both spellings refuse a request naming a face from another shape")
+    func spellingsAgreeOnAForeignFace() {
         guard let (filleted, filletIndices) = Self.filletedBox(),
               let target = filletIndices.first,
               let other = Shape.box(width: 11, height: 11, depth: 11) else {
@@ -182,43 +188,15 @@ struct Issue536DefeaturingSpellingsTests {
         let face = filleted.subShapes(ofType: .face)[target]
         let foreign = other.subShapes(ofType: .face)[0]
 
-        guard let alone = filleted.defeature(faces: [face]), let aloneVolume = alone.volume else {
-            #expect(Bool(false), "defeaturing a fillet face should succeed on this fixture")
-            return
-        }
+        expectSameRemoval(filleted.removeFeatures(faces: [face, foreign]),
+                          filleted.defeature(faces: [face, foreign]),
+                          "a real face and a foreign one")
+        #expect(filleted.defeature(faces: [face, foreign]) == nil,
+                "a foreign face fails the whole request (#578)")
 
-        // The real face still goes; the foreign one is neither removed nor fatal.
-        if let mixed = filleted.defeature(faces: [face, foreign]) {
-            #expect(mixed.faces().count == alone.faces().count)
-            if let v = mixed.volume {
-                #expect(abs(v - aloneVolume) < 1e-9, "the foreign face changed the result")
-            }
-        } else {
-            #expect(Bool(false), "a mixed request should still remove the face that belongs")
-        }
-
-        // Nothing but foreign faces has nothing to remove, and fails.
+        expectSameRemoval(filleted.removeFeatures(faces: [foreign]),
+                          filleted.defeature(faces: [foreign]),
+                          "nothing but a foreign face")
         #expect(filleted.defeature(faces: [foreign]) == nil)
-    }
-
-    /// Membership is identity, not geometry. Two separately built but identical filleted boxes do
-    /// not share faces, so one's face is foreign to the other — the same rule the kernel applies.
-    @Test("an identically-built shape's face is still foreign")
-    func membershipIsIdentityNotGeometry() {
-        guard let (a, filletIndices) = Self.filletedBox(),
-              let (b, _) = Self.filletedBox(),
-              let target = filletIndices.first else {
-            #expect(Bool(false), "fixture: two identically built filleted boxes")
-            return
-        }
-
-        // Same construction, same dimensions, same face at the same position.
-        #expect(a.faces().count == b.faces().count)
-        let twinFace = b.subShapes(ofType: .face)[target]
-
-        #expect(a.defeature(faces: [twinFace]) == nil,
-                "a twin fixture's face is not this shape's face")
-        // ... while this shape's own face at that position works.
-        #expect(a.defeature(faces: [a.subShapes(ofType: .face)[target]]) != nil)
     }
 }
