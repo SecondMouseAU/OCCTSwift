@@ -77,15 +77,16 @@
 // BOPAlgo_ArgumentAnalyzer            → OCCTBOPAlgoAnalyzeArguments
 // BOPAlgo_BuilderFace                 → OCCTBOPAlgoBuilderFace
 // BOPAlgo_BuilderSolid                → OCCTBOPAlgoBuilderSolid
-// BOPAlgo_CellsBuilder                → OCCTBOPAlgoSplit
+// BOPAlgo_CellsBuilder                → OCCTCellsBuilder* (the incremental builder; OCCTBOPAlgoSplit
+//                                       drives BOPAlgo_Splitter, two entries down)
 // BOPAlgo_CheckerSI                   → OCCTShapeSelfIntersects
 // BOPAlgo_MakeConnected               → OCCTShapeMakeConnected
 // BOPAlgo_MakePeriodic                → OCCTShapeMakePeriodic, OCCTShapeRepeat
 // BOPAlgo_MakerVolume                 → OCCTShapeMakeVolume
 // BOPAlgo_RemoveFeatures              → OCCTShapeDefeature, OCCTShapeRemoveFeatures,
 //                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
-//                                       (reached through BRepAlgoAPI_Defeaturing, a forwarder to
-//                                       it; #536 deleted the direct wrap that duplicated them)
+//                                       (via BRepAlgoAPI_Defeaturing, a forwarder to it;
+//                                       #536 deleted the direct wrap that duplicated them)
 // BOPAlgo_Section                     → OCCTBOPAlgoSection
 // BOPAlgo_ShellSplitter               → OCCTBOPAlgoShellSplitter
 // BOPAlgo_Splitter                    → OCCTBOPAlgoSplit
@@ -124,8 +125,9 @@
 // BRepBuilderAPI_Transform            → OCCTShapeTranslate, OCCTShapeRotate, OCCTShapeScale, OCCTShapeMirror
 //
 // --- BRepCheck ---
-// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*
-// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid, OCCTBRepCheckSubShapeValid
+// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*,
+//                                       OCCTBRepCheckSubShapeValid
+// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid
 //
 // --- BRepExtrema ---
 // BRepExtrema_DistShapeShape          → OCCTShapeDistance, OCCTShapeIntersects
@@ -155,8 +157,11 @@
 // BRepFill_CompatibleWires            → OCCTBRepFillCompatibleWires
 // BRepFill_Draft                      → OCCTBRepFillDraft
 // BRepFill_Generator                  → OCCTBRepFillGenerator
-// BRepFill_OffsetWire                 → OCCTWireOffset
+// BRepFill_OffsetWire                 → OCCTBRepFillOffsetWire, OCCTBRepFillOffsetAncestors*
+//                                       (OCCTWireOffset drives BRepOffsetAPI_MakeOffset, not this)
 // BRepFill_Pipe                       → OCCTBRepFillPipe
+// BRepFill_PipeShell                  → OCCTPipeShell* (the incremental builder — what
+//                                       BRepOffsetAPI_MakePipeShell forwards to; #503)
 //
 // --- BRepFilletAPI ---
 // BRepFilletAPI_MakeChamfer           → OCCTShapeChamfer*
@@ -164,7 +169,10 @@
 // BRepFilletAPI_MakeFillet2d          → OCCTFace2DFillet, OCCTFace2DChamfer
 //
 // --- BRepGProp ---
-// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetCenterOfMass
+// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea,
+//                                       OCCTEdgeGetLength, OCCTFaceGetArea, OCCTShapeAnalyze
+//                                       (OCCTShapeGetCenterOfMass does NOT use BRepGProp — it
+//                                       returns the bounding-box centre via BRepBndLib; #605)
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds, OCCTFaceEvaluateNormalAtUV
 // BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
@@ -185,7 +193,10 @@
 // BRepMesh_ShapeTool                  → OCCTMeshShapeTool*
 //
 // --- BRepOffset ---
-// BRepOffset_Analyse                  → OCCTEdgeGetConvexity
+// BRepOffset_Analyse                  → OCCTAnalyse*, OCCTShapeAnalyzeEdgeConcavity,
+//                                       OCCTShapeCountEdgeConcavity (OCCTEdgeGetConvexity computes
+//                                       convexity by hand from BRepAdaptor_Curve/Surface instead)
+// BRepOffset_MakeOffset               → OCCTShapeOffsetPerFace
 // BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
 // BRepOffset_Offset                   → OCCTBRepOffsetOffsetFace
 // BRepOffset_SimpleOffset             → OCCTBRepOffsetSimpleOffset
@@ -196,12 +207,16 @@
 // BRepOffsetAPI_MakeEvolved           → OCCTShapeCreateEvolved, OCCTShapeCreateEvolvedAdvanced
 // BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
 //                                       (FillingSurface) — one implementation, #434
-// BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
-// BRepOffsetAPI_MakePipe              → OCCTShapePipe*
+// BRepOffsetAPI_MakeOffset            → OCCTWireOffset, OCCTWireMultiOffset, OCCTOffsetWireOnPlane,
+//                                       OCCTOffsetFace
+// BRepOffsetAPI_MakeOffsetShape       → OCCTShapeOffset, OCCTShapeOffsetByJoin
+// BRepOffsetAPI_MakePipe              → OCCTShapeCreatePipeSweep (OCCTShapePipeFeature* is
+//                                       BRepFeat_MakePipe)
 // BRepOffsetAPI_MakePipeShell         → OCCTShapeCreatePipeShellMultiSection (every
 //                                       Add() sweep, one profile or many),
-//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw),
-//                                       OCCTPipeShell* (the incremental builder). #503
+//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw). #503
+//                                       (the OCCTPipeShell* incremental builder drives
+//                                       BRepFill_PipeShell directly — see that entry)
 // BRepOffsetAPI_MakeThickSolid        → OCCTShapeShell*, OCCTShapeMakeThickSolid, OCCTThickSolidWithOptions,
 //                                       OCCTShapeHistoryFromShell
 // BRepOffsetAPI_ThruSections          → OCCTShapeCreateLoft*, OCCTThruSections*
@@ -242,12 +257,12 @@
 //
 // --- GC ---
 // GC_MakeArcOfCircle                  → OCCTCurve3DCreateArcOfCircle, OCCTWireCreateArcThroughPoints
-// GC_MakeCircle                       → OCCTWireCreateCircle
+// GC_MakeCircle                       → OCCTGCMakeCircle*
 // GC_MakeEllipse                      → OCCTGCMakeEllipse3Points
 // GC_MakeHyperbola                    → OCCTGCMakeHyperbola3Points
 // GC_MakeMirror                       → OCCTShapeMirrorAboutAxis, OCCTShapeMirrorAboutPoint
 // GC_MakeScale                        → OCCTShapeScaleAboutPoint
-// GC_MakeSegment                      → OCCTWireCreateLine
+// GC_MakeSegment                      → OCCTCurve3DCreateSegment
 // GC_MakeTranslation                  → OCCTShapeTranslateByPoints
 //
 // --- GC 2D ---
@@ -258,7 +273,12 @@
 // GC_MakeParabola2d                   → OCCTCurve2DMakeParabola*
 //
 // --- GCPnts ---
-// GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength,
+//                                       OCCTCurve2DLength, OCCTCurve2DGetLength*,
+//                                       OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*,
+//                                       OCCTEdgeParameterAt*, OCCTWireGetLength
+//                                       (two further spellings were deleted by #506/#549; their
+//                                       tombstones sit at the old declaration sites)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
 // GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive
@@ -304,7 +324,6 @@
 // Geom2d_CartesianPoint               → OCCTPoint2D*
 // Geom2d_Circle                       → OCCTCurve2DCircle*, OCCTCurve2DCreateCircle, OCCTCurve2DCreateArcOfCircle,
 //                                       OCCTGceMakeCirc2d*
-// Geom2d_Direction                    → OCCTDirection2D*
 // Geom2d_Ellipse                      → OCCTCurve2DEllipse*
 // Geom2d_Hyperbola                    → OCCTCurve2DHyperbola*, OCCTCurve2DCreateHyperbola,
 //                                       OCCTCurve2DCreateArcOfHyperbola, OCCTGceMakeHypr2d
@@ -315,7 +334,9 @@
 //                                       OCCTCurve2DCreateArcOfParabola, OCCTGceMakeParab2d
 // Geom2d_Transformation               → OCCTTransform2D*
 // Geom2d_TrimmedCurve                 → OCCTCurve2DTrim
-// Geom2d_VectorWithMagnitude          → OCCTVector2D*
+//                                       (Geom2d_Direction and Geom2d_VectorWithMagnitude are not
+//                                       wrapped — OCCTDirection2D*/OCCTVector2D* are gp_Dir2d/
+//                                       gp_Vec2d arithmetic; see docs/occtswift-wrapping-gaps.md)
 //
 // --- Geom2dAPI ---
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DMinDistance, OCCTCurve2DAllExtrema
@@ -366,10 +387,25 @@
 // --- GeomConvert ---
 // GeomConvert                         → OCCTCurve3DToBSpline, OCCTCurve3DBSplineToBeziers, OCCTCurve3DSplitAtContinuity,
 //                                       OCCTSurfaceToBSpline, OCCTSurfaceToBezierPatches
+// GeomConvert_BSplineCurveKnotSplitting → OCCTCurve3DBSplineKnotSplits (the sole wrapper; #562)
+// GeomConvert_BSplineSurfaceKnotSplitting → OCCTSurfaceKnotSplitting (the sole wrapper since #562
+//                                       deleted the second family that wrapped it)
 // GeomConvert_CompCurveToBSplineCurve → OCCTCurve3DJoinCurves, OCCTCurve3DJoinToBSpline,
 //                                       OCCTCurve3DConcatenateG1, OCCTConcatenateCurves3D
 // GeomConvert_CurveToAnaCurve         → OCCTGeomConvertCurveToAnalytical, OCCTGeomConvertIsLinear
 // GeomConvert_SurfToAnaSurf           → OCCTGeomConvertSurfToAnalytical*, OCCTGeomConvertIsCanonical
+//
+// --- Geom2dConvert ---
+// #562: this section did not exist, which is half of why Geom2dConvert_BSplineCurveKnotSplitting
+// could be wrapped twice without anything noticing. Census is by call site in OCCTBridge_Geom2d.mm.
+// Geom2dConvert                       → OCCTCurve2DToBSpline, OCCTCurve2DSplitAtContinuity,
+//                                       OCCTCurve2DJoinToBSpline
+// Geom2dConvert_ApproxArcsSegments    → OCCTGeom2dConvertApproxArcsSegments, OCCTCurve2DToArcsAndSegments
+// Geom2dConvert_ApproxCurve           → OCCTCurve2DApproximate
+// Geom2dConvert_BSplineCurveKnotSplitting → OCCTCurve2DSplitAtDiscontinuities (the sole wrapper
+//                                       since #562 deleted the second family that wrapped it)
+// Geom2dConvert_BSplineCurveToBezierCurve → OCCTCurve2DBSplineToBeziers
+// Geom2dConvert_CompCurveToBSplineCurve → OCCTConcatenateCurves2D, OCCTCurve2DJoinToBSpline
 //
 // --- Convert ---
 // Convert_CompBezierCurvesToBSplineCurve   → OCCTConvertCompBezierToBSpline (v0.99.0)
@@ -435,7 +471,9 @@
 // Law_BSpFunc                         → OCCTLawCreateBSpline, OCCTLawInterpolate
 // Law_BSpline                         → OCCTLawCreateBSpline, OCCTLawInterpolate, OCCTLawBSplineKnotSplit*
 // Law_Constant                        → OCCTLawCreateConstant
-// Law_Interpol                        → OCCTLawInterpolate
+// Law_Interpol                        → OCCTLawCreateInterpolate
+// Law_Interpolate                     → OCCTLawInterpolate (a different class from Law_Interpol,
+//                                       one letter apart, driven by a different bridge function)
 // Law_Linear                          → OCCTLawCreateLinear
 // Law_S                               → OCCTLawCreateS
 // Law_BSplineKnotSplitting            → OCCTLawBSplineKnotSplitting (v0.68.0)
@@ -462,7 +500,8 @@
 // LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
 //
 // --- LProp ---
-// LProp_AnalyticCurInf                → OCCTLPropAnalyticCurInf
+// LProp_CurAndInf                     → OCCTLPropAnalyticCurInf (which fills a LProp_CurAndInf from
+//                                       an inline scan — LProp_AnalyticCurInf itself is not wrapped)
 //
 // --- NLPlate ---
 // NLPlate_NLPlate                     → OCCTSurfaceNLPlate*
@@ -502,7 +541,11 @@
 //                                       OCCTSurfaceNbSingularities, OCCTSurfaceIsDegenerated,
 //                                       OCCTSurfaceIsUClosedSA, OCCTSurfaceIsVClosedSA
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
-// ShapeAnalysis_WireOrder             → OCCTWireAnalyze
+// ShapeAnalysis_Wire                  → OCCTWireAnalyze, OCCTWireAnalyzer*, OCCTWireCheck* (all but
+//                                       OCCTWireCheckOuterBound, which only explores for a wire),
+//                                       OCCTWireEdgeCount, OCCTWireMinDistance*, OCCTWireMaxDistance*,
+//                                       OCCTShapeAnalyze
+// ShapeAnalysis_WireOrder             → OCCTWireOrderAnalyze, OCCTWireOrderAnalyzeWire
 //
 // --- ShapeBuild ---
 // ShapeBuild_Edge                     → OCCTShapeBuildEdge*
@@ -534,16 +577,22 @@
 // ShapeFix_ShapeTolerance             → OCCTShapeFixLimitTolerance, OCCTShapeFixSetTolerance,
 //                                       OCCTShapeFixTolerance, OCCTShapeLimitMaxTolerance
 // ShapeFix_SplitCommonVertex          → OCCTShapeFixSplitCommonVertex
-// ShapeFix_Wire                       → OCCTShapeFixWire*
+// ShapeFix_Wire                       → OCCTWireFix, OCCTWireFixer* (OCCTShapeFixWire* is the two
+//                                       entries below: ShapeFix_WireVertex and ShapeFix_Wireframe)
 // ShapeFix_WireVertex                 → OCCTShapeFixWireVertex
 // ShapeFix_Wireframe                  → OCCTShapeFixWireframe, OCCTShapeFixWireGaps, OCCTShapeFixSmallEdges (v0.99.0)
 //
 // --- ShapeUpgrade ---
 // ShapeUpgrade_ConvertCurve3dToBezier → OCCTShapeUpgradeConvertCurves3dToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, the shape-level
+//                                       driver that owns it; no direct wrap)
 // ShapeUpgrade_ConvertSurfaceToBezierBasis → OCCTShapeUpgradeConvertSurfaceToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, as above)
 // ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
 // ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
-// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeUpgradeConvertCurves3dToBezier
+// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeConvertToBezier,
+//                                       OCCTShapeUpgradeConvertCurves3dToBezier,
+//                                       OCCTShapeUpgradeConvertSurfaceToBezier
 // ShapeUpgrade_ShapeDivideClosed      → OCCTShapeUpgradeDivideClosed
 // ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide, OCCTShapeUpgradeDivideContinuity
 // ShapeUpgrade_UnifySameDomain        → OCCTShapeUnifySameDomain, OCCTShapeSimplify, OCCTUnifySameDomainCreate
@@ -659,7 +708,7 @@
 // gp_Pnt/gp_Vec/gp_Dir               → (used throughout all bridge functions)
 // gp_Ax1/gp_Ax2/gp_Ax3               → (used throughout all bridge functions)
 // gp_Trsf/gp_Trsf2d                  → OCCTShapeTranslate/Rotate/Scale/Mirror, OCCTPoint2D*
-// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*
+// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*, OCCTDirection2D*
 //
 
 #ifdef __cplusplus
@@ -1129,6 +1178,13 @@ OCCTShapeRef OCCTImportSTEP(const char* path);
 // Cancellation: if shouldCancel returns true, OCCT stops at the next polling
 // boundary. The *Progress entry points return NULL and set *outCancelled=true.
 // If the import otherwise fails, NULL is returned and *outCancelled stays false.
+//
+// Both halves of that hold on every exit path, not only at the bridge's own
+// checkpoints (#525): a break during a transfer surfaces as zero transferred
+// roots, a null shape, a non-Done status or an exception depending on where it
+// lands, and each of those is still reported as a cancellation rather than as a
+// failure. One true from shouldCancel is also enough -- it is latched, so a
+// caller that answers true once and false afterwards still stops the call.
 
 typedef struct OCCTImportProgress {
     /// Called as the importer advances. fraction is 0.0...1.0; step is a
@@ -2663,6 +2719,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef curve, double tolerance,
                                       int32_t continuity, int32_t maxSegments, int32_t maxDegree);
 // `continuity` is a ContinuityRange (a literal derivative order, splitting where
 // `degree - multiplicity < continuity`), not a GeomAbs_Shape. See the #480 note in OCCTBridge_Internal.h.
+// Returns the TRUE split count even when writing was truncated by `max`, so a caller that came up
+// short can retry at the size it was just told — the #481 contract the rest of this family already
+// shares. It used to return the count it had written, which is indistinguishable from a curve with
+// exactly `max` splits (#562).
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef curve, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max);
 int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef curve, double tolerance,
@@ -5810,6 +5870,9 @@ OCCTFillingRef OCCTFillingCreate(int32_t degree, int32_t nbPtsOnCur, int32_t max
 void OCCTFillingRelease(OCCTFillingRef filling);
 
 /// Add a boundary edge constraint, deriving the continuity reference from the edge's own pcurve.
+///
+/// With no nominated support face to validate, this only refuses a constraint OCCT itself throws
+/// on. A refusal is sticky either way; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param continuity Continuity order: 0=position, 1=tangency, 2=curvature (see OCCTFillingParams)
@@ -5828,6 +5891,7 @@ bool OCCTFillingAddFreeEdge(OCCTFillingRef filling, OCCTEdgeRef edge, int32_t co
 /// `support` is used or the constraint fails: if it carries no pcurve for `edge` it cannot
 /// serve as the continuity reference, matching OCCTShapeFillConstraints' per-constraint
 /// contract. Pass NULL to derive the reference from the edge itself, same as OCCTFillingAddEdge.
+/// A refusal is sticky; see OCCTFillingBuild.
 /// @param filling Filling handle
 /// @param edge Edge to add as constraint
 /// @param support Face to be continuous with, or NULL to derive one from the edge
@@ -5842,7 +5906,21 @@ bool OCCTFillingAddEdgeWithSupport(OCCTFillingRef filling, OCCTEdgeRef edge,
 /// @return true if point was added
 bool OCCTFillingAddPoint(OCCTFillingRef filling, double x, double y, double z);
 
+/// Number of OCCTFillingAdd* calls this builder refused (#482).
+///
+/// A refused constraint is one that is NOT in the builder, so it distinguishes a poisoned
+/// OCCTFillingBuild from an ordinary fitting failure. Only ever increases; a later successful
+/// Add does not clear it.
+/// @param filling Filling handle
+/// @return Refusal count, or 0 for a NULL handle
+int32_t OCCTFillingRefusedConstraintCount(OCCTFillingRef filling);
+
 /// Build the filling surface.
+///
+/// Fails immediately, without attempting the build, if any OCCTFillingAdd* was refused (#482).
+/// Fitting a surface to the constraints that did make it in would answer a different question
+/// than the caller asked. Matches OCCTShapeFillConstraints, which returns NULL on the same
+/// refusal. Use OCCTFillingRefusedConstraintCount to tell the two failures apart.
 /// @param filling Filling handle
 /// @return true if build succeeded
 bool OCCTFillingBuild(OCCTFillingRef filling);
@@ -6832,15 +6910,20 @@ typedef struct {
 ///   cubic with simple interior knots needs 3. See the #480 note in OCCTBridge_Internal.h
 /// @param vContinuity Desired V continuity, same contract against the V degree and knots
 /// @param outUParams Pre-allocated array for U split parameter values (may be NULL)
-/// @param maxUParams Capacity of outUParams
+/// @param outUIndices Pre-allocated array for the 1-based U knot-table indices those parameters
+///   were read from, i.e. `outUParams[i] == UKnot(outUIndices[i])` (may be NULL). #562: the
+///   analyzer reports indices and this function converts them, so the caller only ever saw the
+///   converted form and a second family of bridge functions existed to serve the raw one
+/// @param maxU Capacity of outUParams and outUIndices
 /// @param outVParams Pre-allocated array for V split parameter values (may be NULL)
-/// @param maxVParams Capacity of outVParams
+/// @param outVIndices Pre-allocated array for the 1-based V knot-table indices (may be NULL)
+/// @param maxV Capacity of outVParams and outVIndices
 /// @return Split counts; nbUSplits/nbVSplits are the true counts even when writing
-///   was truncated by maxUParams/maxVParams, so a caller can retry with a bigger buffer
+///   was truncated by maxU/maxV, so a caller can retry with a bigger buffer
 OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
     int32_t uContinuity, int32_t vContinuity,
-    double* outUParams, int32_t maxUParams,
-    double* outVParams, int32_t maxVParams);
+    double* outUParams, int32_t* outUIndices, int32_t maxU,
+    double* outVParams, int32_t* outVIndices, int32_t maxV);
 
 /// Join an array of Bezier surface patches into a single BSpline surface.
 /// @param patches Array of surface handles (row-major, nRows x nCols)
@@ -14678,33 +14761,19 @@ OCCTCurve3DRef _Nullable OCCTConcatenateCurves3D(OCCTCurve3DRef _Nonnull * _Nonn
 OCCTCurve2DRef _Nullable OCCTConcatenateCurves2D(OCCTCurve2DRef _Nonnull * _Nonnull curves,
                                                    int32_t count, double tolerance);
 
-// MARK: - GeomConvert_BSplineSurfaceKnotSplitting (v0.105.0)
+// MARK: - GeomConvert_BSplineSurfaceKnotSplitting / Geom2dConvert_BSplineCurveKnotSplitting
 //
-// `continuity` throughout this section is the same ContinuityRange as OCCTSurfaceKnotSplitting
-// takes: a literal derivative order, splitting where `degree - multiplicity < continuity`, with
-// useful domain 0...degree. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of U-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsU(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get number of V-direction knot splits for a BSpline surface at given continuity.
-int32_t OCCTBSplineSurfaceKnotSplitsV(OCCTSurfaceRef _Nonnull surface, int32_t continuity);
-
-/// Get U and V knot split indices for a BSpline surface at given continuity.
-void OCCTBSplineSurfaceKnotSplitValues(OCCTSurfaceRef _Nonnull surface, int32_t continuity,
-                                        int32_t* _Nonnull uSplits, int32_t* _Nonnull vSplits);
-
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
+// #562: five functions used to live here (OCCTBSplineSurfaceKnotSplitsU/V,
+// OCCTBSplineSurfaceKnotSplitValues, OCCTBSplineCurve2dKnotSplits,
+// OCCTBSplineCurve2dKnotSplitValues), added in v0.105.0 over the same two analyzers
+// OCCTSurfaceKnotSplitting and OCCTCurve2DSplitAtDiscontinuities already drove. They are gone;
+// those two are the sole wrappers of their analyzer. Both now report the split knot-table
+// indices, which is all the deleted family carried that the survivors did not.
 //
-// Same ContinuityRange contract again: Geom2dConvert_BSplineCurveKnotSplitting runs the
-// identical algorithm on a 2D curve. See the #480 note in OCCTBridge_Internal.h.
-
-/// Get number of knot splits for a 2D BSpline curve at given continuity.
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef _Nonnull curve, int32_t continuity);
-
-/// Get knot split indices for a 2D BSpline curve at given continuity.
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef _Nonnull curve, int32_t continuity,
-                                        int32_t* _Nonnull splits);
+// Two contract hazards the deleted family had, recorded so they are not reintroduced: neither
+// values function took a buffer capacity (each wrote NbSplits() entries into a buffer the caller
+// had sized from a *separate* call), and the surface one constructed the analyzer three times per
+// logical query, once per count call and once for the values.
 
 // MARK: - BndLib extras (v0.105.0)
 
