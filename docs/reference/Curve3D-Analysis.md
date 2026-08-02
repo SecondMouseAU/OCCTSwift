@@ -574,7 +574,7 @@ public func projectPoint(_ point: SIMD3<Double>, precision: Double = 1e-6) -> Po
 
 Always returns a result (never `nil`); a non-zero `distance` indicates the query point was not on the curve.
 
-The answer is always inside the curve's own `domain`, and always the true nearest point. Where the query point has no perpendicular foot on the curve — anything past the end of a trimmed curve, or off to one side of an arc — the nearest point is an end, and that is what comes back. Contrast [`nearestParameter(to:)`](Curve3D-Construction.md#nearestparameterto), which reports `nil` for exactly those points instead.
+The answer is always inside the curve's own `domain`, and always the true nearest point. Where the query point has no perpendicular foot on the curve — anything past the end of a trimmed curve, or off to one side of an arc — the nearest point is an end, and that is what comes back. [`nearestParameter(to:)`](Curve3D-Construction.md#nearestparameterto) is the scalar spelling of this and agrees with it exactly; it reported `nil` for exactly those points until #615 routed it through the same helper.
 
 - **Parameters:** `point` — 3D point to project; `precision` — projection precision (default `1e-6`).
 - **Returns:** `PointProjection` with distance, parameter, and closest curve point.

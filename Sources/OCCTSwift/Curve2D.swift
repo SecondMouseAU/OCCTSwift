@@ -816,19 +816,28 @@ public final class Curve2D: @unchecked Sendable {
     /// Project a point onto this curve, returning the nearest projection.
     ///
     /// - Parameter p: Point to project.
-    /// - Returns: The nearest projection, or `nil` if the point has no projection onto this curve
-    ///     one beyond the ends of a bounded curve, or the centre of a circle.
+    /// - Returns: The nearest projection, or `nil` if there is no curve to answer about.
     ///
-    /// `project(_:)` (the `Point2D` overload) and `Point2D.distance(to:)` compute the same nearest
-    /// solution through the same shared bridge path, and agree on both the value and on when
-    /// there is no projection.
+    /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
+    /// where the point has no perpendicular foot on the curve — anything past the end of a trimmed
+    /// curve, or off to one side of an arc — the nearest point is an end, and that is what comes
+    /// back. `project(_:)` (the `Point2D` overload), `Point2D.distance(to:)` and
+    /// ``nearestParameter(to:)`` compute the same nearest solution through the same shared bridge
+    /// path and agree with it exactly.
     ///
     /// ```swift
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// let hit = segment.project(point: SIMD2(5, 3))
     /// #expect(hit?.distance == 3)
-    /// #expect(segment.project(point: SIMD2(100, 0)) == nil)   // past the end
+    /// #expect(segment.project(point: SIMD2(100, 0))?.distance == 90)   // past the end: the end
+    ///
+    /// let arc = Curve2D.circle(center: .zero, radius: 5)!.trimmed(from: 0, to: .pi)!
+    /// #expect(arc.project(point: SIMD2(0, -6))?.parameter == 0)        // the near end, 7.81 away
     /// ```
+    ///
+    /// Before #615 this reported `Geom2dAPI_ProjectPointOnCurve`'s extremum instead — the arc above
+    /// answered π/2, the far side, 11 away — and `nil` for the segment. ``allProjections(of:)`` asks
+    /// for the extrema, which is a different question, and still reports none in both cases.
     public func project(point p: SIMD2<Double>) -> Curve2DProjection? {
         let r = OCCTCurve2DProjectPoint(handle, p.x, p.y)
         guard r.distance >= 0 else { return nil }
@@ -838,24 +847,27 @@ public final class Curve2D: @unchecked Sendable {
     /// The parameter of the point on this curve nearest to `point`.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: The nearest parameter, or `nil` if the point has no projection onto this curve
-    ///     one beyond the ends of a bounded curve, or the centre of a circle.
+    /// - Returns: The nearest parameter, always inside this curve's own ``domain``, or `nil` if
+    ///     there is no curve to answer about.
     ///
-    /// The scalar form of `project(point:)`, computed by the same shared bridge path and agreeing
-    /// with it, with `Point2D.distance(to:)` and with `allProjections(of:)` on exactly when there
-    /// is no projection.
+    /// The scalar form of ``project(point:)``, computed by the same shared bridge path and agreeing
+    /// with it and with `Point2D.distance(to:)` exactly. Like them it reports the true nearest
+    /// point rather than the nearest perpendicular foot, so a point past the end of a bounded curve
+    /// answers with that end.
     ///
-    /// `nil` is the only answer that says so, which is why this replaces the deprecated
-    /// `parameterAtPoint(_:)`: no `Double` can carry the signal. `0` is a legitimate parameter on
-    /// any curve whose domain includes it, and so is every other value.
+    /// This replaces the deprecated `parameterAtPoint(_:)` because no `Double` can carry a failure
+    /// signal: `0` is a legitimate parameter on any curve whose domain includes it, and so is every
+    /// other value.
     ///
     /// ```swift
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// #expect(segment.nearestParameter(to: SIMD2(5, 3)) == 5)
-    /// #expect(segment.nearestParameter(to: SIMD2(100, 0)) == nil)   // past the end
+    /// #expect(segment.nearestParameter(to: SIMD2(100, 0)) == 10)   // past the end: the end
     ///
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
-    /// #expect(circle.nearestParameter(to: .zero) == nil)            // equidistant everywhere
+    /// // Equidistant everywhere, so every point is a nearest one; it names a tied parameter
+    /// // rather than refusing to answer (#615).
+    /// #expect(circle.nearestParameter(to: .zero) != nil)
     /// ```
     public func nearestParameter(to point: SIMD2<Double>) -> Double? {
         var parameter = 0.0
@@ -863,7 +875,21 @@ public final class Curve2D: @unchecked Sendable {
         return parameter
     }
 
-    /// Project a point onto this curve, returning all projections.
+    /// Project a point onto this curve, returning every projection.
+    ///
+    /// This asks for the **extrema** of the distance function — the perpendicular feet — which is a
+    /// different question from "the nearest point", and since #615 gives a visibly different answer.
+    /// A bounded curve queried from beyond its end has no perpendicular foot at all, so this
+    /// correctly returns empty where ``project(point:)`` and ``nearestParameter(to:)`` answer with
+    /// the end. An extremum may also be a local *maximum*: on a half arc queried from the far side
+    /// the only element here is the point furthest away.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    /// #expect(segment.allProjections(of: SIMD2(5, 3)).count == 1)      // a foot at (5, 0)
+    /// #expect(segment.allProjections(of: SIMD2(100, 0)).isEmpty)       // no foot past the end
+    /// #expect(segment.project(point: SIMD2(100, 0))?.parameter == 10)  // but a nearest point
+    /// ```
     public func allProjections(of p: SIMD2<Double>) -> [Curve2DProjection] {
         var buffer = [OCCTCurve2DProjection](repeating: OCCTCurve2DProjection(), count: 64)
         let n = Int(OCCTCurve2DProjectPointAll(handle, p.x, p.y, &buffer, 64))
@@ -2158,19 +2184,20 @@ extension Curve2D {
     /// Project a `Point2D` onto this curve.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: `(parameter, distance)` of the nearest solution, or `nil` if the point has no
-    ///   projection onto this curve.
+    /// - Returns: `(parameter, distance)` of the nearest solution, or `nil` if there is no curve to
+    ///   answer about.
     ///
-    /// The same nearest-solution computation as `project(point:)`, returned without the projected
-    /// point itself. Note that a parameter of `0` is a perfectly ordinary success — projecting a
-    /// segment's own start point onto it returns exactly that — so `nil` is the only failure
-    /// signal.
+    /// The same nearest-solution computation as ``project(point:)``, returned without the projected
+    /// point itself, so it reports the true nearest point over the curve's own domain — a point past
+    /// the end answers with that end (#615). Note that a parameter of `0` is a perfectly ordinary
+    /// success — projecting a segment's own start point onto it returns exactly that — so `nil` is
+    /// the only failure signal.
     ///
     /// ```swift
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
     /// let start = Point2D(x: 0, y: 0)!
-    /// #expect(segment.project(start)?.parameter == 0)          // success, at parameter 0
-    /// #expect(segment.project(Point2D(x: 100, y: 0)!) == nil)  // no projection
+    /// #expect(segment.project(start)?.parameter == 0)                    // success, at parameter 0
+    /// #expect(segment.project(Point2D(x: 100, y: 0)!)?.parameter == 10)  // past the end: the end
     /// ```
     public func project(_ point: Point2D) -> (parameter: Double, distance: Double)? {
         var dist: Double = 0

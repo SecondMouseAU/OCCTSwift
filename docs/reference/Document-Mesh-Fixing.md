@@ -784,13 +784,20 @@ public func nearestParameter(to point: SIMD3<Double>) -> Double?
 ```
 
 - **Parameters:** `point` — the 3D query point.
-- **Returns:** The nearest parameter `u` on the curve, or `nil` if the point has no projection at
-  all: one beyond the ends of a bounded curve, or the centre of a circle.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve` (via `OCCTCurve3DNearestParameter`).
+- **Returns:** The nearest parameter `u` on the curve, always inside its own domain, or `nil` if
+  there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurveRange` (via `OCCTCurve3DNearestParameter`) — the minimum over
+  `ShapeAnalysis_Curve`, every `GeomAPI_ProjectPointOnCurve` extremum in range, and both ends.
+
+The true nearest point, not the nearest perpendicular foot: a point past the end of a bounded curve
+is nearest to that end, and that is the answer. Agrees exactly with
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which shares its helper;
+until #615 this one reported an extremum instead, so the two disagreed about which point is nearest
+and about whether there was one.
 
 Replaces `parameterAtPoint(_:)` and
 [`closestParameter(to:)`](Curve3D-Construction.md#nearestparameterto), both deprecated: they ran
-the identical projection and disagreed about the no-projection case (#500).
+the identical projection and disagreed about how to report its absence (#500).
 
 ---
 
@@ -816,10 +823,17 @@ Find the 2D curve parameter nearest to a 2D point.
 public func nearestParameter(to point: SIMD2<Double>) -> Double?
 ```
 
-- **Returns:** The nearest parameter, or `nil` if the point has no projection at all. Agrees with
-  `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_:)` and
-  `Point2D.distance(to:)` on exactly when that is (#413, #500).
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (via `OCCTCurve2DNearestParameter`).
+- **Returns:** The nearest parameter, always inside the curve's own domain, or `nil` if there is no
+  curve to answer about. Agrees exactly with `Curve2D.project(point:)`, `Curve2D.project(_:)` and
+  `Point2D.distance(to:)`, which share its bridge path (#413, #500, #615).
+- **OCCT:** `occtNearestPointOnCurve2dRange` (via `OCCTCurve2DNearestParameter`) — the minimum over
+  every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both ends. There is no third source:
+  `ShapeAnalysis_Curve` has no 2D projection.
+
+`Curve2D.allProjections(of:)` is **not** in that agreement, by design. It asks for the extrema, so
+it reports none where these four answer with an end — a point past the end of a bounded curve has a
+nearest point but no perpendicular foot. Before #615 all five agreed only because the other four
+were asking the extrema question too, and so were wrong.
 
 Replaces `parameterAtPoint(_:)`, deprecated: it reported the no-projection case as the curve's
 own `firstParameter`.
@@ -856,8 +870,25 @@ public func locateNearestPoint(
   - `point` — the 3D query point.
   - `initParam` — starting parameter for the local search.
   - `tolerance` — convergence tolerance.
-- **Returns:** `(parameter, distance)` tuple, or `nil` if the search diverges.
-- **OCCT:** `Extrema_ExtPC` local mode (via `OCCTExtremaLocateOnCurve`).
+- **Returns:** `(parameter, distance)` tuple, or `nil` only if there is no curve to answer about.
+- **OCCT:** `GeomAPI_ProjectPointOnCurve` over a ±10% window around `initParam`, falling back to
+  `occtNearestPointOnCurveRange` over the whole curve (via `OCCTExtremaLocateOnCurve`).
+
+Two searches with two different contracts. The **primary** one reports the **lowest-distance extremum
+inside that window** — `initParam` bounds the window, it does not rank what is found in it, so the
+extremum returned is not necessarily the one nearest the guess; where a window holds several, the one
+closest to the *query point* wins. The window is what makes the answer local, and a windowed minimum
+can still be a global *maximum*. On a half circle of radius 5 queried from `(0, -6, 0)` with a guess
+of `.pi / 2` it reports `11`, where the nearest point on the curve is `7.81` away. Use
+[`nearestParameter(to:)`](#curve3dnearestparameterto) or
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision) when you want the global
+answer.
+
+The **fallback** fires only when the window holds no extremum, at which point the search has already
+abandoned locality — so since #615 it reports the whole curve's true nearest point, agreeing with
+those two. Before #615 it reported an extremum instead, so a guess sitting *on* the nearest point
+returned the point diametrically opposite it, and a bounded segment queried from past its own end
+returned `nil` for every guess.
 
 ---
 

@@ -482,10 +482,9 @@ public func nearestParameter(to point: SIMD3<Double>) -> Double?
 
 - **Parameters:** `point` — the query point in 3D space.
 - **Returns:** Parameter `u` such that `self.point(at: u)` is the nearest point on the curve to
-  `point`, or `nil` if the point has no projection at all: one beyond the ends of a bounded
-  curve, or the centre of a circle, which is equidistant from every point on it. `nil` is the
-  only answer that says so: every `Double` is a legitimate parameter on some curve.
-- **OCCT:** `GeomAPI_ProjectPointOnCurve::LowerDistanceParameter`.
+  `point`, always inside the curve's own domain, or `nil` if there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurveRange` — the minimum over `ShapeAnalysis_Curve::Project`, every
+  `GeomAPI_ProjectPointOnCurve` extremum in range, and both curve ends.
 - **Example:**
   ```swift
   if let line = Curve3D.line(through: .zero, direction: SIMD3(1,0,0)) {
@@ -493,20 +492,32 @@ public func nearestParameter(to point: SIMD3<Double>) -> Double?
       #expect(param.map { abs($0 - 5.0) < 0.1 } == true)
   }
 
-  // A curve trimmed to [3, 8]: a point past the end has no projection.
+  // A curve trimmed to [3, 8]: a point past the end is nearest to that end.
   if let seg = Curve3D.line(through: .zero, direction: SIMD3(1,0,0))?.trimmed(from: 3, to: 8) {
-      #expect(seg.nearestParameter(to: SIMD3(100, 0, 0)) == nil)
+      #expect(seg.nearestParameter(to: SIMD3(100, 0, 0)) == 8)
+  }
+
+  // A half arc queried from below: the near end, not the extremum on the far side.
+  if let arc = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 5)?
+      .trimmed(from: 0, to: .pi) {
+      #expect(arc.nearestParameter(to: SIMD3(0, -6, 0)) == 0)   // 7.81 away, not 11
   }
   ```
 
-Contrast [`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision), which asks a
-different question and so always answers: the nearest point on the curve, which exists for every
-query point, rather than the nearest perpendicular foot, which does not. For the trimmed segment
-above it reports the curve's end, parameter `8` at distance `92` (#539).
+This is the scalar spelling of
+[`projectPoint(_:precision:)`](Curve3D-Analysis.md#projectpointprecision) and agrees with it
+exactly. Both report the true nearest point rather than the nearest *perpendicular foot*: where the
+point has no foot, the nearest point is an end, and that is the answer.
 
-`closestParameter(to:)` is the deprecated spelling of this method. It returns `.nan` where this
-one returns `nil`; before #500 it returned `0`, which is not even inside the domain of a curve
-trimmed to `[3, 8]`.
+Until #615 the two disagreed, because this one reported `GeomAPI_ProjectPointOnCurve`'s extremum:
+for the half arc above it answered π/2, the far side, 11 away, and for the trimmed segment it
+answered `nil` where `projectPoint` answered `8` at distance `92`. `Optional` remains because no
+`Double` can carry a failure signal — every value is a legitimate parameter on some curve — not
+because a point can fail to have a nearest one.
+
+`closestParameter(to:)` is the deprecated spelling of this method. It returns `.nan` where this one
+returns `nil`; before #500 it returned `0`, which is not even inside the domain of a curve trimmed
+to `[3, 8]`.
 
 ---
 

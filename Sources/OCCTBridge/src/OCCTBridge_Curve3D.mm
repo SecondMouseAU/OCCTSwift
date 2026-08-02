@@ -4209,53 +4209,106 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef curve) {
     } catch (...) { return 7; }
 }
 
-// The 3D counterpart of OCCTBridge_Geom2d.mm's occtNearestProjectionOnCurve2d, which #413 gave the
-// 2D side and #500 found the 3D side had never had: one GeomAPI_ProjectPointOnCurve construction
-// behind every entry point that wants the nearest solution over the curve's whole range:
-// OCCTCurve3DNearestParameter and OCCTExtremaLocateOnCurve's full-range fallback.
+// One nearest-point answer behind every entry point that wants the nearest solution over the curve's
+// whole range: OCCTCurve3DNearestParameter and OCCTExtremaLocateOnCurve's full-range fallback.
 //
-// Returns false when there is no projection at all, an ordinary outcome rather than an error: a point
-// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Failure may not
-// be reported through the parameter, since every double is a legitimate parameter on some curve.
+// #500 unified them onto a single GeomAPI_ProjectPointOnCurve construction. #615 makes that
+// construction the RIGHT one: GeomAPI reports extrema, not minima, so LowerDistance is not the
+// nearest point and NbPoints() == 0 is not "no nearest point". Measured on the geometry #539 named,
+// a half circle of radius 5 queried from (0, -6, 0): this reported the far side of the arc, 11 away,
+// where OCCTCurve3DProjectPoint -- converted by #539, same promise, same curve, same point --
+// reported the true nearest at 7.81; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it
+// reported nothing at all where the converted sibling reported the segment's own end, 92 away. So
+// the two spellings disagreed about which point is nearest AND about whether there is one.
 //
-// Not routed through here, and why: OCCTExtremaLocateOnCurve's primary search and
-// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) pass an explicit parameter window;
-// OCCTExtremaPointCurve and OCCTProjOnCurve* need every extremum, not the nearest;
-// OCCTCurve3DProjectPoint runs ShapeAnalysis_Curve::Project, a different algorithm with a
-// different contract, adjusting to the curve ends rather than reporting no projection.
+// Both are now the same answer because both are now the same helper. See
+// occtNearestPointOnCurveRange (OCCTBridge_Internal.h) for what each of its three candidate sources
+// contributes and why none of them suffices alone.
+//
+// CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
+// point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
+// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
+// real parameter and a true distance. False is left meaning what it means for the converted
+// siblings: no curve to answer about. Precision::Confusion() is the projection precision, matching
+// the two converted entry points that likewise take none from their caller:
+// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) and OCCTBRepExtremaExtPC
+// (OCCTBridge_Topology.mm). Nothing in THIS file set that precedent -- OCCTCurve3DProjectPoint,
+// the only other local caller of the helper, is handed a precision by its own caller.
+//
+// Not routed through here, and why: OCCTExtremaLocateOnCurve's PRIMARY search deliberately reports
+// a windowed extremum near a caller-supplied guess (see there, and note that "near" is the window,
+// not a ranking); OCCTExtremaPointCurve and OCCTProjOnCurve* need every extremum, not the nearest;
+// OCCTEdgeProjectPoint (OCCTBridge_Properties.mm) reaches the same shared helper by its own route,
+// from BRep_Tool::Curve's range rather than a Geom_Curve's.
 static bool occtNearestProjectionOnCurve3d(OCCTCurve3DRef curve, const gp_Pnt& point,
                                            gp_Pnt* outNearest, double* outParameter,
                                            double* outDistance) {
     if (!curve || curve->curve.IsNull()) return false;
     try {
-        GeomAPI_ProjectPointOnCurve proj(point, curve->curve);
-        if (proj.NbPoints() == 0) return false;
-        if (outNearest) *outNearest = proj.NearestPoint();
-        if (outParameter) *outParameter = proj.LowerDistanceParameter();
-        if (outDistance) *outDistance = proj.LowerDistance();
-        return true;
+        return occtNearestPointOnCurveRange(curve->curve, point,
+                                            curve->curve->FirstParameter(),
+                                            curve->curve->LastParameter(),
+                                            Precision::Confusion(),
+                                            outNearest, outParameter, outDistance);
     } catch (...) {
         return false;
     }
 }
 
-// Failure contract: returns false, leaving *outParameter untouched. This replaces two functions
-// that computed the identical projection and disagreed about how to report its absence:
-// OCCTCurve3DParameterAtPoint returned curve->FirstParameter(), OCCTCurve3DClosestParameter
-// returned 0, which is not even in the domain of a curve trimmed to, say, [3, 8] (#500).
+// Failure contract: returns false, leaving *outParameter untouched. That now means only "no curve":
+// every real curve has a nearest point to every point (#615). It used to also mean "no extremum",
+// which is why this replaced two functions that computed the identical projection and disagreed
+// about how to report its absence: OCCTCurve3DParameterAtPoint returned curve->FirstParameter(),
+// OCCTCurve3DClosestParameter returned 0, which is not even in the domain of a curve trimmed to,
+// say, [3, 8] (#500).
 bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve, double x, double y, double z,
                                  double* _Nonnull outParameter) {
     return occtNearestProjectionOnCurve3d(curve, gp_Pnt(x, y, z), nullptr, outParameter, nullptr);
 }
 // --- Extrema extras ---
 
+// Two searches, and #615 deliberately changed only the second of them.
+//
+// The PRIMARY search is local by RANGE, not by proximity: it reports the LOWEST-DISTANCE extremum
+// within a window of +/-10% of the domain around the guess. Note what initParam does and does not
+// buy -- it bounds the window, and nothing selects among the extrema inside it by how near the guess
+// they are, because the selection is GeomAPI_ProjectPointOnCurve::LowerDistanceParameter(). Measured
+// on a ramped sine BSpline, a guess of 90.9114 returns param 79.9751, 10.94 away from the guess, in
+// preference to an extremum 0.13 away at 91.0378, because the far one is the closer of the two to
+// the query POINT (10.07 against 15.19); 22 of 46 multi-extremum windows in that sweep behave so.
+//
+// The window is still what makes the answer local, and a windowed minimum can be a global MAXIMUM:
+// on a half circle of radius 5 queried from (0, -6, 0) with a guess of pi/2 this reports 11, the far
+// side. That is not the nearest point on the curve and is not claimed to be.
+//
+// Adding the window's two ends to that minimum -- the #539 recipe applied to [lo, hi] rather than to
+// the whole curve -- was considered and rejected, on two grounds, and NOT on the ground that it would
+// redefine initParam. It would not: the function already minimises over the window, so the ends are
+// the only thing the change adds. The grounds are (1) it does not make the function correct under its
+// own name, answering 10.865697905689686 on the arc above where the true nearest point is 7.81 away,
+// and (2) a window's ends always evaluate, so the minimum would always be found, and the fallback
+// below would become unreachable -- deleting the one path in this function that #615 fixes. Making
+// the search global outright would leave initParam meaning nothing at all and the function a
+// duplicate of OCCTCurve3DNearestParameter. So the primary search is left exactly as it was.
+//
+// The FALLBACK is a different matter, and was wrong. It fires precisely when the window contains no
+// extremum, at which point the function has already abandoned locality and searched the whole curve.
+// Having done that, it must give the whole curve's answer, which is the one
+// OCCTCurve3DNearestParameter gives -- and #615 is that those two disagreed. Measured before:
+// locateNearestPoint((0, -6, 0), initParam: 0) on that same half circle fell through to the fallback
+// and answered pi/2 at distance 11, a point diametrically opposite a guess that sat on the true
+// nearest point; and on a segment trimmed to [3, 8] queried at (100, 0, 0) it answered nil for every
+// guess, because no window and no full-range search contains a perpendicular foot. Both now answer
+// through the shared helper: 0 at 7.81, and 8 at 92.
 bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
                               double px, double py, double pz,
                               double initParam, double tol,
                               double* param, double* distance) {
     if (!curve || curve->curve.IsNull()) return false;
     try {
-        // Use ProjectPointOnCurve in a narrow window around initParam for local search
+        // Local search: the lowest-distance extremum inside a narrow window around the guess.
+        // LowerDistanceParameter() below picks by distance to the query point, not by nearness to
+        // initParam -- the guess bounds the window, it does not rank what is found in it.
         double f = curve->curve->FirstParameter();
         double l = curve->curve->LastParameter();
         double range = (l - f) * 0.1;
@@ -4263,7 +4316,8 @@ bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef curve,
         double hi = std::min(l, initParam + range);
         GeomAPI_ProjectPointOnCurve proj(gp_Pnt(px, py, pz), curve->curve, lo, hi);
         if (proj.NbPoints() < 1) {
-            // Fallback to full range
+            // No extremum near the guess: fall back to the whole curve, and to the whole curve's
+            // nearest point rather than to whichever extremum a full-range search turns up (#615).
             return occtNearestProjectionOnCurve3d(curve, gp_Pnt(px, py, pz), nullptr,
                                                   param, distance);
         }

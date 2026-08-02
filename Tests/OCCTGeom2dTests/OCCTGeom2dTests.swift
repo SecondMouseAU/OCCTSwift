@@ -4708,30 +4708,42 @@ struct Curve2DProjectionParityTests {
         }
     }
 
-    /// A point with no projection at all is an ordinary outcome, not an error: one beyond the
-    /// ends of a bounded curve, or a circle's centre (equidistant everywhere, so no local
-    /// minimum). All five entry points must report it, and none may report it as a distance a
-    /// threshold test would accept, or as a parameter a caller could mistake for a real one.
-    @Test("All five entry points agree when there is no projection")
-    func failureAgreesAcrossAllFive() {
-        let cases: [(Curve2D, SIMD2<Double>)] = [
-            (Self.segment, SIMD2(100, 0)),      // past the end
-            (Self.segment, SIMD2(-50, 3)),      // before the start
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0)),   // circle centre
+    /// A point with no *perpendicular foot* — one beyond the ends of a bounded curve, or a circle's
+    /// centre (equidistant everywhere, so no local minimum) — still has a nearest point, and since
+    /// #615 the four nearest-point spellings all report it rather than reporting nothing.
+    ///
+    /// `allProjections(of:)` is the one that still reports nothing, and correctly: it asks for the
+    /// extrema, which is a different question, and here there are none. Before #615 all five agreed
+    /// only because the other four were asking the extrema question too.
+    @Test("The four nearest-point entry points agree where there is no perpendicular foot")
+    func noPerpendicularFootAgreesAcrossTheFour() throws {
+        let cases: [(Curve2D, SIMD2<Double>, Double)] = [
+            (Self.segment, SIMD2(100, 0), 90),                  // past the end, nearest is (10, 0)
+            (Self.segment, SIMD2(-50, 3), 2509.0.squareRoot()), // before the start, nearest is (0, 0)
+            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0), 5),   // centre: tied at r
         ]
-        for (curve, p) in cases {
-            guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
+        for (curve, p, truth) in cases {
+            let point2D = try #require(Point2D(x: p.x, y: p.y))
             let comment: Comment = "\(p)"
 
-            #expect(curve.project(point: p) == nil, comment)
-            #expect(curve.project(point2D) == nil, comment)
-            #expect(curve.allProjections(of: p).isEmpty, comment)
-            #expect(curve.nearestParameter(to: p) == nil, comment)
-
-            // Not -1: a raw sentinel here reads as "touching" to any `distance < tolerance` test.
+            let nearest = try #require(curve.project(point: p), comment)
+            let asTuple = try #require(curve.project(point2D), comment)
+            let scalar = try #require(curve.nearestParameter(to: p), comment)
             let distance = point2D.distance(to: curve)
-            #expect(distance == .infinity, comment)
+
+            #expect(abs(nearest.distance - truth) < 1e-4, comment)
+            #expect(nearest.parameter == asTuple.parameter, comment)
+            #expect(nearest.distance == asTuple.distance, comment)
+            #expect(nearest.distance == distance, comment)
+            #expect(scalar == nearest.parameter, comment)
+
+            // Never the old sentinels: `.infinity` from Point2D.distance(to:) was a real distance
+            // thrown away, and -1 underneath it reads as "touching" to a `distance < tolerance` test.
+            #expect(distance.isFinite, comment)
             #expect(distance > 0, comment)
+
+            // The extrema question is genuinely unanswerable here, and still says so.
+            #expect(curve.allProjections(of: p).isEmpty, comment)
         }
     }
 
@@ -4756,23 +4768,29 @@ struct Curve2DProjectionParityTests {
 
     /// The fifth entry point, which #413 missed. `parameterAtPoint(_:)` answered a no-projection
     /// with `firstParameter`: right by luck when the point fell off the start, and the far end of
-    /// the curve when it fell off the finish. Neither is distinguishable from a real result, so
-    /// the scalar spelling had to become optional; the deprecated one now says `.nan` instead.
-    @Test("The deprecated scalar spelling no longer answers with a real parameter")
+    /// the curve when it fell off the finish. Neither was distinguishable from a real result, so
+    /// the scalar spelling became optional.
+    ///
+    /// Since #615 there is no reachable `.nan` case left on a real curve — a point past the end is
+    /// nearest to that end, so it gets a real parameter — and `firstParameter` is now right for the
+    /// point that fell off the start for the *right* reason. The spelling stays deprecated because
+    /// no `Double` can carry a failure signal, not because this input has no answer.
+    @Test("The deprecated scalar spelling agrees with the optional one")
     @available(*, deprecated, message: "exercises the deprecated parameterAtPoint on purpose")
-    func deprecatedScalarSpellingReportsNaN() {
+    func deprecatedScalarSpellingAgrees() throws {
         // A domain that does not start at 0, so `firstParameter` is visibly not a default.
-        guard let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)),
-              let trimmed = line.trimmed(from: 3, to: 8) else { return }
+        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
+        let trimmed = try #require(line.trimmed(from: 3, to: 8))
         #expect(trimmed.domain == 3...8)
 
-        // Fell off the far end: `firstParameter` (3) was the worst answer available.
-        #expect(trimmed.nearestParameter(to: SIMD2(100, 0)) == nil)
-        #expect(trimmed.parameterAtPoint(SIMD2(100, 0)).isNaN)
+        // Fell off the far end: `firstParameter` (3) was the worst answer available; the end is 8.
+        #expect(trimmed.nearestParameter(to: SIMD2(100, 0)) == 8)
+        #expect(trimmed.parameterAtPoint(SIMD2(100, 0)) == 8)
 
-        // Fell off the start: `firstParameter` (3) was the right point for the wrong reason.
-        #expect(trimmed.nearestParameter(to: SIMD2(0, 0)) == nil)
-        #expect(trimmed.parameterAtPoint(SIMD2(0, 0)).isNaN)
+        // Fell off the start: 3 all along, now because it is the nearest point rather than because
+        // it is the first parameter.
+        #expect(trimmed.nearestParameter(to: SIMD2(0, 0)) == 3)
+        #expect(trimmed.parameterAtPoint(SIMD2(0, 0)) == 3)
 
         // A real projection still returns the real parameter through both spellings.
         #expect(trimmed.nearestParameter(to: SIMD2(5, 2)) == 5)

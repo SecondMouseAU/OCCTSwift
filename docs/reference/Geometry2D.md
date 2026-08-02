@@ -233,14 +233,14 @@ Minimum distance from this point to a 2D curve.
 public func distance(to curve: Curve2D) -> Double
 ```
 
-Returns `.infinity` when the point has no projection onto the curve at all — one beyond the ends of a bounded curve, or the centre of a circle (equidistant from every point, so there is no local minimum). This is an ordinary outcome, not an error.
+Measured over the curve's own domain, ends included, so it is the true minimum rather than the distance to the nearest *perpendicular foot*. A point beyond the end of a bounded curve is measured to that end, and a circle's centre to the radius.
 
-Before #413 this returned the bridge's raw `-1.0` sentinel for that case, which any threshold test (`distance < tolerance`) would read as "touching" — the opposite of the truth.
+Two sentinels have been retired from this one method. It first returned the bridge's raw `-1.0` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`) read as "touching" — the opposite of the truth (#413). `.infinity` replaced it, which was safe but still discarded a real, finite distance: a point 92 units from a segment measured as infinitely far from it. #615 measures it instead.
 
 - **Parameters:** `curve` — the 2D curve to measure against.
-- **Returns:** Minimum distance, or `.infinity` if there is no projection.
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve::LowerDistance()`.
-- **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md) and `Curve2D.project(_:)`, so all three agree on the value and on when there is no projection (#413).
+- **Returns:** Minimum distance, or `.infinity` only if there is no curve to measure to.
+- **OCCT:** `occtNearestPointOnCurve2dRange` — the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends.
+- **Note:** Shares one bridge path with [`Curve2D.project(point:)`](Curve2D-Analysis.md), `Curve2D.project(_:)` and `Curve2D.nearestParameter(to:)`, so all four agree exactly (#413, #615).
 - **Example:**
   ```swift
   if let p = Point2D(x: 5.0, y: 5.0),

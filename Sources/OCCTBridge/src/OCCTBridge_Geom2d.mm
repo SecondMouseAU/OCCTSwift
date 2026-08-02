@@ -161,31 +161,46 @@
 // radius-5 circle offset by -5 yields radius 0 and by -6 yields radius 1, so GC_MakeCircle2d takes
 // the absolute value rather than refusing an offset that passes through the centre.
 
-// One Geom2dAPI_ProjectPointOnCurve construction behind every entry point that wants the nearest
-// solution: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve and
+// One nearest-point answer behind every 2D entry point that wants the nearest solution:
+// OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve and
 // OCCTCurve2DNearestParameter. They were four independent constructions of the same algorithm with
 // four different failure-signalling conventions bolted on separately (#413 unified the first
 // three, #500 the fourth). It also gives those that lacked one an explicit null-handle guard
 // rather than relying on catch(...) to absorb the dereference.
 //
-// Returns false when there is no projection at all — an ordinary outcome, not an error: a point
-// beyond the ends of a bounded curve, or the centre of a circle, has no extremum. Each caller
-// applies its own documented sentinel; none of them may report failure through the parameter,
+// #615 makes that one construction the RIGHT one, the treatment #539/#580 gave the 3D side and
+// never gave this one. Geom2dAPI_ProjectPointOnCurve reports extrema, not minima, so LowerDistance
+// is not the nearest point and NbPoints() == 0 is not "no nearest point". Measured, on the 2D twin
+// of the geometry #539 named: a half circle of radius 5 queried from (0, -6) reported the far side
+// of the arc at distance 11 where the truth is 7.81, and a point on the circle but off the arc,
+// (3, -4), reported 10 where the truth is 4.47; a segment trimmed to [3, 8] queried at (100, 0)
+// reported no projection at all where the truth is its own end, 92 away. Every 2D spelling was
+// wrong the same way, so they agreed with each other and with nothing else.
+//
+// See occtNearestPointOnCurve2dRange (OCCTBridge_Internal.h) for the candidate set, and for the one
+// source the 3D helper has that this one cannot: ShapeAnalysis_Curve has no 2D projection.
+//
+// CONSEQUENCE, and it is the point rather than a side effect: this no longer returns false for a
+// point with no perpendicular foot. A point beyond the end of a bounded curve is nearest to that
+// end, and a circle's centre is equidistant from every point on it, so both now answer -- with a
+// real parameter and a true distance. Each caller keeps its own documented sentinel for the case
+// that remains: no curve to answer about. None of them may report failure through the parameter,
 // since 0 is a legitimate parameter on any curve whose domain includes it.
 //
 // OCCTCurve2DProjectPointAll is the multi-solution sibling: it needs every extremum rather than
-// the nearest one, so it constructs its own and is not routed through here.
+// the nearest one, so it constructs its own and is not routed through here. It therefore still
+// reports nothing where these four now answer, and that is correct -- "the extrema" and "the
+// nearest point" have been different questions since #539, and on a bounded curve queried from
+// beyond its end the honest answer to the first one is that there are none.
 static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef curve, const gp_Pnt2d& point,
                                             gp_Pnt2d* outNearest, double* outParameter,
                                             double* outDistance) {
     if (!curve || curve->curve.IsNull()) return false;
     try {
-        Geom2dAPI_ProjectPointOnCurve proj(point, curve->curve);
-        if (proj.NbPoints() == 0) return false;
-        if (outNearest) *outNearest = proj.NearestPoint();
-        if (outParameter) *outParameter = proj.LowerDistanceParameter();
-        if (outDistance) *outDistance = proj.LowerDistance();
-        return true;
+        return occtNearestPointOnCurve2dRange(curve->curve, point,
+                                              curve->curve->FirstParameter(),
+                                              curve->curve->LastParameter(),
+                                              outNearest, outParameter, outDistance);
     } catch (...) {
         return false;
     }

@@ -1852,6 +1852,89 @@ inline bool occtNearestPointOnCurveRange(const occ::handle<Geom_Curve>& curve, c
     return true;
 }
 
+// === #615: the same question in 2D ===
+//
+// The twin of occtNearestPointOnCurveRange above, for every 2D entry point that promises the CLOSEST
+// point on a bounded curve. #539/#580 converted the 3D side and left this one reporting
+// Geom2dAPI_ProjectPointOnCurve::LowerDistance directly, so the 2D API was wrong in exactly the two
+// ways the 3D API used to be: a half circle of radius 5 queried from (0, -6) reported the FAR side at
+// distance 11 where the truth is 7.81, and a segment trimmed to [3, 8] queried at (100, 0) reported no
+// projection at all where the truth is its own end, 92 away.
+//
+// ONE candidate source is missing relative to the 3D helper, and it is missing from OCCT, not from
+// here: ShapeAnalysis_Curve has no 2D projection. Its Project overloads take Geom_Curve or
+// Adaptor3d_Curve only -- the Geom2d_Curve members of that class (FillBndBox, SelectForwardSeam,
+// GetSamplePoints, IsPeriodic) do something else entirely. So the 2D candidate set is the extrema
+// plus both ends, which is the "all extrema + the two ends" row #580 measured at 188/189 rather than
+// the 189/189 the 3D helper's third source buys. The one case that row misses is Extrema failing to
+// converge on a BSpline, where an end then wins by a fraction of a percent; there is no 2D-NATIVE
+// second algorithm to break that tie. (A Geom2d_Curve could in principle be lifted into the z = 0
+// plane and run through the 3D ShapeAnalysis_Curve. Not done: #580 measured extrema-plus-ends at
+// 188/189, so the lift would buy one case in 189 at the cost of a per-call curve conversion.)
+//
+// Everything else matches the 3D helper deliberately, including the treatment of infinite bounds and
+// of periodic bases; see its comment for why each choice is what it is.
+//
+// Returns false only when there is nothing to answer with: a null curve, or a curve on which every
+// candidate failed to evaluate. With no ShapeAnalysis fallback there is no "kept the analytic answer"
+// path, so an unbounded 2D curve with no extremum at all -- which no Geom2d type measured here
+// actually produces, since a line, parabola and hyperbola each always have a perpendicular foot --
+// would report false rather than a wrong answer.
+
+#include <Geom2dAPI_ProjectPointOnCurve.hxx>
+
+inline bool occtNearestPointOnCurve2dRange(const occ::handle<Geom2d_Curve>& curve,
+                                           const gp_Pnt2d& point,
+                                           double first, double last,
+                                           gp_Pnt2d* outPoint, double* outParameter,
+                                           double* outDistance) {
+    if (curve.IsNull()) return false;
+
+    const bool firstFinite = !Precision::IsInfinite(first);
+    const bool lastFinite = !Precision::IsInfinite(last);
+
+    double bestParam = 0.0, bestDistance = RealLast();
+    gp_Pnt2d bestPoint;
+    bool found = false;
+
+    auto consider = [&](double param) {
+        if (firstFinite && param < first) return;
+        if (lastFinite && param > last) return;
+        gp_Pnt2d candidate;
+        try {
+            candidate = curve->Value(param);
+        } catch (...) {
+            return;
+        }
+        double distance = point.Distance(candidate);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestParam = param;
+            bestPoint = candidate;
+            found = true;
+        }
+    };
+
+    // 1. Every extremum inside the range, since the nearest one is not always the first.
+    try {
+        Geom2dAPI_ProjectPointOnCurve projector(point, curve, first, last);
+        for (int i = 1; i <= projector.NbPoints(); i++) consider(projector.Parameter(i));
+    } catch (...) {
+        // Leave it to the ends.
+    }
+
+    // 2. The ends, where they are real parameters rather than OCCT's infinity sentinel.
+    if (firstFinite) consider(first);
+    if (lastFinite) consider(last);
+
+    if (!found) return false;
+
+    if (outPoint) *outPoint = bestPoint;
+    if (outParameter) *outParameter = bestParam;
+    if (outDistance) *outDistance = bestDistance;
+    return true;
+}
+
 // === #496: the drilling preconditions, and one BRepFeat_MakeCylindricalHole skeleton ===
 //
 // OCCTSwift drills round holes two ways, and the audit read the older one as a crude
