@@ -17,6 +17,46 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The one grid layout finally covers the third type holding a grid (#617)
+
+#486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer
+layout of this codebase, and gave `SurfaceGrid` / `SurfaceGridD1` an `.at(u:v:)` accessor for it,
+precisely so two bridge functions could not go on writing opposite layouts while each header called
+its own "row-major". A third type holding the same shape of buffer was left out of that sweep.
+
+`BRepGraph.FaceGridSample` hands back four parallel flat buffers (positions, normals, Gaussian and
+mean curvature) that `OCCTBRepGraphSampleFaceUVGrid` wrote **transposed**, `iv * uSamples + iu`.
+The Swift type documented no layout and offered no accessor, so the only guidance a caller had was
+the convention #486 had just declared, which was the wrong one for this one type.
+
+Two things make this worse than a plain inconsistency. `docs/reference/BRepGraph-Editor-Identity.md`
+**already documented the U-major index** (`index = u * vSamples + v`) for this type, so the bridge
+was contradicting its own published reference page, not just a sibling type. And the failure is not
+uniform: a caller reading with the layout-conforming stride gets a silent wrong answer at every
+aspect ratio (a normal or a curvature attributed to the wrong place on the face, no trap), while
+the neighbouring slip of using the wrong count as the stride (`u * uSamples + v`) stays in range on
+a 3×10 grid and runs off the end of the same 30-element buffer on a 10×3 one. #617's own report has
+these two expressions crossed; the arithmetic is now pinned in a test.
+
+**Converted the bridge to U-major** rather than documenting the transpose, so the codebase keeps one
+rule, and routed it through the shared `occtSurfaceGridIndex` so the formula is not re-spelled at a
+third site. `FaceGridSample` gains the `.at(u:v:)` accessor its siblings have, resolving the index
+through the same shared Swift-side `surfaceGridIndex`, plus an explicit layout line and worked
+snippets on the type, the method and the reference page. `OCCTBridge.h`'s declaration now states the
+literal index instead of being silent.
+
+**No consumer depended on the old order.** Every in-repo caller and all three ecosystem callers
+(`PadCAMEngine`'s `PadCAMMLExport`, `OCCTSwiftScripts`' `occtkit graph-ml` and `GraphML`) sample a
+**square** grid and either map the arrays element-wise into a JSON payload or reduce them
+order-independently (a mean position/normal face signature), so none reads a specific `(u, v)`. The
+observable change is limited to the order of the flat arrays those exporters serialize, which was
+never a documented contract on the emitted payload.
+
+| API | Before | After |
+|---|---|---|
+| `OCCTBRepGraphSampleFaceUVGrid` buffers | V-major, `iv * uSamples + iu`, layout undocumented | U-major via `occtSurfaceGridIndex`, index stated in the header |
+| `BRepGraph.FaceGridSample` | four flat arrays, no layout doc, no accessor | same arrays documented U-major, plus `at(u:v:)` |
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real

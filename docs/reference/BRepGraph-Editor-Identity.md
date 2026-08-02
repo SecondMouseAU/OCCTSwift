@@ -664,22 +664,40 @@ Result of sampling a face surface on a regular UV grid.
 
 ```swift
 public struct FaceGridSample: Sendable {
-    /// Surface positions at grid points.
+    /// Surface positions at grid points, U-major.
     public let positions: [SIMD3<Double>]
-    /// Surface normals at grid points.
+    /// Surface normals at grid points, U-major.
     public let normals: [SIMD3<Double>]
-    /// Gaussian curvature at each grid point.
+    /// Gaussian curvature at each grid point, U-major.
     public let gaussianCurvatures: [Double]
-    /// Mean curvature at each grid point.
+    /// Mean curvature at each grid point, U-major.
     public let meanCurvatures: [Double]
     /// Number of samples in U direction.
     public let uSamples: Int
     /// Number of samples in V direction.
     public let vSamples: Int
+
+    /// Position, normal and curvatures at the given U/V grid index.
+    public func at(u: Int, v: Int) -> (position: SIMD3<Double>, normal: SIMD3<Double>,
+                                       gaussianCurvature: Double, meanCurvature: Double)
 }
 ```
 
-Grid points are laid out in row-major order: `index = u * vSamples + v` where `u ∈ [0, uSamples)` and `v ∈ [0, vSamples)`.
+All four arrays share one layout: **U-major**, u varying slowest and v fastest, so grid position `(u, v)` sits at `index = u * vSamples + v` for `u ∈ [0, uSamples)` and `v ∈ [0, vSamples)`. This is the layout `SurfaceGrid` and `SurfaceGridD1` use, and the one #486 declared for the whole API.
+
+Read through `at(u:v:)` rather than spelling the index out. Until #617 the bridge wrote these buffers *transposed* (`v * uSamples + u`) while this page already documented the U-major index above, so a caller who followed the docs read the wrong point of the face; getting the stride wrong instead (`u * uSamples + v`) is silently in range on a 3×10 grid and out of bounds on a 10×3 one. `at(u:v:)` removes both failure modes by owning the index.
+
+```swift
+guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
+else { return }
+
+for u in 0..<sample.uSamples {
+    for v in 0..<sample.vSamples {
+        let s = sample.at(u: u, v: v)
+        print("(\(u), \(v)) -> \(s.position)  kG=\(s.gaussianCurvature) kH=\(s.meanCurvature)")
+    }
+}
+```
 
 ---
 
@@ -697,7 +715,7 @@ public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> Fa
   - `vSamples` — number of samples in V direction (must be ≥ 1).
 
   The bound is on the **product**: `uSamples * vSamples` must not exceed `Sampling.maximumSampleCount` (10,000,000), and each factor is checked on its own, since two negatives multiply to a plausible positive total (#558). This sampler fills four buffers per point (position, normal, Gaussian and mean curvature), so it reaches the ceiling's memory cost sooner than the point-only samplers do.
-- **Returns:** `FaceGridSample` with `uSamples × vSamples` entries, or `nil` if the face has no surface, sampling fails, or the grid cannot be served.
+- **Returns:** `FaceGridSample` with `uSamples × vSamples` entries laid out **U-major** (`u * vSamples + v`, see `FaceGridSample` above), or `nil` if the face has no surface, sampling fails, or the grid cannot be served.
 - **OCCT:** `GeomLProp_SLProps` (position, normal, curvature evaluation) via `OCCTBRepGraphSampleFaceUVGrid`.
 - **Example:**
   ```swift
@@ -707,6 +725,14 @@ public func sampleFaceUVGrid(faceIndex: Int, uSamples: Int, vSamples: Int) -> Fa
           let kH = grid.meanCurvatures[i]
           print("(\(pos.x), \(pos.y), \(pos.z))  kG=\(kG) kH=\(kH)")
       }
+  }
+  ```
+- **Example (indexed by grid position, not flat order):**
+  ```swift
+  if let grid = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3) {
+      // The far corner of a non-square grid: `at` resolves the U-major index for you.
+      let corner = grid.at(u: grid.uSamples - 1, v: grid.vSamples - 1)
+      print(corner.position, corner.normal, corner.meanCurvature)
   }
   ```
 

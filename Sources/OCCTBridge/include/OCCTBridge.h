@@ -21588,6 +21588,13 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef _Nonnull gra
 /// Sample a regular UV grid on a face surface. Returns point count (uSamples * vSamples),
 /// or 0 on failure. Caller provides output buffers: positions (count*3 doubles),
 /// normals (count*3 doubles), gaussianCurvatures (count doubles), meanCurvatures (count doubles).
+///
+/// All four buffers share one layout: **U-major**, u varying slowest and v fastest, i.e. sample
+/// (iu, iv) sits at `occtSurfaceGridIndex(iu, iv, vSamples)` == `iu * vSamples + iv` — the same
+/// index every other surface grid in this bridge uses (#404/#486). Scalar buffers are indexed by
+/// that value directly; the xyz buffers by `idx * 3 + {0,1,2}`. This wrote the transposed
+/// `iv * uSamples + iu` until #617, which is silently wrong on a square grid and out of bounds on
+/// a non-square one — do not re-spell the formula here, use the shared helper.
 int32_t OCCTBRepGraphSampleFaceUVGrid(
     OCCTBRepGraphRef _Nonnull graph, int32_t faceIndex,
     int32_t uSamples, int32_t vSamples,
