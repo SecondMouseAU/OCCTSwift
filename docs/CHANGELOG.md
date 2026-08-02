@@ -265,6 +265,76 @@ plain `param->field` form, so the fix is provably additive) and six that must no
 guard reached only through a by-value `Handle` copy, and one only through the shared helper).
 No public API change; behaviour changes only for inputs no bridge call can currently produce.
 
+#### Breaking: `continuityOrder` is retired, because a warning did not stop the numbers changing underneath it (#619)
+
+**Source-breaking.** `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and
+`Surface.surfaceContinuityOrder` are now `@available(*, unavailable)`. Any use is a compile error
+carrying the migration in the diagnostic.
+
+Nothing about the *values* changes here. They already changed, in #485:
+
+| class | before #485 | now |
+|---|---|---|
+| C0 | 0 | 0 |
+| G1 | −2 | 1 |
+| C1 | 1 | 2 |
+| G2 | −3 | 3 |
+| C2 | 2 | 4 |
+| C3 | 3 | 5 |
+| CN | 99 | 6 |
+
+The old scheme was OCCTSwift's own invention. It matched neither `GeomAbs_Shape` nor its own doc
+comment, and disagreed with the `continuity` property on the same curve for every class except C0.
+Reporting the real ordinal is right and is not reverted.
+
+What #485 could not do with a deprecation attribute is stop the change being silent. The type stayed
+`Int` and the name stayed the same, so every call site kept compiling:
+
+```swift
+// Before: `2` was C2, so this rejected a C1 curve.
+// After:  `2` is C1, so a merely tangent-continuous curve reaches a path assuming curvature.
+if curve.continuityOrder >= 2 { useAsC2Spline() }
+
+// And this, the analytic fast path, became unreachable rather than wrong — silently dead code.
+if curve.continuityOrder == 99 { useAnalyticFastPath() }
+```
+
+The clearest evidence that a warning was not enough is in this repo: #485's own regression suites
+silenced it with `@available(*, deprecated)` on the test function, which is exactly what a caller
+does. Retiring the spelling turns both lines above into errors that name the old encoding, the new
+one, and the replacement.
+
+Migration — both replacements predate this change and neither is new API:
+
+```swift
+// A continuity floor. Takes the request vocabulary by type, so the mismatched
+// constant cannot be written at all.
+if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
+
+// The analytic fast path.
+if curve.continuityClass == .cN { useAnalyticFastPath() }
+
+// A raw ordinal, if that is genuinely what you want — but it is the *new*
+// ordinal, so re-check the constant you compare against.
+let ordinal = curve.continuity
+```
+
+`continuity` is unchanged in value: it read the real ordinal before the refactor and still does.
+Only its doc comment was wrong, which is what let the two spellings disagree unnoticed.
+
+- **`unavailable` rather than deletion.** The declaration stays so the compiler can explain itself;
+  deleting it outright would say only "has no member `continuityOrder`". Follows
+  `EvolvingFilletEdge.init(edgeIndex:)` (#520), the same response to the same shape of hazard. The
+  operation count drops by 3 (4,301 → 4,299) — `Scripts/count-operations.py` does not count a
+  retired spelling as a wrapped operation, and no new API was added.
+- **Tests:** `Issue619ContinuityEncodingTests` (`OCCTCurveTests`),
+  `Issue619Curve2DContinuityEncodingTests` (`OCCTGeom2dTests`) and
+  `Issue619SurfaceContinuityEncodingTests` (`OCCTSurfaceTests`) pin the encoding against geometry
+  whose class is known by construction, and assert the trap is live: a C1 BSpline satisfies
+  `continuity >= 2` while `continuityClass.satisfies(.c2)` correctly refuses it. The #485 suites had
+  their `continuityOrder` assertions moved onto `continuity`/`continuityClass`.
+- Recorded as a break in [`SEMVER.md`](SEMVER.md).
+
 #### The index gate was reporting seven correct entries, because it could not read a template helper (#624)
 
 `Scripts/check-bridge-index.py` exited 1 with `0 stale, 7 misfiled`, every one of them on the

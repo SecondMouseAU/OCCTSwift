@@ -170,6 +170,39 @@ The exception was taken because:
 - **This does not finish the idiom.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still return per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and are filed as **#651**; they are unchanged here, so no caller of them is affected by this entry.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
+#### Recorded exception: Unreleased, `continuityOrder` is retired rather than reinterpreted (#619)
+
+**Three compile errors, deliberately — this exception is taken to *convert* a silent behaviour change into a break.** Recorded here before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `Curve3D.continuityOrder` is `@available(*, unavailable)` | Replace with `continuityClass.satisfies(_:)` for a floor, `continuityClass == .cN` for the analytic fast path, or `continuity` for a raw ordinal — re-checking the constant compared against |
+| `Curve2D.continuityOrder` likewise | Same |
+| `Surface.surfaceContinuityOrder` likewise | Same |
+
+The values these three reported already changed, in #485, from a hand-invented `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` to the real `GeomAbs_Shape` ordinal `C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`. That change was correct and is not reverted. The exception was taken because:
+
+- **A warning was demonstrably not enough.** #485 shipped the encoding change with a deprecation attribute carrying the exact before/after in its `message:`. `if curve.continuityOrder >= 2 { useAsC2Spline() }` still compiled, and `2` went from meaning C2 to meaning C1, so a merely tangent-continuous curve reached a path that assumes curvature continuity. Symmetrically `continuityOrder == 99`, the analytic-geometry fast path, became unreachable — silently dead code rather than a wrong answer. The strongest evidence is in this repo: the #485 regression suites themselves silenced the warning with `@available(*, deprecated)` on the test function, which is exactly what a caller under `-warnings-as-errors` does.
+- **There is no spelling in which both survive.** As with #541 and #568 this is a *value* contract, and Swift cannot overload on return value. But unlike those two, a name is available to attach a diagnostic to, so the break can be made loud instead of silent — which is the whole point of taking it.
+- **Both replacements already exist and neither is new API.** `continuity` (raw ordinal, unchanged in value since before the refactor) and `continuityClass` (named cases, `Comparable`, with `satisfies(_:)`) both predate this change. Nothing was added; the operation count drops by 3, which is `Scripts/count-operations.py` correctly declining to count a retired spelling as a wrapped operation.
+- **`unavailable` rather than deletion**, following `EvolvingFilletEdge.init(edgeIndex:)` (#520): deleting gives `value of type 'Curve3D' has no member 'continuityOrder'`, which says nothing about the encoding. The retained declaration puts the whole migration in the compiler's own error text.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the before/after table, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, `buildCurves3d`'s default tolerance loosens (#498)
+
+**One silent behaviour change, not a compile error.** Recorded here on the #619 sweep, which asked of every "a value changed under an unchanged signature" site whether the change was decided or merely happened:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.buildCurves3d(tolerance:)`'s default moves from `1e-7` to `1e-5`, a 100× loosening | Nothing, unless the tighter curve was being relied on — then pass `tolerance: 1e-7` explicitly. The value is also written onto the rebuilt edge as its tolerance, so a caller who cared about edge tolerance downstream should re-check it |
+
+**Decision: keep `1e-5`.** The alternatives considered were reverting to `1e-7`, and removing the default outright so every caller must choose (the response #541 took for `defeature(faces:tolerance:)`). Both were rejected:
+
+- **`1e-5` is OCCT's own default, and `1e-7` was OCCTSwift's invention.** `BRepLib::BuildCurves3d(const TopoDS_Shape&)` is literally `return BRepLib::BuildCurves3d(S, 1.0e-5);` (`BRepLib.cxx:463`), and `BRepLib::BuildCurve3d`'s header declares `Tolerance = 1.0e-5`. Reverting would restore a number no upstream API asks for.
+- **The old default over-claimed.** OCCT writes this tolerance onto the edge as a floor rather than the deviation actually achieved, so `1e-7` had every rebuilt edge asserting a tightness the approximation may not hold on hard geometry. Measured on a helix, `1e-5` deviates 2.6e-6 and `1e-7` deviates 9.0e-8 — the tighter fit is real, but it costs a pole or two and it is a claim the caller should make deliberately.
+- **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things* — both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
+
 ### MINOR — `x.y.0`
 
 A minor bump is for additive change. Two routes:
