@@ -283,9 +283,13 @@ The actual build script is at `Scripts/build-occt.sh`. It handles:
 To update the OCCT version, edit the variables at the top of the script:
 
 ```bash
-OCCT_VERSION="8.0.0"
-OCCT_RC="rc4"       # Clear this for stable releases
+OCCT_VERSION="8.0.1"
+OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag like V8_0_1
 ```
+
+Then **delete `Libraries/occt-src`**. The script reuses an existing tree only when its `HEAD` is at
+the tag these variables name, and aborts otherwise — editing the version without removing the tree
+used to build the previous kernel silently and package it under the new version's number.
 
 Make executable:
 ```bash
