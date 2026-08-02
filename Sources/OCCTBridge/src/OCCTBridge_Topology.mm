@@ -4012,14 +4012,16 @@ OCCTFaceRef* OCCTShapeGetOrientedFaces(OCCTShapeRef shape,
     *outCount = 0;
 
     try {
+        // One traversal serves both: TopExp::MapShapes IS this explorer walk piped into the map
+        // (TopExp.cxx:35-45), so adding as we go builds exactly the enumeration OCCTShapeGetFaces
+        // reads, without walking the shape a second time to rebuild it.
         std::vector<TopoDS_Face> occurrences;
+        TopTools_IndexedMapOfShape faceMap;
         for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) {
             occurrences.push_back(TopoDS::Face(ex.Current()));
+            faceMap.Add(ex.Current());
         }
         if (occurrences.empty()) return nullptr;
-
-        TopTools_IndexedMapOfShape faceMap;
-        occtMapSubShapes(shape->shape, TopAbs_FACE, faceMap);
 
         int32_t count = static_cast<int32_t>(occurrences.size());
         OCCTFaceRef* result = new OCCTFaceRef[count];

@@ -388,19 +388,69 @@ extension Shape {
         return result
     }
 
-    /// Get horizontal faces (normals pointing up or down)
+    /// Every horizontal face occurrence — normals pointing up or down.
+    ///
+    /// Reads ``orientedFaces()``, not ``faces()``. "Horizontal" is a statement about the face
+    /// *normal*, and `faces()` cannot carry a shared face's second orientation: on a solid split
+    /// into two bodies the shared wall is horizontal from **both** sides, and filtering `faces()`
+    /// found only the side that happened to be stored — silently losing the other body's floor.
+    /// Measured on an origin-centred 10mm box cut at z=4, this returned **3** where the geometry
+    /// has **4** horizontal occurrences. (#614)
+    ///
+    /// - Note: Because a shared face contributes one entry per side, this array can contain two
+    ///   `Face` values with the same ``Face/index``. On a shape whose faces are not shared — the
+    ///   common case — the result is identical to filtering `faces()`.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.horizontalFaces().count)   // 2 — top and bottom, nothing shared
+    ///
+    /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+    /// let compound = Shape.compound(halves)!
+    /// print(compound.horizontalFaces().count)   // 4: outer top, outer bottom, and the
+    ///                                           // shared wall once per owning solid
+    /// ```
+    ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     public func horizontalFaces(tolerance: Double = 0.01) -> [Face] {
-        faces().filter { $0.isHorizontal(tolerance: tolerance) }
+        orientedFaces().filter { $0.isHorizontal(tolerance: tolerance) }
     }
 
-    /// Get upward-facing horizontal faces (potential pocket floors)
+    /// Upward-facing horizontal face occurrences (potential pocket floors).
+    ///
+    /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does — "upward-facing"
+    /// is a statement about the normal, which `faces()` cannot carry for a shared face. (#614)
+    ///
+    /// - Note: Unlike ``horizontalFaces()`` this can never return the same ``Face/index`` twice:
+    ///   the two sides of a shared face have opposed normals, so at most one of them faces up.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+    /// let compound = Shape.compound(halves)!
+    /// // The outer top, plus the shared wall as seen from the lower solid (its ceiling).
+    /// print(compound.upwardFaces().count)   // 2
+    /// ```
+    ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)
     public func upwardFaces(tolerance: Double = 0.01) -> [Face] {
-        faces().filter { $0.isUpwardFacing(tolerance: tolerance) }
+        orientedFaces().filter { $0.isUpwardFacing(tolerance: tolerance) }
     }
 
     /// Get faces grouped by Z level (for CAM pocket detection)
+    ///
+    /// Built from ``horizontalFaces()``, so it inherits that method's occurrence semantics: a wall
+    /// shared by two bodies lands in its Z group **twice**, once per side, where filtering
+    /// `faces()` reported it once and only from whichever side happened to be stored. (#614)
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+    /// let compound = Shape.compound(halves)!
+    /// let levels = compound.facesByZLevel()
+    /// print(levels.mapValues(\.count))   // [-5.0: 1, 4.0: 2, 5.0: 1]
+    /// ```
+    ///
     /// - Parameter tolerance: Z tolerance for grouping faces
     /// - Returns: Dictionary mapping Z levels to arrays of faces at that level
     public func facesByZLevel(tolerance: Double = 0.01) -> [Double: [Face]] {

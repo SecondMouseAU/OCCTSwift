@@ -695,7 +695,9 @@ returns exactly `faces()`, same order, same indices.
   let shared = Dictionary(grouping: compound.orientedFaces(), by: \.index)
       .filter { $0.value.count > 1 }
   #expect(shared.count == 1)
-  #expect(Set(shared.first!.value.map(\.orientation)) == Set([.forward, .reversed]))
+  if let sides = shared.first?.value {
+      #expect(Set(sides.map(\.orientation)) == Set([.forward, .reversed]))
+  }
   ```
 
 ---
@@ -708,15 +710,28 @@ Returns the subset of faces whose normals point up or down.
 public func horizontalFaces(tolerance: Double = 0.01) -> [Face]
 ```
 
-Pure-Swift filter over `faces()` using `Face.isHorizontal(tolerance:)`.
+Pure-Swift filter over **`orientedFaces()`** using `Face.isHorizontal(tolerance:)`. "Horizontal" is
+a statement about the face *normal*, so this selects over occurrences: a wall shared by two bodies
+is horizontal from **both** sides and contributes one entry per side. Filtering `faces()` — which
+cannot carry a shared face's second orientation — returned 3 on the fixture below where the
+geometry has 4. (#614)
 
 - **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
-- **Returns:** Faces with normals within `tolerance` of the ±Z axis.
+- **Returns:** Faces with normals within `tolerance` of the ±Z axis, one per occurrence.
+- **Note:** Because a shared face contributes one entry per side, the result can contain two `Face`
+  values with the same `Face.index`. On a shape whose faces are not shared it is identical to
+  filtering `faces()`.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 5)!
   let h = box.horizontalFaces()
   #expect(h.count == 2)
+
+  // A split solid: the shared wall is horizontal from both sides.
+  let cube = Shape.box(width: 10, height: 10, depth: 10)!
+  let halves = cube.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+  let compound = Shape.compound(halves)!
+  #expect(compound.horizontalFaces().count == 4)   // was 3 before #614
   ```
 
 ---
@@ -729,10 +744,14 @@ Returns the subset of faces whose normals point upward (positive Z).
 public func upwardFaces(tolerance: Double = 0.01) -> [Face]
 ```
 
-Pure-Swift filter over `faces()` using `Face.isUpwardFacing(tolerance:)`. Useful for identifying pocket floors and platform surfaces in CAM.
+Pure-Swift filter over **`orientedFaces()`** using `Face.isUpwardFacing(tolerance:)`. Useful for
+identifying pocket floors and platform surfaces in CAM. Selects over occurrences for the same
+reason `horizontalFaces()` does — "upward-facing" is a statement about the normal. (#614)
 
 - **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
-- **Returns:** Upward-facing horizontal faces.
+- **Returns:** Upward-facing horizontal faces, one per occurrence.
+- **Note:** Unlike `horizontalFaces()` this can never repeat a `Face.index`: the two sides of a
+  shared face have opposed normals, so at most one of them faces up.
 - **Example:**
   ```swift
   let pocketFloors = myPart.upwardFaces()
@@ -756,6 +775,9 @@ Calls `horizontalFaces()`, then groups faces whose `zLevel` values are within `t
 - **Parameters:** `tolerance` — Z grouping tolerance; faces within this Z distance are placed in the same group.
 - **Returns:** Dictionary mapping representative Z values to arrays of horizontal faces at that level.
 - **Note:** Only planar horizontal faces (those with a non-nil `zLevel`) are included; non-planar horizontal faces are silently dropped.
+- **Note:** Inherits `horizontalFaces()`'s occurrence semantics — a wall shared by two bodies lands
+  in its Z group **twice**, once per side, where filtering `faces()` reported it once and only from
+  whichever side happened to be stored. (#614)
 - **Example:**
   ```swift
   let stepped = Shape.box(width: 10, height: 10, depth: 5)! // simplified
@@ -763,6 +785,12 @@ Calls `horizontalFaces()`, then groups faces whose `zLevel` values are within `t
   for (z, faces) in byZ.sorted(by: { $0.key < $1.key }) {
       print("Z=\(z): \(faces.count) face(s)")
   }
+
+  // A split solid: the cut level carries both owners' copies.
+  let cube = Shape.box(width: 10, height: 10, depth: 10)!
+  let halves = cube.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+  let compound = Shape.compound(halves)!
+  print(compound.facesByZLevel().mapValues(\.count))   // [-5.0: 1, 4.0: 2, 5.0: 1]
   ```
 
 ---

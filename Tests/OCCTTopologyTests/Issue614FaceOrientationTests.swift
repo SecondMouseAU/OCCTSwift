@@ -218,6 +218,7 @@ struct Issue614FaceOrientationTests {
             return
         }
 
+        var checked = 0
         for (i, solid) in compound.solids.enumerated() {
             guard let inside = Self.interiorPoint(of: solid) else {
                 Issue.record("no interior point for solid \(i)")
@@ -227,8 +228,11 @@ struct Issue614FaceOrientationTests {
                 guard let c = Self.centreAndNormal(face) else { continue }
                 #expect(Self.dot(c.normal, c.point - inside) > 0,
                         "solid \(i) face \(face.index) points inward")
+                checked += 1
             }
         }
+        // Without this the loop passes vacuously if every centreAndNormal returns nil.
+        #expect(checked == 12)
     }
 
     // MARK: - The unshared case is untouched
@@ -261,15 +265,104 @@ struct Issue614FaceOrientationTests {
             return
         }
 
+        var checked = 0
         for face in box.faces() {
             guard let c = Self.centreAndNormal(face) else { continue }
             #expect(Self.dot(c.normal, c.point - inside) > 0, "faces(): face \(face.index) inward")
+            checked += 1
         }
         for face in box.orientedFaces() {
             guard let c = Self.centreAndNormal(face) else { continue }
             #expect(Self.dot(c.normal, c.point - inside) > 0,
                     "orientedFaces(): face \(face.index) inward")
+            checked += 1
         }
+        // Without this the loops pass vacuously if every centreAndNormal returns nil.
+        #expect(checked == 12)
+    }
+
+    // MARK: - #614's stated failure scenario, through the public CAM helpers
+
+    /// The failure the issue actually describes: "any per-face area or normal accumulation
+    /// silently loses a facet."
+    ///
+    /// `horizontalFaces()` selects on the face normal, so it is a geometry consumer. Filtering
+    /// `faces()` found the shared wall only from the side that happened to be stored, so the upper
+    /// solid's floor was simply absent: 3 entries where the geometry has 4 horizontal occurrences.
+    @Test("horizontalFaces() keeps both sides of a shared horizontal wall")
+    func horizontalFacesKeepsBothSidesOfSharedWall() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+              let compound = Shape.compound(halves) else {
+            Issue.record("could not build the z=4 split compound")
+            return
+        }
+
+        let horizontal = compound.horizontalFaces()
+
+        // Outer top, outer bottom, and the shared wall once per owning solid.
+        #expect(horizontal.count == 4)
+
+        // Exactly one face index appears twice: the shared wall, once per side.
+        let counts = Dictionary(grouping: horizontal, by: \.index).mapValues(\.count)
+        #expect(counts.values.filter { $0 > 1 }.count == 1)
+        guard let sharedIndex = counts.first(where: { $0.value == 2 })?.key else {
+            Issue.record("no horizontal face appears twice — the shared wall was dropped")
+            return
+        }
+        let sides = horizontal.filter { $0.index == sharedIndex }
+        #expect(Set(sides.map(\.orientation)) == Set([.forward, .reversed]))
+
+        // And each side faces out of a different solid.
+        var solidsCovered = 0
+        for solid in compound.solids {
+            guard let inside = Self.interiorPoint(of: solid) else { continue }
+            let outward = sides.contains { face in
+                guard let c = Self.centreAndNormal(face) else { return false }
+                return Self.dot(c.normal, c.point - inside) > 0
+            }
+            #expect(outward, "no side of the shared wall faces out of this solid")
+            solidsCovered += 1
+        }
+        #expect(solidsCovered == 2)
+    }
+
+    /// `facesByZLevel()` is documented "for CAM pocket detection", and inherits the same walk.
+    @Test("facesByZLevel() reports the shared level once per owning solid")
+    func facesByZLevelCountsBothSides() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+              let compound = Shape.compound(halves) else {
+            Issue.record("could not build the z=4 split compound")
+            return
+        }
+
+        let levels = compound.facesByZLevel()
+        guard let atCut = levels.first(where: { abs($0.key - 4.0) < 1e-6 })?.value else {
+            Issue.record("no horizontal faces at the z=4 cut; levels \(levels.keys.sorted())")
+            return
+        }
+        // Both the lower solid's ceiling and the upper solid's floor.
+        #expect(atCut.count == 2)
+        #expect(Set(atCut.map(\.orientation)) == Set([.forward, .reversed]))
+    }
+
+    /// `upwardFaces()` is the one of the three that cannot duplicate an index — two opposed
+    /// normals cannot both face up. Pinned so the contract note stays true.
+    @Test("upwardFaces() never repeats a face index")
+    func upwardFacesNeverDuplicates() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+              let compound = Shape.compound(halves) else {
+            Issue.record("could not build the z=4 split compound")
+            return
+        }
+
+        let upward = compound.upwardFaces()
+        #expect(upward.count == Set(upward.map(\.index)).count)
+        // The outer top, plus the shared wall as the lower solid's ceiling.
+        #expect(upward.count == 2)
+        #expect(upward.allSatisfy { $0.orientation == .forward })
     }
 
     // MARK: - Orientation is reportable

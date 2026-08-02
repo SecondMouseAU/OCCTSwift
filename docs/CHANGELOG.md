@@ -701,21 +701,32 @@ whichever orientation was reached **first**.
 
 That is correct for an index and wrong for a normal, because `OCCTFaceGetNormalAtUV` reverses the
 surface normal exactly when the face reads `REVERSED`. Measured on the pinned kernel — a
-`BRepAlgoAPI_Splitter` cutting a 10mm box with the z=4 plane, the plainest two-body result there
-is:
+`BRepAlgoAPI_Splitter` cutting an origin-centred 10mm box (`Shape.box` spans −5..5) with the z=4
+plane, the plainest two-body result there is:
 
 | | before |
 |---|---|
 | face occurrences (`TopExp_Explorer`) | 12 |
 | distinct faces (`TopExp::MapShapes`) | 11 |
 | shared wall stored as | `FORWARD` (lower solid visited first) |
-| its normal | `(0, 0, 1)` |
-| dot vs lower solid | **+2.0** — outward |
-| dot vs upper solid | **−3.0** — *inward* |
+| its centre / normal | `(0, 0, 4)` / `(0, 0, 1)` |
+| dot vs lower solid interior `(0, 0, −0.5)` | **+4.5** — outward |
+| dot vs upper solid interior `(0, 0, 4.5)` | **−0.5** — *inward* |
 
 The two occurrences are `IsSame` and not `IsEqual`. A renderer or CAM pass building outward normals
 by walking `faces()` got an inward-facing wall for the second body, and any per-face accumulation
 silently lost a facet.
+
+That second half was reachable through public API, not just in principle. The face-list CAM helpers
+filter on normal-derived predicates, so they inherited the collapse — on the same compound:
+
+| | before | after |
+|---|---|---|
+| `horizontalFaces()` | **3** | 4 |
+| `facesByZLevel()` at z=4 | **1** (upward only) | 2 (one per owning solid) |
+| `upwardFaces()` | 2 | 2 (unchanged — opposed normals cannot both face up) |
+
+The upper solid's floor was simply absent.
 
 **Fixed by following the split OCCT itself draws, rather than inventing one.** The kernel already
 separates these two jobs and this bridge now matches it:
@@ -731,7 +742,8 @@ separates these two jobs and this bridge now matches it:
   orientation* (`aFwdFMap`/`aRvsFMap`, `BRepGProp.cxx:318-338`) so a shared wall's two sides both
   survive. The oriented indexed map (`NCollection_IndexedMap<TopoDS_Shape>`, deprecated alias
   `TopTools_IndexedMapOfOrientedShape`) is used upstream only for internal algorithm bookkeeping —
-  `TopOpeBRepBuild`, `BOPAlgo_Builder`, `BRepCheck_Wire`, `ChFi3d`, `BRepTools_ReShape` — never as
+  `TopOpeBRepBuild`, `TopOpeBRepTool`, `BOPAlgo_Builder`, `BRepCheck_Wire`, `ChFi3d`,
+  `BRepTools_ReShape` — never as
   a public sub-shape enumeration.
 
 New API, all additive:
@@ -746,6 +758,12 @@ New API, all additive:
 - **`Face.orientation -> Shape.Orientation`** — the flag the normal reverses on, so the two sides
   of a shared wall can be told apart.
 - Bridge: `OCCTShapeGetOrientedFaces`, `OCCTShapeGetFaceOccurrenceCount`, `OCCTFaceGetOrientation`.
+- **`horizontalFaces()`, `upwardFaces()` and `facesByZLevel()` now read `orientedFaces()`** — they
+  select on the face normal, so they are geometry consumers by definition. **Contract change:**
+  because a shared face contributes one entry per side, `horizontalFaces()` (and therefore
+  `facesByZLevel()`) can return two `Face` values carrying the same `Face.index`. `upwardFaces()`
+  cannot — opposed normals mean at most one side faces up. On any shape whose faces are not shared
+  all three are unchanged, entry for entry.
 
 `Shape.faces()`'s own behaviour is unchanged; its documentation now states which of the two
 contracts it holds. Per-solid enumeration (`compound.solids` then `.faces()`) was already correct

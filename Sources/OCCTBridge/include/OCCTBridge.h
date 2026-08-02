@@ -1383,13 +1383,20 @@ void OCCTFreeWireArrayOnly(OCCTWireRef* wires);
 //     collapsed (BRepGProp.cxx:318-338). The oriented indexed map
 //     (NCollection_IndexedMap<TopoDS_Shape>, deprecated alias TopTools_IndexedMapOfOrientedShape)
 //     is used upstream only for internal algorithm bookkeeping -- TopOpeBRepBuild, BOPAlgo_Builder,
-//     BRepCheck_Wire, ChFi3d, BRepTools_ReShape -- never as a public sub-shape enumeration.
+//     TopOpeBRepTool, BRepCheck_Wire, ChFi3d, BRepTools_ReShape -- never as a public sub-shape
+//     enumeration. (Both typedefs are Standard_HEADER_DEPRECATED since 8.0.0 and live in
+//     src/Deprecated/, hence the NCollection spellings above.)
 //
 // So: index by IsSame, orient by explorer. Measured on the pinned kernel (BRepAlgoAPI_Splitter,
-// 10mm box cut by the z=4 plane, two solids): 12 face occurrences over 11 distinct faces; the
-// shared wall is map index 2, stored FORWARD because the lower solid is visited first. Its normal
-// is (0,0,1) -- outward for the lower solid (dot +2.0) and INWARD for the upper one (dot -3.0).
-// The two occurrences are IsSame and not IsEqual.
+// an origin-centred 10mm box -- Shape.box spans -5..5 -- cut by the z=4 plane, two solids):
+// 12 face occurrences over 11 distinct faces; the shared wall is map index 2, stored FORWARD
+// because the lower solid is visited first. Its centre is (0,0,4) and its normal (0,0,1), so
+// against the lower solid's interior (0,0,-0.5) the dot is +4.5 (outward) and against the upper
+// solid's (0,0,4.5) it is -0.5 (INWARD). The two occurrences are IsSame and not IsEqual.
+//
+// The same collapse reached the CAM helpers built on the face list: horizontalFaces() answered 3
+// where the geometry has 4 horizontal occurrences, because the shared wall is horizontal from both
+// sides and only one survived. Those helpers read the occurrence enumeration now.
 //
 // OCCTShapeGetFaces is the INDEXING enumeration and stays the IsSame map. OCCTShapeGetOrientedFaces
 // is the GEOMETRY enumeration and is the explorer walk, added rather than substituted so no index
