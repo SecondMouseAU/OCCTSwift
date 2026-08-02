@@ -232,6 +232,17 @@ extension ContinuityClass {
     ///
     /// ``g1`` and ``g2`` are false: they constrain tangent direction and curvature but not the
     /// derivative vectors themselves.
+    ///
+    /// ```swift
+    /// ContinuityClass.c1.isParametric   // true
+    /// ContinuityClass.g2.isParametric   // false — curvature matches, C2 does not follow
+    /// ```
+    ///
+    /// - Important: `false` means "not a C-class", not "meets no floor at all" — the same
+    ///   distinction ``derivativeOrder`` carries. A geometric class still meets the C0 floor,
+    ///   so `guard measured.isParametric else { return false }` ahead of a `.c0` check reports
+    ///   a tangent-continuous curve as not even connected, which is #623 exactly. Gate on
+    ///   ``satisfies(_:)``; use this property to *describe* a class, not to gate on one.
     public var isParametric: Bool {
         switch self {
         case .c0, .c1, .c2, .c3, .cN: return true

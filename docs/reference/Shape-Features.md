@@ -1117,15 +1117,23 @@ Fillets specific edges with a linear radius interpolation.
 public func filleted(edges: [Edge], startRadius: Double, endRadius: Double) -> Shape?
 ```
 
-The radius varies linearly from `startRadius` at the start of each edge to `endRadius` at its end.
+Each named edge is given a law running from `startRadius` to `endRadius`, placed in that edge's own
+slot within its contour. A contour is not always one edge — OCCT groups tangent-continuous edges
+into a single contour — and the radius over the whole contour is the interpolation of its edges'
+slots, so naming two edges of one tangent chain is not the same as naming one of them. Measured on
+a rounded slot's rim at 1 → 4: the straight side alone gives 10273.238348, the side plus its tangent
+arc 10297.711861 (#612).
 
-- **Parameters:** `edges` — edges to fillet; `startRadius` — radius at edge start (> 0); `endRadius` — radius at edge end (> 0).
+- **Parameters:** `edges` — edges to fillet; `startRadius` — radius at the start of each named edge's law (> 0); `endRadius` — radius at its end (> 0).
 - **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius at
   either end.
-- **OCCT:** `BRepFilletAPI_MakeFillet` with law-driven radius (via `OCCTShapeFilletEdgesLinear`).
+- **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`), which
+  places each law in that edge's own slot within its contour (#612).
 - **Notes:** shares one bridge implementation with [`filleted(edges:radius:)`](#filletededgesradius)
   and [`blendedEdges(_:)`](#blendededges_) (#489), including their all-or-nothing index contract
-  (#520).
+  (#520). An edge OCCT declines to fillet outright — a free-boundary edge of an open shell — is
+  skipped by all five edge-list fillet entry points alike; a batch in which every edge is declined
+  returns `nil` (#612).
 
 ---
 

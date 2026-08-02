@@ -6293,9 +6293,19 @@ public struct EvolvingFilletEdge: Sendable {
 extension Shape {
     /// Apply evolving-radius fillets to multiple edges simultaneously.
     ///
-    /// Every edge is filleted or none is: an `edgeIndex` naming no edge of this shape returns `nil`
-    /// rather than filleting the rest, and so does any radius that is not positive, any parameter
-    /// outside `0...1`, any non-increasing parameter sequence, and an empty `radiusPoints`.
+    /// The request is rejected as a whole, rather than partly applied, whenever it is malformed: an
+    /// `edgeIndex` naming no edge of this shape returns `nil` rather than filleting the rest, and so
+    /// does any radius that is not positive, any parameter outside `0...1`, any non-increasing
+    /// parameter sequence, and an empty `radiusPoints`.
+    ///
+    /// Each edge's law is applied to that edge's own position within its own contour, so
+    /// tangent-continuous edges — the sides and ends of a rounded slot's rim, say — can each carry a
+    /// different law even though OCCT groups them into a single contour.
+    ///
+    /// Separately from a malformed request, OCCT itself declines to fillet some edges outright (a
+    /// free-boundary edge of an open shell). Those are skipped, exactly as ``Shape/blendedEdges(_:)``
+    /// and ``Shape/filleted(edges:radius:)`` skip them; if OCCT declines *every* edge of the
+    /// request, the call returns `nil` rather than the unfilleted input. (#612)
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -6304,9 +6314,25 @@ extension Shape {
     ///     EvolvingFilletEdge(edge: edges[0], radiusPoints: [(0.0, 1.0), (1.0, 3.0)]),
     ///     EvolvingFilletEdge(edge: edges[2], radiusPoints: [(0.0, 1.0), (0.5, 4.0), (1.0, 1.0)]),
     /// ])
+    ///
+    /// // A rounded slot: two straight sides joined by two semicircular ends, extruded. Its whole
+    /// // top rim is one tangent-continuous contour, and each edge of it still carries its own law.
+    /// let profile = Wire.join([
+    ///     Wire.line(from: SIMD3(-10, -8, 0), to: SIMD3(10, -8, 0))!,
+    ///     Wire.arc(start: SIMD3(10, -8, 0), midpoint: SIMD3(18, 0, 0), end: SIMD3(10, 8, 0))!,
+    ///     Wire.line(from: SIMD3(10, 8, 0), to: SIMD3(-10, 8, 0))!,
+    ///     Wire.arc(start: SIMD3(-10, 8, 0), midpoint: SIMD3(-18, 0, 0), end: SIMD3(-10, -8, 0))!,
+    /// ])!
+    /// let slot = Shape.face(from: profile)!.extruded(by: SIMD3(0, 0, 20))!
+    /// let rim = slot.edges()
+    /// let tapered = slot.filletEvolving([
+    ///     EvolvingFilletEdge(edge: rim[3], radiusPoints: [(0.0, 1.0), (1.0, 3.0)]),
+    ///     EvolvingFilletEdge(edge: rim[6], radiusPoints: [(0.0, 5.0), (1.0, 5.0)]),
+    /// ])
     /// ```
     ///
-    /// - Parameter edges: Array of edge specifications with radius evolution.
+    /// - Parameter edges: Array of edge specifications with radius evolution. Naming the same edge
+    ///   twice writes its law twice, and the later one wins.
     /// - Returns: Filleted shape, or nil on failure.
     public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape? {
         guard !edges.isEmpty else { return nil }

@@ -91,6 +91,160 @@ Two holes in the script's own `--self-test`, both of which had to be closed for 
 Both were verified by injecting the regression they describe and confirming 17/18. The suite is
 18/18 and the gate exits 0.
 
+#### A single iso-row stops being documented, accepted, and then silently refused (#620)
+
+Three layers disagreed about the minimum count `Surface.drawMesh(uCount:vCount:)` accepts. The doc
+comment said "at least 1", the Swift guard (`Sampling.gridTotal`, default `atLeast: 1`) accepted 1,
+and the bridge returned 0 for anything under 2. The wrapper's `guard n == total` turned that 0 into
+`SurfaceGrid.empty`, so `drawMesh(uCount: 1, vCount: 20)` — in range by its own documentation —
+came back empty, and the caller had no way to tell "you asked for something unsupported" from "this
+surface has no mesh".
+
+**The bridge was the layer that was wrong**, which is not what the issue expected ("a mesh of one
+row has no quads"). Measured against the kernel first: despite the name `OCCTSurfaceDrawMesh` does
+not mesh anything. There is no `BRepMesh`, no triangulation and no quad, just a uniform walk of the
+sampled range calling `Geom_Surface::D0`, and a single `(u, v)` is a valid OCCT evaluation — a
+1 × 20 iso-row off a sphere is 20 finite points. The 2 was never OCCT's rule, it was this
+function's own divisor: `i / (uCount - 1)` divides by zero at count 1. And the NaN that produces is
+worse than a throw would have been, because `D0` does not throw on NaN, it returns NaN coordinates
+silently. Every other member of the same U-major grid family already accepted 1 —
+`OCCTSurfaceDrawGrid` guards no count at all, `EvaluateGrid` and `EvaluateGridD1` guard `<= 0` — so
+`drawMesh` was the family's sole outlier. `OCCTSurfaceDrawGrid`, forty lines above in the same
+file, samples the same bounds and had spelled that divisor defensively since `b1cd75d`, the commit
+that introduced both functions. The bound moved to 1 rather than disappearing: below 1, and
+products past `Sampling.maximumSampleCount`, are still rejected at the Swift boundary before any
+allocation, which is #558's contract unchanged.
+
+That divisor is now `occtUniformParameter` in `OCCTBridge_Internal.h`, next to
+`occtSurfaceGridIndex` and for the same reason: it had been open-coded **ten** times in
+`OCCTBridge_Surface.mm` in four different spellings, and #620 is what a single copy written
+without the guard costs. Sharing the expression is what stops an eleventh loop re-deriving the
+unguarded form.
+
+Nine of the ten are bit-identical substitutions. **The tenth reassociates**: the Gordon network
+builder's `f + (l - f) * ((double)j / (guideCount - 1))` becomes `((l - f) * j) / (guideCount - 1)`,
+and across ten realistic `[FirstParameter, LastParameter]` ranges 25-33% of cases differ by 1-2 ulp
+(≤ 4e-15 over the whole span, exactly 0 on this repo's own Gordon fixture). One structural
+consequence beyond the magnitude: the old form always landed the last sample exactly on
+`f + (l - f)`, while the new one can land 1 ulp **past** `LastParameter` (4 cases of n = 2…60 on a
+0..2π profile). Harmless here, because the builder `SetNotPeriodic()`s the curves first so
+`Geom_BSplineCurve::D0` does not throw just outside the range, but it is a boundary the old
+expression structurally could not cross, so it is recorded at the site rather than left for
+someone to rediscover.
+
+Three open-coded lines remain, across two sites, both deliberately.
+`OCCTGeomFillAppSurf`'s `(double)i / (count - 1)` is
+**unguarded** — the exact #620 shape — but chasing it turned up a separate, larger defect
+(`Surface.appSurf(curves:)` segfaults on a single curve regardless of the parameter value, so it
+is a missing arity guard rather than a divisor bug), which is filed on its own; converting the
+divisor would not fix it and would muddy that fix. `OCCTGeomFillCoonsPatchEval`'s two lines are a
+different contract, not the same expression: their single-sample branch is `0.5`, the patch
+midpoint, where every other site's is the low end. The helper's own doc says so, so the next
+sweep does not fold them in on shape alone.
+
+**Recorded, not fixed: the Gordon family has no behavioural test coverage at all.** All five
+Gordon tests assert only nil-ness and status ordinals — not one checks a point, pole, degree or
+bound — and `networkSurfaceBuildsOrReportsStatus`, the only test reaching the changed line, accepts
+any status but `.notStarted`; on the repo's own `makeNetwork()` fixture the builder returns
+`KnotAlignmentFailed`, so it never builds a surface. Nothing in the repo would have caught the 1-ulp
+change above, or one many orders of magnitude larger. Filed separately.
+
+**A second wrong claim, caught reviewing the first fix.** The new contract sentence said
+`uCount: 1` is "the single iso-row at `uMin`". That holds only for a bounded surface: the bridge
+clamps infinite bounds to ±100 **before** deriving parameters, so on a plane `domain.uMin` is about
+-2e100 while the single row sits at -100. Same defect class as #620 itself — a claim true of the
+fixture in front of you and false in general — so the docs now name the **sampled range** (the
+domain, with infinite bounds clamped) rather than the domain, and a test pins the clamped value on
+an unbounded surface. The first version of that test checked only finiteness, which passes under
+either reading and so could not contradict the doc.
+
+**The sibling site keeps its 2.** `OCCTSurfaceCreateBezier` carries a visually identical
+`uCount < 2 || vCount < 2`, and that one is the kernel's: a Bezier's degree is its pole count minus
+1 and must be at least 1, so `Geom_BezierSurface` raises `Standard_ConstructionError` on a
+single-pole direction (measured; 2 × 2 builds a bilinear patch). `Surface.bezier(poles:weights:)`
+already guarded the same bound, so that site had no three-layer mismatch at all — only a doc that
+was silent about the bound rather than wrong about it. Both look-alike guards now say in a comment
+which kind they are, so the two are not "made consistent" by a later sweep. The accompanying test
+pins the *public* contract only, and says so: relaxing the bridge guard alone leaves it passing,
+because `Surface.bezier` rejects in Swift and never reaches the bridge — and if it did, OCCT would
+throw and `catch (...)` would return `nullptr`, so `nil` comes back either way. No black-box test
+can separate those two layers, and claiming otherwise would be the same kind of overstatement this
+entry is about.
+
+#### The reference page that kept documenting the continuity default #491 replaced (#626)
+
+Two pages under `docs/reference/` restate `Surface.approxWithDetails`. #491 flipped both of its
+continuity defaults from C1 to C2 — so that it and `Surface.approximated` stop fitting to different
+smoothness when neither is given a continuity argument — and updated `Surface.md`.
+`Shape-HLR-Geom.md` went on declaring `uContinuity: ParametricContinuity = .c1, vContinuity: .c1`.
+
+That page **is** in this branch's changed set: its `quasiUniformParameters` entry was rewritten
+thirty lines below the stale default. A reader following it and omitting the arguments expects a C1
+fit and gets a C2 one, which per #572 is not cosmetic — continuity is one of the inputs deciding how
+far the fitted surface moves. It also reinstated, in the documentation layer, the exact divergence
+#491 existed to remove.
+
+The interesting part is not the one-line correction. A per-type reference page that restates a
+signature is a **copy**, and this tree holds 3427 such restatements.
+`Scripts/check-docs-defaults.py` parses every one of them, matches it to its declaration in
+`Sources/OCCTSwift`, and compares them position by position: **1460 defaults compared, 2 drifted**,
+both of them this one.
+
+A default drifts in three shapes, and all three fail the run, because a gate that reports a defect
+while exiting 0 is not a gate. The literals can differ. The docs can state a default the source
+does not have, so a required argument reads as optional. Or the source can state one the docs omit
+— which is also how a *source-side* addition hides behind an unchanged page, and it is the reason
+the comparison covers restatements carrying no defaults at all rather than only the 876 that do.
+(`--lenient` drops that third shape to a warning, for a tree still paying it down; the other two
+fail either way.) Layout is not drift: `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` compare equal.
+
+All of that depends on comparing against the **right** declaration, because several share one name
+and label list: `writeOBJ(to:deflection:)` is both `Document.writeOBJ` (deflection 1.0) and
+`Shape.writeOBJ` (0.1). Resolving that by accepting agreement with any candidate cannot invent a
+failure, but it can swallow one, and it did — twice, at two different depths. First across types,
+letting a page state `Shape.writeOBJ`'s default for `Document.writeOBJ` and exit 0. Then, once a
+hint selected the right *type*, across the overloads within it: deprecating a method by keeping its
+old signature verbatim, defaults included, is the ordinary way to deprecate, and the stale page
+went on matching the retained twin. Both are the #626 shape walking through the gate built for it.
+
+So the owning type is resolved from the nearest heading's qualifier, then outward through the
+enclosing section headings (`CurveAdaptors.md` holds `## WireCurve` and `## EdgeCurve`, each with
+an identically titled `### points(count:)`), then the page filename — and where that still leaves
+two candidates *disagreeing* about a default, the restatement is reported as `unverified` and
+fails, rather than being quietly decided by whichever one happened to match. A twin that merely
+lacks a default is still disambiguated by the doc's own defaults, so the ordinary deprecation
+shape stays quiet. On this tree: 2713 resolved uniquely, 504 by heading, 163 by filename, and
+**0 unverified**.
+
+Worth stating exactly, rather than leaving it implied. 129 doc sites across 67 signature groups
+still hold more than one candidate after narrowing, but 108 of those are skipped upstream — neither
+side states a default, so there is nothing to compare — and only **21 sites across 9 groups** reach
+the ambiguity guard at all. Of those, 0 disagree on a value, 4 have a twin merely lacking one, and
+17 agree outright; the 17 are protected by the rule rather than by luck, since any later divergence
+between them reports `unverified`. The carve-out is narrower than "safe": a **single-sided
+acquisition** — one overload gains a default, a bare twin remains, and the page states none — stays
+quiet. That is the mirror of the documented twin exemption, it can only ever miss a `source_only`
+-class defect, and it is strictly better than before this change, when all 108 were not examined at
+all.
+
+Exit status is 1 on any drift, on an unverified restatement, or on growth in the `unmatched`
+bucket — a restatement stops being compared the moment its labels stop matching, so an unpinned
+bucket there would absorb a rename silently. `--self-test` runs a 13-case battery in memory,
+covering each shape above and each mechanism the gate depends on; every case was checked by
+reverting the mechanism it guards and confirming the battery goes red, because a case that passes
+with its subject removed is not a test. It is committed because three gate scripts on this branch
+have now shipped confidently wrong, and an uncommitted battery regresses without saying so. Nothing
+runs this script yet — wiring the gate scripts into CI is #625, whose own note warns against
+installing a gate that passes unconditionally.
+
+`ContinuityClass.isParametric` was flagged as the same root cause and is the same shape of miss.
+#623 fixed `satisfies(_:)` and gave `derivativeOrder` an explicit warning that its `nil` means "no
+parametric order", not "meets no floor", because `guard let o = derivativeOrder else { return
+false }` reproduces #623 verbatim. `isParametric` is that property's structural sibling with the
+identical trap — it is `false` for the geometric classes, so `guard measured.isParametric` ahead of
+a `.c0` check reports a tangent-continuous curve as not even connected — and the warning was added
+to only one of the two. It now carries it as well, pointing at `satisfies(_:)` the same way.
+
 #### The one grid layout finally covers the third type holding a grid (#617)
 
 #486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer
@@ -402,6 +556,74 @@ nominally ~189 GB `[OCCTRayHit]` costs nothing until it is touched. The trapping
 reached first. Worth recording, because it means the allocation size is the wrong thing to reason
 about when judging which of these entry points is dangerous — the `int32_t` cast is what fires, and
 it fires identically whether the element is 8 bytes or 88.
+
+#### A fillet radius law goes to the edge's own slot, in the edge's own contour (#612)
+
+`filletEvolving`, `filleted(edges:startRadius:endRadius:)` and `filletedVariable` all wrote their
+law with `SetRadius(law, NbContours(), 1)`. Both coordinates were wrong, independently.
+
+**The contour.** `NbContours()` is "the contour that exists after the most recent `Add`", which is
+the edge's own contour only when every `Add` creates one — a tangent-continuous edge **extends** an
+existing contour instead. Measured on a rounded-slot prism (two straight sides joined by two
+semicircular ends, extruded 20mm), adding a top-rim edge, a bottom-rim edge, then a second top-rim
+edge:
+
+| after | `NbContours()` | `Contour(edge)` |
+|---|---|---|
+| add top-rim edge | 1 | 1 |
+| add bottom-rim edge | 2 | 2 |
+| add second top-rim edge | 2 | **1** |
+
+The third edge's law was written to contour 2, replacing the bottom rim's own. Asking for top rim
+2mm and bottom rim 5mm returned **10271.088459** — byte-identical to filleting *both* rims at 2mm —
+against the intended **9899.533264**.
+
+**The slot.** `SetRadius`'s third argument, `IinC`, is the edge's index *within* the contour and
+selects a distinct per-edge slot. Hardcoding it to `1` sent every edge of a tangent chain to the
+same slot, so only the last survived. On the same rim, filleting the straight side at 2mm and its
+tangent arc at 5mm:
+
+| | volume |
+|---|---|
+| both laws at slot 1 (the old idiom) | 9974.608333 — the arc's 5mm overwrote the line's 2mm |
+| each law in its own slot | **10139.793468** — both honoured |
+| `blendedEdges([(line, 2), (arc, 5)])` | **10139.793468** — byte-identical |
+
+`Add(Radius, E)`, which backs `blendedEdges`, resolves that slot itself, so it always honoured the
+very request `filletEvolving` could not express. **There was never a "one law per contour" limit to
+work around** — the conflict was an artefact of the hardcoded `1`. #612's own example (a taper on
+one edge, a constant on its tangent neighbour) is an ordinary request and now builds, at
+10171.225408.
+
+The slot is visible on a single edge too: a 1 → 4 taper on one added edge measures 10273.238348,
+10297.711861, 10343.333856, 10402.168644 at slots 1, 2, 3, 4.
+
+**The linear entry point was observably wrong after all.** Its batch shares one `(startRadius,
+endRadius)`, so with a *constant* law two edges of a contour rewrite the same number and nothing
+moves — but a genuine taper does not: two tangent-continuous edges at 1 → 4 measured
+**10273.238348**, exactly what filleting the first alone produces, against **10297.711861** with
+each law in its own slot. It now uses OCCT's own one-call `Add(R1, R2, E)`, which is `Add(E)` plus
+the same slot resolution plus `SetRadius` — verified identical to resolving the slot by hand, and it
+declines an unfilletable edge by construction. `OCCTShapeHistoryFromFilletEdgeVariable` moves to the
+same overload: its `SetRadius(radii, 1, 1)` was in fact safe, because a single added edge always
+lands at index 1 of its contour's spine (measured on all four edges of a tangent rim) and a
+*literal* 1 is bounds-checked upstream, but the idiom is gone.
+
+**And `filletedVariable` on such an edge did not merely pick a wrong index — it SIGSEGV'd.** When
+OCCT declines an edge outright (a free-boundary edge of an open shell; 4 of the 12 edges of a box
+missing one face), `Contour(E)` is 0 and `NbContours()` is 0, so the call became
+`SetRadius(law, 0, 1)` — the unchecked low side of the contour index #505 measured. That is an OS
+signal, uncatchable in process. Confirmed by re-injecting the old code: `swift test` exits with
+signal 11. Such an edge is now resolved to no slot and skipped, which is exactly what
+`Add(Radius, E)` already does with it — measured identical to the digit, **surface area
+465.09733552923257** over all 12 edges of that shell, whichever entry point applies it, so the
+edge-list fillet family agrees. A batch in which *every* edge is declined leaves zero contours and
+fails in `Build()`, so an all-refused request still returns `nil` rather than the unfilleted input.
+
+Measure an open shell by **area**, not volume: it is not a solid, so `BRepGProp::VolumeProperties`
+fabricates a number for it — the very defect class #605/#609 exist to reject — and that number is
+not even a property of the shape. It ranges 746.83 to 748.28 depending on which of the six faces is
+dropped, while the surface area is 465.097 for all six.
 
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
@@ -813,6 +1035,104 @@ exact on both kernels.
 Two regression suites pin the paths that moved, both checked against the released pre-`0019` kernel
 with `OCCTSWIFT_REMOTE=1`. No production code changes. Reproducer, both transcripts and the probe
 census: [`Scripts/repro/572-approx-consumer-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/572-approx-consumer-sweep).
+
+#### `faces()` dropped a shared face's second orientation, inverting normals on split solids (#614)
+
+#541/#502 converged every face accessor onto one enumeration, `TopExp::MapShapes`. That map
+compares with `TopoDS_Shape::IsSame` — "same TShape with the same Locations. Orientations may
+differ" (`TopoDS_Shape.hxx:265-271`) — and `NCollection_IndexedMap::addImpl` returns the existing
+index and leaves the stored key untouched on a repeat (`NCollection_IndexedMap.hxx:684-710`). So a
+face occurring in one shape both `FORWARD` and `REVERSED` collapsed to a single entry carrying
+whichever orientation was reached **first**.
+
+That is correct for an index and wrong for a normal, because `OCCTFaceGetNormalAtUV` reverses the
+surface normal exactly when the face reads `REVERSED`. Measured on the pinned kernel — a
+`BRepAlgoAPI_Splitter` cutting an origin-centred 10mm box (`Shape.box` spans −5..5) with the z=4
+plane, the plainest two-body result there is:
+
+| | before |
+|---|---|
+| face occurrences (`TopExp_Explorer`) | 12 |
+| distinct faces (`TopExp::MapShapes`) | 11 |
+| shared wall stored as | `FORWARD` (lower solid visited first) |
+| its centre / normal | `(0, 0, 4)` / `(0, 0, 1)` |
+| dot vs lower solid interior `(0, 0, −0.5)` | **+4.5** — outward |
+| dot vs upper solid interior `(0, 0, 4.5)` | **−0.5** — *inward* |
+
+The two occurrences are `IsSame` and not `IsEqual`. A renderer or CAM pass building outward normals
+by walking `faces()` got an inward-facing wall for the second body, and any per-face accumulation
+silently lost a facet.
+
+That second half was reachable through public API, not just in principle. The face-list CAM helpers
+filter on normal-derived predicates, so they inherited the collapse — on the same compound:
+
+| | before | after |
+|---|---|---|
+| `horizontalFaces()` | **3** | 4 |
+| `facesByZLevel()` at z=4 | **1** (upward only) | 2 (one per owning solid) |
+| `upwardFaces()` | 2 | 2 (unchanged — opposed normals cannot both face up) |
+
+The upper solid's floor was simply absent.
+
+**Fixed by following the split OCCT itself draws, rather than inventing one.** The kernel already
+separates these two jobs and this bridge now matches it:
+
+- **Index → orientation-insensitive.** `TopExp::MapShapes(S, T, M)` is the only type-filtered
+  mapping function OCCT publishes and it accepts only the `IsSame` hasher's map — there is no
+  oriented overload (`TopExp.hxx:57-60`). Upstream's own canonical stable sub-shape index, the one
+  BREP file persistence writes, is that same map (`TopTools_ShapeSet.hxx:192`). `Shape.faces()`
+  stays on it, so **no index moves** and #541 is untouched.
+- **Normal → orientation-sensitive, read off the traversal.** `BRepGProp::VolumeProperties`, where
+  a face's orientation sets the sign of the volume integral, takes it from `ex.Current()`
+  (`BRepGProp.cxx:322-325`); and where it deduplicates, it keeps one `IsSame` map *per
+  orientation* (`aFwdFMap`/`aRvsFMap`, `BRepGProp.cxx:318-338`) so a shared wall's two sides both
+  survive. The oriented indexed map (`NCollection_IndexedMap<TopoDS_Shape>`, deprecated alias
+  `TopTools_IndexedMapOfOrientedShape`) is used upstream only for internal algorithm bookkeeping —
+  `TopOpeBRepBuild`, `TopOpeBRepTool`, `BOPAlgo_Builder`, `BRepCheck_Wire`, `ChFi3d`,
+  `BRepTools_ReShape` — never as
+  a public sub-shape enumeration.
+
+New API, all additive:
+
+- **`Shape.orientedFaces() -> [Face]`** — the geometry enumeration: one entry per *occurrence*,
+  each carrying the orientation it has in its parent. A shared wall appears twice, once per owner,
+  each time with the orientation that makes `Face.normal(atU:v:)` point *out* of that owner. An
+  entry's array position is an occurrence number, not a face index, but each `Face` still carries
+  the correct `Face.index` into `faces()` — so an occurrence stays addressable by every
+  face-index-taking method, and entries sharing an `index` are the sides of one shared face. On any
+  shape that shares no face this returns exactly `faces()`, same order, same indices.
+- **`Face.orientation -> Shape.Orientation`** — the flag the normal reverses on, so the two sides
+  of a shared wall can be told apart.
+- Bridge: `OCCTShapeGetOrientedFaces`, `OCCTShapeGetFaceOccurrenceCount`, `OCCTFaceGetOrientation`.
+- **`horizontalFaces()`, `upwardFaces()` and `facesByZLevel()` now read `orientedFaces()`** — they
+  select on the face normal, so they are geometry consumers. **Contract change:** all three select
+  over *occurrences* and so can return two `Face` values carrying the same `Face.index`; dedupe on
+  `index` (or use `faces()`) if you need one entry per distinct face. On any shape whose faces are
+  not shared all three are unchanged, entry for entry.
+
+  These three are **not** the complete set of normal-derived consumers of `faces()`.
+  `AAG.buildGraph()` (`FeatureRecognition.swift:96`) also derives `normal`, `isHorizontal`,
+  `isUpward`, `isDownward`, `isVertical` and `zLevel` from `faces()`, and `AAG.detectPockets()`
+  selects on them — both public via `Shape.buildAAG()` and `Shape.detectPocketsAAG()`. It is
+  **not** fixed here: `faceIndex` and `adjacencyList` are array positions, so moving that graph to
+  the occurrence enumeration changes its identity model. Measured on the z=4 split compound,
+  `detectPocketsAAG()` returns 2 or 1 depending only on the order the halves were compounded in
+  (upward+horizontal nodes `[2, 8]` vs `[2]`), while `upwardFaces()` correctly returns 2 either
+  way. Tracked as #642.
+
+  One correction to an earlier draft of this entry: `upwardFaces()` was described as unable to
+  repeat an index, on the reasoning that a shared wall's two sides have opposed normals. That
+  reasoning holds only when the repeats come from parents bounding *opposite* sides. Reached twice
+  through parents imposing the *same* orientation, both entries qualify —
+  `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`. Separately,
+  `isUpwardFacing` tests `n.z > cos(tolerance)`, so at `tolerance >= π/2` the threshold is
+  non-positive and admits faces that do not point up at all, including both sides of a vertical
+  shared wall: `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices on a
+  two-solid split. Both are pinned by tests.
+
+`Shape.faces()`'s own behaviour is unchanged; its documentation now states which of the two
+contracts it holds. Per-solid enumeration (`compound.solids` then `.faces()`) was already correct
+and is pinned by a regression test so the compound-level fix cannot regress it.
 
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 

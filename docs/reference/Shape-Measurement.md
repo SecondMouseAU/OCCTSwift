@@ -283,13 +283,35 @@ public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape?
   `edgeIndex` naming no edge of this shape returns `nil` rather than filleting the rest, and so
   does a non-positive radius, a parameter outside `0...1`, a non-increasing parameter sequence, or
   an empty `radiusPoints` (#520).
-- **OCCT:** `BRepFilletAPI_MakeFillet` with evolving law (via `OCCTShapeFilletEvolving`).
+- **Contours and slots:** each edge's law is applied to that edge's own slot within its own contour.
+  OCCT groups tangent-continuous edges into a single contour, but a contour holds one law *per
+  edge*, so two edges of one tangent chain can each carry a different law. An edge OCCT declines to
+  fillet (a free-boundary edge of an open shell) is skipped, matching
+  [`blendedEdges(_:)`](#blendededges_); a request in which it declines every edge returns `nil`.
+  Naming the same edge twice writes its slot twice and the later law wins (#612).
+- **OCCT:** `BRepFilletAPI_MakeFillet` with evolving law (via `OCCTShapeFilletEvolving`), with the
+  contour and the index within it resolved per edge by `Contour(E)` / `NbEdges(IC)` / `Edge(IC, J)`.
 - **Example:**
   ```swift
   let spec = EvolvingFilletEdge(edge: box.edges()[0], radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
   if let filled = box.filletEvolving([spec]) {
       print(filled.isValid)
   }
+
+  // A rounded slot — two straight sides joined by two semicircular ends, extruded. Its whole
+  // top rim is one tangent-continuous contour, and each edge of it still carries its own law.
+  let profile = Wire.join([
+      Wire.line(from: SIMD3(-10, -8, 0), to: SIMD3(10, -8, 0))!,
+      Wire.arc(start: SIMD3(10, -8, 0), midpoint: SIMD3(18, 0, 0), end: SIMD3(10, 8, 0))!,
+      Wire.line(from: SIMD3(10, 8, 0), to: SIMD3(-10, 8, 0))!,
+      Wire.arc(start: SIMD3(-10, 8, 0), midpoint: SIMD3(-18, 0, 0), end: SIMD3(-10, -8, 0))!,
+  ])!
+  let slot = Shape.face(from: profile)!.extruded(by: SIMD3(0, 0, 20))!
+  let rim = slot.edges()
+  slot.filletEvolving([
+      EvolvingFilletEdge(edge: rim[3], radiusPoints: [(0.0, 1.0), (1.0, 3.0)]),
+      EvolvingFilletEdge(edge: rim[6], radiusPoints: [(0.0, 5.0), (1.0, 5.0)]),
+  ])
   ```
 
 ---
