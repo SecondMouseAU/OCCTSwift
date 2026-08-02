@@ -61,6 +61,7 @@ let ordinal = curve.continuity
 ```
 
 - **OCCT:** `Geom_Curve::Continuity` (via `OCCTCurve3DGetContinuity`).
+- **No error sentinel.** The retired encoding returned `-1` for a null or unreadable handle and from its `default:` branch; `continuity` returns `0`, which is an ordinary C0. A migrated `< 0` error check can never fire (#619).
 
 ---
 

@@ -2931,7 +2931,9 @@ extension Curve2D {
         OCCTCurve2DBSplineIsPeriodic(handle)
     }
 
-    /// BSpline curve continuity (0=C0, 1=C1, 2=C2, 3=C3, 4=CN).
+    /// BSpline curve continuity, as a raw `GeomAbs_Shape` ordinal
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`) — so a C2 cubic reports `4`, not `2`.
+    /// `0` if the curve is not a BSpline. Prefer ``ContinuityClass`` (#619).
     public var bsplineContinuity: Int {
         Int(OCCTCurve2DBSplineContinuity(handle))
     }

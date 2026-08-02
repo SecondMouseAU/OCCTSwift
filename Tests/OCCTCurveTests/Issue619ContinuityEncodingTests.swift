@@ -37,13 +37,31 @@ struct Issue619ContinuityEncodingTests {
     func analyticCurveReportsCN() {
         // The `continuityOrder == 99` fast path was the issue's second failure: not a wrong
         // answer but silently dead code, because nothing can produce 99 any more.
+        var checked = 0
         for curve in [Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
                       Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)]
                         .compactMap({ $0 }) {
             #expect(curve.continuityClass == .cN)
             #expect(curve.continuity == 6)
             #expect(curve.continuity != 99)
+            checked += 1
         }
+        #expect(checked == 2, "both analytic fixtures must build, or this passes vacuously")
+    }
+
+    @Test("The sibling raw-ordinal accessors use the same encoding, so CN is 6 there too")
+    func siblingAccessorsUseTheSameOrdinal() {
+        // `bezierContinuity` is a separate `(int32_t)Continuity()` cast on a different OCCT
+        // class, and several reference pages documented it as `4 = CN` — the same wrong table
+        // that let `continuity` and `continuityOrder` disagree. A Bezier is CN by construction.
+        guard let bezier = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(1, 1, 0), SIMD3(2, 0, 0)])
+        else {
+            Issue.record("could not build the Bezier fixture")
+            return
+        }
+        #expect(bezier.bezierContinuity == 6)
+        #expect(bezier.bezierContinuity != 4)
+        #expect(bezier.continuityClass == .cN)
     }
 
     @Test("A C1 spline reports C1 as ordinal 2, not 1")
@@ -115,6 +133,7 @@ struct Issue619ContinuityEncodingTests {
         // Whatever the bridge reports, the two public spellings must name the same thing. If the
         // ordinal were restored to the old scheme, `ContinuityClass(rawValue:)` would fail to
         // decode 99/-2/-3 and fall back to `.c0`, breaking this.
+        var checked = 0
         for curve in [Self.bspline(interiorMultiplicity: 1),
                       Self.bspline(interiorMultiplicity: 2),
                       Self.bspline(interiorMultiplicity: 3),
@@ -122,6 +141,8 @@ struct Issue619ContinuityEncodingTests {
             #expect(curve.continuity == Int(curve.continuityClass.rawValue))
             #expect(ContinuityClass(rawValue: Int32(curve.continuity)) != nil)
             #expect(curve.continuity >= 0 && curve.continuity <= 6)
+            checked += 1
         }
+        #expect(checked == 4, "every fixture must build, or this passes vacuously")
     }
 }

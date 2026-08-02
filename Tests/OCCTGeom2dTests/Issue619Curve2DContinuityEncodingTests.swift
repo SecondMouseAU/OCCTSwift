@@ -35,14 +35,20 @@ struct Issue619Curve2DContinuityEncodingTests {
 
     @Test("A C1 pcurve reports C1 as ordinal 2, not 1")
     func c1SplineReportsOrdinalTwo() {
-        if let c1 = Self.bspline(interiorMultiplicity: 2) {
-            #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)
+        guard let c1 = Self.bspline(interiorMultiplicity: 2),
+              let c2 = Self.bspline(interiorMultiplicity: 1) else {
+            Issue.record("could not build the BSpline fixtures")
+            return
         }
-        if let c2 = Self.bspline(interiorMultiplicity: 1) {
-            #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)
-        }
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)
+
+        // The same encoding on the separate `bsplineContinuity` accessor, whose reference page
+        // documented a C2 cubic as reporting `2`. It reports 4.
+        #expect(c2.bsplineContinuity == 4)
+        #expect(c2.bsplineContinuity != 2)
     }
 
     @Test("A raw threshold of 2 now admits a merely-C1 pcurve; satisfies(.c2) still refuses it")

@@ -10947,7 +10947,9 @@ extension Surface {
         G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
         continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
         analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against (#619).
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
         """)
     public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
@@ -15489,13 +15491,23 @@ extension Curve3D {
     ///
     /// ``continuity`` is the same `Int` under an honest name if a raw ordinal is genuinely what
     /// you want — but it is the *new* ordinal, so re-check any constant compared against it.
+    ///
+    /// - Important: The retired encoding had an eighth value the tables above do not show. It
+    ///   signalled failure out of band, returning `-1` from its `default:` branch and for a null
+    ///   or unreadable handle. ``continuity`` has no such sentinel: it returns `0` in the same
+    ///   situations, and `0` is an ordinary C0 measurement. A migrated
+    ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
+    ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
+    ///   two apart; check the handle before asking.
     @available(*, unavailable, message: """
         continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
         G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
         C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
         continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
         analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against (#619).
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
         """)
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
@@ -15554,7 +15566,9 @@ extension Curve2D {
         C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
         continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
         analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
-        you compare against (#619).
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
         """)
     public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 

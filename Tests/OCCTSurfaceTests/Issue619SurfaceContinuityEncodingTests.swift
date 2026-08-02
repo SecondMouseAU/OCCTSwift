@@ -26,24 +26,44 @@ struct Issue619SurfaceContinuityEncodingTests {
 
     @Test("An analytic surface reports CN as ordinal 6 — the old encoding's 99 is unreachable")
     func analyticSurfaceReportsCN() {
+        var checked = 0
         for surface in [Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
                         Surface.sphere(center: .zero, radius: 5)].compactMap({ $0 }) {
             #expect(surface.continuityClass == .cN)
             #expect(surface.continuity == 6)
             #expect(surface.continuity != 99)
+            checked += 1
         }
+        #expect(checked == 2, "both analytic fixtures must build, or this passes vacuously")
     }
 
     @Test("A C1 surface reports C1 as ordinal 2, not 1")
     func c1SurfaceReportsOrdinalTwo() {
-        if let c1 = Self.bsplineSurface(interiorMultiplicityU: 2) {
-            #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)
+        guard let c1 = Self.bsplineSurface(interiorMultiplicityU: 2),
+              let c2 = Self.bsplineSurface(interiorMultiplicityU: 1) else {
+            Issue.record("could not build the BSpline surface fixtures")
+            return
         }
-        if let c2 = Self.bsplineSurface(interiorMultiplicityU: 1) {
-            #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)
+    }
+
+    @Test("The sibling bezierContinuity accessor uses the same encoding, so CN is 6 there too")
+    func bezierContinuityUsesTheSameOrdinal() {
+        // A separate `(int32_t)Continuity()` cast on `Geom_BezierSurface`, documented as
+        // `4 = CN` on its reference page — the same wrong table this issue is about.
+        let poles: [[SIMD3<Double>]] = (0..<3).map { i in
+            (0..<3).map { j in SIMD3<Double>(Double(i), Double(j), Double((i + j) % 2)) }
         }
+        guard let bezier = Surface.bezier(poles: poles) else {
+            Issue.record("could not build the Bezier surface fixture")
+            return
+        }
+        #expect(bezier.bezierContinuity == 6)
+        #expect(bezier.bezierContinuity != 4)
+        #expect(bezier.continuityClass == .cN)
     }
 
     @Test("A raw threshold of 2 now admits a merely-C1 surface; satisfies(.c2) still refuses it")

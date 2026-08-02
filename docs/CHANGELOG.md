@@ -299,10 +299,17 @@ if curve.continuityOrder >= 2 { useAsC2Spline() }
 if curve.continuityOrder == 99 { useAnalyticFastPath() }
 ```
 
-The clearest evidence that a warning was not enough is in this repo: #485's own regression suites
-silenced it with `@available(*, deprecated)` on the test function, which is exactly what a caller
-does. Retiring the spelling turns both lines above into errors that name the old encoding, the new
-one, and the replacement.
+A warning does not stop compilation, and neither outcome above is one a warning prevents: the first
+is a wrong geometric answer produced silently by a build that succeeded, the second is a branch that
+quietly stopped being taken. Retiring the spelling turns both lines into errors that name the old
+encoding, the new one, and the replacement.
+
+**There is no error sentinel any more, and that is its own migration hazard.** The retired encoding
+signalled failure out of band, returning `-1` from its `default:` branch and for a null or
+unreadable handle. `continuity` returns `0` in the same situations, and `0` is an ordinary C0
+measurement. So `if continuityOrder < 0 { handleError() }` migrates to a branch that can never be
+taken, and an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell them
+apart — check the handle before asking.
 
 Migration — both replacements predate this change and neither is new API:
 
