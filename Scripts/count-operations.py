@@ -31,6 +31,13 @@ Usage:
     ./Scripts/count-operations.py           # report; exit 1 if the docs disagree
     ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
+
+Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
+count, so this can gate a commit — it always could; it was the one gate script whose docstring
+never said so, which is why it read as a release-time reporting tool. It has no `--self-test`,
+and it ignores an unrecognised option rather than rejecting it, so do not pass one: `--self-test`
+would be silently accepted and run the ordinary report, which reads as a passing self-test that
+does not exist. CI runs this in `ci.yml`'s `gate-scripts` job (#625).
 """
 import re
 import sys

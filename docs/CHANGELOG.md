@@ -17,6 +17,65 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### Four gate scripts documented as gating on exit status, run by nothing (#625)
+
+`check-bridge-index.py`, `check-null-handle-guards.py`, `check-docs-defaults.py` and
+`count-operations.py` were each written to gate a commit, and three said so in their own docstring.
+No workflow, hook, script or Makefile invoked any of them. `CLAUDE.md` told contributors the guard
+script "exits 1 on any unguarded site" — true, and it still merged green when it didn't, because
+nothing ran it. The documentation described a gate that existed only as prose.
+
+All four now run in a new `gate-scripts` job in `.github/workflows/ci.yml`, together with the three
+`--self-test` batteries, on `ubuntu-latest`, in about three seconds of work.
+
+**A separate job rather than a step in `build-and-test`, for a reason beyond speed.** The obvious
+argument is that a pure-Python check should not wait ~6 minutes behind a Swift build to say a
+symbol name is misspelled. The load-bearing one is the status check: `build-and-test` is red
+branch-wide on any `refactor/**` branch carrying a kernel patch newer than `Package.swift`'s pinned
+xcframework (#585), so a gate folded into that job would be red for a reason that has nothing to do
+with it — indistinguishable from having no gate at all. Linux rather than macOS because none of the
+four needs Xcode, OCCT or a build, and a macOS runner bills ten times the minutes for the identical
+result. Python is pinned at 3.12 rather than taken from the image: these gates parse Swift and C++
+with regexes, and a runner-image Python bump quietly changing a verdict is the exact failure mode
+they exist to prevent.
+
+**Each script's `--self-test` runs alongside its real invocation.** A detector that reports "all
+clear" because it is blind looks exactly like one reporting "all clear" because the tree is clean,
+and this branch shipped three gate scripts that were confidently wrong — #618 (the guard checker
+saw one of the five ways this bridge reaches a handle), #624/#630 (the index checker called seven
+correct entries misfiled), #626 (the drift it was written to catch was live in the tree). Two of
+those had self-tests with holes. Running the fixtures in CI is what keeps the gate from rotting
+into vacuity while still exiting 0.
+
+Every step after the first carries `if: '!cancelled()'`, so one failing gate does not hide the
+other three; without it a contributor fixes them one CI round trip at a time. `!cancelled()` rather
+than `always()` so the workflow's `cancel-in-progress` concurrency still takes effect.
+
+**`count-operations.py` gains the docstring line its three siblings already had.** It was always a
+gate — `return 0 if (readme_n == derived and apiref_n == derived) else 1` — but nothing said so, so
+it read as a release-time reporting tool, which is the only way it was ever used. Its counts had
+drifted on this branch before (#625's own scope note). It also **silently ignores an unrecognised
+option**, so `--self-test` would be accepted, run the ordinary report, and exit 0: a passing
+self-test that does not exist. CI invokes it bare, and the docstring now says why.
+
+**An opt-in pre-commit hook, not an installed one.** `Scripts/git-hooks/pre-commit` runs the same
+seven invocations locally, for the case `CLAUDE.md` actually addresses: a contributor mid-change,
+not a reviewer. It is enabled deliberately with a symlink into `.git/hooks` (or `core.hooksPath`,
+which replaces the hooks directory wholesale rather than adding to it — documented, because that
+silently disables any hook a contributor already has). **The rejected alternative was
+auto-installation** — a bootstrap script or SwiftPM plugin writing `.git/hooks/pre-commit` on first
+build. It was rejected because it changes when a contributor's commits succeed without them asking,
+and its failure mode is a commit refused by a hook they did not know existed and cannot find in the
+tree. The hook mirrors the CI job exactly, so "passed locally, failed in CI" can never mean the two
+disagree; it checks the working tree rather than the staged snapshot, so a partially-staged commit
+can pass it and still fail CI, which is documented in the hook and is why CI stays the authority.
+
+**Verified by breaking each condition and confirming the gate catches it.** Fabricating an index
+entry (`OCCTShapeBoxNope`) took `check-bridge-index.py` 0 → 1; deleting the `IsNull()` from a
+guarded bridge opener took `check-null-handle-guards.py` 0 → 1; editing a restated default in
+`docs/reference/` took `check-docs-defaults.py` 0 → 1; editing README's headline count took
+`count-operations.py` 0 → 1. All four returned to 0 on restore.
+
 #### The null-handle gate was blind to four of the five ways this bridge reaches a handle (#618)
 
 `Scripts/check-null-handle-guards.py` printed "All bridge functions guard the geometry handle as

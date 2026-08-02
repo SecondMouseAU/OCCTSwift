@@ -17,6 +17,40 @@ swift run OCCTTest                   # Run test executable
 Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concurrency-touching changes (see docs/thread-safety.md)
 ```
 
+### Static Gate Scripts
+
+Four pure-Python checks over the repo's own text. No OCCT, no build, ~3s for all four. **CI runs
+every one of them, plus each `--self-test`, in `ci.yml`'s `gate-scripts` job** — a separate
+`ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
+its own status check when `build-and-test` is red for an unrelated reason (#585's pinned-kernel
+mismatch on `refactor/**` branches). Each exits 1 on a defect and 0 when clean; `check-bridge-index`
+and `check-null-handle-guards` exit **2** if run from anywhere but the repo root (#625).
+
+```bash
+python3 Scripts/check-bridge-index.py        # OCCTBridge.h's class → symbol index: stale / misfiled entries
+python3 Scripts/check-null-handle-guards.py  # every bridge fn guards the Handle, not just the pointer
+python3 Scripts/check-docs-defaults.py       # every default docs/reference/ restates matches its declaration
+python3 Scripts/count-operations.py          # README + API_REFERENCE totals match the derived count
+```
+
+The first three take `--self-test`, which runs a fixture battery proving the *detector* catches each
+failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
+were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
+is blind looks exactly like one reporting "all clear" because the tree is clean.
+`count-operations.py` has no `--self-test` and **silently ignores an unrecognised option**, so
+passing it one runs the ordinary report and looks like a passing self-test that does not exist.
+
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs the same seven invocations
+locally. It is **opt-in and not installed by cloning** — enable it deliberately, from the repo root:
+
+```bash
+ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit   # recommended: leaves other hooks alone
+git config core.hooksPath Scripts/git-hooks                      # alternative: REPLACES .git/hooks entirely
+```
+
+`git commit --no-verify` skips it. It checks the working tree rather than the staged snapshot, so a
+partially-staged commit can pass it and still fail CI; CI is the authority.
+
 ### Compile a Ground Truth C++ Test
 
 ```bash
@@ -73,7 +107,10 @@ uses>;`. Checking only the pointer says nothing about the handle, and 36 of the 
 points this bridge passes such a handle into dereference it unconditionally, which is an
 uncatchable signal, not something `catch (...)` can absorb (#478, #556, #618). Run
 `python3 Scripts/check-null-handle-guards.py` to verify; it exits 1 on any unguarded site, and
-`--self-test` proves both failure modes (an unguarded site reported, a guarded one not).
+`--self-test` proves both failure modes (an unguarded site reported, a guarded one not). **Both are
+run by CI** in `ci.yml`'s `gate-scripts` job, so an unguarded site fails the PR rather than merging
+green — until #625 they were run by nothing at all, and this instruction described a gate that
+existed only as prose. See "Static Gate Scripts" above for the optional pre-commit hook.
 
 **The guard is required only where the OCCT call actually needs it.** Not every entry point
 dereferences: `GeomLib_Tool::Parameter` returns false, `GeomAdaptor_Surface` and
