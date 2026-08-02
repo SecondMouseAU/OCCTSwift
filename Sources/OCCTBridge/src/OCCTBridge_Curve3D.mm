@@ -1631,6 +1631,7 @@ bool OCCTLocalAnalysisCurveContinuity(OCCTCurve3DRef _Nonnull curve1, double u1,
     try {
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
+        if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull()) return false;
 
         const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
         const int32_t measured = occtAnalysisMeasuredMask(effective);
@@ -1661,6 +1662,7 @@ int32_t OCCTLocalAnalysisCurveContinuityFlags(OCCTCurve3DRef _Nonnull curve1, do
     try {
         auto c1 = (OCCTCurve3D*)curve1;
         auto c2 = (OCCTCurve3D*)curve2;
+        if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull()) return 0;
 
         const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
         const int32_t measured = occtAnalysisMeasuredMask(effective);
@@ -2165,7 +2167,9 @@ bool OCCTApproxSameParameter(OCCTCurve3DRef _Nonnull curve3dRef,
 int OCCTSplitCurve3dContinuity(OCCTCurve3DRef _Nonnull curveRef, int criterion, double tolerance,
                                  OCCTCurve3DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve3D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve3D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_SplitCurve3dContinuity) splitter = new ShapeUpgrade_SplitCurve3dContinuity();
         splitter->Init(curve);
         splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));

@@ -2871,7 +2871,9 @@ int OCCTGccAnaLin2d2TanCircPnt(double cx, double cy, double radius,
 int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, double tolerance,
                                  OCCTCurve2DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve2D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve2D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_SplitCurve2dContinuity) splitter = new ShapeUpgrade_SplitCurve2dContinuity();
         splitter->Init(curve);
         splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
@@ -2900,7 +2902,9 @@ int OCCTSplitCurve2dContinuity(OCCTCurve2DRef _Nonnull curveRef, int criterion, 
 int OCCTConvertCurve2dToBezier(OCCTCurve2DRef _Nonnull curveRef,
                                 OCCTCurve2DRef _Nullable* _Nullable outCurves, int maxCurves) {
     try {
-        auto& curve = reinterpret_cast<OCCTCurve2D*>(curveRef)->curve;
+        auto* wrapper = reinterpret_cast<OCCTCurve2D*>(curveRef);
+        if (!wrapper || wrapper->curve.IsNull()) return 0;
+        auto& curve = wrapper->curve;
         Handle(ShapeUpgrade_ConvertCurve2dToBezier) converter = new ShapeUpgrade_ConvertCurve2dToBezier();
         converter->Init(curve);
         converter->Perform(true);

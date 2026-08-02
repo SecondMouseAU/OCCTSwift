@@ -24,6 +24,28 @@
 #include <Geom2d_BoundedCurve.hxx>
 #include <Geom2d_CartesianPoint.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
+#include <Approx_SameParameter.hxx>
+#include <Geom_Line.hxx>
+#include <Geom_Plane.hxx>
+#include <Geom2d_Line.hxx>
+#include <gp_Dir2d.hxx>
+#include <Geom2dConvert_ApproxArcsSegments.hxx>
+#include <GeomAdaptor_Surface.hxx>
+#include <GeomConvert_SurfToAnaSurf.hxx>
+#include <GeomFill_NSections.hxx>
+#include <GeomLib_IsPlanarSurface.hxx>
+#include <GeomLib_Tool.hxx>
+#include <GeomTools_Curve2dSet.hxx>
+#include <GeomTools_CurveSet.hxx>
+#include <GeomTools_SurfaceSet.hxx>
+#include <LocalAnalysis_CurveContinuity.hxx>
+#include <LocalAnalysis_SurfaceContinuity.hxx>
+#include <ShapeUpgrade_ConvertCurve2dToBezier.hxx>
+#include <ShapeUpgrade_SplitCurve2dContinuity.hxx>
+#include <ShapeUpgrade_SplitCurve3dContinuity.hxx>
+#include <ShapeUpgrade_SplitSurfaceAngle.hxx>
+#include <ShapeUpgrade_SplitSurfaceArea.hxx>
+#include <ShapeUpgrade_SplitSurfaceContinuity.hxx>
 #include <ShapeAnalysis_Curve.hxx>
 #include <ShapeAnalysis_Surface.hxx>
 #include <ShapeConstruct_Curve.hxx>
@@ -40,6 +62,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Pnt2d.hxx>
 
+#include <sstream>
 #include <cstdio>
 #include <cstring>
 #include <functional>
@@ -197,6 +220,122 @@ int main() {
     probe("BRepToolCurveOnPlane", "BRep_Tool::CurveOnPlane", [&] {
         TopoDS_Edge e; TopLoc_Location l; double f = 0, la = 0;
         (void)BRep_Tool::CurveOnPlane(e, ns, l, f, la);
+    });
+
+    // #618: the entry points the original sweep never saw. The walk that produced #556's census
+    // matched only `param->field`, so every site reaching the handle through a cast or a local
+    // alias was invisible, and so were the OCCT calls those sites make. Each probe below runs the
+    // bridge function's real sequence, not just its first call, because the crash need not be on
+    // the first one.
+    printf("\n  --- #618: reached through a cast or a local alias, never measured by #556 ---\n");
+
+    probe("LocalAnalysisCurveCont*", "LocalAnalysis_CurveContinuity ctor", [&] {
+        LocalAnalysis_CurveContinuity cc(nc, 0.5, nc, 0.5, GeomAbs_C1);
+        (void)cc.IsDone();
+    });
+    probe("LocalAnalysisSurfCont*", "LocalAnalysis_SurfaceContinuity ctor", [&] {
+        LocalAnalysis_SurfaceContinuity sc(ns, 0.5, 0.5, ns, 0.5, 0.5, GeomAbs_C1);
+        (void)sc.IsDone();
+    });
+    probe("GeomLibToolParameter3D", "GeomLib_Tool::Parameter(Geom_Curve)", [&] {
+        double p = 0; (void)GeomLib_Tool::Parameter(nc, gp_Pnt(0, 0, 0), 1e-3, p);
+    });
+    probe("GeomLibToolParameter2D", "GeomLib_Tool::Parameter(Geom2d_Curve)", [&] {
+        double p = 0; (void)GeomLib_Tool::Parameter(nc2, gp_Pnt2d(0, 0), 1e-3, p);
+    });
+    probe("GeomLibToolParams...Surf", "GeomLib_Tool::Parameters(Geom_Surface)", [&] {
+        double u = 0, v = 0; (void)GeomLib_Tool::Parameters(ns, gp_Pnt(0, 0, 0), 1e-3, u, v);
+    });
+    // Approx_SameParameter takes three handles, so one all-null probe does not cover the claim
+    // that the bridge function needs no guard: it only shows the all-null case is survivable. The
+    // three below null one argument at a time with the other two valid, which is what the guard
+    // would actually be protecting against. These are extra probes of an entry point already
+    // counted once, not extra entry points (same distinction as `new Geom_TrimmedCurve` above).
+    {
+        occ::handle<Geom_Curve>   goodC3d = new Geom_Line(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0));
+        occ::handle<Geom2d_Curve> goodC2d = new Geom2d_Line(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+        occ::handle<Geom_Surface> goodSrf = new Geom_Plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+
+        probe("ApproxSameParameter", "Approx_SameParameter(null, null, null)", [&] {
+            Approx_SameParameter a(nc, nc2, ns, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (3D curve null only)", "Approx_SameParameter(null, c2d, surf)", [&] {
+            Approx_SameParameter a(nc, goodC2d, goodSrf, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (2D curve null only)", "Approx_SameParameter(c3d, null, surf)", [&] {
+            Approx_SameParameter a(goodC3d, nc2, goodSrf, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (surface null only)", "Approx_SameParameter(c3d, c2d, null)", [&] {
+            Approx_SameParameter a(goodC3d, goodC2d, ns, 1e-3); (void)a.IsDone();
+        });
+    }
+    probe("SplitCurve3dContinuity", "ShapeUpgrade_SplitCurve3dContinuity Init+Perform", [&] {
+        Handle(ShapeUpgrade_SplitCurve3dContinuity) s = new ShapeUpgrade_SplitCurve3dContinuity();
+        s->Init(nc); s->SetCriterion(GeomAbs_C1); s->SetTolerance(1e-3); s->Perform(true);
+        (void)s->GetCurves();
+    });
+    probe("SplitCurve2dContinuity", "ShapeUpgrade_SplitCurve2dContinuity Init+Perform", [&] {
+        Handle(ShapeUpgrade_SplitCurve2dContinuity) s = new ShapeUpgrade_SplitCurve2dContinuity();
+        s->Init(nc2); s->SetCriterion(GeomAbs_C1); s->SetTolerance(1e-3); s->Perform(true);
+        (void)s->GetCurves();
+    });
+    probe("ConvertCurve2dToBezier", "ShapeUpgrade_ConvertCurve2dToBezier Init+Perform", [&] {
+        Handle(ShapeUpgrade_ConvertCurve2dToBezier) c = new ShapeUpgrade_ConvertCurve2dToBezier();
+        c->Init(nc2); c->Perform(true); (void)c->GetCurves();
+    });
+    probe("SplitSurfaceContinuity", "ShapeUpgrade_SplitSurfaceContinuity Init+Perform", [&] {
+        Handle(ShapeUpgrade_SplitSurfaceContinuity) s = new ShapeUpgrade_SplitSurfaceContinuity();
+        s->Init(ns); s->SetCriterion(GeomAbs_C1); s->SetTolerance(1e-3); s->Perform(true);
+        (void)s->USplitValues();
+    });
+    probe("SplitSurfaceAngle", "ShapeUpgrade_SplitSurfaceAngle Init+Perform", [&] {
+        Handle(ShapeUpgrade_SplitSurfaceAngle) s = new ShapeUpgrade_SplitSurfaceAngle(1.57);
+        s->Init(ns); s->Perform(true); (void)s->USplitValues();
+    });
+    probe("SplitSurfaceArea", "ShapeUpgrade_SplitSurfaceArea Init+Perform", [&] {
+        Handle(ShapeUpgrade_SplitSurfaceArea) s = new ShapeUpgrade_SplitSurfaceArea();
+        s->SetNumbersUVSplits(2, 2); s->Init(ns); s->Perform(true); (void)s->USplitValues();
+    });
+    probe("Extrema* / ProjLib*", "GeomAdaptor_Surface ctor", [&] {
+        Handle(GeomAdaptor_Surface) a = new GeomAdaptor_Surface(ns); (void)a;
+    });
+    probe("ExtremaExtCC etc", "GeomAdaptor_Curve(c, first, last)", [&] {
+        Handle(GeomAdaptor_Curve) a = new GeomAdaptor_Curve(nc, 0, 1); (void)a;
+    });
+    probe("GeomToolsCurveSetWrite", "GeomTools_CurveSet::Add + Write", [&] {
+        GeomTools_CurveSet cs; cs.Add(nc); std::ostringstream o; cs.Write(o);
+    });
+    probe("GeomToolsCurve2dSetWrite", "GeomTools_Curve2dSet::Add + Write", [&] {
+        GeomTools_Curve2dSet cs; cs.Add(nc2); std::ostringstream o; cs.Write(o);
+    });
+    probe("GeomToolsSurfaceSetWrite", "GeomTools_SurfaceSet::Add + Write", [&] {
+        GeomTools_SurfaceSet ss; ss.Add(ns); std::ostringstream o; ss.Write(o);
+    });
+    probe("GeomFillNSections", "GeomFill_NSections + ComputeSurface", [&] {
+        NCollection_Sequence<occ::handle<Geom_Curve>> sec;
+        NCollection_Sequence<double> par;
+        sec.Append(nc); par.Append(0.0);
+        sec.Append(nc); par.Append(1.0);
+        Handle(GeomFill_NSections) n = new GeomFill_NSections(sec, par);
+        n->ComputeSurface(); (void)n->BSplineSurface();
+    });
+    probe("GeomFillNSectionsInfo", "GeomFill_NSections + SectionShape", [&] {
+        NCollection_Sequence<occ::handle<Geom_Curve>> sec;
+        NCollection_Sequence<double> par;
+        sec.Append(nc); par.Append(0.0);
+        sec.Append(nc); par.Append(1.0);
+        Handle(GeomFill_NSections) n = new GeomFill_NSections(sec, par);
+        int a = 0, b = 0, c = 0; n->SectionShape(a, b, c);
+    });
+    probe("GeomLibIsPlanarSurface", "GeomLib_IsPlanarSurface ctor", [&] {
+        GeomLib_IsPlanarSurface p(ns, 1e-7); (void)p.IsPlanar();
+    });
+    probe("GeomConvertIsCanonical", "GeomConvert_SurfToAnaSurf::IsCanonical", [&] {
+        (void)GeomConvert_SurfToAnaSurf::IsCanonical(ns);
+    });
+    probe("Geom2dConvertApproxArcs", "Geom2dConvert_ApproxArcsSegments", [&] {
+        Geom2dAdaptor_Curve a(nc2);
+        Geom2dConvert_ApproxArcsSegments x(a, 1e-3, 1e-3); (void)x.GetResult();
     });
 
     printf("\n%d uncatchable signal(s), %d catchable exception(s), %d returned normally.\n",
