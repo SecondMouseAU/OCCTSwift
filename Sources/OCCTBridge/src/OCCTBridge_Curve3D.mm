@@ -653,25 +653,31 @@ OCCTCurve3DRef OCCTCurve3DMirrorPlane(OCCTCurve3DRef c,
     }
 }
 
-// GCPnts, not CPnts: CPnts_AbscissaPoint::Length runs one Gauss quadrature over the whole
-// domain, which is measurably wrong on a multi-span BSpline (up to 5% on an interpolated
-// curve with sharply varying speed). GCPnts splits at the GeomAbs_CN interval boundaries and
-// integrates each span. #477.
+// Not one Gauss quadrature over the whole domain: that is what CPnts_AbscissaPoint::Length does,
+// and it is up to 5% wrong on a multi-span BSpline (#477). #477 moved this to GCPnts, which splits
+// at the GeomAbs_CN interval boundaries -- but a conic has one interval, so the single quadrature
+// survived there and measured a whole ellipse up to 1.7% long. occtAdaptorArcLength
+// (OCCTBridge_Internal.h) subdivides inside each interval until it converges. #603.
 double OCCTCurve3DGetLength(OCCTCurve3DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
 }
 
+// A non-finite bound is rejected here rather than handed to GCPnts, which answers it differently
+// per curve type -- see occtValidParameterRange (OCCTBridge_Internal.h) for the measurements. #548.
+// The measurement itself is occtAdaptorLengthBetween (same header), which measures the part of the
+// range that lies on the curve, winding a curve whose domain covers a period. #600.
 double OCCTCurve3DGetLengthBetween(OCCTCurve3DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
@@ -865,14 +871,21 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef c, double deflection,
 
 // Local Properties
 
-double OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: the curvature is reported alongside whether there is one, rather than spelled 0 when there
+// is not. A straight curve's curvature is exactly 0 with the tangent perfectly well defined, so the
+// old encoding could not tell a line from a curve with no derivatives at all. See
+// Scripts/repro/595-curvature-zero-sentinel/. A cusp is NOT an absence: OCCT reports RealLast()
+// there, meaning infinite, and that sentinel passes through unchanged.
+bool OCCTCurve3DGetCurvature(OCCTCurve3DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         GeomLProp_CLProps props = occtCurveLocalProps(c->curve, u, 2);
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -925,8 +938,13 @@ bool OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef c, double u,
     }
 }
 
-double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: torsion is only defined where the curve has an osculating plane to twist out of, and the
+// same 0 used to mean both "it does not" and "it does, and the curve lies flat in it". Every planar
+// curve -- every circle and ellipse in the suite -- reports a real torsion of exactly 0, so that
+// collision is as ordinary as the curvature one a few functions above.
+bool OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u, double* torsion) {
+    *torsion = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         gp_Pnt pnt;
         gp_Vec d1, d2, d3;
@@ -934,10 +952,11 @@ double OCCTCurve3DGetTorsion(OCCTCurve3DRef c, double u) {
 
         gp_Vec cross = d1.Crossed(d2);
         double crossMag2 = cross.SquareMagnitude();
-        if (crossMag2 < Precision::Confusion()) return 0.0;
-        return cross.Dot(d3) / crossMag2;
+        if (crossMag2 < Precision::Confusion()) return false;
+        *torsion = cross.Dot(d3) / crossMag2;
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -4654,12 +4673,15 @@ OCCTCurve3DRef OCCTCurve3DConcatenateG1(const OCCTCurve3DRef* curves, int32_t co
 // Curve3D.closestParameter(to:) now shares the one implementation.
 
 
+// occtAdaptorParameterAtLength, not GCPnts_AbscissaPoint directly: the kernel's root finder
+// inverts the same single quadrature OCCTCurve3DGetLength no longer uses, so left alone it would
+// answer 6.2438 for the full length of an 8 x 3 ellipse whose domain ends at 6.2832. #603.
 double OCCTCurve3DParameterAtLength(OCCTCurve3DRef curve, double arcLength, double fromParam) {
     if (!curve || curve->curve.IsNull()) return 0;
     try {
         GeomAdaptor_Curve adaptor(curve->curve);
-        GCPnts_AbscissaPoint ap(adaptor, arcLength, fromParam);
-        if (ap.IsDone()) return ap.Parameter();
+        double parameter = 0;
+        if (occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return parameter;
         return 0;
     } catch (...) { return 0; }
 }
@@ -4775,25 +4797,16 @@ OCCTCurve3DRef _Nullable OCCTHelixApproxToBSpline(double t1, double t2, double p
 
 // MARK: - v0.116: Curve3D Local Curvature/Tangent/Normal/CentreOfCurvature
 //
-// The same four GeomLProp_CLProps quantities as OCCTCurve3DGetCurvature / GetTangent / GetNormal /
-// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All four
-// used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with their
-// canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose first
-// two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical props
-// returned RealLast(). They now build props through occtCurveLocalProps (#494).
-double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u) {
-    if (curve->curve.IsNull()) return 0.0;
-    try {
-        GeomLProp_CLProps props = occtCurveLocalProps(curve->curve, u, 2);
-        // Curvature() reads derivatives IsTangentDefined() is what establishes as meaningful. It
-        // does raise LProp_NotDefined itself, but only through LProp_NotDefined_Raise_if, which
-        // compiles out under No_Exception — defined for the OCCT build, not for this one. Asking
-        // first, as the canonical sibling does, does not depend on which side of that macro the
-        // code lands on.
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
-    } catch (...) { return 0.0; }
-}
+// The same three GeomLProp_CLProps quantities as OCCTCurve3DGetTangent / GetNormal /
+// GetCenterOfCurvature, in the isDefined-out-parameter shape the v0.116 Swift API wanted. All of
+// them used to pass a hardcoded 1e-10 resolution instead of the shared one, so they disagreed with
+// their canonical counterparts about the same curve at the same parameter: on a cubic Bezier whose
+// first two poles sit 1e-8 apart, the 1e-10 props returned curvature 6.67e15 where the canonical
+// props returned RealLast(). They now build props through occtCurveLocalProps (#494).
+//
+// There were four. OCCTCurve3DLocalCurvature was removed in #595: once #494 gave it the shared
+// resolution it was OCCTCurve3DGetCurvature line for line, and measured over the same curves the two
+// agreed on every row, degenerate ones included.
 
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,
                                double* _Nonnull tx, double* _Nonnull ty, double* _Nonnull tz,
@@ -5614,8 +5627,11 @@ OCCTCurve3DRef OCCTGeomEvalAHTBezierCurveCreateRational(
 #include <GCPnts_AbscissaPoint.hxx>
 #include <GCPnts_UniformAbscissa.hxx>
 
+// Both of these share the whole-bridge arc-length measurement and its inverse rather than calling
+// GCPnts directly, so an edge or a wire measured through EdgeCurve/WireCurve agrees with the same
+// edge measured through Shape.edgeArcLength and with the curve it was built from. #603.
 static double adaptorLength(Adaptor3d_Curve& a) {
-    return GCPnts_AbscissaPoint::Length(a);
+    return occtAdaptorArcLength(a, a.FirstParameter(), a.LastParameter());
 }
 
 static void adaptorParamRange(Adaptor3d_Curve& a, double* first, double* last) {
@@ -5639,9 +5655,9 @@ static bool adaptorTangentAtParam(Adaptor3d_Curve& a, double u, double* x, doubl
 }
 
 static bool adaptorParamAtAbscissa(Adaptor3d_Curve& a, double s, double* outParam) {
-    GCPnts_AbscissaPoint ap(a, s, a.FirstParameter());
-    if (!ap.IsDone()) return false;
-    if (outParam) *outParam = ap.Parameter();
+    double parameter = 0;
+    if (!occtAdaptorParameterAtLength(a, s, a.FirstParameter(), parameter)) return false;
+    if (outParam) *outParam = parameter;
     return true;
 }
 

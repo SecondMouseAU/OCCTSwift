@@ -1,0 +1,275 @@
+diff --git a/src/ModelingData/TKGeomBase/CPnts/CPnts_AbscissaPoint.cxx b/src/ModelingData/TKGeomBase/CPnts/CPnts_AbscissaPoint.cxx
+index dd1a5746..b7e1cc91 100644
+--- a/src/ModelingData/TKGeomBase/CPnts/CPnts_AbscissaPoint.cxx
++++ b/src/ModelingData/TKGeomBase/CPnts/CPnts_AbscissaPoint.cxx
+@@ -26,13 +26,13 @@
+ #include <Adaptor2d_Curve2d.hxx>
+ #include <Adaptor3d_Curve.hxx>
+ #include <CPnts_AbscissaPoint.hxx>
++#include <CPnts_AdaptiveIntegration.hxx>
+ #include <Geom2d_BezierCurve.hxx>
+ #include <Geom2d_BSplineCurve.hxx>
+ #include <Geom_BezierCurve.hxx>
+ #include <gp_Vec.hxx>
+ #include <gp_Vec2d.hxx>
+ #include <math_FunctionRoot.hxx>
+-#include <math_GaussSingleIntegration.hxx>
+ #include <Precision.hxx>
+ #include <Standard_ConstructionError.hxx>
+ #include <StdFail_NotDone.hxx>
+@@ -134,13 +134,12 @@ double CPnts_AbscissaPoint::Length(const Adaptor3d_Curve& C, const double U1, co
+   // POP pout WNT
+   CPnts_RealFunction rf = f3d;
+   FG.Init(rf, (void*)&C);
+-  //  FG.Init(f3d,(void*)&C);
+-  math_GaussSingleIntegration TheLength(FG, U1, U2, order(C));
+-  if (!TheLength.IsDone())
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(FG, U1, U2, order(C), nullptr, aLength))
+   {
+     throw Standard_ConstructionError();
+   }
+-  return std::abs(TheLength.Value());
++  return std::abs(aLength);
+ }
+ 
+ //=================================================================================================
+@@ -151,13 +150,12 @@ double CPnts_AbscissaPoint::Length(const Adaptor2d_Curve2d& C, const double U1,
+   // POP pout WNT
+   CPnts_RealFunction rf = f2d;
+   FG.Init(rf, (void*)&C);
+-  //  FG.Init(f2d,(void*)&C);
+-  math_GaussSingleIntegration TheLength(FG, U1, U2, order(C));
+-  if (!TheLength.IsDone())
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(FG, U1, U2, order(C), nullptr, aLength))
+   {
+     throw Standard_ConstructionError();
+   }
+-  return std::abs(TheLength.Value());
++  return std::abs(aLength);
+ }
+ 
+ //=======================================================================
+@@ -174,13 +172,12 @@ double CPnts_AbscissaPoint::Length(const Adaptor3d_Curve& C,
+   // POP pout WNT
+   CPnts_RealFunction rf = f3d;
+   FG.Init(rf, (void*)&C);
+-  //  FG.Init(f3d,(void*)&C);
+-  math_GaussSingleIntegration TheLength(FG, U1, U2, order(C), Tol);
+-  if (!TheLength.IsDone())
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(FG, U1, U2, order(C), &Tol, aLength))
+   {
+     throw Standard_ConstructionError();
+   }
+-  return std::abs(TheLength.Value());
++  return std::abs(aLength);
+ }
+ 
+ //=======================================================================
+@@ -197,13 +194,12 @@ double CPnts_AbscissaPoint::Length(const Adaptor2d_Curve2d& C,
+   // POP pout WNT
+   CPnts_RealFunction rf = f2d;
+   FG.Init(rf, (void*)&C);
+-  //  FG.Init(f2d,(void*)&C);
+-  math_GaussSingleIntegration TheLength(FG, U1, U2, order(C), Tol);
+-  if (!TheLength.IsDone())
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(FG, U1, U2, order(C), &Tol, aLength))
+   {
+     throw Standard_ConstructionError();
+   }
+-  return std::abs(TheLength.Value());
++  return std::abs(aLength);
+ }
+ 
+ //=================================================================================================
+diff --git a/src/ModelingData/TKGeomBase/CPnts/CPnts_AdaptiveIntegration.hxx b/src/ModelingData/TKGeomBase/CPnts/CPnts_AdaptiveIntegration.hxx
+new file mode 100644
+index 00000000..a381b268
+--- /dev/null
++++ b/src/ModelingData/TKGeomBase/CPnts/CPnts_AdaptiveIntegration.hxx
+@@ -0,0 +1,95 @@
++// Copyright (c) 2026 OPEN CASCADE SAS
++//
++// This file is part of Open CASCADE Technology software library.
++//
++// This library is free software; you can redistribute it and/or modify it under
++// the terms of the GNU Lesser General Public License version 2.1 as published
++// by the Free Software Foundation, with special exception defined in the file
++// OCCT_LGPL_EXCEPTION.txt. Consult the file LICENSE_LGPL_21.txt included in OCCT
++// distribution for complete text of the license and disclaimer of any warranty.
++//
++// Alternatively, this file may be used under the terms of Open CASCADE
++// commercial license or contractual agreement.
++
++#ifndef _CPnts_AdaptiveIntegration_HeaderFile
++#define _CPnts_AdaptiveIntegration_HeaderFile
++
++#include <cmath>
++#include <math_Function.hxx>
++#include <math_GaussSingleIntegration.hxx>
++
++//! Relative agreement two successive subdivision levels must reach.
++constexpr double CPnts_IntegrationTolerance = 1.e-9;
++
++//! Ceiling on the equal parts the range may be split into.
++constexpr int CPnts_IntegrationMaxParts = 512;
++
++//! One theOrder-point Gauss quadrature of theF over [theU1, theU2].
++inline bool CPnts_GaussIntegrate(math_Function& theF,
++                                 const double   theU1,
++                                 const double   theU2,
++                                 const int      theOrder,
++                                 const double*  theTol,
++                                 double&        theValue)
++{
++  math_GaussSingleIntegration anIntegral =
++    theTol != nullptr ? math_GaussSingleIntegration(theF, theU1, theU2, theOrder, *theTol)
++                      : math_GaussSingleIntegration(theF, theU1, theU2, theOrder);
++  if (!anIntegral.IsDone())
++  {
++    return false;
++  }
++  theValue = anIntegral.Value();
++  return true;
++}
++
++//! Integrate theF over [theU1, theU2], splitting the range into two, four, ... equal parts until
++//! two successive levels agree to CPnts_IntegrationTolerance relatively.
++//!
++//! A single fixed-order Gauss rule cannot resolve an integrand that varies sharply across the
++//! range it covers, and the arc-length integrand |C'(u)| does: over a whole ellipse it has four
++//! extrema, and the order-10 rule order() gives a conic reads a 1 x 0.05 ellipse 1.7% long. The
++//! error follows the width of one integration interval rather than the curve's type, so the same
++//! rule applied to each GeomAbs_CN span of a B-spline is out by 6.0e-5 on a 5-point interpolation.
++inline bool CPnts_AdaptiveIntegrate(math_Function& theF,
++                                    const double   theU1,
++                                    const double   theU2,
++                                    const int      theOrder,
++                                    const double*  theTol,
++                                    double&        theValue)
++{
++  double aPrevious = 0.;
++  if (!CPnts_GaussIntegrate(theF, theU1, theU2, theOrder, theTol, aPrevious))
++  {
++    return false;
++  }
++  for (int aNbParts = 2; aNbParts <= CPnts_IntegrationMaxParts; aNbParts *= 2)
++  {
++    const double aStep  = (theU2 - theU1) / aNbParts;
++    double       aTotal = 0.;
++    for (int aPart = 0; aPart < aNbParts; ++aPart)
++    {
++      double aPartValue = 0.;
++      if (!CPnts_GaussIntegrate(theF,
++                                theU1 + aPart * aStep,
++                                aPart + 1 == aNbParts ? theU2 : theU1 + (aPart + 1) * aStep,
++                                theOrder,
++                                theTol,
++                                aPartValue))
++      {
++        return false;
++      }
++      aTotal += aPartValue;
++    }
++    if (std::abs(aTotal - aPrevious) <= CPnts_IntegrationTolerance * std::abs(aTotal))
++    {
++      theValue = aTotal;
++      return true;
++    }
++    aPrevious = aTotal;
++  }
++  theValue = aPrevious;
++  return true;
++}
++
++#endif // _CPnts_AdaptiveIntegration_HeaderFile
+diff --git a/src/ModelingData/TKGeomBase/CPnts/CPnts_MyRootFunction.cxx b/src/ModelingData/TKGeomBase/CPnts/CPnts_MyRootFunction.cxx
+index 6fe78c1d..e3ccb125 100644
+--- a/src/ModelingData/TKGeomBase/CPnts/CPnts_MyRootFunction.cxx
++++ b/src/ModelingData/TKGeomBase/CPnts/CPnts_MyRootFunction.cxx
+@@ -13,7 +13,7 @@
+ // commercial license or contractual agreement.
+ 
+ #include <CPnts_MyRootFunction.hxx>
+-#include <math_GaussSingleIntegration.hxx>
++#include <CPnts_AdaptiveIntegration.hxx>
+ #include <Standard_DomainError.hxx>
+ 
+ void CPnts_MyRootFunction::Init(const CPnts_RealFunction& F, void* const D, const int Order)
+@@ -38,26 +38,15 @@ void CPnts_MyRootFunction::Init(const double X0, const double L, const double To
+ 
+ bool CPnts_MyRootFunction::Value(const double X, double& F)
+ {
+-  math_GaussSingleIntegration Length;
+-
+-  if (myTol <= 0)
+-  {
+-    Length = math_GaussSingleIntegration(myFunction, myX0, X, myOrder);
+-  }
+-  else
+-  {
+-    Length = math_GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
+-  }
+-
+-  if (Length.IsDone())
+-  {
+-    F = Length.Value() - myL;
+-    return true;
+-  }
+-  else
++  // Subdivided like CPnts_AbscissaPoint::Length, whose integral this inverts: on a single rule the
++  // parameter returned would not agree with the length it was given.
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(myFunction, myX0, X, myOrder, myTol > 0 ? &myTol : nullptr, aLength))
+   {
+     return false;
+   }
++  F = aLength - myL;
++  return true;
+ }
+ 
+ bool CPnts_MyRootFunction::Derivative(const double X, double& Df)
+@@ -67,24 +56,11 @@ bool CPnts_MyRootFunction::Derivative(const double X, double& Df)
+ 
+ bool CPnts_MyRootFunction::Values(const double X, double& F, double& Df)
+ {
+-  math_GaussSingleIntegration Length;
+-
+-  if (myTol <= 0)
+-  {
+-    Length = math_GaussSingleIntegration(myFunction, myX0, X, myOrder);
+-  }
+-  else
+-  {
+-    Length = math_GaussSingleIntegration(myFunction, myX0, X, myOrder, myTol);
+-  }
+-
+-  if (Length.IsDone())
+-  {
+-    F = Length.Value() - myL;
+-    return myFunction.Value(X, Df);
+-  }
+-  else
++  double aLength = 0.;
++  if (!CPnts_AdaptiveIntegrate(myFunction, myX0, X, myOrder, myTol > 0 ? &myTol : nullptr, aLength))
+   {
+     return false;
+   }
++  F = aLength - myL;
++  return myFunction.Value(X, Df);
+ }
+diff --git a/src/ModelingData/TKGeomBase/CPnts/FILES.cmake b/src/ModelingData/TKGeomBase/CPnts/FILES.cmake
+index 4fb123cd..f426f3af 100644
+--- a/src/ModelingData/TKGeomBase/CPnts/FILES.cmake
++++ b/src/ModelingData/TKGeomBase/CPnts/FILES.cmake
+@@ -5,6 +5,7 @@ set(OCCT_CPnts_FILES
+   CPnts_AbscissaPoint.cxx
+   CPnts_AbscissaPoint.hxx
+   CPnts_AbscissaPoint.lxx
++  CPnts_AdaptiveIntegration.hxx
+   CPnts_MyGaussFunction.cxx
+   CPnts_MyGaussFunction.hxx
+   CPnts_MyGaussFunction.lxx

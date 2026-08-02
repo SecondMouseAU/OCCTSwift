@@ -24,18 +24,21 @@ Differential geometry queries at a parameter value on the curve, backed by `Geom
 Returns the curvature at parameter `u`.
 
 ```swift
-public func curvature(at u: Double) -> Double
+public func curvature(at u: Double) -> Double?
 ```
 
 The curvature is the reciprocal of the radius of the osculating circle at `u`. Zero on a straight line; larger values indicate tighter bends.
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature value; `0` when `GeomLProp_CLProps` cannot compute it (e.g. tangent is zero-length).
+- **Returns:** Curvature value; `nil` when `GeomLProp_CLProps::IsTangentDefined()` is false there — a point with no significant derivative of any order, e.g. a Bezier whose control points all coincide. This was `0` until #595, which is also every straight curve's real curvature. A **cusp** is not an absence: OCCT calls the curvature infinite there and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which is still reported as a value.
 - **OCCT:** `GeomLProp_CLProps::Curvature`.
 - **Example:**
   ```swift
   if let arc = Curve3D.arc(center: .zero, radius: 5, startAngle: 0, endAngle: .pi) {
       let k = arc.curvature(at: 0)  // ≈ 0.2 (1/R)
+  }
+  if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
+      line.curvature(at: 3)         // 0 — straight, and that is the answer, not a failure
   }
   ```
 
@@ -111,18 +114,21 @@ public func centerOfCurvature(at u: Double) -> SIMD3<Double>?
 Returns the torsion at parameter `u` (the rate of change of the osculating plane).
 
 ```swift
-public func torsion(at u: Double) -> Double
+public func torsion(at u: Double) -> Double?
 ```
 
 Torsion is zero for planar curves. Non-zero values indicate the curve is twisting out of its local plane.
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Torsion value (signed); `0` for planar curves or when torsion cannot be computed.
+- **Returns:** Torsion value (signed); `0` for planar curves, which is a real answer, and `nil` where there is no osculating plane to twist out of — a straight stretch, where the first two derivatives are parallel. Those two were the same `0` until #595 (every circle and ellipse is planar, so the collision was as ordinary as `curvature(at:)`'s).
 - **OCCT:** `GeomLProp_CLProps::Torsion`.
 - **Example:**
   ```swift
   if let helix = Curve3D.helix(radius: 5, pitch: 2, turns: 3) {
       let tau = helix.torsion(at: 0)  // non-zero for a helix
+  }
+  if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4) {
+      circle.torsion(at: 1)           // 0 — planar, and that is the answer
   }
   ```
 

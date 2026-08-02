@@ -77,15 +77,16 @@
 // BOPAlgo_ArgumentAnalyzer            → OCCTBOPAlgoAnalyzeArguments
 // BOPAlgo_BuilderFace                 → OCCTBOPAlgoBuilderFace
 // BOPAlgo_BuilderSolid                → OCCTBOPAlgoBuilderSolid
-// BOPAlgo_CellsBuilder                → OCCTBOPAlgoSplit
+// BOPAlgo_CellsBuilder                → OCCTCellsBuilder* (the incremental builder; OCCTBOPAlgoSplit
+//                                       drives BOPAlgo_Splitter, two entries down)
 // BOPAlgo_CheckerSI                   → OCCTShapeSelfIntersects
 // BOPAlgo_MakeConnected               → OCCTShapeMakeConnected
 // BOPAlgo_MakePeriodic                → OCCTShapeMakePeriodic, OCCTShapeRepeat
 // BOPAlgo_MakerVolume                 → OCCTShapeMakeVolume
 // BOPAlgo_RemoveFeatures              → OCCTShapeDefeature, OCCTShapeRemoveFeatures,
 //                                       OCCTShapeHistoryFromDefeature, OCCTShapeRemoveSmallFaces
-//                                       (reached through BRepAlgoAPI_Defeaturing, a forwarder to
-//                                       it; #536 deleted the direct wrap that duplicated them)
+//                                       (via BRepAlgoAPI_Defeaturing, a forwarder to it;
+//                                       #536 deleted the direct wrap that duplicated them)
 // BOPAlgo_Section                     → OCCTBOPAlgoSection
 // BOPAlgo_ShellSplitter               → OCCTBOPAlgoShellSplitter
 // BOPAlgo_Splitter                    → OCCTBOPAlgoSplit
@@ -124,8 +125,9 @@
 // BRepBuilderAPI_Transform            → OCCTShapeTranslate, OCCTShapeRotate, OCCTShapeScale, OCCTShapeMirror
 //
 // --- BRepCheck ---
-// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*
-// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid, OCCTBRepCheckSubShapeValid
+// BRepCheck_Analyzer                  → OCCTShapeIsValid, OCCTShapeAnalyze, OCCTCheckShape*,
+//                                       OCCTBRepCheckSubShapeValid
+// BRepCheck_Edge/Face/Shell/Solid     → OCCTCheckFace, OCCTCheckSolid
 //
 // --- BRepExtrema ---
 // BRepExtrema_DistShapeShape          → OCCTShapeDistance, OCCTShapeIntersects
@@ -155,8 +157,11 @@
 // BRepFill_CompatibleWires            → OCCTBRepFillCompatibleWires
 // BRepFill_Draft                      → OCCTBRepFillDraft
 // BRepFill_Generator                  → OCCTBRepFillGenerator
-// BRepFill_OffsetWire                 → OCCTWireOffset
+// BRepFill_OffsetWire                 → OCCTBRepFillOffsetWire, OCCTBRepFillOffsetAncestors*
+//                                       (OCCTWireOffset drives BRepOffsetAPI_MakeOffset, not this)
 // BRepFill_Pipe                       → OCCTBRepFillPipe
+// BRepFill_PipeShell                  → OCCTPipeShell* (the incremental builder — what
+//                                       BRepOffsetAPI_MakePipeShell forwards to; #503)
 //
 // --- BRepFilletAPI ---
 // BRepFilletAPI_MakeChamfer           → OCCTShapeChamfer*
@@ -164,7 +169,10 @@
 // BRepFilletAPI_MakeFillet2d          → OCCTFace2DFillet, OCCTFace2DChamfer
 //
 // --- BRepGProp ---
-// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea, OCCTShapeGetCenterOfMass
+// BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea,
+//                                       OCCTEdgeGetLength, OCCTFaceGetArea, OCCTShapeAnalyze
+//                                       (OCCTShapeGetCenterOfMass does NOT use BRepGProp — it
+//                                       returns the bounding-box centre via BRepBndLib; #605)
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds, OCCTFaceEvaluateNormalAtUV
 // BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
@@ -185,7 +193,10 @@
 // BRepMesh_ShapeTool                  → OCCTMeshShapeTool*
 //
 // --- BRepOffset ---
-// BRepOffset_Analyse                  → OCCTEdgeGetConvexity
+// BRepOffset_Analyse                  → OCCTAnalyse*, OCCTShapeAnalyzeEdgeConcavity,
+//                                       OCCTShapeCountEdgeConcavity (OCCTEdgeGetConvexity computes
+//                                       convexity by hand from BRepAdaptor_Curve/Surface instead)
+// BRepOffset_MakeOffset               → OCCTShapeOffsetPerFace
 // BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
 // BRepOffset_Offset                   → OCCTBRepOffsetOffsetFace
 // BRepOffset_SimpleOffset             → OCCTBRepOffsetSimpleOffset
@@ -196,12 +207,16 @@
 // BRepOffsetAPI_MakeEvolved           → OCCTShapeCreateEvolved, OCCTShapeCreateEvolvedAdvanced
 // BRepOffsetAPI_MakeFilling           → OCCTShapeFill* (Shape.fill), OCCTFilling*
 //                                       (FillingSurface) — one implementation, #434
-// BRepOffsetAPI_MakeOffset            → OCCTShapeOffset*
-// BRepOffsetAPI_MakePipe              → OCCTShapePipe*
+// BRepOffsetAPI_MakeOffset            → OCCTWireOffset, OCCTWireMultiOffset, OCCTOffsetWireOnPlane,
+//                                       OCCTOffsetFace
+// BRepOffsetAPI_MakeOffsetShape       → OCCTShapeOffset, OCCTShapeOffsetByJoin
+// BRepOffsetAPI_MakePipe              → OCCTShapeCreatePipeSweep (OCCTShapePipeFeature* is
+//                                       BRepFeat_MakePipe)
 // BRepOffsetAPI_MakePipeShell         → OCCTShapeCreatePipeShellMultiSection (every
 //                                       Add() sweep, one profile or many),
-//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw),
-//                                       OCCTPipeShell* (the incremental builder). #503
+//                                       OCCTShapeCreatePipeShellWithLaw (SetLaw). #503
+//                                       (the OCCTPipeShell* incremental builder drives
+//                                       BRepFill_PipeShell directly — see that entry)
 // BRepOffsetAPI_MakeThickSolid        → OCCTShapeShell*, OCCTShapeMakeThickSolid, OCCTThickSolidWithOptions,
 //                                       OCCTShapeHistoryFromShell
 // BRepOffsetAPI_ThruSections          → OCCTShapeCreateLoft*, OCCTThruSections*
@@ -242,12 +257,12 @@
 //
 // --- GC ---
 // GC_MakeArcOfCircle                  → OCCTCurve3DCreateArcOfCircle, OCCTWireCreateArcThroughPoints
-// GC_MakeCircle                       → OCCTWireCreateCircle
+// GC_MakeCircle                       → OCCTGCMakeCircle*
 // GC_MakeEllipse                      → OCCTGCMakeEllipse3Points
 // GC_MakeHyperbola                    → OCCTGCMakeHyperbola3Points
 // GC_MakeMirror                       → OCCTShapeMirrorAboutAxis, OCCTShapeMirrorAboutPoint
 // GC_MakeScale                        → OCCTShapeScaleAboutPoint
-// GC_MakeSegment                      → OCCTWireCreateLine
+// GC_MakeSegment                      → OCCTCurve3DCreateSegment
 // GC_MakeTranslation                  → OCCTShapeTranslateByPoints
 //
 // --- GC 2D ---
@@ -258,7 +273,12 @@
 // GC_MakeParabola2d                   → OCCTCurve2DMakeParabola*
 //
 // --- GCPnts ---
-// GCPnts_AbscissaPoint                → OCCTCurve3DArcLength*, OCCTCurve3DLength, OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength, OCCTCurve2DLength, OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength, OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength,
+//                                       OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength,
+//                                       OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+//                                       (three further spellings were deleted by #506/#549; their
+//                                       tombstones sit at the old declaration sites)
+// CPnts_AbscissaPoint                 → the same functions, as occtArcQuadrature's per-span integrator on composite curves (#603)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
 // GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive
@@ -304,7 +324,6 @@
 // Geom2d_CartesianPoint               → OCCTPoint2D*
 // Geom2d_Circle                       → OCCTCurve2DCircle*, OCCTCurve2DCreateCircle, OCCTCurve2DCreateArcOfCircle,
 //                                       OCCTGceMakeCirc2d*
-// Geom2d_Direction                    → OCCTDirection2D*
 // Geom2d_Ellipse                      → OCCTCurve2DEllipse*
 // Geom2d_Hyperbola                    → OCCTCurve2DHyperbola*, OCCTCurve2DCreateHyperbola,
 //                                       OCCTCurve2DCreateArcOfHyperbola, OCCTGceMakeHypr2d
@@ -315,7 +334,9 @@
 //                                       OCCTCurve2DCreateArcOfParabola, OCCTGceMakeParab2d
 // Geom2d_Transformation               → OCCTTransform2D*
 // Geom2d_TrimmedCurve                 → OCCTCurve2DTrim
-// Geom2d_VectorWithMagnitude          → OCCTVector2D*
+//                                       (Geom2d_Direction and Geom2d_VectorWithMagnitude are not
+//                                       wrapped — OCCTDirection2D*/OCCTVector2D* are gp_Dir2d/
+//                                       gp_Vec2d arithmetic; see docs/occtswift-wrapping-gaps.md)
 //
 // --- Geom2dAPI ---
 // Geom2dAPI_ExtremaCurveCurve         → OCCTCurve2DMinDistance, OCCTCurve2DAllExtrema
@@ -450,7 +471,9 @@
 // Law_BSpFunc                         → OCCTLawCreateBSpline, OCCTLawInterpolate
 // Law_BSpline                         → OCCTLawCreateBSpline, OCCTLawInterpolate, OCCTLawBSplineKnotSplit*
 // Law_Constant                        → OCCTLawCreateConstant
-// Law_Interpol                        → OCCTLawInterpolate
+// Law_Interpol                        → OCCTLawCreateInterpolate
+// Law_Interpolate                     → OCCTLawInterpolate (a different class from Law_Interpol,
+//                                       one letter apart, driven by a different bridge function)
 // Law_Linear                          → OCCTLawCreateLinear
 // Law_S                               → OCCTLawCreateS
 // Law_BSplineKnotSplitting            → OCCTLawBSplineKnotSplitting (v0.68.0)
@@ -477,7 +500,8 @@
 // LocOpe_WiresOnShape                 → OCCTLocOpeBuildWires, OCCTLocOpeSplitByWire*
 //
 // --- LProp ---
-// LProp_AnalyticCurInf                → OCCTLPropAnalyticCurInf
+// LProp_CurAndInf                     → OCCTLPropAnalyticCurInf (which fills a LProp_CurAndInf from
+//                                       an inline scan — LProp_AnalyticCurInf itself is not wrapped)
 //
 // --- NLPlate ---
 // NLPlate_NLPlate                     → OCCTSurfaceNLPlate*
@@ -517,7 +541,11 @@
 //                                       OCCTSurfaceNbSingularities, OCCTSurfaceIsDegenerated,
 //                                       OCCTSurfaceIsUClosedSA, OCCTSurfaceIsVClosedSA
 // ShapeAnalysis_TransferParametersProj → OCCTShapeAnalysisTransferParam*
-// ShapeAnalysis_WireOrder             → OCCTWireAnalyze
+// ShapeAnalysis_Wire                  → OCCTWireAnalyze, OCCTWireAnalyzer*, OCCTWireCheck* (all but
+//                                       OCCTWireCheckOuterBound, which only explores for a wire),
+//                                       OCCTWireEdgeCount, OCCTWireMinDistance*, OCCTWireMaxDistance*,
+//                                       OCCTShapeAnalyze
+// ShapeAnalysis_WireOrder             → OCCTWireOrderAnalyze, OCCTWireOrderAnalyzeWire
 //
 // --- ShapeBuild ---
 // ShapeBuild_Edge                     → OCCTShapeBuildEdge*
@@ -549,16 +577,22 @@
 // ShapeFix_ShapeTolerance             → OCCTShapeFixLimitTolerance, OCCTShapeFixSetTolerance,
 //                                       OCCTShapeFixTolerance, OCCTShapeLimitMaxTolerance
 // ShapeFix_SplitCommonVertex          → OCCTShapeFixSplitCommonVertex
-// ShapeFix_Wire                       → OCCTShapeFixWire*
+// ShapeFix_Wire                       → OCCTWireFix, OCCTWireFixer* (OCCTShapeFixWire* is the two
+//                                       entries below: ShapeFix_WireVertex and ShapeFix_Wireframe)
 // ShapeFix_WireVertex                 → OCCTShapeFixWireVertex
 // ShapeFix_Wireframe                  → OCCTShapeFixWireframe, OCCTShapeFixWireGaps, OCCTShapeFixSmallEdges (v0.99.0)
 //
 // --- ShapeUpgrade ---
 // ShapeUpgrade_ConvertCurve3dToBezier → OCCTShapeUpgradeConvertCurves3dToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, the shape-level
+//                                       driver that owns it; no direct wrap)
 // ShapeUpgrade_ConvertSurfaceToBezierBasis → OCCTShapeUpgradeConvertSurfaceToBezier
+//                                       (via ShapeUpgrade_ShapeConvertToBezier, as above)
 // ShapeUpgrade_FixSmallBezierCurves   → OCCTShapeUpgradeFixSmallBezierCurves
 // ShapeUpgrade_FixSmallCurves         → OCCTShapeUpgradeFixSmallCurves
-// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeUpgradeConvertCurves3dToBezier
+// ShapeUpgrade_ShapeConvertToBezier   → OCCTShapeConvertToBezier,
+//                                       OCCTShapeUpgradeConvertCurves3dToBezier,
+//                                       OCCTShapeUpgradeConvertSurfaceToBezier
 // ShapeUpgrade_ShapeDivideClosed      → OCCTShapeUpgradeDivideClosed
 // ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide, OCCTShapeUpgradeDivideContinuity
 // ShapeUpgrade_UnifySameDomain        → OCCTShapeUnifySameDomain, OCCTShapeSimplify, OCCTUnifySameDomainCreate
@@ -674,7 +708,7 @@
 // gp_Pnt/gp_Vec/gp_Dir               → (used throughout all bridge functions)
 // gp_Ax1/gp_Ax2/gp_Ax3               → (used throughout all bridge functions)
 // gp_Trsf/gp_Trsf2d                  → OCCTShapeTranslate/Rotate/Scale/Mirror, OCCTPoint2D*
-// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*
+// gp_Pnt2d/gp_Vec2d/gp_Dir2d         → OCCTCurve2D*, OCCTPoint2D*, OCCTVector2D*, OCCTDirection2D*
 //
 
 #ifdef __cplusplus
@@ -1717,7 +1751,10 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeI
 /// @param angle Draft angle in radians
 /// @param planeX, planeY, planeZ Point on neutral plane
 /// @param planeNx, planeNy, planeNz Normal of neutral plane
-/// @return Drafted shape, or NULL on failure
+/// @return Drafted shape, or NULL on failure, including when an index names no face of `shape`,
+///         which since #568 fails the call rather than being skipped. Skipping was worse here than
+///         anywhere else in that sweep: BRepOffsetAPI_DraftAngle reports IsDone() for a request it
+///         was handed no faces for, so a wholly unresolvable list returned `shape` undrafted.
 OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount,
                             double dirX, double dirY, double dirZ, double angle,
                             double planeX, double planeY, double planeZ,
@@ -1849,8 +1886,11 @@ bool OCCTWireGetTangentAt(OCCTWireRef wire, double param, double* tx, double* ty
 /// Get curvature at normalized parameter
 /// @param wire The wire to sample
 /// @param param Parameter value from 0.0 to 1.0
-/// @return Curvature value (1/radius), or -1.0 on error
-double OCCTWireGetCurvatureAt(OCCTWireRef wire, double param);
+/// @param curvature Output: curvature value (1/radius)
+/// @return true if the curvature exists there. False for a null wire, a parameter the wire cannot
+///   be evaluated at, and a point whose first derivative is null (a cusp), where the hand-rolled
+///   formula has no answer -- that last case used to return 0, a straight wire's answer (#595).
+bool OCCTWireGetCurvatureAt(OCCTWireRef wire, double param, double* _Nonnull curvature);
 
 /// Get full curve point with position, tangent, and curvature
 /// @param wire The wire to sample
@@ -1886,7 +1926,9 @@ OCCTShapeRef OCCTShapeCreateRuled(OCCTWireRef wire1, OCCTWireRef wire2);
 /// @param thickness Shell wall thickness (positive = inward, negative = outward)
 /// @param openFaceIndices Array of face indices to leave open (0-based)
 /// @param faceCount Number of faces to leave open
-/// @return Shelled shape, or NULL on failure
+/// @return Shelled shape, or NULL on failure, including when an index names no face of `shape`,
+///         which since #568 fails the call rather than being skipped. Only a list where *every*
+///         index was unresolvable used to be caught, by the resulting empty face list.
 OCCTShapeRef OCCTShapeShellWithOpenFaces(OCCTShapeRef shape, double thickness,
                                           const int32_t* openFaceIndices, int32_t faceCount);
 
@@ -2675,7 +2717,11 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
                                         double tolerance);
 
 // Local Properties (Geom2dLProp)
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef curve, double u);
+
+/// Get curvature at parameter u. Returns true if the curvature exists there: false for a null
+/// curve, a parameter that cannot be evaluated, and a point where IsTangentDefined() is false.
+/// A cusp still reports true with OCCT's RealLast() infinity sentinel, which is an answer (#595).
+bool   OCCTCurve2DGetCurvature(OCCTCurve2DRef curve, double u, double* _Nonnull curvature);
 bool   OCCTCurve2DGetNormal(OCCTCurve2DRef curve, double u, double* nx, double* ny);
 bool   OCCTCurve2DGetTangentDir(OCCTCurve2DRef curve, double u, double* tx, double* ty);
 bool   OCCTCurve2DGetCenterOfCurvature(OCCTCurve2DRef curve, double u, double* cx, double* cy);
@@ -3176,14 +3222,25 @@ int32_t OCCTCurve3DDrawDeflection(OCCTCurve3DRef curve, double deflection,
                                    double* outXYZ, int32_t maxPoints);
 
 // Local Properties
-double OCCTCurve3DGetCurvature(OCCTCurve3DRef curve, double u);
+
+/// Get curvature at parameter u. Returns true if the curvature exists there: false for a null
+/// curve, a parameter that cannot be evaluated, and a point where IsTangentDefined() is false --
+/// which used to be spelled 0, indistinguishable from a straight curve's real answer (#595).
+/// A cusp reports true with OCCT's RealLast() infinity sentinel, which is an answer, not an absence.
+bool   OCCTCurve3DGetCurvature(OCCTCurve3DRef curve, double u, double* _Nonnull curvature);
 bool   OCCTCurve3DGetTangent(OCCTCurve3DRef curve, double u,
                               double* tx, double* ty, double* tz);
 bool   OCCTCurve3DGetNormal(OCCTCurve3DRef curve, double u,
                              double* nx, double* ny, double* nz);
 bool   OCCTCurve3DGetCenterOfCurvature(OCCTCurve3DRef curve, double u,
                                         double* cx, double* cy, double* cz);
-double OCCTCurve3DGetTorsion(OCCTCurve3DRef curve, double u);
+
+/// Get torsion at parameter u, the rate the curve twists out of its osculating plane. Returns true
+/// if the torsion exists there: false for a null curve, a parameter that cannot be evaluated, and a
+/// point with no osculating plane to twist out of (|d1 x d2| under the gate, e.g. a straight
+/// stretch). That last case used to be spelled 0, which is also every planar curve's real torsion,
+/// so a circle and a line were indistinguishable (#595).
+bool   OCCTCurve3DGetTorsion(OCCTCurve3DRef curve, double u, double* _Nonnull torsion);
 
 // Bounding Box
 bool OCCTCurve3DGetBoundingBox(OCCTCurve3DRef curve,
@@ -3317,8 +3374,17 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef surface,
                              double* outXYZ);
 
 // Local Properties (GeomLProp_SLProps)
-double OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef surface, double u, double v);
-double OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef surface, double u, double v);
+
+/// Get Gaussian / mean curvature at (u, v). Both return true if the curvature exists there, and
+/// false for a null surface, a parameter that cannot be evaluated, and a point where
+/// IsCurvatureDefined() is false (a cone apex, a sphere pole). Each used to return the value bare
+/// with 0 for the undefined case, which is also a plane's mean curvature and the Gaussian curvature
+/// of every point of every plane, cylinder and cone -- whole surfaces reading as "no answer" (#595).
+/// Same shape as their OCCTFaceGetGaussianCurvature / OCCTFaceGetMeanCurvature counterparts.
+bool   OCCTSurfaceGetGaussianCurvature(OCCTSurfaceRef surface, double u, double v,
+                                        double* _Nonnull curvature);
+bool   OCCTSurfaceGetMeanCurvature(OCCTSurfaceRef surface, double u, double v,
+                                    double* _Nonnull curvature);
 bool   OCCTSurfaceGetPrincipalCurvatures(OCCTSurfaceRef surface, double u, double v,
                                           double* kMin, double* kMax,
                                           double* d1x, double* d1y, double* d1z,
@@ -5070,6 +5136,11 @@ OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromFilletEdgeVariable(OCCTShape
                                                                          OCCTShapeRef _Nullable * _Nullable outResult);
 
 /// Uniform chamfer on the given edges, with retained history.
+///
+/// Edge indices are 0-based into the shape's own edge map, and one naming no edge fails the call
+/// rather than being skipped: the same contract #520 gave the fillet siblings, extended to this
+/// family by #568. Both resolve their indices through occtUseSubShapesByIndex
+/// (OCCTBridge_Internal.h).
 OCCTBooleanHistoryRef _Nullable OCCTShapeHistoryFromChamferEdges(OCCTShapeRef _Nonnull shape,
                                                                    const int32_t* _Nonnull edgeIndices,
                                                                    int32_t count,
@@ -5663,6 +5734,7 @@ OCCTWireRef OCCTWireCreateFastPolygon(const double* coords, int32_t pointCount, 
 /// @param radii Array of fillet radii (one per vertex)
 /// @param count Number of fillets to add
 /// @return Filleted face shape, or NULL on failure
+/// A vertex index naming no vertex of that face fails the call rather than being skipped (#568).
 OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
                                const double* radii, int32_t count);
 
@@ -5672,7 +5744,8 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef shape, const int32_t* vertexIndices,
 /// @param edge2Indices Array of second edge indices (0-based)
 /// @param distances Array of chamfer distances
 /// @param count Number of chamfers to add
-/// @return Chamfered face shape, or NULL on failure
+/// @return Chamfered face shape, or NULL on failure, including when *either* half of a pair names
+///         no edge of that face, which since #568 fails the call rather than dropping the pair
 OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
                                 const int32_t* edge1Indices, const int32_t* edge2Indices,
                                 const double* distances, int32_t count);
@@ -16551,9 +16624,12 @@ bool OCCTEdgeLPropValue(OCCTShapeRef _Nonnull edge, double param,
 bool OCCTEdgeLPropTangent(OCCTShapeRef _Nonnull edge, double param,
                             double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
-/// Get curvature on edge at parameter. Returns 0 where the tangent is undefined, and OCCT's
-/// RealLast() where the curvature is infinite (a cusp), matching OCCTEdgeGetCurvature3D.
-double OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param);
+/// Get curvature on edge at parameter. Returns true if the curvature exists there, and false for a
+/// null handle, a Shape that is not an edge, and an edge whose tangent is undefined at that
+/// parameter -- a degenerate edge, which every sphere carries at its poles, and which used to
+/// report 0, a straight edge's real answer (#595). A cusp reports true with OCCT's RealLast()
+/// infinity sentinel, matching OCCTEdgeGetCurvature3D.
+bool OCCTEdgeLPropCurvature(OCCTShapeRef _Nonnull edge, double param, double* _Nonnull curvature);
 
 /// Get normal direction on edge at parameter.
 /// Returns false where there is no normal to report: an undefined tangent, or a curvature that
@@ -16572,29 +16648,43 @@ bool OCCTEdgeLPropD1(OCCTShapeRef _Nonnull edge, double param,
                        double* _Nonnull d1x, double* _Nonnull d1y, double* _Nonnull d1z);
 
 // MARK: - BRepLProp_SLProps (v0.111.0)
+//
+// #583: the six value-reporting entry points below report definedness the way OCCTFaceGetMeanCurvature
+// and its siblings do: bool return, value in an out-parameter. They used to return the value bare and
+// spell "undefined here" as 0, which is not a spare encoding, because a cylinder's Gaussian and
+// maximum curvature are exactly 0 at every point with the curvature perfectly well defined.
 
 /// Get point on face at (u, v) using local surface properties.
-void OCCTFaceLPropValue(OCCTShapeRef _Nonnull face, double u, double v,
+/// Returns false for a null handle or a shape that is not a face; the point itself does not depend on
+/// the curvature gate, so it is reported at a cone apex and a sphere pole too.
+bool OCCTFaceLPropValue(OCCTShapeRef _Nonnull face, double u, double v,
                           double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
 
 /// Get normal on face at (u, v). Returns true if normal is defined.
 bool OCCTFaceLPropNormal(OCCTShapeRef _Nonnull face, double u, double v,
                            double* _Nonnull dx, double* _Nonnull dy, double* _Nonnull dz);
 
-/// Get maximum curvature on face at (u, v).
-double OCCTFaceLPropMaxCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get maximum curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMaxCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                 double* _Nonnull curvature);
 
-/// Get minimum curvature on face at (u, v).
-double OCCTFaceLPropMinCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get minimum curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMinCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                 double* _Nonnull curvature);
 
-/// Get mean curvature on face at (u, v).
-double OCCTFaceLPropMeanCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get mean curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropMeanCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                  double* _Nonnull curvature);
 
-/// Get Gaussian curvature on face at (u, v).
-double OCCTFaceLPropGaussianCurvature(OCCTShapeRef _Nonnull face, double u, double v);
+/// Get Gaussian curvature on face at (u, v). Returns true if curvature is defined there.
+bool OCCTFaceLPropGaussianCurvature(OCCTShapeRef _Nonnull face, double u, double v,
+                                      double* _Nonnull curvature);
 
 /// Check if face at (u, v) is umbilic (all curvatures equal).
-bool OCCTFaceLPropIsUmbilic(OCCTShapeRef _Nonnull face, double u, double v);
+/// Returns true if curvature is defined there, i.e. if the question has an answer at all; the answer
+/// itself goes to isUmbilic. A false return used to be indistinguishable from "not umbilic".
+bool OCCTFaceLPropIsUmbilic(OCCTShapeRef _Nonnull face, double u, double v,
+                              bool* _Nonnull isUmbilic);
 
 /// Get tangent in U direction on face at (u, v). Returns true if tangent is defined.
 bool OCCTFaceLPropTangentU(OCCTShapeRef _Nonnull face, double u, double v,
@@ -17898,9 +17988,10 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);
 /// Create a trimmed copy of a 2D curve between parameters u1 and u2.
 OCCTCurve2DRef _Nullable OCCTCurve2DTrimmed(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 
-/// Compute the length of a 2D curve between parameters u1 and u2 (u1 must not exceed u2).
-/// Returns -1.0 on failure (null curve, reversed range, or any other computation error).
-double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
+/// OCCTCurve2DLength was declared here: a second spelling of OCCTCurve2DGetLengthBetween that
+/// measured through a pre-bounded Geom2dAdaptor_Curve, so it extrapolated past a multi-span
+/// curve's knots instead of clamping and reported a reversed range as a failure. Removed by
+/// #549, matching what #506 did to the 3D spelling.
 
 // --- Surface additional (v0.115.0) ---
 
@@ -17908,8 +17999,10 @@ double OCCTCurve2DLength(OCCTCurve2DRef _Nonnull curve, double u1, double u2);
 void OCCTSurfaceNormal(OCCTSurfaceRef _Nonnull surface, double u, double v,
                          double* _Nonnull nx, double* _Nonnull ny, double* _Nonnull nz);
 
-/// Compute Gaussian and mean curvature at (u,v).
-void OCCTSurfaceCurvatures(OCCTSurfaceRef _Nonnull surface, double u, double v,
+/// Compute Gaussian and mean curvature at (u,v). Returns true if the curvature exists there, on the
+/// same terms as OCCTSurfaceGetGaussianCurvature / OCCTSurfaceGetMeanCurvature, which it shares one
+/// GeomLProp_SLProps construction with (#595).
+bool OCCTSurfaceCurvatures(OCCTSurfaceRef _Nonnull surface, double u, double v,
                              double* _Nonnull gaussian, double* _Nonnull mean);
 
 // MARK: - HelixGeom (v0.116.0)
@@ -18261,8 +18354,10 @@ const char* _Nullable OCCTUnitsDumpLengthUnit(int32_t unit);
 
 // MARK: - LProp3d_CLProps (v0.117.0)
 
-/// Get curvature at parameter on a 3D curve.
-double OCCTCurve3DLocalCurvature(OCCTCurve3DRef _Nonnull curve, double u);
+// OCCTCurve3DLocalCurvature was removed in #595. Since #494 converged its resolution it built the
+// same GeomLProp_CLProps as OCCTCurve3DGetCurvature at the same occtLocalPropsResolution() and gated
+// on the same IsTangentDefined(); measured over the same curves the two never disagreed on any row,
+// including the degenerate ones. Curve3D.localCurvature(at:) is deprecated onto curvature(at:).
 
 /// Get tangent direction at parameter on a 3D curve.
 void OCCTCurve3DLocalTangent(OCCTCurve3DRef _Nonnull curve, double u,

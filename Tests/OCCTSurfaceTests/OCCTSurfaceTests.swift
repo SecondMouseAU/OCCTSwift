@@ -730,7 +730,7 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let gc = sphere.gaussianCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / (r * r)
-        #expect(abs(gc - expected) < 1e-10)
+        if let gc { #expect(abs(gc - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Sphere mean curvature = 1/r")
@@ -739,14 +739,15 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let mc = sphere.meanCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / r
-        #expect(abs(abs(mc) - expected) < 1e-10)
+        if let mc { #expect(abs(abs(mc) - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Plane Gaussian curvature = 0")
     func planeGaussianCurvature() {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        // #595: a plane's Gaussian curvature is 0 and defined, so this asserts a reported 0, not nil.
         let gc = plane.gaussianCurvature(atU: 0, v: 0)
-        #expect(abs(gc) < 1e-10)
+        if let gc { #expect(abs(gc) < 1e-10) } else { Issue.record("a plane has Gaussian curvature 0") }
     }
 
     @Test("Cylinder principal curvatures = (0, 1/r)")
@@ -4040,11 +4041,14 @@ struct SurfaceFromGridTests {
 
     @Test func surfaceCurvatures() {
         if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
-            let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4)
-            // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
-            #expect(abs(gaussian - 0.04) < 0.01)
-            // Mean curvature = 1/R = 0.2
-            #expect(abs(abs(mean) - 0.2) < 0.01)
+            if let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4) {
+                // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
+                #expect(abs(gaussian - 0.04) < 0.01)
+                // Mean curvature = 1/R = 0.2
+                #expect(abs(abs(mean) - 0.2) < 0.01)
+            } else {
+                Issue.record("a sphere away from its poles has curvature")
+            }
         }
     }
 
@@ -5880,9 +5884,11 @@ struct SurfaceCurvatureParityTests {
 
     private func expectAgreement(_ surface: Surface, u: Double, v: Double,
                                  _ comment: Comment? = nil) {
+        // #595: agreement is now on definedness too, not only on the value -- which is what this
+        // suite's own doc comment always claimed and could not assert while all three returned 0.
         let pair = surface.curvatures(u: u, v: v)
-        #expect(pair.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
-        #expect(pair.mean == surface.meanCurvature(atU: u, v: v), comment)
+        #expect(pair?.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
+        #expect(pair?.mean == surface.meanCurvature(atU: u, v: v), comment)
     }
 
     @Test("Well-conditioned points agree across all three entry points")
@@ -5917,18 +5923,18 @@ struct SurfaceCurvatureParityTests {
         // v = 1e-6 specifically: curvature IS defined at Precision::Confusion(), and both
         // entry points must now report the same non-zero mean curvature.
         let pair = cone.curvatures(u: 0, v: 1e-6)
-        #expect(pair.mean < -1e5)
-        #expect(pair.mean == cone.meanCurvature(atU: 0, v: 1e-6))
+        #expect((pair?.mean ?? 0) < -1e5)
+        #expect(pair?.mean == cone.meanCurvature(atU: 0, v: 1e-6))
     }
 
-    @Test("Genuinely undefined points return zero from all three entry points")
+    @Test("Genuinely undefined points return nil from all three entry points")
     func undefinedPointsAgree() {
         let cone = Self.apexCone()
+        // #595: was `== 0` on all four, which a plane also satisfies with the curvature defined.
         let pair = cone.curvatures(u: 0, v: 0)          // exactly at the apex
-        #expect(pair.gaussian == 0)
-        #expect(pair.mean == 0)
-        #expect(cone.gaussianCurvature(atU: 0, v: 0) == 0)
-        #expect(cone.meanCurvature(atU: 0, v: 0) == 0)
+        #expect(pair == nil)
+        #expect(cone.gaussianCurvature(atU: 0, v: 0) == nil)
+        #expect(cone.meanCurvature(atU: 0, v: 0) == nil)
 
         // Sphere pole: curvature (unlike the normal) is undefined there for both.
         let sphere = Surface.sphere(center: .zero, radius: 5)!

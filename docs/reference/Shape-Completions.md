@@ -1152,7 +1152,11 @@ Finds the curve parameter on this edge at the given arc length from a start para
 public func edgeParameterAtArcLength(_ arcLength: Double, from startParam: Double) -> Double
 ```
 
-- **OCCT:** `GCPnts_AbscissaPoint`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
+  `GCPnts_AbscissaPoint`.
+- **Note:** Shares the subdivided measurement with `edgeArcLength`, so the two agree on the same
+  edge. OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`, which on an
+  elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
 
 ---
 
@@ -1164,7 +1168,13 @@ The total arc length of this edge.
 public var edgeArcLength: Double { get }
 ```
 
-- **OCCT:** `GCPnts_AbscissaPoint` / `BRepAdaptor_Curve`.
+- **Returns:** Arc length in model units, or `-1.0` on failure. Arc length is otherwise always
+  non-negative, so this is an unambiguous sentinel; it used to be `0`, which a genuinely
+  zero-length edge also measures (#548).
+- **OCCT:** `BRepAdaptor_Curve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
+  subdivided until two successive levels agree to 1e-9 relative (#603).
+- **Note:** An elliptical edge measured 1.485% long before #603 — one Gauss quadrature over the
+  edge's whole domain. A straight or circular edge is unaffected (closed form).
 
 ---
 
@@ -1176,7 +1186,26 @@ Computes the arc length of this edge between two parameter values.
 public func edgeArcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **OCCT:** `GCPnts_AbscissaPoint`.
+- **Parameters:** `u1`/`u2` — parameter range, either order. Both must be finite.
+- **Returns:** Arc length in model units, or `-1.0` if a bound is not finite or the computation
+  fails.
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided to convergence —
+  the same measurement as `edgeArcLength` (#603).
+- **Note:** `.nan` and `±.infinity` are rejected before OCCT sees them. This entry point used to
+  hand a NaN bound's result straight back: on a straight edge that was NaN itself, and on a
+  multi-span edge `0` (a NaN upper bound) or the edge's whole length (a NaN lower one) — see
+  [`Curve3D.length(from:to:)`](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the edge's parameter domain measures the part of it that lies
+  on the edge (a range wholly outside measures `0`); a closed periodic edge covers a whole period
+  and so measures the whole range, winding. Shared with the `Curve3D`/`Curve2D` spellings, so an
+  edge and the curve it was built from answer identically (#600).
+- **Example:**
+  ```swift
+  let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+  let d = edge.edgeAdaptorDomain
+  let half = edge.edgeArcLength(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+  // half == 5.0
+  ```
 
 ---
 
@@ -1188,7 +1217,10 @@ Returns the curve parameter at a fractional position (0–1) along the total edg
 public func edgeParameterAtFraction(_ fraction: Double) -> Double
 ```
 
-- **OCCT:** `GCPnts_AbscissaPoint`.
+- **OCCT:** `edgeArcLength`'s subdivided total, then the same walk `edgeParameterAtArcLength` makes.
+- **Note:** Both halves were biased by the same single quadrature before #603, and the two errors
+  cancelled; both are accurate now, so `edgeParameterAtFraction(1.0)` still lands on the edge's last
+  parameter and `0.5` genuinely halves the arc (it split an elliptical edge 0.74% off centre).
 
 ---
 

@@ -2850,12 +2850,28 @@ extension Shape {
     /// Draft angles are used in injection molding and casting to allow parts to
     /// be released from the mold. The angle is measured from the pull direction.
     ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). It used to be dropped,
+    ///   and `BRepOffsetAPI_DraftAngle` reports success for a request it was handed no faces for at
+    ///   all, so a draft naming only faces from another shape returned this shape undrafted.
+    ///
     /// - Parameters:
     ///   - faces: Faces to add draft to (must have valid indices from this shape)
     ///   - direction: Pull direction (typically vertical, e.g., [0, 0, 1])
     ///   - angle: Draft angle in radians (typically 1-5 degrees)
     ///   - neutralPlane: Plane where draft angle is zero (point and normal)
     /// - Returns: Drafted shape, or nil on failure
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 30)!
+    /// let sides = box.faces().filter { $0.isVertical() }
+    /// let drafted = box.drafted(
+    ///     faces: sides,
+    ///     direction: SIMD3(0, 0, 1),
+    ///     angle: 3.0 * .pi / 180.0,
+    ///     neutralPlane: (point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+    /// )
+    /// ```
     public func drafted(
         faces: [Face],
         direction: SIMD3<Double>,
@@ -2896,7 +2912,8 @@ extension Shape {
     /// analysis or removing small features.
     ///
     /// `defeature(faces:)` is the same operation addressing its faces as shapes rather than by
-    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge.
+    /// index; both run one shared `BRepAlgoAPI_Defeaturing` path in the bridge, and since #578 both
+    /// apply the same rule to a face this shape does not have — the whole call fails.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -3281,6 +3298,10 @@ extension Shape {
     ///
     /// Unlike the basic `shelled(thickness:)` method, this allows you to specify
     /// which faces should be removed to create openings.
+    ///
+    /// - Note: Every face must be one of *this* shape's, by index. A `Face` whose `index` names no
+    ///   face here fails the whole call rather than being skipped (#568). Previously such a face
+    ///   was dropped and the solid was shelled with fewer openings than asked for.
     ///
     /// - Parameters:
     ///   - thickness: Wall thickness (positive = inward, negative = outward)
@@ -5636,6 +5657,18 @@ extension Shape {
 
     /// Apply a uniform chamfer to the given edges, returning the result and
     /// a queryable history.
+    ///
+    /// Edge indices are 0-based positions in ``edges()``. An index naming no edge of this shape
+    /// fails the whole call rather than being skipped (#568), matching
+    /// ``filletedWithFullHistory(radius:edges:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// if let (chamfered, history) = box.chamferedWithFullHistory(distance: 1.0, edges: [0, 1]),
+    ///    let edge = box.subShapes(ofType: .edge).first {
+    ///     print(chamfered.volume ?? 0, history.record(of: edge).modified.count)
+    /// }
+    /// ```
     public func chamferedWithFullHistory(distance: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
     {
@@ -6779,10 +6812,20 @@ extension Shape {
     ///   through. Vertex indices are numbered within that first face. Call this on one face
     ///   at a time.
     ///
+    /// - Note: An index naming no vertex of that first face fails the whole call rather than being
+    ///   skipped (#568). Previously it was dropped and the corners that did resolve were rounded,
+    ///   reported as a complete result.
+    ///
     /// - Parameters:
     ///   - vertexIndices: 0-based indices of vertices to fillet
     ///   - radii: Fillet radius for each vertex (must match vertexIndices count)
     /// - Returns: Modified shape with fillets, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let rounded = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2, 2, 2, 2])
+    /// print(rounded?.edgeCount ?? 0)   // 8: four straights and four arcs
+    /// ```
     public func fillet2D(vertexIndices: [Int], radii: [Double]) -> Shape? {
         guard !vertexIndices.isEmpty, vertexIndices.count == radii.count else { return nil }
         let indices = vertexIndices.map { Int32($0) }
@@ -6805,10 +6848,20 @@ extension Shape {
     ///   through. Edge indices are numbered within that first face. Call this on one face at
     ///   a time.
     ///
+    /// - Note: *Either* half of a pair naming no edge of that first face fails the whole call
+    ///   rather than being skipped (#568). Previously the pair was dropped and the corners that
+    ///   did resolve were cut, reported as a complete result.
+    ///
     /// - Parameters:
     ///   - edgePairs: Array of (edge1Index, edge2Index) pairs identifying adjacent edges
     ///   - distances: Chamfer distance for each edge pair
     /// - Returns: Modified shape with chamfers, or nil on failure
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let cut = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2, 2])
+    /// print(cut?.edgeCount ?? 0)   // 6: two corners replaced by chamfer edges
+    /// ```
     public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape? {
         guard !edgePairs.isEmpty, edgePairs.count == distances.count else { return nil }
         let edge1Indices = edgePairs.map { Int32($0.0) }
@@ -14640,21 +14693,72 @@ extension Shape {
     // --- GCPnts_AbscissaPoint expansion ---
 
     /// Find parameter on an edge at a given arc length from startParam.
+    ///
+    /// Shares the subdivided measurement with ``Shape/edgeArcLength``, so the two agree on the
+    /// same edge: OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`,
+    /// which on an elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let mid = edge.edgeParameterAtArcLength(5, from: edge.edgeAdaptorDomain.lowerBound)
+    /// ```
     public func edgeParameterAtArcLength(_ arcLength: Double, from startParam: Double) -> Double {
         OCCTEdgeParameterAtArcLength(handle, arcLength, startParam)
     }
 
     /// Compute total arc length of this edge.
+    ///
+    /// Returns `-1.0` if the computation fails — arc length is otherwise always non-negative, so
+    /// this is an unambiguous failure sentinel, matching ``Curve3D/totalArcLength``. It used to
+    /// return `0`, which a genuinely zero-length edge also measures (#548).
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided until two successive levels agree to
+    /// 1e-9 relative. An elliptical edge measured 1.485% long before that (#603); a straight or
+    /// circular edge is unaffected, since those have an exact closed form.
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let total = edge.edgeArcLength   // 10.0
+    /// ```
     public var edgeArcLength: Double {
         OCCTEdgeArcLength(handle)
     }
 
     /// Compute arc length between two parameters on this edge.
+    ///
+    /// Both bounds must be finite. `.nan` and `±.infinity` return `-1.0` rather than reaching
+    /// OCCT's integrator, which answered them per curve type: a NaN bound on a straight edge came
+    /// back as NaN itself, and on a multi-span edge as `0` (a NaN upper bound) or the edge's whole
+    /// length (a NaN lower one). `-1.0` is also the sentinel for any other failure, replacing the
+    /// `0` this returned before — that value is what a genuine zero-width interval measures (#548).
+    ///
+    /// A range reaching outside the edge's parameter domain measures the part of it that lies on
+    /// the edge, so a range wholly outside measures `0`; a closed periodic edge (a full circle, a
+    /// closed spline) covers a whole period and so measures the whole range, winding (#600). The
+    /// answer matches ``Curve3D/length(from:to:)`` on the curve the edge was built from.
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let d = edge.edgeAdaptorDomain
+    /// let half = edge.edgeArcLength(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+    /// let bad = edge.edgeArcLength(from: d.lowerBound, to: .nan)   // -1.0
+    /// let clipped = edge.edgeArcLength(from: 0, to: 20)            // 10, the edge's own length
+    /// ```
     public func edgeArcLength(from u1: Double, to u2: Double) -> Double {
         OCCTEdgeArcLengthBetween(handle, u1, u2)
     }
 
     /// Find parameter at a fraction (0..1) of total edge length.
+    ///
+    /// Both halves — the total and the walk along it — use the subdivided measurement (#603).
+    /// They were biased by the same single quadrature before, and the two errors cancelled; both
+    /// are accurate now, so `edgeParameterAtFraction(1.0)` still lands on the edge's last
+    /// parameter and `0.5` genuinely halves the arc (it split an elliptical edge 0.74% off).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let quarter = edge.edgeParameterAtFraction(0.25)
+    /// ```
     public func edgeParameterAtFraction(_ fraction: Double) -> Double {
         OCCTEdgeParameterAtFraction(handle, fraction)
     }

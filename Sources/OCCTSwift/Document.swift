@@ -11476,17 +11476,26 @@ extension Shape {
 
     /// Curvature on an edge at `param`, through the edge's own adaptor.
     ///
-    /// Returns 0 where the tangent is undefined, and `Double.greatestFiniteMagnitude` (OCCT's
-    /// `RealLast()`, meaning infinite curvature) at a cusp — the same two sentinels
-    /// ``Curve3D/curvature(at:)`` reports for the curve underneath.
+    /// - Parameter param: Parameter on the edge's curve.
+    /// - Returns: The curvature, or `nil` where this `Shape` is not an edge, the parameter cannot
+    ///   be evaluated, or the tangent is undefined there. That last case used to be `0`, which is
+    ///   also a straight edge's real curvature (#595). It is not exotic: a sphere carries a
+    ///   **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
+    ///   skip them.
+    ///
+    /// `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is still
+    /// reported at a cusp — an answer, not an absence — matching ``Curve3D/curvature(at:)`` on the
+    /// curve underneath.
     ///
     /// ```swift
     /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
     /// let edge = Shape.edgeFromCurve(arc)!
     /// let k = edge.edgeCurvatureLP(at: 0.5)   // 0.25, the reciprocal of the radius
     /// ```
-    public func edgeCurvatureLP(at param: Double) -> Double {
-        return OCCTEdgeLPropCurvature(handle, param)
+    public func edgeCurvatureLP(at param: Double) -> Double? {
+        var k = 0.0
+        guard OCCTEdgeLPropCurvature(handle, param, &k) else { return nil }
+        return k
     }
 
     /// Normal direction on an edge at `param`.
@@ -11536,11 +11545,23 @@ extension Shape {
 
 extension Shape {
 
-    /// Get point on a face at (u, v) using local surface properties (BRepLProp_SLProps).
-    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double> {
+    /// Point on a face at (u, v), through the face's own adaptor (`BRepLProp_SLProps`).
+    ///
+    /// Returns nil if the receiver is not a single face, the same contract
+    /// ``faceLPropMeanCurvature(u:v:)`` and its siblings use, except that the point does not depend
+    /// on the curvature gate, so it is still reported at a cone apex or a sphere pole. Before #583
+    /// a non-face `Shape` came back as `(0, 0, 0)`, which is a real point of most surfaces.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!
+    /// if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+    ///     print(p)
+    /// }
+    /// ```
+    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0
-        OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
-        return SIMD3(x, y, z)
+        let ok = OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
     }
 
     /// Get normal on a face at (u, v). Returns nil if normal is undefined.
@@ -11550,29 +11571,84 @@ extension Shape {
         return ok ? SIMD3(dx, dy, dz) : nil
     }
 
-    /// Get maximum principal curvature on a face at (u, v).
-    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMaxCurvature(handle, u, v)
+    /// Maximum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil is a cone apex, a sphere pole, or a receiver that is not a face. `0` is a value in its
+    /// own right: it is the maximum curvature at every point of a cylinder or a cone. Before #583
+    /// the two were the same answer.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMax = cylinder.faceLPropMaxCurvature(u: 1.1, v: 6)   // 0, along the axis, not nil
+    /// ```
+    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMaxCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get minimum principal curvature on a face at (u, v).
-    public func faceLPropMinCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMinCurvature(handle, u, v)
+    /// Minimum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil on the same terms as ``faceLPropMaxCurvature(u:v:)``.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6)   // -1/3, the reciprocal radius
+    /// ```
+    public func faceLPropMinCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMinCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get mean curvature on a face at (u, v).
-    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropMeanCurvature(handle, u, v)
+    /// Mean curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/meanCurvature(atU:v:)``, which has always been
+    /// optional; since #529 the two agree about where curvature exists, and since #583 both can
+    /// say so.
+    ///
+    /// ```swift
+    /// let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+    /// if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+    /// ```
+    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMeanCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Get Gaussian curvature on a face at (u, v).
-    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double {
-        return OCCTFaceLPropGaussianCurvature(handle, u, v)
+    /// Gaussian curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/gaussianCurvature(atU:v:)``. `0` is the answer at
+    /// every point of any developable surface (a cylinder, a cone, a plane), so this getter
+    /// returned the pre-#583 "undefined" sentinel for whole faces at a time.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+    /// ```
+    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropGaussianCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
     }
 
-    /// Check if a face is umbilic at (u, v) (all principal curvatures equal).
-    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool {
-        return OCCTFaceLPropIsUmbilic(handle, u, v)
+    /// Whether a face is umbilic at (u, v), meaning both principal curvatures are equal, or nil
+    /// where there are no principal curvatures to compare.
+    ///
+    /// OCCT's test is one ULP wide rather than a geometric tolerance, so a plane qualifies
+    /// everywhere but an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`. Before #583 a cone apex answered `false`, claiming the two
+    /// curvatures differ there.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+    /// ```
+    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool? {
+        var isUmbilic = false
+        let ok = OCCTFaceLPropIsUmbilic(handle, u, v, &isUmbilic)
+        return ok ? isUmbilic : nil
     }
 
     /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.
@@ -13336,6 +13412,13 @@ extension Shape {
     /// Nil for a shape with no edges, such as a lone vertex. The centre of mass reported there was
     /// the shape's location origin, not a recognisable zero (#609).
     ///
+    /// - Warning: `length` here comes from `BRepGProp::LinearProperties`, which runs its own
+    ///   integrator — one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
+    ///   On an elliptical edge it reports 41.243158 against a true 40.639742 (+1.485%) and so
+    ///   **disagrees with ``Shape/edgeArcLength``**, which measures 40.639742. Before #603 both
+    ///   were wrong together. Use ``Shape/edgeArcLength`` or ``Wire/length`` when you want the
+    ///   length; this call remains the way to get the centre of mass.
+    ///
     /// ```swift
     /// let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 20)!)!
     /// wire.linearProperties()?.length   // 60
@@ -14464,20 +14547,22 @@ extension Curve3D {
 
     /// The curvature of the curve at a parameter value.
     ///
-    /// Equivalent to ``Curve3D/curvature(at:)`` — same OCCT computation, same tolerance. The two
-    /// used to disagree near a degeneracy, because this one asked at a 1000x tighter resolution
-    /// (#494).
+    /// Not merely equivalent to ``Curve3D/curvature(at:)`` — since #494 gave the two the same
+    /// resolution it *is* the same call, and measured over the same curves the two never disagreed
+    /// on any row, degenerate ones included. So this spelling forwards rather than duplicating, and
+    /// the bridge function behind it is gone (#595).
     ///
     /// - Parameter u: Curve parameter.
-    /// - Returns: Curvature (1/radius), `0` where the curve has no defined tangent, and
+    /// - Returns: Curvature (1/radius), `nil` where the curve has no defined tangent, and
     ///   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
-    /// let k = circle.localCurvature(at: 0)   // 0.2, i.e. 1/5
+    /// let k = circle.curvature(at: 0)   // 0.2, i.e. 1/5
     /// ```
-    public func localCurvature(at u: Double) -> Double {
-        OCCTCurve3DLocalCurvature(handle, u)
+    @available(*, deprecated, renamed: "curvature(at:)")
+    public func localCurvature(at u: Double) -> Double? {
+        curvature(at: u)
     }
 
     /// The unit tangent direction at a parameter value.
@@ -14825,12 +14910,25 @@ extension Shape {
     /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
     /// not necessarily a caller error.
     ///
-    /// A face that is not part of this shape cannot be removed from it. OCCT drops such a face
-    /// from the request and carries on with the rest, so a request that mixes real faces with
-    /// foreign ones succeeds and removes only the real ones; a request of nothing but foreign
-    /// faces fails. Membership is by identity, not by geometry: the same face measured off an
-    /// identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is
-    /// stricter — since #497 one bad index fails the whole call.
+    /// ## What may be named, and what must belong
+    ///
+    /// Each element of `faces` names faces rather than having to be one: a compound of faces, a
+    /// shell, or this whole shape all name the faces they contain, and naming a carrier is the same
+    /// request as naming the faces it holds. The rule every element must satisfy:
+    ///
+    /// > Every element must name at least one face, and every face it names must be a face of this
+    /// > shape. Otherwise the whole call returns `nil` and nothing is removed.
+    ///
+    /// So a request that mixes this shape's faces with another shape's fails, as does one carrying
+    /// an edge or a vertex, which name no face at all. Membership is by identity, not by geometry:
+    /// the same face measured off an identically-built shape is foreign, while the same face
+    /// reversed is not — orientation is not identity.
+    ///
+    /// Until #578 a foreign face was dropped from the request and the rest proceeded, which is
+    /// OCCT's own documented rule ("those that do not belong will be ignored"). That answered a
+    /// success, with no warning, on a shape still carrying the feature the caller asked to remove —
+    /// indistinguishable from a real removal. The index-addressed ``Shape/withoutFeatures(faces:)``
+    /// has failed the whole call on one bad index since #497; both spellings now agree.
     ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -14841,10 +14939,16 @@ extension Shape {
     /// if let plain = filleted.defeature(faces: filletFaces) {
     ///     print(plain.volume ?? 0)   // back to 8000.0, the unfilleted box
     /// }
+    ///
+    /// // A face from somewhere else fails the request rather than being ignored.
+    /// let elsewhere = Shape.box(width: 11, height: 11, depth: 11)!.subShapes(ofType: .face)[0]
+    /// print(filleted.defeature(faces: filletFaces + [elsewhere]) == nil)   // true
     /// ```
     ///
-    /// - Parameter faces: The faces to remove, as shapes belonging to this shape.
-    /// - Returns: The defeatured shape, or `nil` on failure.
+    /// - Parameter faces: The faces to remove — each element either a face of this shape, or a
+    ///   shape whose faces all belong to this shape.
+    /// - Returns: The defeatured shape, or `nil` on failure, including when the request names a
+    ///   face this shape does not have.
     public func defeature(faces: [Shape]) -> Shape? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
         return faceHandles.withUnsafeBufferPointer { buf -> Shape? in

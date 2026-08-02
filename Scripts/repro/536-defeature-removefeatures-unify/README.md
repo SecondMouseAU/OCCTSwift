@@ -137,5 +137,7 @@ face:
 This is why #536 did not go on to give the shape-addressed form the index-addressed form's stricter
 membership rule. Enforcing "every requested face must belong to this shape" means first deciding
 what to do with the compounds, shells and whole solids the kernel accepts as face carriers, which is
-its own design question with its own measurement matrix, not a line of validation. Recorded here and
-in `defeature(faces:)`'s own documentation, and filed separately.
+its own design question with its own measurement matrix, not a line of validation. Filed as #578 and
+settled there — see `Scripts/repro/578-defeature-face-membership/` for that matrix and the rule
+chosen. A face this shape does not have now fails the whole request, whichever way the request
+addresses its faces; carriers stay legal, and every face a carrier names must belong.

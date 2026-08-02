@@ -481,7 +481,9 @@ public var curveInfo: CurveInfo? { get }
 Encapsulates length, closure/periodicity status, and the start/end 3D points. More efficient than calling `length`, `point(at:0)`, and `point(at:1)` separately.
 
 - **Returns:** `CurveInfo` struct, or `nil` if the wire is degenerate or OCCT fails.
-- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length`.
+- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
+  subdivided to convergence — the same measurement `length` makes, so the two cannot disagree
+  (#603).
 - **Example:**
   ```swift
   if let info = Wire.circle(radius: 5)?.curveInfo {
@@ -500,7 +502,10 @@ public var length: Double? { get }
 ```
 
 - **Returns:** Length in model units, or `nil` if measurement fails. Returns `nil` (not 0) for degenerate wires.
-- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length`.
+- **OCCT:** `BRepAdaptor_CompCurve` + `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval,
+  subdivided until two successive levels agree to 1e-9 relative (#603).
+- **Note:** A `BRepAdaptor_CompCurve` reports one interval per edge span, so a wire of lines and
+  circles was always exact — but one elliptical edge in it measured 1.485% long before #603.
 - **Example:**
   ```swift
   let len = Wire.line(from: .zero, to: SIMD3(10, 0, 0))?.length  // 10.0
@@ -558,7 +563,12 @@ public func curvature(at parameter: Double) -> Double?
 A straight line has curvature 0; a circle of radius R has curvature 1/R.
 
 - **Parameters:** `parameter` — value in `[0, 1]`.
-- **Returns:** Curvature value ≥ 0, or `nil` on failure.
+- **Returns:** Curvature value ≥ 0, or `nil` where the wire has none there: a parameter it cannot be
+  evaluated at, or a point whose first derivative is null (a cusp), where the formula divides by
+  zero. That second case returned `0` until #595 — a straight wire's real answer — because only the
+  error path reached this optional. Unlike `Curve3D.curvature(at:)` there is no infinity sentinel to
+  report at a cusp: `BRepAdaptor_CompCurve` computes the formula directly rather than through
+  `GeomLProp_CLProps`.
 - **OCCT:** `BRepAdaptor_CompCurve::D2` — uses the formula κ = |d1 × d2| / |d1|³.
 - **Example:**
   ```swift

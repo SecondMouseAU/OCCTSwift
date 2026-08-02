@@ -201,8 +201,8 @@ started at the collapsing continuity rather than degrading into it.
 
 **Two mentions are not callers.** `BRepFill_Sweep.cxx:1162` sits inside a `/* */` block spanning
 `:1064`-`:1179`, and `BRepFill_Filling.cxx:712` is a `//`-commented line. A filename-level grep counts
-both; neither is compiled. `Sources/OCCTBridge/src/OCCTBridge_Surface.mm`'s `PrecisCode` census cites
-the `BRepFill_Sweep` one as a live site (#573).
+both; neither is compiled. `Sources/OCCTBridge/src/OCCTBridge_Surface.mm`'s `PrecisCode` census used
+to cite the `BRepFill_Sweep` one as a live site, corrected in #573.
 
 What each consumer inherited is tracked separately: #570 (the healing paths that decide on
 `MaxError() <= tol`, including the forced-C0 offset-surface branch), #571 (`GeomPlate_MakeApprox`)

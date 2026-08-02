@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with four recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, and [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build. A fifth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with five recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build, and [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip. A sixth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -124,6 +124,26 @@ The exception was taken because:
 - **There is no spelling in which both survive.** These are index *values*, not types or names, so Swift cannot overload on them and a deprecation attribute has nothing to attach to. The alternative to changing them is documenting that five different meanings of "face index" coexist and leaving callers to track which is which per method.
 - **On every shape that shares no sub-shape, nothing moves.** The probe checks the enumeration order face-by-face rather than by count across ten such fixtures: identical at every index. The `faces()` change is invisible to a caller whose shapes are primitives, booleans, sewn sheets or compsolids.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, an unresolvable sub-shape index refuses the call (#568)
+
+**Five silent behaviour changes, none a compile error.** A sub-shape index naming nothing now rejects the whole request, finishing the sweep #520 began for the fillet family and #541 for `offsetPerFace`:
+
+| Break | What a caller does |
+|---|---|
+| `drafted(faces:direction:angle:neutralPlane:)` returns `nil` when a `Face.index` names no face of the receiver | Pass only faces taken from this shape, or filter against `faces().count`. A call that drafted the faces that resolved now returns `nil` |
+| `shelled(thickness:openFaces:)` likewise | Same. A call that opened fewer faces than asked for now returns `nil` |
+| `chamferedWithFullHistory(distance:edges:)` returns `nil` on an edge index outside `0..<edges().count` | Same as `filletedWithFullHistory`, which already behaved this way after #520 |
+| `fillet2D(vertexIndices:radii:)` returns `nil` on a vertex index the first face does not have | Filter against that face's `vertices().count` |
+| `chamfer2D(edgePairs:distances:)` returns `nil` when *either* half of a pair is out of range | Filter against that face's `edgeCount` |
+
+The exception was taken because:
+
+- **The old answer was unobservable.** Measured on the pinned kernel (`Scripts/repro/568-index-skip-idiom/`), every builder behind these five reports an ordinary success for a batch it was never told was short: `IsDone`, non-null, `BRepCheck_Analyzer`-valid. A partial chamfer of a 20mm box measures 7922.666667 against the complete 7885.333333, and nothing but re-measuring the geometry distinguishes them.
+- **One of the five did not honour any of the request.** `BRepOffsetAPI_DraftAngle` handed no faces at all still reports `IsDone()` and returns the input unchanged, so `drafted(faces:)` with a list of foreign faces succeeded and drafted nothing.
+- **There is no spelling in which both survive.** As with #541, this is a *value* contract, not a type or a name: Swift cannot overload on it and a deprecation attribute has nothing to attach to. A caller who wants the old best-effort behaviour can filter its own indices, which is the same work done deliberately instead of silently.
+- **A request naming only valid indices is unaffected**, which is pinned by a positive-control test per entry point.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
 ### MINOR — `x.y.0`
 

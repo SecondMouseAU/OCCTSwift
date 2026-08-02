@@ -418,10 +418,15 @@ public final class Curve3D: @unchecked Sendable {
     /// for source compatibility — prefer this property when you need to tell "failed" apart
     /// from "genuinely zero".
     ///
-    /// Backed by `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
-    /// interval boundaries and integrates each span separately, so a multi-span BSpline (an
-    /// interpolated toolpath, an imported spline) measures correctly rather than being integrated
-    /// as one Gauss quadrature across the whole domain.
+    /// Backed by `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN`
+    /// intervals and then to that interval halved, quartered, ... until two successive levels
+    /// agree to 1e-9 relative. One fixed-order Gauss rule per interval is not enough wherever the
+    /// speed `|C'(u)|` varies across it: a whole ellipse measured up to 1.7% long, a parabola over
+    /// `[-100, 100]` 3.1% short and a 5-point interpolation 6.0e-5 out (#603, completing #477's
+    /// per-span split). A line, a circle and a 2-pole Bezier/BSpline keep their exact closed form.
+    ///
+    /// The measurement costs roughly 5x what a single quadrature did — an 8 x 3 ellipse 0.11 us to
+    /// 3.5 us, a 200-span BSpline 89 us to 452 us; a line or circle is unchanged at 0.02 us.
     ///
     /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so
     /// trim before measuring if that is not what you want.
@@ -448,18 +453,36 @@ public final class Curve3D: @unchecked Sendable {
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`. Parameters outside the curve's domain are clamped to it, so a
-    /// range wholly outside measures `0` rather than extrapolating the curve's polynomial.
+    /// parameters measure `0`.
+    ///
+    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
+    /// itself does not check, and answered them differently per curve type — on an interpolated
+    /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
+    /// length, neither distinguishable from a real result (#548).
+    ///
+    /// A finite range reaching outside the curve's domain is *not* rejected: it measures the part
+    /// of the range that lies on the curve, so a range wholly outside measures `0` and one
+    /// overhanging an end measures up to that end. A curve whose parameter domain covers a whole
+    /// period exists at every parameter, so a *periodic* curve measures the whole range and winds:
+    /// a circle over `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers
+    /// half a period, so it stops at its own trim (#600).
     ///
     /// - Parameters:
-    ///   - u1: Start parameter.
-    ///   - u2: End parameter.
-    /// - Returns: Arc length in model units, or `nil` if the OCCT computation fails.
+    ///   - u1: Start parameter. Must be finite.
+    ///   - u2: End parameter. Must be finite.
+    /// - Returns: Arc length in model units, or `nil` if a bound is not finite or the OCCT
+    ///   computation fails.
     ///
     /// ```swift
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 1)!
     /// let d = circle.domain
     /// let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)  // ~= pi
+    /// let two = circle.length(from: 0, to: 4 * .pi)   // ~= 4pi, two turns: the circle is periodic
+    /// let bad = circle.length(from: d.lowerBound, to: .nan)                 // nil, not a number
+    ///
+    /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+    /// let clipped = seg.length(from: 0, to: 20)       // 10, the segment: it is not a whole line
+    /// let outside = seg.length(from: 20, to: 30)      // 0, the segment is not there
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)
@@ -587,9 +610,28 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Curvature at parameter u
-    public func curvature(at u: Double) -> Double {
-        OCCTCurve3DGetCurvature(handle, u)
+    /// Curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The curvature, or `nil` at a parameter the curve cannot be evaluated at or where
+    ///   `GeomLProp_CLProps::IsTangentDefined()` is false — a point with no significant derivative
+    ///   of any order, such as a Bezier whose control points all coincide. This used to be `0`,
+    ///   which is also every straight curve's real curvature (#595).
+    ///
+    /// A **cusp** is not an absence and is still reported: OCCT calls the curvature there infinite
+    /// and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which passes through as a value.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let k = circle.curvature(at: 0) { print(k) }   // 0.2, i.e. 1/5
+    ///
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// line.curvature(at: 3)   // 0 — straight, and that is the answer, not a failure
+    /// ```
+    public func curvature(at u: Double) -> Double? {
+        var k = 0.0
+        guard OCCTCurve3DGetCurvature(handle, u, &k) else { return nil }
+        return k
     }
 
     /// Unit tangent direction at parameter u
@@ -613,9 +655,26 @@ public final class Curve3D: @unchecked Sendable {
         return SIMD3(cx, cy, cz)
     }
 
-    /// Torsion at parameter u (twist out of the osculating plane)
-    public func torsion(at u: Double) -> Double {
-        OCCTCurve3DGetTorsion(handle, u)
+    /// Torsion at parameter `u` — the rate the curve twists out of its osculating plane — or `nil`
+    /// where there is no osculating plane to twist out of.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The torsion, or `nil` at a parameter the curve cannot be evaluated at or where
+    ///   the first two derivatives are parallel (a straight stretch), so no osculating plane is
+    ///   defined. That case used to be `0`, which is also every **planar** curve's real torsion —
+    ///   a circle and a straight line reported the same answer (#595).
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// circle.torsion(at: 1)   // 0 — planar, and that is the answer
+    ///
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// line.torsion(at: 5)     // nil — no osculating plane at all
+    /// ```
+    public func torsion(at u: Double) -> Double? {
+        var t = 0.0
+        guard OCCTCurve3DGetTorsion(handle, u, &t) else { return nil }
+        return t
     }
 
     // MARK: - Bounding Box
@@ -2065,21 +2124,36 @@ extension Curve3D {
     /// Compute the arc length of this curve between parameters u1 and u2 (non-optional).
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if the underlying computation fails — arc length is otherwise always non-negative, so
-    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
-    /// result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional
-    /// rather than a sentinel value.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)`
+    /// directly if you need an optional rather than a sentinel value.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         length(from: u1, to: u2) ?? -1.0
     }
 
     /// Find the parameter at a given arc length distance from a starting parameter.
     ///
-    /// Uses `GCPnts_AbscissaPoint` for accurate arc-length parameterization.
+    /// Measured with the same subdivided quadratures `length` uses, so this and the length it
+    /// inverts always agree: `curve.parameterAtLength(curve.length!)` lands on
+    /// `domain.upperBound`. OCCT's own root finder inverts a *single* Gauss quadrature over
+    /// `[startParam, u]`, and fed the accurate total length of an 8 x 3 ellipse it answers 6.2438
+    /// for a domain ending at 6.2832 (#603).
+    ///
+    /// A distance longer than the curve keeps OCCT's answer, which reports success with a
+    /// parameter outside the curve's own domain rather than failing.
+    ///
     /// - Parameters:
     ///   - arcLength: Distance along the curve (positive = forward, negative = backward).
     ///   - from: Starting parameter (defaults to curve start).
     /// - Returns: The parameter value at the specified arc length.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 1)!
+    /// let half = e.parameterAtLength(e.length! / 2)   // halfway along by arc, not by parameter
+    /// let end = e.parameterAtLength(e.length!)        // e.domain.upperBound
+    /// ```
     public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double {
         let start = startParam ?? domain.lowerBound
         return OCCTCurve3DParameterAtLength(handle, arcLength, start)
@@ -2098,10 +2172,10 @@ extension Curve3D {
     /// Arc length between two parameters.
     ///
     /// Delegates to `length(from:to:)`, the failure-distinguishing entry point. Returns `-1.0`
-    /// if the underlying computation fails — arc length is otherwise always non-negative, so
-    /// this is an unambiguous failure sentinel, never confusable with a genuine zero-length
-    /// interval (e.g. `param1 == param2`). Use `length(from:to:)` directly if you need an
-    /// optional rather than a sentinel value.
+    /// if a bound is not finite (`.nan`, `±.infinity`) or the underlying computation fails — arc
+    /// length is otherwise always non-negative, so this is an unambiguous failure sentinel, never
+    /// confusable with a genuine zero-length interval (e.g. `param1 == param2`). Use
+    /// `length(from:to:)` directly if you need an optional rather than a sentinel value.
     public func arcLengthBetween(_ param1: Double, _ param2: Double) -> Double {
         length(from: param1, to: param2) ?? -1.0
     }
