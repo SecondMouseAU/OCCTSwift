@@ -277,7 +277,10 @@
 //                                       OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength,
 //                                       OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
 //                                       (three further spellings were deleted by #506/#549; their
-//                                       tombstones sit at the old declaration sites)
+//                                       tombstones sit at the old declaration sites. None of the
+//                                       seven names the class any more: since #603 they all reach
+//                                       it through the shared occtArcQuadrature /
+//                                       occtArcWalkToLength helpers, so grep those, not the class)
 // CPnts_AbscissaPoint                 → the same functions, as occtArcQuadrature's per-span integrator on composite curves (#603)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection

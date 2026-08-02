@@ -17,6 +17,57 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The index gate was reporting seven correct entries, because it could not read a template helper (#624)
+
+`Scripts/check-bridge-index.py` exited 1 with `0 stale, 7 misfiled`, every one of them on the
+`GCPnts_AbscissaPoint` line of `OCCTBridge.h`'s cross-reference index, and every one reported as
+`no bridge function reaches this class`. The reading that fits — #477, #549, #600 and #603 did
+progressively move arc-length measurement off `GCPnts_AbscissaPoint` — is that the entries had
+drifted and needed re-filing. They had not.
+
+Adjudicated per symbol, by reading each body and following the call path rather than the name:
+
+| symbol | call path | reaches |
+|---|---|---|
+| `OCCTCurve3DGetLength*` | `occtAdaptorArcLength` / `occtAdaptorLengthBetween` → `occtArcConvergedLength` → `occtArcQuadrature` | `GCPnts_AbscissaPoint::Length` |
+| `OCCTCurve3DParameterAtLength` | `occtAdaptorParameterAtLength` → `occtArcWalkToLength` | `GCPnts_AbscissaPoint` (constructed) |
+| `OCCTCurve2DGetLength*` | same helpers, `Geom2dAdaptor_Curve` | `GCPnts_AbscissaPoint::Length` |
+| `OCCTCurve2DParameterAtLength` | `occtAdaptorParameterAtLength` | `GCPnts_AbscissaPoint` (constructed) |
+| `OCCTEdgeArcLength*` | same helpers, `BRepAdaptor_Curve` | `GCPnts_AbscissaPoint::Length` |
+| `OCCTEdgeParameterAt*` | `occtAdaptorParameterAtLength` | `GCPnts_AbscissaPoint` (constructed) |
+| `OCCTWireGetLength` | same helpers, `BRepAdaptor_CompCurve` | `GCPnts_AbscissaPoint::Length` |
+
+All seven still reach the class. `occtArcQuadrature` (`OCCTBridge_Internal.h`) is
+`singleSpan ? GCPnts_AbscissaPoint::Length(...) : CPnts_AbscissaPoint::Length(...)`, so #603 added
+a second class to these functions rather than replacing the first — which is what the index already
+said, on the `CPnts_AbscissaPoint` line directly beneath.
+
+The defect was the checker's. It classifies each brace-balanced definition by searching its
+signature for `struct|class|union|namespace|enum`, and a `template <class TheAdaptor>` head
+satisfies that: all nine of the shared arc-length helpers were filed as a *type* named `TheAdaptor`
+instead of as functions. A type is only ever reached by a function that names it, and none do, so
+the helper-indirection chain was cut at its first template link and the class looked unreached. The
+tell was that `OCCTBridge_Modeling.mm`'s one `template <typename BoolOpT>` helper parsed correctly:
+`typename` is not in that alternation, `class` is. `without_template_head` now strips the head
+before classification; a `template <class T> struct Foo` is still read as a type.
+
+No bridge or Swift source changed — the index entry was right, and the note added to it records
+that the seven reach the class through the helpers rather than by naming it, so the next reader
+greps the right thing.
+
+Two holes in the script's own `--self-test`, both of which had to be closed for #625 to gate on it:
+
+- `DIRECTION_TEST` did prove the misfiled mode was caught, but all four of its cases named a single
+  symbol, so the entry-level rule `misfiled_entries` explicitly warns against — "at least one of
+  these reaches the class", which lets one wrong symbol hide behind correct neighbours — passed the
+  whole suite 16/16 when injected. A fifth case mixes a correct symbol with a wrong one and pins
+  which symbol must be blamed.
+- `INDIRECTION_TEST` covered the plain `inline` helper but not the template one, so nothing failed
+  when the parse above broke. A case for it now asserts the `GCPnts_AbscissaPoint` line stays clean.
+
+Both were verified by injecting the regression they describe and confirming 17/18. The suite is
+18/18 and the gate exits 0.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real

@@ -48,7 +48,9 @@ indirectly" fails on correct entries and gets switched off.
 2. **Helper indirection** — `TDataStd_NamedData` is reached only through two lowercase
    `static` helpers, so no `OCCT`-prefixed function body names it. A function reaches
    what its file-local helpers (and the shared `OCCTBridge_Internal.h` ones) reach.
-   This is the near-miss that almost got the entry wrongly deleted in #510.
+   This is the near-miss that almost got the entry wrongly deleted in #510. The helper
+   may be a `template <class T>` one, which has to be parsed as a function and not as a
+   definition of a class called `T` — see `without_template_head` (#624).
 3. **Static facades** — `ShapeCustom::SweptToElementary` is how the bridge reaches
    `ShapeCustom_SweptToElementary`; the worker class is never named. A `Foo::Bar` call
    counts as naming `Foo_Bar`. (Facades with no worker class of their own, such as
@@ -89,6 +91,7 @@ VIA = re.compile(r'\(via ([A-Za-z0-9_]+)')
 IDENT = re.compile(r'\b[A-Za-z_][A-Za-z0-9_]*\b')
 SCOPED = re.compile(r'\b([A-Za-z_][A-Za-z0-9_]*)::([A-Za-z_][A-Za-z0-9_]*)')
 AGGREGATE = re.compile(r'\b(?:struct|class|union|namespace|enum)\s')
+TEMPLATE_HEAD = re.compile(r'\btemplate\s*<')
 WORD = re.compile(r'[A-Z][a-z0-9]*|\d+')
 
 
@@ -187,6 +190,39 @@ def strip_noise(text):
     return re.sub(r'^\s*#[^\n]*', '', text, flags=re.M)
 
 
+def without_template_head(sig):
+    """`template <class TheAdaptor>` introduces a parameter, not a class definition.
+
+    The `class` in a template head otherwise satisfies AGGREGATE below, so every one of
+    the bridge's `template <class TheAdaptor>` helpers was filed as a *type* named
+    `TheAdaptor` rather than as the function it is — and a type is only ever reached by a
+    function that names it, which none do. That silently cut the helper-indirection chain
+    at its first template link: `OCCTCurve3DGetLength` reaches `GCPnts_AbscissaPoint`
+    through `occtAdaptorArcLength -> occtArcConvergedLength -> occtArcQuadrature`, all
+    three of them templates, so the class looked unreached and all seven symbols on the
+    `GCPnts_AbscissaPoint` line were reported misfiled when the line was correct (#624).
+    The tell was that `OCCTBridge_Modeling.mm`'s one `template <typename BoolOpT>` helper
+    parsed fine: `typename` is not in AGGREGATE, `class` is.
+    """
+    out, i = [], 0
+    while True:
+        m = TEMPLATE_HEAD.search(sig, i)
+        if not m:
+            return ''.join(out) + sig[i:]
+        out.append(sig[i:m.start()])
+        depth, j = 0, m.end() - 1
+        while j < len(sig):
+            if sig[j] == '<':
+                depth += 1
+            elif sig[j] == '>':
+                depth -= 1
+                if depth == 0:
+                    j += 1
+                    break
+            j += 1
+        i = j
+
+
 def definitions(path):
     """(kind, name, names-it-reaches) for every brace-balanced definition at file scope."""
     with open(path, errors='replace') as f:
@@ -205,12 +241,14 @@ def definitions(path):
                 names = set(IDENT.findall(sig)) | set(IDENT.findall(body))
                 # a `Foo::Bar` call is how the bridge reaches worker class `Foo_Bar`
                 names |= {f'{a}_{b}' for a, b in SCOPED.findall(body)}
-                if AGGREGATE.search(sig):
-                    m = re.search(r'\b(?:struct|class|union)\s+(\w+)', sig)
+                # classified on the declaration proper: a template head is not a definition
+                decl = without_template_head(sig)
+                if AGGREGATE.search(decl):
+                    m = re.search(r'\b(?:struct|class|union)\s+(\w+)', decl)
                     if m:
                         out.append(('type', m.group(1), names))
                 else:
-                    m = list(re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(', sig))
+                    m = list(re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(', decl))
                     if m:
                         out.append(('fn', m[-1].group(1), names))
                 start, sig_start = None, i + 1
@@ -337,6 +375,12 @@ SELF_TEST = [
 
 # Each case is an entry filed under the wrong class — the four shapes #565 found. Every
 # one names a symbol that exists, so the existence check above calls them all clean.
+#
+# The last case is the one that makes this per-SYMBOL rather than per-entry, and it is not
+# redundant: the first four each name a single symbol, so an entry-level rule ("at least one
+# of these reaches the class") passes all four and the whole suite still reported 16/16 with
+# the regression `misfiled_entries` warns against injected. Its third field pins which symbol
+# must be named, so a rule that flags the entry but blames the wrong symbol fails too (#624).
 DIRECTION_TEST = [
     ('symbol drives a neighbouring class', [
         '// BOPAlgo_CellsBuilder                → OCCTBOPAlgoSplit']),
@@ -346,6 +390,9 @@ DIRECTION_TEST = [
         '// LProp_AnalyticCurInf                → OCCTLPropAnalyticCurInf']),
     ('class name is one letter off', [
         '// Law_Interpol                        → OCCTLawInterpolate']),
+    ('one wrong symbol among correct neighbours', [
+        '// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTBOPAlgoSplit'],
+        'OCCTBOPAlgoSplit'),
 ]
 
 # The four indirection forms, plus the two shapes carrying an explicit exemption. A
@@ -356,6 +403,13 @@ INDIRECTION_TEST = [
         '// XCAFDoc_ShapeTool                   → OCCTDocumentAddShape']),
     ('lowercase static helper', [
         '// TDataStd_NamedData                  → OCCTDocumentNamedData*']),
+    # The helper case above is a plain `inline`; this one is reached only through a chain of
+    # `template <class TheAdaptor>` helpers, which is a different parse. All seven symbols on
+    # this line were reported misfiled until #624 stopped a template head from being read as a
+    # `class` definition — the entry was correct the whole time.
+    ('template static helper', [
+        '// GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTEdgeParameterAt*,',
+        '//                                       OCCTWireGetLength']),
     ('static facade', [
         '// ShapeCustom_SweptToElementary       → OCCTShapeSweptToElementary']),
     ('multi-class heading', [
@@ -377,11 +431,13 @@ def self_test(known, reach):
         failed += not flagged
         print(f'  {"ok  " if flagged else "MISS"} stale, {name}: '
               f'{", ".join(flagged) or "injected name not reported"}')
-    for name, lines in DIRECTION_TEST:
+    for name, lines, *expected in DIRECTION_TEST:
         flagged = misfiled_entries(index_entries(lines), reach)
+        if expected:  # the entry must be flagged *on this symbol*, not merely flagged
+            flagged = [f for f in flagged if f[2] == expected[0]]
         failed += not flagged
         print(f'  {"ok  " if flagged else "MISS"} misfiled, {name}: '
-              f'{flagged[0][1] if flagged else "mis-attribution not reported"}')
+              f'{flagged[0][1] + " → " + flagged[0][2] if flagged else "mis-attribution not reported"}')
     for name, lines in INDIRECTION_TEST:
         flagged = misfiled_entries(index_entries(lines), reach)
         failed += bool(flagged)
