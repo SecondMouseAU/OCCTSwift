@@ -1355,11 +1355,101 @@ void OCCTFreeWireArrayOnly(OCCTWireRef* wires);
 
 // MARK: - Face Analysis (for solid-based CAM)
 
-/// Get all faces from a shape
+// === #614: two face enumerations, two contracts -- the split OCCT itself draws ===
+//
+// A face can appear in one shape twice with opposite orientations: the ordinary result of any BOP
+// leaving two bodies that share a wall. What callers want from a face list is then two lists, and
+// OCCT's own kernel already separates them. This bridge follows that split rather than inventing
+// one. Read against the pinned 8.0.0p1 headers/sources:
+//
+//   * IDENTITY / INDEXING is orientation-INSENSITIVE upstream. TopoDS_Shape::IsSame is "same
+//     TShape with the same Locations. Orientations may differ" (TopoDS_Shape.hxx:265-271);
+//     IsEqual additionally requires the orientation (TopoDS_Shape.hxx:273-280).
+//     TopTools_ShapeMapHasher's equality operator is exactly IsSame (TopTools_ShapeMapHasher.hxx
+//     :35-38), and the ONLY type-filtered mapping function OCCT publishes,
+//     TopExp::MapShapes(S, T, M), accepts only that hasher's map -- there is no oriented overload
+//     (TopExp.hxx:57-60). It is literally an explorer walk piped into the map (TopExp.cxx:35-45),
+//     and NCollection_IndexedMap::addImpl returns the existing index and leaves the stored key
+//     untouched on a repeat (NCollection_IndexedMap.hxx:684-710), so the map keeps the FIRST
+//     occurrence's orientation. Upstream's own canonical stable sub-shape index -- the one BREP
+//     file persistence writes -- is this same IsSame map (TopTools_ShapeSet.hxx:192).
+//
+//   * GEOMETRY / NORMALS is orientation-SENSITIVE upstream, and is read off the TRAVERSAL, never
+//     out of an indexed map. BRepGProp::VolumeProperties, where a face's orientation decides the
+//     sign of the volume integral, walks a TopExp_Explorer and takes the orientation from
+//     ex.Current() (BRepGProp.cxx:322-325). Its SkipShared branch is the exact case at issue: it
+//     dedupes with IsSame maps but keeps TWO of them, aFwdFMap and aRvsFMap, one per orientation,
+//     so a face present both FORWARD and REVERSED is visited ONCE PER ORIENTATION rather than
+//     collapsed (BRepGProp.cxx:318-338). The oriented indexed map
+//     (NCollection_IndexedMap<TopoDS_Shape>, deprecated alias TopTools_IndexedMapOfOrientedShape)
+//     is used upstream only for internal algorithm bookkeeping -- TopOpeBRepBuild, BOPAlgo_Builder,
+//     TopOpeBRepTool, BRepCheck_Wire, ChFi3d, BRepTools_ReShape -- never as a public sub-shape
+//     enumeration. (Both typedefs are Standard_HEADER_DEPRECATED since 8.0.0 and live in
+//     src/Deprecated/, hence the NCollection spellings above.)
+//
+// So: index by IsSame, orient by explorer. Measured on the pinned kernel (BRepAlgoAPI_Splitter,
+// an origin-centred 10mm box -- Shape.box spans -5..5 -- cut by the z=4 plane, two solids):
+// 12 face occurrences over 11 distinct faces; the shared wall is map index 2, stored FORWARD
+// because the lower solid is visited first. Its centre is (0,0,4) and its normal (0,0,1), so
+// against the lower solid's interior (0,0,-0.5) the dot is +4.5 (outward) and against the upper
+// solid's (0,0,4.5) it is -0.5 (INWARD). The two occurrences are IsSame and not IsEqual.
+//
+// The same collapse reached the CAM helpers built on the face list: horizontalFaces() answered 3
+// where the geometry has 4 horizontal occurrences, because the shared wall is horizontal from both
+// sides and only one survived. Those helpers read the occurrence enumeration now.
+//
+// OCCTShapeGetFaces is the INDEXING enumeration and stays the IsSame map. OCCTShapeGetOrientedFaces
+// is the GEOMETRY enumeration and is the explorer walk, added rather than substituted so no index
+// moves. Its entries carry BOTH the parent-relative orientation and the OCCTShapeGetFaces index of
+// the same face, so an oriented occurrence is still addressable by every index-taking entry point.
+
+/// Get all faces from a shape -- the INDEXING enumeration, one entry per *distinct* face.
+///
+/// #614: each entry carries the orientation it has at its FIRST occurrence. On a shape where a
+/// face occurs with both orientations (two solids sharing a wall), that orientation is correct for
+/// one owner and inverted for the other, and so is the normal OCCTFaceGetNormalAtUV derives from
+/// it. Use OCCTShapeGetOrientedFaces when the normal's direction matters; use this when the index
+/// matters.
+///
 /// @param shape The shape to extract faces from
 /// @param outCount Output: number of faces returned
 /// @return Array of face references, or NULL on failure. Caller must free with OCCTFreeFaceArray.
 OCCTFaceRef* OCCTShapeGetFaces(OCCTShapeRef shape, int32_t* outCount);
+
+/// The number of face OCCURRENCES in a shape -- the length OCCTShapeGetOrientedFaces returns.
+///
+/// #614: this is a TopExp_Explorer walk, so a face reachable from two parents is counted once per
+/// parent. It is >= OCCTShapeGetFaceCount, and equal to it on any shape that shares no face. Call
+/// this to size the index buffer OCCTShapeGetOrientedFaces fills.
+int32_t OCCTShapeGetFaceOccurrenceCount(OCCTShapeRef shape);
+
+/// Get all faces from a shape -- the GEOMETRY enumeration, one entry per *occurrence*, each
+/// carrying the orientation it has in the parent.
+///
+/// #614: this is the list to walk when the normal's direction matters. A face shared by two solids
+/// appears twice, once per owner, each time with the orientation that makes
+/// OCCTFaceGetNormalAtUV point OUT of that owner.
+///
+/// Array position here is NOT a face index -- it is an occurrence number, and two positions can
+/// name the same face. The face index of each entry (its position in OCCTShapeGetFaces, the token
+/// every index-taking entry point in this header expects) is written into `outIndices`, so an
+/// entry keeps both properties.
+///
+/// @param shape The shape to extract faces from
+/// @param outIndices Optional buffer receiving each entry's 0-based face index; may be NULL
+/// @param indexCapacity Number of int32_t slots in `outIndices`; slots past it are not written
+/// @param outCount Output: number of faces returned
+/// @return Array of face references, or NULL on failure. Caller must free with OCCTFreeFaceArray.
+OCCTFaceRef* OCCTShapeGetOrientedFaces(OCCTShapeRef shape,
+                                        int32_t* outIndices,
+                                        int32_t indexCapacity,
+                                        int32_t* outCount);
+
+/// The orientation this face carries: 0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL.
+///
+/// #614: OCCTFaceGetNormalAtUV reverses its normal exactly when this is REVERSED, so this is what
+/// decides which side of the surface the reported normal points to. Returns 0 for a null face.
+int32_t OCCTFaceGetOrientation(OCCTFaceRef face);
 
 /// Free an array of faces (frees faces AND array)
 /// @param faces Array of face references

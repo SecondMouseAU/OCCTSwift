@@ -770,6 +770,104 @@ Two regression suites pin the paths that moved, both checked against the release
 with `OCCTSWIFT_REMOTE=1`. No production code changes. Reproducer, both transcripts and the probe
 census: [`Scripts/repro/572-approx-consumer-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/572-approx-consumer-sweep).
 
+#### `faces()` dropped a shared face's second orientation, inverting normals on split solids (#614)
+
+#541/#502 converged every face accessor onto one enumeration, `TopExp::MapShapes`. That map
+compares with `TopoDS_Shape::IsSame` — "same TShape with the same Locations. Orientations may
+differ" (`TopoDS_Shape.hxx:265-271`) — and `NCollection_IndexedMap::addImpl` returns the existing
+index and leaves the stored key untouched on a repeat (`NCollection_IndexedMap.hxx:684-710`). So a
+face occurring in one shape both `FORWARD` and `REVERSED` collapsed to a single entry carrying
+whichever orientation was reached **first**.
+
+That is correct for an index and wrong for a normal, because `OCCTFaceGetNormalAtUV` reverses the
+surface normal exactly when the face reads `REVERSED`. Measured on the pinned kernel — a
+`BRepAlgoAPI_Splitter` cutting an origin-centred 10mm box (`Shape.box` spans −5..5) with the z=4
+plane, the plainest two-body result there is:
+
+| | before |
+|---|---|
+| face occurrences (`TopExp_Explorer`) | 12 |
+| distinct faces (`TopExp::MapShapes`) | 11 |
+| shared wall stored as | `FORWARD` (lower solid visited first) |
+| its centre / normal | `(0, 0, 4)` / `(0, 0, 1)` |
+| dot vs lower solid interior `(0, 0, −0.5)` | **+4.5** — outward |
+| dot vs upper solid interior `(0, 0, 4.5)` | **−0.5** — *inward* |
+
+The two occurrences are `IsSame` and not `IsEqual`. A renderer or CAM pass building outward normals
+by walking `faces()` got an inward-facing wall for the second body, and any per-face accumulation
+silently lost a facet.
+
+That second half was reachable through public API, not just in principle. The face-list CAM helpers
+filter on normal-derived predicates, so they inherited the collapse — on the same compound:
+
+| | before | after |
+|---|---|---|
+| `horizontalFaces()` | **3** | 4 |
+| `facesByZLevel()` at z=4 | **1** (upward only) | 2 (one per owning solid) |
+| `upwardFaces()` | 2 | 2 (unchanged — opposed normals cannot both face up) |
+
+The upper solid's floor was simply absent.
+
+**Fixed by following the split OCCT itself draws, rather than inventing one.** The kernel already
+separates these two jobs and this bridge now matches it:
+
+- **Index → orientation-insensitive.** `TopExp::MapShapes(S, T, M)` is the only type-filtered
+  mapping function OCCT publishes and it accepts only the `IsSame` hasher's map — there is no
+  oriented overload (`TopExp.hxx:57-60`). Upstream's own canonical stable sub-shape index, the one
+  BREP file persistence writes, is that same map (`TopTools_ShapeSet.hxx:192`). `Shape.faces()`
+  stays on it, so **no index moves** and #541 is untouched.
+- **Normal → orientation-sensitive, read off the traversal.** `BRepGProp::VolumeProperties`, where
+  a face's orientation sets the sign of the volume integral, takes it from `ex.Current()`
+  (`BRepGProp.cxx:322-325`); and where it deduplicates, it keeps one `IsSame` map *per
+  orientation* (`aFwdFMap`/`aRvsFMap`, `BRepGProp.cxx:318-338`) so a shared wall's two sides both
+  survive. The oriented indexed map (`NCollection_IndexedMap<TopoDS_Shape>`, deprecated alias
+  `TopTools_IndexedMapOfOrientedShape`) is used upstream only for internal algorithm bookkeeping —
+  `TopOpeBRepBuild`, `TopOpeBRepTool`, `BOPAlgo_Builder`, `BRepCheck_Wire`, `ChFi3d`,
+  `BRepTools_ReShape` — never as
+  a public sub-shape enumeration.
+
+New API, all additive:
+
+- **`Shape.orientedFaces() -> [Face]`** — the geometry enumeration: one entry per *occurrence*,
+  each carrying the orientation it has in its parent. A shared wall appears twice, once per owner,
+  each time with the orientation that makes `Face.normal(atU:v:)` point *out* of that owner. An
+  entry's array position is an occurrence number, not a face index, but each `Face` still carries
+  the correct `Face.index` into `faces()` — so an occurrence stays addressable by every
+  face-index-taking method, and entries sharing an `index` are the sides of one shared face. On any
+  shape that shares no face this returns exactly `faces()`, same order, same indices.
+- **`Face.orientation -> Shape.Orientation`** — the flag the normal reverses on, so the two sides
+  of a shared wall can be told apart.
+- Bridge: `OCCTShapeGetOrientedFaces`, `OCCTShapeGetFaceOccurrenceCount`, `OCCTFaceGetOrientation`.
+- **`horizontalFaces()`, `upwardFaces()` and `facesByZLevel()` now read `orientedFaces()`** — they
+  select on the face normal, so they are geometry consumers. **Contract change:** all three select
+  over *occurrences* and so can return two `Face` values carrying the same `Face.index`; dedupe on
+  `index` (or use `faces()`) if you need one entry per distinct face. On any shape whose faces are
+  not shared all three are unchanged, entry for entry.
+
+  These three are **not** the complete set of normal-derived consumers of `faces()`.
+  `AAG.buildGraph()` (`FeatureRecognition.swift:96`) also derives `normal`, `isHorizontal`,
+  `isUpward`, `isDownward`, `isVertical` and `zLevel` from `faces()`, and `AAG.detectPockets()`
+  selects on them — both public via `Shape.buildAAG()` and `Shape.detectPocketsAAG()`. It is
+  **not** fixed here: `faceIndex` and `adjacencyList` are array positions, so moving that graph to
+  the occurrence enumeration changes its identity model. Measured on the z=4 split compound,
+  `detectPocketsAAG()` returns 2 or 1 depending only on the order the halves were compounded in
+  (upward+horizontal nodes `[2, 8]` vs `[2]`), while `upwardFaces()` correctly returns 2 either
+  way. Tracked as #642.
+
+  One correction to an earlier draft of this entry: `upwardFaces()` was described as unable to
+  repeat an index, on the reasoning that a shared wall's two sides have opposed normals. That
+  reasoning holds only when the repeats come from parents bounding *opposite* sides. Reached twice
+  through parents imposing the *same* orientation, both entries qualify —
+  `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`. Separately,
+  `isUpwardFacing` tests `n.z > cos(tolerance)`, so at `tolerance >= π/2` the threshold is
+  non-positive and admits faces that do not point up at all, including both sides of a vertical
+  shared wall: `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices on a
+  two-solid split. Both are pinned by tests.
+
+`Shape.faces()`'s own behaviour is unchanged; its documentation now states which of the two
+contracts it holds. Per-solid enumeration (`compound.solids` then `.faces()`) was already correct
+and is pinned by a regression test so the compound-level fix cannot regress it.
+
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 
 `Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and

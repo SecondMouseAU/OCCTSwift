@@ -3944,6 +3944,16 @@ bool OCCTBRepToolSetUVPoints(OCCTShapeRef edge, OCCTShapeRef face,
 // OCCTShapeGetFaceCount/GetFaceAtIndex read the deduplicated map. Since Swift writes the array
 // position here into Face.index and hands it back to ~30 index-taking entry points, the two
 // enumerations had to be one. Reads occtMapSubShapes now, like every other face accessor.
+//
+// #614: that convergence is right for the index and lossy for the normal. TopExp::MapShapes keys
+// on TopoDS_Shape::IsSame, which ignores orientation (TopoDS_Shape.hxx:265-271), so a face
+// occurring both FORWARD and REVERSED keeps only the orientation it was first seen with -- and
+// OCCTFaceGetNormalAtUV derives the normal's SIDE from exactly that flag.
+//
+// Keeping this on the IsSame map is what OCCT does for an index: TopExp::MapShapes publishes no
+// oriented overload (TopExp.hxx:57-60) and BREP persistence indexes sub-shapes through the same
+// IsSame map (TopTools_ShapeSet.hxx:192). Orientation-sensitive work reads the traversal instead --
+// see OCCTShapeGetOrientedFaces below, and BRepGProp.cxx:318-338 for upstream doing exactly that.
 OCCTFaceRef* OCCTShapeGetFaces(OCCTShapeRef shape, int32_t* outCount) {
     if (!shape || !outCount) return nullptr;
     *outCount = 0;
@@ -3962,6 +3972,82 @@ OCCTFaceRef* OCCTShapeGetFaces(OCCTShapeRef shape, int32_t* outCount) {
         return result;
     } catch (...) {
         return nullptr;
+    }
+}
+
+// #614: the occurrence count -- what OCCTShapeGetFaces returned before #541, and what
+// OCCTShapeGetOrientedFaces returns now. Deliberately a bare explorer walk: the whole point is the
+// repeats the map drops.
+int32_t OCCTShapeGetFaceOccurrenceCount(OCCTShapeRef shape) {
+    if (!shape) return 0;
+    try {
+        int32_t count = 0;
+        for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) count++;
+        return count;
+    } catch (...) {
+        return 0;
+    }
+}
+
+// #614: the geometry enumeration. One entry per occurrence, carrying the orientation the explorer
+// composed through the traversal -- which is the orientation that makes OCCTFaceGetNormalAtUV
+// point out of the body that owns this occurrence.
+//
+// This is upstream's own idiom for orientation-sensitive face work, not a local invention:
+// BRepGProp::VolumeProperties reads TopoDS::Face(ex.Current()).Orientation() straight off the
+// explorer (BRepGProp.cxx:322-325), and when it dedupes it keeps one IsSame map PER orientation
+// (aFwdFMap/aRvsFMap, BRepGProp.cxx:318-338) precisely so a shared wall's two orientations both
+// survive. Collapsing them is the bug; the explorer is the fix.
+//
+// Each entry also reports its position in OCCTShapeGetFaces' deduplicated enumeration, looked up
+// through the same map that enumeration is built from (FindIndex is the IsSame lookup, 1-based).
+// TopExp::MapShapes is literally this explorer walk piped into the map, so every occurrence is in
+// it and FindIndex never misses; a 0 would mean the two walks had diverged, and is reported as -1
+// rather than silently written as a valid-looking index.
+OCCTFaceRef* OCCTShapeGetOrientedFaces(OCCTShapeRef shape,
+                                        int32_t* outIndices,
+                                        int32_t indexCapacity,
+                                        int32_t* outCount) {
+    if (!shape || !outCount) return nullptr;
+    *outCount = 0;
+
+    try {
+        // One traversal serves both: TopExp::MapShapes IS this explorer walk piped into the map
+        // (TopExp.cxx:35-45), so adding as we go builds exactly the enumeration OCCTShapeGetFaces
+        // reads, without walking the shape a second time to rebuild it.
+        std::vector<TopoDS_Face> occurrences;
+        TopTools_IndexedMapOfShape faceMap;
+        for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) {
+            occurrences.push_back(TopoDS::Face(ex.Current()));
+            faceMap.Add(ex.Current());
+        }
+        if (occurrences.empty()) return nullptr;
+
+        int32_t count = static_cast<int32_t>(occurrences.size());
+        OCCTFaceRef* result = new OCCTFaceRef[count];
+        for (int32_t i = 0; i < count; i++) {
+            result[i] = new OCCTFace(occurrences[i]);
+            if (outIndices && i < indexCapacity) {
+                int32_t found = faceMap.FindIndex(occurrences[i]);
+                outIndices[i] = (found > 0) ? found - 1 : -1;
+            }
+        }
+
+        *outCount = count;
+        return result;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+// #614: the flag OCCTFaceGetNormalAtUV reverses on, exposed so a caller can tell a shared wall's
+// two occurrences apart.
+int32_t OCCTFaceGetOrientation(OCCTFaceRef face) {
+    if (!face) return 0;
+    try {
+        return static_cast<int32_t>(face->face.Orientation());
+    } catch (...) {
+        return 0;
     }
 }
 
@@ -4090,9 +4176,11 @@ bool OCCTFaceGetZLevel(OCCTFaceRef face, double* outZ) {
 // OCCTShapeGetHorizontalFaces and OCCTShapeGetUpwardFaces were implemented here: second copies
 // of Face.isHorizontal / Face.isUpwardFacing (|n.Z| > cos(tolerance) and n.Z > cos(tolerance) over
 // the midpoint normal OCCTFaceGetNormal already returns), declared, compiled, and reachable from
-// nothing. Shape.horizontalFaces / Shape.upwardFaces filter faces() through those two Face
-// predicates and never called either. Removed by #529, which would otherwise have had to converge
-// their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
+// nothing. Shape.horizontalFaces / Shape.upwardFaces filter the Swift-side face list through those
+// two Face predicates and never called either. Removed by #529, which would otherwise have had to
+// converge their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
+// (Since #614 that Swift-side list is orientedFaces(), not faces(): both predicates read the face
+// normal, whose sign the deduplicated enumeration cannot carry for a shared face.)
 
 // MARK: - Edge Structure
 // OCCTEdge is now defined in OCCTBridge_Internal.h.
