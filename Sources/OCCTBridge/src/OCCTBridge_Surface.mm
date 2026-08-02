@@ -785,10 +785,10 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 
         // U-iso lines (constant U, varying V)
         for (int32_t i = 0; i < uCount && lineIdx < maxLines; i++) {
-            double u = uMin + (uMax - uMin) * i / (uCount > 1 ? (uCount - 1) : 1);
+            double u = occtUniformParameter(uMin, uMax, i, uCount);
             int32_t ptsInLine = 0;
             for (int32_t j = 0; j < pointsPerLine && totalPoints < maxPoints; j++) {
-                double v = vMin + (vMax - vMin) * j / (pointsPerLine > 1 ? (pointsPerLine - 1) : 1);
+                double v = occtUniformParameter(vMin, vMax, j, pointsPerLine);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[totalPoints * 3]     = p.X();
@@ -802,10 +802,10 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 
         // V-iso lines (constant V, varying U)
         for (int32_t j = 0; j < vCount && lineIdx < maxLines; j++) {
-            double v = vMin + (vMax - vMin) * j / (vCount > 1 ? (vCount - 1) : 1);
+            double v = occtUniformParameter(vMin, vMax, j, vCount);
             int32_t ptsInLine = 0;
             for (int32_t i = 0; i < pointsPerLine && totalPoints < maxPoints; i++) {
-                double u = uMin + (uMax - uMin) * i / (pointsPerLine > 1 ? (pointsPerLine - 1) : 1);
+                double u = occtUniformParameter(uMin, uMax, i, pointsPerLine);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[totalPoints * 3]     = p.X();
@@ -830,8 +830,14 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 // not OCCT's constraint but this function's own divisor: `i / (uCount - 1)` divides by zero at
 // count 1, and the NaN parameter that produces is worse than a throw, because D0 does not throw
 // on NaN — it returns NaN coordinates silently. OCCTSurfaceDrawGrid, forty lines above, samples
-// the same bounds the same way and has always spelled the divisor defensively; that spelling is
-// now shared, so a single iso-row is served rather than rejected (#620).
+// the same bounds and had spelled the divisor defensively since the commit that introduced both
+// functions; that expression is now occtUniformParameter, so neither loop states it in its own
+// words and a single iso-row is served rather than rejected (#620). Every other member of this
+// U-major grid family already accepted 1 — DrawGrid guards no count at all, EvaluateGrid and
+// EvaluateGridD1 guard `<= 0` — so the 2 here was the family's sole outlier.
+//
+// Note the infinite-bounds clamp below happens BEFORE the sampling, so on an unbounded surface
+// the row a single sample lands on is the clamped -100, not the surface's own -2e100 uMin.
 int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
                              int32_t uCount, int32_t vCount,
                              double* outXYZ) {
@@ -848,9 +854,9 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 
         int32_t idx = 0;
         for (int32_t i = 0; i < uCount; i++) {
-            double u = uMin + (uMax - uMin) * i / (uCount > 1 ? (uCount - 1) : 1);
+            double u = occtUniformParameter(uMin, uMax, i, uCount);
             for (int32_t j = 0; j < vCount; j++) {
-                double v = vMin + (vMax - vMin) * j / (vCount > 1 ? (vCount - 1) : 1);
+                double v = occtUniformParameter(vMin, vMax, j, vCount);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[idx * 3]     = p.X();
@@ -6574,10 +6580,10 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
         // Uniform locator parameters in [0,1].
         NCollection_Array1<double> profileParams(1, profileCount);
         for (int i = 0; i < profileCount; i++)
-            profileParams.SetValue(i + 1, profileCount > 1 ? (double)i / (profileCount - 1) : 0.0);
+            profileParams.SetValue(i + 1, occtUniformParameter(0.0, 1.0, i, profileCount));
         NCollection_Array1<double> guideParams(1, guideCount);
         for (int j = 0; j < guideCount; j++)
-            guideParams.SetValue(j + 1, guideCount > 1 ? (double)j / (guideCount - 1) : 0.0);
+            guideParams.SetValue(j + 1, occtUniformParameter(0.0, 1.0, j, guideCount));
 
         // Intersection grid: row = profile (i), col = guide (j). Sample profile i
         // at the parameter matching guide j's normalized position along the profile.
@@ -6587,7 +6593,7 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
             const Handle(Geom_BSplineCurve)& pc = profs.Value(i + 1);
             double f = pc->FirstParameter(), l = pc->LastParameter();
             for (int j = 0; j < guideCount; j++) {
-                double t = guideCount > 1 ? f + (l - f) * ((double)j / (guideCount - 1)) : f;
+                double t = occtUniformParameter(f, l, j, guideCount);
                 ipts.SetValue(i + 1, j + 1, pc->Value(t));
                 iwts.SetValue(i + 1, j + 1, 1.0);
             }

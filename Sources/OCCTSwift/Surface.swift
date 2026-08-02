@@ -688,21 +688,35 @@ public final class Surface: @unchecked Sendable {
     ///   `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while
     ///   `drawMesh(uCount: -1, vCount: 3)` aborted the process.
     ///
+    /// Samples span the **sampled range**, which is the surface's parametric domain with infinite
+    /// bounds clamped to ±100. For a bounded surface that is ``domain``; for an unbounded one
+    /// (a plane, an unbounded cylinder) it is not, and the difference is extreme rather than
+    /// marginal — a plane's `domain.uMin` is about -2e100 while its first sample sits at -100.
+    ///
     /// **One sample in a direction is a request, not a degenerate case.** Despite the name nothing
-    /// here triangulates: the bridge walks the parametric bounds evaluating the surface pointwise,
-    /// so `uCount: 1` is the single iso-row at `uMin` and a 1×1 grid is one point. The bridge used
-    /// to demand 2 per direction — its own interpolation divisor, not an OCCT rule — so a request
-    /// this doc called in-range came back as an empty grid the caller could not tell apart from a
-    /// surface that failed to sample (#620). Counts below 1 are still rejected, and rejection is
-    /// still an empty grid, the documented answer every ``Sampling`` entry point gives.
+    /// here triangulates: the bridge walks that range evaluating the surface pointwise, so
+    /// `uCount: 1` is the single iso-row at the low end of the sampled U range and a 1×1 grid is
+    /// one point. The bridge used to demand 2 per direction — its own interpolation divisor, not
+    /// an OCCT rule — so a request this doc called in-range came back as an empty grid the caller
+    /// could not tell apart from a surface that failed to sample (#620). Counts below 1 are still
+    /// rejected, and rejection is still an empty grid, the documented answer every ``Sampling``
+    /// entry point gives.
     ///
     /// ```swift
     /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
     /// let p = grid.at(u: 5, v: 3)
     ///
-    /// // A single V iso-row: 20 points along v at the surface's minimum u.
+    /// // A single V iso-row: 20 points along v, at the low end of the sampled U range.
     /// let isoRow = surface.drawMesh(uCount: 1, vCount: 20)
     /// let along = (0..<isoRow.vCount).map { isoRow.at(u: 0, v: $0) }
+    ///
+    /// // Bounded surface: that low end is domain.uMin.
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// sphere.drawMesh(uCount: 1, vCount: 4).at(u: 0, v: 0)   // == sphere.point(atU: 0, v: -.pi / 2)
+    ///
+    /// // Unbounded surface: it is the clamp, not domain.uMin.
+    /// let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    /// plane.drawMesh(uCount: 1, vCount: 4).at(u: 0, v: 0).x   // -100, not plane.domain.uMin
     /// ```
     public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
         // `atLeast: 1` is gridTotal's default, but it is spelled out because it is a contract the

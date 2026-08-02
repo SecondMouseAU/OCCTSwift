@@ -103,14 +103,32 @@ surface has no mesh".
 **The bridge was the layer that was wrong**, which is not what the issue expected ("a mesh of one
 row has no quads"). Measured against the kernel first: despite the name `OCCTSurfaceDrawMesh` does
 not mesh anything. There is no `BRepMesh`, no triangulation and no quad, just a uniform walk of the
-parametric bounds calling `Geom_Surface::D0`, and a single `(u, v)` is a valid OCCT evaluation — a
+sampled range calling `Geom_Surface::D0`, and a single `(u, v)` is a valid OCCT evaluation — a
 1 × 20 iso-row off a sphere is 20 finite points. The 2 was never OCCT's rule, it was this
 function's own divisor: `i / (uCount - 1)` divides by zero at count 1. And the NaN that produces is
 worse than a throw would have been, because `D0` does not throw on NaN, it returns NaN coordinates
-silently. `OCCTSurfaceDrawGrid`, forty lines above in the same file, samples the same bounds the
-same way and had always spelled that divisor defensively; that spelling is now shared. The bound
-moved to 1 rather than disappearing: below 1, and products past `Sampling.maximumSampleCount`, are
-still rejected at the Swift boundary before any allocation, which is #558's contract unchanged.
+silently. Every other member of the same U-major grid family already accepted 1 —
+`OCCTSurfaceDrawGrid` guards no count at all, `EvaluateGrid` and `EvaluateGridD1` guard `<= 0` — so
+`drawMesh` was the family's sole outlier. `OCCTSurfaceDrawGrid`, forty lines above in the same
+file, samples the same bounds and had spelled that divisor defensively since `b1cd75d`, the commit
+that introduced both functions. The bound moved to 1 rather than disappearing: below 1, and
+products past `Sampling.maximumSampleCount`, are still rejected at the Swift boundary before any
+allocation, which is #558's contract unchanged.
+
+That divisor is now `occtUniformParameter` in `OCCTBridge_Internal.h`, next to
+`occtSurfaceGridIndex` and for the same reason: it had been open-coded **nine** times in
+`OCCTBridge_Surface.mm` in three different spellings, and #620 is what a single copy written
+without the guard costs. Sharing the expression is what stops a tenth loop re-deriving the
+unguarded form.
+
+**A second wrong claim, caught reviewing the first fix.** The new contract sentence said
+`uCount: 1` is "the single iso-row at `uMin`". That holds only for a bounded surface: the bridge
+clamps infinite bounds to ±100 **before** deriving parameters, so on a plane `domain.uMin` is about
+-2e100 while the single row sits at -100. Same defect class as #620 itself — a claim true of the
+fixture in front of you and false in general — so the docs now name the **sampled range** (the
+domain, with infinite bounds clamped) rather than the domain, and a test pins the clamped value on
+an unbounded surface. The first version of that test checked only finiteness, which passes under
+either reading and so could not contradict the doc.
 
 **The sibling site keeps its 2.** `OCCTSurfaceCreateBezier` carries a visually identical
 `uCount < 2 || vCount < 2`, and that one is the kernel's: a Bezier's degree is its pole count minus
@@ -118,8 +136,12 @@ still rejected at the Swift boundary before any allocation, which is #558's cont
 single-pole direction (measured; 2 × 2 builds a bilinear patch). `Surface.bezier(poles:weights:)`
 already guarded the same bound, so that site had no three-layer mismatch at all — only a doc that
 was silent about the bound rather than wrong about it. Both look-alike guards now say in a comment
-which kind they are, and a test pins the Bezier minimum so the two are not "made consistent" by a
-later sweep.
+which kind they are, so the two are not "made consistent" by a later sweep. The accompanying test
+pins the *public* contract only, and says so: relaxing the bridge guard alone leaves it passing,
+because `Surface.bezier` rejects in Swift and never reaches the bridge — and if it did, OCCT would
+throw and `catch (...)` would return `nullptr`, so `nil` comes back either way. No black-box test
+can separate those two layers, and claiming otherwise would be the same kind of overstatement this
+entry is about.
 
 #### The one grid layout finally covers the third type holding a grid (#617)
 

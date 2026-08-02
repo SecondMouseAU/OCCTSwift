@@ -863,6 +863,22 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
     return iu * vCount + iv;
 }
 
+/// THE definition of the i-th of `count` uniformly spaced parameters across `[lo, hi]`.
+///
+/// The whole content of this function is the divisor. `count - 1` is the number of *intervals*,
+/// which is the right spacing for two or more samples and a division by zero for one, and a
+/// single sample is a legitimate request: it means the low end of the range, the degenerate
+/// interval. Every sampling loop in this file needs that guard, and #620 is what happens when one
+/// of them is written without it — OCCTSurfaceDrawMesh divided by `count - 1` bare, so it had to
+/// reject `count == 1` to avoid handing NaN to Geom_Surface::D0, which does not throw on NaN but
+/// returns NaN coordinates. The bound that cost the caller was never OCCT's; it was this
+/// expression's. It is written once here so no future loop can re-derive the version without the
+/// guard, which is exactly how DrawGrid and DrawMesh came to disagree in the commit that
+/// introduced both of them.
+inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t count) {
+    return lo + (hi - lo) * index / (count > 1 ? (count - 1) : 1);
+}
+
 // === #501: GCPnts arc-length samplers can return more points than were asked for ===
 //
 // GCPnts_UniformAbscissa::initialize sizes its own parameter array at `nbPoints + 5` and lets the
