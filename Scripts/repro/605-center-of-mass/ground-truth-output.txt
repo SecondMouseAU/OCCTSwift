@@ -1,0 +1,68 @@
+========== #605 GROUND TRUTH: OCCT ONLY, NO BRIDGE ==========
+
+box 10x20x30 moved to (100,200,300); true volume centroid = (105, 210, 315)
+
+--- CLOSED SOLID  (type=SOLID, location is NOT identity) ---
+  shells: 1 total, 1 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=   6000.0000  COM=(105.0000, 210.0000, 315.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=   6000.0000  COM=(105.0000, 210.0000, 315.0000)
+  SurfaceProperties                                    : mass=   2200.0000  COM=(105.0000, 210.0000, 315.0000)
+  LinearProperties                                     : mass=    480.0000  COM=(105.0000, 210.0000, 315.0000)
+
+--- CLOSED SHELL (not wrapped in a solid)  (type=SHELL, location is NOT identity) ---
+  shells: 1 total, 1 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=   6000.0000  COM=(105.0000, 210.0000, 315.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=   6000.0000  COM=(105.0000, 210.0000, 315.0000)
+  SurfaceProperties                                    : mass=   2200.0000  COM=(105.0000, 210.0000, 315.0000)
+  LinearProperties                                     : mass=    480.0000  COM=(105.0000, 210.0000, 315.0000)
+
+--- OPEN SHELL (5 of 6 faces)  (type=SHELL, location IS identity) ---
+  shells: 1 total, 0 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=   4800.0000  COM=(105.0000, 210.0000, 312.3750)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=      0.0000  COM=(0.0000, 0.0000, 0.0000)
+  SurfaceProperties                                    : mass=   2000.0000  COM=(105.0000, 210.0000, 313.5000)
+  LinearProperties                                     : mass=    420.0000  COM=(105.0000, 210.0000, 312.8571)
+
+--- FACE  (type=FACE, location is NOT identity) ---
+  shells: 0 total, 0 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  SurfaceProperties                                    : mass=    600.0000  COM=(100.0000, 210.0000, 315.0000)
+  LinearProperties                                     : mass=    100.0000  COM=(100.0000, 210.0000, 315.0000)
+
+--- WIRE  (type=WIRE, location is NOT identity) ---
+  shells: 0 total, 0 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  SurfaceProperties                                    : mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  LinearProperties                                     : mass=    100.0000  COM=(100.0000, 210.0000, 315.0000)
+
+--- EDGE  (type=EDGE, location is NOT identity) ---
+  shells: 0 total, 0 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  SurfaceProperties                                    : mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  LinearProperties                                     : mass=     30.0000  COM=(100.0000, 200.0000, 315.0000)
+
+--- VERTEX  (type=VERTEX, location is NOT identity) ---
+  shells: 0 total, 0 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  SurfaceProperties                                    : mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+  LinearProperties                                     : mass=      0.0000  COM=(100.0000, 200.0000, 300.0000)
+
+--- MIXED COMPOUND (solid at origin + loose edge at x=1000)  (type=COMPOUND, location IS identity) ---
+  shells: 1 total, 1 closed
+  VolumeProperties (OnlyClosed=false, OUR CURRENT CALL): mass=   6000.0000  COM=(5.0000, 10.0000, 15.0000)
+  VolumeProperties (OnlyClosed=true,  OCCT XDE'S CALL ): mass=   6000.0000  COM=(5.0000, 10.0000, 15.0000)
+  SurfaceProperties                                    : mass=   2200.0000  COM=(5.0000, 10.0000, 15.0000)
+  LinearProperties                                     : mass=    482.0000  COM=(9.1286, 9.9585, 14.9419)
+
+--- ZERO-MASS SENTINEL: is it always (0,0,0)? ---
+  original face location IS identity      : no
+  moved face location IS identity         : no
+  face      : mass=0.000000  COM=(100.0000, 200.0000, 300.0000)
+  moved face: mass=0.000000  COM=(200.0000, 400.0000, 600.0000)
+  => a zero-mass COM is the shape's LOCATION origin, not necessarily (0,0,0)
+
+========== END ==========

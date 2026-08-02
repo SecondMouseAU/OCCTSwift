@@ -758,7 +758,8 @@ Intersection. Calls `lhs.intersection(rhs)`.
 
 ### `ShapeProperties`
 
-Mass and geometric properties of a shape.
+Volume mass properties of a shape. `centerOfMass` is the centre of mass of the enclosed volume, and
+`momentOfInertia` is referenced to it rather than to the world origin.
 
 ```swift
 public struct ShapeProperties: Sendable, Equatable {
@@ -800,13 +801,20 @@ public func properties(density: Double = 1.0) -> ShapeProperties?
 ```
 
 - **Parameters:** `density` — material density for mass calculation (default 1.0).
-- **Returns:** `ShapeProperties` including volume, surface area, centre of mass, and inertia tensor; or `nil` if calculation fails.
-- **OCCT:** `BRepGProp::VolumeProperties` + `BRepGProp::SurfaceProperties` (via `OCCTShapeGetProperties`).
+- **Returns:** `ShapeProperties` including volume, surface area, centre of mass, and inertia tensor;
+  or `nil` when the shape encloses no volume (a face, wire, edge, vertex or **open shell**) or the
+  calculation fails. These are volume mass properties, so without a volume there is no mass, no
+  centre of mass and no inertia tensor. Use `surfaceArea` for the area of such a shape.
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` + `BRepGProp::SurfaceProperties`
+  (via `OCCTShapeGetProperties`). See `centerOfMass` below for what `OnlyClosed` means.
+- **Note:** `momentOfInertia` is referenced to the centre of mass, not to the world origin.
 - **Example:**
   ```swift
-  let box = Shape.box(width: 10, height: 10, depth: 10)
-  if let p = box.properties(density: 7.8) {
-      print("mass: \(p.mass), CoM: \(p.centerOfMass)")
+  let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+  if let p = cone.properties(density: 2.7) {
+      print(p.volume)        // 2094.395
+      print(p.mass)          // 5654.867 (volume x density)
+      print(p.centerOfMass)  // (0, 0, 5): a cone's centroid is at h/4
   }
   ```
 
@@ -875,14 +883,31 @@ public var surfaceArea: Double? { get }
 
 ### `centerOfMass`
 
-Centre of mass (centroid) of the shape.
+Centre of mass of the volume the shape encloses. This is a *volume* measure, not the centre of the
+bounding box: a cone's centre of mass sits at a quarter of its height.
 
 ```swift
 public var centerOfMass: SIMD3<Double>? { get }
 ```
 
-- **Returns:** Centroid position, or `nil` on failure.
-- **OCCT:** `BRepGProp::VolumeProperties` (via `OCCTShapeGetCenterOfMass`).
+- **Returns:** Centre of mass, or `nil` when the shape encloses no volume (a face, wire, edge,
+  vertex or **open shell**) or the calculation fails.
+- **OCCT:** `BRepGProp::VolumeProperties` with `OnlyClosed = true` (via `OCCTShapeGetCenterOfMass`),
+  matching OCCT's own `XCAFDoc_Centroid` writer. An open shell contributes nothing rather than the
+  number the divergence integral returns over a surface enclosing nothing; close it first if you
+  need a figure, since which closure you want is your choice. Closedness is computed per shell, so a
+  closed shell outside any solid still counts.
+- **See also:** `surfaceInertia` for an area measure, `linearProperties()` for a length measure,
+  `vertices()` for a vertex position.
+- **Example:**
+  ```swift
+  let big = Shape.box(width: 10, height: 10, depth: 10)!
+  let small = Shape.box(width: 2, height: 2, depth: 2)!.translated(by: SIMD3(20, 0, 0))!
+  let part = big.union(small)!
+
+  part.centerOfMass    // (0.1587, 0, 0): the small cube barely shifts it
+                       // the bounding box centre would be 8.0
+  ```
 
 ---
 
