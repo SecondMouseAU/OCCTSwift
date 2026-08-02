@@ -26,6 +26,22 @@ its own status check when `build-and-test` is red for an unrelated reason (#585'
 mismatch on `refactor/**` branches). Each exits 1 on a defect and 0 when clean; `check-bridge-index`
 and `check-null-handle-guards` exit **2** if run from anywhere but the repo root (#625).
 
+**`gate-scripts` is a required status check on `refactor/**`** (#649), via a repository ruleset — the
+repo's only branch protection. Three consequences worth knowing before you touch it:
+
+- **Do not give the job a `name:` key.** The published check-run name is the job's `name:` when it
+  has one and the job id otherwise, and that string is what the rule matches. A prose name reads
+  like a comment, so rewording it would silently stop satisfying the rule while the PR UI looked
+  unchanged — the same class of failure the gates themselves exist to catch. The job id is a stable
+  identifier nobody edits for readability.
+- **It is not required on `main`, and must not be until `ci.yml` carrying this job lands there.** A
+  required check that never reports blocks a PR permanently with "Expected, waiting for status to be
+  reported", and there is no way to clear it. For a `pull_request` the workflow is read from the
+  merge ref, so once the base has the job every PR gets it regardless of how stale the head is.
+- **`build-and-test` is deliberately not required on `refactor/**`** — it is 0-for-21 there under
+  #585. It *is* ~9/10 green on `main`, so the requirable set inverts per branch; #585 is confined to
+  this branch and its descendants, not repo-wide.
+
 ```bash
 python3 Scripts/check-bridge-index.py        # OCCTBridge.h's class → symbol index: stale / misfiled entries
 python3 Scripts/check-null-handle-guards.py  # every bridge fn guards the Handle, not just the pointer
