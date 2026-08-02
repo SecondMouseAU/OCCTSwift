@@ -4693,16 +4693,19 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
     try {
         LocOpe_SplitShape splitter(shape->shape);
 
-        // Find the target edge
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) {
-                edge = TopoDS::Edge(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #613: this counted TopExp_Explorer occurrences while OCCTLocOpeSplitShapeByWire directly
+        // above already read the shared enumeration -- so faceIndex and edgeIndex meant different
+        // things in two adjacent functions driving the same LocOpe_SplitShape. Measured on a 10mm
+        // box: splitEdge(at:) matches edges() up to index 8 and splits a DIFFERENT edge from 9 on
+        // (index 9 split edges()[4], index 11 split edges()[0]), and indices 12 and 13 split
+        // successfully although edge(at:) refuses both.
+        //
+        // Safe on the map: LocOpe_SplitShape keys the edge into its own myMap/myDblE, both
+        // NCollection containers over TopTools_ShapeMapHasher (LocOpe_SplitShape.hxx:89-90) whose
+        // equality is TopoDS_Shape::IsSame, so orientation cannot select a different entry.
+        // Measured over all 12 box edges present in both orientations: BRep_Tool::Range and the
+        // resulting DescendantShapes count were identical for both, 0 differing.
+        TopoDS_Edge edge = occtEdgeAt(shape->shape, edgeIndex);
         if (edge.IsNull()) return nullptr;
 
         // Get edge parameter range
@@ -4775,16 +4778,33 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceIndex, OCCTSh
     }
 }
 
+// #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
+// an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
+// 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
+// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11 -- so
+// ALL FOUR named a different edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from
+// the edges those slot numbers address. An Edge from either finder therefore could not be fed to
+// filleted(edges:), chamfered(...) or any other index-taking entry point, which is the whole
+// purpose of carrying an index.
+//
+// The map lookup is the fix and it is exact: the enumeration's equality is TopoDS_Shape::IsSame, so
+// whichever orientation the finder hands back resolves to the one index that names that edge.
 int32_t OCCTLocOpeFindEdges(OCCTShapeRef shape1, OCCTShapeRef shape2,
-                            OCCTShapeRef* outEdges, int32_t maxEdges) {
+                            OCCTShapeRef* outEdges, int32_t* outIndices, int32_t maxEdges) {
     if (!shape1 || !shape2 || !outEdges || maxEdges <= 0) return 0;
     try {
         LocOpe_FindEdges finder;
         finder.Set(shape1->shape, shape2->shape);
 
+        // One map for the whole batch rather than one per lookup.
+        TopTools_IndexedMapOfShape edgeMap;
+        occtMapSubShapes(shape1->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
         for (finder.InitIterator(); finder.More() && count < maxEdges; finder.Next()) {
-            outEdges[count] = new OCCTShape(finder.EdgeFrom());
+            const TopoDS_Edge& found = finder.EdgeFrom();  // an edge of shape1
+            outEdges[count] = new OCCTShape(found);
+            if (outIndices) outIndices[count] = occtMappedIndexOf(edgeMap, found);
             count++;
         }
         return count;
@@ -4794,7 +4814,7 @@ int32_t OCCTLocOpeFindEdges(OCCTShapeRef shape1, OCCTShapeRef shape2,
 }
 
 int32_t OCCTLocOpeFindEdgesInFace(OCCTShapeRef shape, int32_t faceIndex,
-                                   OCCTShapeRef* outEdges, int32_t maxEdges) {
+                                   OCCTShapeRef* outEdges, int32_t* outIndices, int32_t maxEdges) {
     if (!shape || !outEdges || maxEdges <= 0) return 0;
     try {
         // #541: the shared face enumeration, so this names the face face(at:) names.
@@ -4804,9 +4824,14 @@ int32_t OCCTLocOpeFindEdgesInFace(OCCTShapeRef shape, int32_t faceIndex,
         LocOpe_FindEdgesInFace finder;
         finder.Set(shape->shape, face);
 
+        TopTools_IndexedMapOfShape edgeMap;
+        occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
         for (finder.Init(); finder.More() && count < maxEdges; finder.Next()) {
-            outEdges[count] = new OCCTShape(finder.Edge());
+            const TopoDS_Edge& found = finder.Edge();
+            outEdges[count] = new OCCTShape(found);
+            if (outIndices) outIndices[count] = occtMappedIndexOf(edgeMap, found);
             count++;
         }
         return count;
@@ -7008,19 +7033,26 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, nubs);
 
-        // Collect edges by index
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
-            }
+        // #613: this filled a std::vector from a bare TopExp_Explorer -- one entry per OCCURRENCE --
+        // and subscripted it with the caller's edgeIndices, which come from edges() / Edge.index and
+        // so are positions in the deduplicated enumeration. A 10mm box has 24 edge occurrences over
+        // 12 edges, so from index 9 on this blended a different edge than the caller selected, and
+        // indices 12..23 were accepted although edge(at:) refuses every one of them. Not named by
+        // the issue or its audit; found by sweeping for the same idiom.
+        //
+        // occtUseSubShapesByIndex also settles the #568 question this site got wrong in the same
+        // breath: an index naming no edge used to be SILENTLY SKIPPED, so a blend of 3 edges naming
+        // one that does not exist blended 2 and reported an ordinary success. The batch is refused
+        // now, as it is for every other index-taking builder.
+        //
+        // Safe on the map: BiTgte_Blend keys the edge into its own myEdges, an
+        // NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> (BiTgte_Blend.hxx:202),
+        // whose equality is TopoDS_Shape::IsSame -- orientation cannot select a different entry.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                      [&](const TopoDS_Shape& sub, int32_t) {
+                                          blend.SetEdge(TopoDS::Edge(sub));
+                                      })) {
+            return nullptr;
         }
 
         blend.Perform(true);
@@ -7046,18 +7078,14 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
-            }
+        // #613: the same explorer-indexed walk as OCCTBiTgteBlend above, written out a second time.
+        // Both are converted together -- fixing one alone would have left the two entry points
+        // disagreeing about what edgeIndices means for the identical operation.
+        if (!occtUseSubShapesByIndex(shape->shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                      [&](const TopoDS_Shape& sub, int32_t) {
+                                          blend.SetEdge(TopoDS::Edge(sub));
+                                      })) {
+            return info;
         }
 
         blend.Perform(true);

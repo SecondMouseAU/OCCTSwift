@@ -2015,6 +2015,29 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, 
     }
 }
 
+// #613: this walked a bare TopExp_Explorer while OCCTBRepCheckSubShapeValid ten lines above -- the
+// other half of the same "is this sub-shape valid" surface -- reads occtSubShapeAt. So checkEdge(at:)
+// and isSubShapeValid(type:.edge, at:) counted different things. Measured on a 10mm box (24 edge
+// occurrences over 12 edges, 48 vertex occurrences over 8 vertices): checkEdge(at: 12) reported a
+// valid edge although edge(at: 12) is nil, and it kept answering all the way to index 23;
+// checkVertex answered to index 47 on an 8-vertex shape.
+//
+// Safe on the map rather than the traversal: BRepCheck_Edge/Wire/Shell/Vertex are handed the
+// sub-shape as geometry+topology, not as a key selecting one side of a shared boundary. Measured
+// rather than assumed -- over every box edge (12) and vertex (8) present in both orientations, the
+// full BRepCheck status list was identical for the FORWARD and the REVERSED occurrence, 0
+// differing.
+//
+// A plain box has no WIRE or SHELL occurring twice, so six fixtures were built to reach those:
+// compound{solid, solid.Reversed()} and the same for a shell, a face, a wire, an open (invalid,
+// non-closed) wire, and a fused two-body solid. Together 26 WIRE pairs and 4 SHELL pairs, BRepCheck
+// identical across orientation in every one, 0 differing, invalid geometry included. Note this does
+// NOT mean the conversion is a no-op for them: their index DOMAIN moves, and should -- on
+// compound{solid, solid.Reversed()} the WIRE enumeration goes 12 occurrences to 6 distinct. What is
+// unchanged is the answer for a wire or shell that both enumerations name.
+//
+// This function never handles FACE, which is the one type where the map/traversal choice changes a
+// result (#614) -- OCCTCheckFace takes an OCCTFaceRef directly and never indexes.
 static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum type, int32_t index) {
     OCCTShapeCheckResult result = {};
     result.isValid = false;
@@ -2022,15 +2045,7 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
     if (!shape) return result;
 
     try {
-        TopoDS_Shape subShape;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, type); exp.More(); exp.Next()) {
-            if (idx == index) {
-                subShape = exp.Current();
-                break;
-            }
-            idx++;
-        }
+        TopoDS_Shape subShape = occtSubShapeAt(shape->shape, type, index);
         if (subShape.IsNull()) return result;
 
         Handle(BRepCheck_Result) checker;

@@ -660,9 +660,16 @@ public struct Triangle: Sendable {
 ```
 
 Returned by `Mesh.trianglesWithFaces()`. The `faceIndex` is the 0-based index of the B-Rep
-face this triangle was tessellated from (−1 for meshes constructed directly from arrays). Use
+face this triangle was tessellated from (−1 for meshes constructed directly from arrays), in the
+`Shape.faces()` enumeration — so `shape.face(at: Int(tri.faceIndex))` always resolves. Use
 `faceIndex` to correlate a picked triangle back to the original solid face for CAM or selection
 operations.
+
+On a shape where one face is shared by two solids, that face is meshed **twice** — once per owner,
+each wound so its normals point out of that owner — and both sets of triangles carry the one index
+that names it. `faceIndex` values are therefore not unique per face. Before #613 this was the
+position in a `TopExp_Explorer` walk instead, which on a two-solid split compound ran 0…11 over an
+11-face shape, so a triangle could claim a `faceIndex` that `face(at:)` could not address.
 
 - **Fields:**
   - `v1`, `v2`, `v3` — vertex indices into `Mesh.vertices`.

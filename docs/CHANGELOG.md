@@ -110,6 +110,101 @@ emitted per job, so this job's pins decide this job's warning. Bumping the other
 and it is the one check in the repo that can be required without a caveat — unlike `build-and-test`
 it needs no OCCT, no build and no xcframework, so #585's pinned-kernel mismatch cannot make it red.
 
+#### Seven entry points indexed sub-shapes by occurrence while their consumers used the deduplicated map (#613)
+
+#541 put sub-shape indexing on one enumeration, `TopExp::MapShapes` — one entry per *distinct*
+sub-shape, `TopoDS_Shape::IsSame`, orientation ignored. Seven entry points stayed on a bare
+`TopExp_Explorer`, which yields one entry per *occurrence*. A plain 10 mm box has **24 edge
+occurrences over 12 edges** and **48 vertex occurrences over 8 vertices**, because every edge is
+reached once per adjacent face — so the two enumerations disagree on any ordinary solid, not only
+on an exotic one.
+
+**The end-to-end failure is the composition this branch's own documentation recommends.**
+`Shape.filleted(edges:radius:)` carries the snippet
+`bracket.filleted(edges: bracket.concaveEdges(), radius: 3)`. `edgeConcavities()` sizes its buffer
+from `edgeCount` and zips the bridge's answer against `edges()`, but the bridge filled it per
+occurrence, so every label past the first repeat landed on the wrong edge. Measured on an L-bracket
+(two fused boxes, inner corner at x = 10, z = 10, map edge **27**):
+
+| | before | after |
+|---|---|---|
+| `bracket.concaveEdges()` | **`[]`** | `[27]` |
+| `edgeConcavityCount(.concave)` | 2 (occurrences of that one edge) | 1 |
+| `box.edgeConcavityCount(.convex)` on a 12-edge box | **24** | 12 |
+
+So the recommended one-liner filleted an empty list. Measured on base, `filleted(edges: [], radius: 2)`
+returns **`nil`** — it reported *failure*, not success. The harm is not a silent wrong answer but a
+misattributed one: a `nil` from a fillet reads as "the fillet failed", and nothing pointed at the
+edge *selection* as the cause. On the fix it returns a shape, 28034.3 mm³ against the bracket's
+28000.0.
+
+**The six named sites, plus one the issue and its audit both missed:**
+
+| Site | Was | Measured divergence |
+|---|---|---|
+| `OCCTShapeAnalyzeEdgeConcavity` + `OCCTShapeCountEdgeConcavity` | result-array order, and the count | the table above |
+| `OCCTBRepExtremaExtCC` | the `edgeIndex` argument | matches `edges()` to index 8, names a different edge from 9; answered for 12…23 |
+| `checkSubShape` (behind `checkEdge`/`Wire`/`Shell`/`Vertex(at:)`) | the sub-shape index | `checkEdge(at: 12)` reported a valid edge although `edge(at: 12)` is `nil`; `checkVertex` answered to index 47 on an 8-vertex box |
+| `OCCTLocOpeSplitShapeByVertex` | the edge-splitting index | index 9 split `edges()[4]`, index 11 split `edges()[0]`; 12 and 13 split successfully |
+| `OCCTShapeCreateMesh` / `…WithParams` | triangle `faceIndex` | 12 indices emitted on an 11-face compound |
+| `edgesInFace(at:)` — and its unlisted sibling `commonEdges(with:)` | the `Edge.index` handed back | result-array positions: `edgesInFace(at: 3)` returned 0, 1, 2, 3 for edges at 2, 6, 10, 11 — all four wrong, by 10.00, 12.25, 7.07 and 12.25 mm |
+| **`OCCTBiTgteBlend` / `OCCTBiTgteBlendInfo_`** — named by neither the issue nor its audit | a `std::vector` filled from an explorer, subscripted by the caller's indices | **no index blended the bracket's concave edge at all**; and an unresolvable index was silently dropped rather than refusing the batch (#568) |
+
+**Meshing is the one site where the two enumerations pull opposite ways, and it uses both.**
+Triangle winding is set by the face's orientation *as it occurs in the parent*
+(`if REVERSED swap(n2, n3)`), so converting it to the map would have kept only the orientation a
+shared face was first seen with — #614's defect one level down. Measured on a `BRepAlgoAPI_Splitter`
+cut of a 20×10×10 block at x = 10: 12 face occurrences over 11 distinct faces, exactly one face
+present in both orientations, and the map stores it `FORWARD`. Meshed off the map the shared wall
+emits 2 triangles wound `+x` and **0** wound `−x` — the upper solid's floor simply absent. The new
+`occtForEachOrientedFace` hands out both from one traversal: the occurrence for its winding, and
+that occurrence's index in the enumeration `faces()` reads. `FindIndex` is the `IsSame` lookup, so a
+`REVERSED` occurrence resolves to its `FORWARD` twin's index and both sides of a shared wall carry
+the one index that names it.
+
+**`OCCTPolyMergeNodes` is deliberately NOT converted**, and is now documented and pinned as such.
+It emits no index, and the `reversed` flag it derives per occurrence goes straight to
+`Poly_MergeNodesTool::AddTriangulation`. Deduplicating it would add a shared wall once and lose the
+other solid's side (measured: `+x` 2, `−x` 0). A regression test fails if a later sweep converts it.
+
+**The audit's own verdicts were re-derived rather than taken on trust**, and one was overturned:
+site 6 was recorded as "already on the map bridge-side", which is true of the `faceIndex` *argument*
+and not of the `Edge.index` on the way out — the issue's actual complaint, and a live defect.
+Sites 1-4 were confirmed safe to read off the map by measurement rather than by reading headers:
+every consumer was handed both orientations of every box edge (12 pairs) and vertex (8 pairs) and
+gave an identical answer, **0 differing** — `BRepOffset_Analyse::Type`'s interval list,
+`BRepExtrema_ExtCC`'s `IsParallel`/`NbExt`/`SquareDistance`/`ParameterOnE1`/`PointOnE1`, the full
+`BRepCheck_*` status list, and `BRep_Tool::Range` + `LocOpe_SplitShape::DescendantShapes`. That
+matches what the headers predict (`BRepOffset_Analyse.hxx:173`, `LocOpe_SplitShape.hxx:89-90`,
+`BiTgte_Blend.hxx:202` are all `TopTools_ShapeMapHasher`-keyed, and that hasher's equality operator
+*is* `IsSame`, `TopTools_ShapeMapHasher.hxx:35-38`) — but the headers are the reason to check, not
+the check.
+
+The `BRepCheck` WIRE and SHELL spellings go through the same converted helper, and a plain box has
+no wire or shell occurring twice, so the first pass could not exercise them. Six further fixtures
+were built for exactly that — `compound{solid, solid.Reversed()}`, and the same for a shell, a face,
+a wire, an open (invalid, non-closed) wire, and a fused two-body solid — giving **26 WIRE pairs and
+4 SHELL pairs, `BRepCheck` identical across orientation in every one, 0 differing**, invalid
+geometry included. Their index *domain* does move, which is the point of the conversion and is
+recorded in [`SEMVER.md`](SEMVER.md): on `compound{solid, solid.Reversed()}` the WIRE enumeration
+goes 12 occurrences → 6 distinct.
+
+**This is not a complete sweep of the per-occurrence idiom.** `Shape.nbEdges` / `nbVertices` /
+`nbFaces` return per-occurrence counts (a box answers **24** and **48** against `edgeCount` 12 and
+`vertexCount` 8; a split compound's `nbFaces` is **12** against `faceCount` 11) while their own
+published docs assert the deduplicated answers — filed separately as **#651**.
+`OCCTShapeFixEdgeSameParameter` and `OCCTShapeFixEdgeVertexTolerance` also document "number of edges
+fixed" while counting explorer occurrences; that one is source-visible but **unmeasured** (a box
+returns 0 either way), so it is recorded here as a candidate rather than converted on a pattern
+match.
+
+Bridge-only plus two Swift wrappers; no kernel patch and no `OCCT.xcframework` rebuild.
+`OCCTLocOpeFindEdges` and `OCCTLocOpeFindEdgesInFace` gained an optional `outIndices` parameter.
+Index-value changes are recorded in [`SEMVER.md`](SEMVER.md). Tests:
+`Tests/OCCTTopologyTests/Issue613IndexContractTests.swift` and
+`Tests/OCCTMeshTests/Issue613MeshIndexContractTests.swift`, 25 tests, each proven to catch its own
+site by reverting that site alone.
+
 #### The null-handle gate was blind to four of the five ways this bridge reaches a handle (#618)
 
 `Scripts/check-null-handle-guards.py` printed "All bridge functions guard the geometry handle as

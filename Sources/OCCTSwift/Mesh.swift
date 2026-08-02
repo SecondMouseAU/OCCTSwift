@@ -114,6 +114,22 @@ public struct Triangle: Sendable {
     ///
     /// This allows correlating mesh triangles back to the original
     /// solid faces, useful for CAM operations like selective re-meshing.
+    ///
+    /// It is an index into ``Shape/faces()`` — the same enumeration ``Shape/face(at:)`` and
+    /// ``Face/index`` use — so it is always addressable:
+    ///
+    /// ```swift
+    /// for tri in mesh.trianglesWithFaces() {
+    ///     if let face = shape.face(at: Int(tri.faceIndex)) {
+    ///         print("triangle on face of area \(face.area)")
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// On a shape where one face is shared by two solids, that face is meshed **twice** — once per
+    /// owner, each wound so its normals point out of that owner — and both sets of triangles carry
+    /// the one index that names it. So `faceIndex` values are not unique per face, and the number
+    /// of distinct values can be less than the number of face occurrences meshed (#613).
     public let faceIndex: Int32
 
     /// Triangle normal vector.
