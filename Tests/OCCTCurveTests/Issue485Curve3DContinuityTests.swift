@@ -100,35 +100,38 @@ struct Issue485Curve3DContinuityTests {
 
     // MARK: - The divergence itself
 
-    @Test("continuity and continuityOrder agree on the same curve, in every class")
-    @available(*, deprecated, message: "continuityOrder is deprecated; this is the regression guard")
+    // These two originally compared `continuity` against `continuityOrder`, silencing the
+    // deprecation warning with `@available(*, deprecated)` on the test function — which is
+    // exactly what a real caller does, and exactly why a warning was not enough of a signal.
+    // `continuityOrder` is unavailable as of #619, so the substance moved onto the two
+    // properties that survive.
+
+    @Test("continuity and continuityClass agree on the same curve, in every class")
     func bothPropertiesAgree() {
-        // This is the comparison no pre-existing test made. Before the fix it failed for every
-        // fixture below except the C0 one.
+        // This is the comparison no pre-#485 test made. Before that fix the two spellings of
+        // the measured value disagreed for every fixture below except the C0 one.
         var checked = 0
         for curve in [Self.bspline(interiorMultiplicity: 1),
                       Self.bspline(interiorMultiplicity: 2),
                       Self.bspline(interiorMultiplicity: 3),
                       Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
                       Self.offsetOfG1Basis()].compactMap({ $0 }) {
-            #expect(curve.continuity == curve.continuityOrder)
-            #expect(curve.continuityOrder == Int(curve.continuityClass.rawValue))
+            #expect(curve.continuity == Int(curve.continuityClass.rawValue))
             checked += 1
         }
         #expect(checked == 5, "every fixture should build; the G1 one is the fragile member")
     }
 
     @Test("The retired encoding's sentinel values never appear")
-    @available(*, deprecated, message: "continuityOrder is deprecated; this is the regression guard")
     func retiredSentinelValuesAreGone() {
         for curve in [Self.bspline(interiorMultiplicity: 1),
                       Self.bspline(interiorMultiplicity: 2),
                       Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
                       Self.offsetOfG1Basis()].compactMap({ $0 }) {
-            #expect(curve.continuityOrder != 99)     // was CN
-            #expect(curve.continuityOrder != -2)     // was G1
-            #expect(curve.continuityOrder != -3)     // was G2
-            #expect(curve.continuityOrder >= 0 && curve.continuityOrder <= 6)
+            #expect(curve.continuity != 99)     // was CN
+            #expect(curve.continuity != -2)     // was G1
+            #expect(curve.continuity != -3)     // was G2
+            #expect(curve.continuity >= 0 && curve.continuity <= 6)
         }
     }
 }

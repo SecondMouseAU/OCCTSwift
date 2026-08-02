@@ -1121,19 +1121,19 @@ Bézier curves are never periodic in OCCT; this always returns `false` for `Geom
 
 ### `bezierContinuity`
 
-The global continuity class of the Bézier curve (0 = C0, 1 = C1, 2 = C2, 3 = C3, 4 = CN).
+The global continuity class of the Bézier curve, as a raw `GeomAbs_Shape` ordinal (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN).
 
 ```swift
 public var bezierContinuity: Int { get }
 ```
 
-A Bézier curve of degree ≥ 1 is always C∞ (returns `4` = CN). Returns `0` for non-Bézier curves.
+A Bézier curve of degree ≥ 1 is always C∞ (returns `6` = CN). Returns `0` for non-Bézier curves.
 
 - **OCCT:** `Geom_BezierCurve::Continuity` → `GeomAbs_Shape` mapped to Int.
 - **Example:**
   ```swift
   if let curve = Curve3D.bezier(poles: [SIMD3(0,0,0), SIMD3(1,1,0), SIMD3(2,0,0)]) {
-      let cont = curve.bezierContinuity  // 4 (CN)
+      let cont = curve.bezierContinuity  // 6 (CN)
   }
   ```
 

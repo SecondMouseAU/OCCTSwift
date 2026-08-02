@@ -937,7 +937,7 @@ Get the maximum continuity order of an edge (as `GeomAbs_Shape` raw int).
 public func edgeMaxContinuity(_ edgeIndex: Int) -> Int
 ```
 
-Returns the `GeomAbs_Shape` continuity enum raw value (0 = C0, 1 = C1, 2 = C2, …). Currently returns `0` always — `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
+Returns the `GeomAbs_Shape` continuity enum raw value (`0` = C0, `1` = G1, `2` = C1, `3` = G2, `4` = C2, `5` = C3, `6` = CN). Currently returns `0` always — `BRepGraph_LayerRegularity` is unavailable in OCCT 8.0.0 p1 due to an upstream header bug. Use `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) as an alternative.
 
 - **Parameters:** `edgeIndex` — zero-based edge index.
 - **Note:** Always returns 0 in OCCT 8.0.0 p1 — `BRepGraph_LayerRegularity` does not compile/link. Use `Shape.maxContinuity` instead.

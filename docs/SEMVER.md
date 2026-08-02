@@ -17,7 +17,22 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with six recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build, [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip, and [#613](#recorded-exception-unreleased-the-last-seven-entry-points-join-the-one-sub-shape-enumeration-613) moves the last seven entry points off the per-occurrence walk onto that same enumeration. A seventh was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **nine** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+
+- [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
+- [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
+- [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
+
+The other six change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+
+- [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
+- [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
+- [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip.
+- [#613](#recorded-exception-unreleased-the-last-seven-entry-points-join-the-one-sub-shape-enumeration-613) moves the last seven entry points off the per-occurrence walk onto that same enumeration.
+- [#498](#recorded-exception-unreleased-buildcurves3ds-default-tolerance-loosens-498) loosens `buildCurves3d`'s default tolerance 100×.
+- [#502](#recorded-exception-unreleased-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) collapses the `wires`/`shells`/`solids` enumerations onto the deduplicated sub-shape map.
+
+A tenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -169,6 +184,58 @@ The exception was taken because:
 - **One site was deliberately NOT converted.** `OCCTPolyMergeNodes` walks face occurrences to set per-face triangle winding; deduplicating it would drop a shared wall's second side. It is unchanged, documented as such, and pinned by a test that fails if a later sweep converts it.
 - **This does not finish the idiom.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still return per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and are filed as **#651**; they are unchanged here, so no caller of them is affected by this entry.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, `continuityOrder` is retired rather than reinterpreted (#619)
+
+**Three compile errors, deliberately — this exception is taken to *convert* a silent behaviour change into a break.** Recorded here before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `Curve3D.continuityOrder` is `@available(*, unavailable)` | Replace with `continuityClass.satisfies(_:)` for a floor, `continuityClass == .cN` for the analytic fast path, or `continuity` for a raw ordinal — re-checking the constant compared against |
+| `Curve2D.continuityOrder` likewise | Same |
+| `Surface.surfaceContinuityOrder` likewise | Same |
+
+The values these three reported already changed, in #485, from a hand-invented `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` to the real `GeomAbs_Shape` ordinal `C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`. That change was correct and is not reverted. The exception was taken because:
+
+- **A warning was not enough, because a warning does not stop compilation.** #485 shipped the encoding change with a deprecation attribute carrying the exact before/after in its `message:`, and `if curve.continuityOrder >= 2 { useAsC2Spline() }` still built and still ran. `2` went from meaning C2 to meaning C1, so a merely tangent-continuous curve reached a path that assumes curvature continuity — a wrong geometric answer, produced silently, in a build that succeeded. Symmetrically `continuityOrder == 99`, the analytic-geometry fast path, became unreachable: dead code rather than a wrong answer. Neither outcome is one a warning prevents.
+- **There is no spelling in which both survive.** As with #541 and #568 this is a *value* contract, and Swift cannot overload on return value. But unlike those two, a name is available to attach a diagnostic to, so the break can be made loud instead of silent — which is the whole point of taking it.
+- **Both replacements already exist and neither is new API.** `continuity` (raw ordinal, unchanged in value since before the refactor) and `continuityClass` (named cases, `Comparable`, with `satisfies(_:)`) both predate this change. Nothing was added; the operation count drops by 3, which is `Scripts/count-operations.py` correctly declining to count a retired spelling as a wrapped operation.
+- **`unavailable` rather than deletion**, following `EvolvingFilletEdge.init(edgeIndex:)` (#520): deleting gives `value of type 'Curve3D' has no member 'continuityOrder'`, which says nothing about the encoding. The retained declaration puts the whole migration in the compiler's own error text.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the before/after table, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, the `wires`/`shells`/`solids` enumerations join the deduplicated map (#502)
+
+**Six silent behaviour changes, none a compile error.** Recorded here on the #619 sweep. #541 recorded the *face* half of the explorer→`TopExp::MapShapes` conversion and #613 the last seven entry points; these six were converted by #502 and documented only in their own `///` comments, never in this file. The criterion for recording is the one this document already applies: a change a consumer can absorb without a diagnostic belongs in the table a consumer reads before upgrading blindly.
+
+| Break | What a caller does |
+|---|---|
+| `Shape.solids` / `solidCount` count *distinct* solids, not occurrences | Nothing on a shape that shares no sub-shape. On one that does, the count is lower and the array shorter — `Shape.compound([box, box]).solidCount` is `1`, and was `2` |
+| `Shape.shells` / `shellCount` likewise | A shell reused by two solids (what `solidFromShells` produces when handed the same shell twice) is now one shell |
+| `Shape.wires` / `wireCount` likewise | A wire used to build two faces counts once, being one wire seen from two parents |
+
+On `origin/main` each of these called its own explorer-backed bridge function (`OCCTShapeGetSolidCount` and siblings, a `TopExp_Explorer` occurrence walk); each is now a named spelling of `subShapeCount(ofType:)` / `subShapes(ofType:)`, which read `TopExp::MapShapes`. `MapShapes` keys on `TopoDS_Shape::IsSame`, which ignores orientation, so duplicate occurrences collapse and the surviving entry carries the first occurrence's orientation.
+
+The exception was taken because:
+
+- **The disagreement is the bug.** These six and `subShapeCount(ofType:)` answered the same question about the same shape with different numbers, neither cross-checked against the other. That is the #502 finding, and it is the same defect class as #541's face indices.
+- **There is no spelling in which both survive.** As with #541 and #568 these are *values*, so Swift cannot overload on them and a deprecation attribute has nothing to attach to.
+- **On every shape that shares no sub-shape, nothing moves** — primitives, booleans, sewn sheets and compsolids are unaffected.
+- Documented in each property's `///` comment; recorded here so the guarantee paragraph above is complete.
+
+#### Recorded exception: Unreleased, `buildCurves3d`'s default tolerance loosens (#498)
+
+**One silent behaviour change, not a compile error.** Recorded here on the #619 sweep, which asked of every "a value changed under an unchanged signature" site whether the change was decided or merely happened:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.buildCurves3d(tolerance:)`'s default moves from `1e-7` to `1e-5`, a 100× loosening | Nothing, unless the tighter curve was being relied on — then pass `tolerance: 1e-7` explicitly. The value is also written onto the rebuilt edge as its tolerance, so a caller who cared about edge tolerance downstream should re-check it |
+
+**Decision: keep `1e-5`.** The alternatives considered were reverting to `1e-7`, and removing the default outright so every caller must choose (the response #541 took for `defeature(faces:tolerance:)`). Both were rejected:
+
+- **`1e-5` is OCCT's own default, and `1e-7` was OCCTSwift's invention.** `BRepLib::BuildCurves3d(const TopoDS_Shape&)` is literally `return BRepLib::BuildCurves3d(S, 1.0e-5);` (`BRepLib.cxx:463`), and `BRepLib::BuildCurve3d`'s header declares `Tolerance = 1.0e-5`. Reverting would restore a number no upstream API asks for.
+- **The old default over-claimed.** OCCT writes this tolerance onto the edge as a floor rather than the deviation actually achieved, so `1e-7` had every rebuilt edge asserting a tightness the approximation may not hold on hard geometry. Measured on a helix, `1e-5` deviates 2.6e-6 and `1e-7` deviates 9.0e-8 — the tighter fit is real, but it costs a pole or two and it is a claim the caller should make deliberately.
+- **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things* — both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
 
 ### MINOR — `x.y.0`
 

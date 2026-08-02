@@ -9360,6 +9360,13 @@ extension Curve3D {
     /// print(bspline.continuity)        // 2
     /// print(bspline.continuityClass)   // .c1
     /// ```
+    ///
+    /// - Warning: This is the migration target for the retired `continuityOrder`, but it is not a
+    ///   drop-in one: `continuityOrder` used to answer a different set of numbers
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`). A threshold moved across unchanged
+    ///   reads as one class too low — `>= 2` accepts C1 here and accepted C2 there — and `== 99`
+    ///   is now unreachable. Prefer ``continuityClass`` and ``ContinuityClass/satisfies(_:)``,
+    ///   which cannot be compared against the wrong constant at all (#619).
     public var continuity: Int {
         Int(OCCTCurve3DGetContinuity(handle))
     }
@@ -9383,6 +9390,9 @@ extension Curve2D {
     ///
     /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
     /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// - Warning: The migration target for the retired `continuityOrder`, but not a drop-in one —
+    ///   see ``Curve3D/continuity`` for the constants that shift (#619).
     public var continuity: Int {
         Int(OCCTCurve2DGetContinuity(handle))
     }
@@ -9405,6 +9415,9 @@ extension Surface {
     ///
     /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
     /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// - Warning: The migration target for the retired `surfaceContinuityOrder`, but not a
+    ///   drop-in one — see ``Curve3D/continuity`` for the constants that shift (#619).
     public var continuity: Int {
         Int(OCCTSurfaceGetContinuity(handle))
     }
@@ -10913,15 +10926,31 @@ extension Surface {
         return (uMin, uMax, vMin, vMax)
     }
 
-    /// Measured surface continuity as a raw `GeomAbs_Shape` ordinal. Same value as
-    /// ``continuity``; prefer ``continuityClass``.
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
-    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
-    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
-    ///   nor its own documentation, and disagreed with ``continuity`` on the same surface for
-    ///   every class except C0. It now returns the real ordinal.
-    @available(*, deprecated, renamed: "continuityClass",
-               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
+    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
+    /// `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold
+    /// check kept compiling and quietly changed meaning (#619).
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1, and an analytic surface answers 6, never 99.
+    /// if surface.surfaceContinuityOrder >= 2 { offsetSafely() }
+    ///
+    /// // Ask it so it cannot drift again:
+    /// if surface.continuityClass.satisfies(.c2) { offsetSafely() }
+    /// ```
+    @available(*, unavailable, message: """
+        surfaceContinuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, \
+        G1=-2, G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, \
+        G2=3, C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
     public var surfaceContinuityOrder: Int { Int(OCCTSurfaceGetContinuity(handle)) }
 
     /// Create a deep copy of this surface.
@@ -15437,15 +15466,49 @@ extension Curve2D {
 
 extension Curve3D {
 
-    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
-    /// prefer ``continuityClass``.
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
-    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
-    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
-    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
-    ///   every class except C0. It now returns the real ordinal.
-    @available(*, deprecated, renamed: "continuityClass",
-               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` — a
+    /// scheme of OCCTSwift's own invention that matched neither `GeomAbs_Shape` nor its own doc
+    /// comment, and disagreed with ``continuity`` on the same curve for every class except C0.
+    /// #485 replaced it with the real `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4,
+    /// C3=5, CN=6`).
+    ///
+    /// Every existing threshold check kept compiling across that change and quietly changed
+    /// meaning, which is why the spelling is retired rather than reinterpreted (#619):
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1, so a merely tangent-continuous curve passed.
+    /// if curve.continuityOrder >= 2 { useAsC2Spline() }
+    ///
+    /// // The question that idiom meant to ask, asked so it cannot drift again:
+    /// if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
+    ///
+    /// // And the old `== 99` fast path for analytic geometry, which can never fire again:
+    /// if curve.continuityClass == .cN { useAnalyticFastPath() }
+    /// ```
+    ///
+    /// ``continuity`` is the same `Int` under an honest name if a raw ordinal is genuinely what
+    /// you want — but it is the *new* ordinal, so re-check any constant compared against it.
+    ///
+    /// - Important: The retired encoding had an eighth value the tables above do not show. It
+    ///   signalled failure out of band, returning `-1` from its `default:` branch and for a null
+    ///   or unreadable handle. ``continuity`` has no such sentinel: it returns `0` in the same
+    ///   situations, and `0` is an ordinary C0 measurement. A migrated
+    ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
+    ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
+    ///   two apart; check the handle before asking.
+    @available(*, unavailable, message: """
+        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
     public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.
@@ -15482,15 +15545,31 @@ extension Curve3D {
 
 extension Curve2D {
 
-    /// Measured continuity as a raw `GeomAbs_Shape` ordinal. Same value as ``continuity``;
-    /// prefer ``continuityClass``.
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
     ///
-    /// - Warning: The values changed in #485. This used to report a hand-invented encoding
-    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`) that matched neither `GeomAbs_Shape`
-    ///   nor its own documentation, and disagreed with ``continuity`` on the same curve for
-    ///   every class except C0. It now returns the real ordinal.
-    @available(*, deprecated, renamed: "continuityClass",
-               message: "Raw values changed in #485: this reported a hand-invented encoding (CN=99, G1=-2). Use continuityClass, or continuity for the raw GeomAbs_Shape ordinal.")
+    /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
+    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
+    /// `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold
+    /// check kept compiling and quietly changed meaning (#619).
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1.
+    /// if pcurve.continuityOrder >= 2 { treatAsC2() }
+    ///
+    /// // Ask it so it cannot drift again:
+    /// if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
+    /// ```
+    @available(*, unavailable, message: """
+        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
     public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
 
     /// Check if this curve has at least Cn continuity.

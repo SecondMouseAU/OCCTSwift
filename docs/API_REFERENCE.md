@@ -427,7 +427,7 @@ a map of the major areas, and the `Total` as the count.
 | **Shape Topology Counting** | 3 | faceCount, edgeCount, shapeTypeString |
 | **Curve3D Extras** | 4 | reverse, copy, continuity, continuityClass |
 | **Curve2D Extras** | 4 | reverse, copy, continuity, continuityClass |
-| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder (deprecated, #485), copy |
+| **Surface Extras** | 3 | parameterBounds, surfaceContinuityOrder (unavailable, #619), copy |
 | **Math Solvers** | 7 | findRoot, findRootBounded, findRootBisection, solveSystem, minimize (BFGS), minimizePowell, minimizeBrent |
 | **Curve3D Evaluation** | 6 | evalD0, evalD1, evalD2, evalD3, evalBatchD0, evalBatchD1 |
 | **Curve2D Evaluation** | 5 | evalD0, evalD1, evalD2, evalBatchD0, evalBatchD1 |
@@ -484,7 +484,7 @@ a map of the major areas, and the `Total` as the count.
 | **Curve2D Bezier** | 7 | bezierProperties (degree, poleCount, isRational, pole, setPole, setWeight, resolution) |
 | **Curve2D BSpline Extras** | 3 | bsplineSetPeriodic, bsplineWeight, bsplineWeights |
 | **BSplineSurface Extras** | 4 | bsplineResolution, bsplineSetUPeriodic, bsplineSetVPeriodic, bsplineWeight |
-| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D, deprecated #485), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
+| **Final Cleanup** | 25 | IsCN (curve3D/curve2D/surfaceU/V), ReversedParameter (curve3D/2D), ParametricTransformation, continuityOrder (curve3D/2D, unavailable #619), surface UReversed/VReversed/UReversedParam/VReversedParam, RemoveVKnot, vecCrossMagnitude/CrossSquareMagnitude, dirIsOpposite/IsNormal, BezierResolution (curve3D/surface), MaxDegree (bezierCurve3D/2D/surface, bsplineSurface/curve2D) |
 | **GLTF Import/Export** | 5 | importGLTF, exportGLTF (GLB/GLTF), documentLoadGLTF, documentWriteGLTF |
 | **FilletBuilder** | 16 | create, addEdge, addEdgeEvolving, build, nbContours, nbEdges, hasResult, badShape, faultyContours, faultyVertices, getRadius, getLength, isConstant, removeEdge, reset |
 | **ChamferBuilder** | 8 | create, addEdge, addEdgeTwoDists, addEdgeDistAngle, build, nbContours, isDistAngle |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,304** | |
+| **Total** | **4,301** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 

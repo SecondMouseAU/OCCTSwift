@@ -598,13 +598,31 @@ public var parameterBounds: (uMin: Double, uMax: Double, vMin: Double, vMax: Dou
 
 ### `Surface.surfaceContinuityOrder`
 
-Continuity order as an integer: 0=C0, 1=C1, 2=C2, 3=C3, 99=CN.
+**Unavailable** (#619) — use `Surface.continuityClass`, or `Surface.continuity` for a raw ordinal.
+Any use is a compile error.
 
 ```swift
+@available(*, unavailable, message: "...")
 public var surfaceContinuityOrder: Int { get }
 ```
 
-- **OCCT:** `Geom_Surface::Continuity` via `OCCTSurfaceContinuity`.
+This page previously documented the encoding as `0=C0, 1=C1, 2=C2, 3=C3, 99=CN`. That was the
+hand-invented scheme #485 replaced with the real `GeomAbs_Shape` ordinal (`0=C0, 1=G1, 2=C1, 3=G2,
+4=C2, 5=C3, 6=CN`); the page was not updated at the time, so it went on describing retired numbers.
+Because the type and name were unchanged, `surfaceContinuityOrder >= 2` kept compiling and went from
+meaning "at least C2" to meaning "at least C1". #619 retires the spelling so that becomes an error.
+
+```swift
+// A continuity floor — takes the request vocabulary by type, so the wrong
+// constant cannot be written at all.
+if surface.continuityClass.satisfies(.c2) { offsetSafely() }
+
+// The analytic fast path that `== 99` used to express.
+if surface.continuityClass == .cN { useAnalyticFastPath() }
+```
+
+- **OCCT:** `Geom_Surface::Continuity` via `OCCTSurfaceGetContinuity`.
+- **No error sentinel.** The retired encoding returned `-1` for a null or unreadable handle and from its `default:` branch; `continuity` returns `0`, which is an ordinary C0. A migrated `< 0` error check can never fire (#619).
 
 ---
 

@@ -119,18 +119,19 @@ struct Issue485SurfaceContinuityTests {
         }
     }
 
-    @Test("continuity and surfaceContinuityOrder agree on the same surface, in every class")
-    @available(*, deprecated, message: "surfaceContinuityOrder is deprecated; this is the regression guard")
+    // Originally compared `continuity` against `surfaceContinuityOrder`, silencing the
+    // deprecation warning on the test function. `surfaceContinuityOrder` is unavailable as of
+    // #619; the substance moved onto the two properties that survive.
+    @Test("continuity and continuityClass agree on the same surface, in every class")
     func bothPropertiesAgree() {
         var checked = 0
         for surface in [Self.bsplineSurface(interiorMultiplicityU: 1),
                         Self.bsplineSurface(interiorMultiplicityU: 2),
                         Self.bsplineSurface(interiorMultiplicityU: 3),
                         Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))].compactMap({ $0 }) {
-            #expect(surface.continuity == surface.surfaceContinuityOrder)
-            #expect(surface.surfaceContinuityOrder == Int(surface.continuityClass.rawValue))
-            #expect(surface.surfaceContinuityOrder != 99)
-            #expect(surface.surfaceContinuityOrder >= 0 && surface.surfaceContinuityOrder <= 6)
+            #expect(surface.continuity == Int(surface.continuityClass.rawValue))
+            #expect(surface.continuity != 99)
+            #expect(surface.continuity >= 0 && surface.continuity <= 6)
             checked += 1
         }
         #expect(checked == 4)

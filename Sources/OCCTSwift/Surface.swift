@@ -3072,7 +3072,9 @@ extension Surface {
         OCCTSurfaceBezierIsVPeriodic(handle)
     }
 
-    /// Bezier surface continuity (0=C0, 1=C1, 2=C2, 3=C3, 4=CN).
+    /// Bezier surface continuity, as a raw `GeomAbs_Shape` ordinal
+    /// (`0=C0, 1=G1, 2=C1, 3=G2, 4=C2, 5=C3, 6=CN`). A Bezier surface is CN by construction, so
+    /// this is `6`; `0` if the surface is not a Bezier. Prefer ``ContinuityClass`` (#619).
     public var bezierContinuity: Int {
         Int(OCCTSurfaceBezierContinuity(handle))
     }
