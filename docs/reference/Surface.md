@@ -988,7 +988,7 @@ public struct SurfaceGridD1: Sendable {
 
 ### `drawMesh(uCount:vCount:)`
 
-Samples a uniform mesh grid of points for Metal visualisation.
+Samples a uniform grid of points over the surface's parametric bounds.
 
 ```swift
 public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
@@ -996,11 +996,16 @@ public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid
 
 - **Parameters:** `uCount` — number of U sample points, at least 1; `vCount` — number of V sample points, at least 1.
 - **Returns:** A `SurfaceGrid` indexed `.at(u:v:)`, or an empty grid if sampling fails or the grid cannot be served. The bound is on the **product**: `uCount * vCount` must not exceed `Sampling.maximumSampleCount` (10,000,000). Each factor is also checked on its own, which is not redundant — two negative counts multiply to a plausible positive total, so `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while `drawMesh(uCount: -1, vCount: 3)` aborted the process (#558).
+- **One sample in a direction is a request, not a degenerate case.** Despite the name nothing here triangulates, so `uCount: 1` is the single iso-row at `uMin` and a 1×1 grid is one point. The bridge used to demand 2 per direction — its own interpolation divisor, not an OCCT rule — so a request this page called in-range came back as an empty grid indistinguishable from a failed sample (#620). Counts below 1 are still rejected, and rejection is still an empty grid.
 - **OCCT:** `Geom_Surface::D0` sampled on a uniform UV grid.
 - **Example:**
   ```swift
   let mesh = surface.drawMesh(uCount: 30, vCount: 30)
   let p = mesh.at(u: 5, v: 3)
+
+  // A single V iso-row: 20 points along v at the surface's minimum u.
+  let isoRow = surface.drawMesh(uCount: 1, vCount: 20)
+  let along = (0..<isoRow.vCount).map { isoRow.at(u: 0, v: $0) }
   ```
 
 ---

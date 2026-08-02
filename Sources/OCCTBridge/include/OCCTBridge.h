@@ -3372,8 +3372,11 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef surface,
                              double* outXYZ, int32_t maxPoints,
                              int32_t* outLineLengths, int32_t maxLines);
 
-/// Sample a uniform grid of points for mesh triangulation
-/// Returns total point count (uCount * vCount)
+/// Sample a uniform grid of points for mesh triangulation.
+/// Returns total point count (uCount * vCount), or 0 on failure.
+/// uCount and vCount must each be **at least 1**, not 2: this samples Geom_Surface::D0 over the
+/// parametric bounds and a single iso-row (or a single point) is a valid request (#620).
+/// Output is U-major, `outXYZ[(iu * vCount + iv) * 3 + {0,1,2}]`, matching occtSurfaceGridIndex.
 int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef surface,
                              int32_t uCount, int32_t vCount,
                              double* outXYZ);

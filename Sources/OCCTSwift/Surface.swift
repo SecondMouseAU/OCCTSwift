@@ -328,10 +328,24 @@ public final class Surface: @unchecked Sendable {
 
     // MARK: - Freeform Surfaces
 
-    /// Create a Bezier surface from control points
+    /// Create a Bezier surface from control points.
+    ///
     /// - Parameters:
-    ///   - poles: 2D array of control points [uRow][vCol]
-    ///   - weights: Optional 2D array of weights (same dimensions as poles)
+    ///   - poles: 2D array of control points `[uRow][vCol]`, **at least 2 × 2**.
+    ///   - weights: Optional 2D array of weights (same dimensions as poles).
+    /// - Returns: The surface, or `nil` if either direction has fewer than 2 poles or OCCT rejects
+    ///   the poles. Unlike ``drawMesh(uCount:vCount:)``, whose superficially identical minimum of 2
+    ///   turned out to be a bridge artifact (#620), this one is the kernel's: a Bezier's degree is
+    ///   its pole count minus 1 and must be at least 1, so `Geom_BezierSurface` raises
+    ///   `Standard_ConstructionError` on a single-pole direction. A 2 × 2 patch is the smallest
+    ///   legal one, bilinear in both directions.
+    ///
+    /// ```swift
+    /// let patch = Surface.bezier(poles: [
+    ///     [SIMD3(0, 0, 0), SIMD3(0, 1, 0)],
+    ///     [SIMD3(1, 0, 0), SIMD3(1, 1, 1)],
+    /// ])
+    /// ```
     public static func bezier(poles: [[SIMD3<Double>]],
                               weights: [[Double]]? = nil) -> Surface? {
         let uCount = Int32(poles.count)
@@ -662,7 +676,7 @@ public final class Surface: @unchecked Sendable {
         return result
     }
 
-    /// Sample a uniform mesh grid of points for Metal visualization.
+    /// Sample a uniform grid of points over the surface's parametric bounds.
     ///
     /// - Parameters:
     ///   - uCount: Samples in U, at least 1.
@@ -674,12 +688,26 @@ public final class Surface: @unchecked Sendable {
     ///   `drawMesh(uCount: -1, vCount: -1)` used to look well-behaved while
     ///   `drawMesh(uCount: -1, vCount: 3)` aborted the process.
     ///
+    /// **One sample in a direction is a request, not a degenerate case.** Despite the name nothing
+    /// here triangulates: the bridge walks the parametric bounds evaluating the surface pointwise,
+    /// so `uCount: 1` is the single iso-row at `uMin` and a 1×1 grid is one point. The bridge used
+    /// to demand 2 per direction — its own interpolation divisor, not an OCCT rule — so a request
+    /// this doc called in-range came back as an empty grid the caller could not tell apart from a
+    /// surface that failed to sample (#620). Counts below 1 are still rejected, and rejection is
+    /// still an empty grid, the documented answer every ``Sampling`` entry point gives.
+    ///
     /// ```swift
     /// let grid = surface.drawMesh(uCount: 30, vCount: 30)
     /// let p = grid.at(u: 5, v: 3)
+    ///
+    /// // A single V iso-row: 20 points along v at the surface's minimum u.
+    /// let isoRow = surface.drawMesh(uCount: 1, vCount: 20)
+    /// let along = (0..<isoRow.vCount).map { isoRow.at(u: 0, v: $0) }
     /// ```
     public func drawMesh(uCount: Int = 20, vCount: Int = 20) -> SurfaceGrid {
-        guard let total = Sampling.gridTotal(uCount, vCount) else { return .empty }
+        // `atLeast: 1` is gridTotal's default, but it is spelled out because it is a contract the
+        // bridge has to match exactly: the one time it was left implicit the two disagreed (#620).
+        guard let total = Sampling.gridTotal(uCount, vCount, atLeast: 1) else { return .empty }
         var buffer = [Double](repeating: 0, count: total * 3)
         let n = Int(OCCTSurfaceDrawMesh(handle, Int32(uCount), Int32(vCount), &buffer))
         guard n == total else { return .empty }

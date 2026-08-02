@@ -91,6 +91,36 @@ Two holes in the script's own `--self-test`, both of which had to be closed for 
 Both were verified by injecting the regression they describe and confirming 17/18. The suite is
 18/18 and the gate exits 0.
 
+#### A single iso-row stops being documented, accepted, and then silently refused (#620)
+
+Three layers disagreed about the minimum count `Surface.drawMesh(uCount:vCount:)` accepts. The doc
+comment said "at least 1", the Swift guard (`Sampling.gridTotal`, default `atLeast: 1`) accepted 1,
+and the bridge returned 0 for anything under 2. The wrapper's `guard n == total` turned that 0 into
+`SurfaceGrid.empty`, so `drawMesh(uCount: 1, vCount: 20)` — in range by its own documentation —
+came back empty, and the caller had no way to tell "you asked for something unsupported" from "this
+surface has no mesh".
+
+**The bridge was the layer that was wrong**, which is not what the issue expected ("a mesh of one
+row has no quads"). Measured against the kernel first: despite the name `OCCTSurfaceDrawMesh` does
+not mesh anything. There is no `BRepMesh`, no triangulation and no quad, just a uniform walk of the
+parametric bounds calling `Geom_Surface::D0`, and a single `(u, v)` is a valid OCCT evaluation — a
+1 × 20 iso-row off a sphere is 20 finite points. The 2 was never OCCT's rule, it was this
+function's own divisor: `i / (uCount - 1)` divides by zero at count 1. And the NaN that produces is
+worse than a throw would have been, because `D0` does not throw on NaN, it returns NaN coordinates
+silently. `OCCTSurfaceDrawGrid`, forty lines above in the same file, samples the same bounds the
+same way and had always spelled that divisor defensively; that spelling is now shared. The bound
+moved to 1 rather than disappearing: below 1, and products past `Sampling.maximumSampleCount`, are
+still rejected at the Swift boundary before any allocation, which is #558's contract unchanged.
+
+**The sibling site keeps its 2.** `OCCTSurfaceCreateBezier` carries a visually identical
+`uCount < 2 || vCount < 2`, and that one is the kernel's: a Bezier's degree is its pole count minus
+1 and must be at least 1, so `Geom_BezierSurface` raises `Standard_ConstructionError` on a
+single-pole direction (measured; 2 × 2 builds a bilinear patch). `Surface.bezier(poles:weights:)`
+already guarded the same bound, so that site had no three-layer mismatch at all — only a doc that
+was silent about the bound rather than wrong about it. Both look-alike guards now say in a comment
+which kind they are, and a test pins the Bezier minimum so the two are not "made consistent" by a
+later sweep.
+
 #### The one grid layout finally covers the third type holding a grid (#617)
 
 #486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer

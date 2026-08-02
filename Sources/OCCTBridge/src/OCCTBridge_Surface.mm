@@ -388,6 +388,12 @@ OCCTSurfaceRef OCCTSurfaceCreateRevolution(OCCTCurve3DRef meridian,
 
 // Freeform Surfaces
 
+// Unlike OCCTSurfaceDrawMesh's superficially identical `< 2` (which was this function's own
+// divisor masquerading as a kernel rule, #620), the 2 here IS OCCT's constraint and must stay:
+// Geom_BezierSurface's header states it raises "if the number of poles of the surface is lower
+// than 2 ... in one of the two directions U or V", since a Bezier's degree is poles - 1 and must
+// be >= 1. Measured: a 1 x N pole array throws Standard_ConstructionError, 2 x 2 builds a
+// degree-1 x degree-1 surface. Surface.bezier(poles:weights:) already guards the same bound.
 OCCTSurfaceRef OCCTSurfaceCreateBezier(const double* poles,
                                         int32_t uCount, int32_t vCount,
                                         const double* weights) {
@@ -817,10 +823,19 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
     }
 }
 
+// The minimum here is 1 sample per direction, not 2. Despite the name this is not a mesher:
+// there is no BRepMesh, no triangulation and no quad, just a uniform walk of the parametric
+// bounds evaluating Geom_Surface::D0, and a single (u, v) is a perfectly valid OCCT evaluation
+// (measured: a 1 x 20 iso-row off a sphere is 20 finite points). The old `uCount < 2` guard was
+// not OCCT's constraint but this function's own divisor: `i / (uCount - 1)` divides by zero at
+// count 1, and the NaN parameter that produces is worse than a throw, because D0 does not throw
+// on NaN — it returns NaN coordinates silently. OCCTSurfaceDrawGrid, forty lines above, samples
+// the same bounds the same way and has always spelled the divisor defensively; that spelling is
+// now shared, so a single iso-row is served rather than rejected (#620).
 int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
                              int32_t uCount, int32_t vCount,
                              double* outXYZ) {
-    if (!s || s->surface.IsNull() || !outXYZ || uCount < 2 || vCount < 2) return 0;
+    if (!s || s->surface.IsNull() || !outXYZ || uCount < 1 || vCount < 1) return 0;
     try {
         double uMin, uMax, vMin, vMax;
         s->surface->Bounds(uMin, uMax, vMin, vMax);
@@ -833,9 +848,9 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 
         int32_t idx = 0;
         for (int32_t i = 0; i < uCount; i++) {
-            double u = uMin + (uMax - uMin) * i / (uCount - 1);
+            double u = uMin + (uMax - uMin) * i / (uCount > 1 ? (uCount - 1) : 1);
             for (int32_t j = 0; j < vCount; j++) {
-                double v = vMin + (vMax - vMin) * j / (vCount - 1);
+                double v = vMin + (vMax - vMin) * j / (vCount > 1 ? (vCount - 1) : 1);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[idx * 3]     = p.X();
