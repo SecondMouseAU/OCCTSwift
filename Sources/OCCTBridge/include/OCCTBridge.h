@@ -21592,9 +21592,13 @@ uint32_t OCCTBRepGraphCachedCoEdgeMeshStoredOwnGen(OCCTBRepGraphRef _Nonnull gra
 /// All four buffers share one layout: **U-major**, u varying slowest and v fastest, i.e. sample
 /// (iu, iv) sits at `occtSurfaceGridIndex(iu, iv, vSamples)` == `iu * vSamples + iv` — the same
 /// index every other surface grid in this bridge uses (#404/#486). Scalar buffers are indexed by
-/// that value directly; the xyz buffers by `idx * 3 + {0,1,2}`. This wrote the transposed
-/// `iv * uSamples + iu` until #617, which is silently wrong on a square grid and out of bounds on
-/// a non-square one — do not re-spell the formula here, use the shared helper.
+/// that value directly; the xyz buffers by `idx * 3 + {0,1,2}`.
+///
+/// This wrote the transposed `iv * uSamples + iu` until #617. Note what that defect did and did
+/// not do: a transpose is a bijection onto the same `0..<uSamples * vSamples` range, so it is in
+/// bounds at every aspect ratio and every reader of it got a silent wrong answer, never a trap.
+/// (The out-of-range failure in this family needs a different slip, a caller striding by the
+/// wrong count.) Do not re-spell the formula here — use the shared helper.
 int32_t OCCTBRepGraphSampleFaceUVGrid(
     OCCTBRepGraphRef _Nonnull graph, int32_t faceIndex,
     int32_t uSamples, int32_t vSamples,

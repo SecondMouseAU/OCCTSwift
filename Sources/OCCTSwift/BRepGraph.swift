@@ -1969,9 +1969,19 @@ public final class BRepGraph: @unchecked Sendable {
     ///
     /// All four parallel arrays share one layout: **U-major**, u varying slowest and v fastest,
     /// so the sample at grid position `(u, v)` lives at flat index `u * vSamples + v` — the same
-    /// index ``SurfaceGrid`` and ``SurfaceGridD1`` use (#404/#486). Prefer ``at(u:v:)`` over
-    /// spelling that out: a hand-rolled `u * uSamples + v` is silently wrong on a square grid and
-    /// traps out of range on a non-square one, which is exactly the bug #617 fixed.
+    /// index ``SurfaceGrid`` and ``SurfaceGridD1`` use (#404/#486).
+    ///
+    /// Prefer ``at(u:v:)`` over spelling the index out, because the two ways to get it wrong fail
+    /// differently and neither announces itself:
+    ///
+    /// - Using the layout but the **wrong count as the stride** (`u * uSamples + v`) is correct
+    ///   only on a square grid, where the two counts coincide. On a non-square grid it is in
+    ///   range and quietly wrong when `uSamples < vSamples` (3x10 reaches 15 of 30), and past the
+    ///   end when `uSamples > vSamples` (10x3 reaches 92 of 30).
+    /// - Reading with the **transposed index** (`v * uSamples + u`) never traps at any aspect
+    ///   ratio: it is a bijection onto the same `0..<uSamples * vSamples` range, so it can only
+    ///   ever be a silent wrong answer. That was the layout this buffer was written in until
+    ///   #617.
     ///
     /// ```swift
     /// guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)

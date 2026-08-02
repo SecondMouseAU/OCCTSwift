@@ -10,12 +10,21 @@ import simd
 /// documented no layout and offered no accessor, so the only guidance a caller had was the
 /// convention that was wrong for this one type.
 ///
-/// The two faces of the same mistake, both covered below:
-///   - `uSamples < vSamples` (3x10): the U-major index stays inside the 30-element buffer by
-///     coincidence of the shape, so the caller silently reads the *transposed* point — a normal
-///     or a curvature attributed to the wrong place on the face, no trap.
-///   - `uSamples > vSamples` (10x3): the same expression runs past the end of the same
-///     30-element buffer and traps with "Index out of range".
+/// #617's own report crosses two different mistakes here, so state the model carefully — getting
+/// this arithmetic wrong is the exact failure the fix exists to prevent, and `handRolledIndexArithmetic`
+/// below asserts every claim in this paragraph:
+///
+///   - A caller reading the U-major index off a transposed buffer **never traps**, at any aspect
+///     ratio. `u * vSamples + v` is a bijection onto `0..<uSamples * vSamples`, so at both 3x10
+///     and 10x3 it lands on exactly the last valid slot at worst (29 of 30). Every such read is a
+///     silent wrong answer: a position, normal or curvature attributed to the wrong place on the
+///     face, no diagnostic. That is what the pre-#617 write produced.
+///   - The out-of-range trap needs a *different* slip, striding by the wrong count
+///     (`u * uSamples + v`). That one does split by aspect ratio: in range and quietly wrong at
+///     3x10 (15 of 30), past the end at 10x3 (92 of 30).
+///
+/// So "silently wrong" and "traps" are not the two aspect ratios of one expression; they are two
+/// expressions, one of which never traps at all. `at(u:v:)` retires both by owning the index.
 ///
 /// Fixed by writing the bridge buffer U-major through the shared `occtSurfaceGridIndex`, so the
 /// codebase has one rule, plus a `FaceGridSample.at(u:v:)` that resolves it through the shared
@@ -40,27 +49,58 @@ struct Issue617FaceGridLayoutTests {
 
     /// Build the single-face shape, its graph, and the UV bounds the bridge itself samples over
     /// (`BRepTools::UVBounds`, mirrored by `Face.uvBounds`).
+    ///
+    /// Every failure here records an issue rather than returning a bare `nil`. A suite whose only
+    /// job is catching a layout regression must not be able to go green by failing to build its
+    /// own fixture: with a silent `guard ... else { return }` at each call site, breaking
+    /// `asymmetricPatch()` alone turns all 7 tests green while asserting nothing.
     private func fixture() -> (surface: Surface, graph: BRepGraph,
                                uMin: Double, uMax: Double, vMin: Double, vMax: Double)? {
-        guard let surface = asymmetricPatch(),
-              let shape = surface.toFace(),
-              let face = shape.faces().first,
-              let bounds = face.uvBounds,
-              let graph = BRepGraph(shape: shape),
-              graph.faceCount == 1 else { return nil }
+        guard let surface = asymmetricPatch() else {
+            Issue.record("fixture: Surface.bezier returned nil for the asymmetric patch")
+            return nil
+        }
+        guard let shape = surface.toFace() else {
+            Issue.record("fixture: Surface.toFace returned nil")
+            return nil
+        }
+        guard let face = shape.faces().first else {
+            Issue.record("fixture: the face shape exposed no Face")
+            return nil
+        }
+        guard let bounds = face.uvBounds else {
+            Issue.record("fixture: Face.uvBounds returned nil")
+            return nil
+        }
+        guard let graph = BRepGraph(shape: shape) else {
+            Issue.record("fixture: BRepGraph(shape:) returned nil")
+            return nil
+        }
+        guard graph.faceCount == 1 else {
+            Issue.record("fixture: expected exactly 1 face, got \(graph.faceCount); the grid tests address faceIndex 0 and rely on it being the patch")
+            return nil
+        }
         return (surface, graph, bounds.uMin, bounds.uMax, bounds.vMin, bounds.vMax)
     }
 
-    /// Every `.at(u:v:)` position must equal a direct `Surface.point(atU:v:)` evaluation at the
-    /// parameters that grid slot stands for. Run on both aspect ratios: 10x3 is the one that used
-    /// to trap, 3x10 the one that used to be silently transposed.
-    private func checkGrid(uSamples: Int, vSamples: Int) {
-        guard let f = fixture() else { return }
-        guard let sample = f.graph.sampleFaceUVGrid(
+    /// `sampleFaceUVGrid` returning nil is a failure too, never a reason to skip quietly.
+    private func requireSample(_ graph: BRepGraph, _ uSamples: Int, _ vSamples: Int)
+        -> BRepGraph.FaceGridSample? {
+        guard let sample = graph.sampleFaceUVGrid(
             faceIndex: 0, uSamples: uSamples, vSamples: vSamples) else {
             Issue.record("sampleFaceUVGrid returned nil for \(uSamples)x\(vSamples)")
-            return
+            return nil
         }
+        return sample
+    }
+
+    /// Every `.at(u:v:)` position must equal a direct `Surface.point(atU:v:)` evaluation at the
+    /// parameters that grid slot stands for. Run on **both** aspect ratios: the pre-#617 buffer
+    /// was silently transposed at each of them, and a square grid alone would not distinguish a
+    /// stride mistake from a correct read.
+    private func checkGrid(uSamples: Int, vSamples: Int) {
+        guard let f = fixture(),
+              let sample = requireSample(f.graph, uSamples, vSamples) else { return }
 
         #expect(sample.uSamples == uSamples)
         #expect(sample.vSamples == vSamples)
@@ -85,12 +125,12 @@ struct Issue617FaceGridLayoutTests {
         }
     }
 
-    @Test("10x3: .at(u:v:) matches direct evaluation (the aspect ratio that used to trap)")
+    @Test("10x3 (uSamples > vSamples): .at(u:v:) matches direct evaluation")
     func tallGridMatchesDirectEvaluation() {
         checkGrid(uSamples: 10, vSamples: 3)
     }
 
-    @Test("3x10: .at(u:v:) matches direct evaluation (the aspect ratio that was silently wrong)")
+    @Test("3x10 (uSamples < vSamples): .at(u:v:) matches direct evaluation")
     func wideGridMatchesDirectEvaluation() {
         checkGrid(uSamples: 3, vSamples: 10)
     }
@@ -102,8 +142,7 @@ struct Issue617FaceGridLayoutTests {
     @Test("The fixture patch actually distinguishes U from V")
     func transposedReadIsMateriallyDifferent() {
         guard let f = fixture(),
-              let sample = f.graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 3, vSamples: 10)
-        else { return }
+              let sample = requireSample(f.graph, 3, 10) else { return }
 
         var maxDrift = 0.0
         for iu in 0..<3 {
@@ -127,8 +166,7 @@ struct Issue617FaceGridLayoutTests {
     @Test("at(u:v:) reads the documented U-major slot of all four buffers")
     func accessorAgreesWithDocumentedIndex() {
         guard let f = fixture(),
-              let sample = f.graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
-        else { return }
+              let sample = requireSample(f.graph, 10, 3) else { return }
 
         for iu in 0..<10 {
             for iv in 0..<3 {
@@ -149,8 +187,7 @@ struct Issue617FaceGridLayoutTests {
     @Test("Normals land on the same U-major slot as positions")
     func normalsMatchDirectEvaluationPerSlot() {
         guard let f = fixture(),
-              let sample = f.graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
-        else { return }
+              let sample = requireSample(f.graph, 10, 3) else { return }
 
         let uStep = (f.uMax - f.uMin) / 9
         let vStep = (f.vMax - f.vMin) / 2
