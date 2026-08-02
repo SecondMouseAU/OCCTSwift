@@ -74,13 +74,28 @@ public var continuityClass: ContinuityClass { get }
 
 - **Returns:** A `ContinuityClass` describing positional through CN continuity. Raw values are
   `GeomAbs_Shape`'s own ordinals (`c0=0, g1=1, c1=2, g2=3, c2=4, c3=5, cN=6`), which are not a
-  0/1/2 order — use `satisfies(_:)` rather than comparing raw values.
+  0/1/2 order — use `satisfies(_:)` rather than comparing raw values against a
+  `ParametricContinuity`.
 - **OCCT:** `Geom_Surface::Continuity` (via `OCCTSurfaceGetContinuity`).
 - **Example:**
   ```swift
   let bsp = Surface.bspline(poles: ..., ...)!
   print(bsp.continuityClass)                  // typically .c2
   print(bsp.continuityClass.satisfies(.c2))   // true
+  ```
+- **Note:** `satisfies(_:)` and `>=` answer different questions and are not interchangeable.
+  `satisfies(_:)` tests a measured class against a requested **parametric** floor; `<`/`>=` ranks
+  two measured classes by their place in `GeomAbs_Shape`'s ladder. Because that ladder interleaves
+  the geometric classes with the parametric ones, outranking a class is not the same as entailing
+  it: `.g2` sorts above `.c1` but does not satisfy `.c1`, since curvature continuity says nothing
+  about first-derivative vectors. They agree on every other pair, `.c0` included — a geometric
+  class does meet the positional floor, because G1 entails G0 entails position, and position is
+  what C0 is (#623).
+  ```swift
+  ContinuityClass.g1.satisfies(.c0)   // true  — tangent-continuous implies connected
+  ContinuityClass.g1.satisfies(.c1)   // false — but says nothing about derivative vectors
+  ContinuityClass.g2 >= .c1           // true  — the ladder ranks G2 above C1 ...
+  ContinuityClass.g2.satisfies(.c1)   // false — ... without G2 entailing C1
   ```
 
 ---

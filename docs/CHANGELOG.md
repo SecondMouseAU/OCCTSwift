@@ -91,6 +91,108 @@ Two holes in the script's own `--self-test`, both of which had to be closed for 
 Both were verified by injecting the regression they describe and confirming 17/18. The suite is
 18/18 and the gate exits 0.
 
+#### The one grid layout finally covers the third type holding a grid (#617)
+
+#486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer
+layout of this codebase, and gave `SurfaceGrid` / `SurfaceGridD1` an `.at(u:v:)` accessor for it,
+precisely so two bridge functions could not go on writing opposite layouts while each header called
+its own "row-major". A third type holding the same shape of buffer was left out of that sweep.
+
+`BRepGraph.FaceGridSample` hands back four parallel flat buffers (positions, normals, Gaussian and
+mean curvature) that `OCCTBRepGraphSampleFaceUVGrid` wrote **transposed**, `iv * uSamples + iu`.
+The Swift type documented no layout and offered no accessor, so the only guidance a caller had was
+the convention #486 had just declared, which was the wrong one for this one type.
+
+Two things make this worse than a plain inconsistency. `docs/reference/BRepGraph-Editor-Identity.md`
+**already documented the U-major index** (`index = u * vSamples + v`) for this type, so the bridge
+was contradicting its own published reference page, not just a sibling type. And the failure is not
+uniform: a caller reading with the layout-conforming stride gets a silent wrong answer at every
+aspect ratio (a normal or a curvature attributed to the wrong place on the face, no trap), while
+the neighbouring slip of using the wrong count as the stride (`u * uSamples + v`) stays in range on
+a 3×10 grid and runs off the end of the same 30-element buffer on a 10×3 one. #617's own report has
+these two expressions crossed; the arithmetic is now pinned in a test.
+
+**Converted the bridge to U-major** rather than documenting the transpose, so the codebase keeps one
+rule, and routed it through the shared `occtSurfaceGridIndex` so the formula is not re-spelled at a
+third site. `FaceGridSample` gains the `.at(u:v:)` accessor its siblings have, resolving the index
+through the same shared Swift-side `surfaceGridIndex`, plus an explicit layout line and worked
+snippets on the type, the method and the reference page. `OCCTBridge.h`'s declaration now states the
+literal index instead of being silent.
+
+**No consumer depended on the old order.** Every in-repo caller and all three ecosystem callers
+(`PadCAMEngine`'s `PadCAMMLExport`, `OCCTSwiftScripts`' `occtkit graph-ml` and `GraphML`) sample a
+**square** grid and either map the arrays element-wise into a JSON payload or reduce them
+order-independently (a mean position/normal face signature), so none reads a specific `(u, v)`. The
+observable change is limited to the order of the flat arrays those exporters serialize, which was
+never a documented contract on the emitted payload.
+
+| API | Before | After |
+|---|---|---|
+| `OCCTBRepGraphSampleFaceUVGrid` buffers | V-major, `iv * uSamples + iu`, layout undocumented | U-major via `occtSurfaceGridIndex`, index stated in the header |
+| `BRepGraph.FaceGridSample` | four flat arrays, no layout doc, no accessor | same arrays documented U-major, plus `at(u:v:)` |
+
+#### A tangent-continuous surface stops being reported as not even connected (#623)
+
+`ContinuityClass` offers two ways to ask "is this at least X", and they disagreed.
+`satisfies(_:)` short-circuited on the `nil` `derivativeOrder` that the geometric classes carry,
+returning `false` before it ever read the requested floor:
+
+```swift
+surface.continuityClass                  // .g1
+surface.continuityClass.satisfies(.c0)   // false
+surface.continuityClass >= .c0           // true
+```
+
+So a caller gating on "is this at least positionally continuous?" through the API the docs steer
+them to rejected every G1 and G2 result — surfaces *smoother* than the C0 ones it accepted.
+
+The old justification, "a `g1`/`g2` result is not a parametric guarantee at any order", is right
+for C1 and above and wrong for C0. G1 entails G0 entails positional continuity, and positional
+continuity is exactly what C0 is; there is no parametrisation subtlety at order zero, a curve is
+either connected or it is not. The `nil` branch now floors at order 0 instead of failing
+unconditionally, so `.g1`/`.g2` satisfy `.c0` and still correctly refuse `.c1` and above.
+`derivativeOrder` is unchanged — it still reports `nil`, because a geometric class genuinely has
+no parametric order; the floor lives in `satisfies` alone.
+
+**Sweeping the full 7×7 matrix of `satisfies` against `>=` found one more disagreement than the
+reported cell, and it is not a bug.** Of the 49 (measured, required) pairs, 28 name a
+`ParametricContinuity` floor that both APIs can answer. Before: three disagreed — `(.g1, .c0)`,
+`(.g2, .c0)` and `(.g2, .c1)`. After: exactly one, `(.g2, .c1)`, and it is correct. `GeomAbs_Shape`
+ranks G2 (3) above C1 (2), but curvature continuity does not entail first-derivative continuity,
+so the parametric floor rightly refuses what the ladder allows. That is a genuine difference in
+what the two APIs are *for*, not drift, and both doc comments now say so: `satisfies(_:)` tests a
+measured class against a requested parametric floor, `<`/`>=` ranks two measured classes by their
+place in the ladder, and outranking is not entailing. The one exception is named in both.
+
+A third contract in the same file, `ContinuityAnalysis.holds(_:)` and the `GeomAbs_Shape`-ordinal
+junction-analysis bitmask behind it, asks exact-class membership rather than a floor or a ranking
+and is deliberately untouched; a regression test pins that it stayed independent.
+
+Both readings are OCCT's own, not an inference: `dox/user_guides/modeling_data/modeling_data.md`
+says at line 1281 that C0 "is the same as G0 (geometric continuity), so the last one is not
+represented by separate variable", and at line 1289 that "Geometric continuity (G1, G2) means that
+the curve **can be reparametrized** to have parametric (C1, C2) continuity". The first is why a
+geometric class clears the C0 floor; the second is why it clears nothing above it, since the
+existence of a reparametrisation is not a promise about the parametrisation in hand. Both are now
+quoted in the `satisfies(_:)` doc, and `derivativeOrder` carries an explicit warning that its `nil`
+means "no parametric order", not "meets no floor" — the hand-rolled
+`guard let o = derivativeOrder else { return false }` reproduces #623 verbatim.
+
+`Issue623ContinuityFloorTests` (`Tests/OCCTSurfaceTests/`) carries the matrix sweep plus two
+monotonicity directions, and the tests are explicit about which of them actually guard this bug.
+Monotonicity in the *requested* order (whatever a class satisfies, it satisfies everything weaker)
+holds for any implementation shaped `f(measured) >= required.rawValue`, the buggy one included, so
+it guards a future rewrite that loses downward closure rather than a regression here.
+Monotonicity in the *measured* class (if a weaker measurement clears a floor, a higher-ranked one
+should too) is the invariant the unconditional `false` actually broke, and it does fail under the
+injected bug — 4 violations against the fixed code's 1, that 1 being the documented G2/C1 cell,
+which violates it too and so is pinned rather than asserted away. The soundness direction (a floor
+check may be stricter than the ladder, never looser) passes vacuously under a too-strict
+implementation and guards the opposite failure mode: an over-correction that has a geometric class
+clear a floor the ladder never reaches. The matrix is what would have caught this; the single cell
+would not have. `Issue485SurfaceContinuityTests` had pinned the old answer as correct and is
+corrected.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
