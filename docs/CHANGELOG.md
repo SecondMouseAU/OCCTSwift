@@ -17,6 +17,38 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### Every workflow action pin moves to a Node 24 major (#648)
+
+#625 bumped only the job it introduced, so `ci.yml` was left mixed-version: `actions/checkout@v7` in
+`gate-scripts`, `actions/checkout@v4` in `build-and-test` and `ios-simulator-build`. Deprecation
+annotations are emitted per **job**, not per workflow, so each remaining v4 job raised its own
+"Node.js 20 is deprecated" warning.
+
+All 17 pins across the five workflow files were enumerated rather than just the two the issue named:
+`actions/checkout` v4 → v7 (six sites), `actions/cache` v4 → v6 (four sites), and
+`actions/github-script` v7 → v9 (one site). `maxim-lobanov/setup-xcode@v1` is unchanged — the moving
+`v1` tag already resolves to a `node24` build — as are `gate-scripts`' own `actions/checkout@v7` and
+`actions/setup-python@v7`.
+
+**Bumping `actions/checkout` alone would not have cleared the warning.** The annotation on the base
+commit names two actions, not one — "the following actions target Node.js 20 ... `actions/cache@v4,
+actions/checkout@v4`" — because it is emitted once per job listing every Node 20 action in that job.
+Changing only the action the issue names would have left `actions/cache@v4` behind and the warning
+still standing, while the diff looked like a fix.
+
+**The target for each was read out of that action's `action.yml` at the pinned ref, not inferred from
+the version number**, and one action does not follow the pattern: `actions/github-script@v7` is
+`using: node20`, and node24 only arrives at v8. A sweep that made every pin say `v7` would have
+produced a repo that looked consistent and left `require-issue-labels.yml` deprecated — the same
+shape of defect as the mixed-version file it was fixing.
+
+No bump changed an interface: `action.yml` at the new ref is byte-identical to the old one apart from
+the `using:` line in all three cases, so `fetch-depth`, `submodules`, `persist-credentials` and
+`cache-hit` keep their declared defaults. The two real behaviour changes are inert
+here — checkout v6 persists credentials to a separate file rather than `.git/config` (no workflow
+reads them or pushes), and checkout v7 blocks checking out a fork PR head under `pull_request_target`
+or `workflow_run` (neither trigger is used; the two `pull_request` workflows are unaffected).
+
 #### Four gate scripts documented as gating on exit status, run by nothing (#625)
 
 `check-bridge-index.py`, `check-null-handle-guards.py`, `check-docs-defaults.py` and
