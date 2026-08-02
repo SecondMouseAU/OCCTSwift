@@ -1182,6 +1182,10 @@ public func edgeArcLength(from u1: Double, to u2: Double) -> Double
   hand a NaN bound's result straight back: on a straight edge that was NaN itself, and on a
   multi-span edge `0` (a NaN upper bound) or the edge's whole length (a NaN lower one) — see
   [`Curve3D.length(from:to:)`](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the edge's parameter domain measures the part of it that lies
+  on the edge (a range wholly outside measures `0`); a closed periodic edge covers a whole period
+  and so measures the whole range, winding. Shared with the `Curve3D`/`Curve2D` spellings, so an
+  edge and the curve it was built from answer identically (#600).
 - **Example:**
   ```swift
   let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!

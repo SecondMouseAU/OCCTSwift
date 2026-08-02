@@ -1028,8 +1028,9 @@ public static func approximate(
 
 Computes the arc length of this curve between two parameter values (non-optional). Delegates to
 [`length(from:to:)`](Curve2D.md), the failure-distinguishing entry point, and shares its contract:
-either parameter order, `0` for equal parameters, and clamping to the curve's own knots on a
-multi-span curve. `Curve3D.arcLength(from:to:)` has had the same shape since #408.
+either parameter order, `0` for equal parameters, and a range outside the curve's domain measuring
+only the part that lies on the curve (winding a periodic one, #600). `Curve3D.arcLength(from:to:)`
+has had the same shape since #408.
 
 ```swift
 public func arcLength(from u1: Double, to u2: Double) -> Double
@@ -1043,6 +1044,9 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
 - **Note:** `.nan` and `±.infinity` return `-1.0` rather than propagating into the result. The
   pre-#548 unranged path could return `+infinity` for an infinite bound on a segment or a circle,
   which passed the bridge's non-negative check unnoticed (#548).
+- **Note:** A range reaching outside the curve's domain measures only the part that lies on the
+  curve, matching `length(from:to:)`. The pre-bounded adaptor this used to delegate to (see
+  History) evaluated the curve past its domain instead: 4771.88 for a BSpline 457.26 long (#600).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
@@ -1053,7 +1057,7 @@ public func arcLength(from u1: Double, to u2: Double) -> Double
 - **History:** until #549 this measured through `Geom2dAdaptor_Curve(curve, u1, u2)`, a
   range-checked constructor that reported a reversed range as `-1.0` and extrapolated past a
   multi-span curve's knots (8082 for a curve 353.5 long). #506 removed the same adaptor from the
-  3D path.
+  3D path. #600 then fixed the same extrapolation-past-domain defect on the surviving delegate.
 
 ---
 

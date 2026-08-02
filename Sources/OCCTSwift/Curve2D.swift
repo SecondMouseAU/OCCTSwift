@@ -518,22 +518,28 @@ public final class Curve2D: @unchecked Sendable {
     /// fails, rather than a number that could be mistaken for a real zero-length segment.
     /// `arcLength(from:to:)` delegates to this and collapses failure back to `-1.0`.
     ///
-    /// The range may be given in either order; equal parameters measure `0`. On a curve with
-    /// more than one span (an interpolation, an approximation, any multi-span BSpline) the
-    /// range is clamped to the curve's own knots, so a range wholly outside the domain measures
-    /// `0` instead of extrapolating the polynomial. A single-span curve (a line, a circle, a
-    /// Bezier) has no interior knots to clamp against and measures the range as given.
+    /// The range may be given in either order; equal parameters measure `0`.
     ///
     /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
     /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
     /// and a NaN lower bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the
     /// mechanism (#548).
     ///
+    /// A range reaching outside the curve's domain measures the part of it that lies on the curve,
+    /// so a range wholly outside measures `0`. A curve whose domain covers a whole period exists at
+    /// every parameter, so a periodic one measures the whole range and winds (#600). The 3D
+    /// spelling answers identically on the same geometry.
+    ///
     /// ```swift
+    /// let c = Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(10, 5), SIMD2(20, 0)])!
+    /// let d = c.domain
+    /// let half = c.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
+    /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
+    ///
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
     /// let quarter = circle.length(from: 0, to: .pi / 2)   // ≈ 7.854
     /// let reversed = circle.length(from: .pi / 2, to: 0)  // the same 7.854
-    /// let bad = circle.length(from: 0, to: .nan)          // nil
+    /// let two = circle.length(from: 0, to: 4 * .pi)       // two circumferences
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
@@ -2711,12 +2717,13 @@ extension Curve2D {
     /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
     ///
     /// Delegates to ``length(from:to:)``, the failure-distinguishing entry point, and shares its
-    /// contract: the range may be given in either order, equal parameters measure `0`, a
-    /// multi-span curve clamps an out-of-domain range to its own knots, and a non-finite bound
-    /// (`.nan` or `±.infinity`) fails rather than propagating (#548). Returns `-1.0` if the
-    /// computation fails. Arc length is otherwise always non-negative, so this is an
-    /// unambiguous failure sentinel, never confusable with a genuine zero-length segment. Use
-    /// ``length(from:to:)`` directly if you need an optional rather than a sentinel value.
+    /// contract: the range may be given in either order, equal parameters measure `0`, an
+    /// out-of-domain range measures only the part that lies on the curve (winding a periodic
+    /// one, #600), and a non-finite bound (`.nan` or `±.infinity`) fails rather than propagating
+    /// (#548). Returns `-1.0` if the computation fails. Arc length is otherwise always
+    /// non-negative, so this is an unambiguous failure sentinel, never confusable with a genuine
+    /// zero-length segment. Use ``length(from:to:)`` directly if you need an optional rather
+    /// than a sentinel value.
     ///
     /// ```swift
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
@@ -2725,7 +2732,8 @@ extension Curve2D {
     /// ```
     ///
     /// - Note: Until #549 this measured through a pre-bounded `Geom2dAdaptor_Curve`, which
-    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots.
+    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots —
+    ///   4771.88 for a BSpline 457.26 long, past what #600 fixed on the surviving delegate.
     ///   `Curve3D.arcLength(from:to:)` dropped the same adaptor in #506.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
         length(from: u1, to: u2) ?? -1.0

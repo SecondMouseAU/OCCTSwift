@@ -374,7 +374,8 @@ an optional.
 - **Returns:** Arc length in model units, or `-1.0` on failure.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` (via `length(from:to:)`).
 - **Note:** `.nan` and `±.infinity` return `-1.0` on every curve type. See
-  [`length(from:to:)`](Curve3D.md#lengthfromto) for what OCCT did with them (#548).
+  [`length(from:to:)`](Curve3D.md#lengthfromto) for what OCCT did with them (#548), and for what an
+  out-of-domain range measures (#600).
 - **Example:**
   ```swift
   if let curve = Curve3D.interpolate(

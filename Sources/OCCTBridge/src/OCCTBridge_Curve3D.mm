@@ -669,12 +669,14 @@ double OCCTCurve3DGetLength(OCCTCurve3DRef c) {
 
 // A non-finite bound is rejected here rather than handed to GCPnts, which answers it differently
 // per curve type -- see occtValidParameterRange (OCCTBridge_Internal.h) for the measurements. #548.
+// The measurement itself is occtAdaptorLengthBetween (same header), which measures the part of the
+// range that lies on the curve, winding a curve whose domain covers a period. #600.
 double OCCTCurve3DGetLengthBetween(OCCTCurve3DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
     if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         GeomAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }

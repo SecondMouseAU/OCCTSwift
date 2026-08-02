@@ -448,18 +448,19 @@ public final class Curve3D: @unchecked Sendable {
     /// you need to tell "failed" apart from a genuine zero-length interval (e.g. `u1 == u2`).
     ///
     /// Same composite integrator as ``length``. The range may be given in either order; equal
-    /// parameters measure `0`. On a curve with more than one span (an interpolation, an
-    /// approximation, any multi-span BSpline) the range is clamped to the curve's own knots, so
-    /// a range wholly outside the domain measures `0` instead of extrapolating the polynomial.
-    /// A single-span curve (a line, a circle, a Bezier) has no interior knots to clamp against
-    /// and measures the range as given: measured in #549, where the claim had been unqualified.
-    /// That is what a periodic curve needs, not a defect — a circle over `[0, 4π]` genuinely
-    /// travels two turns (#600).
+    /// parameters measure `0`.
     ///
-    /// Both bounds must also be finite: `.nan` and `±.infinity` are rejected and report `nil`.
-    /// OCCT itself does not check, and answered them differently per curve type — on an
-    /// interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound measured the
-    /// curve's whole length, neither distinguishable from a real result (#548).
+    /// Both bounds must be finite: `.nan` and `±.infinity` are rejected and report `nil`. OCCT
+    /// itself does not check, and answered them differently per curve type — on an interpolated
+    /// BSpline a NaN upper bound measured `0` and a NaN lower bound measured the curve's whole
+    /// length, neither distinguishable from a real result (#548).
+    ///
+    /// A finite range reaching outside the curve's domain is *not* rejected: it measures the part
+    /// of the range that lies on the curve, so a range wholly outside measures `0` and one
+    /// overhanging an end measures up to that end. A curve whose parameter domain covers a whole
+    /// period exists at every parameter, so a *periodic* curve measures the whole range and winds:
+    /// a circle over `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers
+    /// half a period, so it stops at its own trim (#600).
     ///
     /// - Parameters:
     ///   - u1: Start parameter. Must be finite.
@@ -471,7 +472,12 @@ public final class Curve3D: @unchecked Sendable {
     /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 1)!
     /// let d = circle.domain
     /// let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)  // ~= pi
+    /// let two = circle.length(from: 0, to: 4 * .pi)   // ~= 4pi, two turns: the circle is periodic
     /// let bad = circle.length(from: d.lowerBound, to: .nan)                 // nil, not a number
+    ///
+    /// let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+    /// let clipped = seg.length(from: 0, to: 20)       // 10, the segment: it is not a whole line
+    /// let outside = seg.length(from: 20, to: 30)      // 0, the segment is not there
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve3DGetLengthBetween(handle, u1, u2)

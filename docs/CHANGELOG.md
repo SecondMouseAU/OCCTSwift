@@ -55,11 +55,59 @@ caller arithmetic. Both spellings (`edgeArcLength` and `edgeArcLength(from:to:)`
 on failure instead of `0`, matching every other arc-length function in the bridge — `0` is what a
 genuine zero-width interval measures.
 
-**Also measured, not changed:** the documented "parameters outside the curve's domain are clamped
-to it" holds only on composite curves. A 10-long segment measures 20 over `[f, l + span]`, a circle
-measures two turns, and a Bezier 122.14 long measures 1002.29 — polynomial extrapolation past its
-poles. For a periodic curve, measuring past the domain is meaningful, so this is a contract
-decision rather than a guard: filed as #600, and the doc comments now describe what is measured.
+**Also measured here, fixed in #600 below:** the documented "parameters outside the curve's domain
+are clamped to it" holds only on composite curves. A 10-long segment measures 20 over
+`[f, l + span]`, and a Bezier 122.14 long measures 1002.29 — polynomial extrapolation past its
+poles.
+
+#### An out-of-domain range measures the curve, not its extrapolation (#600)
+
+Filed out of #548's measurements. `Curve3D.length(from:to:)` documented (since #477) that
+"parameters outside the curve's domain are clamped to it, so a range wholly outside measures `0`
+rather than extrapolating the curve's polynomial". That was measured on an interpolated BSpline and
+holds only for curves with more than one `GeomAbs_CN` interval, because
+`GCPnts_AbscissaPoint::length` intersects the requested range with the curve's own knots in that
+branch and in no other. Measured over `[f, l + span]`, one domain width past the end
+(`Scripts/repro/600-out-of-domain-length/`):
+
+| curve | own length | was | now |
+|---|---|---|---|
+| segment (trimmed line) | 10 | 20 | **10** |
+| Bezier, 4 poles | 122.14 | 1002.29 | **122.14** |
+| arc, half a circle | 15.71 | 31.42 | **15.71** |
+| multi-span BSpline | 528.75 | 528.75 | 528.75 |
+| circle | 31.42 | 62.83 | 62.83 |
+| periodic BSpline | 548.51 | 548.51 | **1097.02** |
+
+**One rule now, applied in the bridge instead of falling out of which branch a curve's type takes:
+a ranged arc length measures the part of the range that lies on the curve.** A curve whose
+parameter domain covers a whole period exists at every parameter, so those measure the whole range
+and wind — a circle over `[0, 4π]` still travels two circumferences, which confining would have
+broken.
+
+**The last row is why "confine unless periodic" was not enough.** A closed interpolated BSpline is
+periodic *and* composite, so GCPnts confined it to its knots and returned one period for a request
+of two — silently answering half of what was asked, with no failure reported. Winding is computed
+in `occtAdaptorLengthBetween` (whole turns × one period's length, plus the remainder wrapped into
+the domain) rather than delegated. Verified against a chord-sum reference.
+
+**Periodicity alone is not the test.** A `Geom_TrimmedCurve` over half a circle reports
+`IsPeriodic() == true` with `Period() == 2π`, inheriting the basis curve's periodicity, so the
+domain must cover a whole period before a range is allowed to wind. Otherwise an arc would measure
+round the part of the circle its caller trimmed away, which is what it used to do.
+
+All four ranged entry points share the measurement, so a curve, its 2D equivalent and an edge built
+from it now answer an out-of-domain range identically. `Curve2D.arcLength(from:to:)` keeps its own
+range check (a reversed range still fails — that is #549's decision, not this one's) but no longer
+evaluates past the domain: 4771.88 for a BSpline 457.26 long, before.
+
+**Found while measuring, filed as #603:** `GCPnts_AbscissaPoint::Length` integrates a single-span
+conic with one Gauss quadrature over the whole domain and lands 0.34% high on an 8×3 ellipse
+(36.4894 against a true 36.36686, confirmed by both a Richardson-extrapolated chord sum and a
+2M-point Simpson quadrature of the elliptic integral), 1.49% on a 10×1 and 1.74% on a 1×0.05.
+Sub-ranges are accurate to ~1e-6 and summing two equal halves of the period recovers full accuracy,
+so it is the single quadrature — the #477 defect, on a curve type with no `GeomAbs_CN` boundaries
+to split at. Not fixed here: an accuracy question, not a range-semantics one.
 
 #### The 2D arc length that measured 8082 for a curve 353 long (#549)
 

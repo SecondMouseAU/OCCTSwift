@@ -842,15 +842,15 @@ public func length(from u1: Double, to u2: Double) -> Double?
   (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
 - **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
-- **Note:** The range may be given in either order, and equal parameters measure `0`. On a curve
-  with more than one span (an interpolation, an approximation, any multi-span BSpline) the range
-  is clamped to the curve's own knots, so a range wholly outside the domain measures `0` instead
-  of extrapolating the polynomial; a single-span curve (a line, a circle, a Bezier) has no
-  interior knots to clamp against and measures the range as given.
+- **Note:** The range may be given in either order, and equal parameters measure `0`.
 - **Note:** `.nan` and `±.infinity` also report `nil`, on every curve type. They are rejected in
   the bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
   bound measured `0` and a NaN lower bound the curve's whole length — see
   [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the curve's domain measures the part of it that lies on the
+  curve (a range wholly outside measures `0`); a curve whose domain covers a whole period measures
+  the whole range and winds. Same rule and same shared implementation as the 3D spelling, so both
+  answer identically on the same geometry (#600).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!
