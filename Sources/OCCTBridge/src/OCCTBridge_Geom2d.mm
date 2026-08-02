@@ -4175,18 +4175,15 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
     } catch (...) { return nullptr; }
 }
 
-#include <Geom2dAdaptor_Curve.hxx>
-
-// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
-// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
-// unrestricted adaptor, which tolerates either order.
-double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return -1.0;
-    try {
-        Geom2dAdaptor_Curve ac(curve->curve, u1, u2);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return -1.0; }
-}
+// OCCTCurve2DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// Geom2dAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as -1.0) and extrapolates past a multi-span curve's knots instead of clamping to
+// its domain. Removed by #549, which is what #506 did to the 3D spelling of the same call;
+// Curve2D.arcLength(from:to:) now routes through OCCTCurve2DGetLengthBetween, which does neither.
+// OCCTCurve2DGetLengthBetween (below) carries this PR's (#548) non-finite-bound rejection via
+// occtValidParameterRange, so the guard #602 originally added here now lives on the surviving
+// spelling instead of being re-added to the removed one. Its winding/domain-confinement fix (#600)
+// is on the same surviving spelling -- see OCCTCurve2DGetLengthBetween below.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
@@ -5521,21 +5518,29 @@ OCCTCurve2DRef OCCTCurve2DMirrorPoint(OCCTCurve2DRef c, double px, double py) {
     }
 }
 
+// Same subdivided measurement as the 3D sibling (occtAdaptorArcLength, OCCTBridge_Internal.h): the
+// GCPnts_AbscissaPoint::length template is shared between Adaptor3d_Curve and Adaptor2d_Curve2d,
+// so a 2D ellipse measured exactly the same 0.337% long. #603.
 double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
 }
 
+// Same non-finite-bound rejection as the 3D sibling: Geom2dAdaptor_Curve reaches the very same
+// GCPnts_AbscissaPoint::length template, so a 2D BSpline measured 0 (NaN upper) or its whole
+// length (NaN lower) too. See occtValidParameterRange (OCCTBridge_Internal.h). #548.
+// Same shared measurement too, so 2D and 3D agree on an out-of-domain range. #600.
 double OCCTCurve2DGetLengthBetween(OCCTCurve2DRef c, double u1, double u2) {
     if (!c || c->curve.IsNull()) return -1.0;
+    if (!occtValidParameterRange(u1, u2)) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor, u1, u2);
+        return occtAdaptorLengthBetween(adaptor, u1, u2);
     } catch (...) {
         return -1.0;
     }
@@ -5761,17 +5766,21 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
 #include <Geom2dGcc_QualifiedCurve.hxx>
 #include <GccEnt_Position.hxx>
 
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: reports whether there is a curvature rather than spelling its absence 0, which is also a
+// straight 2D curve's real answer. Matches OCCTCurve3DGetCurvature, here as in #494.
+bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
         // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
         // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -5984,13 +5993,14 @@ int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef c, double tolerance,
 
 // MARK: - Issue #37: Parameter at Arc Length
 
+// Shared with the 3D spelling so both stay consistent with the length they invert. #603.
 double OCCTCurve2DParameterAtLength(OCCTCurve2DRef c, double arcLength, double fromParam) {
     if (!c || c->curve.IsNull()) return -DBL_MAX;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        GCPnts_AbscissaPoint solver(adaptor, arcLength, fromParam);
-        if (!solver.IsDone()) return -DBL_MAX;
-        return solver.Parameter();
+        double parameter = 0;
+        if (!occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return -DBL_MAX;
+        return parameter;
     } catch (...) {
         return -DBL_MAX;
     }

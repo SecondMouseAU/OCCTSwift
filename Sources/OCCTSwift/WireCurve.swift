@@ -30,6 +30,9 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     deinit { OCCTCompCurveRelease(ref) }
 
     /// Total arc length of the wire.
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided to convergence, the same measurement
+    /// ``Wire/length`` makes, so the two cannot disagree (#603).
     public var length: Double { OCCTCompCurveLength(ref) }
 
     /// The native parameter range `[first, last]` (not arc length, use the
@@ -56,6 +59,9 @@ public final class WireCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     }
 
     /// The native parameter at arc length `s` measured from the start of the wire.
+    ///
+    /// Walks the same subdivided pieces ``length`` is summed from, so
+    /// `parameter(atAbscissa: length)` lands on `parameterRange.last` (#603).
     public func parameter(atAbscissa s: Double) -> Double? {
         var u = 0.0
         guard OCCTCompCurveParamAtAbscissa(ref, s, &u) else { return nil }

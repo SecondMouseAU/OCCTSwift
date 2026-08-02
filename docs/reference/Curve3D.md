@@ -716,10 +716,16 @@ This is the canonical, failure-distinguishing entry point for the whole-domain a
 collapses `nil` to a `-1.0` sentinel for source compatibility.
 
 - **Returns:** Arc length in model units, or `nil` if the OCCT computation fails.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`. The curve is split at its `GeomAbs_CN`
-  interval boundaries and each span integrated separately, so a multi-span BSpline measures
-  correctly. (Through v1.16.1 this call used `CPnts_AbscissaPoint::Length`, one quadrature across
-  the whole domain, which read up to several percent low on an interpolated curve. See #477.)
+- **OCCT:** `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN` intervals
+  and then to that interval halved, quartered, ... until two successive levels agree to 1e-9
+  relative. A line, a circle and a 2-pole Bezier/BSpline keep their closed form, which is exact and
+  has nothing to converge. (Through v1.16.1 this was `CPnts_AbscissaPoint::Length`, one quadrature
+  across the whole domain, which read up to several percent low on an interpolated curve — #477.
+  Through v1.17.0 it was one quadrature *per span*, which is the same defect wherever a span is
+  wide: a full ellipse measured up to 1.7% long, a parabola over `[-100, 100]` 3.1% short, and a
+  5-point interpolation 6.0e-5 out — #603.)
+- **Note:** The measurement costs roughly 5× what a single quadrature did (an 8 × 3 ellipse 0.11 µs
+  → 3.5 µs, a 200-span BSpline 89 µs → 452 µs); a line or circle is unchanged at 0.02 µs.
 - **Note:** An unbounded curve reports its parametric extent rather than failing: an untrimmed
   `Curve3D.line(through:direction:)` spans ±2e100 and measures ~4e100. Trim before measuring.
 - **Example:**
@@ -743,19 +749,38 @@ This is the canonical, failure-distinguishing entry point for a bounded-interval
 [Curve3D-Construction](Curve3D-Construction.md)) both delegate to this and collapse `nil` to a
 `-1.0` sentinel for source compatibility.
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter.
-- **Returns:** Arc length, or `nil` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, the same composite integrator as
-  `length`.
-- **Note:** The range may be given in either order, and equal parameters measure `0`. Parameters
-  outside the curve's domain are clamped to it, so a range wholly outside measures `0` rather
-  than extrapolating the curve's polynomial past its knots.
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite.
+- **Returns:** Arc length, or `nil` if a bound is not finite or the computation fails.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN` interval,
+  the same measurement as `length` (#603).
+- **Note:** The range may be given in either order, and equal parameters measure `0`.
+- **Note:** `.nan` and `±.infinity` are rejected before the integrator sees them, so they report
+  `nil` on every curve type. OCCT does not check them and answered them per type: on an
+  interpolated BSpline a NaN upper bound measured `0` and a NaN lower bound the curve's whole
+  length, neither distinguishable from a real result, while a line, segment or circle returned
+  `+infinity` for an infinite bound (#548).
+- **Note:** A *finite* range reaching outside the curve's domain is not rejected. It measures the
+  part of the range that lies on the curve, so a range wholly outside measures `0` and one
+  overhanging an end measures up to that end. A curve whose parameter domain covers a whole period
+  exists at every parameter, so a periodic curve measures the whole range and winds — a circle over
+  `[0, 4π]` travels two circumferences. An arc trimmed from a circle covers half a period, so it
+  stops at its own trim. Before #600 this held only for multi-span BSplines: a 10-long segment
+  measured 20 over `[0, 20]`, a Bezier 122.14 long measured 1002.29 one domain width past its end,
+  and a *periodic* BSpline silently measured one period for a request of two.
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let two = circle.length(from: 0, to: 4 * .pi)
+  // two ≈ 4π — two turns, because a circle is periodic
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
+
+  let seg = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
+  let clipped = seg.length(from: 0, to: 20)   // 10 — the segment, not the line it lies on
+  let outside = seg.length(from: 20, to: 30)  // 0
   ```
 
 ---

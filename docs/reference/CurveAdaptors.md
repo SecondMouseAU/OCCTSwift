@@ -52,7 +52,8 @@ public var length: Double { get }
 ```
 
 - **Returns:** Arc length in model units; `-1.0` on error.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_CompCurve&)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_CompCurve&)` per `GeomAbs_CN` interval,
+  subdivided to convergence (#603). Same measurement as `Wire.length`.
 - **Example:**
   ```swift
   let wc = WireCurve(Wire.rectangle(width: 10, height: 5)!)!
@@ -136,7 +137,9 @@ public func parameter(atAbscissa s: Double) -> Double?
 
 - **Parameters:** `s` — arc length from the wire start (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if `GCPnts_AbscissaPoint` does not converge.
-- **OCCT:** `GCPnts_AbscissaPoint(BRepAdaptor_CompCurve&, s, FirstParameter())`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint(BRepAdaptor_CompCurve&, remainder, pieceStart)` (#603), so
+  `parameter(atAbscissa: length)` lands on `parameterRange.last`.
 - **Example:**
   ```swift
   let wc = WireCurve(wire)!
@@ -293,7 +296,8 @@ public var length: Double { get }
 ```
 
 - **Returns:** Arc length in model units; `-1.0` on error.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_Curve&)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(BRepAdaptor_Curve&)` per `GeomAbs_CN` interval,
+  subdivided to convergence (#603). Same measurement as `Shape.edgeArcLength`.
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!
@@ -372,7 +376,9 @@ public func parameter(atAbscissa s: Double) -> Double?
 
 - **Parameters:** `s` — arc length offset (0...`length`).
 - **Returns:** Native parameter `u`, or `nil` if the solver does not converge.
-- **OCCT:** `GCPnts_AbscissaPoint(BRepAdaptor_Curve&, s, FirstParameter())`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint(BRepAdaptor_Curve&, remainder, pieceStart)` (#603), so
+  `parameter(atAbscissa: length)` lands on `parameterRange.last`.
 - **Example:**
   ```swift
   let ec = EdgeCurve(edge)!

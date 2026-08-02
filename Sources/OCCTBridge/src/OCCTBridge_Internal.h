@@ -77,6 +77,9 @@
 #include <BRepLProp_SLProps.hxx>
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
+#include <GCPnts_AbscissaPoint.hxx>   // occtAdaptorLengthBetween, the shared ranged arc length
+#include <CPnts_AbscissaPoint.hxx>   // occtArcQuadrature's per-span integrator (#603)
+#include <TColStd_Array1OfReal.hxx>  // the GeomAbs_CN interval array the same helpers walk
 #include <cmath>
 
 // === Foundation struct definitions ===
@@ -616,8 +619,26 @@ bool occtDefeaturingFacesByIndex(const TopoDS_Shape& shape, const int32_t* faceI
 // The same resolution for faces addressed as shape handles. Returns false when the request is
 // empty, the array itself is null, or any element is null — a null element used to be dereferenced
 // unchecked by OCCTShapeDefeature, which no try/catch could have saved.
-bool occtDefeaturingFacesFromShapes(const OCCTShape* const* faces, int32_t faceCount,
-                                    TopTools_ListOfShape& outFaces);
+//
+// #578: each element is a face *carrier*, not necessarily a face. AddFaceToRemove takes a
+// TopoDS_Shape and its own documentation calls it "the shape to extract the faces for removal", so
+// a compound, a shell or the whole input solid is a legal way to name faces — measured, and passing
+// the faces a carrier explores to is the same request BREP for BREP. Every element is therefore
+// exploded for TopAbs_FACE and each face checked against the input's own face map. The rule, chosen
+// to match the index-addressed occtDefeaturingFacesByIndex above rather than the kernel's own:
+//
+//   every element must contribute at least one face, and every face it contributes must belong to
+//   `shape` — otherwise the whole request fails and nothing is removed.
+//
+// Membership is TopTools_ShapeMapHasher, i.e. IsSame, so a reversed face still belongs (measured)
+// while a face off an identically-built shape does not. The kernel's own rule is to ignore what does
+// not belong ("those that do not belong will be ignored", BRepAlgoAPI_Defeaturing.hxx), which
+// succeeds while silently leaving the named feature in place — the failure mode #497 removed from
+// the index-addressed spelling, on the entry point #536 made canonical. This changes only requests
+// that were being partly discarded: nothing whose carriers all belong behaves differently. See
+// Scripts/repro/578-defeature-face-membership/ for the whole matrix.
+bool occtDefeaturingFacesFromShapes(const TopoDS_Shape& shape, const OCCTShape* const* faces,
+                                    int32_t faceCount, TopTools_ListOfShape& outFaces);
 
 // Run `defeaturing` over `shape`, removing `facesToRemove`. The builder is the caller's, because
 // OCCTShapeHistoryFromDefeature has to outlive this call to read its history. Returns false unless
@@ -841,6 +862,463 @@ inline bool occtValidSampleCount(int32_t nbPoints) {
     return nbPoints >= 2;
 }
 
+/// The parameter-range precondition every ranged arc-length entry point has to apply itself:
+/// both bounds finite. `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` does not check, and what a
+/// non-finite bound produces is curve-type dependent, so without this the "nil means the
+/// computation failed" contract of Curve3D/Curve2D.length(from:to:) held only for some curves.
+///
+/// Measured on the pinned kernel (Scripts/repro/548-nonfinite-length-bounds/): on a line, a
+/// segment, a circle and a Bezier a NaN bound propagates to NaN, which the `l >= 0` guard reads
+/// as failure -- but on a 5-point interpolated BSpline `length(from: f, to: .nan)` returned 0
+/// (the encoding of a genuine zero-width interval) and `length(from: .nan, to: l)` returned the
+/// curve's entire length, indistinguishable from a valid measurement. An infinite bound is worse:
+/// on the line, segment and circle it returns +inf, which passes `l >= 0` and reaches the caller.
+///
+/// The mechanism is not the domain clamping #477 describes. Curves with more than one GeomAbs_CN
+/// interval take GCPnts_AbscissaPoint::length's `GCPnts_AbsComposite` branch, which reduces the
+/// caller's bounds with `std::min`/`std::max`. Those return their *first* argument when the
+/// comparison is false, so `std::min(u, NaN) == std::max(u, NaN) == u` while
+/// `std::min(NaN, u) == std::max(NaN, u) == NaN`: a NaN upper bound collapses the interval to
+/// [u1, u1] and measures 0, and a NaN lower bound makes both bounds NaN, which turns every
+/// per-span skip test (`aTI(i) > aUU2`, `aTI(i+1) < aUU1`) false and integrates every span in
+/// full. Single-span curves take the branches that propagate NaN instead, which is the only
+/// reason the existing parity test (built on a segment) passed. #548.
+inline bool occtValidParameterRange(double u1, double u2) {
+    return std::isfinite(u1) && std::isfinite(u2);
+}
+
+// === #603: one Gauss quadrature is not enough to measure an arc ===
+//
+// `CPnts_AbscissaPoint::Length` integrates |C'(u)| with a SINGLE fixed-order Gauss rule over the
+// whole range it is handed -- order 10 for a conic, 5 for a parabola, 2*Degree for a Bezier.
+// #477 moved this family onto `GCPnts_AbscissaPoint::Length`, which splits at the GeomAbs_CN
+// interval boundaries first, so a multi-span BSpline gets one rule per span. That helps only as
+// far as the curve happens to have spans: a conic has exactly one, so the rule still has to cover
+// the whole domain in one go, and it cannot.
+//
+// Measured against a 16-point composite Gauss-Legendre quadrature of |C'(u)| over 40,000 panels,
+// cross-checked against a Richardson-extrapolated chord sum (Scripts/repro/603-single-span-
+// quadrature/). Every one of these is the WHOLE curve, measured through the shipped bridge:
+//
+//   curve                          kernel        truth      error
+//   ellipse 8 x 3                36.489427    36.366863    +0.337%
+//   ellipse 10 x 1               41.243158    40.639742    +1.485%
+//   ellipse 1 x 0.05              4.089251     4.019426    +1.737%
+//   parabola f=3 over [-100,100] 1638.523403  1690.708712  -3.087%
+//   hyperbola 5/2 over [-4,4]    285.669841   285.479769   +0.067%
+//   Bezier degree 3, whipping    48.124451    48.215370    -0.189%
+//   circle r=5                   31.415927    31.415927     exact  (length-parametrized)
+//   line                             exact       exact      exact  (length-parametrized)
+//
+// It is not a conic defect and not a single-span defect either: the SAME rule is what GCPnts
+// applies per span, so a 5-point interpolated BSpline (4 spans) is 6.0e-5 out and a 40-point one
+// 1.5e-6. Sub-ranges of a bad curve are accurate -- the 8 x 3 ellipse is exact to 1e-14 over
+// [0, pi/2] -- because the error is set by how much |C'| varies across ONE integration interval,
+// not by the curve's type.
+//
+// So the fix is to keep subdividing until it stops mattering: measure each GeomAbs_CN interval,
+// then the same interval halved, quartered, ... until two successive levels agree relatively.
+//
+// The subdivision has to happen INSIDE each interval, not across the whole range, and that is the
+// one part of this that is not obvious. Splitting the whole range in two puts the split point at
+// the domain midpoint, which on a uniformly-knotted curve is exactly a knot GCPnts already splits
+// at -- the level-2 sum then equals the level-1 sum bit for bit and a "have two levels agreed?"
+// test reports convergence on an answer that has not moved at all. Measured on the 5-point
+// interpolated BSpline: levels 1 and 2 both give 110.963893077, and the truth is 110.970568312.
+//
+// Cost, per measurement, on the pinned kernel: an 8 x 3 ellipse goes 0.11 us -> 3.5 us, a 40-span
+// BSpline 17 us -> 95 us, a 200-span one 89 us -> 452 us, and a line or circle stays on its closed
+// form (0.02 us) because there is no error to remove and it converges on the first split. Roughly
+// 5x, with a floor of three quadratures per interval where there used to be one.
+
+/// The relative agreement two successive subdivision levels must reach for a piece to be measured.
+/// 1e-9 is ~1 nm on a 1 m curve, six orders tighter than any of the errors above and reachable in
+/// a handful of levels; the errors this removes are 1e-2.
+constexpr double kOCCTArcLengthTolerance = 1e-9;
+
+/// Ceiling on how finely one GeomAbs_CN interval may be split. Only the pathological reach it:
+/// a 1 x 0.001 ellipse (whose speed is a near-square wave) stops here at 1.2e-11, still nine
+/// orders better than the 1.9e-2 it measured before.
+constexpr int kOCCTArcLengthMaxPieces = 512;
+
+/// One quadrature over [lo, hi]. A curve with a single GeomAbs_CN interval goes through GCPnts so
+/// the length-parametrized closed forms (line, circle, 2-pole Bezier/BSpline) are kept exactly; a
+/// composite curve cannot be any of those (GCPnts tests the interval count first), and calling
+/// GCPnts per piece would only re-derive the whole interval array on each call before delegating
+/// to CPnts for the one interval the piece lies in, so it is called directly.
+template <class TheAdaptor>
+inline double occtArcQuadrature(const TheAdaptor& adaptor, double lo, double hi, bool singleSpan) {
+    return singleSpan ? GCPnts_AbscissaPoint::Length(adaptor, lo, hi)
+                      : CPnts_AbscissaPoint::Length(adaptor, lo, hi);
+}
+
+/// The converged length of ONE GeomAbs_CN interval's [lo, hi]. `pieces` reports the subdivision it
+/// settled on, which occtAdaptorParameterAtLength re-walks so the measurement and its inverse are
+/// built out of the same quadratures rather than merely aiming at the same number.
+template <class TheAdaptor>
+inline double occtArcConvergedLength(const TheAdaptor& adaptor, double lo, double hi,
+                                     bool singleSpan, int& pieces) {
+    double previous = occtArcQuadrature(adaptor, lo, hi, singleSpan);
+    pieces = 1;
+    for (int n = 2; n <= kOCCTArcLengthMaxPieces; n *= 2) {
+        const double h = (hi - lo) / n;
+        double total = 0.0;
+        for (int i = 0; i < n; ++i) {
+            total += occtArcQuadrature(adaptor, lo + i * h, (i + 1 == n) ? hi : lo + (i + 1) * h,
+                                       singleSpan);
+        }
+        pieces = n;
+        if (std::abs(total - previous) <= kOCCTArcLengthTolerance * std::abs(total)) return total;
+        previous = total;
+    }
+    return previous;
+}
+
+/// Fill `bounds` (sized 1..count+1) with the adaptor's GeomAbs_CN interval boundaries, or with its
+/// own parameter range when `count` is 1 -- so a caller can walk "the intervals" uniformly without
+/// branching on whether the curve has more than one.
+template <class TheAdaptor>
+inline void occtArcIntervals(const TheAdaptor& adaptor, int count, TColStd_Array1OfReal& bounds) {
+    if (count > 1) {
+        adaptor.Intervals(bounds, GeomAbs_CN);
+    } else {
+        bounds(1) = adaptor.FirstParameter();
+        bounds(2) = adaptor.LastParameter();
+    }
+}
+
+/// The arc length of [u1, u2], subdivided per GeomAbs_CN interval until it converges. Bounds may
+/// be given in either order; a range that misses the curve's intervals measures 0, exactly as
+/// GCPnts' own composite branch does. Callers keep their own try/catch and null checks.
+template <class TheAdaptor>
+inline double occtAdaptorArcLength(const TheAdaptor& adaptor, double u1, double u2) {
+    const double lo = std::min(u1, u2), hi = std::max(u1, u2);
+    if (!(hi > lo)) return 0.0;
+
+    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
+    int pieces = 0;
+    if (intervals <= 1) return occtArcConvergedLength(adaptor, lo, hi, true, pieces);
+
+    TColStd_Array1OfReal bounds(1, intervals + 1);
+    adaptor.Intervals(bounds, GeomAbs_CN);
+    double total = 0.0;
+    for (int i = 1; i <= intervals; ++i) {
+        const double pieceLo = std::max(bounds(i), lo), pieceHi = std::min(bounds(i + 1), hi);
+        if (pieceHi > pieceLo) {
+            total += occtArcConvergedLength(adaptor, pieceLo, pieceHi, false, pieces);
+        }
+    }
+    return total;
+}
+
+/// Walk `abscissa` of arc length from `u0` (backwards when it is negative) using the same
+/// subdivision occtAdaptorArcLength measures with, and hand the final sub-piece -- narrow enough
+/// that its single quadrature has converged -- to the kernel's own root finder. Returns false when
+/// the travel runs off the end of the curve.
+///
+/// Without this the fix above would break a pairing that used to hold: the kernel's solver inverts
+/// the very quadrature this replaces (`CPnts_MyRootFunction::Value` is one Gauss rule over
+/// [u0, X]), so today `parameterAtLength(length)` lands exactly on the last parameter -- both
+/// sides wrong by the same 0.337%. Make only the length accurate and it stops landing there: on
+/// an 8 x 3 ellipse the solver answers 6.2438 for a target of 36.3669, 0.33% short in arc, and on
+/// a 10 x 1 ellipse 6.0358 for 40.6397, 1.0% short. Measured the same way, this walk lands within
+/// 2e-13 on every fixture, at every fraction of the length.
+template <class TheAdaptor>
+inline bool occtArcWalkToLength(const TheAdaptor& adaptor, double abscissa, double u0,
+                                double& parameter) {
+    if (!std::isfinite(abscissa) || !std::isfinite(u0)) return false;
+    if (abscissa == 0.0) { parameter = u0; return true; }
+
+    const bool backwards = abscissa < 0.0;
+    const double want = std::abs(abscissa);
+    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
+    const bool singleSpan = intervals <= 1;
+    const int count = singleSpan ? 1 : intervals;
+
+    TColStd_Array1OfReal bounds(1, count + 1);
+    occtArcIntervals(adaptor, count, bounds);
+
+    double walked = 0.0;
+    for (int k = 0; k < count; ++k) {
+        const int i = backwards ? count - k : k + 1;
+        const double lo = std::max(bounds(i), backwards ? first : u0);
+        const double hi = std::min(bounds(i + 1), backwards ? u0 : last);
+        if (!(hi > lo)) continue;
+
+        int pieces = 0;
+        const double whole = occtArcConvergedLength(adaptor, lo, hi, singleSpan, pieces);
+        if (walked + whole < want) { walked += whole; continue; }
+
+        // Inside this interval: re-walk the very pieces its converged length was summed from, so
+        // the running total is the same arithmetic and cannot drift away from it.
+        const double h = (hi - lo) / pieces;
+        for (int j = 0; j < pieces; ++j) {
+            const double pieceLo = backwards ? hi - (j + 1) * h : lo + j * h;
+            const double pieceHi = backwards ? hi - j * h : lo + (j + 1) * h;
+            const double piece = occtArcQuadrature(adaptor, pieceLo, pieceHi, singleSpan);
+            // The last piece is always taken: `want` cannot exceed `whole` here, so only the
+            // rounding of the running sum can leave it fractionally short of this piece's end.
+            if (walked + piece < want && j + 1 < pieces) { walked += piece; continue; }
+            const double rest = want - walked;
+            GCPnts_AbscissaPoint solver(adaptor, backwards ? -rest : rest,
+                                        backwards ? pieceHi : pieceLo);
+            if (!solver.IsDone()) return false;
+            parameter = solver.Parameter();
+            return true;
+        }
+        walked += whole;
+    }
+    return false;
+}
+
+/// The one "parameter at arc length" every entry point makes: the accurate walk when the travel
+/// lands on the curve, and the kernel solver otherwise. The fallback is deliberate -- asked for
+/// more length than a curve has, the solver reports a parameter outside the curve's own domain
+/// (12.566 on an ellipse bounded by 2*pi) yet reports IsDone, and turning that into a failure is
+/// a contract change #603 has no measurement to justify.
+template <class TheAdaptor>
+inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor, double abscissa, double u0,
+                                         double& parameter) {
+    if (occtArcWalkToLength(adaptor, abscissa, u0, parameter)) return true;
+    GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);
+    if (!solver.IsDone()) return false;
+    parameter = solver.Parameter();
+    return true;
+}
+
+// === #600: what a ranged arc length measures when the range reaches outside the domain ===
+//
+// One rule, applied here rather than left to whichever GCPnts branch the curve's type happens to
+// take: **a ranged arc length measures the part of the requested range that lies on the curve.**
+// A curve whose parameter domain covers a whole period exists at every parameter, so for those the
+// whole range lies on the curve and a range longer than the period winds round it again.
+//
+// GCPnts confines the range to the curve only in its `GCPnts_AbsComposite` branch (it intersects
+// the range with each GeomAbs_CN interval), so before this the answer was an accident of span
+// count. Measured on the pinned kernel over [f, l + span], one domain width past the end
+// (Scripts/repro/600-out-of-domain-length/):
+//
+//   curve                        was          now      why
+//   segment, 10 long             20           10       the line stops at the trim
+//   Bezier, 122.14 long          1002.29      122.14   extrapolated its polynomial past the poles
+//   arc, half a circle           31.42        15.71    left the arc and finished the basis circle
+//   multi-span BSpline           528.75       528.75   already confined
+//   circle                       62.83        62.83    two turns, and it really does travel them
+//   periodic BSpline, one period 548.51       1097.02  dropped the second winding silently
+//
+// The periodic BSpline is the case that makes "confine unless periodic" insufficient on its own:
+// it is periodic *and* composite, so GCPnts confined it to one period and returned less than was
+// asked for. Winding has to be computed here (whole turns times one period's length, plus the
+// remainder wrapped into the domain) rather than delegated.
+//
+// `IsPeriodic()` alone is not the test: a `Geom_TrimmedCurve` over half a circle reports
+// IsPeriodic() == true with Period() == 2*pi, because it inherits the basis curve's periodicity.
+// Its domain covers half a period, and measuring past the trim means measuring a curve the caller
+// trimmed away, so the domain must cover a whole period before the range is allowed to wind.
+
+template <class TheAdaptor>
+inline bool occtAdaptorWindsPeriodically(const TheAdaptor& adaptor) {
+    if (!adaptor.IsPeriodic()) return false;
+    const double period = adaptor.Period();
+    if (!(period > 0)) return false;
+    const double span = adaptor.LastParameter() - adaptor.FirstParameter();
+    return span >= period * (1.0 - 1e-9);
+}
+
+/// Clamp `u1`/`u2` into the adaptor's own parameter range, preserving their order (so a caller
+/// that raises on a reversed range still sees one). Used for curves that do not wind.
+template <class TheAdaptor>
+inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u2) {
+    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+    u1 = std::min(std::max(u1, first), last);
+    u2 = std::min(std::max(u2, first), last);
+}
+
+/// The one ranged arc-length measurement every entry point makes: the length of the part of
+/// [u1, u2] that lies on the curve, winding included when the curve's domain covers a period.
+/// Bounds may be given in either order. Callers keep their own try/catch and null checks.
+/// Every integral here goes through occtAdaptorArcLength, so a wound period is as accurate as a
+/// single one and a whole ellipse no longer measures 0.337% long. #603.
+template <class TheAdaptor>
+inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, double u2) {
+    double lo = std::min(u1, u2), hi = std::max(u1, u2);
+
+    if (occtAdaptorWindsPeriodically(adaptor)) {
+        const double first  = adaptor.FirstParameter();
+        const double period = adaptor.Period();
+        const double seam   = first + period;
+        // One period's worth, not the whole domain: a curve trimmed to more than a period would
+        // otherwise multiply the wrong number.
+        const double perPeriod = occtAdaptorArcLength(adaptor, first, seam);
+        const double turns     = std::floor((hi - lo) / period);
+        double       total     = turns * perPeriod;
+        const double rest      = (hi - lo) - turns * period;
+        if (rest > 0) {
+            double start = first + std::fmod(lo - first, period);
+            if (start < first) start += period;
+            const double end = start + rest;
+            total += (end <= seam)
+                         ? occtAdaptorArcLength(adaptor, start, end)
+                         : occtAdaptorArcLength(adaptor, start, seam) +
+                               occtAdaptorArcLength(adaptor, first, first + (end - seam));
+        }
+        return total;
+    }
+
+    occtConfineToDomain(adaptor, lo, hi);
+    if (hi <= lo) return 0.0;
+    return occtAdaptorArcLength(adaptor, lo, hi);
+}
+
+// === #502: one sub-shape enumeration ===
+//
+// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
+// primitives that answer differently:
+//
+//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
+//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
+//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
+//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
+//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
+//
+// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
+// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
+// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
+// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
+// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
+// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
+// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
+// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
+// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
+// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
+//
+// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
+// is the answer all of it gives now. What made the choice cheap is that the two primitives
+// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
+// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
+// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
+
+/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
+/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
+/// TShape and location, orientation ignored). Returns the number of entries.
+///
+/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
+/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
+/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
+/// SOLID answers 1.
+inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
+                                TopTools_IndexedMapOfShape& outMap) {
+    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
+    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
+    return outMap.Extent();
+}
+
+/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
+/// the index is negative or past the end. Callers that want the whole set should map once and
+/// read the map, rather than calling this in a loop.
+inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
+    if (index < 0) return TopoDS_Shape();
+    TopTools_IndexedMapOfShape map;
+    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+// === #541: one meaning for a face index ===
+//
+// A face index crossing this bridge is a 0-based position in the enumeration above, the one
+// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
+// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
+// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
+// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
+// addressed the face before the one it named and could never name the last face at all.
+//
+// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
+// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
+// plane leaves two solids sharing the single cut face (12 occurrences over 11 distinct faces), and
+// the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
+// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
+// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
+// them moved no index on any shape without a shared sub-shape.
+//
+// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
+// "no such index", which is the only failure they have.
+
+/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
+/// negative, past the end, or names a sub-shape that is not a face.
+inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
+    return TopoDS::Face(sub);
+}
+
+/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
+/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
+/// face, whose edges are enumerated the same way.
+inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
+    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
+    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
+    return TopoDS::Edge(sub);
+}
+
+// === #568: one answer for an index that names no sub-shape ===
+//
+// A batch entry point takes an array of 0-based indices into the enumeration above and hands each
+// resolved sub-shape to some OCCT builder. What it does with an index that resolves to nothing is
+// the contract question #520 settled for the fillet family and #541 for OCCTShapeOffsetPerFace:
+// the whole request is refused. Six sites disagreed with them, dropping the unresolvable entry and
+// building from the rest.
+//
+// The reason to refuse rather than skip is that the partial result is not distinguishable from the
+// complete one. Measured on the pinned kernel (Scripts/repro/568-index-skip-idiom/), every builder
+// behind those sites reports an ordinary success for a batch it was never told was short:
+//
+//   BRepFilletAPI_MakeChamfer, 2 of 3 edges     IsDone, valid, volume 7922.666667 (3 of 3: 7885.33)
+//   BRepOffsetAPI_DraftAngle, 2 of 4 faces      IsDone, valid, volume 7299.820338 (4 of 4: 6681.35)
+//   BRepOffsetAPI_MakeThickSolid, 1 of 2 open   IsDone, valid, volume 3392.000000 (2 of 2: 2880.00)
+//   BRepFilletAPI_MakeFillet2d, 2 of 4 vertices IsDone, valid, area 1189.269908 (4 of 4: 1178.54)
+//
+// BRepOffsetAPI_DraftAngle is the one that shows why this is not merely untidy: handed *no* faces
+// at all it still reports IsDone() and returns the input shape unchanged, so a draft naming only
+// faces the shape does not have used to succeed and draft nothing. The others at least fail an
+// empty batch (MakeChamfer throws "There are no suitable edges for chamfer or fillet";
+// MakeFillet2d fails IsDone), which is why only the *mixed* batch escaped for them.
+//
+// A caller who wants best-effort can filter its own indices against the counts this API already
+// exposes. A caller who cannot tell a partial result from a complete one had no way back.
+
+/// The sub-shape at 0-based `index` in an already-built enumeration map, or a null TopoDS_Shape
+/// when the index is negative or past the end. This is the read half of occtSubShapeAt, for the
+/// callers that resolve several indices against one map rather than mapping per lookup.
+inline TopoDS_Shape occtMappedSubShapeAt(const TopTools_IndexedMapOfShape& map, int32_t index) {
+    if (index < 0 || index >= map.Extent()) return TopoDS_Shape();
+    return map(index + 1);  // OCCT's indexed maps are 1-based
+}
+
+/// Resolve all `count` 0-based `indices` against `shape`'s sub-shapes of TopAbs type `type` and
+/// hand each to `use(sub, i)`, where `i` is the caller's own array position so it can read a
+/// parallel array of its own (a per-entry radius, distance or offset). Returns false, having used
+/// nothing further, when an index names no such sub-shape, and false outright for a null array or
+/// a count below 1.
+///
+/// `type` is passed through occtMapSubShapes, so the enumeration is exactly the one Shape.faces(),
+/// Shape.edges() and Face.index read; an index out of range here is out of range there too.
+template <class Use>
+bool occtUseSubShapesByIndex(const TopoDS_Shape& shape, int32_t type,
+                             const int32_t* indices, int32_t count, Use use) {
+    if (!indices || count < 1) return false;
+
+    TopTools_IndexedMapOfShape map;
+    occtMapSubShapes(shape, type, map);
+
+    for (int32_t i = 0; i < count; i++) {
+        TopoDS_Shape sub = occtMappedSubShapeAt(map, indices[i]);
+        if (sub.IsNull()) return false;
+        use(sub, i);
+    }
+    return true;
+}
+
 // === #489: shared BRepFilletAPI_MakeFillet edge-list skeleton ===
 //
 // Three bridge functions fillet a caller-supplied list of edge indices and differ only in what
@@ -897,8 +1375,8 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 // bad index filleted the rest and reported success: a request honoured in part, presented as
 // honoured in full, the same defect class as #439/#442/#443. The two radius-law entry points
 // (OCCTShapeFilletVariable, OCCTShapeFilletEvolving) already rejected, so this is what makes all
-// five agree. A caller who wants best-effort can filter its own indices; a caller who cannot tell
-// a partial result from a complete one had no way back.
+// five agree. #568 finished the sweep, and this is now a thin wrapper over the resolution helper
+// the five remaining sites share: only the TopoDS_Edge cast is specific to the fillet family.
 //
 // Not folded into occtShapeFilletEdgeList below because OCCTShapeHistoryFromFilletEdges has to
 // keep its builder alive past the call, to hand back a BRepTools_History over it.
@@ -908,15 +1386,10 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 template <class AddEdge>
 bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
                         const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
-    TopTools_IndexedMapOfShape edgeMap;
-    TopExp::MapShapes(shape, TopAbs_EDGE, edgeMap);
-
-    for (int32_t i = 0; i < edgeCount; i++) {
-        int32_t idx = edgeIndices[i];
-        if (idx < 0 || idx >= edgeMap.Extent()) return false;
-        addEdge(fillet, TopoDS::Edge(edgeMap(idx + 1)), i);  // OCCT's map is 1-based
-    }
-    return true;
+    return occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                   [&](const TopoDS_Shape& edge, int32_t i) {
+        addEdge(fillet, TopoDS::Edge(edge), i);
+    });
 }
 
 // === #520: the radius law, for the two entry points that take one ===
@@ -1116,96 +1589,6 @@ inline bool occtSurfaceToAnalytical(const occ::handle<Geom_Surface>& surface, do
     } catch (...) {
         return false;
     }
-}
-
-// === #502: one sub-shape enumeration ===
-//
-// "Give me this shape's sub-shapes of type T" was implemented twice, on two different OCCT
-// primitives that answer differently:
-//
-//   * OCCTShapeGetSolidCount/GetSolids, GetShellCount/GetShells, GetWireCount/GetWires drove a
-//     bare TopExp_Explorer, which yields one entry per *occurrence* in the topology tree.
-//   * OCCTShapeGetSubShapeCount/GetSubShapeByTypeIndex (and OCCTShapeUniqueSubShapeCount, and the
-//     fixed-type counts for faces, edges and vertices) built a TopTools_IndexedMapOfShape through
-//     TopExp::MapShapes, which keeps one entry per *distinct* sub-shape.
-//
-// The gap is not cosmetic and not rare. TopTools_ShapeMapHasher's equality is
-// TopoDS_Shape::IsSame (same TShape and same location, orientation ignored), so the map drops
-// every repeat visit. Measured on the pinned kernel (Scripts/repro/502-subshape-traversal-dedup/):
-// a plain 10mm box has 24 edge occurrences over 12 edges and 48 vertex occurrences over 8
-// vertices, because each edge is reached once per adjacent face. For SOLID/SHELL/WIRE the two
-// agreed on every ordinary shape tried (primitives, a hollow solid's two shells, two distinct
-// bodies, two placements of one body, a sewn stack, a compsolid) and diverged exactly when one
-// sub-shape is reachable from two parents: one Shape compounded with itself (2 solids vs 1), one
-// shell handed to two solidFromShells calls (2 shells vs 1, #502's own example), one wire used to
-// build two faces (2 wires vs 1), a face and its own reverse in one shell (2 faces vs 1).
-//
-// Deduplicated is the answer this API gives everywhere else (a box has 12 edges, not 24), so that
-// is the answer all of it gives now. What made the choice cheap is that the two primitives
-// are not independent: TopExp::MapShapes(S, T, M) is literally a TopExp_Explorer walk piped into
-// the map (TopExp.cxx:34-45), so the deduplicated sequence is the explorer's sequence with later
-// repeats removed. Order is preserved, no index moves, and one traversal serves both spellings.
-
-/// THE sub-shape enumeration. Fills `outMap` with `shape`'s sub-shapes of TopAbs type `type`,
-/// in TopExp_Explorer order, one entry per distinct sub-shape (`TopoDS_Shape::IsSame`: same
-/// TShape and location, orientation ignored). Returns the number of entries.
-///
-/// `type` is the raw TopAbs_ShapeEnum ordinal as it arrives from Swift (0=COMPOUND..7=VERTEX);
-/// anything outside that range yields 0 rather than being cast to an enum it has no value in.
-/// Note that a shape IS its own sub-shape when it is of the requested type: a solid asked for
-/// SOLID answers 1.
-inline int32_t occtMapSubShapes(const TopoDS_Shape& shape, int32_t type,
-                                TopTools_IndexedMapOfShape& outMap) {
-    if (type < TopAbs_COMPOUND || type > TopAbs_VERTEX) return 0;
-    TopExp::MapShapes(shape, static_cast<TopAbs_ShapeEnum>(type), outMap);
-    return outMap.Extent();
-}
-
-/// The single sub-shape at 0-based `index` in the enumeration above, or a null TopoDS_Shape when
-/// the index is negative or past the end. Callers that want the whole set should map once and
-/// read the map, rather than calling this in a loop.
-inline TopoDS_Shape occtSubShapeAt(const TopoDS_Shape& shape, int32_t type, int32_t index) {
-    if (index < 0) return TopoDS_Shape();
-    TopTools_IndexedMapOfShape map;
-    if (index >= occtMapSubShapes(shape, type, map)) return TopoDS_Shape();
-    return map(index + 1);  // OCCT's indexed maps are 1-based
-}
-
-// === #541: one meaning for a face index ===
-//
-// A face index crossing this bridge is a 0-based position in the enumeration above -- the one
-// Shape.faces(), Shape.faceCount and Shape.face(at:) all read. Before #541 it was three things:
-// OCCTShapeGetFaces walked a bare TopExp_Explorer (one entry per *occurrence*, so the index it
-// wrote into Face.index could name a face no other entry point had), fourteen consumers walked
-// their own explorer to match it, and a handful read the deduplicated map 1-based, so a Face.index
-// addressed the face before the one it named and could never name the last face at all.
-//
-// Measured on the pinned kernel (Scripts/repro/541-face-index-contract/): the explorer/map
-// divergence is not a hand-built curiosity. One BRepAlgoAPI_Splitter run cutting a box with a
-// plane leaves two solids sharing the single cut face -- 12 occurrences over 11 distinct faces --
-// and the duplicate is not last, so from index 10 onwards the two schemes named *different* faces.
-// A caller holding Face.index from faces() drafted, deleted or opened a face it had not selected.
-// On the ten fixtures that share no face the two orders are identical face-by-face, so converging
-// them moved no index on any shape without a shared sub-shape.
-//
-// Use these two rather than open-coding an explorer walk or a map lookup: a null return means
-// "no such index", which is the only failure they have.
-
-/// The face at 0-based `index` in `shape`'s face enumeration, or a null face when the index is
-/// negative, past the end, or names a sub-shape that is not a face.
-inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_FACE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE) return TopoDS_Face();
-    return TopoDS::Face(sub);
-}
-
-/// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is
-/// negative, past the end, or names a sub-shape that is not an edge. `shape` is often a single
-/// face, whose edges are enumerated the same way.
-inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
-    TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
-    if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
-    return TopoDS::Edge(sub);
 }
 
 // === #405/#494: one resolution behind every GeomLProp_* local-property construction ===

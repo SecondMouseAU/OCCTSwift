@@ -819,7 +819,12 @@ public var length: Double? { get }
 ```
 
 - **Returns:** Arc length in model units, or `nil` if measurement fails.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided until two
+  successive levels agree to 1e-9 relative (#603). A line, a circle and a 2-pole
+  Bezier/BSpline keep their exact closed form.
+- **Note:** A whole ellipse used to measure up to 1.7% long — one Gauss quadrature over the
+  whole domain, the same defect and the same numbers as the 3D spelling, because both reach
+  one `GCPnts_AbscissaPoint::length` template (#603).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(3, 4))!
@@ -830,23 +835,36 @@ public var length: Double? { get }
 
 ### `length(from:to:)`
 
-Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be greater than
-`u2` — order doesn't affect the result, since this entry point builds an unrestricted adaptor
-rather than a range-checked one.
+Arc length between two parameter values. This is the canonical, failure-distinguishing entry
+point: `arcLength(from:to:)` delegates to it and collapses `nil` to a `-1.0` sentinel for source
+compatibility (#549).
 
 ```swift
 public func length(from u1: Double, to u2: Double) -> Double?
 ```
 
-- **Parameters:** `u1` — start parameter; `u2` — end parameter (either order).
+- **Parameters:** `u1` — start parameter, must be finite; `u2` — end parameter, must be finite
+  (either order).
 - **Returns:** Arc length, or `nil` on failure — never a sentinel value.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`, subdivided per `GeomAbs_CN`
+  interval, the same measurement as `length` (#603).
+- **Note:** The range may be given in either order, and equal parameters measure `0`.
+- **Note:** `.nan` and `±.infinity` also report `nil`, on every curve type. They are rejected in
+  the bridge, because OCCT's integrator does not check them: on a multi-span BSpline a NaN upper
+  bound measured `0` and a NaN lower bound the curve's whole length — see
+  [Curve3D](Curve3D.md#lengthfromto) for the mechanism (#548).
+- **Note:** A range reaching outside the curve's domain measures the part of it that lies on the
+  curve (a range wholly outside measures `0`); a curve whose domain covers a whole period measures
+  the whole range and winds. Same rule and same shared implementation as the 3D spelling, so both
+  answer identically on the same geometry (#600).
 - **Example:**
   ```swift
   let circle = Curve2D.circle(center: .zero, radius: 1)!
   let d = circle.domain
   let halfLen = circle.length(from: d.lowerBound, to: d.lowerBound + .pi)
   // halfLen ≈ π
+  let bad = circle.length(from: d.lowerBound, to: .nan)
+  // bad == nil
   ```
 
 ---
@@ -863,7 +881,11 @@ Use this to trim a curve to a specific arc length, or to place features at measu
 
 - **Parameters:** `arcLength` — desired arc-length distance; may be negative to travel in reverse; `fromParameter` — starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails.
-- **OCCT:** `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
+  to `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
+- **Note:** Shares the subdivided measurement with `length`, so the two agree:
+  `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own root
+  finder inverts a single quadrature and would not (#603).
 - **Example:**
   ```swift
   let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
