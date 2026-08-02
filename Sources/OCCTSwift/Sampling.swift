@@ -24,6 +24,12 @@ public enum Sampling {
     /// orders of magnitude below the `int32_t` the bridge takes its count in, which is where the
     /// process used to abort instead.
     ///
+    /// Since #622 the same ceiling also bounds result buffers whose element is not a point, so
+    /// "10 million points / ~625 MB" is the floor of its memory cost, not the whole of it: a
+    /// ray hit is 88 bytes (about 880 MB at the ceiling) and a hatch segment is four doubles.
+    /// The ceiling is deliberately *not* per-element-size — it is a count, and the `int32_t`
+    /// conversion it keeps callers away from traps identically whatever the element weighs.
+    ///
     /// ```swift
     /// let curve = Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))!
     /// curve.drawUniform(pointCount: Sampling.maximumSampleCount + 1).isEmpty   // true

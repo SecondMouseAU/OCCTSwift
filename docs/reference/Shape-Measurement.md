@@ -550,7 +550,7 @@ Returns all extremal point pairs (not just the minimum). Useful for finding mult
 - **Parameters:**
   - `other` — The other shape.
   - `maxSolutions` — Output *capacity*, clamped into `0...Sampling.maximumSampleCount`
-    (10,000,000); 0 or less returns empty (#622).
+    (10,000,000); 0 or less returns an empty array — **not** `nil`, as it did before #622 (#622).
 - **Returns:** Array of distance solutions, or `nil` on failure.
 - **OCCT:** `BRepExtrema_DistShapeShape` (via `OCCTShapeAllDistanceSolutions`).
 - **Example:**

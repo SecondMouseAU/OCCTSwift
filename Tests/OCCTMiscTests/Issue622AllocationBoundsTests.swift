@@ -145,7 +145,13 @@ struct Issue622AllocationBounds {
         let b = box(), s = sphere()
         #expect(b.allDistanceSolutions(to: s, maxSolutions: Self.pastInt32)?.count
                 == b.allDistanceSolutions(to: s)?.count)
+        // Behaviour change, asserted deliberately rather than incidentally: no capacity now yields
+        // an empty array, where before #622 the bridge's -1 for `maxSolutions <= 0` came back
+        // through `guard count >= 0` as `nil` — "the measurement failed" for what is really "no
+        // room was offered". `nil` is now reserved for an actual failure.
+        #expect(b.allDistanceSolutions(to: s, maxSolutions: 0) != nil)
         #expect(b.allDistanceSolutions(to: s, maxSolutions: 0)?.count == 0)
+        #expect(b.allDistanceSolutions(to: s, maxSolutions: -1) != nil)
         #expect(b.allDistanceSolutions(to: s, maxSolutions: -1)?.count == 0)
     }
 
@@ -238,19 +244,34 @@ struct Issue622AllocationBounds {
 
     @Test("directory and file listing clamp maxCount rather than trapping")
     func listingCapacities() {
-        // Comparing against a *small* capacity rather than the default, since /tmp's real entry
-        // count is not something a test may assume is under the 1000 default.
-        let dirSmall = DirectoryIterator.list(path: "/tmp", maxCount: 5).count
-        #expect(dirSmall <= 5)
-        #expect(DirectoryIterator.list(path: "/tmp", maxCount: Self.pastInt32).count >= dirSmall)
-        #expect(DirectoryIterator.list(path: "/tmp", maxCount: 0).count == 0)
-        #expect(DirectoryIterator.list(path: "/tmp", maxCount: -1).count == 0)
+        // A directory this test does not own cannot be assumed to hold a fixed number of entries,
+        // so the clamp is asserted against a baseline taken in the same call sequence rather than
+        // against a literal. An earlier version compared only `>= aSmallCapacityCount`, which both
+        // sides satisfy when the directory is empty — that asserted the absence of a trap and
+        // nothing about the clamp.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt622-listing-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        for i in 0..<7 {
+            FileManager.default.createFile(atPath: dir.appendingPathComponent("f\(i).txt").path,
+                                           contents: Data("x".utf8))
+        }
+        let path = dir.path
 
-        let fileSmall = FileIterator.list(path: "/tmp", maxCount: 5).count
-        #expect(fileSmall <= 5)
-        #expect(FileIterator.list(path: "/tmp", maxCount: Self.pastInt32).count >= fileSmall)
-        #expect(FileIterator.list(path: "/tmp", maxCount: 0).count == 0)
-        #expect(FileIterator.list(path: "/tmp", maxCount: -1).count == 0)
+        // 7 files in a directory of our own: the clamped capacity returns all of them, exactly as
+        // a generous-but-servable capacity does.
+        let fileBaseline = FileIterator.list(path: path, maxCount: 1000).count
+        #expect(fileBaseline == 7)
+        #expect(FileIterator.list(path: path, maxCount: Self.pastInt32).count == fileBaseline)
+        #expect(FileIterator.list(path: path, maxCount: 3).count == 3)      // a real capacity truncates
+        #expect(FileIterator.list(path: path, maxCount: 0).count == 0)
+        #expect(FileIterator.list(path: path, maxCount: -1).count == 0)
+
+        let dirBaseline = DirectoryIterator.list(path: path, maxCount: 1000).count
+        #expect(DirectoryIterator.list(path: path, maxCount: Self.pastInt32).count == dirBaseline)
+        #expect(DirectoryIterator.list(path: path, maxCount: 0).count == 0)
+        #expect(DirectoryIterator.list(path: path, maxCount: -1).count == 0)
     }
 
     // MARK: - The one request in the set

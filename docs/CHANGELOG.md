@@ -319,6 +319,33 @@ it rejects outside `1...ceiling` rather than silently handing back 10 million va
 10-billion request. Exactly the split #558 drew between `Curve3D.drawAdaptive` and
 `MedialAxis.drawArc`.
 
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let ray = (origin: SIMD3(0.0, 0, 20), direction: SIMD3(0.0, 0, -1))
+
+// A capacity is clamped, so an unservable one still returns the real answer.
+box.raycast(origin: ray.origin, direction: ray.direction, maxHits: 10_000_000_000).count
+    == box.raycast(origin: ray.origin, direction: ray.direction).count   // true
+box.raycast(origin: ray.origin, direction: ray.direction, maxHits: -1)   // [] -- used to abort
+
+// A request is rejected, never silently coarsened.
+LogSample.sample(from: 1, to: 100, count: 16).count                      // 16
+LogSample.sample(from: 1, to: 100, count: 10_000_001).count              // 0, not 10,000,000
+```
+
+**Two behaviour changes beyond "stops aborting", both at a zero-or-negative count:**
+
+- `Shape.allDistanceSolutions(to:maxSolutions:)` returns `[]` rather than `nil` for a capacity of 0
+  or less. The bridge answers `-1` for `maxSolutions <= 0` and the old `guard count >= 0` turned
+  that into `nil`, so "no room was offered" was reported as "the measurement failed". Every sibling
+  in this set returns its documented empty value for no capacity, and `nil` is now reserved for an
+  actual failure.
+- `KDTree`'s three searches gain an **effective** result ceiling of 10,000,000. The bridge returns
+  `min(results.Size(), maxResults)` with no truncation flag, so a caller who previously passed a
+  huge capacity against a >10-million-point cloud and got a complete answer now silently gets
+  10,000,000 of them. The silence is pre-existing (there was never a "there were more" signal); the
+  ceiling is new.
+
 **A separate, pre-existing defect surfaced while building the fixture and is *not* fixed here:**
 `Curve3D.extrema(with:maxCount:)` SIGSEGVs (uncatchable) on two **parallel** curves at *any*
 capacity — measured at `maxCount` 2, 20, 100, 1e4, 1e6, 1e7 and `Int32.max + 1`, all signal 11,
@@ -326,15 +353,35 @@ including the method's own default of 20. The bridge's own loop is correctly bou
 `min(NbExtrema(), maxCount)`, so the crash is inside `GeomAPI_ExtremaCurveCurve`'s construction: the
 documented `BRepExtrema_ExtCC` parallel hazard, on the `GeomAPI` path. It has nothing to do with the
 count bound, and the regression fixture uses skew curves deliberately so that it tests the bound
-rather than the crash.
+rather than the crash. Filed as
+[#636](https://github.com/SecondMouseAU/OCCTSwift/issues/636).
 
-**Also measured, also not fixed here, for the same "do not invent a contract" reason:** the math
-solver/optimizer family (`MathSolver.leastSquares`, `.uzawa`, `MathOptimizer`'s `variables:`
-parameters and friends) has the same trapping shape — confirmed on two of them, aborting on both
-`-1` and `Int32.max + 1`. But those numbers are problem *dimensions* that must agree with the
-caller's own `matrix` / `startPoint` arrays, not sampling capacities; the right bound is a
-consistency check against those arrays, and forcing them through a *sampling* ceiling would be
-precisely the fifth behaviour #622 asked to avoid. Filed separately rather than guessed at here.
+**Also measured, also not fixed here, for the same "do not invent a contract" reason — now filed as
+[#640](https://github.com/SecondMouseAU/OCCTSwift/issues/640).** The math solver/optimizer family
+has the same trapping shape, at **13** entry points in `Sources/OCCTSwift/Document.swift`:
+`MathSVD.solve` (`:5699`), `MathJacobi.eigenvalues` (`:5744`), `MathHouseholder.solve` (`:5919`),
+`MathOptimizer`'s `solveSystem`, `minimize`, `minimizePowell`, `particleSwarm`, `globalMinimize`,
+`solveSystemNewton`, `minimizeNewton` and `gaussSetIntegration`, and `MathSolver.leastSquares`
+(`:14193`) and `.uzawa`.
+
+These are problem *dimensions* that must agree with the caller's own `matrix` / `startPoint` arrays,
+not sampling capacities, and clamping a dimension to 10,000,000 would hand back a garbage-dimension
+solve rather than truncating a result set — so `Sampling.*` is the wrong tool and applying it would
+have been precisely the fifth behaviour #622 asked to avoid.
+
+**A consistency check against those arrays is *not* on its own the remedy**, which is where an
+earlier draft of this note was wrong. A degenerate array satisfies the consistency relation exactly
+and still aborts:
+
+```swift
+MathJacobi.eigenvalues(matrix: [1.0], n: -1)   // matrix.count == n*n holds exactly: 1 == 1
+                                                // still aborts: Can't construct Array with count < 0
+```
+
+The same holds for `MathSVD.solve` and `MathHouseholder.solve`. A positivity bound is needed as
+well. And `MathSolver.leastSquares` has **no** consistency check at all, so `Int32(rows)` /
+`Int32(cols)` drive an out-of-bounds **read** of `matrix` inside the bridge — memory unsafety rather
+than a clean trap, and the reason #640 is not merely a tidiness issue.
 
 Regression suite: `Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift`, 13 tests covering all
 21 entry points. They run in-process only because the fix is what lets them: before it, every
@@ -346,8 +393,15 @@ all 10 million of them.
 Confirmed by injection, one bound at a time: with the ceiling removed from the bound it covers (and
 the lower bound left in place, so the edit still compiles and the injection is exactly "the ceiling
 is gone"), **all 13 tests stopped passing** — 12 aborting with signal 5 and `raycast` dying mid-run
-on its ~189 GB allocation before it could report an assertion. Each was restored by exact reverse
-replacement and re-verified afterwards.
+before it could report an assertion. Each was restored by exact reverse replacement and re-verified
+afterwards.
+
+The `raycast` case dies at the `Int32(capacity)` conversion ("Not enough bits to represent the
+passed value"), *not* at the buffer allocation: `calloc` hands back lazily-zeroed pages, so the
+nominally ~189 GB `[OCCTRayHit]` costs nothing until it is touched. The trapping conversion is
+reached first. Worth recording, because it means the allocation size is the wrong thing to reason
+about when judging which of these entry points is dangerous — the `int32_t` cast is what fires, and
+it fires identically whether the element is 8 bytes or 88.
 
 #### A NaN parameter bound stops being a plausible arc length (#548)
 

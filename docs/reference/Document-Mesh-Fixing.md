@@ -905,7 +905,7 @@ public func projectPointAll(
 
 - **Parameters:**
   - `point` — the 3D query point.
-  - `maxResults` — maximum number of results to return (default 10).
+  - `maxResults` — output *capacity* (default 10), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(parameter, distance)` pairs for every extremum found.
 - **OCCT:** `GeomAPI_ExtremaCurveCurve` / `Extrema_ExtPC` (via `OCCTExtremaPointCurve`).
 - **Example:**
@@ -951,7 +951,8 @@ public func projectPointAll(
 ) -> [(u: Double, v: Double, distance: Double)]
 ```
 
-- **Parameters:** `point` — 3D query point; `maxResults` — upper bound on results returned.
+- **Parameters:** `point` — 3D query point; `maxResults` — output *capacity* (default 10),
+  clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `(u, v, distance)` tuples for every extremum.
 - **OCCT:** `GeomAPI_ProjectPointOnSurf` (via `OCCTExtremaPointSurface`).
 

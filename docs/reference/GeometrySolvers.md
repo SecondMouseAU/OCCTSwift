@@ -1079,7 +1079,8 @@ public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDi
 
 - **Parameters:**
   - `point` — the query point.
-  - `k` — number of neighbors to find.
+  - `k` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622). Fewer than `k` come back when the tree
+    holds fewer points.
 - **Returns:** Array of `(index, squaredDistance)` tuples sorted by distance. Note: distances are **squared**.
 - **OCCT:** `NCollection_KDTree` k-nearest query.
 - **Example:**

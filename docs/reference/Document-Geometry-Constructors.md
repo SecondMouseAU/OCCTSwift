@@ -1170,7 +1170,8 @@ Convert a UTF-8 string to the current multi-byte encoding.
 public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String?
 ```
 
-- **Parameters:** `utf8Input` — UTF-8 encoded source; `maxSize` — output buffer capacity in bytes.
+- **Parameters:** `utf8Input` — UTF-8 encoded source; `maxSize` — output buffer capacity in bytes,
+  clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns `nil` (#622).
 - **Returns:** String in the current encoding, or `nil` on failure.
 - **OCCT:** `Resource_Unicode::ConvertSJISToUnicode` / `ConvertEUCToUnicode` / etc. (inverse path)
 - **Example:**
@@ -1343,8 +1344,13 @@ Compute logarithmically spaced parameter values in [a, b].
 public static func sample(from a: Double, to b: Double, count n: Int) -> [Double]
 ```
 
-- **Parameters:** `a` — start of interval; `b` — end of interval; `n` — number of sample points.
-- **Returns:** Array of `n` logarithmically spaced values, or empty if `n ≤ 0`.
+- **Parameters:** `a` — start of interval; `b` — end of interval; `n` — a *request* for exactly
+  this many sample points, honoured within `1...Sampling.maximumSampleCount` (10,000,000). The
+  bridge fills the buffer exactly, so this is not a capacity and is never clamped (#622).
+- **Returns:** Array of `n` logarithmically spaced values, or empty if `n` is outside
+  `1...10,000,000` — **including above the ceiling**, where it returns empty rather than a
+  coarser sampling than was asked for (#622). Before #622 a count past `Int32.max` aborted the
+  process.
 - **OCCT:** `GeomLib_LogSample`
 - **Example:**
   ```swift
@@ -2290,7 +2296,8 @@ List all directory names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — result cap.
+- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+  (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of directory name strings.
 - **OCCT:** `OSD_DirectoryIterator`
 - **Example:**
@@ -2350,7 +2357,8 @@ List all file names matching a mask (up to `maxCount`).
 public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String]
 ```
 
-- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — result cap.
+- **Parameters:** `path`, `mask` — search location and filter; `maxCount` — output *capacity*
+  (default 1000), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of file name strings.
 - **OCCT:** `OSD_FileIterator`
 - **Example:**
