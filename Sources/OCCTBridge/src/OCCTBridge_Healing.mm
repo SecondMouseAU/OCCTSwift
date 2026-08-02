@@ -3049,7 +3049,9 @@ int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
                                  int criterion, double tolerance,
                                  int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceContinuity) splitter = new ShapeUpgrade_SplitSurfaceContinuity();
         splitter->Init(surface);
         splitter->SetCriterion(occtGeomAbsFromParametricContinuity(criterion));
@@ -3070,7 +3072,9 @@ int OCCTSplitSurfaceContinuity(OCCTSurfaceRef _Nonnull surfaceRef,
 int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef, double maxAngle,
                             int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceAngle) splitter = new ShapeUpgrade_SplitSurfaceAngle(maxAngle);
         splitter->Init(surface);
         splitter->Perform(true);
@@ -3089,7 +3093,9 @@ int OCCTSplitSurfaceAngle(OCCTSurfaceRef _Nonnull surfaceRef, double maxAngle,
 int OCCTSplitSurfaceArea(OCCTSurfaceRef _Nonnull surfaceRef, int nbParts, bool intoSquares,
                            int* _Nullable outUSplitCount, int* _Nullable outVSplitCount) {
     try {
-        auto& surface = reinterpret_cast<OCCTSurface*>(surfaceRef)->surface;
+        auto* wrapper = reinterpret_cast<OCCTSurface*>(surfaceRef);
+        if (!wrapper || wrapper->surface.IsNull()) return 0;
+        auto& surface = wrapper->surface;
         Handle(ShapeUpgrade_SplitSurfaceArea) splitter = new ShapeUpgrade_SplitSurfaceArea();
         splitter->Init(surface);
         splitter->NbParts() = nbParts;

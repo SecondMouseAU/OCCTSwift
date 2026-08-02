@@ -1074,6 +1074,7 @@ OCCTCurve3DRef _Nullable OCCTProjLibProjectOnSurface(OCCTCurve3DRef curve, doubl
     try {
         auto* c = (OCCTCurve3D*)curve;
         auto* s = (OCCTSurface*)surface;
+        if (!c || c->curve.IsNull() || !s || s->surface.IsNull()) return nullptr;
         Handle(GeomAdaptor_Surface) as = new GeomAdaptor_Surface(s->surface);
         Handle(Geom_TrimmedCurve) trimmed = new Geom_TrimmedCurve(c->curve, uFirst, uLast);
         Handle(GeomAdaptor_Curve) ac = new GeomAdaptor_Curve(trimmed);

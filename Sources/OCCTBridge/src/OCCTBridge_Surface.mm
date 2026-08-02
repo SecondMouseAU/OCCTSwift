@@ -2538,6 +2538,7 @@ bool OCCTLocalAnalysisSurfaceContinuity(OCCTSurfaceRef _Nonnull surface1, double
     try {
         auto s1 = (OCCTSurface*)surface1;
         auto s2 = (OCCTSurface*)surface2;
+        if (!s1 || s1->surface.IsNull() || !s2 || s2->surface.IsNull()) return false;
 
         const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
         const int32_t measured = occtAnalysisMeasuredMask(effective);
@@ -2562,6 +2563,7 @@ int32_t OCCTLocalAnalysisSurfaceContinuityFlags(OCCTSurfaceRef _Nonnull surface1
     try {
         auto s1 = (OCCTSurface*)surface1;
         auto s2 = (OCCTSurface*)surface2;
+        if (!s1 || s1->surface.IsNull() || !s2 || s2->surface.IsNull()) return 0;
 
         const GeomAbs_Shape effective = occtGeomAbsFromAnalysisOrder(order);
         const int32_t measured = occtAnalysisMeasuredMask(effective);
@@ -2680,6 +2682,7 @@ OCCTSurfaceRef OCCTGeomFillNSections(
         NCollection_Sequence<double> paramSeq;
         for (int32_t i = 0; i < count; i++) {
             auto* wrapper = reinterpret_cast<OCCTCurve3D*>(curveRefs[i]);
+            if (!wrapper || wrapper->curve.IsNull()) return nullptr;
             sections.Append(wrapper->curve);
             paramSeq.Append(params[i]);
         }
@@ -2708,6 +2711,7 @@ void OCCTGeomFillNSectionsInfo(
         NCollection_Sequence<double> paramSeq;
         for (int32_t i = 0; i < count; i++) {
             auto* wrapper = reinterpret_cast<OCCTCurve3D*>(curveRefs[i]);
+            if (!wrapper || wrapper->curve.IsNull()) return;
             sections.Append(wrapper->curve);
             paramSeq.Append(params[i]);
         }

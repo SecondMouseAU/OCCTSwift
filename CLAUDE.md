@@ -69,10 +69,22 @@ Opaque handle types (`OCCTShapeRef`, `OCCTWireRef`, `OCCTFaceRef`, `OCCTEdgeRef`
 
 If the new function takes an `OCCTCurve3DRef` / `OCCTCurve2DRef` / `OCCTSurfaceRef`, guard the
 handle as well as the pointer: `if (!x || x->curve.IsNull()) return <the fallback the catch below
-uses>;`. Checking only the pointer says nothing about the handle, and 24 of the 35 OCCT entry
+uses>;`. Checking only the pointer says nothing about the handle, and 36 of the 57 OCCT entry
 points this bridge passes such a handle into dereference it unconditionally, which is an
-uncatchable signal, not something `catch (...)` can absorb (#478, #556). Run
-`python3 Scripts/check-null-handle-guards.py` to verify; it exits 1 on any unguarded site.
+uncatchable signal, not something `catch (...)` can absorb (#478, #556, #618). Run
+`python3 Scripts/check-null-handle-guards.py` to verify; it exits 1 on any unguarded site, and
+`--self-test` proves both failure modes (an unguarded site reported, a guarded one not).
+
+**The guard is required only where the OCCT call actually needs it.** Not every entry point
+dereferences: `GeomLib_Tool::Parameter` returns false, `GeomAdaptor_Surface` and
+`Approx_SameParameter` raise a catchable `Standard_Failure` the surrounding `catch (...)` already
+turns into the same fallback a guard would return. Measure against
+`Scripts/repro/556-null-handle-guard-sweep` before adding one; a guard on a call that copes is
+noise, and the script's `ALLOWED` table records each such site with its measured reason.
+The handle does not have to be spelled `x->curve` to reach OCCT: this bridge also reaches it
+through a `reinterpret_cast`/`static_cast`/C-style cast, a pointer alias, a handle alias, and a
+shared bridge helper. The checker understands all of them (#618); a hand-audit that greps for
+`->curve` does not.
 
 ## Naming Conventions
 

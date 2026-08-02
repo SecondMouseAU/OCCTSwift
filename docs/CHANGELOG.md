@@ -17,6 +17,58 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### The null-handle gate was blind to four of the five ways this bridge reaches a handle (#618)
+
+`Scripts/check-null-handle-guards.py` printed "All bridge functions guard the geometry handle as
+well as the wrapper pointer" and exited 0. Its use-detector matched `param->field` and nothing
+else, so every site that reaches the handle through an indirection was invisible to it, and this
+bridge uses four: a cast (`reinterpret_cast<OCCTSurface*>(ref)->surface`, `static_cast`,
+`(OCCTSurface*)ref`), a pointer alias (`auto* s = (OCCTSurface*)surface; ... s->surface`), a
+handle alias (`auto& surf = ...->surface;`, and the by-value `Handle(Geom_Surface) w = ...->surface;`
+copy), and a shared bridge helper. Casts are now normalised away before the walk, aliases are
+followed, and the detector scores 6/6 on fixtures the old one scored 1/6 on.
+
+The fourth form cuts the other way, and is why the fix is not just "teach it the cast spelling"
+(#624/#630's lesson, one issue earlier: a sibling gate that had been taught indirection badly was
+confidently wrong about seven correct entries). `OCCTGeomConvertCurveToAnalytical` and
+`occtSurfToAnaSurfResult` hand their handle to `occtCurveToAnalytical` / `occtSurfaceToAnalytical`,
+both of which open with `if (curve.IsNull()) return false;`: checked, just one call frame away. A
+detector taught forms 1-3 and not form 4 reports both as defects. It now recognises a bridge helper
+that `IsNull()`-checks the parameter it is handed as a guard in its own right.
+
+**54 candidate `(function, argument)` pairs across 39 functions (the old detector found 1), of
+which 20 needed a guard and 34 were cleared by measurement.** The issue's own list of
+seven suspected-unguarded sites was partly wrong, and measuring first is what caught it:
+`OCCTGeomLibToolParameter3D` and `OCCTGeomLibToolParameter2D` reach `GeomLib_Tool::Parameter`,
+which returns `false` on a null handle, and `OCCTApproxSameParameter` reaches
+`Approx_SameParameter`, which raises a catchable `Standard_Failure` the function's own `catch (...)`
+already turns into the same `false` a guard would return. Three of the seven needed nothing. The
+other four did, along with eleven sites the issue never named.
+
+Guards added to 15 functions (20 `(function, argument)` pairs): `OCCTLocalAnalysisCurveContinuity`
+`{,Flags}`, `OCCTLocalAnalysisSurfaceContinuity{,Flags}`, `OCCTSplitCurve3dContinuity`,
+`OCCTSplitCurve2dContinuity`, `OCCTConvertCurve2dToBezier`, `OCCTSplitSurface{Continuity,Angle,Area}`,
+`OCCTGeomToolsCurve2dSetWrite`, `OCCTGeomToolsSurfaceSetWrite`, `OCCTProjLibProjectOnSurface`,
+`OCCTGeomFillNSections{,Info}`. Each returns the fallback its surrounding `catch (...)` already
+returns. The remaining 34 pairs (24 functions) are recorded in the script's `ALLOWED` table, each
+with the measured reason it does not need one; four of those are not OCCT calls at all
+(`OCCTBRepGraphRepSet*` store
+into a bridge-owned side registry whose *else* branch deliberately stores a null handle to clear
+the slot, and `BRepGraph_EditorView::SetPCurve` documents the null handle as its clear-the-binding
+contract).
+
+`Scripts/repro/556-null-handle-guard-sweep` grew from 35 entry points to 57: the 22 the pre-#618
+walk never reached, so nobody had measured them. 36 of 57 are now uncatchable signals (was 24 of
+35). Along the way: `GeomTools_CurveSet::Add` guards with `return (C.IsNull()) ? 0 : myMap.Add(C)`
+while `GeomTools_Curve2dSet` and `GeomTools_SurfaceSet` contain no `IsNull` anywhere and both
+crash. An upstream inconsistency between three copies of the same writer.
+
+The script also gains `--self-test`, matching `check-bridge-index.py`. It proves both failure
+modes by injection: six fixtures that must be reported (one per indirection form, including the
+plain `param->field` form, so the fix is provably additive) and six that must not (including a
+guard reached only through a by-value `Handle` copy, and one only through the shared helper).
+No public API change; behaviour changes only for inputs no bridge call can currently produce.
+
 #### The index gate was reporting seven correct entries, because it could not read a template helper (#624)
 
 `Scripts/check-bridge-index.py` exited 1 with `0 stale, 7 misfiled`, every one of them on the

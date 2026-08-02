@@ -1564,6 +1564,7 @@ const char * _Nullable OCCTGeomToolsCurve2dSetWrite(const OCCTCurve2DRef * curve
         GeomTools_Curve2dSet cs;
         for (int i = 0; i < count; i++) {
             auto* c = (OCCTCurve2D*)curveRefs[i];
+            if (!c || c->curve.IsNull()) return nullptr;
             cs.Add(c->curve);
         }
         std::ostringstream oss;
@@ -1615,6 +1616,7 @@ const char * _Nullable OCCTGeomToolsSurfaceSetWrite(const OCCTSurfaceRef * surfR
         GeomTools_SurfaceSet ss;
         for (int i = 0; i < count; i++) {
             auto* s = (OCCTSurface*)surfRefs[i];
+            if (!s || s->surface.IsNull()) return nullptr;
             ss.Add(s->surface);
         }
         std::ostringstream oss;

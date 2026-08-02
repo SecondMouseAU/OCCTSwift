@@ -24,10 +24,11 @@ with before the fix. A child killed by a signal is a case it could not.
 
 ## What it measures
 
-35 distinct OCCT entry points: every API that the 60 bridge functions #556 guards pass an
-`OCCTCurve3DRef` / `OCCTCurve2DRef` / `OCCTSurfaceRef`'s handle into.
+57 distinct OCCT entry points: every API that the bridge passes an `OCCTCurve3DRef` /
+`OCCTCurve2DRef` / `OCCTSurfaceRef`'s handle into. 35 of them come from #556; #618 added the
+other 22 (see below).
 
-**24 of 35 crash with an uncatchable signal. 5 raise a catchable `Standard_Failure`. 6 return.**
+**36 of 57 crash with an uncatchable signal. 10 raise a catchable `Standard_Failure`. 11 return.**
 
 ### The issue's headline example is one of the mild ones
 
@@ -82,6 +83,55 @@ constructed the object would have reported this whole 11-function family as safe
 
 Per CLAUDE.md, `OCC_CATCH_SIGNALS` is inert in this build, so none of the 24 is recoverable
 in-process. The enclosing `catch (...)` is not a fallback for any of them.
+
+## The 22 entry points #618 added
+
+The walk that produced #556's census matched `param->field` and nothing else, so it never saw the
+bridge sites that reach the handle through a cast or a local alias, and so these entry points,
+the ones those sites call, were never probed at all. #618 taught the checker every indirection in
+the tree and then measured what it turned up. Each probe below runs the bridge function's real
+sequence (`Init` *and* `Perform`, not just the first call), because the crash need not land on the
+first one.
+
+**13 crash, 5 raise a catchable `Standard_Failure`, 5 return.** Which means the "suspected
+unguarded" list #618 was filed with was partly wrong, in the direction that matters: measuring
+first avoided three guards that would have been noise.
+
+| OCCT call | reached from | null handle |
+|---|---|---|
+| `LocalAnalysis_CurveContinuity` ctor | `OCCTLocalAnalysisCurveContinuity{,Flags}` | SIGSEGV |
+| `LocalAnalysis_SurfaceContinuity` ctor | `OCCTLocalAnalysisSurfaceContinuity{,Flags}` | SIGSEGV |
+| `ShapeUpgrade_SplitCurve3dContinuity` `Init`+`Perform` | `OCCTSplitCurve3dContinuity` | SIGSEGV |
+| `ShapeUpgrade_SplitCurve2dContinuity` `Init`+`Perform` | `OCCTSplitCurve2dContinuity` | SIGSEGV |
+| `ShapeUpgrade_ConvertCurve2dToBezier` `Init`+`Perform` | `OCCTConvertCurve2dToBezier` | SIGSEGV |
+| `ShapeUpgrade_SplitSurface{Continuity,Angle,Area}` `Init`+`Perform` | the three `OCCTSplitSurface*` fns | SIGSEGV |
+| `GeomTools_Curve2dSet::Add` + `Write` | `OCCTGeomToolsCurve2dSetWrite` | SIGSEGV |
+| `GeomTools_SurfaceSet::Add` + `Write` | `OCCTGeomToolsSurfaceSetWrite` | SIGSEGV |
+| `GeomFill_NSections` + `ComputeSurface` / `SectionShape` | `OCCTGeomFillNSections{,Info}` | SIGSEGV |
+| `new Geom_TrimmedCurve` | `OCCTProjLibProjectOnSurface` | SIGSEGV |
+| `Approx_SameParameter` ctor | `OCCTApproxSameParameter` | `Standard_Failure` |
+| `GeomAdaptor_Surface` ctor | 9 `OCCTExtrema*` / `OCCTProjLib*` fns | `Standard_Failure` |
+| `GeomAdaptor_Curve(c, first, last)` | 5 `OCCTExtrema*` fns | `Standard_Failure` |
+| `GeomLib_IsPlanarSurface` ctor | `OCCTGeomLibIsPlanarSurface`, `OCCTGeomLibPlanarSurfacePlane` | `Standard_Failure` |
+| `Geom2dConvert_ApproxArcsSegments` | `OCCTGeom2dConvertApproxArcsSegments` | `Standard_Failure` |
+| `GeomLib_Tool::Parameter` (3D and 2D) | `OCCTGeomLibToolParameter{3D,2D}` | returns false |
+| `GeomLib_Tool::Parameters` (surface) | `OCCTGeomLibToolParametersSurface` | returns false |
+| `GeomConvert_SurfToAnaSurf::IsCanonical` | `OCCTGeomConvertIsCanonical` | returns |
+| `GeomTools_CurveSet::Add` + `Write` | `OCCTGeomToolsCurveSetWrite` | returns |
+
+### One asymmetry worth naming: `GeomTools`
+
+The three `GeomTools_*Set` writers are the same code three times over, and they do not behave the
+same way. `GeomTools_CurveSet::Add` opens
+
+```cpp
+return (C.IsNull()) ? 0 : myMap.Add(C);
+```
+
+so a null 3D curve is dropped rather than written. `GeomTools_Curve2dSet.cxx` and
+`GeomTools_SurfaceSet.cxx` contain no `IsNull` at all, and both crash. Upstream inconsistency, not
+ours; the two that crash are guarded bridge-side, the one that copes is left alone and recorded in
+the checker's `ALLOWED` with that reason.
 
 ## What this does not show
 
