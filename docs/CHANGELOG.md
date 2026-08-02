@@ -37,7 +37,7 @@ detector taught forms 1-3 and not form 4 reports both as defects. It now recogni
 that `IsNull()`-checks the parameter it is handed as a guard in its own right.
 
 **54 candidate `(function, argument)` pairs across 39 functions (the old detector found 1), of
-which 20 needed a guard and 34 were cleared by measurement.** The issue's own list of
+which 21 needed a guard and 33 were cleared by measurement.** The issue's own list of
 seven suspected-unguarded sites was partly wrong, and measuring first is what caught it:
 `OCCTGeomLibToolParameter3D` and `OCCTGeomLibToolParameter2D` reach `GeomLib_Tool::Parameter`,
 which returns `false` on a null handle, and `OCCTApproxSameParameter` reaches
@@ -45,17 +45,25 @@ which returns `false` on a null handle, and `OCCTApproxSameParameter` reaches
 already turns into the same `false` a guard would return. Three of the seven needed nothing. The
 other four did, along with eleven sites the issue never named.
 
-Guards added to 15 functions (20 `(function, argument)` pairs): `OCCTLocalAnalysisCurveContinuity`
+Guards added to 16 functions (21 `(function, argument)` pairs): `OCCTLocalAnalysisCurveContinuity`
 `{,Flags}`, `OCCTLocalAnalysisSurfaceContinuity{,Flags}`, `OCCTSplitCurve3dContinuity`,
 `OCCTSplitCurve2dContinuity`, `OCCTConvertCurve2dToBezier`, `OCCTSplitSurface{Continuity,Angle,Area}`,
-`OCCTGeomToolsCurve2dSetWrite`, `OCCTGeomToolsSurfaceSetWrite`, `OCCTProjLibProjectOnSurface`,
+`OCCTGeomTools{Curve,Curve2d,Surface}SetWrite`, `OCCTProjLibProjectOnSurface`,
 `OCCTGeomFillNSections{,Info}`. Each returns the fallback its surrounding `catch (...)` already
-returns. The remaining 34 pairs (24 functions) are recorded in the script's `ALLOWED` table, each
+returns. The remaining 33 pairs (23 functions) are recorded in the script's `ALLOWED` table, each
 with the measured reason it does not need one; four of those are not OCCT calls at all
 (`OCCTBRepGraphRepSet*` store
 into a bridge-owned side registry whose *else* branch deliberately stores a null handle to clear
 the slot, and `BRepGraph_EditorView::SetPCurve` documents the null handle as its clear-the-binding
 contract).
+
+`OCCTGeomToolsCurveSetWrite` is the one guard here that measurement did *not* demand:
+`GeomTools_CurveSet::Add` guards its own handle, so a null cannot crash it. It is guarded anyway
+because the alternative was worse than noise. `Add` silently drops the null, `Write()` then emits a
+set with fewer curves than the caller passed, and `Curve3D.serializeCurves`/`deserializeCurves` is a
+round trip, so the surviving indices stop matching the input array. Guarding it also keeps the three
+identical `GeomTools_*SetWrite` writers from diverging three ways on null handling, which is the
+divergence shape this audit exists to remove.
 
 `Scripts/repro/556-null-handle-guard-sweep` grew from 35 entry points to 57: the 22 the pre-#618
 walk never reached, so nobody had measured them. 36 of 57 are now uncatchable signals (was 24 of

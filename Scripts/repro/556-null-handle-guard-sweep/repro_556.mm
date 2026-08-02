@@ -25,6 +25,10 @@
 #include <Geom2d_CartesianPoint.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
 #include <Approx_SameParameter.hxx>
+#include <Geom_Line.hxx>
+#include <Geom_Plane.hxx>
+#include <Geom2d_Line.hxx>
+#include <gp_Dir2d.hxx>
 #include <Geom2dConvert_ApproxArcsSegments.hxx>
 #include <GeomAdaptor_Surface.hxx>
 #include <GeomConvert_SurfToAnaSurf.hxx>
@@ -242,9 +246,29 @@ int main() {
     probe("GeomLibToolParams...Surf", "GeomLib_Tool::Parameters(Geom_Surface)", [&] {
         double u = 0, v = 0; (void)GeomLib_Tool::Parameters(ns, gp_Pnt(0, 0, 0), 1e-3, u, v);
     });
-    probe("ApproxSameParameter", "Approx_SameParameter ctor", [&] {
-        Approx_SameParameter a(nc, nc2, ns, 1e-3); (void)a.IsDone();
-    });
+    // Approx_SameParameter takes three handles, so one all-null probe does not cover the claim
+    // that the bridge function needs no guard: it only shows the all-null case is survivable. The
+    // three below null one argument at a time with the other two valid, which is what the guard
+    // would actually be protecting against. These are extra probes of an entry point already
+    // counted once, not extra entry points (same distinction as `new Geom_TrimmedCurve` above).
+    {
+        occ::handle<Geom_Curve>   goodC3d = new Geom_Line(gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0));
+        occ::handle<Geom2d_Curve> goodC2d = new Geom2d_Line(gp_Pnt2d(0, 0), gp_Dir2d(1, 0));
+        occ::handle<Geom_Surface> goodSrf = new Geom_Plane(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
+
+        probe("ApproxSameParameter", "Approx_SameParameter(null, null, null)", [&] {
+            Approx_SameParameter a(nc, nc2, ns, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (3D curve null only)", "Approx_SameParameter(null, c2d, surf)", [&] {
+            Approx_SameParameter a(nc, goodC2d, goodSrf, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (2D curve null only)", "Approx_SameParameter(c3d, null, surf)", [&] {
+            Approx_SameParameter a(goodC3d, nc2, goodSrf, 1e-3); (void)a.IsDone();
+        });
+        probe("  \" (surface null only)", "Approx_SameParameter(c3d, c2d, null)", [&] {
+            Approx_SameParameter a(goodC3d, goodC2d, ns, 1e-3); (void)a.IsDone();
+        });
+    }
     probe("SplitCurve3dContinuity", "ShapeUpgrade_SplitCurve3dContinuity Init+Perform", [&] {
         Handle(ShapeUpgrade_SplitCurve3dContinuity) s = new ShapeUpgrade_SplitCurve3dContinuity();
         s->Init(nc); s->SetCriterion(GeomAbs_C1); s->SetTolerance(1e-3); s->Perform(true);

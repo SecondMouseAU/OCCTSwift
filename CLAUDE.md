@@ -83,8 +83,17 @@ turns into the same fallback a guard would return. Measure against
 noise, and the script's `ALLOWED` table records each such site with its measured reason.
 The handle does not have to be spelled `x->curve` to reach OCCT: this bridge also reaches it
 through a `reinterpret_cast`/`static_cast`/C-style cast, a pointer alias, a handle alias, and a
-shared bridge helper. The checker understands all of them (#618); a hand-audit that greps for
-`->curve` does not.
+shared bridge helper. The checker handles those four, which are the four this tree currently uses
+(#618); a hand-audit that greps for `->curve` handles none of them.
+
+**Four is a fact about this tree, not a closed set.** The checker is still blind to `(*cast).field`,
+a reference-to-wrapper alias, an `IsNull()` whose result is discarded or does not dominate the use,
+a negated guard, `extern "C"` on the definition line (which hides the whole function from its
+parser), and a helper that guards only some paths; and it would wrongly report
+`Handle(Geom_Curve) w(wrapper->curve);` constructor-init syntax. None of those appears today. If you
+write one, teach the checker the shape in the same PR, and note that an `ALLOWED` entry is keyed
+`(file, function)` with no argument index and no re-validation, so it exempts every argument of
+that function and every later change to it.
 
 ## Naming Conventions
 

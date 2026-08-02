@@ -1512,6 +1512,14 @@ const char * _Nullable OCCTGeomToolsCurveSetWrite(const OCCTCurve3DRef * curveRe
         GeomTools_CurveSet cs;
         for (int i = 0; i < count; i++) {
             auto* c = (OCCTCurve3D*)curveRefs[i];
+            // Same opener as the Curve2dSet/SurfaceSet writers below, for a different reason.
+            // GeomTools_CurveSet::Add is the only one of the three that guards its handle
+            // (GeomTools_CurveSet.cxx:70, `return (C.IsNull()) ? 0 : myMap.Add(C)`), so a null
+            // here does not crash: it is silently dropped, and Write() then emits a set with
+            // fewer curves than the caller passed. Curve3D.serializeCurves/deserializeCurves is
+            // a round trip, so that is a silent truncation, and the surviving indices no longer
+            // match the input array. Refusing the batch is what the siblings already do (#618).
+            if (!c || c->curve.IsNull()) return nullptr;
             cs.Add(c->curve);
         }
         std::ostringstream oss;

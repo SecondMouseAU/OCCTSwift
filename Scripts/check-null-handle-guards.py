@@ -14,7 +14,8 @@ test both:
 it to an OCCT API which dereferences it internally. This script is what keeps that at zero.
 
 #618: the walk that produced both lists matched `param->field` and nothing else, so it was blind
-to every site that reaches the handle through an indirection, and this bridge uses four:
+to every site that reaches the handle through an indirection. Four such forms occur in this tree,
+and the detector handles those four:
 
     1. a cast:            reinterpret_cast<OCCTSurface*>(surfaceRef)->surface
                           static_cast<OCCTCurve3D*>(curveRef)->curve
@@ -30,6 +31,25 @@ one call frame away, so a detector that learns 1-3 without learning 4 reports co
 resolved here: casts are normalised away, aliases are followed, and a use that hands the handle to
 a bridge helper whose own body `IsNull()`-checks that parameter first counts as guarded.
 
+WHAT THIS STILL CANNOT SEE. "Four" is a fact about this tree, not about C++, and the list was
+arrived at by enumerating what the bridge actually writes. Add any of these and the gate goes quiet
+on a real defect, so add the shape here too rather than assuming it is covered:
+
+  * `(*cast).field` instead of `cast->field`. Zero occurrences today.
+  * an alias bound by reference to the wrapper, `OCCTSurface& w = *ref;   ... w.surface`.
+  * a guard whose result is discarded or does not dominate the use: `x->curve.IsNull();` as a
+    statement, or an `if` that tests it and then falls through to the use anyway. The walk treats
+    the first `IsNull()` before the use as a guard and does not check for a control transfer.
+    Verified once, by hand, that every clearing guard in this tree does return or throw.
+  * a negated guard, `if (!x->curve.IsNull()) { } else { use(x->curve); }`.
+  * `extern "C"` on the definition line: the `"` is outside FUNC's return-type character class, so
+    the whole function is invisible to the parser, guarded or not. Zero occurrences today.
+  * a helper that guards on some paths only. `guarding_helpers()` asks whether the FIRST mention of
+    the parameter is an `IsNull()` test, not whether every path through the body is protected.
+
+And one false-positive direction: `Handle(Geom_Curve) w(wrapper->curve);` constructor-init syntax
+is not recognised as an alias binding, so it would be reported as an unguarded use. Also absent.
+
 Two exclusions, both load-bearing:
 
   * A `DownCast(x->curve)` is NOT a use: down-casting a null handle returns a null handle, and
@@ -39,6 +59,14 @@ Two exclusions, both load-bearing:
     entry point was *measured* to tolerate a null handle - #556's own standard, since a call that
     returns normally or raises a catchable `Standard_Failure` is already handled by the function's
     `catch (...)`. Every reason cites the measurement.
+
+    Know what an ALLOWED entry actually buys. It is keyed `(file, function)`, with no argument
+    index and no re-validation: it exempts EVERY wrapper argument of that function, and it keeps
+    exempting them after the body changes. A function cleared today because it called
+    `GeomLib_Tool::Parameter` stays cleared if someone swaps that for a call that dereferences.
+    The mechanism's only real safeguard is that it lives in a tracked file, so an entry has to
+    survive review. Re-measure before trusting an entry you did not write, and delete it rather
+    than widen it when a function grows a new argument.
 
 Usage (from the repo root):
 
@@ -92,15 +120,12 @@ ALLOWED = {
         'measured #618: GeomLib_Tool::Parameters(Geom_Surface) returns false on a null handle',
     ('OCCTBridge_Surface.mm', 'OCCTGeomConvertIsCanonical'):
         'measured #618: GeomConvert_SurfToAnaSurf::IsCanonical returns on a null handle',
-    ('OCCTBridge_IO.mm', 'OCCTGeomToolsCurveSetWrite'):
-        'measured #618: GeomTools_CurveSet::Add opens "return (C.IsNull()) ? 0 : myMap.Add(C)", '
-        'so a null section is dropped rather than written. Its 2D and surface twins have no such '
-        'check anywhere and DO crash - they are guarded, this one needs nothing',
-
     # --- measured: the OCCT call raises a catchable Standard_Failure, which each function's own
     #     catch (...) already turns into the same fallback a guard would return ---
     ('OCCTBridge_Curve3D.mm', 'OCCTApproxSameParameter'):
-        'measured #618: Approx_SameParameter raises a catchable Standard_Failure',
+        'measured #618: Approx_SameParameter raises a catchable Standard_Failure. Probed per '
+        'argument, not just all-three-null, since this function takes three handles and a guard '
+        'would protect each one separately: all four combinations are catchable',
     ('OCCTBridge_Curve3D.mm', 'OCCTExtremaExtCC'):
         'measured #618: GeomAdaptor_Curve raises a catchable Standard_Failure',
     ('OCCTBridge_Curve3D.mm', 'OCCTExtremaExtCCPoint'):
@@ -114,7 +139,9 @@ ALLOWED = {
     ('OCCTBridge_Geom2d.mm', 'OCCTExtremaLocateExtCC2d'):
         'measured #556: Geom2dAdaptor_Curve raises a catchable Standard_Failure',
     ('OCCTBridge_Geom2d.mm', 'OCCTGeom2dConvertApproxArcsSegments'):
-        'measured #618: Geom2dConvert_ApproxArcsSegments raises a catchable Standard_Failure',
+        'measured #618: the throw is the Geom2dAdaptor_Curve built on the preceding line '
+        '(OCCTBridge_Geom2d.mm:2935), not Geom2dConvert_ApproxArcsSegments itself; either way a '
+        'catchable Standard_Failure',
     ('OCCTBridge_Surface.mm', 'OCCTGeomLibIsPlanarSurface'):
         'measured #618: GeomLib_IsPlanarSurface raises a catchable Standard_Failure',
     ('OCCTBridge_Surface.mm', 'OCCTGeomLibPlanarSurfacePlane'):
@@ -235,16 +262,21 @@ def split_params(params):
 
 
 def wrapper_params(params):
-    """(name, handle field) for each wrapper-typed parameter."""
+    """(name, handle field, is_array) for each wrapper-typed parameter.
+
+    is_array marks `OCCTCurve3DRef*` / `OCCTCurve3DRef[]`, where the parameter is a pointer to
+    wrappers rather than a wrapper. It only affects the suggested fix that gets printed: writing
+    `curveRefs->curve` on one of those is a type error, so the hint has to name an element."""
     out = []
     for p in split_params(params):
         p = p.strip()
         for wrapper, field in WRAPPERS.items():
             if not re.search(r'\b' + wrapper + r'\b', p):
                 continue
-            m = re.search(r'(\w+)\s*(?:\[\s*\])?\s*$', p)
+            m = re.search(r'(\w+)\s*(\[\s*\])?\s*$', p)
             if m and m.group(1) not in WRAPPERS:
-                out.append((m.group(1), field))
+                tail = p[p.index(wrapper) + len(wrapper):]
+                out.append((m.group(1), field, '*' in tail or bool(m.group(2))))
             break
     return out
 
@@ -252,8 +284,14 @@ def wrapper_params(params):
 def guarding_helpers(sources):
     """(function, argument index) for every bridge function that IsNull-checks that Handle
     parameter before touching it. Passing a handle to one of these IS a guard: the check just
-    lives one call frame away. `occtCurveToAnalytical` and `occtSurfaceToAnalytical` are the two
-    in this tree, and both open with `if (curve.IsNull()) return false;`."""
+    lives one call frame away.
+
+    Seven (function, argument) pairs across six functions qualify in this tree:
+    `occtCurveToAnalytical`, `occtSurfaceToAnalytical`, `bgSurfacesSameDomain` (both arguments),
+    `occtNearestPointOnCurveRange`, `occtNearestPointOnCurve2dRange` and `occtPlateApproxSurface`.
+    Only the first two are load-bearing: drop this rule and exactly `OCCTGeomConvertCurveToAnalytical`
+    and `occtSurfToAnaSurfResult` are wrongly reported, nothing else. The other four are recognised
+    because they guard unconditionally, not because any caller currently relies on it."""
     guards = set()
     for _, text in sources:
         text = strip_comments(text)
@@ -335,7 +373,7 @@ def unguarded_sites(sources, helpers):
         lines = raw.splitlines()
         for name, params, bs, be in functions(text):
             body = ctext[bs:be + 1]
-            for param, field in wrapper_params(params):
+            for param, field, is_array in wrapper_params(params):
                 if (os.path.basename(path), name) in ALLOWED:
                     continue
                 ptr, handle, spans = aliases(body, param, field)
@@ -363,7 +401,7 @@ def unguarded_sites(sources, helpers):
                     continue
                 line = text.count('\n', 0, bs + first) + 1
                 found.append((os.path.basename(path), line, name, param, field,
-                              lines[line - 1].strip() if line <= len(lines) else ''))
+                              lines[line - 1].strip() if line <= len(lines) else '', is_array))
     return found
 
 
@@ -512,10 +550,16 @@ def main():
         return 0
     if not quiet:
         print(f'{len(sites)} (function, argument) pair(s) reach OCCT with an unchecked handle:\n')
-        for f, line, func, param, field, src in sites:
+        for f, line, func, param, field, src, is_array in sites:
             print(f'  {f}:{line}  {func}({param})')
             print(f'      {src}')
-            print(f'      want: if (!{param} || {param}->{field}.IsNull()) return <fallback>;')
+            if is_array:
+                # `param` is a pointer to wrappers, so `param->field` would not compile. The
+                # guard belongs on the element, inside the loop that reads it.
+                print(f'      want, per element of {param}:  '
+                      f'if (!e || e->{field}.IsNull()) return <fallback>;')
+            else:
+                print(f'      want: if (!{param} || {param}->{field}.IsNull()) return <fallback>;')
     return 1
 
 
