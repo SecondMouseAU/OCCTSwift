@@ -475,3 +475,40 @@ The defect is invisible whenever the cut result happens to have one solid, which
 **A second defect in the same heuristic, not fixed here.** `PerformThruNext`'s closest-interval fallback (`BRepFeat_MakeCylindricalHole.cxx:217-242`) has a misplaced brace: the `// parbar > Last` branch is nested *inside* `if (parbar < First)`, as the `else` of the distance comparison, so the "beyond `Last`" case is unreachable as written. `PerformBlind`'s equivalent fallback (`:602-616`) compares `std::abs(First - parbar)` uniformly and has no such structure. The fallback only runs when no tool part's barycentre lies in `[First, Last]`, which none of the probed geometries reach, so it is reported rather than changed.
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0021-CPnts-adaptive-arc-length-integration-603.patch
+
+**Fixes the upstream OCCT defect behind [#603](https://github.com/SecondMouseAU/OCCTSwift/issues/603)**, which OCCTSwift already works around bridge-side: `CPnts_AbscissaPoint::Length` integrates `|C'(u)|` with **one** fixed-order Gauss rule over the whole range it is handed — `order()` gives 10 to a conic, 5 to a parabola, `2 * Degree` to a Bezier, `min(24, 2 * NbPoles - 1)` to a B-spline.
+
+`GCPnts_AbscissaPoint::Length` splits at the `GeomAbs_CN` interval boundaries and applies that rule per interval, so a multi-span B-spline is mostly saved by the split. A conic has exactly one interval, so nothing is split and the rule has to cover the whole domain in one go. Measured against a 16-point composite Gauss-Legendre quadrature of `|C'(u)|` over 40,000 panels, cross-checked against a Richardson-extrapolated chord sum:
+
+| curve | `GCPnts::Length` | truth | error |
+|---|---|---|---|
+| ellipse 8 × 3 | 36.489426687 | 36.366862783 | +0.337% |
+| ellipse 10 × 1 | 41.243157870 | 40.639741801 | +1.485% |
+| ellipse 1 × 0.05 | 4.089251430 | 4.019425619 | +1.737% |
+| parabola f=3 over `[-100, 100]` | 1638.523403092 | 1690.708711624 | **−3.087%** |
+| hyperbola 5/2 over `[-4, 4]` | 285.669841141 | 285.479768689 | +0.067% |
+| Bezier degree 3, whipping poles | 48.124450786 | 48.215369891 | −0.189% |
+| interpolated B-spline, 5 points | 110.963893077 | 110.970568312 | −0.0060% |
+| circle, line | exact | exact | length-parametrized, no quadrature |
+
+The error is set by how much `|C'|` varies across **one** integration interval, not by the curve's type: the same 8 × 3 ellipse is 0.337% out over `[0, 2π]`, 0.0001% over `[0, π]` and exact over `[0, π/2]`. So the per-span split is not a fix either, just a mitigation that happens to work when spans are narrow — a 5-point interpolation is 100× worse than a 40-point one.
+
+`CPnts_AbscissaPoint::Length` **called directly** is far worse than through `GCPnts`, because nothing splits at all: 3.6e-2 on the 5-point interpolation, 7.4e-2 at 40 points and **1.0e-1 at 200 points**, where the `min(24, ...)` cap means one order-24 rule covers the entire domain.
+
+**Fix:** a new header-only `CPnts_AdaptiveIntegration.hxx` integrates over `[U1, U2]`, then over the same range split in two, four, … equal parts, until two successive levels agree to `1e-9` relative (ceiling 512 parts). All four `CPnts_AbscissaPoint::Length` overloads and `CPnts_MyRootFunction::Value`/`Values` use it.
+
+**`CPnts_MyRootFunction` has to move with `Length`, not after it.** That class is the function `math_FunctionRoot` drives to answer "which parameter is this far along?", and its `Value(X)` is *the same integral*: one Gauss rule over `[myX0, X]` minus the target. Today both are wrong by the same amount, which is why `GCPnts_AbscissaPoint(C, GCPnts_AbscissaPoint::Length(C), first)` still lands on the last parameter and why `GCPnts_UniformAbscissa` spaces its points uniformly in *true* arc (measured: 2.9e-14 on an 8 × 3 ellipse) despite computing a total that is 0.337% wrong. Fixing `Length` alone would break both of those. Fixing them together keeps the sampler's spacing bit-for-bit (2.9e-14 → 2.9e-14, 1.59e-10 → 1.59e-10 on a 1 × 0.05 ellipse) and makes every fraction of the way accurate: `GCPnts_AbscissaPoint(ellipse 8×3, total/2, first)` moves from `u = 3.162016203` to `u = 3.141592654`.
+
+**Validation** (override-link first, then the rebuilt binary — see the `#0001` entry for the technique, compiled with `-DNDEBUG -DNo_Exception` to match the production build): every relative error in the table above goes to ≤ 2.6e-13, `CPnts_AbscissaPoint::Length`'s own direct errors from 1.0e-1 to 2.8e-8, and the inverse from 3.4e-3/1.5e-2/1.7e-2 at the full length to ≤ 1.8e-13 at every fraction. The rebuilt xcframework reproduces the override-linked prediction line for line with no override TUs. Full `swift test` (5096 tests / 1371 suites): no change, the same 3 pre-existing `Issue496CylindricalHoleTests` failures as before the rebuild.
+
+**Cost:** the floor is three quadratures where there was one, and a curve whose closed form is exact (`GeomAbs_Line`, `GeomAbs_Circle`, a 2-pole Bezier/B-spline) never reaches the integrator at all. `GCPnts_AbscissaPoint::Length` on an 8 × 3 ellipse goes 0.24 µs → 7.2 µs; on a 200-span B-spline 87 µs → 444 µs; `GCPnts_UniformAbscissa` at 500 points on an ellipse 2.71 ms → 6.20 ms.
+
+**Not reached by this patch:** `BRepGProp::LinearProperties` runs its own integrator and still reports 41.243157870 for a 10 × 1 elliptical edge against a true 40.639741801 (confirmed unchanged against the rebuilt binary). Same defect class, different code, its own fix.
+
+**OCCTSwift's own bridge-side subdivision (#603, `occtAdaptorArcLength`) is now redundant but not removed.** `ci.yml` resolves the pinned *released* kernel, which does not carry this patch, so removing it would fail the #603 regression tests there until a release ships this binary. Layered on the fixed kernel it costs almost exactly 2× (an 8 × 3 ellipse 3.3 µs → 6.6 µs) and changes no answer — retire it in the release commit that bumps `Package.swift`'s `url:`/`checksum:`.
+
+See [`Scripts/repro/603-single-span-quadrature/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/603-single-span-quadrature) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1420](https://github.com/Open-Cascade-SAS/OCCT/pull/1420), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). The three touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
+
+**Retire** once the bundled OCCT includes this fix.

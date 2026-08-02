@@ -741,8 +741,9 @@ OCCTCurveInfo OCCTWireGetCurveInfo(OCCTWireRef wire) {
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
 
-        // Get length
-        result.length = GCPnts_AbscissaPoint::Length(curve);
+        // Get length -- the same subdivided measurement OCCTWireGetLength makes, so the two
+        // spellings of a wire's length cannot disagree on an elliptical edge. #603.
+        result.length = occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
 
         // Get closed/periodic status
         result.isClosed = curve.IsClosed();
@@ -773,7 +774,10 @@ double OCCTWireGetLength(OCCTWireRef wire) {
 
     try {
         BRepAdaptor_CompCurve curve(wire->wire);
-        return GCPnts_AbscissaPoint::Length(curve);
+        // A BRepAdaptor_CompCurve reports one GeomAbs_CN interval per edge span, so a wire made of
+        // lines and circles was already exact -- but one elliptical edge in it measured 1.485%
+        // long, because that edge's span still got a single quadrature. #603.
+        return occtAdaptorArcLength(curve, curve.FirstParameter(), curve.LastParameter());
     } catch (...) {
         return -1.0;
     }

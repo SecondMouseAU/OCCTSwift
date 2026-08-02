@@ -398,11 +398,20 @@ Finds the parameter at a given arc-length distance from a starting parameter.
 public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double
 ```
 
-Uses `GCPnts_AbscissaPoint` for accurate arc-length parameterisation. Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure.
+Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure.
+
+The travel is measured with the same subdivided quadratures `length` uses, so this and the length
+it inverts always agree: `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`.
+That mattered from #603 onwards — OCCT's own root finder inverts a *single* Gauss quadrature over
+`[startParam, u]`, the very integral `length` stopped using, and fed the accurate total length of
+an 8 × 3 ellipse it answered 6.2438 for a domain ending at 6.2832.
 
 - **Parameters:** `arcLength` — distance to advance along the curve; `startParam` — starting parameter (defaults to `domain.lowerBound`).
 - **Returns:** The parameter value at the specified arc-length distance from `startParam`.
-- **OCCT:** `GCPnts_AbscissaPoint(adaptor, arcLength, startParam)::Parameter`.
+- **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed to
+  `GCPnts_AbscissaPoint(adaptor, remainder, pieceStart)::Parameter`.
+- **Note:** A distance longer than the curve keeps OCCT's own answer, which reports success with a
+  parameter outside the curve's domain rather than failing.
 - **Example:**
   ```swift
   let line = Curve3D.segment(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
@@ -427,7 +436,7 @@ otherwise always non-negative, so `-1.0` is unambiguous and never collides with 
 zero-length curve. Use `length` directly if you need an optional.
 
 - **Returns:** Total arc length in model units, or `-1.0` on failure.
-- **OCCT:** `GCPnts_AbscissaPoint::Length(GeomAdaptor_Curve(curve))` (via `length`).
+- **OCCT:** `GCPnts_AbscissaPoint::Length` per `GeomAbs_CN` interval, subdivided to convergence (via `length`, #603).
 - **Example:**
   ```swift
   let circle = Curve3D.circle(center: .zero, normal: SIMD3(0,0,1), radius: 10)!

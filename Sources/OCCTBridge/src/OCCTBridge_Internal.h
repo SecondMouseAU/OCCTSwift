@@ -78,6 +78,8 @@
 #include <BRepLProp_CLProps.hxx>
 #include <Precision.hxx>
 #include <GCPnts_AbscissaPoint.hxx>   // occtAdaptorLengthBetween, the shared ranged arc length
+#include <CPnts_AbscissaPoint.hxx>   // occtArcQuadrature's per-span integrator (#603)
+#include <TColStd_Array1OfReal.hxx>  // the GeomAbs_CN interval array the same helpers walk
 #include <cmath>
 
 // === Foundation struct definitions ===
@@ -885,6 +887,206 @@ inline bool occtValidParameterRange(double u1, double u2) {
     return std::isfinite(u1) && std::isfinite(u2);
 }
 
+// === #603: one Gauss quadrature is not enough to measure an arc ===
+//
+// `CPnts_AbscissaPoint::Length` integrates |C'(u)| with a SINGLE fixed-order Gauss rule over the
+// whole range it is handed -- order 10 for a conic, 5 for a parabola, 2*Degree for a Bezier.
+// #477 moved this family onto `GCPnts_AbscissaPoint::Length`, which splits at the GeomAbs_CN
+// interval boundaries first, so a multi-span BSpline gets one rule per span. That helps only as
+// far as the curve happens to have spans: a conic has exactly one, so the rule still has to cover
+// the whole domain in one go, and it cannot.
+//
+// Measured against a 16-point composite Gauss-Legendre quadrature of |C'(u)| over 40,000 panels,
+// cross-checked against a Richardson-extrapolated chord sum (Scripts/repro/603-single-span-
+// quadrature/). Every one of these is the WHOLE curve, measured through the shipped bridge:
+//
+//   curve                          kernel        truth      error
+//   ellipse 8 x 3                36.489427    36.366863    +0.337%
+//   ellipse 10 x 1               41.243158    40.639742    +1.485%
+//   ellipse 1 x 0.05              4.089251     4.019426    +1.737%
+//   parabola f=3 over [-100,100] 1638.523403  1690.708712  -3.087%
+//   hyperbola 5/2 over [-4,4]    285.669841   285.479769   +0.067%
+//   Bezier degree 3, whipping    48.124451    48.215370    -0.189%
+//   circle r=5                   31.415927    31.415927     exact  (length-parametrized)
+//   line                             exact       exact      exact  (length-parametrized)
+//
+// It is not a conic defect and not a single-span defect either: the SAME rule is what GCPnts
+// applies per span, so a 5-point interpolated BSpline (4 spans) is 6.0e-5 out and a 40-point one
+// 1.5e-6. Sub-ranges of a bad curve are accurate -- the 8 x 3 ellipse is exact to 1e-14 over
+// [0, pi/2] -- because the error is set by how much |C'| varies across ONE integration interval,
+// not by the curve's type.
+//
+// So the fix is to keep subdividing until it stops mattering: measure each GeomAbs_CN interval,
+// then the same interval halved, quartered, ... until two successive levels agree relatively.
+//
+// The subdivision has to happen INSIDE each interval, not across the whole range, and that is the
+// one part of this that is not obvious. Splitting the whole range in two puts the split point at
+// the domain midpoint, which on a uniformly-knotted curve is exactly a knot GCPnts already splits
+// at -- the level-2 sum then equals the level-1 sum bit for bit and a "have two levels agreed?"
+// test reports convergence on an answer that has not moved at all. Measured on the 5-point
+// interpolated BSpline: levels 1 and 2 both give 110.963893077, and the truth is 110.970568312.
+//
+// Cost, per measurement, on the pinned kernel: an 8 x 3 ellipse goes 0.11 us -> 3.5 us, a 40-span
+// BSpline 17 us -> 95 us, a 200-span one 89 us -> 452 us, and a line or circle stays on its closed
+// form (0.02 us) because there is no error to remove and it converges on the first split. Roughly
+// 5x, with a floor of three quadratures per interval where there used to be one.
+
+/// The relative agreement two successive subdivision levels must reach for a piece to be measured.
+/// 1e-9 is ~1 nm on a 1 m curve, six orders tighter than any of the errors above and reachable in
+/// a handful of levels; the errors this removes are 1e-2.
+constexpr double kOCCTArcLengthTolerance = 1e-9;
+
+/// Ceiling on how finely one GeomAbs_CN interval may be split. Only the pathological reach it:
+/// a 1 x 0.001 ellipse (whose speed is a near-square wave) stops here at 1.2e-11, still nine
+/// orders better than the 1.9e-2 it measured before.
+constexpr int kOCCTArcLengthMaxPieces = 512;
+
+/// One quadrature over [lo, hi]. A curve with a single GeomAbs_CN interval goes through GCPnts so
+/// the length-parametrized closed forms (line, circle, 2-pole Bezier/BSpline) are kept exactly; a
+/// composite curve cannot be any of those (GCPnts tests the interval count first), and calling
+/// GCPnts per piece would only re-derive the whole interval array on each call before delegating
+/// to CPnts for the one interval the piece lies in, so it is called directly.
+template <class TheAdaptor>
+inline double occtArcQuadrature(const TheAdaptor& adaptor, double lo, double hi, bool singleSpan) {
+    return singleSpan ? GCPnts_AbscissaPoint::Length(adaptor, lo, hi)
+                      : CPnts_AbscissaPoint::Length(adaptor, lo, hi);
+}
+
+/// The converged length of ONE GeomAbs_CN interval's [lo, hi]. `pieces` reports the subdivision it
+/// settled on, which occtAdaptorParameterAtLength re-walks so the measurement and its inverse are
+/// built out of the same quadratures rather than merely aiming at the same number.
+template <class TheAdaptor>
+inline double occtArcConvergedLength(const TheAdaptor& adaptor, double lo, double hi,
+                                     bool singleSpan, int& pieces) {
+    double previous = occtArcQuadrature(adaptor, lo, hi, singleSpan);
+    pieces = 1;
+    for (int n = 2; n <= kOCCTArcLengthMaxPieces; n *= 2) {
+        const double h = (hi - lo) / n;
+        double total = 0.0;
+        for (int i = 0; i < n; ++i) {
+            total += occtArcQuadrature(adaptor, lo + i * h, (i + 1 == n) ? hi : lo + (i + 1) * h,
+                                       singleSpan);
+        }
+        pieces = n;
+        if (std::abs(total - previous) <= kOCCTArcLengthTolerance * std::abs(total)) return total;
+        previous = total;
+    }
+    return previous;
+}
+
+/// Fill `bounds` (sized 1..count+1) with the adaptor's GeomAbs_CN interval boundaries, or with its
+/// own parameter range when `count` is 1 -- so a caller can walk "the intervals" uniformly without
+/// branching on whether the curve has more than one.
+template <class TheAdaptor>
+inline void occtArcIntervals(const TheAdaptor& adaptor, int count, TColStd_Array1OfReal& bounds) {
+    if (count > 1) {
+        adaptor.Intervals(bounds, GeomAbs_CN);
+    } else {
+        bounds(1) = adaptor.FirstParameter();
+        bounds(2) = adaptor.LastParameter();
+    }
+}
+
+/// The arc length of [u1, u2], subdivided per GeomAbs_CN interval until it converges. Bounds may
+/// be given in either order; a range that misses the curve's intervals measures 0, exactly as
+/// GCPnts' own composite branch does. Callers keep their own try/catch and null checks.
+template <class TheAdaptor>
+inline double occtAdaptorArcLength(const TheAdaptor& adaptor, double u1, double u2) {
+    const double lo = std::min(u1, u2), hi = std::max(u1, u2);
+    if (!(hi > lo)) return 0.0;
+
+    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
+    int pieces = 0;
+    if (intervals <= 1) return occtArcConvergedLength(adaptor, lo, hi, true, pieces);
+
+    TColStd_Array1OfReal bounds(1, intervals + 1);
+    adaptor.Intervals(bounds, GeomAbs_CN);
+    double total = 0.0;
+    for (int i = 1; i <= intervals; ++i) {
+        const double pieceLo = std::max(bounds(i), lo), pieceHi = std::min(bounds(i + 1), hi);
+        if (pieceHi > pieceLo) {
+            total += occtArcConvergedLength(adaptor, pieceLo, pieceHi, false, pieces);
+        }
+    }
+    return total;
+}
+
+/// Walk `abscissa` of arc length from `u0` (backwards when it is negative) using the same
+/// subdivision occtAdaptorArcLength measures with, and hand the final sub-piece -- narrow enough
+/// that its single quadrature has converged -- to the kernel's own root finder. Returns false when
+/// the travel runs off the end of the curve.
+///
+/// Without this the fix above would break a pairing that used to hold: the kernel's solver inverts
+/// the very quadrature this replaces (`CPnts_MyRootFunction::Value` is one Gauss rule over
+/// [u0, X]), so today `parameterAtLength(length)` lands exactly on the last parameter -- both
+/// sides wrong by the same 0.337%. Make only the length accurate and it stops landing there: on
+/// an 8 x 3 ellipse the solver answers 6.2438 for a target of 36.3669, 0.33% short in arc, and on
+/// a 10 x 1 ellipse 6.0358 for 40.6397, 1.0% short. Measured the same way, this walk lands within
+/// 2e-13 on every fixture, at every fraction of the length.
+template <class TheAdaptor>
+inline bool occtArcWalkToLength(const TheAdaptor& adaptor, double abscissa, double u0,
+                                double& parameter) {
+    if (!std::isfinite(abscissa) || !std::isfinite(u0)) return false;
+    if (abscissa == 0.0) { parameter = u0; return true; }
+
+    const bool backwards = abscissa < 0.0;
+    const double want = std::abs(abscissa);
+    const double first = adaptor.FirstParameter(), last = adaptor.LastParameter();
+    const int intervals = adaptor.NbIntervals(GeomAbs_CN);
+    const bool singleSpan = intervals <= 1;
+    const int count = singleSpan ? 1 : intervals;
+
+    TColStd_Array1OfReal bounds(1, count + 1);
+    occtArcIntervals(adaptor, count, bounds);
+
+    double walked = 0.0;
+    for (int k = 0; k < count; ++k) {
+        const int i = backwards ? count - k : k + 1;
+        const double lo = std::max(bounds(i), backwards ? first : u0);
+        const double hi = std::min(bounds(i + 1), backwards ? u0 : last);
+        if (!(hi > lo)) continue;
+
+        int pieces = 0;
+        const double whole = occtArcConvergedLength(adaptor, lo, hi, singleSpan, pieces);
+        if (walked + whole < want) { walked += whole; continue; }
+
+        // Inside this interval: re-walk the very pieces its converged length was summed from, so
+        // the running total is the same arithmetic and cannot drift away from it.
+        const double h = (hi - lo) / pieces;
+        for (int j = 0; j < pieces; ++j) {
+            const double pieceLo = backwards ? hi - (j + 1) * h : lo + j * h;
+            const double pieceHi = backwards ? hi - j * h : lo + (j + 1) * h;
+            const double piece = occtArcQuadrature(adaptor, pieceLo, pieceHi, singleSpan);
+            // The last piece is always taken: `want` cannot exceed `whole` here, so only the
+            // rounding of the running sum can leave it fractionally short of this piece's end.
+            if (walked + piece < want && j + 1 < pieces) { walked += piece; continue; }
+            const double rest = want - walked;
+            GCPnts_AbscissaPoint solver(adaptor, backwards ? -rest : rest,
+                                        backwards ? pieceHi : pieceLo);
+            if (!solver.IsDone()) return false;
+            parameter = solver.Parameter();
+            return true;
+        }
+        walked += whole;
+    }
+    return false;
+}
+
+/// The one "parameter at arc length" every entry point makes: the accurate walk when the travel
+/// lands on the curve, and the kernel solver otherwise. The fallback is deliberate -- asked for
+/// more length than a curve has, the solver reports a parameter outside the curve's own domain
+/// (12.566 on an ellipse bounded by 2*pi) yet reports IsDone, and turning that into a failure is
+/// a contract change #603 has no measurement to justify.
+template <class TheAdaptor>
+inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor, double abscissa, double u0,
+                                         double& parameter) {
+    if (occtArcWalkToLength(adaptor, abscissa, u0, parameter)) return true;
+    GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);
+    if (!solver.IsDone()) return false;
+    parameter = solver.Parameter();
+    return true;
+}
+
 // === #600: what a ranged arc length measures when the range reaches outside the domain ===
 //
 // One rule, applied here rather than left to whichever GCPnts branch the curve's type happens to
@@ -936,6 +1138,8 @@ inline void occtConfineToDomain(const TheAdaptor& adaptor, double& u1, double& u
 /// The one ranged arc-length measurement every entry point makes: the length of the part of
 /// [u1, u2] that lies on the curve, winding included when the curve's domain covers a period.
 /// Bounds may be given in either order. Callers keep their own try/catch and null checks.
+/// Every integral here goes through occtAdaptorArcLength, so a wound period is as accurate as a
+/// single one and a whole ellipse no longer measures 0.337% long. #603.
 template <class TheAdaptor>
 inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, double u2) {
     double lo = std::min(u1, u2), hi = std::max(u1, u2);
@@ -946,7 +1150,7 @@ inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, dou
         const double seam   = first + period;
         // One period's worth, not the whole domain: a curve trimmed to more than a period would
         // otherwise multiply the wrong number.
-        const double perPeriod = GCPnts_AbscissaPoint::Length(adaptor, first, seam);
+        const double perPeriod = occtAdaptorArcLength(adaptor, first, seam);
         const double turns     = std::floor((hi - lo) / period);
         double       total     = turns * perPeriod;
         const double rest      = (hi - lo) - turns * period;
@@ -955,16 +1159,16 @@ inline double occtAdaptorLengthBetween(const TheAdaptor& adaptor, double u1, dou
             if (start < first) start += period;
             const double end = start + rest;
             total += (end <= seam)
-                         ? GCPnts_AbscissaPoint::Length(adaptor, start, end)
-                         : GCPnts_AbscissaPoint::Length(adaptor, start, seam) +
-                               GCPnts_AbscissaPoint::Length(adaptor, first, first + (end - seam));
+                         ? occtAdaptorArcLength(adaptor, start, end)
+                         : occtAdaptorArcLength(adaptor, start, seam) +
+                               occtAdaptorArcLength(adaptor, first, first + (end - seam));
         }
         return total;
     }
 
     occtConfineToDomain(adaptor, lo, hi);
     if (hi <= lo) return 0.0;
-    return GCPnts_AbscissaPoint::Length(adaptor, lo, hi);
+    return occtAdaptorArcLength(adaptor, lo, hi);
 }
 
 // === #502: one sub-shape enumeration ===

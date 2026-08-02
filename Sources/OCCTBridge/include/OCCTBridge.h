@@ -278,6 +278,7 @@
 //                                       OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
 //                                       (three further spellings were deleted by #506/#549; their
 //                                       tombstones sit at the old declaration sites)
+// CPnts_AbscissaPoint                 → the same functions, as occtArcQuadrature's per-span integrator on composite curves (#603)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection
 // GCPnts_TangentialDeflection         → OCCTGCPntsTangentialDeflection*, OCCTCurve3DDrawAdaptive, OCCTCurve2DDrawAdaptive

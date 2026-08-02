@@ -14482,6 +14482,15 @@ extension Shape {
     // --- GCPnts_AbscissaPoint expansion ---
 
     /// Find parameter on an edge at a given arc length from startParam.
+    ///
+    /// Shares the subdivided measurement with ``Shape/edgeArcLength``, so the two agree on the
+    /// same edge: OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`,
+    /// which on an elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let mid = edge.edgeParameterAtArcLength(5, from: edge.edgeAdaptorDomain.lowerBound)
+    /// ```
     public func edgeParameterAtArcLength(_ arcLength: Double, from startParam: Double) -> Double {
         OCCTEdgeParameterAtArcLength(handle, arcLength, startParam)
     }
@@ -14491,6 +14500,10 @@ extension Shape {
     /// Returns `-1.0` if the computation fails — arc length is otherwise always non-negative, so
     /// this is an unambiguous failure sentinel, matching ``Curve3D/totalArcLength``. It used to
     /// return `0`, which a genuinely zero-length edge also measures (#548).
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided until two successive levels agree to
+    /// 1e-9 relative. An elliptical edge measured 1.485% long before that (#603); a straight or
+    /// circular edge is unaffected, since those have an exact closed form.
     ///
     /// ```swift
     /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
@@ -14525,6 +14538,16 @@ extension Shape {
     }
 
     /// Find parameter at a fraction (0..1) of total edge length.
+    ///
+    /// Both halves — the total and the walk along it — use the subdivided measurement (#603).
+    /// They were biased by the same single quadrature before, and the two errors cancelled; both
+    /// are accurate now, so `edgeParameterAtFraction(1.0)` still lands on the edge's last
+    /// parameter and `0.5` genuinely halves the arc (it split an elliptical edge 0.74% off).
+    ///
+    /// ```swift
+    /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
+    /// let quarter = edge.edgeParameterAtFraction(0.25)
+    /// ```
     public func edgeParameterAtFraction(_ fraction: Double) -> Double {
         OCCTEdgeParameterAtFraction(handle, fraction)
     }

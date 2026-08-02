@@ -507,6 +507,16 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// The total arc length of the curve, or `nil` on error.
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided until two successive levels agree to
+    /// 1e-9 relative. A whole 2D ellipse used to measure 0.337% long on the single Gauss
+    /// quadrature `GCPnts_AbscissaPoint::Length` hands a one-interval curve — the same defect and
+    /// the same numbers as the 3D spelling, since both reach one shared template (#603).
+    ///
+    /// ```swift
+    /// let e = Curve2D.ellipse(center: .zero, majorRadius: 8, minorRadius: 3)!
+    /// let circumference = e.length!   // 36.36686, not 36.48943
+    /// ```
     public var length: Double? {
         let l = OCCTCurve2DGetLength(handle)
         return l >= 0 ? l : nil
@@ -558,6 +568,9 @@ public final class Curve2D: @unchecked Sendable {
     ///                    (the start of the curve).
     /// - Returns: The parameter value at the given arc-length distance,
     ///            or `nil` if the computation fails (e.g. distance exceeds the curve).
+    /// - Note: Shares the subdivided measurement with `length`, so the two agree —
+    ///         `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own
+    ///         root finder inverts a single quadrature and would not (#603).
     /// - Note: Resolves GitHub issue #37.
     public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? = nil) -> Double? {
         let start = fromParameter ?? domain.lowerBound

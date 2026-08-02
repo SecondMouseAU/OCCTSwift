@@ -28,6 +28,9 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     deinit { OCCTEdgeCurveRelease(ref) }
 
     /// Arc length of the edge.
+    ///
+    /// Measured per `GeomAbs_CN` interval and subdivided to convergence, the same measurement
+    /// ``Shape/edgeArcLength`` makes, so the two cannot disagree (#603).
     public var length: Double { OCCTEdgeCurveLength(ref) }
 
     /// The native parameter range `[first, last]` (not arc length).
@@ -52,6 +55,9 @@ public final class EdgeCurve: ArcLengthCurveAdaptor, @unchecked Sendable {
     }
 
     /// Native parameter at arc length `s` from the start of the edge.
+    ///
+    /// Walks the same subdivided pieces ``length`` is summed from, so
+    /// `parameter(atAbscissa: length)` lands on `parameterRange.last` (#603).
     public func parameter(atAbscissa s: Double) -> Double? {
         var u = 0.0
         guard OCCTEdgeCurveParamAtAbscissa(ref, s, &u) else { return nil }

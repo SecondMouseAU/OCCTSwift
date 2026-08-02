@@ -5518,11 +5518,14 @@ OCCTCurve2DRef OCCTCurve2DMirrorPoint(OCCTCurve2DRef c, double px, double py) {
     }
 }
 
+// Same subdivided measurement as the 3D sibling (occtAdaptorArcLength, OCCTBridge_Internal.h): the
+// GCPnts_AbscissaPoint::length template is shared between Adaptor3d_Curve and Adaptor2d_Curve2d,
+// so a 2D ellipse measured exactly the same 0.337% long. #603.
 double OCCTCurve2DGetLength(OCCTCurve2DRef c) {
     if (!c || c->curve.IsNull()) return -1.0;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        return GCPnts_AbscissaPoint::Length(adaptor);
+        return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
     } catch (...) {
         return -1.0;
     }
@@ -5990,13 +5993,14 @@ int32_t OCCTCurve2DToArcsAndSegments(OCCTCurve2DRef c, double tolerance,
 
 // MARK: - Issue #37: Parameter at Arc Length
 
+// Shared with the 3D spelling so both stay consistent with the length they invert. #603.
 double OCCTCurve2DParameterAtLength(OCCTCurve2DRef c, double arcLength, double fromParam) {
     if (!c || c->curve.IsNull()) return -DBL_MAX;
     try {
         Geom2dAdaptor_Curve adaptor(c->curve);
-        GCPnts_AbscissaPoint solver(adaptor, arcLength, fromParam);
-        if (!solver.IsDone()) return -DBL_MAX;
-        return solver.Parameter();
+        double parameter = 0;
+        if (!occtAdaptorParameterAtLength(adaptor, arcLength, fromParam, parameter)) return -DBL_MAX;
+        return parameter;
     } catch (...) {
         return -DBL_MAX;
     }

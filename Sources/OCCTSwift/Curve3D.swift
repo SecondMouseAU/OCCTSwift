@@ -418,10 +418,15 @@ public final class Curve3D: @unchecked Sendable {
     /// for source compatibility — prefer this property when you need to tell "failed" apart
     /// from "genuinely zero".
     ///
-    /// Backed by `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
-    /// interval boundaries and integrates each span separately, so a multi-span BSpline (an
-    /// interpolated toolpath, an imported spline) measures correctly rather than being integrated
-    /// as one Gauss quadrature across the whole domain.
+    /// Backed by `GCPnts_AbscissaPoint::Length`, applied to each of the curve's `GeomAbs_CN`
+    /// intervals and then to that interval halved, quartered, ... until two successive levels
+    /// agree to 1e-9 relative. One fixed-order Gauss rule per interval is not enough wherever the
+    /// speed `|C'(u)|` varies across it: a whole ellipse measured up to 1.7% long, a parabola over
+    /// `[-100, 100]` 3.1% short and a 5-point interpolation 6.0e-5 out (#603, completing #477's
+    /// per-span split). A line, a circle and a 2-pole Bezier/BSpline keep their exact closed form.
+    ///
+    /// The measurement costs roughly 5x what a single quadrature did — an 8 x 3 ellipse 0.11 us to
+    /// 3.5 us, a 200-span BSpline 89 us to 452 us; a line or circle is unchanged at 0.02 us.
     ///
     /// An unbounded curve reports its parametric extent (an untrimmed line spans ±2e100), so
     /// trim before measuring if that is not what you want.
@@ -2129,11 +2134,26 @@ extension Curve3D {
 
     /// Find the parameter at a given arc length distance from a starting parameter.
     ///
-    /// Uses `GCPnts_AbscissaPoint` for accurate arc-length parameterization.
+    /// Measured with the same subdivided quadratures `length` uses, so this and the length it
+    /// inverts always agree: `curve.parameterAtLength(curve.length!)` lands on
+    /// `domain.upperBound`. OCCT's own root finder inverts a *single* Gauss quadrature over
+    /// `[startParam, u]`, and fed the accurate total length of an 8 x 3 ellipse it answers 6.2438
+    /// for a domain ending at 6.2832 (#603).
+    ///
+    /// A distance longer than the curve keeps OCCT's answer, which reports success with a
+    /// parameter outside the curve's own domain rather than failing.
+    ///
     /// - Parameters:
     ///   - arcLength: Distance along the curve (positive = forward, negative = backward).
     ///   - from: Starting parameter (defaults to curve start).
     /// - Returns: The parameter value at the specified arc length.
+    ///
+    /// ```swift
+    /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                         majorRadius: 10, minorRadius: 1)!
+    /// let half = e.parameterAtLength(e.length! / 2)   // halfway along by arc, not by parameter
+    /// let end = e.parameterAtLength(e.length!)        // e.domain.upperBound
+    /// ```
     public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double {
         let start = startParam ?? domain.lowerBound
         return OCCTCurve3DParameterAtLength(handle, arcLength, start)

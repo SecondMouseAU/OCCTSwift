@@ -668,6 +668,15 @@ extension Wire {
 
     /// Get the total length of the wire.
     ///
+    /// A `BRepAdaptor_CompCurve` reports one `GeomAbs_CN` interval per edge span, so a wire of
+    /// lines and circles was always exact — but each span was integrated with a single Gauss
+    /// rule, so one elliptical edge in the wire measured 1.485% long. Each interval is now
+    /// subdivided until two successive levels agree to 1e-9 relative (#603).
+    ///
+    /// ```swift
+    /// let perimeter = Wire.rectangle(width: 10, height: 5)?.length   // 30.0
+    /// ```
+    ///
     /// - Returns: Length in model units, or nil on error
     public var length: Double? {
         let len = OCCTWireGetLength(handle)
