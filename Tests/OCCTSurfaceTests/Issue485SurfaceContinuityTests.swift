@@ -69,11 +69,16 @@ struct Issue485SurfaceContinuityTests {
         #expect(ContinuityClass.cN.satisfies(.c3))
         #expect(ContinuityClass.c0.satisfies(.c0))
 
-        // A geometric class is not a parametric guarantee at any order, however smooth it
+        // A geometric class is not a parametric guarantee *above* order zero, however smooth it
         // looks: G1 constrains tangent direction, not the derivative vector. The old encoding
-        // made these negative, so `>= 0` threshold checks read them as "worse than C0" —
+        // made these negative, so `>= 1` threshold checks read them as "worse than C1" —
         // accidentally the right answer, by the wrong mechanism, and wrong for `>= -2`.
-        #expect(!ContinuityClass.g1.satisfies(.c0))
+        //
+        // At order zero it *is* a guarantee: G1 entails G0 entails positional continuity, which
+        // is what C0 is. This suite originally asserted the opposite; see #623 and
+        // `Issue623ContinuityFloorTests` for why that was wrong and for the matrix that pins it.
+        #expect(ContinuityClass.g1.satisfies(.c0))
+        #expect(!ContinuityClass.g1.satisfies(.c1))
         #expect(!ContinuityClass.g2.satisfies(.c1))
         #expect(ContinuityClass.g1.derivativeOrder == nil)
         #expect(ContinuityClass.g2.derivativeOrder == nil)
