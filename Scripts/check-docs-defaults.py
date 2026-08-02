@@ -19,34 +19,57 @@ C1 fit and gets a C2 one, which per #572 is not cosmetic: continuity is one of t
 how far the fitted surface moves.
 
 This script re-runs that comparison for every restated default in the tree. It parses each page's
-fenced-swift declarations, finds the matching `public` declaration in `Sources/OCCTSwift`, and
-compares the default of each parameter the two have in common.
+fenced-swift declarations, finds the matching declaration in `Sources/OCCTSwift`, and compares the
+default of each parameter the two have in common.
 
-Only a *disagreement* is an error: both sides state a default for the same parameter and the two
-literals differ. The two asymmetric cases are reported separately and do not fail the run, because
-each has a legitimate form:
+## The three shapes a default can drift in
 
-  - docs state a default the source does not have (`--strict` promotes this to an error; it is
-    almost always wrong, but a doc may be describing a protocol requirement or a shim);
-  - docs omit a default the source has, which is ordinary abbreviation.
+All three are reported and all three fail the run, because a gate that reports a defect while
+exiting 0 is not a gate:
 
-A doc declaration that matches no source declaration is listed under `unmatched` and never fails:
-the tree documents nested types, bridge C structs and illustrative pseudo-signatures that have no
-`public` counterpart in `Sources/OCCTSwift`.
+  - `changed`      — both sides state a default and the literals differ (the #626 shape);
+  - `docs-only`    — docs state a default the source does not have, so a caller believes an
+    argument is optional when it is required;
+  - `source-only`  — the source states a default the docs omit, so a caller believes an argument
+    is required when it is optional. This is also how a *source-side* addition hides: the source
+    gains `= 8` and the unchanged page keeps reading `maxDegree: Int`.
 
-Where several source declarations share one name and parameter-label list (`approximated` exists
-on `Curve3D`, `Curve2D` and `Surface`), the doc heading's `Type.` prefix picks one when it has
-them; otherwise the doc is accepted if it agrees with *any* candidate, so ambiguity never
-manufactures a failure.
+`--lenient` drops `source-only` to a warning, for a tree that has not finished paying that down.
+Layout is not drift: `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` compare equal, whitespace inside a string
+literal excepted.
+
+## Picking the right declaration to compare against
+
+Several declarations can share one name and parameter-label list — `writeOBJ(to:deflection:)` is
+both `Document.writeOBJ` (deflection 1.0) and `Shape.writeOBJ` (0.1), and `approximated` exists on
+`Curve3D`, `Curve2D` and `Surface`. Comparing against the wrong one is how the first version of
+this script let a page state `Shape.writeOBJ`'s default for `Document.writeOBJ` and still exit 0 —
+the #626 defect shape passing through the gate built to catch it.
+
+So the owning type is resolved in three steps, most specific first:
+
+  1. the heading's own qualifier — ``### `Surface.approxWithDetails(...)` ``;
+  2. failing that, the page filename — `Document-Persistence-IO.md` -> `Document`;
+  3. failing that, every candidate.
+
+Steps 1 and 2 narrow only when they select a non-empty set, because a page documents types other
+than its title: `Shape-HLR-Geom.md` carries `Surface.approxWithDetails`. Where nothing narrows to
+a single declaration and the remaining candidates disagree about a default the doc states, the
+comparison cannot be trusted either way; those are counted and listed as `unverified` and fail the
+run, so the blind spot is visible instead of invisible.
+
+A doc declaration matching no source declaration is listed under `unmatched` and never fails: the
+tree documents nested types, bridge C structs and helper functions defined inside example snippets.
 
 Usage (from the repo root):
 
-    python3 Scripts/check-docs-defaults.py           # report drifted defaults
-    python3 Scripts/check-docs-defaults.py --verbose # also list every default checked
-    python3 Scripts/check-docs-defaults.py --strict  # also fail on docs-only defaults
-    python3 Scripts/check-docs-defaults.py --quiet   # exit status only
+    python3 Scripts/check-docs-defaults.py            # report drifted defaults
+    python3 Scripts/check-docs-defaults.py --verbose  # also list every default checked
+    python3 Scripts/check-docs-defaults.py --lenient  # source-only omissions warn instead of fail
+    python3 Scripts/check-docs-defaults.py --quiet    # exit status only
 
-Exit status is 1 when any default disagrees, so this can gate a commit.
+Exit status is 1 when any default disagrees, so this can gate a commit. Nothing in this tree runs
+it yet; wiring the gate scripts into CI is #625, which covers all of them together.
 """
 import argparse
 import glob
@@ -57,14 +80,16 @@ import sys
 SRC_GLOB = 'Sources/OCCTSwift/*.swift'
 DOCS_GLOB = 'docs/reference/*.md'
 
-# A declaration this script can compare: it has a parameter list with defaults in it.
+# A declaration this script can compare. The generic-parameter group follows the name, as Swift
+# writes it (`func f<T>(...)`); putting it first made every generic declaration invisible.
 DECL_RE = re.compile(
     r'\b(?:public\s+|open\s+)?'
-    r'(?:static\s+|class\s+|final\s+|mutating\s+|override\s+|convenience\s+)*'
-    r'(?P<kind>func|init)\b'
-    r'(?P<gen>\s*<[^>]*>)?'
+    r'(?:static\s+|class\s+|final\s+|mutating\s+|override\s+|convenience\s+|required\s+'
+    r'|nonisolated\s+)*'
+    r'(?P<kind>func|init|subscript)\b'
     r'\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)?'
-    r'(?P<optional>\?)?'
+    r'(?P<optional>[?!])?'
+    r'(?P<gen>\s*<[^<>]*>)?'
     r'\s*\('
 )
 
@@ -76,10 +101,12 @@ TYPE_RE = re.compile(
 )
 
 # An explicit access modifier on the member itself overrides what the container implies.
-EXPLICIT_ACCESS_RE = re.compile(r'\b(private|fileprivate|internal)\b')
+# Word-anchored: a substring test reads `private func openFile(...)` as public, via `open`.
+EXPLICIT_ACCESS_RE = re.compile(r'(?<![A-Za-z0-9_])(private|fileprivate|internal)(?![A-Za-z0-9_])')
+PUBLIC_RE = re.compile(r'(?<![A-Za-z0-9_])(public|open)(?![A-Za-z0-9_])')
 
-# `### `Surface.approxWithDetails(tolerance:...)`` -> owning type hint for a doc declaration.
-HEADING_RE = re.compile(r'^#{2,4}\s+`?(?P<text>[^`\n]+)`?\s*$')
+# `### `Surface.approxWithDetails(a:b:)`` -> owning type hint for a doc declaration.
+HEADING_RE = re.compile(r'^#{2,6}\s+(?P<text>.+?)\s*$')
 
 
 def split_top_level(text, sep=','):
@@ -107,7 +134,6 @@ def split_top_level(text, sep=','):
         elif c in ')]}':
             depth -= 1
         elif c == '<':
-            # only count as a generic bracket when it looks like one
             angle += 1
         elif c == '>' and angle > 0:
             angle -= 1
@@ -125,7 +151,6 @@ def parse_params(param_text):
     """[(label, default_or_None)] for one parameter list, in declared order."""
     params = []
     for raw in split_top_level(param_text):
-        # attributes/modifiers Swift allows before the label
         cleaned = re.sub(r'^(?:@\w+(?:\([^)]*\))?\s+|inout\s+|isolated\s+)+', '', raw).strip()
         head, _, tail = cleaned.partition(':')
         if not tail:
@@ -134,15 +159,11 @@ def parse_params(param_text):
         if not names:
             continue
         label = names[0]
-        # default is everything after a top-level `=` in the type part
         default = None
-        eq_parts = split_top_level(tail, '=')
-        if len(eq_parts) >= 2 and '=' in tail:
-            # guard against `==` or default-less generic constraints
-            m = re.search(r'(?<![=!<>])=(?![=])', tail)
-            if m:
-                default = tail[m.end():].strip()
-        params.append((label, default or None))
+        m = re.search(r'(?<![=!<>])=(?![=])', tail)
+        if m:
+            default = tail[m.end():].strip() or None
+        params.append((label, default))
     return params
 
 
@@ -197,6 +218,46 @@ def strip_line_comment(line):
     return line
 
 
+def code_skeleton(line, in_block):
+    """Blank out strings and comments so brace counting sees only code.
+
+    Returns (skeleton, still_in_block_comment). A `{` inside a string literal or a doc comment is
+    not a scope, and counting it desynchronises the enclosing-type stack for the rest of the file.
+    """
+    out, i, in_str = [], 0, False
+    while i < len(line):
+        c = line[i]
+        if in_block:
+            if c == '*' and i + 1 < len(line) and line[i + 1] == '/':
+                in_block = False
+                i += 2
+                continue
+            i += 1
+            continue
+        if in_str:
+            if c == '\\':
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            i += 1
+            continue
+        if c == '/' and i + 1 < len(line):
+            if line[i + 1] == '/':
+                break
+            if line[i + 1] == '*':
+                in_block = True
+                i += 2
+                continue
+        out.append(c)
+        i += 1
+    return ''.join(out), in_block
+
+
 def gather_decl(lines, start_idx):
     """Join lines from `start_idx` until the signature's parens balance. Returns (text, end)."""
     depth, buf, i = 0, [], start_idx
@@ -217,42 +278,46 @@ def gather_decl(lines, start_idx):
 
 
 def extract_decls(text, source_label, want_public):
-    """Yield dicts for every func/init declaration with a parameter list."""
+    """Yield dicts for every func/init/subscript declaration with a parameter list."""
     lines = text.split('\n')
     out = []
     type_stack = []
     brace_depth = 0
     pending_type = None
+    in_block = False
     for idx, line in enumerate(lines):
-        tm = TYPE_RE.match(line)
-        if tm:
-            # `public extension Foo {` makes its members public without repeating the keyword;
-            # `public struct Foo {` does not. Only the extension form implies public members.
-            implied = bool(tm.group('access')) and \
-                tm.group('access').strip() in ('public', 'open') and \
-                tm.group('kind') == 'extension'
-            pending_type = (tm.group('name'), implied)
-        if pending_type and '{' in line:
-            type_stack.append((pending_type[0], brace_depth, pending_type[1]))
-            pending_type = None
-        opens = line.count('{')
-        closes = line.count('}')
-        brace_depth += opens - closes
+        skeleton, next_block = code_skeleton(line, in_block)
+        was_in_block = in_block
+        in_block = next_block
+
+        if not was_in_block:
+            tm = TYPE_RE.match(skeleton)
+            if tm:
+                # `public extension Foo {` makes its members public without repeating the
+                # keyword; `public struct Foo {` does not.
+                access = (tm.group('access') or '').strip()
+                implied = access in ('public', 'open') and tm.group('kind') == 'extension'
+                pending_type = (tm.group('name'), implied)
+            if pending_type and '{' in skeleton:
+                type_stack.append((pending_type[0], brace_depth, pending_type[1]))
+                pending_type = None
+
+        brace_depth += skeleton.count('{') - skeleton.count('}')
         while type_stack and brace_depth <= type_stack[-1][1]:
             type_stack.pop()
 
-        m = DECL_RE.search(line)
+        if was_in_block:
+            continue
+        m = DECL_RE.search(skeleton)
         if not m:
             continue
         if want_public:
-            explicit_public = 'public' in line or 'open' in line
+            explicit_public = bool(PUBLIC_RE.search(skeleton))
             implied_public = (bool(type_stack) and type_stack[-1][2]
-                              and not EXPLICIT_ACCESS_RE.search(line))
+                              and not EXPLICIT_ACCESS_RE.search(skeleton))
             if not (explicit_public or implied_public):
                 continue
-        # skip a call site that happens to contain `func` in a comment/string
-        if line.lstrip().startswith(('//', '*', '///')):
-            continue
+
         joined, _ = gather_decl(lines, idx)
         m2 = DECL_RE.search(joined)
         if not m2:
@@ -270,9 +335,10 @@ def extract_decls(text, source_label, want_public):
         if j >= len(joined):
             continue
         params = parse_params(joined[open_paren + 1:j])
-        name = m2.group('name') or 'init'
-        if m2.group('kind') == 'init':
-            name = 'init'
+        kind = m2.group('kind')
+        name = m2.group('name') or kind
+        if kind in ('init', 'subscript'):
+            name = kind
         out.append({
             'name': name,
             'params': params,
@@ -280,20 +346,19 @@ def extract_decls(text, source_label, want_public):
             'type': type_stack[-1][0] if type_stack else None,
             'file': source_label,
             'line': idx + 1,
-            'text': ' '.join(joined.split()),
         })
     return out
 
 
 def doc_swift_blocks(text):
-    """Yield (block_text, first_line_number) for each fenced ```swift block."""
+    """Yield (block_text, first_line_number, nearest_heading) for each fenced ```swift block."""
     lines = text.split('\n')
     blocks, i = [], 0
     heading = None
     while i < len(lines):
         hm = HEADING_RE.match(lines[i])
         if hm:
-            heading = hm.group('text').strip().strip('`')
+            heading = hm.group('text').strip().strip('`').strip()
         if re.match(r'^\s*```\s*swift\s*$', lines[i]):
             start = i + 1
             j = start
@@ -311,9 +376,32 @@ def heading_type(heading):
     if not heading:
         return None
     text = heading.split('(')[0].strip()
-    if '.' in text:
-        return text.rsplit('.', 1)[0].split()[-1]
-    return None
+    words = text.split()
+    if not words:
+        return None
+    text = words[-1]
+    if '.' not in text:
+        return None
+    return text.rsplit('.', 1)[0]
+
+
+def filename_type(path):
+    """`docs/reference/Document-Persistence-IO.md` -> 'Document'.
+
+    The page title's first hyphen-separated component is its principal type. Only a hint: a page
+    documents types other than its title (`Shape-HLR-Geom.md` carries `Surface.approxWithDetails`),
+    so it narrows only when it selects something.
+    """
+    return os.path.basename(path)[:-3].split('-')[0]
+
+
+def type_matches(cand_type, hint):
+    """Tolerate qualification on either side: `BRepGraph.Editor` vs `Editor`."""
+    if not cand_type or not hint:
+        return False
+    if cand_type == hint:
+        return True
+    return cand_type.endswith('.' + hint) or hint.endswith('.' + cand_type)
 
 
 def main():
@@ -321,8 +409,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--verbose', action='store_true', help='list every default compared')
     ap.add_argument('--quiet', action='store_true', help='exit status only')
-    ap.add_argument('--strict', action='store_true',
-                    help='also fail when docs state a default the source does not have')
+    ap.add_argument('--lenient', action='store_true',
+                    help='report source-only omissions without failing the run')
     args = ap.parse_args()
 
     src_decls = []
@@ -334,80 +422,141 @@ def main():
     for d in src_decls:
         by_key.setdefault((d['name'], d['labels']), []).append(d)
 
-    drifted, docs_only, unmatched, checked, compared_decls = [], [], [], 0, 0
+    changed, docs_only, source_only, unverified, unmatched = [], [], [], [], []
+    checked = matched = 0
+    resolved_by = {'unique': 0, 'heading': 0, 'filename': 0, 'unnarrowed': 0}
+
     for path in sorted(glob.glob(DOCS_GLOB)):
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         for block, base_line, heading in doc_swift_blocks(text):
             for d in extract_decls(block, path, want_public=False):
-                # only a restated *declaration* carries defaults worth checking
                 if not any(p[1] for p in d['params']):
-                    continue
+                    continue  # nothing to compare
                 d['line'] = base_line + d['line'] - 1
                 candidates = by_key.get((d['name'], d['labels']), [])
                 if not candidates:
                     unmatched.append(d)
                     continue
-                htype = heading_type(heading)
-                narrowed = [c for c in candidates if htype and c['type'] == htype]
-                pool = narrowed or candidates
-                compared_decls += 1
+                matched += 1
 
-                # accept if the doc agrees with any candidate in the pool
-                def diffs_against(cand):
-                    src_map = dict(cand['params'])
-                    bad, only = [], []
-                    for label, dv in d['params']:
-                        if dv is None:
-                            continue
-                        sv = src_map.get(label)
-                        if sv is None:
-                            only.append((label, dv))
-                        elif normalize_default(sv) != normalize_default(dv):
-                            bad.append((label, dv, sv))
-                    return bad, only
+                pool, how = candidates, 'unnarrowed'
+                if len(candidates) == 1:
+                    how = 'unique'
+                else:
+                    ht = heading_type(heading)
+                    narrowed = [c for c in candidates if type_matches(c['type'], ht)]
+                    if narrowed:
+                        pool, how = narrowed, 'heading'
+                    else:
+                        ft = filename_type(path)
+                        narrowed = [c for c in candidates if type_matches(c['type'], ft)]
+                        if narrowed:
+                            pool, how = narrowed, 'filename'
+                resolved_by[how] += 1
+                checked += sum(1 for _, dv in d['params'] if dv is not None)
 
-                results = [(c,) + diffs_against(c) for c in pool]
-                clean = [r for r in results if not r[1] and not r[2]]
+                def diffs(cand):
+                    # Positional, not keyed by label: a signature may repeat `_` several times
+                    # (`circlesTangentTo(_ c1:, _ q1:, _ c2:, ...)`), and a label-keyed lookup
+                    # collapses those to one entry, inventing drift for every `_` but the last.
+                    # Both sides matched on the ordered label tuple, so index i is the same
+                    # parameter on both.
+                    ch, only_d, only_s = [], [], []
+                    for i, (lab, dv) in enumerate(d['params']):
+                        sv = cand['params'][i][1]
+                        if dv is not None and sv is None:
+                            only_d.append((lab, dv))
+                        elif dv is None and sv is not None:
+                            only_s.append((lab, sv))
+                        elif dv is not None and sv is not None and \
+                                normalize_default(sv) != normalize_default(dv):
+                            ch.append((lab, dv, sv))
+                    return ch, only_d, only_s
+
+                results = [(c,) + diffs(c) for c in pool]
+
+                # Checked BEFORE accepting a clean match, not after. When neither the heading nor
+                # the filename supplied any type evidence and the candidates disagree about a
+                # default, agreeing with one of them proves nothing about the intended one — that
+                # is exactly how a page stating `Shape.writeOBJ`'s 0.1 for `Document.writeOBJ`
+                # passed. Deciding it on "some candidate matched" is the blind spot, so say so
+                # instead. A pool narrowed to one type may still hold several overloads (a
+                # deprecated twin carrying no defaults); there the doc's own defaults do pick one,
+                # so that stays a verified match.
+                if how == 'unnarrowed' and len(pool) > 1:
+                    spread = [set() for _ in d['params']]
+                    for c in pool:
+                        for i in range(len(d['params'])):
+                            sv = c['params'][i][1]
+                            spread[i].add(normalize_default(sv) if sv else None)
+                    if any(len(s) > 1 for s in spread):
+                        unverified.append((path, d['line'], d['name'], pool))
+                        continue
+
+                clean = [r for r in results if not r[1] and not r[2] and not r[3]]
                 if clean:
-                    checked += sum(1 for p in d['params'] if p[1])
                     if args.verbose and not args.quiet:
                         print(f'  ok   {path}:{d["line"]} {d["name"]}({",".join(d["labels"])})')
                     continue
-                # report against the best candidate (fewest disagreements)
-                cand, bad, only = min(results, key=lambda r: (len(r[1]), len(r[2])))
-                checked += sum(1 for p in d['params'] if p[1])
-                for label, dv, sv in bad:
-                    drifted.append((path, d['line'], cand, d['name'], label, dv, sv,
-                                    len(pool) > 1))
-                for label, dv in only:
-                    docs_only.append((path, d['line'], cand, d['name'], label, dv))
+
+                # Deterministic pick, so a report never names an arbitrary sibling's file.
+                cand, ch, only_d, only_s = min(
+                    results,
+                    key=lambda r: (len(r[1]) + len(r[2]) + len(r[3]), r[0]['file'], r[0]['line']))
+                for lab, dv, sv in ch:
+                    changed.append((path, d['line'], cand, d['name'], lab, dv, sv))
+                for lab, dv in only_d:
+                    docs_only.append((path, d['line'], cand, d['name'], lab, dv))
+                for lab, sv in only_s:
+                    source_only.append((path, d['line'], cand, d['name'], lab, sv))
 
     if not args.quiet:
-        print(f'restated declarations with defaults: {compared_decls + len(unmatched)} '
-              f'({compared_decls} matched to a source declaration, '
-              f'{len(unmatched)} with no `public` counterpart)')
+        total = matched + len(unmatched)
+        print(f'restated declarations with defaults: {total} '
+              f'({matched} matched to a source declaration, '
+              f'{len(unmatched)} with no counterpart)')
+        print(f'  owning declaration resolved by:    '
+              f'{resolved_by["unique"]} unique, {resolved_by["heading"]} heading, '
+              f'{resolved_by["filename"]} filename, {resolved_by["unnarrowed"]} unnarrowed')
         print(f'individual defaults compared:        {checked}')
-        print(f'drifted:                             {len(drifted)}')
-        print(f'stated only in docs:                 {len(docs_only)}')
-        if drifted:
-            print('\nDRIFTED — docs and source both state a default and they differ:')
-            for path, line, cand, name, label, dv, sv, ambiguous in drifted:
-                note = '  (ambiguous overload set)' if ambiguous else ''
+        print(f'drifted (default changed):           {len(changed)}')
+        print(f'drifted (stated only in docs):       {len(docs_only)}')
+        print(f'drifted (stated only in source):     {len(source_only)}'
+              f'{"  [warning only]" if args.lenient else ""}')
+        print(f'unverified (ambiguous, not checked): {len(unverified)}')
+
+        if changed:
+            print('\nCHANGED — docs and source both state a default and they differ:')
+            for path, line, cand, name, lab, dv, sv in changed:
                 print(f'  {path}:{line}')
-                print(f'    {name}(… {label}:) docs `{dv}` vs '
-                      f'{cand["file"]}:{cand["line"]} `{sv}`{note}')
+                print(f'    {name}(… {lab}:) docs `{dv}` vs {cand["file"]}:{cand["line"]} `{sv}`')
         if docs_only:
-            print('\nSTATED ONLY IN DOCS — the source parameter has no default:')
-            for path, line, cand, name, label, dv in docs_only:
-                print(f'  {path}:{line}  {name}(… {label}: = {dv})  '
+            print('\nSTATED ONLY IN DOCS — the source parameter has no default, so the argument '
+                  'is required:')
+            for path, line, cand, name, lab, dv in docs_only:
+                print(f'  {path}:{line}  {name}(… {lab}: = {dv})  '
                       f'source {cand["file"]}:{cand["line"]}')
+        if source_only:
+            print('\nSTATED ONLY IN SOURCE — the docs omit a default, so the argument reads as '
+                  'required when it is optional:')
+            for path, line, cand, name, lab, sv in source_only:
+                print(f'  {path}:{line}  {name}(… {lab}:)  source has `= {sv}` at '
+                      f'{cand["file"]}:{cand["line"]}')
+        if unverified:
+            print('\nUNVERIFIED — several declarations share this name and label list, nothing '
+                  'narrowed to one, and they disagree about a default:')
+            for path, line, name, pool in unverified:
+                where = ', '.join(f'{c["type"]} ({c["file"]}:{c["line"]})' for c in pool)
+                print(f'  {path}:{line}  {name} — candidates: {where}')
         if args.verbose and unmatched:
-            print('\nUNMATCHED — no `public` declaration in Sources/OCCTSwift (not an error):')
+            print('\nUNMATCHED — no declaration in Sources/OCCTSwift (not an error):')
             for d in unmatched:
                 print(f'  {d["file"]}:{d["line"]}  {d["name"]}({",".join(d["labels"])})')
 
-    fail = bool(drifted) or (args.strict and bool(docs_only))
+    fail = bool(changed) or bool(docs_only) or bool(unverified)
+    if not args.lenient:
+        fail = fail or bool(source_only)
     return 1 if fail else 0
 
 
