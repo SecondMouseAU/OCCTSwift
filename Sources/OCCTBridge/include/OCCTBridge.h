@@ -871,10 +871,33 @@ typedef struct {
 /// @return Properties structure with isValid indicating success
 OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density);
 
-/// Get volume of a shape (convenience function)
+/// Measure the volume a shape encloses (convenience function)
+///
+/// Computed with `OnlyClosed = true`, so a shape with no closed shell has no volume and this
+/// reports failure rather than the number the divergence integral returns over a surface that
+/// encloses nothing (#609). Use `OCCTShapeSignedVolumeFlux` when the question is which way the
+/// faces point rather than how much volume there is.
+///
+/// The value written keeps `BRepGProp`'s sign, so a reversed solid writes a negative volume and
+/// this still returns true. `Shape.volume` treats that as no answer; `Shape.signedVolume` is the
+/// accessor for it, and it goes through `OCCTShapeSignedVolumeFlux` rather than this.
+///
 /// @param shape The shape to measure
-/// @return Volume in cubic units, or -1.0 on error
-double OCCTShapeGetVolume(OCCTShapeRef shape);
+/// @param outVolume Output: volume in cubic units, signed, untouched when this returns false
+/// @return true when the shape has a closed volume, false otherwise or on error
+bool OCCTShapeGetVolume(OCCTShapeRef shape, double* outVolume);
+
+/// Get the signed divergence integral over a shape's faces.
+///
+/// This is `VolumeProperties` with `OnlyClosed` left at its default, so unlike
+/// `OCCTShapeGetVolume` it answers for an open surface. The *magnitude* is a volume only when the
+/// surface is closed; the *sign* is a sound orientation signal either way, because reversing a
+/// surface negates the flux. Callers wanting to measure a volume must use `OCCTShapeGetVolume`.
+///
+/// @param shape The shape to integrate over
+/// @param outFlux Output: signed flux, untouched when this returns false
+/// @return false only on an internal error
+bool OCCTShapeSignedVolumeFlux(OCCTShapeRef shape, double* outFlux);
 
 /// Get surface area of a shape (convenience function)
 /// @param shape The shape to measure
@@ -14594,15 +14617,22 @@ bool OCCTMakeDir2dFromPoints(double x1, double y1, double x2, double y2, double*
 
 // MARK: - GProp Element Properties (v0.103.0)
 
-/// Compute curve element (line segment) properties. Returns mass (length), center of mass.
-double OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
-                             double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
+/// Compute curve element (line segment) properties: length and center of mass.
+/// @return false when OCCT rejected the input, which for a segment means two coincident endpoints
+///         (`gp_Dir` throws on the zero direction). That used to surface as a length of 0 with a
+///         centre of (0,0,0), which reads as a successful answer (#609).
+bool OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
+                          double* _Nonnull outLength,
+                          double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
-/// Compute curve element (circular arc) properties. Returns mass (arc length), center of mass.
-double OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
-                             double normalX, double normalY, double normalZ,
-                             double radius, double u1, double u2,
-                             double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
+/// Compute curve element (circular arc) properties: arc length and center of mass.
+/// @return false when OCCT rejected the input, which for an arc means a zero normal vector. A
+///         valid arc with u1 == u2 succeeds with a length of 0 and a correct centre (#609).
+bool OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
+                          double normalX, double normalY, double normalZ,
+                          double radius, double u1, double u2,
+                          double* _Nonnull outLength,
+                          double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
 /// Compute point set center of mass. points is array of [x,y,z,...]. Returns mass (count).
 double OCCTGPropPointSetCentroid(const double* _Nonnull points, int32_t count,
@@ -15031,14 +15061,19 @@ bool OCCTUnicodeConvertFromUnicode(const char* _Nonnull utf8Input,
 
 // MARK: - GProp weighted point sets (v0.105.0)
 
-/// Compute weighted centroid of a point set. Returns total mass (sum of weights).
+/// Compute weighted centroid of a point set. Returns total mass (sum of weights), or 0 when there
+/// is no centroid to report: an empty set, or one OCCT rejected because a weight was not strictly
+/// positive (`GProp_PGProps::AddPoint` throws `Standard_DomainError` on the first such weight, so
+/// one bad weight discards the whole set). The `cx`/`cy`/`cz` outputs are meaningless then (#609).
 double OCCTGPropPointSetWeightedCentroid(const double* _Nonnull points,
                                           const double* _Nonnull weights, int32_t count,
                                           double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
 /// Compute barycentre of a point set (equal weights).
-void OCCTGPropBarycentre(const double* _Nonnull points, int32_t count,
-                          double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
+/// @return false for an empty set, which has no barycentre; the (0,0,0) reported there was
+///         indistinguishable from the barycentre of a set centred on the origin (#609).
+bool OCCTGPropBarycentre(const double* _Nonnull points, int32_t count,
+                         double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
 // MARK: - Draft info types (v0.105.0)
 
@@ -17548,21 +17583,28 @@ OCCTShapeRef _Nullable OCCTBRepLibReverseSortFaces(OCCTShapeRef _Nonnull shape);
 // --- Shape mass properties expansion ---
 
 /// Get linear properties (length + center of mass) for wires/edges.
-double OCCTShapeLinearProperties(OCCTShapeRef _Nonnull shape,
-                                   double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
+/// @return false when the shape has no edges, so no length and no centroid (#609).
+bool OCCTShapeLinearProperties(OCCTShapeRef _Nonnull shape, double* _Nonnull length,
+                               double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
-/// Get the static moments (Ix, Iy, Iz) and products of inertia (Ixy, Ixz, Iyz) for a shape.
-void OCCTShapeMomentOfInertia(OCCTShapeRef _Nonnull shape,
-                                double* _Nonnull ixx, double* _Nonnull iyy, double* _Nonnull izz,
-                                double* _Nonnull ixy, double* _Nonnull ixz, double* _Nonnull iyz);
+/// Get the moments of inertia (Ixx, Iyy, Izz) and products of inertia (Ixy, Ixz, Iyz) for a shape.
+/// These are the diagonal and off-diagonal terms of `GProp_GProps::MatrixOfInertia`, referenced to
+/// the centre of mass, not `StaticMoments()`, which is a different quantity about the origin.
+/// @return false when the shape has no closed volume, so no inertia tensor (#609).
+bool OCCTShapeMomentOfInertia(OCCTShapeRef _Nonnull shape,
+                              double* _Nonnull ixx, double* _Nonnull iyy, double* _Nonnull izz,
+                              double* _Nonnull ixy, double* _Nonnull ixz, double* _Nonnull iyz);
 
 /// Get the principal axes of inertia (3 direction vectors = 9 doubles).
-void OCCTShapePrincipalAxes(OCCTShapeRef _Nonnull shape, double* _Nonnull axes9);
+/// @return false when the shape has no closed volume, so no principal axes (#609).
+bool OCCTShapePrincipalAxes(OCCTShapeRef _Nonnull shape, double* _Nonnull axes9);
 
 /// Get the radius of gyration about an arbitrary axis.
-double OCCTShapeRadiusOfGyration(OCCTShapeRef _Nonnull shape,
-                                    double ax, double ay, double az,
-                                    double dx, double dy, double dz);
+/// @return false when the shape has no closed volume, where OCCT's own answer is NaN (#609).
+bool OCCTShapeRadiusOfGyration(OCCTShapeRef _Nonnull shape,
+                               double ax, double ay, double az,
+                               double dx, double dy, double dz,
+                               double* _Nonnull outRadius);
 
 // --- Curve isBounded ---
 
@@ -17925,8 +17967,11 @@ bool OCCTShapeHasFreeFaces(OCCTShapeRef _Nonnull shape);
 double OCCTShapeBoundingDiagonal(OCCTShapeRef _Nonnull shape);
 
 /// Compute the volumetric centroid of a shape.
-void OCCTShapeCentroid(OCCTShapeRef _Nonnull shape,
-                         double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
+/// @return false when the shape has no closed volume. The value this used to write in that case
+///         was the shape's location origin, which follows the part around and is not a
+///         recognisable sentinel (#609).
+bool OCCTShapeCentroid(OCCTShapeRef _Nonnull shape,
+                       double* _Nonnull x, double* _Nonnull y, double* _Nonnull z);
 
 /// Compute the total edge length of all edges in a shape.
 double OCCTShapeTotalEdgeLength(OCCTShapeRef _Nonnull shape);

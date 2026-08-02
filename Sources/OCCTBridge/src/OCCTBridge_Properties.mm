@@ -71,6 +71,28 @@
 #include <TopoDS.hxx>
 #include <TopTools_ListOfShape.hxx>
 
+// MARK: - Mass properties (#605 / #609)
+//
+// The contract each of these implements is documented on the declarations in
+// OCCTBridge_Internal.h. In short: OCCT expects the caller to test Mass(), and to pass OnlyClosed
+// when it wants the volume integral to refuse an open surface rather than estimate one. Neither
+// happened anywhere in the bridge before #605/#609.
+
+bool occtVolumeMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::VolumeProperties(shape, props, /*OnlyClosed*/ true);
+    return props.Mass() != 0.0;
+}
+
+bool occtSurfaceMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::SurfaceProperties(shape, props);
+    return props.Mass() != 0.0;
+}
+
+bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
+    BRepGProp::LinearProperties(shape, props);
+    return props.Mass() != 0.0;
+}
+
 // MARK: - Face Surface Properties (v0.18.0)
 
 #include <GeomLProp_SLProps.hxx>
@@ -656,7 +678,7 @@ bool OCCTShapeInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties* outPr
     if (!shape || !outProps) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
         outProps->volume = props.Mass();
         gp_Pnt cm = props.CentreOfMass();
@@ -696,7 +718,7 @@ bool OCCTShapeSurfaceInertiaProperties(OCCTShapeRef shape, OCCTInertiaProperties
     if (!shape || !outProps) return false;
     try {
         GProp_GProps props;
-        BRepGProp::SurfaceProperties(shape->shape, props);
+        if (!occtSurfaceMassProperties(shape->shape, props)) return false;
 
         outProps->volume = props.Mass(); // Surface area in this context
         gp_Pnt cm = props.CentreOfMass();
@@ -971,7 +993,7 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
     if (!shape || !result) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
 
         result->volume = props.Mass();
 
@@ -980,16 +1002,16 @@ bool OCCTShapeVolumeInertia(OCCTShapeRef shape, OCCTVolumeInertiaResult* result)
         result->centerY = com.Y();
         result->centerZ = com.Z();
 
-        // Matrix of inertia about center of mass
-        GProp_GProps comProps;
-        BRepGProp::VolumeProperties(shape->shape, comProps);
-        gp_Mat mat = comProps.MatrixOfInertia();
+        // Matrix of inertia about center of mass. This used to recompute the whole framework into a
+        // second GProp_GProps before reading it, which cost a second integration for an identical
+        // answer — MatrixOfInertia() is already referenced to the centre of mass.
+        gp_Mat mat = props.MatrixOfInertia();
         result->inertia[0] = mat(1,1); result->inertia[1] = mat(1,2); result->inertia[2] = mat(1,3);
         result->inertia[3] = mat(2,1); result->inertia[4] = mat(2,2); result->inertia[5] = mat(2,3);
         result->inertia[6] = mat(3,1); result->inertia[7] = mat(3,2); result->inertia[8] = mat(3,3);
 
         // Principal properties
-        GProp_PrincipalProps principal = comProps.PrincipalProperties();
+        GProp_PrincipalProps principal = props.PrincipalProperties();
         double I1, I2, I3;
         principal.Moments(I1, I2, I3);
         result->principalMoment1 = I1;
@@ -1019,7 +1041,7 @@ bool OCCTShapeSurfaceInertia(OCCTShapeRef shape, OCCTSurfaceInertiaResult* resul
     if (!shape || !result) return false;
     try {
         GProp_GProps props;
-        BRepGProp::SurfaceProperties(shape->shape, props);
+        if (!occtSurfaceMassProperties(shape->shape, props)) return false;
 
         result->area = props.Mass();
 
@@ -1356,31 +1378,41 @@ int32_t OCCTShapeFaceDomainEdgeCount(OCCTShapeRef shape, int32_t faceIndex) {
 #include <GProp_SelGProps.hxx>
 #include <GProp_VelGProps.hxx>
 
-double OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
-                             double* cx, double* cy, double* cz) {
+// GProp_CelGProps computes its centroid analytically rather than accumulating into a
+// GProp_GProps framework, so a zero-*length* result is still a correct answer: a curve sampled
+// over an empty parameter range has a mass of 0 and a centre at the point itself. What is NOT an
+// answer is a rejected input. Both of these build a gp_Dir from caller data, and gp_Dir throws
+// Standard_ConstructionError on a zero-length vector — two coincident endpoints here, a zero
+// normal there — which the catch used to turn into mass 0 with a centre of (0,0,0). See #609.
+bool OCCTGPropLineSegment(double x1, double y1, double z1, double x2, double y2, double z2,
+                          double* outLength, double* cx, double* cy, double* cz) {
+    if (!outLength || !cx || !cy || !cz) return false;
     try {
         gp_Pnt p1(x1,y1,z1), p2(x2,y2,z2);
         gp_Lin line(p1, gp_Dir(gp_Vec(p1, p2)));
         double u2 = p1.Distance(p2);
         GProp_CelGProps props(line, 0.0, u2, gp_Pnt(0,0,0));
         gp_Pnt cm = props.CentreOfMass();
+        *outLength = props.Mass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-        return props.Mass();
-    } catch (...) { return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-double OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
-                             double normalX, double normalY, double normalZ,
-                             double radius, double u1, double u2,
-                             double* cx, double* cy, double* cz) {
+bool OCCTGPropCircularArc(double centerX, double centerY, double centerZ,
+                          double normalX, double normalY, double normalZ,
+                          double radius, double u1, double u2,
+                          double* outLength, double* cx, double* cy, double* cz) {
+    if (!outLength || !cx || !cy || !cz) return false;
     try {
         gp_Ax2 ax(gp_Pnt(centerX,centerY,centerZ), gp_Dir(normalX,normalY,normalZ));
         gp_Circ circ(ax, radius);
         GProp_CelGProps props(circ, u1, u2, gp_Pnt(0,0,0));
         gp_Pnt cm = props.CentreOfMass();
+        *outLength = props.Mass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-        return props.Mass();
-    } catch (...) { return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
 double OCCTGPropPointSetCentroid(const double* points, int32_t count, double* cx, double* cy, double* cz) {
@@ -1484,18 +1516,23 @@ double OCCTGPropPointSetWeightedCentroid(const double* points, const double* wei
     } catch (...) { return 0; }
 }
 
-void OCCTGPropBarycentre(const double* points, int32_t count,
-                          double* cx, double* cy, double* cz) {
-    *cx = 0; *cy = 0; *cz = 0;
+bool OCCTGPropBarycentre(const double* points, int32_t count,
+                         double* cx, double* cy, double* cz) {
+    if (!points || !cx || !cy || !cz) return false;
     try {
         GProp_PGProps props;
         for (int32_t i = 0; i < count; i++) {
             gp_Pnt p(points[i*3], points[i*3+1], points[i*3+2]);
             props.AddPoint(p);
         }
+        // An empty point set has no barycentre. GProp_PGProps reports (0,0,0) for one, which is a
+        // point a caller cannot distinguish from the barycentre of a set centred on the origin.
+        // Mass is the point count here, so testing it is exact. See #609.
+        if (props.Mass() == 0.0) return false;
         gp_Pnt cm = props.CentreOfMass();
         *cx = cm.X(); *cy = cm.Y(); *cz = cm.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - v0.111: BRepLProp_CLProps + SLProps
@@ -1730,35 +1767,41 @@ bool OCCTFaceLPropTangentV(OCCTShapeRef face, double u, double v, double* dx, do
 // MARK: - v0.114: Shape mass properties expansion
 // --- Shape mass properties expansion ---
 
-double OCCTShapeLinearProperties(OCCTShapeRef shape, double* cx, double* cy, double* cz) {
-    if (!shape) { *cx = *cy = *cz = 0; return 0; }
+bool OCCTShapeLinearProperties(OCCTShapeRef shape, double* length,
+                               double* cx, double* cy, double* cz) {
+    if (!shape || !length || !cx || !cy || !cz) return false;
     try {
         GProp_GProps props;
-        BRepGProp::LinearProperties(shape->shape, props);
+        if (!occtLinearMassProperties(shape->shape, props)) return false;
         gp_Pnt com = props.CentreOfMass();
+        *length = props.Mass();
         *cx = com.X(); *cy = com.Y(); *cz = com.Z();
-        return props.Mass();
-    } catch (...) { *cx = *cy = *cz = 0; return 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTShapeMomentOfInertia(OCCTShapeRef shape,
-                                double* ixx, double* iyy, double* izz,
-                                double* ixy, double* ixz, double* iyz) {
-    if (!shape) { *ixx = *iyy = *izz = *ixy = *ixz = *iyz = 0; return; }
+bool OCCTShapeMomentOfInertia(OCCTShapeRef shape,
+                              double* ixx, double* iyy, double* izz,
+                              double* ixy, double* ixz, double* iyz) {
+    if (!shape || !ixx || !iyy || !izz || !ixy || !ixz || !iyz) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Mat mat = props.MatrixOfInertia();
         *ixx = mat(1,1); *iyy = mat(2,2); *izz = mat(3,3);
         *ixy = mat(1,2); *ixz = mat(1,3); *iyz = mat(2,3);
-    } catch (...) { *ixx = *iyy = *izz = *ixy = *ixz = *iyz = 0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-void OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
-    if (!shape) { for (int i=0;i<9;i++) axes9[i]=0; return; }
+bool OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
+    if (!shape || !axes9) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // Without a mass test this hands back the identity basis for anything with no volume:
+        // math_Jacobi on the zero inertia matrix returns three orthonormal eigenvectors, which
+        // read as a perfectly plausible answer. See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         GProp_PrincipalProps pp = props.PrincipalProperties();
         const gp_Vec& v1 = pp.FirstAxisOfInertia();
         const gp_Vec& v2 = pp.SecondAxisOfInertia();
@@ -1766,19 +1809,26 @@ void OCCTShapePrincipalAxes(OCCTShapeRef shape, double* axes9) {
         axes9[0] = v1.X(); axes9[1] = v1.Y(); axes9[2] = v1.Z();
         axes9[3] = v2.X(); axes9[4] = v2.Y(); axes9[5] = v2.Z();
         axes9[6] = v3.X(); axes9[7] = v3.Y(); axes9[8] = v3.Z();
-    } catch (...) { for (int i=0;i<9;i++) axes9[i]=0; }
+        return true;
+    } catch (...) { return false; }
 }
 
-double OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
-                                    double ax, double ay, double az,
-                                    double dx, double dy, double dz) {
-    if (!shape) return 0;
+bool OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
+                               double ax, double ay, double az,
+                               double dx, double dy, double dz,
+                               double* outRadius) {
+    if (!shape || !outRadius) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // GProp_GProps::RadiusOfGyration is sqrt(MomentOfInertia(A) / dim) with no guard, so a
+        // zero-mass framework returns NaN rather than a zero. Its GProp_PrincipalProps sibling
+        // does guard (`if (0.0e0 != dim)`), which is why the radii-triple read 0 from the same
+        // framework that made this return NaN. See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Ax1 axis(gp_Pnt(ax, ay, az), gp_Dir(dx, dy, dz));
-        return props.RadiusOfGyration(axis);
-    } catch (...) { return 0; }
+        *outRadius = props.RadiusOfGyration(axis);
+        return true;
+    } catch (...) { return false; }
 }
 
 // MARK: - Measurement & Analysis (v0.7.0)
@@ -1788,26 +1838,6 @@ double OCCTShapeRadiusOfGyration(OCCTShapeRef shape,
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopExp.hxx>
-
-/// Volume mass properties for a shape, computed the way OCCT itself computes them.
-///
-/// `OnlyClosed = true` matches OCCT's own `XCAFDoc_Centroid` writer (`XDEDRAW_Props.cxx`) and the
-/// `c` flag on Draw's `vprops`. It explores shells and admits only those `BRep_Tool::IsClosed`
-/// accepts, so an open shell contributes nothing rather than the number the divergence integral
-/// returns over a surface that encloses nothing (measured: 4800 and a centroid 2.6 units off, for
-/// five faces of a 10x20x30 box). Closedness is computed per shell, not read from a cached flag,
-/// so a sewn-but-unflagged closed shell still counts, and a closed shell outside any solid counts
-/// too. Callers that want an answer for an open shell must close it first; there is no unambiguous
-/// centre of mass until they choose how.
-///
-/// Returns false when the framework has no mass, which is OCCT's way of saying there is no volume
-/// here to have a centre of mass. `GProp_GProps` seeds itself with `gp_Pnt(0,0,0)` transformed by
-/// the shape's location, so a zero-mass `CentreOfMass()` is a plausible-looking point rather than
-/// a recognisable sentinel; `Mass()` is the only sound test. See #605 / #609.
-static bool occtVolumeMassProperties(const TopoDS_Shape& shape, GProp_GProps& props) {
-    BRepGProp::VolumeProperties(shape, props, /*OnlyClosed*/ true);
-    return props.Mass() != 0.0;
-}
 
 OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     OCCTShapeProperties result = {};
@@ -1854,17 +1884,43 @@ OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density) {
     return result;
 }
 
-double OCCTShapeGetVolume(OCCTShapeRef shape) {
-    if (!shape) return -1.0;
+bool OCCTShapeGetVolume(OCCTShapeRef shape, double* outVolume) {
+    if (!shape || !outVolume) return false;
 
     occtEnsureSignals();
     try {
         OCC_CATCH_SIGNALS
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
-        return props.Mass();
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
+        *outVolume = props.Mass();
+        return true;
     } catch (...) {
-        return -1.0;
+        return false;
+    }
+}
+
+bool OCCTShapeSignedVolumeFlux(OCCTShapeRef shape, double* outFlux) {
+    if (!shape || !outFlux) return false;
+
+    occtEnsureSignals();
+    try {
+        OCC_CATCH_SIGNALS
+        GProp_GProps props;
+        // Deliberately NOT occtVolumeMassProperties: this is the divergence integral with
+        // OnlyClosed left at its default, which is exactly what the strict volume path refuses.
+        //
+        // The two want different things. As a *measurement* the open-surface result is worthless,
+        // which is why OCCTShapeGetVolume refuses it. As an *orientation signal* it is sound for
+        // any orientable surface, closed or not, because reversing the surface negates the flux.
+        // Measured on five faces of a 10x20x30 box: +4800 forward, -4800 reversed. Shape.sweep
+        // relies on that to normalise a pipe whose faces point inward (#170), and the pipe it
+        // produces is an open shell, so a closed-only test would silently stop normalising it.
+        // See #609.
+        BRepGProp::VolumeProperties(shape->shape, props);
+        *outFlux = props.Mass();
+        return true;
+    } catch (...) {
+        return false;
     }
 }
 

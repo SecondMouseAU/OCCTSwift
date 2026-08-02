@@ -89,8 +89,15 @@ struct SweepTests {
         }
         #expect(spring.isValid)
         // The whole point of the fix: signed volume comes out positive.
+        //
+        // A pipe sweep is an OPEN shell (three faces, no solid), so `signedVolume` here is the
+        // divergence integral rather than a volume, and `volume` is nil. The sign is still the
+        // orientation signal this test cares about, since reversing a surface negates the flux.
+        // The old `volume != nil` assertion passed only because the volume path used to answer for
+        // an open surface too. See #609.
+        #expect(spring.solidCount == 0, "a pipe sweep is a shell")
         #expect(spring.signedVolume > 0)
-        #expect(spring.volume != nil)
+        #expect(spring.volume == nil, "an open shell has no volume to measure")
     }
 
     // Issue #170: orientedForward() flips a reversed solid; leaves a good one.
@@ -2141,9 +2148,13 @@ struct MultiCommonTests {
         let box1 = Shape.box(width: 5, height: 5, depth: 5)!
         let box2 = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(20, 20, 20))!
         let result = Shape.commonAll([box1, box2])
-        // Non-overlapping common may return empty or nil
+        // Non-overlapping common may return empty or nil. When it returns an empty compound there
+        // is no closed shell in it, so `volume` is nil rather than 0 (#609). Force-unwrapping here
+        // used to work only because the old volume path answered 0 for a shape with no volume at
+        // all, which is the confusion this issue removed.
         if let r = result {
-            #expect(r.volume! < 0.001)
+            #expect(r.volume == nil, "an empty common result encloses no volume")
+            #expect(r.signedVolume == 0)
         }
     }
 }

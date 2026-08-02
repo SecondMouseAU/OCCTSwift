@@ -513,11 +513,55 @@ bool occtFillingAddConstraint(BRepOffsetAPI_MakeFilling& filling,
                               GeomAbs_Shape order,
                               bool isBound);
 
+// === #605 / #609: mass properties, computed the way OCCT itself computes them ===
+//
+// Every one of these returns false when the framework OCCT built has no mass, which is OCCT's way
+// of saying there is nothing of that measure here to have a centre of mass, an inertia tensor or
+// principal axes. Testing the mass is the caller's job under OCCT's contract, and it is the only
+// sound test: `GProp_GProps` seeds itself with `gp_Pnt(0,0,0)` transformed by the shape's
+// *location*, so a zero-mass `CentreOfMass()` is a plausible point that follows the part around
+// rather than a recognisable sentinel. Measured, for a face moved to (100,200,300) and then moved
+// again by the same vector: (100,200,300) then (200,400,600). No caller can defend itself with
+// `if com == .zero`. See Scripts/repro/609-zero-mass/.
+//
+// Everything downstream of a zero-mass framework is an artefact, not merely a zero: the principal
+// axes come back as the identity basis (math_Jacobi on a zero matrix), `HasSymmetryAxis()` and
+// `HasSymmetryPoint()` both report true because every moment is equal at zero, and
+// `GProp_GProps::RadiusOfGyration` returns NaN because it is `sqrt(0/0)` with no guard.
+//
+// The guard is `Mass() != 0`, not `> 0`: a reversed solid's negative volume is the documented job
+// of Shape.signedVolume. It is exact rather than tolerant because there is no scale-free tolerance
+// to pick, and OCCT draws the same line itself (`GProp_GProps::Add` tests `|dim| >= 1.e-20`).
+class GProp_GProps;
+
+// Volume properties with `OnlyClosed = true`, matching OCCT's own `XCAFDoc_Centroid` writer
+// (`XDEDRAW_Props.cxx`) and the `c` flag on Draw's `vprops`.
+//
+// The flag matters as much as the mass test. Left at its default, `VolumeProperties` runs the
+// divergence integral over whatever it is given, and a surface that encloses nothing still returns
+// a number: 4800 for five faces of a 10x20x30 box, with a centroid 2.6 units adrift, and 6857 for a
+// compound of that box plus one loose face where the answer is 6000. `OnlyClosed = true` explores
+// shells and admits only those `BRep_Tool::IsClosed` accepts, so those contribute nothing instead.
+//
+// Closedness there is *topological sharing*, computed per shell rather than read from the cached
+// `Closed()` flag: every non-degenerate, non-internal edge must be shared an even number of times.
+// A sewn-but-unflagged closed shell counts, and a closed shell outside any solid counts, but six
+// geometrically coincident faces that were never sewn do not. Callers holding unsewn mesh geometry
+// must sew before asking for a volume.
+bool occtVolumeMassProperties(const TopoDS_Shape& shape, GProp_GProps& props);
+
+// Surface (area) properties. No `OnlyClosed` analogue exists or is needed: the area integral is
+// well defined over any set of faces. Only the mass test applies, and it fails for a shape with no
+// faces at all (a wire, edge or vertex), where the area centroid is the location sentinel again.
+bool occtSurfaceMassProperties(const TopoDS_Shape& shape, GProp_GProps& props);
+
+// Linear (length) properties. As above; fails for a shape with no edges, such as a lone vertex.
+bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props);
+
 // === #571: one GeomPlate_MakeApprox contract behind all six plate entry points ===
 
 class GeomPlate_Surface;
 class Geom_BSplineSurface;
-
 //
 // GeomPlate_MakeApprox is the one consumer of AdvApp2Var_ApproxAFunc2Var that does not go through
 // GeomConvert_ApproxSurface — it drives the approximator directly — so it sat outside every census

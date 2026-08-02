@@ -1189,17 +1189,19 @@ Centroid and barycentre computation on discrete point sets, extending `GeometryP
 Compute the weighted centroid of a point set.
 
 ```swift
-public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>)
+public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) -> (mass: Double, centroid: SIMD3<Double>?)
 ```
 
-- **Parameters:** `points` — array of 3D points; `weights` — per-point scalar weights (must be same length as `points`).
-- **Returns:** Tuple of total mass (sum of weights) and the weighted centroid position.
-- **OCCT:** `GProp_PEquation` / `GProp_GProps` point-set weighted mass properties
+- **Parameters:** `points` — array of 3D points; `weights` — per-point scalar weights (must be same length as `points`). **Every weight must be strictly positive.**
+- **Returns:** Tuple of total mass (sum of weights) and the weighted centroid position, which is `nil` when there is none to report.
+- **A non-positive weight rejects the whole set.** `GProp_PGProps::AddPoint` throws `Standard_DomainError` on the first weight that is not strictly positive, and one bad weight discards every point rather than skipping that one. Before #609 that surfaced as mass 0 with a centroid of (0,0,0), which reads as success.
+- **OCCT:** `GProp_PGProps::AddPoint` point-set weighted mass properties
 - **Example:**
   ```swift
   let pts = [SIMD3<Double>(0,0,0), SIMD3(2,0,0)]
   let (mass, center) = GeometryProperties.weightedCentroid(points: pts, weights: [1.0, 3.0])
-  // center.x ≈ 1.5
+  // center?.x ≈ 1.5
+  GeometryProperties.weightedCentroid(points: pts, weights: [1.0, 0.0]).centroid   // nil
   ```
 
 ---
@@ -1209,16 +1211,18 @@ public static func weightedCentroid(points: [SIMD3<Double>], weights: [Double]) 
 Compute the unweighted barycentre (arithmetic mean) of a point set.
 
 ```swift
-public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>
+public static func barycentre(_ points: [SIMD3<Double>]) -> SIMD3<Double>?
 ```
 
 - **Parameters:** `points` — array of 3D points.
-- **Returns:** The average position.
-- **OCCT:** `GProp_PEquation::Barycentre`
+- **Returns:** The average position, or `nil` for an empty set, which has no barycentre. The (0,0,0)
+  reported before #609 was indistinguishable from the barycentre of a set centred on the origin.
+- **OCCT:** `GProp_PGProps::Barycentre`
 - **Example:**
   ```swift
   let c = GeometryProperties.barycentre([SIMD3(0,0,0), SIMD3(4,0,0)])
   // c == SIMD3(2, 0, 0)
+  GeometryProperties.barycentre([])   // nil
   ```
 
 ---

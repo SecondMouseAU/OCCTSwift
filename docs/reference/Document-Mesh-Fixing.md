@@ -2973,16 +2973,19 @@ public struct LinearProperties: Sendable {
 Get linear properties (total length and center of mass) for an edge or wire shape.
 
 ```swift
-public func linearProperties() -> LinearProperties
+public func linearProperties() -> LinearProperties?
 ```
 
-- **OCCT:** `GProp_GProps` linear analysis (via `OCCTShapeLinearProperties`).
+- **Returns:** Length and length-centroid, or `nil` for a shape with no edges, such as a lone vertex.
+  The centre of mass reported there was the shape's location origin, not a recognisable zero (#609).
+- **OCCT:** `GProp_GProps` linear analysis plus a `Mass()` test (via `OCCTShapeLinearProperties`).
 - **Example:**
   ```swift
-  let wire = Wire.rectangle(width: 10, height: 5)!.asShape()
-  let lp = wire.linearProperties()
-  print("length:", lp.length)              // 30.0
-  print("centroid:", lp.centerOfMass)
+  let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 5)!)!
+  if let lp = wire.linearProperties() {
+      print("length:", lp.length)              // 30.0
+      print("centroid:", lp.centerOfMass)
+  }
   ```
 
 ---
@@ -3002,13 +3005,17 @@ public struct InertiaTensor: Sendable {
 
 ### `Shape.momentOfInertia()`
 
-Get the inertia tensor for a volumetric shape about the world origin.
+Get the inertia tensor for a volumetric shape. It is referenced to the shape's centre of mass, not
+to the world origin (#605).
 
 ```swift
-public func momentOfInertia() -> InertiaTensor
+public func momentOfInertia() -> InertiaTensor?
 ```
 
-- **OCCT:** `GProp_GProps` volumetric analysis, `BRepGProp_MatrixOfInertia` (via `OCCTShapeMomentOfInertia`).
+- **Returns:** The tensor, or `nil` for a shape with no closed volume, where it is identically zero
+  and indistinguishable from a real answer for a shape with no moments (#609).
+- **OCCT:** `GProp_GProps` volumetric analysis with `OnlyClosed = true` plus a `Mass()` test (via
+  `OCCTShapeMomentOfInertia`).
 
 ---
 
@@ -3031,10 +3038,13 @@ public struct PrincipalAxes: Sendable {
 Get the three principal axes of inertia.
 
 ```swift
-public func principalAxes() -> PrincipalAxes
+public func principalAxes() -> PrincipalAxes?
 ```
 
-- **OCCT:** `GProp_GProps::PrincipalProperties` (via `OCCTShapePrincipalAxes`).
+- **Returns:** The three axes, or `nil` for a shape with no closed volume. It used to return three
+  orthonormal unit vectors there, which look like a real answer but are just the identity basis that
+  `math_Jacobi` returns for the zero inertia matrix (#609).
+- **OCCT:** `GProp_GProps::PrincipalProperties` plus a `Mass()` test (via `OCCTShapePrincipalAxes`).
 
 ---
 
@@ -3046,11 +3056,15 @@ Get the radius of gyration about an arbitrary axis.
 public func radiusOfGyration(
     axisOrigin: SIMD3<Double>,
     direction: SIMD3<Double>
-) -> Double
+) -> Double?
 ```
 
 - **Parameters:** `axisOrigin` — a point on the axis; `direction` — axis direction vector.
-- **OCCT:** `GProp_GProps::RadiusOfGyration` (via `OCCTShapeRadiusOfGyration`).
+- **Returns:** The radius, or `nil` for a shape with no closed volume. OCCT computes this as
+  `sqrt(momentOfInertia / mass)` with no guard, so it used to return **NaN** there, which propagates
+  silently through any arithmetic that consumes it. Its `GProp_PrincipalProps` sibling *is* guarded,
+  which is why the radii-triple read 0 from the same framework that made this NaN (#609).
+- **OCCT:** `GProp_GProps::RadiusOfGyration` plus a `Mass()` test (via `OCCTShapeRadiusOfGyration`).
 
 ---
 

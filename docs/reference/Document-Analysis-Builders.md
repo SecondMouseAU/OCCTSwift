@@ -1829,27 +1829,34 @@ public static func direction(from p1: SIMD2<Double>, to p2: SIMD2<Double>) -> SI
 
 ### `GeometryProperties.lineSegment(from:to:)`
 
-Line segment properties: returns `(length, centerOfMass)`.
+Line segment properties: returns `(length, centerOfMass)`, or `nil` when OCCT rejects the input.
 
 ```swift
-public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (length: Double, center: SIMD3<Double>)
+public static func lineSegment(from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> (length: Double, center: SIMD3<Double>)?
 ```
 
-- **OCCT:** `GProp_PEquation` / `GProp_PGProps` line via `OCCTGPropLineSegment`.
+- **Returns:** `nil` for two coincident endpoints, which give no direction to build a line from
+  (`gp_Dir` throws on the zero vector). That used to come back as a length of 0 with a centre of
+  (0,0,0), a plausible answer for a segment that has none (#609).
+- **OCCT:** `GProp_CelGProps` line via `OCCTGPropLineSegment`.
 
 ---
 
 ### `GeometryProperties.circularArc(center:normal:radius:u1:u2:)`
 
-Circular arc properties: returns `(arcLength, centerOfMass)`.
+Circular arc properties: returns `(arcLength, centerOfMass)`, or `nil` when OCCT rejects the input.
 
 ```swift
 public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
-                                radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)
+                                radius: Double, u1: Double, u2: Double) -> (arcLength: Double, center: SIMD3<Double>)?
 ```
 
 - **Parameters:** `u1`, `u2` — parametric start and end angles in radians.
-- **OCCT:** `GProp_PGProps` circular arc via `OCCTGPropCircularArc`.
+- **Returns:** `nil` for a zero normal vector, which gives no plane to build a circle in. A valid arc
+  with `u1 == u2` is **not** a rejection: it answers with an arc length of 0 and the correct centre,
+  because `GProp_CelGProps` computes the centroid analytically rather than by accumulating mass
+  (#609).
+- **OCCT:** `GProp_CelGProps` circular arc via `OCCTGPropCircularArc`.
 
 ---
 
@@ -1858,11 +1865,13 @@ public static func circularArc(center: SIMD3<Double>, normal: SIMD3<Double>,
 Compute the centroid of a point set. Returns `(pointCount, centroid)`.
 
 ```swift
-public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>)
+public static func pointSetCentroid(_ points: [SIMD3<Double>]) -> (count: Double, centroid: SIMD3<Double>?)
 ```
 
 - **Parameters:** `points` — array of 3D points.
-- **Returns:** The point count (as `Double`) and the centroid.
+- **Returns:** The point count (as `Double`) and the centroid, which is `nil` for an empty set. An
+  empty set has no centroid, and the (0,0,0) reported before #609 was indistinguishable from the
+  centroid of a set centred on the origin.
 - **OCCT:** `GProp_PGProps` point set via `OCCTGPropPointSetCentroid`.
 
 ---
@@ -1890,8 +1899,8 @@ public static func sphereVolume(radius: Double) -> Double
 - **OCCT:** `GProp_PGProps` sphere volume via `OCCTGPropSphereVolume`.
 - **Example:**
   ```swift
-  let (len, com) = GeometryProperties.lineSegment(from: .zero, to: SIMD3(3, 4, 0))
-  // len == 5.0, com == SIMD3(1.5, 2.0, 0)
+  let seg = GeometryProperties.lineSegment(from: .zero, to: SIMD3(3, 4, 0))
+  // seg?.length == 5.0, seg?.center == SIMD3(1.5, 2.0, 0)
   ```
 
 ---

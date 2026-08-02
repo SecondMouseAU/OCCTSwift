@@ -794,10 +794,14 @@ public var conversionGap: Double { get }
 
 Result of linear mass property computation from polygon points.
 
+`centerOfMass` is `nil` when `mass` is 0, which covers a polygon of fewer than two points and one
+whose points are all coincident. The three separate `centerX`/`centerY`/`centerZ` fields it replaced
+could not express "no centroid", and reported (0,0,0) instead (#609).
+
 ```swift
 public struct MeshCinertResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -859,11 +863,15 @@ Result of mesh property computation.
 ```swift
 public struct MeshPropsResult {
     public let mass: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
 `mass` is surface area when `type == .surface`, or enclosed volume when `type == .volume`.
+
+`centerOfMass` is `nil` when `mass` is 0, which covers both an untriangulated face and a volume
+contribution that cancels. The mass itself stays non-optional because a zero contribution is a real
+answer for a caller summing over a shell (#609).
 
 ---
 
@@ -1179,7 +1187,7 @@ Curve linear inertia properties (arc length and centre of mass).
 ```swift
 public struct CurveInertia {
     public let length: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -1193,13 +1201,14 @@ Computes linear inertia (arc length and centre of mass) for this edge.
 public var curveInertia: CurveInertia { get }
 ```
 
-- **Returns:** `CurveInertia` with `length` and centre of mass coordinates.
+- **Returns:** `CurveInertia` with `length` and an optional `centerOfMass`, which is `nil` when the
+  length is 0 and there is no centroid to report (#609).
 - **OCCT:** `BRepGProp_Cinert` via `OCCTBRepGPropCinert`.
 - **Example:**
   ```swift
   let inertia = edge.curveInertia
   print("length:", inertia.length)
-  print("center:", inertia.centerX, inertia.centerY, inertia.centerZ)
+  print("center:", inertia.centerOfMass as Any)
   ```
 
 ---
@@ -1213,7 +1222,7 @@ Face surface inertia properties (area and centre of mass).
 ```swift
 public struct FaceSurfaceInertia {
     public let area: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
     public let epsilon: Double
 }
 ```
@@ -1230,7 +1239,8 @@ Computes surface inertia (area and centre of mass) for this face.
 public var surfaceInertia: FaceSurfaceInertia { get }
 ```
 
-- **Returns:** `FaceSurfaceInertia` with `area` and centre of mass (`epsilon` = 0).
+- **Returns:** `FaceSurfaceInertia` with `area` and an optional centre of mass (`epsilon` = 0). The
+  centre is `nil` when the area is 0 (#609).
 - **OCCT:** `BRepGProp_Sinert` via `OCCTBRepGPropSinert`.
 - **Example:**
   ```swift
@@ -1249,7 +1259,8 @@ public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 ```
 
 - **Parameters:** `epsilon` — target integration error bound.
-- **Returns:** `FaceSurfaceInertia` with `area`, centre of mass, and actual `epsilon` achieved.
+- **Returns:** `FaceSurfaceInertia` with `area`, an optional centre of mass, and the actual
+  `epsilon` achieved.
 - **OCCT:** `BRepGProp_Sinert` adaptive overload via `OCCTBRepGPropSinertAdaptive`.
 
 ---
@@ -1260,10 +1271,16 @@ public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia
 
 Face volume inertia contribution.
 
+`volume` stays non-optional because a zero contribution is a real, useful answer: this is the
+divergence-theorem decomposition, so a face whose plane contains the reference point contributes
+exactly nothing and a caller summing over a shell needs that 0. `centerOfMass` is `nil` there,
+because a zero contribution has no centroid and the (0,0,0) reported before #609 was the framework's
+location seed.
+
 ```swift
 public struct FaceVolumeInertia {
     public let volume: Double
-    public let centerX: Double, centerY: Double, centerZ: Double
+    public let centerOfMass: SIMD3<Double>?
 }
 ```
 
@@ -1277,7 +1294,7 @@ Computes the volume inertia contribution from this face (relative to the origin)
 public var volumeInertia: FaceVolumeInertia { get }
 ```
 
-- **Returns:** `FaceVolumeInertia` with signed `volume` and centre of mass.
+- **Returns:** `FaceVolumeInertia` with signed `volume` and an optional centre of mass.
 - **OCCT:** `BRepGProp_Vinert` via `OCCTBRepGPropVinert`.
 - **Example:**
   ```swift

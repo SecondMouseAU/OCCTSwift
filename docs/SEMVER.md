@@ -17,7 +17,7 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with five recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build, and [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip.
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with five recorded exceptions: [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places, [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return without breaking the build, [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one, also without breaking the build, and [#568](#recorded-exception-unreleased-an-unresolvable-sub-shape-index-refuses-the-call-568) makes five more entry points refuse an index they used to skip. A sixth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -29,7 +29,31 @@ A major bump is reserved for two events, either of which alone is sufficient:
 
 2. **Breaking change to the public Swift API.** A removed type, a renamed method, a changed return type, a tightened parameter type, a raised platform floor — anything a consumer might have to fix on their side after pinning forward. This is rare within a major line because we promise stability there; if it happens, it triggers a major bump of the affected package (and possibly the cohort, if the change ripples downstream).
 
-The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0). The next major bump is reserved for OCCT 9.0 (no announced date).
+The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0).
+
+#### Held for the next major: v2.0.0
+
+The exceptions recorded below were each taken on the same terms: one or a few breaks, none
+shimmable, each named with its migration before the tag. **Some changes are too broad for that**,
+and rather than stretch the exception mechanism to cover them they are held for **v2.0.0**.
+
+**What makes it a major is Rule 2 above**, the accumulated breaking changes to the public Swift API,
+not the OCCT version. Nothing in the trigger table changes: an 8.0.0 to 8.0.1 re-pin is a MINOR on
+its own, and no single held entry forces a major on its own either.
+
+v2.0.0 is not scheduled by a date. In practice it will be cut once the in-flight correctness work is
+finished, and the OCCT 8.0.1 re-pin is expected to ride along with it rather than to trigger it. A
+major for an OCCT major (8.x to 9.x) remains a separate, independently sufficient trigger.
+
+**A release cut before then must not include a `CHANGELOG.md` entry marked as containing source
+breaks.** Those entries name every break with its migration up front, which is the same treatment an
+exception gets at tag time.
+
+Currently held:
+
+| Entry | Breaks | Why held rather than taken as an exception |
+|---|---|---|
+| [#609](CHANGELOG.md#unreleased-fix-zero-mass-brepgprop-results-were-returned-as-successful-answers-609), zero-mass `BRepGProp` results | 12 named signature changes across the mass-property surface, all compile errors, all with a documented migration | Scale. The four exceptions below cover one to six call-site shapes each; this one moves the whole mass-property surface at once, and a consumer measuring geometry would meet it everywhere rather than at a named method |
 
 #### Recorded exception: v1.17.0 (2026-07-29)
 

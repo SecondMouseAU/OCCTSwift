@@ -667,7 +667,13 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
     if (!shape || !outAxes || maxAxes <= 0) return -1;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        // A zero-mass framework has three equal (zero) moments, so GProp_PrincipalProps reports
+        // BOTH HasSymmetryPoint() and HasSymmetryAxis() as true and the branch below hands back
+        // three orthonormal axes through the location origin. Measured on a face, edge, wire and
+        // vertex alike: spherical symmetry, from math_Jacobi's identity basis on a zero matrix.
+        // Inertial symmetry detection is a volume question, so outside the volume domain the
+        // answer is "no axes found", not "found three". See #609.
+        if (!occtVolumeMassProperties(shape->shape, props)) return 0;
         gp_Pnt cm = props.CentreOfMass();
         GProp_PrincipalProps pp = props.PrincipalProperties();
         double Ix, Iy, Iz;
@@ -3298,15 +3304,15 @@ double OCCTShapeBoundingDiagonal(OCCTShapeRef shape) {
     } catch (...) { return 0; }
 }
 
-void OCCTShapeCentroid(OCCTShapeRef shape, double* x, double* y, double* z) {
-    *x = *y = *z = 0;
-    if (!shape) return;
+bool OCCTShapeCentroid(OCCTShapeRef shape, double* x, double* y, double* z) {
+    if (!shape || !x || !y || !z) return false;
     try {
         GProp_GProps props;
-        BRepGProp::VolumeProperties(shape->shape, props);
+        if (!occtVolumeMassProperties(shape->shape, props)) return false;
         gp_Pnt cg = props.CentreOfMass();
         *x = cg.X(); *y = cg.Y(); *z = cg.Z();
-    } catch (...) {}
+        return true;
+    } catch (...) { return false; }
 }
 
 double OCCTShapeTotalEdgeLength(OCCTShapeRef shape) {
