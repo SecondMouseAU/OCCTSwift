@@ -1104,9 +1104,12 @@ extension Surface {
     /// - Parameters:
     ///   - other: The other surface
     ///   - tolerance: Intersection tolerance
-    ///   - maxCurves: Maximum number of intersection curves
+    ///   - maxCurves: Output *capacity* (default 50), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of intersection curves
     public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurves: Int = 50) -> [Curve3D] {
+        let maxCurves = Sampling.capacity(maxCurves)
+        guard maxCurves > 0 else { return [] }
         var handles = [OCCTCurve3DRef?](repeating: nil, count: maxCurves)
         let n = Int(OCCTSurfaceIntersect(handle, other.handle, tolerance, &handles, Int32(maxCurves)))
         return (0..<n).compactMap { i in

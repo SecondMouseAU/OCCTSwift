@@ -279,6 +279,76 @@ suites with 41 issues, and the test pinning the *preserved* windowed primary pat
 it must. The 2D sweep's ground-truth anchor was separately proved non-vacuous by over-reporting the
 distance in the helper: 9 failures with `abs()`, 0 without it.
 
+#### The 21 result-buffer capacities #558's sweep never reached (#622)
+
+#558 bounded 28 *sampling* entry points and introduced `Sampling.capacity(_:)` /
+`Sampling.requested(_:atLeast:)`. A review found `Shape.raycast(origin:direction:tolerance:maxHits:)`
+with the identical footgun and named three more sites. Re-running #558's own measurement against the
+current tree found **21**, not 4 — and two of the four the review named do not survive it at all:
+`MedialAxis.drawArc` was already bounded by #558 itself, and both quoted `Document.swift` line
+numbers land on unrelated code. The named list was neither complete nor correct, which is the same
+lesson #558 recorded when its census said 14 and its measurement said 28.
+
+The reason the sweep stopped short is a scoping one, not an oversight: #558 scoped itself to
+*samplers*, and these 21 are **result-buffer capacities** on picking, spatial search, projection,
+intersection, hatching, text conversion and directory listing. Same mechanism throughout — a
+caller-supplied number sizes a Swift allocation and is then cast to the `int32_t` the bridge takes
+its capacity in, so `Array(repeating:count:)` traps on a negative and `Int32(_:)` traps past
+`Int32.max`.
+
+Measured one case per process, since a trap takes the whole harness down with it. 18 of the 21 are
+drivable from a standalone binary; **all 18 failed at `Int(Int32.max) + 1`** — 2 aborted immediately
+with `Fatal error: Not enough memory` and 16 ground past a 40-second timeout on an allocation
+nothing can serve. **12 of the 18 also aborted on `-1`**, inside `Array(repeating:count:)`, before
+any bound could be consulted. The remaining 3 (`Selector.pick`'s three overloads) need a live
+selector and were converted on inspection, then covered in-process. After the fix all 18 return
+their documented value at both inputs.
+
+The sites, by owning type: `Shape.raycast`, `Shape.allDistanceSolutions`, `Shape.selfIntersectionPairs`,
+`Curve3D.extrema` / `.intersections(with:maxHits:)` / `.splitAtContinuity` / `.projectPointAll`,
+`Curve2D.splitAtContinuity`, `Surface.intersections(with:maxCurves:)` / `.projectPointAll`,
+`KDTree.kNearest` / `.rangeSearch` / `.boxSearch`, `Selector.pick` (all three overloads),
+`HatchPattern.generate`, `UnicodeUtils.convertFromUnicode`, `DirectoryIterator.list`,
+`FileIterator.list`, and `LogSample.sample`.
+
+**The contract is #558's, not a fifth one.** 20 of the 21 are capacities: the algorithm decides how
+many results exist and the number only truncates, so they clamp into `0...Sampling.maximumSampleCount`
+and an absurd capacity returns the *same* answer rather than an empty one. The exception is
+`LogSample.sample(from:to:count:)`, whose bridge fills the buffer exactly — that is a *request*, so
+it rejects outside `1...ceiling` rather than silently handing back 10 million values for a
+10-billion request. Exactly the split #558 drew between `Curve3D.drawAdaptive` and
+`MedialAxis.drawArc`.
+
+**A separate, pre-existing defect surfaced while building the fixture and is *not* fixed here:**
+`Curve3D.extrema(with:maxCount:)` SIGSEGVs (uncatchable) on two **parallel** curves at *any*
+capacity — measured at `maxCount` 2, 20, 100, 1e4, 1e6, 1e7 and `Int32.max + 1`, all signal 11,
+including the method's own default of 20. The bridge's own loop is correctly bounded by
+`min(NbExtrema(), maxCount)`, so the crash is inside `GeomAPI_ExtremaCurveCurve`'s construction: the
+documented `BRepExtrema_ExtCC` parallel hazard, on the `GeomAPI` path. It has nothing to do with the
+count bound, and the regression fixture uses skew curves deliberately so that it tests the bound
+rather than the crash.
+
+**Also measured, also not fixed here, for the same "do not invent a contract" reason:** the math
+solver/optimizer family (`MathSolver.leastSquares`, `.uzawa`, `MathOptimizer`'s `variables:`
+parameters and friends) has the same trapping shape — confirmed on two of them, aborting on both
+`-1` and `Int32.max + 1`. But those numbers are problem *dimensions* that must agree with the
+caller's own `matrix` / `startPoint` arrays, not sampling capacities; the right bound is a
+consistency check against those arrays, and forcing them through a *sampling* ceiling would be
+precisely the fifth behaviour #622 asked to avoid. Filed separately rather than guessed at here.
+
+Regression suite: `Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift`, 13 tests covering all
+21 entry points. They run in-process only because the fix is what lets them: before it, every
+assertion in them would have aborted the test harness rather than failing. They compare
+`.count == 0` rather than reading `.isEmpty`, for the reason #558 recorded — Swift Testing prints
+the captured sub-expression on failure, and a regression returning 10 million results would print
+all 10 million of them.
+
+Confirmed by injection, one bound at a time: with the ceiling removed from the bound it covers (and
+the lower bound left in place, so the edit still compiles and the injection is exactly "the ceiling
+is gone"), **all 13 tests stopped passing** — 12 aborting with signal 5 and `raycast` dying mid-run
+on its ~189 GB allocation before it could report an assertion. Each was restored by exact reverse
+replacement and re-verified afterwards.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real

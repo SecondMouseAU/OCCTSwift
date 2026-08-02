@@ -1103,7 +1103,7 @@ public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int =
 - **Parameters:**
   - `center` — center of the search sphere.
   - `radius` — radius of the search sphere.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the sphere.
 - **OCCT:** `NCollection_KDTree` range query.
 - **Example:**
@@ -1125,7 +1125,7 @@ public func boxSearch(min: SIMD3<Double>, max: SIMD3<Double>, maxResults: Int = 
 - **Parameters:**
   - `min` — minimum corner of the box.
   - `max` — maximum corner of the box.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the box.
 - **OCCT:** `NCollection_KDTree` box query.
 - **Example:**

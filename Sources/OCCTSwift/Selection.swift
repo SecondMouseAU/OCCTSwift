@@ -50,7 +50,10 @@ extension Shape {
     ///   - tolerance: Intersection tolerance (default: 0.001). Since #529 this bounds the
     ///     intersection only; the surface normal reported for each hit is computed at the same
     ///     resolution as every other local-property call, so raising it no longer erases normals.
-    ///   - maxHits: Maximum number of hits to return (default: 100)
+    ///   - maxHits: Output *capacity* (default: 100), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622). The ray decides how
+    ///     many surfaces it actually crosses, so this only truncates — clamping an unservable
+    ///     capacity returns the same hits, not a coarser set.
     /// - Returns: Array of ray hits sorted by distance
     public func raycast(
         origin: SIMD3<Double>,
@@ -58,18 +61,19 @@ extension Shape {
         tolerance: Double = 0.001,
         maxHits: Int = 100
     ) -> [RayHit] {
-        guard maxHits > 0 else { return [] }
-        
+        let capacity = Sampling.capacity(maxHits)
+        guard capacity > 0 else { return [] }
+
         // Allocate buffer for hits
-        var hitBuffer = [OCCTRayHit](repeating: OCCTRayHit(), count: maxHits)
-        
+        var hitBuffer = [OCCTRayHit](repeating: OCCTRayHit(), count: capacity)
+
         let hitCount = OCCTShapeRaycast(
             handle,
             origin.x, origin.y, origin.z,
             direction.x, direction.y, direction.z,
             tolerance,
             &hitBuffer,
-            Int32(maxHits)
+            Int32(capacity)
         )
         
         guard hitCount > 0 else { return [] }

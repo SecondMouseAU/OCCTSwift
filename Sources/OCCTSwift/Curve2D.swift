@@ -2780,8 +2780,13 @@ extension Curve2D {
     }
 
     /// Split this curve at C1 discontinuities.
+    ///
+    /// - Parameter maxSegments: Output *capacity* (default 32), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     public func splitAtContinuity(continuity: Int = 1, tolerance: Double = 1e-6,
                                   maxSegments: Int = 32) -> [Curve2D] {
+        let maxSegments = Sampling.capacity(maxSegments)
+        guard maxSegments > 0 else { return [] }
         var refs = [OCCTCurve2DRef?](repeating: nil, count: maxSegments)
         let n = refs.withUnsafeMutableBufferPointer { buf in
             OCCTCurve2DSplitAtContinuity(handle, Int32(continuity), tolerance,

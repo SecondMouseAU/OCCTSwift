@@ -535,7 +535,9 @@ public func splitAtContinuity(
 
 The curve is first converted to BSpline form, then split at C1 (or higher) discontinuities. For `continuity > 1` the implementation returns the single converted BSpline unchanged (higher-order splitting not yet implemented). Returns an empty array on failure.
 
-- **Parameters:** `continuity` — continuity level to split at (0=C0, 1=C1); `tolerance` — discontinuity detection tolerance; `maxSegments` — maximum output segment count.
+- **Parameters:** `continuity` — continuity level to split at (0=C0, 1=C1); `tolerance` —
+  discontinuity detection tolerance; `maxSegments` — output *capacity* (default 32), clamped into
+  `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of BSpline curve segments (at least one on success).
 - **OCCT:** `GeomConvert::C0BSplineToArrayOfC1BSplineCurve` (for `continuity ≤ 1`).
 - **Example:**

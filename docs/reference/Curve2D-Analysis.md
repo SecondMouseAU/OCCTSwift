@@ -1074,7 +1074,8 @@ public func splitAtContinuity(
 ) -> [Curve2D]
 ```
 
-- **Parameters:** `continuity` — 0=C0, 1=C1, 2=C2; `tolerance` — detection tolerance; `maxSegments` — upper bound on returned segments.
+- **Parameters:** `continuity` — 0=C0, 1=C1, 2=C2; `tolerance` — detection tolerance;
+  `maxSegments` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of sub-curves (one per continuous segment); may be empty if the curve has no discontinuities or the split fails.
 - **OCCT:** `Geom2dConvert::C0BSplineToArrayOfC1BSplineCurve` and related splitting utilities.
 - **Example:**
