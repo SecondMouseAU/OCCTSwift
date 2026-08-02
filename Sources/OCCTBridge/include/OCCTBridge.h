@@ -1748,12 +1748,18 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
 /// Fillet specific edges with linear radius interpolation
 ///
 /// Shares occtShapeFilletEdgeList with OCCTShapeFilletEdges and OCCTShapeBlendEdges. #489
+///
+/// The law goes to each edge's own slot in its own contour, not to (NbContours(), 1). This is
+/// observable here despite the batch sharing one law: with startRadius != endRadius, two
+/// tangent-continuous edges written to slot 1 measure exactly as filleting the first alone
+/// (10273.238348 on a slot rim at 1 -> 4) against 10297.711861 with each in its own slot. Done with
+/// OCCT's own one-call Add(R1, R2, E), which is Add(E) + the same slot resolution + SetRadius. #612
 /// @param shape The shape to fillet
 /// @param edgeIndices Array of edge indices (0-based; an index naming no edge of `shape` rejects
-///   the whole call, #520)
+///   the whole call, #520). An edge OCCT declines to add is skipped, as Add(Radius, E) skips it.
 /// @param edgeCount Number of edges to fillet
-/// @param startRadius Radius at start of each edge; must be > 0
-/// @param endRadius Radius at end of each edge; must be > 0
+/// @param startRadius Radius at the start of each named edge's law; must be > 0
+/// @param endRadius Radius at the end of each named edge's law; must be > 0
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
                                          int32_t edgeCount, double startRadius, double endRadius);
@@ -5437,9 +5443,17 @@ typedef struct {
 /// The multi-edge radius-law entry point, sharing occtFilletAddEdges with the other four fillet
 /// edge-list functions and occtFilletSetRadiusProfile with OCCTShapeFilletVariable
 /// (OCCTBridge_Internal.h). Its indices were 1-based until #520 made the family agree.
+///
+/// Each edge's law is written to that edge's own slot in that edge's own contour, resolved with
+/// Contour(E) and NbEdges(IC)/Edge(IC, J). It used to be written to (NbContours(), 1): the first is
+/// the edge's contour only when every Add(edge) creates one — a tangent-continuous edge extends an
+/// existing contour instead — and the second collapsed every edge of a contour onto one slot, so
+/// only the last law of a tangent chain survived. #612
 /// @param shape The shape
 /// @param edgeIndices Array of edge indices (0-based since #520; an index naming no edge of
-///   `shape` rejects the whole call)
+///   `shape` rejects the whole call). Tangent-continuous edges share a contour but not a slot, so
+///   each keeps its own law; the same index twice writes one slot twice and the later law wins. An
+///   edge OCCT declines to add has no slot and is skipped, as Add(Radius, E) skips it. #612
 /// @param edgeCount Number of edges
 /// @param radiusPoints Array of parameter-radius pairs per edge (flattened: edge0[rp0,rp1,...], edge1[rp0,...], ...);
 ///   every radius must be > 0, and each edge's parameters must lie in [0, 1] and strictly increase

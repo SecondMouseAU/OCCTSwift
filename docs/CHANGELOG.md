@@ -279,6 +279,74 @@ suites with 41 issues, and the test pinning the *preserved* windowed primary pat
 it must. The 2D sweep's ground-truth anchor was separately proved non-vacuous by over-reporting the
 distance in the helper: 9 failures with `abs()`, 0 without it.
 
+#### A fillet radius law goes to the edge's own slot, in the edge's own contour (#612)
+
+`filletEvolving`, `filleted(edges:startRadius:endRadius:)` and `filletedVariable` all wrote their
+law with `SetRadius(law, NbContours(), 1)`. Both coordinates were wrong, independently.
+
+**The contour.** `NbContours()` is "the contour that exists after the most recent `Add`", which is
+the edge's own contour only when every `Add` creates one — a tangent-continuous edge **extends** an
+existing contour instead. Measured on a rounded-slot prism (two straight sides joined by two
+semicircular ends, extruded 20mm), adding a top-rim edge, a bottom-rim edge, then a second top-rim
+edge:
+
+| after | `NbContours()` | `Contour(edge)` |
+|---|---|---|
+| add top-rim edge | 1 | 1 |
+| add bottom-rim edge | 2 | 2 |
+| add second top-rim edge | 2 | **1** |
+
+The third edge's law was written to contour 2, replacing the bottom rim's own. Asking for top rim
+2mm and bottom rim 5mm returned **10271.088459** — byte-identical to filleting *both* rims at 2mm —
+against the intended **9899.533264**.
+
+**The slot.** `SetRadius`'s third argument, `IinC`, is the edge's index *within* the contour and
+selects a distinct per-edge slot. Hardcoding it to `1` sent every edge of a tangent chain to the
+same slot, so only the last survived. On the same rim, filleting the straight side at 2mm and its
+tangent arc at 5mm:
+
+| | volume |
+|---|---|
+| both laws at slot 1 (the old idiom) | 9974.608333 — the arc's 5mm overwrote the line's 2mm |
+| each law in its own slot | **10139.793468** — both honoured |
+| `blendedEdges([(line, 2), (arc, 5)])` | **10139.793468** — byte-identical |
+
+`Add(Radius, E)`, which backs `blendedEdges`, resolves that slot itself, so it always honoured the
+very request `filletEvolving` could not express. **There was never a "one law per contour" limit to
+work around** — the conflict was an artefact of the hardcoded `1`. #612's own example (a taper on
+one edge, a constant on its tangent neighbour) is an ordinary request and now builds, at
+10171.225408.
+
+The slot is visible on a single edge too: a 1 → 4 taper on one added edge measures 10273.238348,
+10297.711861, 10343.333856, 10402.168644 at slots 1, 2, 3, 4.
+
+**The linear entry point was observably wrong after all.** Its batch shares one `(startRadius,
+endRadius)`, so with a *constant* law two edges of a contour rewrite the same number and nothing
+moves — but a genuine taper does not: two tangent-continuous edges at 1 → 4 measured
+**10273.238348**, exactly what filleting the first alone produces, against **10297.711861** with
+each law in its own slot. It now uses OCCT's own one-call `Add(R1, R2, E)`, which is `Add(E)` plus
+the same slot resolution plus `SetRadius` — verified identical to resolving the slot by hand, and it
+declines an unfilletable edge by construction. `OCCTShapeHistoryFromFilletEdgeVariable` moves to the
+same overload: its `SetRadius(radii, 1, 1)` was in fact safe, because a single added edge always
+lands at index 1 of its contour's spine (measured on all four edges of a tangent rim) and a
+*literal* 1 is bounds-checked upstream, but the idiom is gone.
+
+**And `filletedVariable` on such an edge did not merely pick a wrong index — it SIGSEGV'd.** When
+OCCT declines an edge outright (a free-boundary edge of an open shell; 4 of the 12 edges of a box
+missing one face), `Contour(E)` is 0 and `NbContours()` is 0, so the call became
+`SetRadius(law, 0, 1)` — the unchecked low side of the contour index #505 measured. That is an OS
+signal, uncatchable in process. Confirmed by re-injecting the old code: `swift test` exits with
+signal 11. Such an edge is now resolved to no slot and skipped, which is exactly what
+`Add(Radius, E)` already does with it — measured identical to the digit, **surface area
+465.09733552923257** over all 12 edges of that shell, whichever entry point applies it, so the
+edge-list fillet family agrees. A batch in which *every* edge is declined leaves zero contours and
+fails in `Build()`, so an all-refused request still returns `nil` rather than the unfilleted input.
+
+Measure an open shell by **area**, not volume: it is not a solid, so `BRepGProp::VolumeProperties`
+fabricates a number for it — the very defect class #605/#609 exist to reject — and that number is
+not even a property of the shape. It ranges 746.83 to 748.28 depending on which of the six faces is
+dropped, while the surface area is 465.097 for all six.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
