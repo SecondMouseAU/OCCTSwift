@@ -339,7 +339,9 @@ The direction vector is automatically normalised by `gp_Dir`. Intersections beyo
     dimensionless *sine* tolerance: any value at or above 1 rejected every hit normal, so
     `raycast(tolerance: 1.0)` on a sphere reported `(0, 0, 1)` for both hits, and at 5.0 a box's
     downward face came back pointing up.
-  - `maxHits` — maximum number of hits to collect (default 100).
+  - `maxHits` — output *capacity* (default 100), clamped into `0...Sampling.maximumSampleCount`
+    (10,000,000); 0 or less returns empty (#622). The ray decides how many surfaces it crosses,
+    so the capacity only truncates: clamping an unservable one returns the same hits.
 - **Returns:** Array of `RayHit` sorted by ascending `distance`; empty if no intersection.
 - **OCCT:** `IntCurvesFace_ShapeIntersector::Load` / `Perform` / `NbPnt` / `Pnt` / `WParameter` / `Face` / `UParameter` / `VParameter`; normals via `BRepAdaptor_Surface` + `BRepLProp_SLProps` at the shared `occtLocalPropsResolution()`.
 - **Example:**
@@ -703,7 +705,7 @@ Results are sorted by depth (nearest first). Only shapes and sub-shape modes tha
   - `pixel` — pixel coordinate in the viewport (origin at top-left).
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels `(width, height)`.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` sorted by ascending depth; empty if nothing was hit.
 - **OCCT:** `OCCTHeadlessSelector::PickPoint` → `SelectMgr_ViewerSelector::Pick` (point volume) + `SelectMgr_SortCriterion` for depth ordering.
 - **Example:**
@@ -733,7 +735,7 @@ public func pick(rect: (min: SIMD2<Double>, max: SIMD2<Double>),
   - `rect` — rectangle defined by `(min, max)` pixel corners.
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes intersecting the rectangle.
 - **OCCT:** `OCCTHeadlessSelector::PickRect` → `SelectMgr_ViewerSelector::Pick` (box volume).
 - **Example:**
@@ -765,7 +767,7 @@ The polygon must have at least 3 points. The last point is automatically connect
   - `polygon` — array of pixel coordinates defining the polygon vertices (minimum 3 points).
   - `camera` — camera providing the projection and view transforms.
   - `viewSize` — viewport dimensions in pixels.
-  - `maxResults` — maximum number of results (default 32).
+  - `maxResults` — output *capacity* (default 32), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `PickResult` for all shapes whose sensitive primitives fall inside the polygon.
 - **OCCT:** `OCCTHeadlessSelector::PickPoly` → `SelectMgr_ViewerSelector::Pick` (polyline volume); pixel XY pairs passed as interleaved `double` array.
 - **Example:**

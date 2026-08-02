@@ -6857,12 +6857,15 @@ extension Shape {
     /// The shape is meshed automatically.
     /// - Parameters:
     ///   - tolerance: Overlap tolerance (default: 0.0).
-    ///   - maxPairs: Maximum number of pairs to return (default: 100).
+    ///   - maxPairs: Output *capacity* (default: 100), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     ///   - deflection: Linear mesh deflection (mm) for the detection triangulation. Default `0.1`.
     /// - Returns: Array of overlapping face index pairs, empty if none found.
     public func selfIntersectionPairs(tolerance: Double = 0.0,
                                        maxPairs: Int = 100,
                                        deflection: Double = 0.1) -> [OverlapPair] {
+        let maxPairs = Sampling.capacity(maxPairs)
+        guard maxPairs > 0 else { return [] }
         var idx1 = [Int32](repeating: 0, count: maxPairs)
         var idx2 = [Int32](repeating: 0, count: maxPairs)
         let count = OCCTShapeSelfIntersectionPairs(handle, tolerance, &idx1, &idx2, Int32(maxPairs), deflection)
@@ -8597,7 +8600,12 @@ public enum UnicodeUtils {
     }
 
     /// Convert from UTF-8 to current format.
+    ///
+    /// - Parameter maxSize: Output buffer *capacity* in bytes (default 4096), clamped into
+    ///   `0...` ``Sampling/maximumSampleCount``; 0 or less returns `nil` (#622).
     public static func convertFromUnicode(_ utf8Input: String, maxSize: Int = 4096) -> String? {
+        let maxSize = Sampling.capacity(maxSize)
+        guard maxSize > 0 else { return nil }
         var output = [CChar](repeating: 0, count: maxSize)
         guard OCCTUnicodeConvertFromUnicode(utf8Input, &output, Int32(maxSize)) else { return nil }
         let result = output.withUnsafeBufferPointer { buf in
@@ -8688,8 +8696,13 @@ public enum DraftInfo {
 /// Logarithmic sampling utilities.
 public enum LogSample {
     /// Compute logarithmically spaced parameter values between a and b.
+    ///
+    /// - Parameter n: A *request* for exactly this many values, honoured in full or not at all:
+    ///   outside `1...` ``Sampling/maximumSampleCount`` this returns empty rather than a coarser
+    ///   sampling than was asked for (#622). The bridge fills the buffer exactly, so unlike a
+    ///   capacity there is nothing here to truncate.
     public static func sample(from a: Double, to b: Double, count n: Int) -> [Double] {
-        guard n > 0 else { return [] }
+        guard let n = Sampling.requested(n, atLeast: 1) else { return [] }
         var params = [Double](repeating: 0, count: n)
         OCCTLogSample(a, b, Int32(n), &params)
         return params
@@ -9138,7 +9151,12 @@ public enum DirectoryIterator {
     }
 
     /// List directory names matching mask.
+    ///
+    /// - Parameter maxCount: Output *capacity* (default 1000), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String] {
+        let maxCount = Sampling.capacity(maxCount)
+        guard maxCount > 0 else { return [] }
         var names = [UnsafeMutablePointer<CChar>?](repeating: nil, count: maxCount)
         let count = Int(OCCTDirectoryList(path, mask, &names, Int32(maxCount)))
         var result: [String] = []
@@ -9170,7 +9188,12 @@ public enum FileIterator {
     }
 
     /// List file names matching mask.
+    ///
+    /// - Parameter maxCount: Output *capacity* (default 1000), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     public static func list(path: String, mask: String = "*", maxCount: Int = 1000) -> [String] {
+        let maxCount = Sampling.capacity(maxCount)
+        guard maxCount > 0 else { return [] }
         var names = [UnsafeMutablePointer<CChar>?](repeating: nil, count: maxCount)
         let count = Int(OCCTFileList(path, mask, &names, Int32(maxCount)))
         var result: [String] = []
@@ -12324,7 +12347,12 @@ extension Curve3D {
     }
 
     /// Global point-to-curve projection returning all extrema. Returns array of (parameter, distance).
+    ///
+    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(parameter: Double, distance: Double)] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
         var params = [Double](repeating: 0, count: maxResults)
         var distances = [Double](repeating: 0, count: maxResults)
         let n = Int(OCCTExtremaPointCurve(handle, point.x, point.y, point.z,
@@ -12344,7 +12372,12 @@ extension Surface {
     }
 
     /// Global point-to-surface projection returning all extrema. Returns array of (u, v, distance).
+    ///
+    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(u: Double, v: Double, distance: Double)] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
         var us = [Double](repeating: 0, count: maxResults)
         var vs = [Double](repeating: 0, count: maxResults)
         var distances = [Double](repeating: 0, count: maxResults)

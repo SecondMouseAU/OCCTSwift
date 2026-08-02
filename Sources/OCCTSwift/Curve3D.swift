@@ -785,9 +785,12 @@ extension Curve3D {
     ///
     /// - Parameters:
     ///   - other: The other curve
-    ///   - maxCount: Maximum number of extrema to return
+    ///   - maxCount: Output *capacity* (default 20), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of extremal distance results
     public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaResult] {
+        let maxCount = Sampling.capacity(maxCount)
+        guard maxCount > 0 else { return [] }
         var buffer = [OCCTCurveExtrema](repeating: OCCTCurveExtrema(), count: maxCount)
         let n = Int(OCCTCurve3DExtrema(handle, other.handle, &buffer, Int32(maxCount)))
         return (0..<n).map { i in
@@ -805,9 +808,12 @@ extension Curve3D {
     ///
     /// - Parameters:
     ///   - surface: The surface to intersect with
-    ///   - maxHits: Maximum number of hits to return
+    ///   - maxHits: Output *capacity* (default 100), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     /// - Returns: Array of intersection points with parameters
     public func intersections(with surface: Surface, maxHits: Int = 100) -> [CurveSurfaceHit] {
+        let maxHits = Sampling.capacity(maxHits)
+        guard maxHits > 0 else { return [] }
         var buffer = [OCCTCurveSurfaceIntersection](repeating: OCCTCurveSurfaceIntersection(), count: maxHits)
         let n = Int(OCCTCurve3DIntersectSurface(handle, surface.handle, &buffer, Int32(maxHits)))
         return (0..<n).map { i in
@@ -2236,9 +2242,14 @@ extension Curve3D {
     }
 
     /// Split this curve at C1 discontinuities.
-    /// Returns array of BSpline segments. maxSegments limits output size.
+    ///
+    /// - Parameter maxSegments: Output *capacity* (default 32), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    /// - Returns: Array of BSpline segments.
     public func splitAtContinuity(continuity: Int = 1, tolerance: Double = 1e-6,
                                   maxSegments: Int = 32) -> [Curve3D] {
+        let maxSegments = Sampling.capacity(maxSegments)
+        guard maxSegments > 0 else { return [] }
         var refs = [OCCTCurve3DRef?](repeating: nil, count: maxSegments)
         let n = refs.withUnsafeMutableBufferPointer { buf in
             OCCTCurve3DSplitAtContinuity(handle, Int32(continuity), tolerance,

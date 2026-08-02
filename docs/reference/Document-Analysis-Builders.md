@@ -373,7 +373,7 @@ public func selfIntersectionPairs(tolerance: Double = 0.0,
 
 - **Parameters:**
   - `tolerance` — overlap tolerance (default `0.0`).
-  - `maxPairs` — maximum number of pairs to return (default `100`).
+  - `maxPairs` — output *capacity* (default `100`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
   - `deflection` — linear mesh deflection in mm for detection triangulation (default `0.1`).
 - **Returns:** Array of overlapping face index pairs; empty if none found.
 - **OCCT:** `BRepExtrema_SelfIntersection` via `OCCTShapeSelfIntersectionPairs`.

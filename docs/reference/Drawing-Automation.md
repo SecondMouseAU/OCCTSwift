@@ -730,7 +730,7 @@ Clips an infinite family of parallel lines at the given `spacing` against the bo
   - `direction` — direction of the hatch lines (need not be unit-length).
   - `spacing` — perpendicular distance between consecutive hatch lines.
   - `offset` — offset of the first hatch line from the origin along the perpendicular axis (default `0`).
-  - `maxSegments` — maximum number of output segments; acts as a safety cap (default `10000`).
+  - `maxSegments` — output *capacity* (default `10000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of `HatchSegment` values clipped inside `boundary`.
 - **OCCT:** `Hatch_Hatcher::AddLine` + `Hatch_Hatcher::Trim` — adds one directed line per spacing interval, then trims against each boundary edge.
 - **Example:**

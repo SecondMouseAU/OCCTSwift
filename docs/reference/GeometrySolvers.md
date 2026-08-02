@@ -1079,7 +1079,8 @@ public func kNearest(to point: SIMD3<Double>, k: Int) -> [(index: Int, squaredDi
 
 - **Parameters:**
   - `point` — the query point.
-  - `k` — number of neighbors to find.
+  - `k` — output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622). Fewer than `k` come back when the tree
+    holds fewer points.
 - **Returns:** Array of `(index, squaredDistance)` tuples sorted by distance. Note: distances are **squared**.
 - **OCCT:** `NCollection_KDTree` k-nearest query.
 - **Example:**
@@ -1103,7 +1104,7 @@ public func rangeSearch(center: SIMD3<Double>, radius: Double, maxResults: Int =
 - **Parameters:**
   - `center` — center of the search sphere.
   - `radius` — radius of the search sphere.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the sphere.
 - **OCCT:** `NCollection_KDTree` range query.
 - **Example:**
@@ -1125,7 +1126,7 @@ public func boxSearch(min: SIMD3<Double>, max: SIMD3<Double>, maxResults: Int = 
 - **Parameters:**
   - `min` — minimum corner of the box.
   - `max` — maximum corner of the box.
-  - `maxResults` — maximum number of results (default `1000`).
+  - `maxResults` — output *capacity* (default `1000`), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 0-based indices of points within the box.
 - **OCCT:** `NCollection_KDTree` box query.
 - **Example:**

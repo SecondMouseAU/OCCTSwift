@@ -580,7 +580,8 @@ public func intersections(with other: Surface, tolerance: Double = 1e-6, maxCurv
 
 Returns an empty array when the surfaces do not intersect. This is the earlier (v0.30.0) intersection method; see also `intersectionCurves(with:tolerance:)` added in v0.35.0.
 
-- **Parameters:** `other` — the second surface; `tolerance` — intersection tolerance (default `1e-6`); `maxCurves` — upper bound on the number of returned curves (default 50).
+- **Parameters:** `other` — the second surface; `tolerance` — intersection tolerance (default
+  `1e-6`); `maxCurves` — output *capacity* (default 50), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
 - **Returns:** Array of 3D intersection curves (may be empty).
 - **OCCT:** `GeomAPI_IntSS`.
 - **Example:**

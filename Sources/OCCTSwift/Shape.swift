@@ -6600,9 +6600,15 @@ extension Shape {
     /// Useful for finding multiple closest/farthest point pairs.
     /// - Parameters:
     ///   - other: The other shape
-    ///   - maxSolutions: Maximum number of solutions to return (default 32)
-    /// - Returns: Array of distance solutions, or nil on failure
+    ///   - maxSolutions: Output *capacity* (default 32), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns an empty array (**not** `nil`, as
+    ///     it did before #622 — the bridge answers -1 for a non-positive capacity and that was
+    ///     being reported as a failed measurement rather than as no room offered).
+    /// - Returns: Array of distance solutions, or `nil` on failure. No capacity is not a
+    ///   failure: it returns `[]`.
     public func allDistanceSolutions(to other: Shape, maxSolutions: Int = 32) -> [DistanceSolution]? {
+        let maxSolutions = Sampling.capacity(maxSolutions)
+        guard maxSolutions > 0 else { return [] }
         var buffer = [OCCTDistanceSolution](repeating: OCCTDistanceSolution(), count: maxSolutions)
         let count = OCCTShapeAllDistanceSolutions(handle, other.handle, &buffer, Int32(maxSolutions))
         guard count >= 0 else { return nil }

@@ -404,7 +404,10 @@ public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaRes
 
 Returns up to `maxCount` results. For simple queries where only the minimum distance matters, prefer `minDistance(to:)`.
 
-- **Parameters:** `other` — the second curve; `maxCount` — maximum number of extrema to return (default 20).
+- **Parameters:** `other` — the second curve; `maxCount` — output *capacity* (default 20), clamped
+  into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
+- **Warning:** SIGSEGVs (uncatchable) on two **parallel** curves, at every capacity including the
+  default — a `GeomAPI_ExtremaCurveCurve` defect unrelated to the count bound (#622).
 - **Returns:** Array of `CurveExtremaResult` values (may be empty if the algorithm finds nothing).
 - **OCCT:** `GeomAPI_ExtremaCurveCurve`.
 - **Example:**
@@ -430,7 +433,9 @@ public func intersections(with surface: Surface, maxHits: Int = 100) -> [CurveSu
 
 Returns an empty array when the curve does not pierce the surface. Both transverse and tangent intersections are returned.
 
-- **Parameters:** `surface` — the surface to intersect with; `maxHits` — upper bound on returned hits (default 100).
+- **Parameters:** `surface` — the surface to intersect with; `maxHits` — output *capacity*
+  (default 100), clamped into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less
+  returns empty (#622).
 - **Returns:** Array of `CurveSurfaceHit` values (may be empty).
 - **OCCT:** `GeomAPI_IntCS`.
 - **Example:**
