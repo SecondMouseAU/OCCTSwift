@@ -30,6 +30,12 @@ All 17 pins across the five workflow files were enumerated rather than just the 
 `v1` tag already resolves to a `node24` build — as are `gate-scripts`' own `actions/checkout@v7` and
 `actions/setup-python@v7`.
 
+**Bumping `actions/checkout` alone would not have cleared the warning.** The annotation on the base
+commit names two actions, not one — "the following actions target Node.js 20 ... `actions/cache@v4,
+actions/checkout@v4`" — because it is emitted once per job listing every Node 20 action in that job.
+Changing only the action the issue names would have left `actions/cache@v4` behind and the warning
+still standing, while the diff looked like a fix.
+
 **The target for each was read out of that action's `action.yml` at the pinned ref, not inferred from
 the version number**, and one action does not follow the pattern: `actions/github-script@v7` is
 `using: node20`, and node24 only arrives at v8. A sweep that made every pin say `v7` would have
