@@ -185,7 +185,7 @@ far the fitted surface moves. It also reinstated, in the documentation layer, th
 #491 existed to remove.
 
 The interesting part is not the one-line correction. A per-type reference page that restates a
-signature is a **copy**, and this tree holds 3426 such restatements.
+signature is a **copy**, and this tree holds 3427 such restatements.
 `Scripts/check-docs-defaults.py` parses every one of them, matches it to its declaration in
 `Sources/OCCTSwift`, and compares them position by position: **1460 defaults compared, 2 drifted**,
 both of them this one.
@@ -195,7 +195,8 @@ while exiting 0 is not a gate. The literals can differ. The docs can state a def
 does not have, so a required argument reads as optional. Or the source can state one the docs omit
 — which is also how a *source-side* addition hides behind an unchanged page, and it is the reason
 the comparison covers restatements carrying no defaults at all rather than only the 876 that do.
-Layout is not drift: `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` compare equal.
+(`--lenient` drops that third shape to a warning, for a tree still paying it down; the other two
+fail either way.) Layout is not drift: `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` compare equal.
 
 All of that depends on comparing against the **right** declaration, because several share one name
 and label list: `writeOBJ(to:deflection:)` is both `Document.writeOBJ` (deflection 1.0) and
@@ -212,16 +213,29 @@ an identically titled `### points(count:)`), then the page filename — and wher
 two candidates *disagreeing* about a default, the restatement is reported as `unverified` and
 fails, rather than being quietly decided by whichever one happened to match. A twin that merely
 lacks a default is still disambiguated by the doc's own defaults, so the ordinary deprecation
-shape stays quiet. On this tree: 2712 resolved uniquely, 504 by heading, 163 by filename, and
+shape stays quiet. On this tree: 2713 resolved uniquely, 504 by heading, 163 by filename, and
 **0 unverified**.
+
+Worth stating exactly, rather than leaving it implied. 129 doc sites across 67 signature groups
+still hold more than one candidate after narrowing, but 108 of those are skipped upstream — neither
+side states a default, so there is nothing to compare — and only **21 sites across 9 groups** reach
+the ambiguity guard at all. Of those, 0 disagree on a value, 4 have a twin merely lacking one, and
+17 agree outright; the 17 are protected by the rule rather than by luck, since any later divergence
+between them reports `unverified`. The carve-out is narrower than "safe": a **single-sided
+acquisition** — one overload gains a default, a bare twin remains, and the page states none — stays
+quiet. That is the mirror of the documented twin exemption, it can only ever miss a `source_only`
+-class defect, and it is strictly better than before this change, when all 108 were not examined at
+all.
 
 Exit status is 1 on any drift, on an unverified restatement, or on growth in the `unmatched`
 bucket — a restatement stops being compared the moment its labels stop matching, so an unpinned
-bucket there would absorb a rename silently. `--self-test` runs an 11-case battery in memory,
-covering each shape above; it is committed because three gate scripts on this branch have now
-shipped confidently wrong, and an uncommitted battery regresses without saying so. Nothing runs
-this script yet — wiring the gate scripts into CI is #625, whose own note warns against installing
-a gate that passes unconditionally.
+bucket there would absorb a rename silently. `--self-test` runs a 13-case battery in memory,
+covering each shape above and each mechanism the gate depends on; every case was checked by
+reverting the mechanism it guards and confirming the battery goes red, because a case that passes
+with its subject removed is not a test. It is committed because three gate scripts on this branch
+have now shipped confidently wrong, and an uncommitted battery regresses without saying so. Nothing
+runs this script yet — wiring the gate scripts into CI is #625, whose own note warns against
+installing a gate that passes unconditionally.
 
 `ContinuityClass.isParametric` was flagged as the same root cause and is the same shape of miss.
 #623 fixed `satisfies(_:)` and gave `derivativeOrder` an explicit warning that its `nil` means "no

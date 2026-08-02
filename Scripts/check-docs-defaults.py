@@ -775,6 +775,30 @@ SELF_TEST_CASES = [
         {'changed': 1},
     ),
     (
+        'a protocol requirement takes its protocol access level',
+        {'Sources/OCCTSwift/A.swift':
+            'public protocol ImportProgress {\n'
+            '    func progress(fraction: Double, step: String = "load")\n}\n'},
+        {'docs/reference/Concurrency.md':
+            '### `ImportProgress.progress(fraction:step:)`\n\n```swift\n'
+            'func progress(fraction: Double, step: String = "start")\n```\n'},
+        # Without the rule the requirement is not public, the restatement lands in `unmatched`,
+        # and the changed default goes unreported.
+        {'changed': 1},
+    ),
+    (
+        'an enclosing section heading names the type the nearest heading omits',
+        {'Sources/OCCTSwift/A.swift':
+            'extension WireCurve {\n    public func points(count: Int) -> [Int] { [] }\n}\n'
+            'extension Edge {\n    public func points(count: Int? = nil) -> [Int] { [] }\n}\n'},
+        {'docs/reference/CurveAdaptors.md':
+            '## WireCurve\n\n### `points(count:)`\n\n```swift\n'
+            'public func points(count: Int = 5) -> [Int]\n```\n'},
+        # Without the outward walk nothing names a type -- the filename is `CurveAdaptors` -- so
+        # the pool stays at two disagreeing candidates and this reads as `unverified` instead.
+        {'docs_only': 1},
+    ),
+    (
         'a `.init(` call site in an example is not a declaration',
         {'Sources/OCCTSwift/A.swift': 'extension Surface {\n'
                                       '    public func fit(tol: Double = 1e-3) -> Int { 0 }\n}\n'},
@@ -793,11 +817,15 @@ def self_test():
     failures = 0
     for name, src_files, doc_files, expect in SELF_TEST_CASES:
         rep = analyse(source_decls_from(src_files), doc_decls_from(doc_files))
+        # `unmatched` is asserted too, not just the four drift buckets. Without it a case can go
+        # green for the wrong reason: the `.init(` case passed with its call-site guard removed,
+        # because the stray declaration merely landed in a bucket nothing was watching.
         got = {
             'changed': len(rep.changed),
             'docs_only': len(rep.docs_only),
             'source_only': len(rep.source_only),
             'unverified': len(rep.unverified),
+            'unmatched': len(rep.unmatched),
         }
         want = {k: expect.get(k, 0) for k in got}
         if got == want:
