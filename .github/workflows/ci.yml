@@ -54,12 +54,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # v7, not the v4 the sibling jobs in this file pin. Deprecation annotations are emitted per
-      # JOB, not per workflow, so this job's pins decide this job's annotation: at v4/v5 it raised
-      # its own "Node.js 20 is deprecated" warning, which this job would have been newly
-      # introducing (nothing in the repo used setup-python before). v7 of both targets node24, so
-      # the annotation is simply absent here. It leaves this file mixed-version until the other two
-      # jobs are bumped, which is a repo-wide change with its own PR.
+      # Every action pin across .github/workflows/ now targets a Node 24 major (#648). The target
+      # for each was established by reading that action's own action.yml at the pinned ref and
+      # checking `using:`, not by assuming a version number implies a runtime — actions/github-script
+      # is node20 at v7 and only reaches node24 at v8, so a "match the v7 the other pins use" rule
+      # would have left require-issue-labels.yml deprecated while looking consistent.
+      #
+      # Deprecation annotations are emitted per JOB, not per workflow, so one stale v4 pin anywhere
+      # raises its own "Node.js 20 is deprecated" warning on that job alone; keep new jobs on these
+      # majors rather than copying an older workflow's pins.
       - uses: actions/checkout@v7
 
       # Pinned rather than the image default: these gates parse Swift and C++ with regexes, and a
@@ -105,7 +108,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -115,7 +118,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .build
@@ -135,7 +138,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -143,7 +146,7 @@ jobs:
           xcode-version: latest-stable
 
       - name: Cache SwiftPM artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .build

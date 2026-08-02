@@ -18,7 +18,7 @@ jobs:
     if: inputs.platform == 'windows' || inputs.platform == 'both'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Build OCCT from source as static libraries.
       # Key settings:
@@ -94,7 +94,7 @@ jobs:
     if: inputs.platform == 'macos' || inputs.platform == 'both'
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build OCCT from source
         run: |
