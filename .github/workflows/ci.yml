@@ -49,8 +49,13 @@ jobs:
   # Two of the four (check-bridge-index, check-null-handle-guards) resolve their inputs relative to
   # the working directory and exit 2 with "run from the repo root" elsewhere; the other two resolve
   # from __file__. A GitHub Actions step starts at the repo root, so both kinds are satisfied.
+  # Deliberately NO `name:` key. The check-run name GitHub publishes is a job's `name:` when it has
+  # one and the job id otherwise, and that string is what a required-status-check rule matches. A
+  # prose name reads like a comment, so rewording it for clarity would silently stop satisfying the
+  # rule — the check would drop out of "required" and the PR UI would look identical to a working
+  # gate. Falling back to the job id makes the required context a stable identifier nobody edits for
+  # readability. This job is required on refactor/** (#649); see CLAUDE.md before renaming it.
   gate-scripts:
-    name: gate scripts (static, no build)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
