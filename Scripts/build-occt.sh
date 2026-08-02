@@ -20,9 +20,10 @@
 
 set -e
 
-OCCT_VERSION="8.0.0"
-OCCT_RC="p1"
-# Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0.
+OCCT_VERSION="8.0.1"
+OCCT_RC=""
+# Pre-release tags use format V8_0_0_rc5 / V8_0_0_beta2; the p1 hot-patch is V8_0_0_p1; GA is V8_0_0
+# and the 8.0.1 maintenance release is V8_0_1 — both plain, so OCCT_RC is empty for a GA tag.
 if [ -n "$OCCT_RC" ]; then
     OCCT_TAG="V${OCCT_VERSION//./_}_${OCCT_RC}"
 else
@@ -96,7 +97,30 @@ if [ ! -d "occt-src" ]; then
     git clone --depth 1 --branch "$OCCT_TAG" \
         https://github.com/Open-Cascade-SAS/OCCT.git occt-src
 else
-    echo ">>> OCCT source already exists, skipping download"
+    # Reuse the tree only when it is at the tag this script names. Testing for the directory alone
+    # (what this did until the 8.0.1 re-pin) makes a version bump a silent no-op on any machine that
+    # has built before: OCCT_TAG changes, the clone is skipped, and the build ships the OLD kernel
+    # under the new version's name. Same failure the stale-install-prefix wipe below exists to
+    # prevent — a reused artifact masquerading as the current one.
+    #
+    # HEAD stays on the tag while the carried patches are applied (they dirty the working tree, not
+    # HEAD), so a repeated run of the same version still reuses the tree. A mismatch aborts rather
+    # than resetting: an investigation may have left a diagnostic probe or a half-written patch here,
+    # and destroying that silently would be worse than one manual step per version bump.
+    CURRENT_TAG="$(git -C occt-src describe --tags --exact-match HEAD 2>/dev/null || true)"
+    if [ "$CURRENT_TAG" = "$OCCT_TAG" ]; then
+        echo ">>> OCCT source already at $OCCT_TAG, skipping download"
+    else
+        echo "ERROR: $LIBRARIES_DIR/occt-src is at '${CURRENT_TAG:-an untagged commit ($(git -C occt-src rev-parse --short HEAD 2>/dev/null || echo 'not a git repo'))}'," >&2
+        echo "       but this script builds $OCCT_TAG. Reusing it would build the wrong kernel." >&2
+        echo "" >&2
+        echo "       Check for work worth keeping first — anything not touched by a carried patch:" >&2
+        echo "         git -C '$LIBRARIES_DIR/occt-src' status --porcelain" >&2
+        echo "" >&2
+        echo "       Then remove the tree and re-run, so the clone below fetches $OCCT_TAG:" >&2
+        echo "         rm -rf '$LIBRARIES_DIR/occt-src'" >&2
+        exit 1
+    fi
 fi
 
 # --------------------
@@ -104,8 +128,11 @@ fi
 # --------------------
 # Patches in Scripts/patches/ are upstream-bound bug fixes we carry until they
 # ship in an OCCT release. Each is applied with -p1 relative to occt-src.
-#   (none currently — the BRepFill_CompatibleWires polar-iterator guard, OCCTSwift
-#    issue #176, shipped upstream in V8_0_0_p1, so its patch was removed.)
+# See Scripts/patches/README.md for what each one fixes and where it was filed upstream; that file
+# is the list, deliberately not duplicated here, since a second copy is a second thing to go stale.
+# Retirement is driven by the pinned tag: V8_0_1 absorbed ten of them (0001-0009 and 0013), whose
+# files are gone while their README sections remain as tombstones. Survivors keep their original
+# numbers, so the sequence has gaps — that is intended, not a missing file.
 if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
     echo ">>> Applying local OCCT patches..."
     for p in "$SCRIPT_DIR"/patches/*.patch; do
