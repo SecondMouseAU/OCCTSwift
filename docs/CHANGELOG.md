@@ -15,6 +15,44 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### OCCT re-pinned to 8.0.1
+
+The source pin moves from `V8_0_0_p1` to [`V8_0_1`](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8.0.1)
+(2026-07-30), the first maintenance release in the 8.0 series. Against p1 it is a clean
+fast-forward — 23 commits, 74 files, nothing reverted — and it carries **no API or ABI break**:
+the only public header in the whole diff is `ShapeAnalysis_FreeBounds.hxx`, changed by one comment
+line. Nothing to migrate for the OCCT API itself.
+
+**`Package.swift`'s `url:`/`checksum:` deliberately still point at the v1.15.18 asset**, which is
+p1 + patches 0001-0016. That bump belongs to the release commit (#512), so until v2.0.0 ships a
+clean checkout with no local `Libraries/` resolves the **old** kernel. Build locally and use
+`OCCTSWIFT_LOCAL=1` for the new one, and read `kernel-integration.yml` rather than `ci.yml`'s
+macOS job for the real signal (#585).
+
+#### Ten carried kernel patches retired
+
+8.0.1 ships our own upstream contributions, so `Scripts/patches/` goes from 21 files to 11.
+Retired: `0001`-`0009` and `0013`, covering #263, #280, #298, #310, #317, #318, #323 (three) and
+#348. Every merge commit was confirmed an **ancestor of the tag** rather than merely merged to
+master, and every patch was diffed against its as-merged form before its file was deleted, because
+review can change a patch between submission and merge.
+
+Nine came back unchanged. `0001` did not: upstream's merged form also guards a *removed* face
+(`anApplied.IsNull() ||`) where ours checked only the shape type, so that retirement fixes a
+latent null dereference our own patch had. Per-patch verdicts are in
+[`Scripts/patches/README.md`](../Scripts/patches/README.md) under "Retired patches".
+
+Patch numbers are not reused — the carried sequence now reads 0010-0012, 0014-0021, and the gaps
+are the retirements. Renumbering would have repointed every citation in `CLAUDE.md`, `docs/`,
+closed issues and `Scripts/repro/` at a different fix.
+
+#### `build-occt.sh` could not change OCCT version
+
+It cloned `occt-src` only when the directory was absent, so bumping `OCCT_VERSION`/`OCCT_RC` was a
+silent no-op on any machine that had built before: the old tag's sources were compiled and packaged
+under the new version's number. It now requires `HEAD` to be at the tag the script names and aborts
+otherwise, naming the tree so a diagnostic probe left by an investigation is not destroyed silently.
+
 ### Pass 1b of the #377 duplication audit
 
 #### Every workflow action pin moves to a Node 24 major (#648)
