@@ -6556,25 +6556,38 @@ OCCTShapeRef _Nullable OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceInd
 
 // --- LocOpe_FindEdges ---
 
+// #613: both finders return a SELECTION of edges, not an enumeration, so the position of an entry
+// in outEdges says nothing about which edge it is. Swift was writing that position into Edge.index
+// anyway, producing indices that address a different edge -- or no edge -- through edges().
+// Both now report each found edge's index in the shape's own deduplicated enumeration alongside it.
+
 /// Find common edges between two shapes.
 /// @param shape1 First shape
 /// @param shape2 Second shape
 /// @param outEdges Output buffer for edge shapes
+/// @param outIndices Optional buffer, same length as outEdges, receiving each found edge's 0-based
+///        index in shape1's edge enumeration (the one Shape.edges() / Shape.edge(at:) read), or -1
+///        when shape1 has no such edge. Pass NULL to skip. Entries may repeat: LocOpe_FindEdges
+///        yields one entry per matched pair, so one edge of shape1 can be reported more than once.
 /// @param maxEdges Max edges to return
 /// @return Number of common edges found
 int32_t OCCTLocOpeFindEdges(OCCTShapeRef shape1, OCCTShapeRef shape2,
-                            OCCTShapeRef _Nullable * _Nonnull outEdges, int32_t maxEdges);
+                            OCCTShapeRef _Nullable * _Nonnull outEdges,
+                            int32_t* _Nullable outIndices, int32_t maxEdges);
 
 // --- LocOpe_FindEdgesInFace ---
 
 /// Find edges of a shape that lie in a specific face.
 /// @param shape Shape whose edges to check
-/// @param faceIndex Face index to check against
+/// @param faceIndex Face index to check against, in the shared enumeration (#541)
 /// @param outEdges Output buffer for edge shapes
+/// @param outIndices Optional buffer, same length as outEdges, receiving each found edge's 0-based
+///        index in `shape`'s edge enumeration, or -1 when `shape` has no such edge. Pass NULL to skip.
 /// @param maxEdges Max edges to return
 /// @return Number of edges found in the face
 int32_t OCCTLocOpeFindEdgesInFace(OCCTShapeRef shape, int32_t faceIndex,
-                                   OCCTShapeRef _Nullable * _Nonnull outEdges, int32_t maxEdges);
+                                   OCCTShapeRef _Nullable * _Nonnull outEdges,
+                                   int32_t* _Nullable outIndices, int32_t maxEdges);
 
 // --- LocOpe_CSIntersector ---
 

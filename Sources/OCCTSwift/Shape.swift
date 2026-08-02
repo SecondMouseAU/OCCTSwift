@@ -7128,10 +7128,19 @@ extension Shape {
         case tangent
     }
 
-    /// Classify all edges by their concavity type using BRepOffset_Analyse.
+    /// Classify all edges by their concavity type using `BRepOffset_Analyse`.
     ///
     /// Analyzes the angles between adjacent faces at each edge to determine
     /// whether each edge is convex, concave, or tangent.
+    ///
+    /// One entry per distinct edge, in ``edges()`` order — so `result[n].0.index == n`, and the
+    /// classification at position `n` describes `edges()[n]`:
+    ///
+    /// ```swift
+    /// for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
+    ///     print("inside corner at edge \(edge.index), length \(edge.length)")
+    /// }
+    /// ```
     ///
     /// - Parameter angle: Threshold angle for tangent classification (radians, default 0.01)
     /// - Returns: Array of (edge, concavity) pairs, or nil on error
@@ -7162,6 +7171,14 @@ extension Shape {
     }
 
     /// Count edges of a specific concavity type.
+    ///
+    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount`` — before #613
+    /// this counted topology *occurrences* and a 12-edge box reported 24 convex edges.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
+    /// ```
     ///
     /// - Parameters:
     ///   - type: Concavity type to count
@@ -7842,20 +7859,35 @@ extension Shape {
 
     /// Find edges in common between this shape and another.
     ///
-    /// Uses LocOpe_FindEdges to identify shared edges.
+    /// Uses `LocOpe_FindEdges` to identify shared edges. The returned edges belong to **this**
+    /// shape, and each carries its ``Edge/index`` into ``edges()`` — so a found edge feeds straight
+    /// into ``filleted(edges:radius:)`` and every other index-taking method.
+    ///
+    /// ```swift
+    /// // Round the seam where two halves of a split block meet
+    /// let seam = lower.commonEdges(with: upper)
+    /// let rounded = lower.filleted(edges: seam, radius: 1)
+    /// ```
+    ///
+    /// The finder reports one entry per matched pair, so a single edge of this shape can appear
+    /// more than once when it matches several edges of `other`. Dedupe on ``Edge/index`` if you
+    /// need one entry per distinct edge.
     ///
     /// - Parameter other: Shape to compare with
-    /// - Returns: Array of common edges
+    /// - Returns: Array of common edges, each with a valid index into ``edges()``.
     public func commonEdges(with other: Shape) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
-        let count = OCCTLocOpeFindEdges(handle, other.handle, &buffer, 100)
+        // #613: the bridge reports each found edge's index in THIS shape's enumeration. The array
+        // position used to be written into Edge.index, which named a different edge or none at all.
+        var indices = [Int32](repeating: -1, count: 100)
+        let count = OCCTLocOpeFindEdges(handle, other.handle, &buffer, &indices, 100)
         var edges = [Edge]()
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
                 // Convert shape to edge
                 if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                    edges.append(Edge(handle: edgeRef, index: Int(indices[i])))
                 }
                 OCCTShapeRelease(ref)
             }
@@ -7867,19 +7899,32 @@ extension Shape {
 
     /// Find edges of this shape that lie in a specific face.
     ///
-    /// Uses LocOpe_FindEdgesInFace.
+    /// Uses `LocOpe_FindEdgesInFace`. Each returned edge carries its ``Edge/index`` into
+    /// ``edges()``, so it can be handed to any index-taking method:
     ///
-    /// - Parameter faceIndex: Index of the face to check (0-based)
-    /// - Returns: Array of edges found in the face
+    /// ```swift
+    /// let onTop = block.edgesInFace(at: 3)
+    /// let rounded = block.filleted(edges: onTop, radius: 2)
+    ///
+    /// // The index addresses the same edge through either route
+    /// let e = onTop[0]
+    /// block.edge(at: e.index)   // the very same edge
+    /// ```
+    ///
+    /// - Parameter faceIndex: Index of the face to check, in the ``faces()`` enumeration (0-based)
+    /// - Returns: Array of edges found in the face, each with a valid index into ``edges()``.
     public func edgesInFace(at faceIndex: Int) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
-        let count = OCCTLocOpeFindEdgesInFace(handle, Int32(faceIndex), &buffer, 100)
+        // #613: as for commonEdges(with:) — the index comes from the shape's own enumeration, not
+        // from this result array's ordering.
+        var indices = [Int32](repeating: -1, count: 100)
+        let count = OCCTLocOpeFindEdgesInFace(handle, Int32(faceIndex), &buffer, &indices, 100)
         var edges = [Edge]()
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
                 if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                    edges.append(Edge(handle: edgeRef, index: Int(indices[i])))
                 }
                 OCCTShapeRelease(ref)
             }
@@ -12504,6 +12549,17 @@ extension Edge {
 
 extension Shape {
     /// Create a rolling-ball blend on specified edges.
+    ///
+    /// `edgeIndices` are indices into ``edges()`` — the same enumeration ``edge(at:)`` and
+    /// ``Edge/index`` use, so a geometrically selected edge feeds straight in:
+    ///
+    /// ```swift
+    /// let seams = part.edges { $0.length > 20 }
+    /// let blended = part.biTgteBlend(edgeIndices: seams.map(\.index), radius: 2)
+    /// ```
+    ///
+    /// The whole request is refused (`nil`) if any index names no edge, rather than blending the
+    /// rest — a partial blend is not distinguishable from a complete one (#568).
     public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 1e-3, nubs: Bool = false) -> Shape? {
         let indices = edgeIndices.map { Int32($0) }
         guard let ref = indices.withUnsafeBufferPointer({ buf in

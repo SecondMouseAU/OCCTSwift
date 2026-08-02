@@ -66,6 +66,7 @@
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp.hxx>
+#include <TopExp_Explorer.hxx>  // #613: occtForEachOrientedFace's per-occurrence walk
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -1324,6 +1325,84 @@ inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
     TopoDS_Shape sub = occtSubShapeAt(shape, TopAbs_EDGE, index);
     if (sub.IsNull() || sub.ShapeType() != TopAbs_EDGE) return TopoDS_Edge();
     return TopoDS::Edge(sub);
+}
+
+// === #613: the same enumeration, read backwards ===
+//
+// occtSubShapeAt answers "which sub-shape is index n". Some entry points need the inverse: they
+// already hold a sub-shape -- one an OCCT finder handed back, or one the traversal is standing on
+// -- and have to report WHICH index names it, so a caller can feed that index to every other
+// index-taking entry point.
+//
+// Doing it by hand is where the index contract leaks. Two bridge functions used to report the
+// position in their own RESULT array instead (Shape.edgesInFace / Shape.commonEdges, measured on a
+// 10mm box: edgesInFace(at: 3) handed back 0,1,2,3 for edges whose real indices are 2, 8, 10 and
+// 11), which is not an index into anything the caller can address.
+//
+// The lookup is cheap and exact because the map's equality IS TopoDS_Shape::IsSame
+// (TopTools_ShapeMapHasher.hxx:35-38): a REVERSED occurrence resolves to the index its FORWARD
+// twin was stored under, so an entry point can hold the oriented occurrence for its geometry and
+// still stamp the deduplicated index, with no second traversal.
+
+/// The 0-based index of `sub` in `shape`'s sub-shape enumeration of TopAbs type `type`, or -1 when
+/// `shape` has no such sub-shape. Matching is `TopoDS_Shape::IsSame`, so orientation is ignored --
+/// both occurrences of a shared sub-shape report the one index that names it.
+inline int32_t occtIndexOfSubShape(const TopoDS_Shape& shape, int32_t type,
+                                   const TopoDS_Shape& sub) {
+    if (sub.IsNull()) return -1;
+    TopTools_IndexedMapOfShape map;
+    if (occtMapSubShapes(shape, type, map) == 0) return -1;
+    int32_t found = map.FindIndex(sub);
+    return (found > 0) ? found - 1 : -1;  // OCCT's indexed maps are 1-based
+}
+
+/// The 0-based index of `sub` in an already-built enumeration map, or -1 when the map has no such
+/// entry. The read half of occtIndexOfSubShape, for callers resolving many sub-shapes against one
+/// map rather than mapping per lookup.
+inline int32_t occtMappedIndexOf(const TopTools_IndexedMapOfShape& map, const TopoDS_Shape& sub) {
+    if (sub.IsNull()) return -1;
+    int32_t found = map.FindIndex(sub);
+    return (found > 0) ? found - 1 : -1;
+}
+
+// === #613/#614: the walk that needs BOTH the orientation and the index ===
+//
+// #541 put every face index on the deduplicated map and #614 established that a normal must come
+// off the traversal instead, because TopExp::MapShapes keys on IsSame and so keeps only the
+// orientation a shared face was FIRST seen with. Meshing needs both at once: the winding of every
+// emitted triangle is set by `if (face.Orientation() == TopAbs_REVERSED) std::swap(n2, n3)`, while
+// the faceIndex stamped on that triangle has to be one a caller can hand to face(at:).
+//
+// Measured on the pinned kernel, one BRepAlgoAPI_Splitter cut of a 20x10x10 block at x=10
+// (Scripts/repro/613-index-contract-sites/, and the ground-truth run in the PR): 12 face
+// occurrences over 11 distinct faces, exactly one face present in both orientations, and the map
+// stores it FORWARD. Meshing that compound off the map would emit the shared wall once, wound for
+// the lower solid, leaving the upper solid's floor missing and the wall it does have facing INTO
+// it. Meshing it off a bare explorer -- what the mesh entry points did -- emits both sides
+// correctly but stamps faceIndex 0..11 on an 11-face shape, so triangles claim a face index
+// face(at:) cannot address and, from index 5 on, name a different face than faces() does.
+//
+// Neither enumeration alone is right. This hands out both from one traversal: the occurrence for
+// its orientation, and the index the same occurrence has in the enumeration faces() reads.
+// TopExp::MapShapes(S, T, M) is literally this explorer walk piped into that map (TopExp.cxx:35-45),
+// so adding each occurrence as it is visited builds exactly that enumeration in exactly that order,
+// and the just-added occurrence is always findable -- a repeat returns the existing index and
+// leaves the stored key untouched (NCollection_IndexedMap.hxx:684-710).
+
+/// Walk `shape`'s FACE occurrences in TopExp_Explorer order, calling `use(face, mapIndex)` once per
+/// occurrence. `face` carries the orientation it has in its parent -- the flag that decides triangle
+/// winding and the sign of a surface normal. `mapIndex` is that face's 0-based position in the
+/// deduplicated enumeration Shape.faces() / Shape.face(at:) read, so a shared face's two
+/// occurrences report the SAME index. -1 would mean the two walks had diverged and is never
+/// expected; it is reported rather than silently written as a valid-looking index.
+template <class Use>
+void occtForEachOrientedFace(const TopoDS_Shape& shape, Use use) {
+    TopTools_IndexedMapOfShape faceMap;
+    for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next()) {
+        const TopoDS_Shape& current = ex.Current();
+        faceMap.Add(current);
+        use(TopoDS::Face(current), occtMappedIndexOf(faceMap, current));
+    }
 }
 
 // === #568: one answer for an index that names no sub-shape ===

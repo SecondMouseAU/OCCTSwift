@@ -994,16 +994,23 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 `BiTgte_Blend` is an alternative blend algorithm that can handle configurations where `BRepFilletAPI_MakeFillet` fails.
 
 - **Parameters:**
-  - `edgeIndices` — zero-based indices of edges to blend (as returned by the shape's topology explorer).
+  - `edgeIndices` — zero-based indices into `edges()`, the same enumeration `edge(at:)` and
+    `Edge.index` use, so a geometrically selected edge feeds straight in.
   - `radius` — blend radius.
   - `tolerance` — geometric tolerance.
   - `nubs` — if `true`, outputs NUBS (Non-Uniform B-Spline) surfaces; if `false`, outputs NURBS.
-- **Returns:** Blended shape, or `nil` if blending fails.
+- **Returns:** Blended shape, or `nil` if blending fails — including when any index names no edge,
+  which refuses the whole request rather than blending the rest (#568).
 - **OCCT:** `BiTgte_Blend::Perform` via `OCCTBiTgteBlend`.
+- **Changed in #613:** the indices addressed a `TopExp_Explorer` walk, one entry per topology
+  *occurrence* (24 on a 12-edge box), not `edges()`. Measured on an L-bracket, no index reached the
+  concave edge at all. An index naming no edge was also silently dropped.
 - **Example:**
   ```swift
-  if let blended = box.biTgteBlend(edgeIndices: [0, 1, 2], radius: 2.0) {
-      // blended has rounded edges
+  // Blend the edges you selected, by index, not by position in a walk
+  let seams = part.edges { $0.length > 20 }
+  if let blended = part.biTgteBlend(edgeIndices: seams.map(\.index), radius: 2.0) {
+      // blended has rounded seams
   }
   ```
 

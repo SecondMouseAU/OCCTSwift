@@ -1144,9 +1144,22 @@ public func edgeConcavities(angle: Double = 0.01) -> [(Edge, EdgeConcavity)]?
 
 Analyzes the angles between adjacent faces at each edge.
 
+One entry per **distinct** edge, in `edges()` order, so `result[n].0.index == n` and the
+classification at position `n` describes `edges()[n]`:
+
+```swift
+for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
+    print("inside corner at edge \(edge.index), length \(edge.length)")
+}
+```
+
 - **Parameters:** `angle` — Threshold angle (radians) for tangent classification.
-- **Returns:** Array of `(edge, concavity)` pairs in edge order, or `nil` on error.
+- **Returns:** Array of `(edge, concavity)` pairs in `edges()` order, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeAnalyzeEdgeConcavity`).
+- **Changed in #613:** the bridge enumerated topology *occurrences* (24 on a 12-edge box) while
+  Swift zipped the result against `edges()`, so every label past the first repeat landed on the
+  wrong edge. On an L-bracket the one concave edge was labelled convex and `concaveEdges()`
+  returned `[]`.
 
 ---
 
@@ -1158,11 +1171,19 @@ Count edges of a specific concavity type.
 public func edgeConcavityCount(_ type: EdgeConcavity, angle: Double = 0.01) -> Int?
 ```
 
+Counts distinct edges, so the three type counts sum to at most `edgeCount`:
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
+```
+
 - **Parameters:**
   - `type` — Concavity type to count.
   - `angle` — Threshold angle (radians) for tangent classification.
 - **Returns:** Count of matching edges, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeCountEdgeConcavity`).
+- **Changed in #613:** counted topology occurrences, so a 12-edge box reported **24** convex edges.
 
 ---
 
@@ -1732,9 +1753,22 @@ Find edges in common between this shape and another.
 public func commonEdges(with other: Shape) -> [Edge]
 ```
 
+The returned edges belong to **this** shape and each carries its `Edge.index` into `edges()`, so
+they feed straight into any index-taking method:
+
+```swift
+let seam = lower.commonEdges(with: upper)
+let rounded = lower.filleted(edges: seam, radius: 1)
+```
+
+`LocOpe_FindEdges` reports one entry per matched *pair*, so one edge of this shape can appear more
+than once. Dedupe on `Edge.index` if you need one entry per distinct edge.
+
 - **Parameters:** `other` — Shape to compare with.
-- **Returns:** Array of common edges (up to 100).
+- **Returns:** Array of common edges (up to 100), each with a valid index into `edges()`.
 - **OCCT:** `LocOpe_FindEdges` (via `OCCTLocOpeFindEdges`).
+- **Changed in #613:** `Edge.index` was the position in the result array, not an index into
+  `edges()`, so it addressed a different edge — or none.
 
 ---
 
@@ -1746,9 +1780,21 @@ Find edges of this shape that lie in a specific face.
 public func edgesInFace(at faceIndex: Int) -> [Edge]
 ```
 
-- **Parameters:** `faceIndex` — 0-based index of the face to check.
-- **Returns:** Array of edges found in the face (up to 100).
+Each returned edge carries its `Edge.index` into `edges()`:
+
+```swift
+let onTop = block.edgesInFace(at: 3)
+let rounded = block.filleted(edges: onTop, radius: 2)
+
+let e = onTop[0]
+block.edge(at: e.index)   // the very same edge
+```
+
+- **Parameters:** `faceIndex` — 0-based index of the face to check, in the `faces()` enumeration.
+- **Returns:** Array of edges found in the face (up to 100), each with a valid index into `edges()`.
 - **OCCT:** `LocOpe_FindEdgesInFace` (via `OCCTLocOpeFindEdgesInFace`).
+- **Changed in #613:** as for `commonEdges(with:)`. Measured on a 10 mm box, `edgesInFace(at: 3)`
+  handed back 0, 1, 2, 3 for edges whose real indices are 2, 8, 10 and 11.
 
 ---
 

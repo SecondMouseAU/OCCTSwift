@@ -85,6 +85,25 @@
 
 // MARK: - Meshing
 
+// #613/#614: meshing is the one converted site where the two enumerations pull in opposite
+// directions, so it uses BOTH -- see occtForEachOrientedFace in OCCTBridge_Internal.h.
+//
+// The winding of every emitted triangle is set by the face's orientation as it appears in the
+// parent (`if REVERSED swap(n2, n3)` below), and that winding is the sign of the triangle normal a
+// renderer or CAM pass reads. Meshing off the deduplicated map would keep only the orientation a
+// shared face was first seen with, inverting the other owner's copy -- #614's defect, one level
+// down.
+//
+// The faceIndex stamped on each triangle is the opposite requirement: a caller reads it to get back
+// to face(at:) / faces(). Stamping the explorer's occurrence counter, which is what this did, made
+// it name a different face from the first repeat and let it exceed faceCount outright. Measured on
+// a BRepAlgoAPI_Splitter compound (a 20x10x10 block cut at x=10): 12 face occurrences over 11
+// distinct faces, mesh faceIndices spanning 0..11 on an 11-face shape, and the shared wall's two
+// occurrences carrying opposite winding (+x and -x) -- so neither enumeration alone is correct.
+//
+// Now: winding from the occurrence, index from the map. The shared wall's two sides both survive,
+// both wound outward for their own solid, and both stamped with the single index (5) that names
+// that wall through face(at:).
 OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape, double linearDeflection, double angularDeflection) {
     if (!shape) return nullptr;
 
@@ -99,11 +118,7 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape, double linearDeflection, dou
         mesh = new OCCTMesh();
 
         // Extract triangles from all faces
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        int32_t faceIndex = 0;
-
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
+        occtForEachOrientedFace(shape->shape, [&](const TopoDS_Face& face, int32_t faceIndex) {
             TopLoc_Location location;
             Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(face, location);
 
@@ -165,10 +180,7 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape, double linearDeflection, dou
                     mesh->triangleNormals.push_back(static_cast<float>(triNormal.Z()));
                 }
             }
-
-            faceIndex++;
-            explorer.Next();
-        }
+        });
 
         return mesh;
     } catch (...) {
@@ -220,12 +232,9 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
 
         mesh = new OCCTMesh();
 
-        // Extract triangles from all faces (same as OCCTShapeCreateMesh)
-        TopExp_Explorer explorer(shape->shape, TopAbs_FACE);
-        int32_t faceIndex = 0;
-
-        while (explorer.More()) {
-            TopoDS_Face face = TopoDS::Face(explorer.Current());
+        // Extract triangles from all faces (same as OCCTShapeCreateMesh, including #613/#614's
+        // orientation-for-winding / map-index-for-faceIndex split -- see the note there)
+        occtForEachOrientedFace(shape->shape, [&](const TopoDS_Face& face, int32_t faceIndex) {
             TopLoc_Location location;
             Handle(Poly_Triangulation) triangulation = BRep_Tool::Triangulation(face, location);
 
@@ -280,10 +289,7 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
                     mesh->triangleNormals.push_back(static_cast<float>(triNormal.Z()));
                 }
             }
-
-            faceIndex++;
-            explorer.Next();
-        }
+        });
 
         return mesh;
     } catch (...) {
@@ -1283,10 +1289,23 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
         auto& shape = reinterpret_cast<OCCTShape*>(shapeRef)->shape;
         // Collect all face triangulations and merge
         Handle(Poly_MergeNodesTool) tool = new Poly_MergeNodesTool(smoothAngle, mergeTolerance);
-        TopExp_Explorer exp(shape, TopAbs_FACE);
         bool hasTri = false;
-        for (; exp.More(); exp.Next()) {
-            TopoDS_Face face = TopoDS::Face(exp.Current());
+        // #613: this is a DELIBERATELY per-occurrence walk and must stay one -- it is the sibling
+        // the index-contract sweep must not "converge". It emits no index at all: the `reversed`
+        // flag it derives from each occurrence is handed straight to
+        // Poly_MergeNodesTool::AddTriangulation, which winds that face's triangles by it, so a face
+        // shared by two solids has to be added ONCE PER OCCURRENCE, each wound outward for its own
+        // owner. Deduplicating on TopoDS_Shape::IsSame would add it once, in whichever orientation
+        // it was first seen, and the other solid would lose its wall entirely.
+        //
+        // Measured on the same BRepAlgoAPI_Splitter compound as the mesh entry points above: the
+        // shared wall at x=10 contributes 2 triangles wound +x and 2 wound -x, and a plain box comes
+        // out 12 triangles outward / 0 inward. Both are pinned by regression tests.
+        //
+        // It shares occtForEachOrientedFace with the mesh entry points so the orientation source is
+        // one line of code rather than three, and ignores the map index that helper also supplies,
+        // having nothing to stamp it on.
+        occtForEachOrientedFace(shape, [&](const TopoDS_Face& face, int32_t) {
             TopLoc_Location loc;
             Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
             if (!tri.IsNull()) {
@@ -1295,7 +1314,7 @@ int OCCTPolyMergeNodes(OCCTShapeRef _Nonnull shapeRef,
                 tool->AddTriangulation(tri, trsf, reversed);
                 hasTri = true;
             }
-        }
+        });
         if (!hasTri) return 0;
         Handle(Poly_Triangulation) result = tool->Result();
         if (result.IsNull()) return 0;

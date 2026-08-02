@@ -1012,6 +1012,22 @@ OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape, double 
 }
 
 // MARK: - BRepOffset_Analyse Edge Concavity (v0.46)
+
+// #613: both of these walked a bare TopExp_Explorer, one entry per OCCURRENCE, while Swift zips the
+// result against edges() -- the deduplicated map. A 10mm box has 24 edge occurrences over 12 edges,
+// so the two desynchronised from the first repeat and every classification after it landed on the
+// wrong edge. Measured on an L-bracket (two fused boxes, inner corner at x=10, z=10): the one
+// genuinely concave edge is map index 27, the analyser finds it (2 occurrences), and
+// concaveEdges() returned an EMPTY array -- the issue's own failure scenario, where
+// `bracket.filleted(edges: bracket.concaveEdges(), radius: 3)` rounds nothing and reports success.
+// The count function was wrong on its own terms too: a 12-edge box reported 24 convex edges.
+//
+// Safe to read the map rather than the traversal, unlike the mesh entry points (#614): the edge is
+// used only as a key into BRepOffset_Analyse's own myMapEdgeType, an
+// NCollection_DataMap<..., TopTools_ShapeMapHasher> (BRepOffset_Analyse.hxx:173) whose equality IS
+// TopoDS_Shape::IsSame (TopTools_ShapeMapHasher.hxx:35-38), so orientation cannot select a
+// different entry. Confirmed by measurement rather than by reading the header: over all 12 edges of
+// a box present in both orientations, Type() returned the same interval list for both, 0 differing.
 int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
                                        OCCTEdgeConcavity* outEdgeTypes, int32_t maxEntries) {
     if (!shape || !outEdgeTypes || maxEntries <= 0) return -1;
@@ -1019,10 +1035,14 @@ int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
         BRepOffset_Analyse analyser(shape->shape, angle);
         if (!analyser.IsDone()) return -1;
 
+        TopTools_IndexedMapOfShape edgeMap;
+        int32_t edgeCount = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More() && count < maxEntries; exp.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-            const auto& intervals = analyser.Type(edge);
+        for (int32_t i = 0; i < edgeCount && count < maxEntries; i++) {
+            const TopoDS_Shape& sub = edgeMap(i + 1);  // OCCT's indexed maps are 1-based
+            if (sub.ShapeType() != TopAbs_EDGE) continue;
+            const auto& intervals = analyser.Type(TopoDS::Edge(sub));
             // Use the first interval's type for the overall edge classification
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 OCCTConcavityType type;
@@ -1051,10 +1071,17 @@ int32_t OCCTShapeCountEdgeConcavity(OCCTShapeRef shape, double angle, int32_t ty
         else if (type == 1) targetType = ChFiDS_Concave;
         else targetType = ChFiDS_Tangential;
 
+        // #613: counted occurrences, so a 12-edge box reported 24 convex edges. Distinct edges now,
+        // which is the number edgeCount reports and the number of entries the classifier above
+        // fills.
+        TopTools_IndexedMapOfShape edgeMap;
+        int32_t edgeCount = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
+
         int32_t count = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
-            const auto& intervals = analyser.Type(edge);
+        for (int32_t i = 0; i < edgeCount; i++) {
+            const TopoDS_Shape& sub = edgeMap(i + 1);
+            if (sub.ShapeType() != TopAbs_EDGE) continue;
+            const auto& intervals = analyser.Type(TopoDS::Edge(sub));
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 if (it->Type() == targetType) {
                     count++;
@@ -1074,18 +1101,18 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeEdgeExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // Find edges
-        TopoDS_Edge e1, e2;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex1) { e1 = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
-        idx = 0;
-        for (TopExp_Explorer exp(shape2->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex2) { e2 = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #613: this counted TopExp_Explorer occurrences while its neighbours in this same file
+        // (OCCTBRepExtremaExtPC, ExtCF, OCCTShapeClassifyPoint2D) were converted to the shared
+        // enumeration by #541 -- so edgeIndex meant one thing here and another thing one function
+        // away. On a 10mm box the two agree up to index 8 and name DIFFERENT edges from 9 on, and
+        // indices 12..23 answered at all despite edge(at:) refusing every one of them.
+        //
+        // BRepExtrema_ExtCC reads the edge as pure geometry (BRepAdaptor_Curve over the 3D curve
+        // and its BRep_Tool::Range), so the map's stored orientation is as good as any occurrence's:
+        // measured over all 12 box edges present in both orientations, IsParallel, NbExt,
+        // SquareDistance, ParameterOnE1 and PointOnE1 were identical for both, 0 differing.
+        TopoDS_Edge e1 = occtEdgeAt(shape1->shape, edgeIndex1);
+        TopoDS_Edge e2 = occtEdgeAt(shape2->shape, edgeIndex2);
         if (e1.IsNull() || e2.IsNull()) return result;
 
         BRepExtrema_ExtCC extCC(e1, e2);
