@@ -875,6 +875,11 @@ inline int32_t occtSurfaceGridIndex(int32_t iu, int32_t iv, int32_t vCount) {
 /// expression's. It is written once here so no future loop can re-derive the version without the
 /// guard, which is exactly how DrawGrid and DrawMesh came to disagree in the commit that
 /// introduced both of them.
+///
+/// Not every `count > 1 ? ... : ...` in the bridge is this function. OCCTGeomFillCoonsPatchEval's
+/// pair reads `(evalU > 1) ? (double)i / (evalU - 1) : 0.5` — its single-sample answer is the
+/// patch MIDPOINT, not the low end, so it is a different contract that happens to share a shape.
+/// Check the else-branch before folding a site in here.
 inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t count) {
     return lo + (hi - lo) * index / (count > 1 ? (count - 1) : 1);
 }

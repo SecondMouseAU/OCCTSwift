@@ -2489,7 +2489,7 @@ void OCCTAdaptor3dIsoCurveEval(OCCTShapeRef faceShape, int isoType, double param
         if (last > 1e6) last = 1e6;
 
         for (int i = 0; i < evalCount; i++) {
-            double t = (evalCount > 1) ? first + (last - first) * i / (evalCount - 1) : first;
+            double t = occtUniformParameter(first, last, i, evalCount);
             gp_Pnt pt;
             iso.D0(t, pt);
             outPoints[i*3]     = pt.X();
@@ -6593,6 +6593,18 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
             const Handle(Geom_BSplineCurve)& pc = profs.Value(i + 1);
             double f = pc->FirstParameter(), l = pc->LastParameter();
             for (int j = 0; j < guideCount; j++) {
+                // The one site of the ten that is not a bit-identical substitution. It read
+                // `f + (l - f) * ((double)j / (guideCount - 1))`, so folding it into the shared
+                // helper reassociates the multiply and the divide: `(l-f)*(j/(n-1))` becomes
+                // `((l-f)*j)/(n-1)`. Measured across ten realistic [FirstParameter, LastParameter]
+                // ranges, 25-33% of cases differ by 1-2 ulp (<= 4e-15 over the whole span, and
+                // exactly 0 on this repo's own Gordon fixture). One structural consequence beyond
+                // the magnitude: the old form always landed the last sample exactly on
+                // f + (l - f), whereas this one can land 1 ulp PAST LastParameter (4 cases of
+                // n = 2..60 on a 0..2pi profile). Probed as harmless here because the builder
+                // SetNotPeriodic()s these curves first, so Geom_BSplineCurve::D0 does not throw
+                // just outside the range — but it is a boundary the old expression structurally
+                // could not cross, so a future caller that stops doing that must re-check it.
                 double t = occtUniformParameter(f, l, j, guideCount);
                 ipts.SetValue(i + 1, j + 1, pc->Value(t));
                 iwts.SetValue(i + 1, j + 1, 1.0);

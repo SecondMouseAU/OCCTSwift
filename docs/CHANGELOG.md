@@ -116,10 +116,38 @@ products past `Sampling.maximumSampleCount`, are still rejected at the Swift bou
 allocation, which is #558's contract unchanged.
 
 That divisor is now `occtUniformParameter` in `OCCTBridge_Internal.h`, next to
-`occtSurfaceGridIndex` and for the same reason: it had been open-coded **nine** times in
-`OCCTBridge_Surface.mm` in three different spellings, and #620 is what a single copy written
-without the guard costs. Sharing the expression is what stops a tenth loop re-deriving the
+`occtSurfaceGridIndex` and for the same reason: it had been open-coded **ten** times in
+`OCCTBridge_Surface.mm` in four different spellings, and #620 is what a single copy written
+without the guard costs. Sharing the expression is what stops an eleventh loop re-deriving the
 unguarded form.
+
+Nine of the ten are bit-identical substitutions. **The tenth reassociates**: the Gordon network
+builder's `f + (l - f) * ((double)j / (guideCount - 1))` becomes `((l - f) * j) / (guideCount - 1)`,
+and across ten realistic `[FirstParameter, LastParameter]` ranges 25-33% of cases differ by 1-2 ulp
+(≤ 4e-15 over the whole span, exactly 0 on this repo's own Gordon fixture). One structural
+consequence beyond the magnitude: the old form always landed the last sample exactly on
+`f + (l - f)`, while the new one can land 1 ulp **past** `LastParameter` (4 cases of n = 2…60 on a
+0..2π profile). Harmless here, because the builder `SetNotPeriodic()`s the curves first so
+`Geom_BSplineCurve::D0` does not throw just outside the range, but it is a boundary the old
+expression structurally could not cross, so it is recorded at the site rather than left for
+someone to rediscover.
+
+Three open-coded lines remain, across two sites, both deliberately.
+`OCCTGeomFillAppSurf`'s `(double)i / (count - 1)` is
+**unguarded** — the exact #620 shape — but chasing it turned up a separate, larger defect
+(`Surface.appSurf(curves:)` segfaults on a single curve regardless of the parameter value, so it
+is a missing arity guard rather than a divisor bug), which is filed on its own; converting the
+divisor would not fix it and would muddy that fix. `OCCTGeomFillCoonsPatchEval`'s two lines are a
+different contract, not the same expression: their single-sample branch is `0.5`, the patch
+midpoint, where every other site's is the low end. The helper's own doc says so, so the next
+sweep does not fold them in on shape alone.
+
+**Recorded, not fixed: the Gordon family has no behavioural test coverage at all.** All five
+Gordon tests assert only nil-ness and status ordinals — not one checks a point, pole, degree or
+bound — and `networkSurfaceBuildsOrReportsStatus`, the only test reaching the changed line, accepts
+any status but `.notStarted`; on the repo's own `makeNetwork()` fixture the builder returns
+`KnotAlignmentFailed`, so it never builds a surface. Nothing in the repo would have caught the 1-ulp
+change above, or one many orders of magnitude larger. Filed separately.
 
 **A second wrong claim, caught reviewing the first fix.** The new contract sentence said
 `uCount: 1` is "the single iso-row at `uMin`". That holds only for a bounded surface: the bridge
