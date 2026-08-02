@@ -185,15 +185,43 @@ far the fitted surface moves. It also reinstated, in the documentation layer, th
 #491 existed to remove.
 
 The interesting part is not the one-line correction. A per-type reference page that restates a
-signature is a **copy**, and 877 such restatements carry a default value somewhere in this tree.
-`Scripts/check-docs-defaults.py` now parses every one of them, matches it to its `public`
-declaration in `Sources/OCCTSwift`, and compares each default the two state in common: **1460
-defaults checked, 2 drifted**, both of them this one. It reports a disagreement only when both sides
-state a default and the literals differ (modulo layout, so `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` are
-not a finding), which is what keeps the run at zero false positives; where several declarations
-share a name and parameter-label list, the doc heading's `Type.` prefix picks one and otherwise
-agreement with any candidate is accepted, so ambiguity cannot manufacture a failure either. Exit
-status is 1 on any drift, so it can gate a commit the way `check-null-handle-guards.py` does.
+signature is a **copy**, and this tree holds 3426 such restatements.
+`Scripts/check-docs-defaults.py` parses every one of them, matches it to its declaration in
+`Sources/OCCTSwift`, and compares them position by position: **1460 defaults compared, 2 drifted**,
+both of them this one.
+
+A default drifts in three shapes, and all three fail the run, because a gate that reports a defect
+while exiting 0 is not a gate. The literals can differ. The docs can state a default the source
+does not have, so a required argument reads as optional. Or the source can state one the docs omit
+— which is also how a *source-side* addition hides behind an unchanged page, and it is the reason
+the comparison covers restatements carrying no defaults at all rather than only the 876 that do.
+Layout is not drift: `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` compare equal.
+
+All of that depends on comparing against the **right** declaration, because several share one name
+and label list: `writeOBJ(to:deflection:)` is both `Document.writeOBJ` (deflection 1.0) and
+`Shape.writeOBJ` (0.1). Resolving that by accepting agreement with any candidate cannot invent a
+failure, but it can swallow one, and it did — twice, at two different depths. First across types,
+letting a page state `Shape.writeOBJ`'s default for `Document.writeOBJ` and exit 0. Then, once a
+hint selected the right *type*, across the overloads within it: deprecating a method by keeping its
+old signature verbatim, defaults included, is the ordinary way to deprecate, and the stale page
+went on matching the retained twin. Both are the #626 shape walking through the gate built for it.
+
+So the owning type is resolved from the nearest heading's qualifier, then outward through the
+enclosing section headings (`CurveAdaptors.md` holds `## WireCurve` and `## EdgeCurve`, each with
+an identically titled `### points(count:)`), then the page filename — and where that still leaves
+two candidates *disagreeing* about a default, the restatement is reported as `unverified` and
+fails, rather than being quietly decided by whichever one happened to match. A twin that merely
+lacks a default is still disambiguated by the doc's own defaults, so the ordinary deprecation
+shape stays quiet. On this tree: 2712 resolved uniquely, 504 by heading, 163 by filename, and
+**0 unverified**.
+
+Exit status is 1 on any drift, on an unverified restatement, or on growth in the `unmatched`
+bucket — a restatement stops being compared the moment its labels stop matching, so an unpinned
+bucket there would absorb a rename silently. `--self-test` runs an 11-case battery in memory,
+covering each shape above; it is committed because three gate scripts on this branch have now
+shipped confidently wrong, and an uncommitted battery regresses without saying so. Nothing runs
+this script yet — wiring the gate scripts into CI is #625, whose own note warns against installing
+a gate that passes unconditionally.
 
 `ContinuityClass.isParametric` was flagged as the same root cause and is the same shape of miss.
 #623 fixed `satisfies(_:)` and gave `derivativeOrder` an explicit warning that its `nil` means "no
