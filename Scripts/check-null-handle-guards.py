@@ -74,7 +74,8 @@ Usage (from the repo root):
     python3 Scripts/check-null-handle-guards.py --quiet     # exit status only
     python3 Scripts/check-null-handle-guards.py --self-test # prove each failure mode is caught
 
-Exit status is 1 when any site is unguarded, so this can gate a commit.
+Exit status is 1 when any site is unguarded, so this can gate a commit. CI runs it, and its
+`--self-test`, in `ci.yml`'s `gate-scripts` job (#625).
 """
 import glob
 import os

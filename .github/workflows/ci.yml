@@ -27,6 +27,79 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The repo's static gate scripts. Deliberately a separate job, on Linux, ahead of nothing:
+  #
+  #   - separate job, not a step in build-and-test, so it reports in well under a minute instead of
+  #     behind the ~6-minute build, and so it carries its own status check. That second half is the
+  #     load-bearing one: build-and-test is red branch-wide on refactor/** whenever the branch
+  #     carries a kernel patch newer than Package.swift's pinned xcframework (#585), and a gate
+  #     folded into that job would be red for a reason that has nothing to do with it, which is the
+  #     same as not having it.
+  #   - ubuntu-latest, because all four are pure Python over the repo's own text: no Xcode, no
+  #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
+  #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
+  #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
+  #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
+  #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
+  #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
+  #     other three. Without it a contributor fixes them one CI round trip at a time. It is
+  #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
+  #     takes effect.
+  #
+  # Two of the four (check-bridge-index, check-null-handle-guards) resolve their inputs relative to
+  # the working directory and exit 2 with "run from the repo root" elsewhere; the other two resolve
+  # from __file__. A GitHub Actions step starts at the repo root, so both kinds are satisfied.
+  gate-scripts:
+    name: gate scripts (static, no build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # v7, not the v4 the sibling jobs in this file pin. Deprecation annotations are emitted per
+      # JOB, not per workflow, so this job's pins decide this job's annotation: at v4/v5 it raised
+      # its own "Node.js 20 is deprecated" warning, which this job would have been newly
+      # introducing (nothing in the repo used setup-python before). v7 of both targets node24, so
+      # the annotation is simply absent here. It leaves this file mixed-version until the other two
+      # jobs are bumped, which is a repo-wide change with its own PR.
+      - uses: actions/checkout@v7
+
+      # Pinned rather than the image default: these gates parse Swift and C++ with regexes, and a
+      # runner-image Python bump silently changing a verdict is exactly the failure mode the gates
+      # exist to prevent. Nothing here needs a third-party package — stdlib only (re, sys, os,
+      # glob, argparse, collections) — so there is no install step.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: check-bridge-index.py --self-test
+        run: python3 Scripts/check-bridge-index.py --self-test
+
+      - name: check-bridge-index.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-index.py
+
+      - name: check-null-handle-guards.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py --self-test
+
+      - name: check-null-handle-guards.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-null-handle-guards.py
+
+      - name: check-docs-defaults.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py --self-test
+
+      - name: check-docs-defaults.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-defaults.py
+
+      # No --self-test of its own. It takes no options other than --fix/--audit and ignores an
+      # unrecognised one, so it is invoked bare; `--self-test` would be silently accepted and run
+      # the ordinary report, which reads as a passing self-test that never existed.
+      - name: count-operations.py
+        if: '!cancelled()'
+        run: python3 Scripts/count-operations.py
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15

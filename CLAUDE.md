@@ -17,6 +17,49 @@ swift run OCCTTest                   # Run test executable
 Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concurrency-touching changes (see docs/thread-safety.md)
 ```
 
+### Static Gate Scripts
+
+Four pure-Python checks over the repo's own text. No OCCT, no build, ~3s for all four. **CI runs
+every one of them, plus each `--self-test`, in `ci.yml`'s `gate-scripts` job** — a separate
+`ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
+its own status check when `build-and-test` is red for an unrelated reason (#585's pinned-kernel
+mismatch on `refactor/**` branches). Each exits 1 on a defect and 0 when clean; `check-bridge-index`
+and `check-null-handle-guards` exit **2** if run from anywhere but the repo root (#625).
+
+```bash
+python3 Scripts/check-bridge-index.py        # OCCTBridge.h's class → symbol index: stale / misfiled entries
+python3 Scripts/check-null-handle-guards.py  # every bridge fn guards the Handle, not just the pointer
+python3 Scripts/check-docs-defaults.py       # every default docs/reference/ restates matches its declaration
+python3 Scripts/count-operations.py          # README + API_REFERENCE totals match the derived count
+```
+
+The first three take `--self-test`, which runs a fixture battery proving the *detector* catches each
+failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
+were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
+is blind looks exactly like one reporting "all clear" because the tree is clean.
+`count-operations.py` has no `--self-test` and **exits 2 on an unrecognised option** rather than
+running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
+instead of passing forever.
+
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs the same seven invocations
+locally, flag for flag. It is **opt-in and not installed by cloning** — enable it deliberately:
+
+```bash
+# main checkout — surgical, leaves other hooks alone
+ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit
+
+# LINKED WORKTREE (.claude/worktrees/*) — the symlink above fails with "Not a directory" there,
+# because a worktree's .git is a file, not a directory. Use either of these instead:
+git config core.hooksPath Scripts/git-hooks                          # per-worktree
+ln -s <main>/Scripts/git-hooks/pre-commit <main>/.git/hooks/pre-commit  # once, covers every worktree
+```
+
+`core.hooksPath` REPLACES `.git/hooks` rather than adding to it, so any hook you already have stops
+firing while it is set. `git commit --no-verify` skips the hook. It checks the working tree rather
+than the staged snapshot, runs whatever `python3` is on your PATH (CI pins 3.12), and exits 0 with a
+warning if `python3` is missing — so a passing hook is weaker evidence than a passing CI job. CI is
+the authority.
+
 ### Compile a Ground Truth C++ Test
 
 ```bash
@@ -73,7 +116,14 @@ uses>;`. Checking only the pointer says nothing about the handle, and 36 of the 
 points this bridge passes such a handle into dereference it unconditionally, which is an
 uncatchable signal, not something `catch (...)` can absorb (#478, #556, #618). Run
 `python3 Scripts/check-null-handle-guards.py` to verify; it exits 1 on any unguarded site, and
-`--self-test` proves both failure modes (an unguarded site reported, a guarded one not).
+`--self-test` proves both failure modes (an unguarded site reported, a guarded one not). **Both are
+run by CI** in `ci.yml`'s `gate-scripts` job, so an unguarded site turns the PR's check red — until
+#625 they were run by nothing at all, and this instruction described a gate that existed only as
+prose. Note the repo has **no branch protection and no rulesets**, so a red check is visible but
+does not itself block a merge; making `gate-scripts` a required check is tracked separately and is
+safe for this one specifically, because unlike `build-and-test` (red branch-wide while #585 stands)
+it is fast and green on every branch. See "Static Gate Scripts" above for the optional pre-commit
+hook.
 
 **The guard is required only where the OCCT call actually needs it.** Not every entry point
 dereferences: `GeomLib_Tool::Parameter` returns false, `GeomAdaptor_Surface` and

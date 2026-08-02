@@ -31,6 +31,14 @@ Usage:
     ./Scripts/count-operations.py           # report; exit 1 if the docs disagree
     ./Scripts/count-operations.py --fix     # rewrite README + API_REFERENCE Total
     ./Scripts/count-operations.py --audit   # list counted entry points with no reference doc
+
+Exit status is 1 when README's headline or API_REFERENCE's Total disagrees with the derived
+count, so this can gate a commit — it always could; it was the one gate script whose docstring
+never said so, which is why it read as a release-time reporting tool. Exit status is 2 for an
+unrecognised option: this script has no `--self-test`, its three sibling gates do, and CI pairs
+each of theirs with its real run, so `count-operations.py --self-test` is the natural thing to
+write when extending that list — it used to be accepted silently and run the ordinary report,
+passing forever. CI runs this bare in `ci.yml`'s `gate-scripts` job (#625).
 """
 import re
 import sys
@@ -238,8 +246,23 @@ def fix(derived):
 
 
 def main():
-    derived, breakdown, ops = count_entry_points()
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    # Reject an unrecognised option rather than falling through to the report. Silently ignoring
+    # one made `--self-test` a trap: this script has no self-test, its three sibling gates do, and
+    # CI pairs each of theirs with its real run — so the natural thing to write when adding this
+    # script to that list is `count-operations.py --self-test`, which would have run the ordinary
+    # report and passed forever, exactly the "a gate that cannot fail" defect #625 exists to end.
+    # A prose warning was the first fix and was the wrong one: #625's whole premise is that prose
+    # describing a gate is not a gate. Exit 2, matching the sibling scripts' "cannot run" status
+    # (they use it for a wrong working directory), so it is distinguishable from a real failure.
+    # Also stops `--fi` silently reporting when `--fix` was meant.
+    if mode not in ("", "--fix", "--audit"):
+        print(f"unknown option: {mode}", file=sys.stderr)
+        print("usage: count-operations.py [--fix | --audit]", file=sys.stderr)
+        return 2
+
+    derived, breakdown, ops = count_entry_points()
 
     if mode == "--audit":
         typed_doc, bare_doc = documented_index()

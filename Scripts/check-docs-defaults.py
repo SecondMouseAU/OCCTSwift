@@ -86,8 +86,8 @@ Usage (from the repo root):
     python3 Scripts/check-docs-defaults.py --quiet          # exit status only
 
 Exit status is 1 when a default disagrees, when a restatement cannot be adjudicated, or when the
-`unmatched` bucket grows — so this can gate a commit. Nothing in this tree runs it yet; wiring the
-gate scripts into CI is #625, which covers all of them together.
+`unmatched` bucket grows — so this can gate a commit. CI runs it, and its `--self-test`, in
+`ci.yml`'s `gate-scripts` job (#625).
 """
 import argparse
 import glob
