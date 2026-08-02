@@ -44,7 +44,7 @@ shape of defect as the mixed-version file it was fixing.
 
 No bump changed an interface: `action.yml` at the new ref is byte-identical to the old one apart from
 the `using:` line in all three cases, so `fetch-depth`, `submodules`, `persist-credentials` and
-`cache-hit` keep their existing defaults and semantics. The two real behaviour changes are inert
+`cache-hit` keep their declared defaults. The two real behaviour changes are inert
 here — checkout v6 persists credentials to a separate file rather than `.git/config` (no workflow
 reads them or pushes), and checkout v7 blocks checking out a fork PR head under `pull_request_target`
 or `workflow_run` (neither trigger is used; the two `pull_request` workflows are unaffected).
