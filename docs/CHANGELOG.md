@@ -171,6 +171,38 @@ throw and `catch (...)` would return `nullptr`, so `nil` comes back either way. 
 can separate those two layers, and claiming otherwise would be the same kind of overstatement this
 entry is about.
 
+#### The reference page that kept documenting the continuity default #491 replaced (#626)
+
+Two pages under `docs/reference/` restate `Surface.approxWithDetails`. #491 flipped both of its
+continuity defaults from C1 to C2 — so that it and `Surface.approximated` stop fitting to different
+smoothness when neither is given a continuity argument — and updated `Surface.md`.
+`Shape-HLR-Geom.md` went on declaring `uContinuity: ParametricContinuity = .c1, vContinuity: .c1`.
+
+That page **is** in this branch's changed set: its `quasiUniformParameters` entry was rewritten
+thirty lines below the stale default. A reader following it and omitting the arguments expects a C1
+fit and gets a C2 one, which per #572 is not cosmetic — continuity is one of the inputs deciding how
+far the fitted surface moves. It also reinstated, in the documentation layer, the exact divergence
+#491 existed to remove.
+
+The interesting part is not the one-line correction. A per-type reference page that restates a
+signature is a **copy**, and 877 such restatements carry a default value somewhere in this tree.
+`Scripts/check-docs-defaults.py` now parses every one of them, matches it to its `public`
+declaration in `Sources/OCCTSwift`, and compares each default the two state in common: **1460
+defaults checked, 2 drifted**, both of them this one. It reports a disagreement only when both sides
+state a default and the literals differ (modulo layout, so `SIMD3(0, 0, 1)` and `SIMD3(0,0,1)` are
+not a finding), which is what keeps the run at zero false positives; where several declarations
+share a name and parameter-label list, the doc heading's `Type.` prefix picks one and otherwise
+agreement with any candidate is accepted, so ambiguity cannot manufacture a failure either. Exit
+status is 1 on any drift, so it can gate a commit the way `check-null-handle-guards.py` does.
+
+`ContinuityClass.isParametric` was flagged as the same root cause and is the same shape of miss.
+#623 fixed `satisfies(_:)` and gave `derivativeOrder` an explicit warning that its `nil` means "no
+parametric order", not "meets no floor", because `guard let o = derivativeOrder else { return
+false }` reproduces #623 verbatim. `isParametric` is that property's structural sibling with the
+identical trap — it is `false` for the geometric classes, so `guard measured.isParametric` ahead of
+a `.c0` check reports a tangent-continuous curve as not even connected — and the warning was added
+to only one of the two. It now carries it as well, pointing at `satisfies(_:)` the same way.
+
 #### The one grid layout finally covers the third type holding a grid (#617)
 
 #486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer

@@ -1086,8 +1086,8 @@ public struct ApproxSurfaceResult {
 Approximates a surface as a BSpline with detailed result information.
 
 ```swift
-public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c1,
-                               vContinuity: ParametricContinuity = .c1,
+public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                               vContinuity: ParametricContinuity = .c2,
                                maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult
 ```
 
@@ -1099,7 +1099,7 @@ public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinui
   - `maxSegments` — maximum number of BSpline segments.
 - **Returns:** `ApproxSurfaceResult` with the output `Surface` (or `nil`), `maxError`, and status flags.
 - **OCCT:** `GeomConvert_ApproxSurface` via `OCCTGeomConvertApproxSurface`.
-- **Note:** Prefer `Surface.approximated(tolerance:continuity:maxSegments:maxDegree:)` for simpler use; use this variant when you need the error and status separately.
+- **Note:** Prefer `Surface.approximated(tolerance:continuity:maxSegments:maxDegree:)` for simpler use; use this variant when you need the error and status separately. Both continuity defaults are C2, matching `Surface.approximated`; before #491 they were C1 here, so the two no-continuity-argument calls fitted to different smoothness and returned different surfaces.
 - **Example:**
   ```swift
   let result = surface.approxWithDetails(tolerance: 0.001)
