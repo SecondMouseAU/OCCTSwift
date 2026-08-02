@@ -2965,11 +2965,15 @@ int32_t OCCTBRepGraphSampleFaceUVGrid(OCCTBRepGraphRef g, int32_t faceIndex,
         double uStep = (uSamples > 1) ? (uMax - uMin) / (uSamples - 1) : 0.0;
         double vStep = (vSamples > 1) ? (vMax - vMin) / (vSamples - 1) : 0.0;
 
-        for (int32_t iv = 0; iv < vSamples; ++iv) {
-            double v = vMin + iv * vStep;
-            for (int32_t iu = 0; iu < uSamples; ++iu) {
-                double u = uMin + iu * uStep;
-                int32_t idx = iv * uSamples + iu;
+        // #617: U-major, via the one shared index (occtSurfaceGridIndex, #486) rather than a
+        // hand-spelled formula. This buffer used to be written `iv * uSamples + iu` — the exact
+        // opposite of what #486 declared THE surface-grid layout, and the only guidance a caller
+        // of BRepGraph.FaceGridSample had. Loop order follows the index so writes stay sequential.
+        for (int32_t iu = 0; iu < uSamples; ++iu) {
+            double u = uMin + iu * uStep;
+            for (int32_t iv = 0; iv < vSamples; ++iv) {
+                double v = vMin + iv * vStep;
+                int32_t idx = occtSurfaceGridIndex(iu, iv, vSamples);
 
                 GeomLProp_SLProps props = occtSurfaceLocalProps(surfHandle, u, v, 2);
 
