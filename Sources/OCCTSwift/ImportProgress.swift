@@ -25,6 +25,35 @@ import OCCTBridge
 /// `shouldCancel()` is polled at OCCT's progress-checkpoint boundaries
 /// (typically once per transferred entity in STEP/IGES). Returning `true` aborts
 /// the in-flight import; the loader throws `ImportError.cancelled`.
+///
+/// ## What a cancelled call reports
+///
+/// One `true` is enough, and it is remembered: the answer is not re-asked into a different
+/// outcome by the polls that follow, so a one-shot flag or an already-consumed
+/// `Task.isCancelled` works as a canceller.
+///
+/// A cancelled call always throws `ImportError.cancelled` (`ExportError.cancelled` for the
+/// exporters), whichever phase the cancellation lands in — a break during a STEP transfer
+/// leaves the reader reporting zero transferred roots, which the bridge used to pass on as
+/// `ImportError.importFailed` for an import the caller had explicitly stopped (#525).
+///
+/// ```swift
+/// final class Cancel: ImportProgress, @unchecked Sendable {
+///     private let flag = NSLock()
+///     private var stop = false
+///     func cancel() { flag.lock(); stop = true; flag.unlock() }
+///     func progress(fraction: Double, step: String) {}
+///     func shouldCancel() -> Bool { flag.lock(); defer { flag.unlock() }; return stop }
+/// }
+///
+/// let canceller = Cancel()
+/// do {
+///     let shape = try Shape.loadRobust(from: stepURL, progress: canceller)
+///     print(shape.faceCount)
+/// } catch ImportError.cancelled {
+///     print("stopped")   // never .importFailed, whichever phase was running
+/// }
+/// ```
 public protocol ImportProgress: AnyObject, Sendable {
     /// Called as the importer advances. `fraction` is `0.0...1.0`. `step` is a
     /// human-readable name of the current sub-task (may be empty).
@@ -32,7 +61,8 @@ public protocol ImportProgress: AnyObject, Sendable {
 
     /// Return `true` to cooperatively cancel the in-flight import. Polled at
     /// each progress checkpoint. The loader throws `ImportError.cancelled` on
-    /// the next boundary after this returns `true`.
+    /// the next boundary after this returns `true`, and later polls returning
+    /// `false` do not undo that.
     func shouldCancel() -> Bool
 }
 

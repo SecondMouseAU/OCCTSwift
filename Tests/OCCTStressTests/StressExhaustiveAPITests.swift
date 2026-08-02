@@ -402,8 +402,9 @@ struct StressCurve3DAPITests {
 
     @Test func localCurvature() {
         let c = standardCurve3D()
-        let k = c.localCurvature(at: 0)
-        #expect(k.isFinite)
+        // #595: localCurvature is deprecated onto curvature(at:), which reports definedness.
+        let k = c.curvature(at: 0)
+        #expect(k?.isFinite == true)
     }
 
     @Test func localTangent() {
@@ -521,14 +522,14 @@ struct StressSurfaceAPITests {
     @Test func gaussianCurvature() {
         if let s = Surface.sphere(center: .zero, radius: 10) {
             let k = s.gaussianCurvature(atU: 1.0, v: 0.5)
-            #expect(abs(k - 0.01) < 0.001)
+            if let k { #expect(abs(k - 0.01) < 0.001) } else { Issue.record("no curvature") }
         }
     }
 
     @Test func meanCurvature() {
         if let s = Surface.sphere(center: .zero, radius: 10) {
             let h = s.meanCurvature(atU: 1.0, v: 0.5)
-            #expect(abs(abs(h) - 0.1) < 0.001)
+            if let h { #expect(abs(abs(h) - 0.1) < 0.001) } else { Issue.record("no curvature") }
         }
     }
 

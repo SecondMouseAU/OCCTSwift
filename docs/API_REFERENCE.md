@@ -360,8 +360,8 @@ a map of the major areas, and the `Total` as the count.
 | **GCPnts_UniformAbscissa** | 4 | uniform arc-length points by count/distance, full/subrange |
 | **GeomConvert_CompCurveToBSpline** | 1 | concatenate bounded 3D curves into BSpline |
 | **Geom2dConvert_CompCurveToBSpline** | 1 | concatenate bounded 2D curves into BSpline |
-| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | surface knot splits U/V count and values |
-| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | 2D curve knot split count and values |
+| **GeomConvert_BSplineSurfaceKnotSplitting** | 3 | *deprecated (#562)* — surface knot splits U/V count and values; forwards to `Surface.knotSplitting`, which wraps the same analyzer |
+| **Geom2dConvert_BSplineCurveKnotSplitting** | 2 | *deprecated (#562)* — 2D curve knot split count and values; forwards to `Curve2D.splitIndicesAtDiscontinuities`, which wraps the same analyzer |
 | **BndLib Extras** | 6 | ellipse, cone, circleArc, ellipseArc, parabolaArc, hyperbolaArc bounds |
 | **GProp Torus** | 2 | torus surface area, torus volume |
 | **BRepTools_ReShape** | 8 | create, release, clear, remove, replace, isRecorded, apply, value |
@@ -465,13 +465,13 @@ a map of the major areas, and the `Total` as the count.
 | **MathPoly rc4** | 4 | linearRoots, quadraticRoots, cubicRoots, quarticRoots |
 | **MathInteg rc4** | 5 | integGauss, integGaussAdaptive, integKronrod, integKronrodAdaptive, integTanhSinh |
 | **UnitsMethods** | 3 | lengthFactor, lengthUnitScale, dumpLengthUnit |
-| **LProp3d Curve** | 4 | localCurvature, localTangent, localNormal, localCentreOfCurvature |
+| **LProp3d Curve** | 4 | localTangent, localNormal, localCentreOfCurvature; localCurvature *deprecated (#595)* — it forwards to `Curve3D.curvature(at:)`, the same call since #494 gave the two one resolution |
 | **LProp3d Surface** | 2 | localCurvatures, localCurvatureDirections |
 | **ProjLib Projectors** | 3 | projectLineOnPlane, projectLineOnCylinder, projectCircleOnPlane |
 | **BRepBndLib** | 3 | boundingBox, boundingBoxOptimal, orientedBoundingBoxDetailed |
 | **ShapeAnalysis Tolerance** | 3 | toleranceValue, toleranceOverCount, toleranceInRangeCount |
 | **Boolean Validation** | 2 | isBooleanValid, isBooleanValidWith |
-| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
+| **Defeaturing** | 2 | defeature(faces:) (also the target of the deprecated removeFeatures, #536; a face this shape does not have fails the whole request, #578), defeature(faces:tolerance:) (deprecated — the tolerance was never read, #497) |
 | **Polynomial Conversion** | 1 | polynomialToPoles |
 | **Transform Extras** | 4 | transformed(byMatrix:), isTransformNegative, displacement, transformation |
 | **TopExp Extras** | 1 | commonVertex |
@@ -573,7 +573,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve2D.ellipse(...)` | `Geom2d_Ellipse` |
 | `Curve2D.bspline(...)` | `Geom2d_BSplineCurve` |
 | `Curve2D.interpolate(through:)` | `Geom2dAPI_Interpolate` |
-| `curve.curvature(at:)` | `Geom2dLProp_CLProps2d` |
+| `curve.curvature(at:)` — `Double?`, `nil` where no tangent is defined (#595) | `Geom2dLProp_CLProps2d` |
 | `curve.intersections(with:)` | `Geom2dAPI_InterCurveCurve` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
 | `Curve2DGcc.circlesTangentWithCenter(...)` | `Geom2dGcc_Circ2dTanCen` |
@@ -590,7 +590,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Curve3D.bspline(...)` | `Geom_BSplineCurve` |
 | `Curve3D.interpolate(points:...)` | `GeomAPI_Interpolate` |
 | `curve.drawAdaptive()` | `GCPnts_TangentialDeflection` |
-| `curve.curvature(at:)` | `GeomLProp_CLProps` |
+| `curve.curvature(at:)` / `curve.torsion(at:)` — both `Double?` since #595 | `GeomLProp_CLProps` |
 | `Curve3D.join(_:)` | `GeomConvert::ConcatG1` |
 
 #### Parametric Surfaces (v0.20.0)
@@ -605,7 +605,7 @@ OCCTSwift wraps a **subset** of OCCT's functionality. The bridge layer (`OCCTBri
 | `Surface.pipe(path:radius:)` | `GeomFill_Pipe` |
 | `surface.uIso(at:)` / `surface.vIso(at:)` | `Geom_Surface::UIso/VIso` |
 | `surface.drawGrid(...)` / `surface.drawMesh(...)` | Grid/mesh discretization |
-| `surface.gaussianCurvature(atU:v:)` | `GeomLProp_SLProps` |
+| `surface.gaussianCurvature(atU:v:)` / `meanCurvature(atU:v:)` / `curvatures(u:v:)` — all optional since #595 | `GeomLProp_SLProps` |
 
 #### Face Surface Analysis (v0.18.0)
 | Swift API | OCCT Class |
@@ -900,6 +900,8 @@ aliases the input.
 | `Shape.fill(boundaries:parameters:)` | `BRepOffsetAPI_MakeFilling` |
 | `Shape.fill(boundaries:supportedBy:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order)` |
 | `Shape.fill(constraints:parameters:)` | `BRepOffsetAPI_MakeFilling::Add(edge, face, order, isBound)` |
+| `FillingSurface.refusedConstraintCount` | bridge state: constraints *not* passed to `BRepOffsetAPI_MakeFilling::Add` (#482) |
+| `FillingSurface.hasRefusedConstraint` | bridge state: constraints *not* passed to `BRepOffsetAPI_MakeFilling::Add` (#482) |
 
 #### Shape Healing (v0.31.0)
 | Swift API | OCCT Class |

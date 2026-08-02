@@ -24,19 +24,22 @@ Differential geometry queries evaluated at a parametric point `(u, v)` on the su
 Returns the Gaussian curvature at `(u, v)`.
 
 ```swift
-public func gaussianCurvature(atU u: Double, v: Double) -> Double
+public func gaussianCurvature(atU u: Double, v: Double) -> Double?
 ```
 
 The Gaussian curvature is the product of the two principal curvatures (`kMin × kMax`). Positive on a convex surface, negative in a saddle region, zero on a developable surface.
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Gaussian curvature value (signed); `0` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole).
+- **Returns:** Gaussian curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point (a cone apex, a sphere pole). This was `0` until #595 — which is also the Gaussian curvature of **every point of every plane, cylinder and cone**, since those are developable, so whole surfaces read as "no answer". `Face.gaussianCurvature(atU:v:)` reads the same quantity through the face and has always returned an optional; the two now agree.
 - **OCCT:** `GeomLProp_SLProps::GaussianCurvature` (order 2, `Precision::Confusion()`).
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `meanCurvature(atU:v:)` together from a single evaluation. All three share one `GeomLProp_SLProps` construction, so they agree exactly — including on whether curvature is defined at all (#405).
 - **Example:**
   ```swift
   if let sphere = Surface.sphere(radius: 5) {
       let k = sphere.gaussianCurvature(atU: 0, v: 0)  // ≈ 0.04 (1/R²)
+      let flat = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+      flat.gaussianCurvature(atU: 3, v: 4)             // 0 — flat, and that is the answer
+      sphere.gaussianCurvature(atU: 0, v: .pi / 2)     // nil — the pole has no curvature
   }
   ```
 
@@ -47,13 +50,13 @@ The Gaussian curvature is the product of the two principal curvatures (`kMin × 
 Returns the mean curvature at `(u, v)`.
 
 ```swift
-public func meanCurvature(atU u: Double, v: Double) -> Double
+public func meanCurvature(atU u: Double, v: Double) -> Double?
 ```
 
 The mean curvature is the arithmetic mean of the two principal curvatures: `(kMin + kMax) / 2`. Zero on a minimal surface (e.g., a flat plane in its own parameter domain).
 
 - **Parameters:** `u` — U parameter; `v` — V parameter.
-- **Returns:** Mean curvature value (signed); `0` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point.
+- **Returns:** Mean curvature value (signed); `nil` if `GeomLProp_SLProps::IsCurvatureDefined()` is false at that point. Was `0` until #595, which is also a plane's real mean curvature, and disagreed with `Face.meanCurvature(atU:v:)` (already optional).
 - **OCCT:** `GeomLProp_SLProps::MeanCurvature` (order 2, `Precision::Confusion()`).
 - **See also:** [`curvatures(u:v:)`](Surface.md) returns this and `gaussianCurvature(atU:v:)` together from a single evaluation, sharing one `GeomLProp_SLProps` construction (#405).
 - **Example:**
