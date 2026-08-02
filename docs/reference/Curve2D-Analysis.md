@@ -338,9 +338,9 @@ public func project(point p: SIMD2<Double>) -> Curve2DProjection?
 ```
 
 - **Parameters:** `p` — 2D point to project.
-- **Returns:** Nearest `Curve2DProjection`, or `nil` when the point has no projection onto the curve — one beyond the ends of a bounded curve, or a circle's centre. An ordinary outcome, not an error.
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (`NearestPoint`/`LowerDistanceParameter`/`LowerDistance`).
-- **Note:** `project(_:)` (the `Point2D` overload) and [`Point2D.distance(to:)`](Geometry2D.md) compute the same nearest solution through the same shared bridge path, so all three agree on the value and on when there is no projection (#413).
+- **Returns:** Nearest `Curve2DProjection`, always inside the curve's own domain, or `nil` when there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurve2dRange` — the minimum over every `Geom2dAPI_ProjectPointOnCurve` extremum in range and both curve ends. There is no third source: `ShapeAnalysis_Curve` has no 2D projection (#615).
+- **Note:** `project(_:)` (the `Point2D` overload), [`Point2D.distance(to:)`](Geometry2D.md) and `nearestParameter(to:)` compute the same nearest solution through the same shared bridge path and agree with it exactly (#413, #615). The answer is the true nearest point rather than the nearest *perpendicular foot*: a point past the end of a bounded curve is nearest to that end, and a half arc queried from below answers with its near end. Until #615 all of these reported an extremum instead — the far side of that arc, `11` away where the truth is `7.81` — or `nil` where there was none. [`allProjections(of:)`](#allprojectionsof) is deliberately **not** in the agreement; it asks for the extrema, and still reports none for those points.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5),
@@ -362,8 +362,9 @@ public func allProjections(of p: SIMD2<Double>) -> [Curve2DProjection]
 Capped at 64 results. Useful when a point has several local-minimum projections — e.g. a point outside a circle projects to both the near and the far side.
 
 - **Parameters:** `p` — 2D point to project.
-- **Returns:** Array of `Curve2DProjection` values, empty when there is no projection at all.
+- **Returns:** Array of `Curve2DProjection` values, empty when there is no extremum at all.
 - **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (all solutions).
+- **Note:** This asks for the **extrema** — the perpendicular feet — which since #615 is visibly a different question from "the nearest point". A bounded curve queried from beyond its end has no foot, so this returns empty where [`project(point:)`](#projectpoint) answers with the end. An extremum may also be a local *maximum*: on a half arc queried from the far side, the only element here is the point furthest away.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
@@ -1503,8 +1504,8 @@ public func project(_ point: Point2D) -> (parameter: Double, distance: Double)?
 ```
 
 - **Parameters:** `point` — the `Point2D` to project.
-- **Returns:** `(parameter, distance)` tuple, or `nil` when the point has no projection onto the curve.
-- **OCCT:** `Geom2dAPI_ProjectPointOnCurve` (`LowerDistanceParameter`/`LowerDistance`).
+- **Returns:** `(parameter, distance)` tuple, or `nil` when there is no curve to answer about.
+- **OCCT:** `occtNearestPointOnCurve2dRange`, shared with [`project(point:)`](#projectpoint), so it reports the true nearest point over the curve's own domain — a point past the end answers with that end (#615).
 - **Note:** A `parameter` of `0` is an ordinary success — projecting a segment's own start point onto it returns exactly that — so `nil` is the only failure signal. The underlying bridge function used to return `0` on failure too, conflating the two (#413).
 - **Example:**
   ```swift

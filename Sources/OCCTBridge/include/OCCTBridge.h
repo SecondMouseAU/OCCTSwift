@@ -352,6 +352,12 @@
 // Geom2dAPI_ProjectPointOnCurve       → OCCTCurve2DProjectPoint, OCCTCurve2DProjectPointAll,
 //                                       OCCTCurve2DProjectPoint2D, OCCTPoint2DDistanceToCurve,
 //                                       OCCTCurve2DNearestParameter
+//                                       (all but OCCTCurve2DProjectPointAll only as one of the two
+//                                       candidate sources occtNearestPointOnCurve2dRange takes a
+//                                       minimum over, the other being the curve's own two ends;
+//                                       there is no 2D ShapeAnalysis_Curve to be the third, see
+//                                       #615. OCCTCurve2DProjectPointAll wants the extrema
+//                                       themselves and constructs its own)
 //
 // --- Geom2dGcc ---
 // Geom2dGcc_Circ2d2TanOn              → OCCTGeom2dGccCirc2d2TanOn*
@@ -383,10 +389,14 @@
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
 //                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint,
 //                                       OCCTBRepExtremaExtPC
-//                                       (the last three only as one of the three candidate sources
+//                                       (all but OCCTExtremaPointCurve and OCCTProjOnCurve* only as
+//                                       one of the three candidate sources
 //                                       occtNearestPointOnCurveRange takes a minimum over; see
-//                                       ShapeAnalysis_Curve for the other, and #539 for why
-//                                       neither class answers correctly on its own)
+//                                       ShapeAnalysis_Curve for the second, the curve's own two
+//                                       ends for the third, and #539 for why neither class answers
+//                                       correctly on its own. OCCTExtremaLocateOnCurve reaches it
+//                                       only through its full-range fallback -- its primary local
+//                                       window search is a bare GeomAPI extremum by design, #615)
 // GeomAPI_ProjectPointOnSurf          → OCCTSurfaceProjectPoint, OCCTFaceProject*
 //
 // --- GeomConvert ---
@@ -2697,8 +2707,11 @@ typedef struct {
 
 /// Project a point onto a curve, nearest solution only.
 /// @return Projection with `distance >= 0` on success; on failure `distance` is -1 and the
-///         other fields are zeroed. A curve can legitimately have no projection for a point
-///         (one beyond the ends of a bounded curve, or a circle's centre).
+///         other fields are zeroed. The answer is the nearest point over the curve's own range,
+///         ends included, so a point with no perpendicular foot (one beyond the ends of a bounded
+///         curve, or a circle's centre) is answered rather than refused; -1 means there was no
+///         curve to answer about (#615). OCCTCurve2DProjectPointAll asks for the extrema instead,
+///         and still reports none for those points.
 OCCTCurve2DProjection OCCTCurve2DProjectPoint(OCCTCurve2DRef curve, double px, double py);
 /// Project a point onto a curve, all local-minimum solutions.
 /// @return Number of solutions written to `out` (0 if there are none).
@@ -9044,9 +9057,10 @@ OCCTPoint2DRef _Nullable OCCTPoint2DMirroredPoint(OCCTPoint2DRef _Nonnull ref,
 OCCTPoint2DRef _Nullable OCCTPoint2DMirroredAxis(OCCTPoint2DRef _Nonnull ref,
     double ox, double oy, double dx, double dy);
 /// Distance from point to curve
-/// @return Minimum distance, or -1 when the point has no projection onto the curve (one beyond
-///         the ends of a bounded curve, or a circle's centre). Swift's Point2D.distance(to:)
-///         maps that to .infinity.
+/// @return Minimum distance over the curve's own range, ends included, so a point with no
+///         perpendicular foot (one beyond the ends of a bounded curve, or a circle's centre) is
+///         measured rather than refused (#615). -1 means there was no curve to measure to; Swift's
+///         Point2D.distance(to:) maps that to .infinity.
 double OCCTPoint2DDistanceToCurve(OCCTPoint2DRef _Nonnull ref, OCCTCurve2DRef _Nonnull curve);
 /// Apply a Transform2D to a point, returns new point
 OCCTPoint2DRef _Nullable OCCTPoint2DTransformed(OCCTPoint2DRef _Nonnull ref,
@@ -9157,7 +9171,9 @@ OCCTCurve2DRef _Nullable OCCTCurve2DSegmentFromPoints(OCCTPoint2DRef _Nonnull p1
     OCCTPoint2DRef _Nonnull p2);
 
 /// Project a Point2D onto a Curve2D, returns parameter at closest point
-/// @param outDistance Output: minimum distance, or -1 on failure — this is the failure signal
+/// @param outDistance Output: minimum distance, or -1 on failure — this is the failure signal.
+///         Since #615 failure means only "no curve": the nearest point is taken over the curve's
+///         own range, ends included, so a point with no perpendicular foot is answered.
 /// @return parameter on curve, or NaN on failure. Do NOT test the return value against 0: 0 is a
 ///         legitimate parameter on any curve whose domain includes it (projecting a segment's own
 ///         start point onto it returns exactly 0). Test `outDistance < 0` instead.
@@ -16947,11 +16963,15 @@ int32_t OCCTCurve3DCurveType(OCCTCurve3DRef _Nonnull curve);
 
 /// Find the parameter on a 3D curve nearest to a 3D point, over the curve's whole range.
 ///
-/// Returns false and leaves *outParameter untouched when the point has no projection at all:
-/// one beyond the ends of a bounded curve, or a circle's centre. That is an ordinary outcome, not
-/// an error, and it cannot be signalled through the parameter: every double is a legitimate
-/// parameter on some curve. Replaces OCCTCurve3DParameterAtPoint and OCCTCurve3DClosestParameter,
-/// which ran the identical projection and disagreed about the no-projection case (#500).
+/// The nearest point over the curve's own range, ends included, not the nearest perpendicular
+/// foot: a point beyond the end of a bounded curve is nearest to that end, and a circle's centre
+/// is equidistant from every point on it, so both are answered (#615). Agrees exactly with
+/// OCCTCurve3DProjectPoint, which shares occtNearestPointOnCurveRange with it.
+///
+/// Returns false and leaves *outParameter untouched only when there is no curve to answer about.
+/// Failure cannot be signalled through the parameter: every double is a legitimate parameter on
+/// some curve. Replaces OCCTCurve3DParameterAtPoint and OCCTCurve3DClosestParameter, which ran the
+/// identical projection and disagreed about how to report its absence (#500).
 bool OCCTCurve3DNearestParameter(OCCTCurve3DRef _Nonnull curve, double x, double y, double z,
                                  double* _Nonnull outParameter);
 
@@ -16962,8 +16982,12 @@ int32_t OCCTCurve2DCurveType(OCCTCurve2DRef _Nonnull curve);
 
 /// Find the parameter on a 2D curve nearest to a 2D point, over the curve's whole range.
 ///
-/// Returns false and leaves *outParameter untouched when the point has no projection at all,
-/// on the same contract as the other Geom2dAPI_ProjectPointOnCurve entry points (#413, #500).
+/// The nearest point over the curve's own range, ends included, not the nearest perpendicular
+/// foot, on the same contract as the other three 2D nearest-point entry points it shares
+/// occtNearestPointOnCurve2dRange with: OCCTCurve2DProjectPoint, OCCTCurve2DProjectPoint2D and
+/// OCCTPoint2DDistanceToCurve (#413, #500, #615).
+///
+/// Returns false and leaves *outParameter untouched only when there is no curve to answer about.
 /// Replaces OCCTCurve2DParameterAtPoint, which reported that case as FirstParameter().
 bool OCCTCurve2DNearestParameter(OCCTCurve2DRef _Nonnull curve, double x, double y,
                                  double* _Nonnull outParameter);
@@ -16975,7 +16999,17 @@ int32_t OCCTSurfaceGetType(OCCTSurfaceRef _Nonnull surface);
 
 // --- Extrema extras ---
 
-/// Local point-on-curve search from initial parameter guess.
+/// Local point-on-curve search from an initial parameter guess.
+///
+/// Two searches with two different contracts. The PRIMARY one reports the LOWEST-DISTANCE extremum
+/// within a window of +/-10% of the domain around the guess: initParam bounds the window, it does
+/// not rank what is found inside it, so the extremum returned need not be the one nearest the guess.
+/// The window is what makes the answer local, and a windowed minimum can still be a global MAXIMUM.
+/// The FALLBACK, which fires only when that window holds no extremum, searches the whole curve and
+/// reports its true nearest point, agreeing with OCCTCurve3DNearestParameter (#615). Callers wanting
+/// the global answer should use that instead.
+///
+/// Returns false only when there is no curve to answer about.
 bool OCCTExtremaLocateOnCurve(OCCTCurve3DRef _Nonnull curve,
                               double px, double py, double pz,
                               double initParam, double tol,

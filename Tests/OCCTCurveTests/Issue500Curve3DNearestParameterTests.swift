@@ -32,67 +32,70 @@ struct Issue500Curve3DNearestParameterTests {
         #expect(curve.nearestParameter(to: SIMD3(8, -1, 0)) == 8)    // the end point itself
     }
 
-    /// A point beyond the ends of a bounded curve has no extremum, so no projection. This is the
-    /// case the two old spellings answered differently, and neither answer was reportable.
-    @Test("No projection is nil, not a parameter from either old convention")
-    func noProjectionIsNil() throws {
+    /// A point beyond the ends of a bounded curve has no perpendicular foot, which is not the same
+    /// as having no nearest point: the nearest point is the end it fell off.
+    ///
+    /// Until #615 this returned `nil` for all three, because the shared helper reported
+    /// `GeomAPI_ProjectPointOnCurve`'s extrema and there are none. `projectPoint(_:precision:)`,
+    /// converted by #539, answered 8 and 3 for the same curve and the same points the whole time.
+    @Test("A point past the end answers with the end, not nil")
+    func pastTheEndAnswersWithTheEnd() throws {
         let curve = try #require(Self.trimmedSegment())
-        for p in [SIMD3<Double>(100, 0, 0), SIMD3(0, 0, 0), SIMD3(-50, 3, 0)] {
-            #expect(curve.nearestParameter(to: p) == nil, "\(p)")
-        }
+        #expect(curve.nearestParameter(to: SIMD3(100, 0, 0)) == 8)
+        #expect(curve.nearestParameter(to: SIMD3(0, 0, 0)) == 3)
+        #expect(curve.nearestParameter(to: SIMD3(-50, 3, 0)) == 3)
     }
 
     /// A circle's centre is equidistant from every point on it, so there is no local minimum to
-    /// find. The 2D parity suite uses the same case (#413).
-    @Test("A circle's centre has no projection")
-    func circleCentreHasNoProjection() throws {
+    /// find — but every point on it is a nearest point, all at the radius. Since #615 that is what
+    /// comes back, matching `projectPoint(_:precision:)`, which has reported it since #539.
+    @Test("A circle's centre answers with a tied nearest point at the radius")
+    func circleCentreAnswersAtTheRadius() throws {
         let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
-        #expect(circle.nearestParameter(to: .zero) == nil)
+        let parameter = try #require(circle.nearestParameter(to: .zero))
+        let onCurve = circle.point(at: parameter)
+        #expect(abs((onCurve.x * onCurve.x + onCurve.y * onCurve.y).squareRoot() - 5) < 1e-9)
+        #expect(abs(circle.projectPoint(.zero).distance - 5) < 1e-9)
         #expect(circle.nearestParameter(to: SIMD3(3, 4, 0)) != nil)   // on the circle: fine
     }
 
-    /// Both deprecated spellings now route through the one implementation, so they agree with each
-    /// other and with `nearestParameter(to:)` — including on the no-projection case, where they
-    /// report `.nan`. `.nan` is the only `Double` that is not a legitimate parameter on some curve.
+    /// Both deprecated spellings route through the one implementation, so they agree with each
+    /// other and with `nearestParameter(to:)`. Since #615 there is no reachable `.nan` case left on
+    /// a real curve: `nil` now means "no curve", not "no extremum". The spellings stay deprecated
+    /// for the reason they always were — no `Double` can carry a failure signal, because every value
+    /// is a legitimate parameter on some curve.
     @Test("The two deprecated spellings agree with each other and with nearestParameter")
     @available(*, deprecated, message: "exercises the deprecated spellings on purpose")
     func deprecatedSpellingsAgree() throws {
         let curve = try #require(Self.trimmedSegment())
 
-        // Where there is a projection, all three give the same real parameter.
-        #expect(curve.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
-        #expect(curve.parameterAtPoint(SIMD3(5, 2, 0)) == 5)
-        #expect(curve.closestParameter(to: SIMD3(5, 2, 0)) == 5)
-
-        // Where there is none, the scalar spellings say so instead of inventing a parameter.
-        // Before #500: parameterAtPoint returned 3 (firstParameter) and closestParameter
-        // returned 0 — a value not even inside this curve's [3, 8] domain.
-        for p in [SIMD3<Double>(100, 0, 0), SIMD3(0, 0, 0)] {
-            #expect(curve.nearestParameter(to: p) == nil, "\(p)")
-            #expect(curve.parameterAtPoint(p).isNaN, "\(p)")
-            #expect(curve.closestParameter(to: p).isNaN, "\(p)")
+        for p in [SIMD3<Double>(5, 2, 0), SIMD3(100, 0, 0), SIMD3(0, 0, 0)] {
+            let nearest = try #require(curve.nearestParameter(to: p), "\(p)")
+            #expect(curve.parameterAtPoint(p) == nearest, "\(p)")
+            #expect(curve.closestParameter(to: p) == nearest, "\(p)")
         }
+
+        // Before #500: parameterAtPoint returned 3 (firstParameter) and closestParameter returned
+        // 0 — a value not even inside this curve's [3, 8] domain — for the two points above that
+        // have no perpendicular foot. Both now report the end those points fell off.
+        #expect(curve.parameterAtPoint(SIMD3(5, 2, 0)) == 5)
+        #expect(curve.parameterAtPoint(SIMD3(100, 0, 0)) == 8)
+        #expect(curve.closestParameter(to: SIMD3(0, 0, 0)) == 3)
     }
 
-    /// `projectPoint(_:precision:)` is deliberately *not* part of this family, and asks a different
-    /// question: the nearest point on the curve, which exists for every point, rather than the
-    /// nearest *perpendicular foot*, which does not. Pinned here so a later pass does not "unify"
-    /// two entry points that genuinely compute different things.
-    ///
-    /// When #500 shipped, its answer here was parameter 100, distance 0 — it projected onto the
-    /// curve's underlying unbounded line, recorded as-is rather than asserted correct. #539 fixed
-    /// that: the answer is now the curve's own end. The contracts still differ, but only in whether
-    /// a point with no perpendicular foot gets an answer, not in whether the answer is true.
-    @Test("projectPoint runs a different algorithm and keeps its own contract")
-    func projectPointIsADifferentAlgorithm() throws {
+    /// `projectPoint(_:precision:)` reaches the answer by a different route — `ShapeAnalysis_Curve`
+    /// is in its candidate set and not in this one — but since #615 it is the same answer. The two
+    /// used to differ on both questions a projection asks: #539 converted `projectPoint` and left
+    /// this spelling reporting an extremum, so on a point past the end one said 8 and the other said
+    /// there was no such point at all.
+    @Test("projectPoint and nearestParameter now agree")
+    func projectPointAndNearestParameterAgree() throws {
         let curve = try #require(Self.trimmedSegment())
         let p = SIMD3<Double>(100, 0, 0)
 
-        #expect(curve.nearestParameter(to: p) == nil)
-
-        // It answers where nearestParameter does not, with the end of the curve (#539).
         let projected = curve.projectPoint(p)
         #expect(projected.parameter == 8)
         #expect(projected.distance == 92)
+        #expect(curve.nearestParameter(to: p) == projected.parameter)
     }
 }

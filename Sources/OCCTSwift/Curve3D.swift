@@ -1081,7 +1081,8 @@ extension Curve3D {
     /// The answer is always inside this curve's own ``domain``, and always the true nearest point:
     /// where the point has no perpendicular foot on the curve — anything past the end of a trimmed
     /// curve, or off to one side of an arc — the nearest point is an end, and that is what comes
-    /// back. Unlike ``nearestParameter(to:)``, this always answers.
+    /// back. ``nearestParameter(to:)`` is the scalar spelling of this and agrees with it exactly
+    /// (#615); ``distance(to:precision:)`` is the distance-only one.
     ///
     /// ```swift
     /// let segment = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
@@ -2190,25 +2191,32 @@ extension Curve3D {
     /// The parameter of the point on this curve nearest to `point`.
     ///
     /// - Parameter point: Point to project.
-    /// - Returns: The nearest parameter, or `nil` if the point has no projection onto this curve
-    ///     one beyond the ends of a bounded curve, or the centre of a circle.
+    /// - Returns: The nearest parameter, always inside this curve's own ``domain``, or `nil` if
+    ///     there is no curve to answer about.
     ///
-    /// `nil` is the only answer that says so: no `Double` can carry the signal, because
-    /// every value is a legitimate parameter on some curve. This is the 3D counterpart of
+    /// The answer is the true nearest point, not the nearest perpendicular foot. Where the point has
+    /// no foot at all — anything past the end of a trimmed curve, or off to one side of an arc — the
+    /// nearest point is an end, and that is what comes back. This is the scalar spelling of
+    /// ``projectPoint(_:precision:)`` and agrees with it exactly; it is the 3D counterpart of
     /// `Curve2D.nearestParameter(to:)`, and it replaces both `closestParameter(to:)` and
     /// `parameterAtPoint(_:)`, which ran the identical projection and disagreed about how to
     /// report its absence.
-    ///
-    /// Contrast `projectPoint(_:precision:)`, which runs a different OCCT algorithm
-    /// (`ShapeAnalysis_Curve::Project`) that always answers, adjusting to the curve's ends rather
-    /// than reporting that there is no projection.
     ///
     /// ```swift
     /// let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
     /// let segment = line.trimmed(from: 3, to: 8)!
     /// #expect(segment.nearestParameter(to: SIMD3(5, 2, 0)) == 5)
-    /// #expect(segment.nearestParameter(to: SIMD3(100, 0, 0)) == nil)   // past the end
+    /// #expect(segment.nearestParameter(to: SIMD3(100, 0, 0)) == 8)   // past the end: the end
+    ///
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(from: 0, to: .pi)!
+    /// #expect(arc.nearestParameter(to: SIMD3(0, -6, 0)) == 0)        // the near end, 7.81 away
     /// ```
+    ///
+    /// Before #615 this reported `GeomAPI_ProjectPointOnCurve`'s extremum instead: the arc above
+    /// answered π/2, the far side, 11 away, and the segment answered `nil`. `Optional` remains
+    /// because no `Double` can carry a failure signal — every value is a legitimate parameter on
+    /// some curve — not because a point can fail to have a nearest one.
     public func nearestParameter(to point: SIMD3<Double>) -> Double? {
         var parameter = 0.0
         guard OCCTCurve3DNearestParameter(handle, point.x, point.y, point.z, &parameter) else {
@@ -2219,9 +2227,9 @@ extension Curve3D {
 
     /// Find the parameter of the closest point on this curve to a given point.
     @available(*, deprecated, message: """
-        Returns .nan when there is no projection, where it used to return 0, a value that is not \
-        even in the domain of a curve trimmed to, say, [3, 8]. Use nearestParameter(to:), which \
-        returns nil.
+        No Double can signal failure here: every value is a legitimate parameter on some curve, \
+        and this used to return 0, which is not even in the domain of a curve trimmed to, say, \
+        [3, 8]. Use nearestParameter(to:), which returns an Optional.
         """)
     public func closestParameter(to point: SIMD3<Double>) -> Double {
         nearestParameter(to: point) ?? .nan

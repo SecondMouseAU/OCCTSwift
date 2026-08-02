@@ -12242,9 +12242,9 @@ extension Curve3D {
 
     /// Find parameter on curve nearest to a 3D point.
     @available(*, deprecated, message: """
-        Returns .nan when there is no projection, where it used to return the curve's \
-        firstParameter, a real parameter in its own domain, right or maximally wrong depending \
-        only on which end the point fell off. Use nearestParameter(to:), which returns nil.
+        No Double can signal failure here: every value is a legitimate parameter on some curve, \
+        and this used to return the curve's firstParameter, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
         """)
     public func parameterAtPoint(_ point: SIMD3<Double>) -> Double {
         nearestParameter(to: point) ?? .nan
@@ -12262,9 +12262,9 @@ extension Curve2D {
 
     /// Find parameter on 2D curve nearest to a 2D point.
     @available(*, deprecated, message: """
-        Returns .nan when there is no projection, where it used to return the curve's \
-        firstParameter, a real parameter in its own domain, right or maximally wrong depending \
-        only on which end the point fell off. Use nearestParameter(to:), which returns nil.
+        No Double can signal failure here: every value is a legitimate parameter on some curve, \
+        and this used to return the curve's firstParameter, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
         """)
     public func parameterAtPoint(_ point: SIMD2<Double>) -> Double {
         nearestParameter(to: point) ?? .nan
@@ -12285,7 +12285,37 @@ extension Surface {
 
 extension Curve3D {
 
-    /// Local point-on-curve search from initial parameter guess. Returns (parameter, distance).
+    /// Local point-on-curve search from an initial parameter guess. Returns `(parameter, distance)`.
+    ///
+    /// Searches a window of ±10% of the domain around `initParam` and reports the
+    /// **lowest-distance extremum inside that window**. `initParam` bounds the window; it does not
+    /// rank what is found in it, so the extremum you get back is not necessarily the one nearest
+    /// your guess — where a window holds several, the one closest to the *query point* wins.
+    ///
+    /// The window is what makes the answer local, and a windowed minimum can still be a global
+    /// *maximum*: on a half circle of radius 5 queried from `(0, -6, 0)` with a guess of `.pi / 2`,
+    /// the window holds the far side of the arc and this reports 11, where the nearest point on the
+    /// curve is 7.81 away. Use ``nearestParameter(to:)`` or ``projectPoint(_:precision:)`` when you
+    /// want the global answer.
+    ///
+    /// When the window holds no extremum at all, the search falls back to the whole curve — and,
+    /// since #615, to the whole curve's true nearest point, which is what those two report. Before
+    /// #615 the fallback reported an extremum instead, so a guess sitting *on* the nearest point
+    /// returned the point diametrically opposite it, and a bounded segment queried from past its own
+    /// end returned `nil` for every guess.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(from: 0, to: .pi)!
+    ///
+    /// // Guess 0: no extremum nearby, so the whole curve is searched, correctly.
+    /// #expect(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: 0)?.parameter == 0)
+    ///
+    /// // Guess .pi / 2: an extremum IS nearby, and it is the far side of the arc.
+    /// #expect(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: .pi / 2)?.distance == 11)
+    /// ```
+    ///
+    /// - Returns: `nil` only when the curve cannot be read.
     public func locateNearestPoint(_ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6) -> (parameter: Double, distance: Double)? {
         var param = 0.0, dist = 0.0
         let ok = OCCTExtremaLocateOnCurve(handle, point.x, point.y, point.z,

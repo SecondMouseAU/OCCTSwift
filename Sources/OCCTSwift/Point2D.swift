@@ -76,13 +76,13 @@ public final class Point2D: @unchecked Sendable {
     /// Minimum distance from this point to a 2D curve.
     ///
     /// - Parameter curve: Curve to measure to.
-    /// - Returns: The distance to the nearest point of the curve, or `.infinity` if the point has
-    ///   no projection onto it at all.
+    /// - Returns: The distance to the nearest point of the curve, or `.infinity` if there is no
+    ///   curve to measure to.
     ///
-    /// A point can legitimately have no projection: one beyond the ends of a bounded curve, or
-    /// the centre of a circle (equidistant from every point, so there is no local minimum). This
-    /// used to return the bridge's raw `-1` sentinel for that case, which any threshold test
-    /// (`distance < tolerance`) would read as "touching" — the opposite of the truth (#413).
+    /// Measured over the curve's own domain, ends included, so it is the true minimum rather than
+    /// the nearest perpendicular foot. A point beyond the end of a bounded curve is measured to
+    /// that end, and a circle's centre to the radius. Agrees exactly with
+    /// `Curve2D.project(point:)` and `Curve2D.nearestParameter(to:)`, which share its bridge path.
     ///
     /// ```swift
     /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
@@ -90,8 +90,14 @@ public final class Point2D: @unchecked Sendable {
     /// #expect(abs(above.distance(to: segment) - 3) < 1e-9)
     ///
     /// let pastTheEnd = Point2D(x: 100, y: 0)!
-    /// #expect(pastTheEnd.distance(to: segment) == .infinity)
+    /// #expect(pastTheEnd.distance(to: segment) == 90)   // to the end at (10, 0)
     /// ```
+    ///
+    /// Two sentinels have been retired from this one method. It first returned the bridge's raw
+    /// `-1` for a point with no perpendicular foot, which any threshold test (`distance < tolerance`)
+    /// read as "touching" — the opposite of the truth (#413). `.infinity` replaced it, which was
+    /// safe but still discarded a real, finite distance; #615 measures it instead. `.infinity` now
+    /// means only that the curve could not be read at all.
     public func distance(to curve: Curve2D) -> Double {
         let d = OCCTPoint2DDistanceToCurve(handle, curve.handle)
         return d < 0 ? .infinity : d

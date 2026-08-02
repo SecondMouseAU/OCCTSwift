@@ -136,13 +136,16 @@ struct Issue539NearestPointOnCurveTests {
         #expect(abs(above.parameter - .pi / 2) < 1e-6)
     }
 
-    /// A circle's centre has no perpendicular foot at all — `nearestParameter(to:)` reports `nil`
-    /// for it (#500). `projectPoint` still answers, and the radius it answers with was already
-    /// right, because the whole domain is in range.
+    /// A circle's centre has no perpendicular foot at all. `projectPoint` still answers, and the
+    /// radius it answers with was already right, because the whole domain is in range.
+    ///
+    /// `nearestParameter(to:)` reported `nil` here until #615 routed it through the same helper;
+    /// it now names one of the infinitely many tied nearest points, all at the radius.
     @Test("A closed curve, and a point with no perpendicular foot, still answer")
     func closedCurveStillAnswers() throws {
         let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
-        #expect(circle.nearestParameter(to: .zero) == nil)
+        let tied = try #require(circle.nearestParameter(to: .zero))
+        #expect(abs(simd_length(circle.point(at: tied)) - 5) < 1e-9)
 
         let centre = circle.projectPoint(.zero)
         #expect(abs(centre.distance - 5) < 1e-9)

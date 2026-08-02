@@ -193,6 +193,92 @@ clear a floor the ladder never reaches. The matrix is what would have caught thi
 would not have. `Issue485SurfaceContinuityTests` had pinned the old answer as correct and is
 corrected.
 
+#### Breaking: the nearest point on a curve, for the entry points #539 left behind, and the whole 2D side (#615)
+
+#539 established that `GeomAPI_ProjectPointOnCurve::LowerDistance()` reports an *extremum*, which on
+a bounded curve is neither necessarily the nearest point nor necessarily present at all, and
+introduced `occtNearestPointOnCurveRange` — the minimum over `ShapeAnalysis_Curve`, every extremum
+in range, and both curve ends. Three entry points were converted. The shared helper behind three
+more was not, and its 2D twin was never touched.
+
+So the two spellings of one question disagreed. Measured through the public Swift API on #539's own
+repro geometry, a half circle of radius 5 over `[0, π]` queried from below at `(0, -6, 0)`:
+
+| | before | after |
+|---|---|---|
+| `Curve3D.projectPoint` (converted by #539) | param 0, distance **7.8102** | unchanged |
+| `Curve3D.nearestParameter` | param **π/2**, distance **11** | param 0, distance 7.8102 |
+| `Curve3D.nearestParameter`, point past a `[3, 8]` segment's end | **`nil`** | param 8, distance 92 |
+| `Curve2D.project(point:)` | point (0, 5), distance **11** | point (5, 0), distance 7.8102 |
+| `Curve2D.project(point:)`, past the end | **`nil`** | param 8, distance 92 |
+| `Point2D.distance(to:)`, past the end | **`.infinity`** | 92 |
+
+A caller seeding a trim or a split from `nearestParameter` landed on the opposite side of the arc
+from where `projectPoint` said the nearest point was. The two spellings disagreed about *which*
+point is nearest **and** about *whether there is one*.
+
+**Both defects, both dimensions, one helper each.** `occtNearestProjectionOnCurve3d` now routes
+through `occtNearestPointOnCurveRange`; the new `occtNearestPointOnCurve2dRange` gives the 2D side
+the equivalent treatment.
+
+**The 2D candidate set is the extrema plus both ends, and cannot be more.** `ShapeAnalysis_Curve`
+has no 2D projection — its `Project` overloads take `Geom_Curve` or `Adaptor3d_Curve` only, and its
+`Geom2d_Curve` members (`FillBndBox`, `SelectForwardSeam`, `GetSamplePoints`, `IsPeriodic`) do
+something else entirely. That is the "all extrema + the two ends" row #580 measured at 188/189
+rather than the 189/189 the third source buys; the one case it misses is `Extrema` failing to
+converge on a BSpline, where an end then wins by a fraction of a percent, and there is no 2D-*native*
+second algorithm to break that tie. (A `Geom2d_Curve` could in principle be lifted into the `z = 0`
+plane and run through the 3D `ShapeAnalysis_Curve`; not done, since that buys one case in 189 at the
+cost of a per-call curve conversion.)
+
+**Breaking: `nil` no longer means "no perpendicular foot".** A point past the end of a bounded curve
+is nearest to that end, and a circle's centre is equidistant from every point on it; all of these
+now answer with a real parameter and a true distance. `nil` (and `Point2D.distance(to:)`'s
+`.infinity`) is left meaning what it means for the entry points #539 converted: no curve to answer
+about. Affects `Curve3D.nearestParameter(to:)`, `Curve2D.nearestParameter(to:)`,
+`Curve2D.project(point:)`, `Curve2D.project(_:)`, `Point2D.distance(to:)` and the deprecated
+`parameterAtPoint`/`closestParameter` spellings, which no longer have a reachable `.nan` case on a
+real curve. They stay deprecated for the reason they always were: no `Double` can carry a failure
+signal, because every value is a legitimate parameter on some curve.
+
+**`Curve2D.allProjections(of:)` still reports nothing where the other four now answer, and that is
+correct.** It asks for the extrema, which has been a different question since #539, and on a bounded
+curve queried from beyond its end the honest answer is that there are none. Before #615 all five
+agreed only because the other four were asking the extrema question too.
+
+**`Curve3D.locateNearestPoint`: the fallback changed, the primary search deliberately did not.** The
+primary reports the **lowest-distance extremum inside a ±10% window** around `initParam`. The guess
+bounds the window; it does not rank what is found in it, so the extremum returned is not necessarily
+the one nearest the guess — measured on a ramped sine BSpline, a guess of 90.9114 returns param
+79.9751, 10.94 away, over an extremum 0.13 away at 91.0378, because the far one is closer to the
+query *point* (10.07 against 15.19); 22 of 46 multi-extremum windows behave so. The window is what
+makes the answer local, and a windowed minimum can still be a global maximum: with a guess of π/2 on
+the arc above it reports 11, and that is pinned by test.
+
+Adding the window's two ends to that minimum was considered and rejected — **not** because it would
+redefine `initParam`, which it would not, since the function already minimises over the window and
+the ends are all the change adds. It was rejected because (1) it does not make the function correct
+under its own name, answering 10.865697905689686 where the true nearest point is 7.8102 away, and
+(2) a window's ends always evaluate, so the minimum would always be found and the fallback would
+become **unreachable** — deleting the one path in this function that #615 fixes. Making the search
+global outright would leave `initParam` meaning nothing and the function a duplicate of
+`nearestParameter`.
+
+The full-range fallback is a different matter: it fires only when the window holds no extremum, at
+which point the function has already abandoned locality, so it must give the whole curve's answer.
+Measured, a guess of `0` — sitting *on* the true nearest point — used to fall through and return the
+point diametrically opposite it (π/2, distance 11); it now returns 0 at 7.8102. A `[3, 8]` segment
+queried at `(100, 0, 0)` returned `nil` for every guess and now returns param 8, distance 92.
+
+Bridge-only: no kernel patch, no `OCCT.xcframework` rebuild. Regression suites
+`Issue615NearestParameterRangeTests` (`OCCTCurveTests`) and `Issue615Curve2DNearestPointTests`
+(`OCCTGeom2dTests`), including a 2D-vs-3D cross-check on the same geometry in the `z = 0` plane —
+the comparison neither side had, and the reason the 2D defect survived #539. Proved by injection:
+restoring both `LowerDistance` helper bodies fails 17 of the 32 tests across the five affected
+suites with 41 issues, and the test pinning the *preserved* windowed primary path keeps passing, as
+it must. The 2D sweep's ground-truth anchor was separately proved non-vacuous by over-reporting the
+distance in the helper: 9 failures with `abs()`, 0 without it.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
