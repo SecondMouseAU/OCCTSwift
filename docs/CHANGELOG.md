@@ -44,12 +44,35 @@ said, on the `CPnts_AbscissaPoint` line directly beneath.
 
 The defect was the checker's. It classifies each brace-balanced definition by searching its
 signature for `struct|class|union|namespace|enum`, and a `template <class TheAdaptor>` head
-satisfies that: all nine of the shared arc-length helpers were filed as a *type* named `TheAdaptor`
-instead of as functions. A type is only ever reached by a function that names it, and none do, so
-the helper-indirection chain was cut at its first template link and the class looked unreached. The
-tell was that `OCCTBridge_Modeling.mm`'s one `template <typename BoolOpT>` helper parsed correctly:
-`typename` is not in that alternation, `class` is. `without_template_head` now strips the head
-before classification; a `template <class T> struct Foo` is still read as a type.
+satisfies that, so the helper was filed as a *type* named `TheAdaptor` instead of as a function. A
+type is only ever reached by a function that names it, and none do, so the helper-indirection chain
+was cut at its first template link and the class looked unreached. The tell was that
+`OCCTBridge_Modeling.mm`'s one `template <typename BoolOpT>` helper parsed correctly: `typename` is
+not in that alternation, `class` is. `without_template_head` now strips the head before
+classification; a `template <class T> struct Foo` is still read as a type.
+
+The nine arc-length helpers are what the misfiled entries pointed at, but they are not the whole of
+it. Every `template <class ...>` definition in the bridge was affected — **15** of them, filed under
+**6** bogus type names:
+
+| bogus type | count | helpers |
+|---|---|---|
+| `TheAdaptor` | 9 | `occtArcQuadrature`, `occtArcConvergedLength`, `occtArcIntervals`, `occtAdaptorArcLength`, `occtArcWalkToLength`, `occtAdaptorParameterAtLength`, `occtConfineToDomain`, `occtAdaptorWindsPeriodically`, `occtAdaptorLengthBetween` |
+| `AddEdge` | 2 | `occtFilletAddEdges`, `occtShapeFilletEdgeList` |
+| `T` | 1 | `occtWriteKnotSplits` |
+| `SplitIndexAt` | 1 | `occtWriteKnotSplitParams` |
+| `Use` | 1 | `occtUseSubShapesByIndex` |
+| `PointAt` | 1 | `occtFilletSetRadiusProfile` |
+
+Across the whole bridge, 34 `OCCT`-prefixed functions' reach sets change: 31 grow, and **3 shrink**.
+The shrinking direction is the one that is easy to miss — the old parser was also false-*widening*.
+`types['T']` was a real bucket holding everything `occtWriteKnotSplits` reaches, and the
+wrapper-type resolution step hands a function the contents of any type it names, so
+`OCCTGeomFillGuideTrihedronACD0`, `OCCTGeomFillGuideTrihedronPlanD0` and `OCCTWireGetCurvePointAt`
+each inherited that bucket purely for containing a local identifier `T`. Fifteen junk names apiece.
+No index verdict depended on any of this — the run went `0 stale, 7 misfiled` to `0 stale,
+0 misfiled` and nothing else moved — but a direction check is only as good as its reach sets, so the
+record should say what actually moved rather than only the part that was being complained about.
 
 No bridge or Swift source changed — the index entry was right, and the note added to it records
 that the seven reach the class through the helpers rather than by naming it, so the next reader

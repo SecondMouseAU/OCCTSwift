@@ -279,8 +279,10 @@
 //                                       (three further spellings were deleted by #506/#549; their
 //                                       tombstones sit at the old declaration sites. None of the
 //                                       seven names the class any more: since #603 they all reach
-//                                       it through the shared occtArcQuadrature /
-//                                       occtArcWalkToLength helpers, so grep those, not the class)
+//                                       it through the shared helpers, so grep those, not the
+//                                       class. Three sites construct it: occtArcQuadrature's
+//                                       single-span branch, occtArcWalkToLength's final piece,
+//                                       and occtAdaptorParameterAtLength's fallback solver)
 // CPnts_AbscissaPoint                 → the same functions, as occtArcQuadrature's per-span integrator on composite curves (#603)
 // GCPnts_QuasiUniformAbscissa         → OCCTCurve3DQuasiUniformAbscissa, OCCTGCPntsQuasiUniform
 // GCPnts_QuasiUniformDeflection       → OCCTCurve3DQuasiUniformDeflection

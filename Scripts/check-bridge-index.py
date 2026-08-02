@@ -248,6 +248,9 @@ def definitions(path):
                     if m:
                         out.append(('type', m.group(1), names))
                 else:
+                    # the last `ident(` in a declaration is its name for everything the bridge
+                    # currently declares; a function-pointer or trailing-return parameter would
+                    # put a different identifier last and mis-name the function
                     m = list(re.finditer(r'\b([A-Za-z_][A-Za-z0-9_]*)\s*\(', decl))
                     if m:
                         out.append(('fn', m[-1].group(1), names))
