@@ -421,15 +421,29 @@ extension Shape {
     /// Reads ``orientedFaces()`` for the same reason ``horizontalFaces()`` does — "upward-facing"
     /// is a statement about the normal, which `faces()` cannot carry for a shared face. (#614)
     ///
-    /// - Note: Unlike ``horizontalFaces()`` this can never return the same ``Face/index`` twice:
-    ///   the two sides of a shared face have opposed normals, so at most one of them faces up.
+    /// - Note: Like ``horizontalFaces()``, this selects over *occurrences* and so **can** return
+    ///   two entries with the same ``Face/index``. Dedupe on `index` (or use ``faces()``) if you
+    ///   need one entry per distinct face. It is only for the shared-wall case — two solids whose
+    ///   parents impose *opposite* orientations — that at most one side can face up, because the
+    ///   two normals are opposed. That is a property of opposed normals, not a guarantee of this
+    ///   method: when a face is reached twice through parents imposing the *same* orientation, both
+    ///   entries qualify. `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`.
+    ///
+    /// - Note: `isUpwardFacing` tests `n.z > cos(tolerance)`, so a `tolerance` of π/2 or more makes
+    ///   the threshold non-positive and admits faces that do not point up at all — including both
+    ///   sides of a *vertical* shared wall, whose normals have `n.z == 0`. On a two-solid split,
+    ///   `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
     /// let compound = Shape.compound(halves)!
     /// // The outer top, plus the shared wall as seen from the lower solid (its ceiling).
-    /// print(compound.upwardFaces().count)   // 2
+    /// print(compound.upwardFaces().count)   // 2 — opposed normals, so only one side faces up
+    ///
+    /// // But a shape compounded with itself reaches each face twice at the SAME orientation:
+    /// let doubled = Shape.compound([box, box])!
+    /// print(doubled.upwardFaces().map(\.index))   // [5, 5] — the same face, twice
     /// ```
     ///
     /// - Parameter tolerance: Angle tolerance in radians (default ~0.5 degrees)

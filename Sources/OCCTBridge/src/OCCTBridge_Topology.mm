@@ -4176,9 +4176,11 @@ bool OCCTFaceGetZLevel(OCCTFaceRef face, double* outZ) {
 // OCCTShapeGetHorizontalFaces and OCCTShapeGetUpwardFaces were implemented here: second copies
 // of Face.isHorizontal / Face.isUpwardFacing (|n.Z| > cos(tolerance) and n.Z > cos(tolerance) over
 // the midpoint normal OCCTFaceGetNormal already returns), declared, compiled, and reachable from
-// nothing. Shape.horizontalFaces / Shape.upwardFaces filter faces() through those two Face
-// predicates and never called either. Removed by #529, which would otherwise have had to converge
-// their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
+// nothing. Shape.horizontalFaces / Shape.upwardFaces filter the Swift-side face list through those
+// two Face predicates and never called either. Removed by #529, which would otherwise have had to
+// converge their resolution too -- an orphan keeps whatever contract it had when it was orphaned.
+// (Since #614 that Swift-side list is orientedFaces(), not faces(): both predicates read the face
+// normal, whose sign the deduplicated enumeration cannot carry for a shared face.)
 
 // MARK: - Edge Structure
 // OCCTEdge is now defined in OCCTBridge_Internal.h.

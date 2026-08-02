@@ -347,10 +347,14 @@ struct Issue614FaceOrientationTests {
         #expect(Set(atCut.map(\.orientation)) == Set([.forward, .reversed]))
     }
 
-    /// `upwardFaces()` is the one of the three that cannot duplicate an index — two opposed
-    /// normals cannot both face up. Pinned so the contract note stays true.
-    @Test("upwardFaces() never repeats a face index")
-    func upwardFacesNeverDuplicates() {
+    /// On a shared *wall* — two solids whose parents impose opposite orientations — at most one
+    /// side can face up, because the two normals are opposed.
+    ///
+    /// This is a property of opposed normals, NOT a guarantee of `upwardFaces()`. The two tests
+    /// below pin the cases where it does not hold; an earlier draft of this PR documented the
+    /// "can never repeat an index" reading as an absolute, and it is false.
+    @Test("across a shared wall, only one side faces up")
+    func upwardFacesOnSharedWallTakesOneSide() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
               let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
               let compound = Shape.compound(halves) else {
@@ -363,6 +367,59 @@ struct Issue614FaceOrientationTests {
         // The outer top, plus the shared wall as the lower solid's ceiling.
         #expect(upward.count == 2)
         #expect(upward.allSatisfy { $0.orientation == .forward })
+
+        // horizontalFaces() sees the same wall from both sides, so it DOES repeat an index.
+        let horizontal = compound.horizontalFaces()
+        #expect(horizontal.count > Set(horizontal.map(\.index)).count)
+    }
+
+    /// Counterexample 1: repeats reached through parents imposing the SAME orientation.
+    ///
+    /// A shape compounded with itself reaches every face twice, both times forward, so nothing is
+    /// opposed and every predicate admits both entries. `upwardFaces()` repeats an index here.
+    @Test("a shape compounded with itself repeats an index in upwardFaces()")
+    func upwardFacesRepeatsWhenOrientationsAgree() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+              let doubled = Shape.compound([box, box]) else {
+            Issue.record("could not build the doubled compound")
+            return
+        }
+
+        // Six distinct faces, twelve occurrences, each pair sharing an orientation.
+        #expect(doubled.faces().count == 6)
+        let occurrences = doubled.orientedFaces()
+        #expect(occurrences.count == 12)
+        for (_, group) in Dictionary(grouping: occurrences, by: \.index) {
+            #expect(group.count == 2)
+            #expect(Set(group.map(\.orientation)).count == 1)
+        }
+
+        // So the "opposed normals" reasoning does not apply, and the index repeats.
+        let upward = doubled.upwardFaces()
+        #expect(upward.count == 2)
+        #expect(Set(upward.map(\.index)).count == 1)
+    }
+
+    /// Counterexample 2: `isUpwardFacing` is `n.z > cos(tolerance)`, so a tolerance of π/2 or more
+    /// makes the threshold non-positive and admits faces that do not point up at all — including
+    /// both sides of a *vertical* shared wall, whose normals have `n.z == 0`.
+    @Test("a tolerance past pi/2 admits both sides of a vertical shared wall")
+    func upwardFacesRepeatsAtDegenerateTolerance() {
+        guard let compound = Self.splitBoxCompound() else {
+            Issue.record("could not build the split-box compound")
+            return
+        }
+
+        // The fixture's shared wall is vertical, so at the default tolerance it is not upward.
+        let strict = compound.upwardFaces()
+        #expect(strict.count == Set(strict.map(\.index)).count)
+
+        // cos(1.6) is negative, so every face with n.z > -0.0292 qualifies.
+        #expect(cos(1.6) < 0)
+        let loose = compound.upwardFaces(tolerance: 1.6)
+        #expect(loose.count == 10)
+        #expect(Set(loose.map(\.index)).count == 9)
+        #expect(loose.count > Set(loose.map(\.index)).count)
     }
 
     // MARK: - Orientation is reportable

@@ -750,8 +750,16 @@ reason `horizontalFaces()` does — "upward-facing" is a statement about the nor
 
 - **Parameters:** `tolerance` — angle tolerance in radians (default ~0.57°).
 - **Returns:** Upward-facing horizontal faces, one per occurrence.
-- **Note:** Unlike `horizontalFaces()` this can never repeat a `Face.index`: the two sides of a
-  shared face have opposed normals, so at most one of them faces up.
+- **Note:** Like `horizontalFaces()`, this selects over *occurrences* and so **can** repeat a
+  `Face.index`. Dedupe on `index` (or use `faces()`) if you need one entry per distinct face. It is
+  only for the shared-wall case — two solids whose parents impose *opposite* orientations — that at
+  most one side can face up, and that follows from the normals being opposed rather than from any
+  guarantee here. When a face is reached twice through parents imposing the *same* orientation both
+  entries qualify: `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`.
+- **Note:** `isUpwardFacing` tests `n.z > cos(tolerance)`, so a `tolerance` of π/2 or more makes the
+  threshold non-positive and admits faces that do not point up at all — including both sides of a
+  *vertical* shared wall, whose normals have `n.z == 0`. On a two-solid split,
+  `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices.
 - **Example:**
   ```swift
   let pocketFloors = myPart.upwardFaces()

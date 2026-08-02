@@ -759,11 +759,30 @@ New API, all additive:
   of a shared wall can be told apart.
 - Bridge: `OCCTShapeGetOrientedFaces`, `OCCTShapeGetFaceOccurrenceCount`, `OCCTFaceGetOrientation`.
 - **`horizontalFaces()`, `upwardFaces()` and `facesByZLevel()` now read `orientedFaces()`** — they
-  select on the face normal, so they are geometry consumers by definition. **Contract change:**
-  because a shared face contributes one entry per side, `horizontalFaces()` (and therefore
-  `facesByZLevel()`) can return two `Face` values carrying the same `Face.index`. `upwardFaces()`
-  cannot — opposed normals mean at most one side faces up. On any shape whose faces are not shared
-  all three are unchanged, entry for entry.
+  select on the face normal, so they are geometry consumers. **Contract change:** all three select
+  over *occurrences* and so can return two `Face` values carrying the same `Face.index`; dedupe on
+  `index` (or use `faces()`) if you need one entry per distinct face. On any shape whose faces are
+  not shared all three are unchanged, entry for entry.
+
+  These three are **not** the complete set of normal-derived consumers of `faces()`.
+  `AAG.buildGraph()` (`FeatureRecognition.swift:96`) also derives `normal`, `isHorizontal`,
+  `isUpward`, `isDownward`, `isVertical` and `zLevel` from `faces()`, and `AAG.detectPockets()`
+  selects on them — both public via `Shape.buildAAG()` and `Shape.detectPocketsAAG()`. It is
+  **not** fixed here: `faceIndex` and `adjacencyList` are array positions, so moving that graph to
+  the occurrence enumeration changes its identity model. Measured on the z=4 split compound,
+  `detectPocketsAAG()` returns 2 or 1 depending only on the order the halves were compounded in
+  (upward+horizontal nodes `[2, 8]` vs `[2]`), while `upwardFaces()` correctly returns 2 either
+  way. Tracked as #642.
+
+  One correction to an earlier draft of this entry: `upwardFaces()` was described as unable to
+  repeat an index, on the reasoning that a shared wall's two sides have opposed normals. That
+  reasoning holds only when the repeats come from parents bounding *opposite* sides. Reached twice
+  through parents imposing the *same* orientation, both entries qualify —
+  `Shape.compound([box, box]).upwardFaces()` returns indices `[5, 5]`. Separately,
+  `isUpwardFacing` tests `n.z > cos(tolerance)`, so at `tolerance >= π/2` the threshold is
+  non-positive and admits faces that do not point up at all, including both sides of a vertical
+  shared wall: `upwardFaces(tolerance: 1.6)` returns 10 entries over 9 distinct indices on a
+  two-solid split. Both are pinned by tests.
 
 `Shape.faces()`'s own behaviour is unchanged; its documentation now states which of the two
 contracts it holds. Per-solid enumeration (`compound.solids` then `.faces()`) was already correct
