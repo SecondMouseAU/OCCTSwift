@@ -98,10 +98,16 @@ struct Issue623ContinuityFloorTests {
 
     @Test("A floor check never claims more than the ordering allows")
     func satisfiesNeverOutrunsTheOrdering() {
-        // The one-directional half of the property above, stated separately because it is the
-        // half that must hold with no exceptions at all: `satisfies` may be stricter than the
-        // ladder (the G2/C1 cell), never looser. A `true` here that the ladder disagrees with
-        // would mean a floor check vouching for smoothness the measurement never reported.
+        // NOTE: this does *not* guard #623, and is not meant to. #623 made `satisfies` too
+        // strict, and a too-strict implementation passes this vacuously — every `false` skips
+        // the body. Verified: it survives the injected bug.
+        //
+        // It guards the opposite failure mode, which the #623 fix is the natural way to
+        // introduce: an over-correction that makes a geometric class satisfy a floor the ladder
+        // itself does not reach (say, floor `?? Int.max`, or dropping the `nil` case entirely).
+        // `satisfies` may be stricter than the ladder — that is the documented G2/C1 cell —
+        // never looser, because that direction would have a floor check vouch for smoothness
+        // the measurement never reported.
         for measured in ContinuityClass.allCases {
             for required in ContinuityClass.allCases {
                 guard let floor = Self.parametricCounterpart[required] else { continue }
@@ -113,12 +119,15 @@ struct Issue623ContinuityFloorTests {
         }
     }
 
-    @Test("The floor is monotonic in the requested order")
+    @Test("The floor is monotonic in the requested order, and in the measured class bar one pair")
     func satisfyingAFloorImpliesSatisfyingEveryLowerOne() {
-        // Whatever a class satisfies, it satisfies everything weaker. This is what makes
-        // `satisfies` usable as a gate at all, and it is the invariant the unconditional
-        // `false` broke: the old `.g1` answered no to C0 while `.c0` answered yes, so the
-        // gate was not monotonic in the *measured* class either.
+        // Two directions, and only the second one guards #623.
+        //
+        // Direction 1, the requested order: whatever a class satisfies, it satisfies everything
+        // weaker. This is what makes `satisfies` usable as a gate at all — but it holds for any
+        // implementation shaped `f(measured) >= required.rawValue`, including the #623 one, so
+        // it catches nothing here. It guards a future rewrite that special-cases individual
+        // floors (a lookup table, say) and loses downward closure.
         for measured in ContinuityClass.allCases {
             for floor in ParametricContinuity.allCases where measured.satisfies(floor) {
                 for weaker in ParametricContinuity.allCases where weaker.rawValue <= floor.rawValue {
@@ -126,6 +135,30 @@ struct Issue623ContinuityFloorTests {
                             "\(measured) satisfies \(floor) but not the weaker \(weaker)")
                 }
             }
+        }
+
+        // Direction 2, the measured class: if a weaker measurement clears a floor, a stronger
+        // one should too. THIS is the invariant #623 broke — `.c0` cleared `.c0` while the
+        // strictly-higher-ranked `.g1` did not — and unlike direction 1 it fails under the
+        // injected bug (4 violations rather than 1).
+        //
+        // It cannot be asserted outright, because the documented G2/C1 cell violates it too:
+        // `.c1` satisfies `.c1` and the higher-ranked `.g2` does not. So collect the violations
+        // and pin the set, exactly as the 7x7 matrix does.
+        var violations: [(weaker: ContinuityClass, stronger: ContinuityClass, floor: ParametricContinuity)] = []
+        for weaker in ContinuityClass.allCases {
+            for stronger in ContinuityClass.allCases where stronger >= weaker {
+                for floor in ParametricContinuity.allCases
+                where weaker.satisfies(floor) && !stronger.satisfies(floor) {
+                    violations.append((weaker, stronger, floor))
+                }
+            }
+        }
+        #expect(violations.count == 1)
+        if let only = violations.first {
+            #expect(only.weaker == .c1)
+            #expect(only.stronger == .g2)
+            #expect(only.floor == .c1)
         }
     }
 

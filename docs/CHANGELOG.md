@@ -54,12 +54,30 @@ A third contract in the same file, `ContinuityAnalysis.holds(_:)` and the `GeomA
 junction-analysis bitmask behind it, asks exact-class membership rather than a floor or a ranking
 and is deliberately untouched; a regression test pins that it stayed independent.
 
-`Issue623ContinuityFloorTests` (`Tests/OCCTSurfaceTests/`) carries the matrix sweep, the
-monotonicity property (whatever a class satisfies, it satisfies everything weaker — which the
-unconditional `false` broke), and the one-directional soundness half that must hold with no
-exceptions at all: a floor check may be stricter than the ladder, never looser. The matrix is what
-would have caught this; the single cell would not have. `Issue485SurfaceContinuityTests` had
-pinned the old answer as correct and is corrected.
+Both readings are OCCT's own, not an inference: `dox/user_guides/modeling_data/modeling_data.md`
+says at line 1281 that C0 "is the same as G0 (geometric continuity), so the last one is not
+represented by separate variable", and at line 1289 that "Geometric continuity (G1, G2) means that
+the curve **can be reparametrized** to have parametric (C1, C2) continuity". The first is why a
+geometric class clears the C0 floor; the second is why it clears nothing above it, since the
+existence of a reparametrisation is not a promise about the parametrisation in hand. Both are now
+quoted in the `satisfies(_:)` doc, and `derivativeOrder` carries an explicit warning that its `nil`
+means "no parametric order", not "meets no floor" — the hand-rolled
+`guard let o = derivativeOrder else { return false }` reproduces #623 verbatim.
+
+`Issue623ContinuityFloorTests` (`Tests/OCCTSurfaceTests/`) carries the matrix sweep plus two
+monotonicity directions, and the tests are explicit about which of them actually guard this bug.
+Monotonicity in the *requested* order (whatever a class satisfies, it satisfies everything weaker)
+holds for any implementation shaped `f(measured) >= required.rawValue`, the buggy one included, so
+it guards a future rewrite that loses downward closure rather than a regression here.
+Monotonicity in the *measured* class (if a weaker measurement clears a floor, a higher-ranked one
+should too) is the invariant the unconditional `false` actually broke, and it does fail under the
+injected bug — 4 violations against the fixed code's 1, that 1 being the documented G2/C1 cell,
+which violates it too and so is pinned rather than asserted away. The soundness direction (a floor
+check may be stricter than the ladder, never looser) passes vacuously under a too-strict
+implementation and guards the opposite failure mode: an over-correction that has a geometric class
+clear a floor the ladder never reaches. The matrix is what would have caught this; the single cell
+would not have. `Issue485SurfaceContinuityTests` had pinned the old answer as correct and is
+corrected.
 
 #### A NaN parameter bound stops being a plausible arc length (#548)
 

@@ -207,18 +207,21 @@ public enum ContinuityClass: Int32, Sendable, CaseIterable {
 extension ContinuityClass: Comparable {
     /// Ranks two *measured* classes by their place in `GeomAbs_Shape`'s ladder.
     ///
-    /// `GeomAbs_Shape`'s declared order happens to be monotonic in smoothness
-    /// (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly. That is a
-    /// property of the enum worth pinning rather than assuming, and it is what makes
-    /// "is this measurement at least as smooth as that one" answerable without a lookup table.
+    /// `GeomAbs_Shape` declares its cases in ascending order of *how much smoothness is being
+    /// claimed* (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly and
+    /// "is this measurement at least as strong a claim as that one" needs no lookup table.
+    /// That is a property of the enum worth pinning rather than assuming.
     ///
-    /// It is not the same question as ``satisfies(_:)``, which tests a measured class against a
-    /// *requested* parametric floor. The ladder interleaves the geometric classes with the
-    /// parametric ones, so a class can outrank another without entailing it: ``g2`` sorts above
-    /// ``c1`` yet does not satisfy `.c1`, since curvature continuity says nothing about the
-    /// first-derivative vectors. Use `<`/`>=` to compare two `ContinuityClass` values, and
-    /// ``satisfies(_:)`` to check a ``ParametricContinuity`` floor — never a raw-value
-    /// comparison across the two types, whose encodings differ (#485, #623).
+    /// Read it as ranking claims, not as an implication chain. The ladder interleaves the
+    /// geometric classes with the parametric ones, and a geometric class is a claim about a
+    /// *reparametrisable* curve rather than about the parametrisation in hand, so outranking a
+    /// class does not entail it: ``g2`` sorts above ``c1`` yet does not satisfy `.c1`, because
+    /// curvature continuity says nothing about the first-derivative vectors.
+    ///
+    /// So `<`/`>=` compares two `ContinuityClass` values, and ``satisfies(_:)`` checks a
+    /// ``ParametricContinuity`` floor — a different question, answered differently at that one
+    /// pair. Never compare raw values across the two types, whose encodings differ
+    /// (#485, #623).
     public static func < (lhs: ContinuityClass, rhs: ContinuityClass) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
@@ -246,6 +249,13 @@ extension ContinuityClass {
     /// ContinuityClass.c2.derivativeOrder   // 2
     /// ContinuityClass.g2.derivativeOrder   // nil — curvature matches, C2 does not follow
     /// ```
+    ///
+    /// - Important: `nil` means "no *parametric* order", not "meets no floor at all". A
+    ///   geometric class still meets the C0 floor, because OCCT's own modelling guide has
+    ///   C0 "the same as G0" and G1/G2 entail G0. Prefer ``satisfies(_:)``, which encodes
+    ///   that; a hand-rolled `guard let order = derivativeOrder else { return false }` reads
+    ///   naturally and reproduces #623 exactly, reporting a tangent-continuous curve as not
+    ///   even connected. Use this property to *report* an order, not to gate on one.
     public var derivativeOrder: Int? {
         switch self {
         case .c0: return 0
@@ -272,10 +282,19 @@ extension ContinuityClass {
     /// `false` while `.g2 >= .c1` is `true`.
     ///
     /// Everywhere else they agree, ``ParametricContinuity/c0`` included: a geometric class
-    /// *does* meet the C0 floor. G1 entails G0 entails positional continuity, and positional
-    /// continuity is exactly what C0 is — there is no parametrisation subtlety at order zero,
-    /// a curve is either connected or it is not. Reporting a tangent-continuous surface as
-    /// failing `.c0` was the defect #623 was filed about.
+    /// *does* meet the C0 floor. G1 entails G0, and OCCT's own modelling guide states the rest
+    /// outright — "C0 (*GeomAbs_C0*) - parametric continuity. It is the same as G0 (geometric
+    /// continuity), so the last one is not represented by separate variable." There is no
+    /// parametrisation subtlety at order zero: a curve is either connected or it is not.
+    /// Reporting a tangent-continuous surface as failing `.c0` was the defect #623 was filed
+    /// about.
+    ///
+    /// The same guide is why the G2/C1 exception above is a real distinction rather than an
+    /// oversight: "Geometric continuity (G1, G2) means that the curve **can be reparametrized**
+    /// to have parametric (C1, C2) continuity." The existence of such a reparametrisation is
+    /// not a promise about the curve as it is actually parametrised, which is what a `.c1`
+    /// floor asks. (Both quotations: `dox/user_guides/modeling_data/modeling_data.md`, lines
+    /// 1281 and 1289 of the pinned OCCT source.)
     ///
     /// ```swift
     /// let measured = surface.continuityClass

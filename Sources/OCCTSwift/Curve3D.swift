@@ -1364,6 +1364,13 @@ extension Curve3D {
         /// a.holds(.c1)   // false — measured, and the junction is not C1
         /// a.holds(.g1)   // nil   — order .c1 never computes G1
         /// ```
+        ///
+        /// - Note: This asks *exact-class membership* — "did this analysis report this one
+        ///   class?" — not a floor. It never infers one class from another, so a `true` for
+        ///   ``ContinuityClass/g2`` implies nothing about ``ContinuityClass/c1``. To test a
+        ///   *measured* class against a continuity floor instead, use
+        ///   ``ContinuityClass/satisfies(_:)``; to rank two measured classes, compare them with
+        ///   `<`/`>=`. Three different questions (#623).
         public func holds(_ continuity: ContinuityClass) -> Bool? {
             guard measured.contains(continuity) else { return nil }
             return flags & continuity.analysisFlagBit != 0
