@@ -40,6 +40,35 @@ public final class Face: @unchecked Sendable {
         return SIMD3(nx, ny, nz)
     }
 
+    /// The orientation this face carries in the shape it came from.
+    ///
+    /// This is the flag that decides which side of the surface ``normal`` and
+    /// ``normal(atU:v:)`` report: both reverse the surface normal exactly when this is
+    /// ``Shape/Orientation/reversed``. OCCT's own definition is that a face's orientation names
+    /// which side of it is *material* — for a space bounded by a face, the default region is on
+    /// the negative side of the surface normal.
+    ///
+    /// #614: a face can appear in one shape twice with opposite orientations — the ordinary
+    /// result of a split leaving two solids that share a wall. ``Shape/faces()`` keeps one entry
+    /// per distinct face and so can only carry one of them; ``Shape/orientedFaces()`` keeps both.
+    /// Two entries of `orientedFaces()` with the same ``index`` and different `orientation` are
+    /// the two sides of one shared wall.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+    ///    let compound = Shape.compound(halves) {
+    ///     let shared = Dictionary(grouping: compound.orientedFaces(), by: \.index)
+    ///         .filter { $0.value.count > 1 }
+    ///     for (index, sides) in shared {
+    ///         print(index, sides.map(\.orientation))   // [.forward, .reversed]
+    ///     }
+    /// }
+    /// ```
+    public var orientation: Shape.Orientation {
+        Shape.Orientation(rawValue: OCCTFaceGetOrientation(handle)) ?? .forward
+    }
+
     /// Get the outer wire (boundary) of the face
     public var outerWire: Wire? {
         guard let wireHandle = OCCTFaceGetOuterWire(handle) else {
@@ -240,7 +269,7 @@ public final class Face: @unchecked Sendable {
 // MARK: - Shape Extension for Face Analysis
 
 extension Shape {
-    /// Every distinct face of this shape, in enumeration order.
+    /// Every **distinct** face of this shape, in enumeration order — the *indexing* enumeration.
     ///
     /// Each returned ``Face`` carries its own ``Face/index``, which is its position here and the
     /// token ``Shape/face(at:)``, ``Shape/drafted(faces:direction:angle:neutralPlane:)``,
@@ -250,11 +279,33 @@ extension Shape {
     /// yielded one entry per *occurrence* in the topology tree, so a face reachable from two
     /// parents appeared twice and the surplus indices named faces nothing else could address.
     ///
+    /// ## Identity, not orientation
+    ///
+    /// Faces are distinguished here the way OCCT distinguishes them for an index: by
+    /// `TopoDS_Shape::IsSame`, which compares the underlying surface and placement and
+    /// **ignores orientation**. A face that occurs in this shape twice with opposite orientations
+    /// — the ordinary result of a split leaving two solids that share a wall — is therefore *one*
+    /// entry here, carrying whichever orientation was reached first.
+    ///
+    /// That matters because ``Face/normal(atU:v:)`` and ``Face/normal`` derive which *side* they
+    /// point to from that orientation. For a shared wall, the single entry's normal points out of
+    /// one owning solid and **into** the other. Use ``orientedFaces()`` whenever the normal's
+    /// direction matters; use this whenever the index matters. (#614)
+    ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    ///
+    /// // Indexing: one entry per distinct face, safe to hand to any face-index API.
     /// let top = box.faces().filter { $0.isUpwardFacing() }
     /// if let hollow = box.shelled(thickness: 1.0, openFaces: top) {
     ///     print(hollow.faceCount)   // the open box
+    /// }
+    ///
+    /// // A split solid shares its cut face, so the two enumerations differ in length.
+    /// if let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+    ///    let compound = Shape.compound(halves) {
+    ///     print(compound.faces().count)          // 11 distinct faces
+    ///     print(compound.orientedFaces().count)  // 12 occurrences — the wall, twice
     /// }
     /// ```
     public func faces() -> [Face] {
@@ -274,6 +325,67 @@ extension Shape {
         }
 
         return faces
+    }
+
+    /// Every face **occurrence** in this shape, each carrying the orientation it has in its
+    /// parent — the *geometry* enumeration.
+    ///
+    /// Walk this, not ``faces()``, whenever the direction of a face normal matters: rendering,
+    /// CAM, per-face area or flux accumulation, anything that asks "which way is out". A face
+    /// shared by two solids appears **twice**, once per owner, each time with the orientation that
+    /// makes ``Face/normal(atU:v:)`` point *out* of that owner.
+    ///
+    /// This mirrors how OCCT itself handles orientation-sensitive face work: `BRepGProp`, whose
+    /// volume integral needs each face's outward side, walks a `TopExp_Explorer` and reads the
+    /// orientation off the traversal rather than out of an index map — and where it deduplicates,
+    /// it keeps one map *per orientation* so a shared wall's two sides both survive.
+    ///
+    /// - Note: An entry's position in this array is an **occurrence number, not a face index** —
+    ///   two positions can name the same face. Each returned ``Face`` still carries the correct
+    ///   ``Face/index`` into ``faces()``, so an occurrence remains addressable by every
+    ///   face-index-taking method on `Shape`. Entries sharing an `index` are the several sides of
+    ///   one shared face.
+    ///
+    /// On any shape whose faces are not shared this returns exactly ``faces()``, in the same
+    /// order, with the same indices. (#614)
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// guard let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+    ///       let compound = Shape.compound(halves) else { return }
+    ///
+    /// // Outward normals for the whole assembly, shared wall included.
+    /// for face in compound.orientedFaces() {
+    ///     if let uv = face.uvBounds {
+    ///         let n = face.normal(atU: (uv.uMin + uv.uMax) / 2,
+    ///                             v: (uv.vMin + uv.vMax) / 2)
+    ///         print(face.index, face.orientation, n ?? .zero)
+    ///     }
+    /// }
+    /// // The cut face appears twice under one index: once .forward, once .reversed,
+    /// // with opposite normals — one outward per solid.
+    /// ```
+    public func orientedFaces() -> [Face] {
+        let capacity = Int(OCCTShapeGetFaceOccurrenceCount(handle))
+        guard capacity > 0 else { return [] }
+
+        var indices = [Int32](repeating: -1, count: capacity)
+        var count: Int32 = 0
+        let faceArray: UnsafeMutablePointer<OCCTFaceRef?>? = indices.withUnsafeMutableBufferPointer {
+            OCCTShapeGetOrientedFaces(handle, $0.baseAddress, Int32(capacity), &count)
+        }
+        guard let faceArray else { return [] }
+        // Swift Face objects take ownership of the handles; free only the array container.
+        defer { OCCTFreeFaceArrayOnly(faceArray) }
+
+        var result: [Face] = []
+        for i in 0..<Int(count) {
+            if let faceHandle = faceArray[i] {
+                let index = i < indices.count ? Int(indices[i]) : -1
+                result.append(Face(handle: faceHandle, index: index))
+            }
+        }
+        return result
     }
 
     /// Get horizontal faces (normals pointing up or down)

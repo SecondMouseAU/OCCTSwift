@@ -690,6 +690,67 @@ Two regression suites pin the paths that moved, both checked against the release
 with `OCCTSWIFT_REMOTE=1`. No production code changes. Reproducer, both transcripts and the probe
 census: [`Scripts/repro/572-approx-consumer-sweep/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/572-approx-consumer-sweep).
 
+#### `faces()` dropped a shared face's second orientation, inverting normals on split solids (#614)
+
+#541/#502 converged every face accessor onto one enumeration, `TopExp::MapShapes`. That map
+compares with `TopoDS_Shape::IsSame` — "same TShape with the same Locations. Orientations may
+differ" (`TopoDS_Shape.hxx:265-271`) — and `NCollection_IndexedMap::addImpl` returns the existing
+index and leaves the stored key untouched on a repeat (`NCollection_IndexedMap.hxx:684-710`). So a
+face occurring in one shape both `FORWARD` and `REVERSED` collapsed to a single entry carrying
+whichever orientation was reached **first**.
+
+That is correct for an index and wrong for a normal, because `OCCTFaceGetNormalAtUV` reverses the
+surface normal exactly when the face reads `REVERSED`. Measured on the pinned kernel — a
+`BRepAlgoAPI_Splitter` cutting a 10mm box with the z=4 plane, the plainest two-body result there
+is:
+
+| | before |
+|---|---|
+| face occurrences (`TopExp_Explorer`) | 12 |
+| distinct faces (`TopExp::MapShapes`) | 11 |
+| shared wall stored as | `FORWARD` (lower solid visited first) |
+| its normal | `(0, 0, 1)` |
+| dot vs lower solid | **+2.0** — outward |
+| dot vs upper solid | **−3.0** — *inward* |
+
+The two occurrences are `IsSame` and not `IsEqual`. A renderer or CAM pass building outward normals
+by walking `faces()` got an inward-facing wall for the second body, and any per-face accumulation
+silently lost a facet.
+
+**Fixed by following the split OCCT itself draws, rather than inventing one.** The kernel already
+separates these two jobs and this bridge now matches it:
+
+- **Index → orientation-insensitive.** `TopExp::MapShapes(S, T, M)` is the only type-filtered
+  mapping function OCCT publishes and it accepts only the `IsSame` hasher's map — there is no
+  oriented overload (`TopExp.hxx:57-60`). Upstream's own canonical stable sub-shape index, the one
+  BREP file persistence writes, is that same map (`TopTools_ShapeSet.hxx:192`). `Shape.faces()`
+  stays on it, so **no index moves** and #541 is untouched.
+- **Normal → orientation-sensitive, read off the traversal.** `BRepGProp::VolumeProperties`, where
+  a face's orientation sets the sign of the volume integral, takes it from `ex.Current()`
+  (`BRepGProp.cxx:322-325`); and where it deduplicates, it keeps one `IsSame` map *per
+  orientation* (`aFwdFMap`/`aRvsFMap`, `BRepGProp.cxx:318-338`) so a shared wall's two sides both
+  survive. The oriented indexed map (`NCollection_IndexedMap<TopoDS_Shape>`, deprecated alias
+  `TopTools_IndexedMapOfOrientedShape`) is used upstream only for internal algorithm bookkeeping —
+  `TopOpeBRepBuild`, `BOPAlgo_Builder`, `BRepCheck_Wire`, `ChFi3d`, `BRepTools_ReShape` — never as
+  a public sub-shape enumeration.
+
+New API, all additive:
+
+- **`Shape.orientedFaces() -> [Face]`** — the geometry enumeration: one entry per *occurrence*,
+  each carrying the orientation it has in its parent. A shared wall appears twice, once per owner,
+  each time with the orientation that makes `Face.normal(atU:v:)` point *out* of that owner. An
+  entry's array position is an occurrence number, not a face index, but each `Face` still carries
+  the correct `Face.index` into `faces()` — so an occurrence stays addressable by every
+  face-index-taking method, and entries sharing an `index` are the sides of one shared face. On any
+  shape that shares no face this returns exactly `faces()`, same order, same indices.
+- **`Face.orientation -> Shape.Orientation`** — the flag the normal reverses on, so the two sides
+  of a shared wall can be told apart.
+- Bridge: `OCCTShapeGetOrientedFaces`, `OCCTShapeGetFaceOccurrenceCount`, `OCCTFaceGetOrientation`.
+
+`Shape.faces()`'s own behaviour is unchanged; its documentation now states which of the two
+contracts it holds. Per-solid enumeration (`compound.solids` then `.faces()`) was already correct
+and is pinned by a regression test so the compound-level fix cannot regress it.
+
 #### The third "closest point on an edge" entry point, and the edge it was measuring to (#580)
 
 `Shape.pointEdgeExtrema(point:edgeIndex:)` makes the same promise `Curve3D.projectPoint` and

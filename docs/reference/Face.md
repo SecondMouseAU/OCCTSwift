@@ -95,6 +95,42 @@ Evaluates the surface normal at the midpoint of the face's UV parameter range. R
 
 ---
 
+### `orientation`
+
+The orientation this face carries in the shape it came from.
+
+```swift
+public var orientation: Shape.Orientation { get }
+```
+
+The flag that decides which side of the surface [`normal`](#normal) and
+[`normal(atU:v:)`](#normalatuv) report: both reverse the surface normal exactly when this is
+`.reversed`. OCCT's own definition is that a face's orientation names which side of it is
+*material* — for a space bounded by a face, the default region lies on the negative side of the
+surface normal.
+
+A face can appear in one shape twice with opposite orientations, the ordinary result of a split
+leaving two solids that share a wall. `Shape.faces()` keeps one entry per distinct face and so
+carries only one of them; `Shape.orientedFaces()` keeps both. Two `orientedFaces()` entries with
+the same `index` and different `orientation` are the two sides of one shared wall. (#614)
+
+- **Returns:** `.forward`, `.reversed`, `.internal` or `.external`.
+- **OCCT:** `TopoDS_Shape::Orientation()` (`TopoDS_Shape.hxx:118`).
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+  let compound = Shape.compound(halves)!
+
+  let shared = Dictionary(grouping: compound.orientedFaces(), by: \.index)
+      .filter { $0.value.count > 1 }
+  for (index, sides) in shared {
+      print(index, sides.map(\.orientation))  // [.forward, .reversed]
+  }
+  ```
+
+---
+
 ### `outerWire`
 
 The outer boundary wire of the face.
@@ -585,6 +621,13 @@ Each returned `Face` carries its position as ``Face.index``. This is the same en
 `TopExp_Explorer` order. A face reachable from two parents — the wall shared by both halves of a
 split solid, say — appears once. Returns an empty array if the shape has no faces.
 
+This is the **indexing** enumeration. Faces are distinguished the way OCCT distinguishes them for
+an index: by `TopoDS_Shape::IsSame`, which compares surface and placement and **ignores
+orientation**. A face occurring in the shape with both orientations therefore collapses to one
+entry carrying whichever was reached first — so its ``Face.normal(atU:v:)`` points out of one
+owning solid and *into* the other. Use `Shape.orientedFaces()` when the normal's direction
+matters. (#614)
+
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_FACE, …)` via the bridge's shared sub-shape
   enumeration.
 - **Example:**
@@ -595,11 +638,65 @@ split solid, say — appears once. Returns an empty array if the shape has no fa
   #expect(faces.count == box.faceCount)
   // Every index handed out here is addressable, and names the same face.
   #expect(faces.allSatisfy { box.face(at: $0.index) != nil })
+
+  // A split solid shares its cut face: 11 distinct faces, 12 occurrences.
+  let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+  let compound = Shape.compound(halves)!
+  #expect(compound.faces().count == 11)
+  #expect(compound.orientedFaces().count == 12)
   ```
 - **Note:** Until #541 this was a separate walk yielding one entry per *occurrence* in the topology
   tree, so on a shape with a shared face it was longer than `faceCount`, its surplus indices named
   faces `face(at:)` could not address, and past the duplicate it named a *different* face than
   every index-taking method resolved.
+
+---
+
+### `Shape.orientedFaces()`
+
+Returns every face **occurrence**, each carrying the orientation it has in its parent.
+
+```swift
+public func orientedFaces() -> [Face]
+```
+
+The **geometry** enumeration. Walk this, not `faces()`, whenever the direction of a face normal
+matters: rendering, CAM, per-face area or flux accumulation, anything asking "which way is out". A
+face shared by two solids appears **twice**, once per owner, each time with the orientation that
+makes `Face.normal(atU:v:)` point *out* of that owner.
+
+An entry's array position is an **occurrence number, not a face index** — two positions can name
+the same face. Each returned `Face` still carries the correct ``Face.index`` into `faces()`, so an
+occurrence remains addressable by every face-index-taking method on `Shape`; entries sharing an
+`index` are the several sides of one shared face. On a shape whose faces are not shared this
+returns exactly `faces()`, same order, same indices.
+
+- **OCCT:** `TopExp_Explorer(shape, TopAbs_FACE)`, with each entry's index resolved through the
+  same `TopExp::MapShapes` map `faces()` is built from. This mirrors the kernel's own split:
+  `TopExp::MapShapes` publishes no orientation-sensitive overload (`TopExp.hxx:57-60`) and BREP
+  persistence indexes sub-shapes through the `IsSame` map (`TopTools_ShapeSet.hxx:192`), while
+  `BRepGProp::VolumeProperties` — where orientation sets the sign of the volume integral — reads
+  it off `ex.Current()` and keeps one `IsSame` map *per orientation* so a shared wall's two sides
+  both survive (`BRepGProp.cxx:318-338`).
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+  let compound = Shape.compound(halves)!
+
+  // Outward normals for the whole assembly, shared wall included.
+  for face in compound.orientedFaces() {
+      guard let uv = face.uvBounds else { continue }
+      let n = face.normal(atU: (uv.uMin + uv.uMax) / 2, v: (uv.vMin + uv.vMax) / 2)
+      print(face.index, face.orientation, n ?? .zero)
+  }
+
+  // The cut face appears twice under one index, once per orientation.
+  let shared = Dictionary(grouping: compound.orientedFaces(), by: \.index)
+      .filter { $0.value.count > 1 }
+  #expect(shared.count == 1)
+  #expect(Set(shared.first!.value.map(\.orientation)) == Set([.forward, .reversed]))
+  ```
 
 ---
 
