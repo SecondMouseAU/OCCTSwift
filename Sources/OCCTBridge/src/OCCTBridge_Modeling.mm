@@ -332,6 +332,7 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
                                    [radius](BRepFilletAPI_MakeFillet& fillet,
                                             const TopoDS_Edge& edge, int32_t) {
         fillet.Add(radius, edge);
+        return true;
     });
 }
 
@@ -342,10 +343,21 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeI
     return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
                                    [startRadius, endRadius](BRepFilletAPI_MakeFillet& fillet,
                                                             const TopoDS_Edge& edge, int32_t) {
-        // The radius-law overload takes no radius: add the edge as its own contour first, then
-        // vary the radius across that contour.
-        fillet.Add(edge);
-        fillet.SetRadius(startRadius, endRadius, fillet.NbContours(), 1);
+        // #612: this used to be Add(edge) followed by SetRadius(R1, R2, NbContours(), 1). Both
+        // coordinates were wrong — a tangent-continuous edge extends an existing contour rather
+        // than creating one, and the third argument is the edge's index *within* the contour, not
+        // a constant 1, so every edge of a tangent chain landed on one slot and only the last
+        // survived (measured 10273.238348 for two edges of a slot rim at 1 -> 4, exactly what
+        // filleting the first alone produces, against 10297.711861 correct).
+        //
+        // OCCT ships the whole thing as one call: Add(R1, R2, E) is Add(E) plus the same
+        // Contains(E, IinC) slot resolution plus SetRadius(R1, R2, IC, IinC). Verified equivalent
+        // to resolving the slot by hand — identical to the digit on that rim for the pair
+        // (10297.711860842), the straight side alone (10273.238347801) and the arc alone
+        // (10276.405613964) — and it declines an unfilletable edge by construction, which is the
+        // skip the sibling entry points get from Add(Radius, E).
+        fillet.Add(startRadius, endRadius, edge);
+        return true;
     });
 }
 
@@ -1853,6 +1865,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef shape,
                                 [radius](BRepFilletAPI_MakeFillet& fillet,
                                          const TopoDS_Edge& edge, int32_t) {
             fillet.Add(radius, edge);
+            return true;
         })) return nullptr;
         op->Build();
         if (!op->IsDone()) return nullptr;
@@ -1878,12 +1891,15 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef shape,
         if (idx < 1 || idx > edgeMap.Extent()) return nullptr;
         TopoDS_Edge edge = TopoDS::Edge(edgeMap(idx));
         std::unique_ptr<BRepFilletAPI_MakeFillet> op(new BRepFilletAPI_MakeFillet(shape->shape));
-        op->Add(edge);
-        // Map the variable radius along the edge: (param=0, startR), (param=1, endR).
-        TColgp_Array1OfPnt2d radii(1, 2);
-        radii.SetValue(1, gp_Pnt2d(0.0, startRadius));
-        radii.SetValue(2, gp_Pnt2d(1.0, endRadius));
-        op->SetRadius(radii, 1, 1);
+        // #612: the same one-call overload OCCTShapeFilletEdgesLinear uses, replacing Add(edge)
+        // plus a two-point array written to SetRadius(radii, 1, 1). That literal 1 was in fact
+        // safe here — a single added edge always lands at index 1 of its contour's spine, measured
+        // on all four edges of a tangent rim, and a *literal* 1 is bounds-checked upstream even
+        // when the edge was declined and there are no contours (unlike the 0 that NbContours()
+        // yields there, which is the unchecked low side that used to SIGSEGV). Converted anyway so
+        // the idiom is gone: Add(R1, R2, E) measures identical to the array law (492.500243 on an
+        // accepted edge) and declines an unfilletable edge by construction.
+        op->Add(startRadius, endRadius, edge);
         op->Build();
         if (!op->IsDone()) return nullptr;
         TopoDS_Shape result = op->Shape();
@@ -2380,20 +2396,23 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
         // The profile of edge i starts where the profiles of edges 0..i-1 end, so the offset walks
         // forward with the loop inside occtFilletAddEdges rather than being indexable from `entry`.
         int32_t offset = 0;
-        bool profilesOk = true;
-        bool indicesOk = occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount,
-                                            [&](BRepFilletAPI_MakeFillet& f,
-                                                const TopoDS_Edge& edge, int32_t entry) {
-            if (!profilesOk) return;
+        bool ok = occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount,
+                                     [&](BRepFilletAPI_MakeFillet& f,
+                                         const TopoDS_Edge& edge, int32_t entry) {
             f.Add(edge);
             const OCCTFilletRadiusPoint* points = radiusPoints + offset;
-            profilesOk = occtFilletSetRadiusProfile(f, f.NbContours(), pointCounts[entry],
-                                                    [points](int32_t j) {
+            // Both the contour and the edge's slot within it are resolved from `edge` inside the
+            // helper, not from (NbContours(), 1). Two tangent-continuous edges share a contour but
+            // not a slot, so both laws are honoured — measured 10139.793468, byte-identical to the
+            // blendedEdges request that always could. #612
+            bool profileOk = occtFilletSetRadiusProfile(f, edge, pointCounts[entry],
+                                                        [points](int32_t j) {
                 return gp_Pnt2d(points[j].parameter, points[j].radius);
             });
             offset += pointCounts[entry];
+            return profileOk;
         });
-        if (!indicesOk || !profilesOk) return nullptr;
+        if (!ok) return nullptr;
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;

@@ -486,12 +486,22 @@ OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef shape, int32_t edgeIndex,
 
     try {
         BRepFilletAPI_MakeFillet fillet(shape->shape);
+        TopoDS_Edge added;
         if (!occtFilletAddEdges(fillet, shape->shape, &edgeIndex, 1,
-                                [](BRepFilletAPI_MakeFillet& f, const TopoDS_Edge& edge, int32_t) {
+                                [&added](BRepFilletAPI_MakeFillet& f,
+                                         const TopoDS_Edge& edge, int32_t) {
             f.Add(edge);  // the radius-law overload: the profile below supplies the radius
+            added = edge;
+            return true;
         })) return nullptr;
 
-        if (!occtFilletSetRadiusProfile(fillet, fillet.NbContours(), count,
+        // #612: the profile goes to this edge's own slot in this edge's own contour. One edge is
+        // added, so the contour index agreed with NbContours() whenever there was one at all — but
+        // when OCCT *declines* the edge (a free-boundary edge of an open shell) NbContours() is 0,
+        // and SetRadius(law, 0, 1) is the unchecked low side #505 measured: it used to SIGSEGV,
+        // uncatchably, rather than fail. Resolving the slot returns no slot instead, and the empty
+        // fillet then fails in Build().
+        if (!occtFilletSetRadiusProfile(fillet, added, count,
                                         [radii, params](int32_t i) {
             return gp_Pnt2d(params[i], radii[i]);
         })) return nullptr;
@@ -712,6 +722,7 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
                                    [radii](BRepFilletAPI_MakeFillet& fillet,
                                            const TopoDS_Edge& edge, int32_t entry) {
         fillet.Add(radii[entry], edge);
+        return true;
     });
 }
 

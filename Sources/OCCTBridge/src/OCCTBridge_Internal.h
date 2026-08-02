@@ -1448,13 +1448,86 @@ inline bool occtValidFilletRadii(const double* radii, int32_t count) {
 //
 // Radius validation is the caller's, since the shapes it takes (one scalar, two scalars, an array,
 // a (parameter, radius) point list) have nothing in common but occtValidFilletRadius above.
+//
+// #612: `addEdge` answers false for a request it cannot honour — in practice a malformed radius
+// law, which is a caller error rather than a property of the geometry. The rest of the batch is
+// then left unadded and the whole call fails, because every caller returns before Build() on false
+// and a fillet carrying a contour with no radius must never reach it (see the SIGSEGV #520
+// measured, below). The shared index resolver's own visitor stays void: the five other families
+// that share it have nothing to refuse.
 template <class AddEdge>
 bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
                         const int32_t* edgeIndices, int32_t edgeCount, AddEdge addEdge) {
-    return occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
-                                   [&](const TopoDS_Shape& edge, int32_t i) {
-        addEdge(fillet, TopoDS::Edge(edge), i);
+    bool honoured = true;
+    bool resolved = occtUseSubShapesByIndex(shape, TopAbs_EDGE, edgeIndices, edgeCount,
+                                            [&](const TopoDS_Shape& edge, int32_t i) {
+        if (!honoured) return;
+        honoured = addEdge(fillet, TopoDS::Edge(edge), i);
     });
+    return resolved && honoured;
+}
+
+// === #612: a radius law belongs to the edge's own slot, in the edge's own contour ===
+//
+// Two independent facts about BRepFilletAPI_MakeFillet, both of which the bridge used to get wrong
+// by writing `SetRadius(law, NbContours(), 1)`.
+//
+// (1) Add(edge) does not always create a contour. An edge tangent-continuous with one already added
+// *extends* that contour instead, so NbContours() — "the contour that exists after the most recent
+// Add" — names the edge's own contour only when every Add happens to create one. Measured on a
+// rounded-slot prism (2 lines + 2 semicircular arcs, extruded), adding a top-rim edge, a bottom-rim
+// edge, then a second top-rim edge:
+//
+//   add top    -> NbContours()=1  Contour(edge)=1
+//   add bottom -> NbContours()=2  Contour(edge)=2
+//   add top    -> NbContours()=2  Contour(edge)=1   <<< the third law lands on the bottom rim
+//
+// Contour(E) returns the index of the contour holding E, or 0 for an edge in none, and is populated
+// by Add() rather than by Build() — the same property #505 relies on.
+//
+// (2) SetRadius's third argument, IinC, is the index of the edge *within* that contour, and it
+// selects a distinct per-edge slot. The bridge hardcoded it to 1, which is what made two edges of
+// one contour look like an unresolvable conflict: both laws went to the same slot and the second
+// replaced the first. It is not a conflict at all. Measured on the same slot rim, filleting the
+// straight side and the tangent arc with radius 2 and 5:
+//
+//   both laws at IinC=1 (the old idiom)      9974.608333   <- the arc's 5 overwrote the line's 2
+//   each law at its own IinC                10139.793468   <- BOTH honoured
+//   Add(Radius, E), i.e. blendedEdges       10139.793468   <- byte-identical
+//
+// The Add(Radius, E) overload resolves the same slot internally (BRepFilletAPI_MakeFillet.cxx:67-77
+// walks Contains(E, IinC)), which is why blendedEdges already honoured the very request
+// filletEvolving could not. A non-constant law makes the slot visible on a single edge too: a
+// 1 -> 4 taper on one added edge measures 10273.238348 / 10297.711861 / 10343.333856 / 10402.168644
+// at IinC 1/2/3/4.
+//
+// So there is no ambiguity to refuse and no law to discard: each edge's law goes to its own slot.
+// A single edge named twice in one call writes the same slot twice, and the later law wins — the
+// ordinary meaning of assigning the same thing twice, not a silent substitution of some *other*
+// edge's request.
+//
+// `indexInContour` is 0 when the edge is not in the named contour. Add() legitimately refuses an
+// edge it cannot fillet — a free-boundary edge of an open shell, 4 of 12 on a box missing a face —
+// and then Contour(E) is 0 and there is no slot to write. That is not an error here: Add(Radius, E)
+// silently declines the same edges, and skipping them makes the law paths agree with it to the
+// digit — surface area 465.09733552923257 both ways over all 12 edges of that shell. Measure such a
+// shell by AREA: it is not a solid, so BRepGProp::VolumeProperties fabricates a number for it (the
+// #605/#609 defect class), and that number is not even a property of the shape — it ranges 746.83
+// to 748.28 depending on which face is dropped, while the area is 465.097 for all six.
+//
+// A batch in which *every* edge is refused leaves zero contours and Build() throws, so an
+// all-refused request still fails rather than quietly returning the unfilleted input.
+inline bool occtFilletEdgeSlot(const BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge,
+                               int32_t& contourIndex, int32_t& indexInContour) {
+    contourIndex = fillet.Contour(edge);
+    if (contourIndex < 1 || contourIndex > fillet.NbContours()) return false;
+    for (int32_t j = 1; j <= fillet.NbEdges(contourIndex); j++) {
+        if (fillet.Edge(contourIndex, j).IsSame(edge)) {
+            indexInContour = j;
+            return true;
+        }
+    }
+    return false;
 }
 
 // === #520: the radius law, for the two entry points that take one ===
@@ -1488,8 +1561,16 @@ bool occtFilletAddEdges(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& sh
 // `pointAt(i)` returns the i-th point as a gp_Pnt2d(relative parameter, radius); the two callers
 // hold their profiles in different layouts (parallel arrays, and an array of OCCTFilletRadiusPoint)
 // and neither is worth copying to share this.
+//
+// #612: this takes the *edge* rather than a contour index and resolves both the contour and the
+// edge's slot within it (occtFilletEdgeSlot above), so a caller can no longer name the wrong one —
+// which is exactly what `SetRadius(law, NbContours(), 1)` did here.
+//
+// False means the *profile* is malformed, which is a caller error and rejects the whole call. An
+// edge OCCT declined to add is not a caller error and returns true having placed nothing: see
+// occtFilletEdgeSlot for why that matches what Add(Radius, E) does with the same edge.
 template <class PointAt>
-bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, int32_t contourIndex,
+bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, const TopoDS_Edge& edge,
                                 int32_t pointCount, PointAt pointAt) {
     if (pointCount < 1) return false;
 
@@ -1506,7 +1587,10 @@ bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, int32_t contou
         UandR.SetValue(i + 1, point);
     }
 
-    fillet.SetRadius(UandR, contourIndex, 1);
+    int32_t contourIndex = 0, indexInContour = 0;
+    if (!occtFilletEdgeSlot(fillet, edge, contourIndex, indexInContour)) return true;
+
+    fillet.SetRadius(UandR, contourIndex, indexInContour);
     return true;
 }
 
