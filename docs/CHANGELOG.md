@@ -54,9 +54,17 @@ than `always()` so the workflow's `cancel-in-progress` concurrency still takes e
 **`count-operations.py` gains the docstring line its three siblings already had.** It was always a
 gate — `return 0 if (readme_n == derived and apiref_n == derived) else 1` — but nothing said so, so
 it read as a release-time reporting tool, which is the only way it was ever used. Its counts had
-drifted on this branch before (#625's own scope note). It also **silently ignores an unrecognised
-option**, so `--self-test` would be accepted, run the ordinary report, and exit 0: a passing
-self-test that does not exist. CI invokes it bare, and the docstring now says why.
+drifted on this branch before (#625's own scope note).
+
+It also **now exits 2 on an unrecognised option instead of silently ignoring it**. This one is a
+trap this PR itself arms: the other three gates all take `--self-test`, and CI pairs each self-test
+with its real run, so "seven invocations, self-test beside gate" becomes the house pattern in two
+places — and the natural thing to write when extending that list is `count-operations.py
+--self-test`, which was accepted, ran the ordinary report, and passed forever. The first fix was a
+docstring warning, which is the wrong shape of fix for an issue whose entire premise is that prose
+describing a gate is not a gate. Exit 2 matches the siblings' "cannot run" status (they use it for
+a wrong working directory) so it is distinguishable from a real failure, and it also stops `--fi`
+silently reporting when `--fix` was meant.
 
 **An opt-in pre-commit hook, not an installed one.** `Scripts/git-hooks/pre-commit` runs the same
 seven invocations locally, for the case `CLAUDE.md` actually addresses: a contributor mid-change,
@@ -66,15 +74,41 @@ silently disables any hook a contributor already has). **The rejected alternativ
 auto-installation** — a bootstrap script or SwiftPM plugin writing `.git/hooks/pre-commit` on first
 build. It was rejected because it changes when a contributor's commits succeed without them asking,
 and its failure mode is a commit refused by a hook they did not know existed and cannot find in the
-tree. The hook mirrors the CI job exactly, so "passed locally, failed in CI" can never mean the two
-disagree; it checks the working tree rather than the staged snapshot, so a partially-staged commit
-can pass it and still fail CI, which is documented in the hook and is why CI stays the authority.
+tree. The hook runs the same seven invocations **flag for flag**. It first ran the three real gates with
+`--quiet`, which is exit-status-only, so it named the failing gate and then printed nothing about
+where — a fabricated index entry got you `FAIL: check-bridge-index.py` where CI names
+`OCCTBridge.h:66`. The flag was redundant anyway, since the runner already buffers output and only
+prints it on failure. **The reason that survived the first round of proof is worth recording**: the
+hook was proven with `count-operations.py`, the one invocation that had no `--quiet` and therefore
+the one case that could not exhibit the defect. A proof that exercises only the case immune to the
+bug is the same shape as the vacuous self-tests this batch keeps finding — the re-proof breaks all
+three of the previously-`--quiet` gates individually and confirms each now prints its site.
+
+Three ways the hook can still diverge from CI, all documented in it rather than closed: it checks
+the working tree rather than the staged snapshot, so a partially-staged commit can pass it and fail
+CI; it runs whatever `python3` is on `PATH` while CI pins 3.12; and it warns and exits 0 if
+`python3` is missing, so "the hook passed" can mean "the hook did nothing". All three resolve the
+same way — CI decides, and it runs on every push regardless.
+
+The install instruction was also wrong for this repo's normal working mode: `ln -s ...
+.git/hooks/pre-commit` fails with "Not a directory" in a linked worktree, because a worktree's
+`.git` is a file, and almost all work here happens in `.claude/worktrees/*`. The hook *body* was
+already worktree-correct (`cd "$(git rev-parse --show-toplevel)"`); only the instruction was not.
+Both the hook header and `CLAUDE.md` now give the worktree forms.
 
 **Verified by breaking each condition and confirming the gate catches it.** Fabricating an index
 entry (`OCCTShapeBoxNope`) took `check-bridge-index.py` 0 → 1; deleting the `IsNull()` from a
 guarded bridge opener took `check-null-handle-guards.py` 0 → 1; editing a restated default in
 `docs/reference/` took `check-docs-defaults.py` 0 → 1; editing README's headline count took
-`count-operations.py` 0 → 1. All four returned to 0 on restore.
+`count-operations.py` 0 → 1. All four returned to 0 on restore. The job is pinned to
+`actions/checkout@v7` + `actions/setup-python@v7` (both `using: node24`) rather than the `@v4` its
+sibling jobs use, so it does not newly introduce a Node 20 deprecation annotation — those are
+emitted per job, so this job's pins decide this job's warning. Bumping the other two jobs is #648.
+
+**What this does not do:** the repo has no branch protection and no rulesets, so a red
+`gate-scripts` is a visible red X that does not block a merge. Making it a required check is #649,
+and it is the one check in the repo that can be required without a caveat — unlike `build-and-test`
+it needs no OCCT, no build and no xcframework, so #585's pinned-kernel mismatch cannot make it red.
 
 #### The null-handle gate was blind to four of the five ways this bridge reaches a handle (#618)
 

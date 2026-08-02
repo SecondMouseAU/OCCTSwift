@@ -7,27 +7,38 @@
 # asking is a surprise, and this one adds a few seconds to every single commit. Enable it with one
 # of the two commands below, from the repo root.
 #
-#   Recommended (surgical — leaves any other hook you already have in place):
+#   In a MAIN checkout — surgical, leaves any other hook you already have in place:
 #
 #       ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit
 #
-#   Alternative (whole hooks directory):
+#   In a LINKED WORKTREE (`.claude/worktrees/*`, where most work on this repo happens) that symlink
+#   FAILS with "Not a directory": a worktree's `.git` is a file pointing at the main checkout, not
+#   a directory, so there is no `.git/hooks` to link into. Use either:
 #
-#       git config core.hooksPath Scripts/git-hooks
+#       git config core.hooksPath Scripts/git-hooks                    # per-worktree, no symlink
+#       ln -s <main-checkout>/Scripts/git-hooks/pre-commit \
+#             <main-checkout>/.git/hooks/pre-commit                    # once, covers every worktree
 #
 #   `core.hooksPath` REPLACES the hooks directory rather than adding to it, so any hook you already
-#   have in `.git/hooks` stops firing while it is set. Prefer the symlink unless you want every
-#   hook this repo ships. Undo either with `rm .git/hooks/pre-commit` or
-#   `git config --unset core.hooksPath`.
+#   have in `.git/hooks` stops firing while it is set. Prefer the symlink where you can use one.
+#   Undo either with `rm .git/hooks/pre-commit` or `git config --unset core.hooksPath`.
 #
-# Skip it for one commit with `git commit --no-verify`. CI is the authority either way: this hook
-# is a faster local copy of the same checks, never a substitute, and it is deliberately kept
-# identical to the CI job so "passed locally, failed in CI" cannot mean the two disagree.
+#   The hook body itself is worktree-correct either way — it `cd`s to `git rev-parse --show-toplevel`,
+#   which resolves to the worktree you are committing in, not the main checkout.
 #
-# It checks the WORKING TREE, not the staged snapshot. A partially-staged commit can therefore pass
-# the hook and fail CI on what was actually committed. Making it accurate would mean checking out
-# the index to a temp tree on every commit, which costs more than it saves for a convenience hook —
-# CI closes that gap. #625.
+# Skip it for one commit with `git commit --no-verify`. CI is the authority either way: this hook is
+# a faster local copy of the same checks, never a substitute. The seven INVOCATIONS below are
+# deliberately identical to the CI job's, flag for flag, so a disagreement can never come from the
+# two running different things. Three ways they can still diverge, none of them worth closing here:
+#
+#   - it checks the WORKING TREE, not the staged snapshot, so a partially-staged commit can pass the
+#     hook and fail CI on what was actually committed. Fixing it means checking the index out to a
+#     temp tree on every commit, which costs more than it saves for a convenience hook;
+#   - it runs whatever `python3` is on your PATH; CI pins 3.12;
+#   - if `python3` is missing entirely it warns and exits 0, so "the hook passed" can mean "the hook
+#     did nothing".
+#
+# All three resolve the same way: CI is what decides, and it runs on every push regardless. #625.
 
 set -uo pipefail
 
@@ -54,12 +65,16 @@ run() {
     rm -f /tmp/occtswift-gate-$$.log
 }
 
+# Deliberately NOT --quiet, even though run() only prints on failure. --quiet is exit-status-only,
+# so the hook would name the failing gate and then print nothing about WHERE — a fabricated index
+# entry gets you "FAIL: check-bridge-index.py" instead of the file and line CI names. These are the
+# same invocations CI runs, which is the point: the two must not be able to disagree.
 run "check-bridge-index.py --self-test"       Scripts/check-bridge-index.py --self-test
-run "check-bridge-index.py"                   Scripts/check-bridge-index.py --quiet
+run "check-bridge-index.py"                   Scripts/check-bridge-index.py
 run "check-null-handle-guards.py --self-test" Scripts/check-null-handle-guards.py --self-test
-run "check-null-handle-guards.py"             Scripts/check-null-handle-guards.py --quiet
+run "check-null-handle-guards.py"             Scripts/check-null-handle-guards.py
 run "check-docs-defaults.py --self-test"      Scripts/check-docs-defaults.py --self-test
-run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py --quiet
+run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py
 run "count-operations.py"                     Scripts/count-operations.py
 
 if [ ${#failed[@]} -ne 0 ]; then

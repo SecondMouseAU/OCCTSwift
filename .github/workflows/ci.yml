@@ -54,13 +54,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      # v7, not the v4 the sibling jobs in this file pin. Deprecation annotations are emitted per
+      # JOB, not per workflow, so this job's pins decide this job's annotation: at v4/v5 it raised
+      # its own "Node.js 20 is deprecated" warning, which this job would have been newly
+      # introducing (nothing in the repo used setup-python before). v7 of both targets node24, so
+      # the annotation is simply absent here. It leaves this file mixed-version until the other two
+      # jobs are bumped, which is a repo-wide change with its own PR.
+      - uses: actions/checkout@v7
 
       # Pinned rather than the image default: these gates parse Swift and C++ with regexes, and a
       # runner-image Python bump silently changing a verdict is exactly the failure mode the gates
       # exist to prevent. Nothing here needs a third-party package — stdlib only (re, sys, os,
       # glob, argparse, collections) — so there is no install step.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
