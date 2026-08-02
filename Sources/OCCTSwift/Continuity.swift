@@ -205,12 +205,20 @@ public enum ContinuityClass: Int32, Sendable, CaseIterable {
 }
 
 extension ContinuityClass: Comparable {
-    /// Orders by increasing smoothness.
+    /// Ranks two *measured* classes by their place in `GeomAbs_Shape`'s ladder.
     ///
     /// `GeomAbs_Shape`'s declared order happens to be monotonic in smoothness
     /// (C0 < G1 < C1 < G2 < C2 < C3 < CN), so the raw values compare correctly. That is a
     /// property of the enum worth pinning rather than assuming, and it is what makes
-    /// "at least this smooth" answerable without a lookup table.
+    /// "is this measurement at least as smooth as that one" answerable without a lookup table.
+    ///
+    /// It is not the same question as ``satisfies(_:)``, which tests a measured class against a
+    /// *requested* parametric floor. The ladder interleaves the geometric classes with the
+    /// parametric ones, so a class can outrank another without entailing it: ``g2`` sorts above
+    /// ``c1`` yet does not satisfy `.c1`, since curvature continuity says nothing about the
+    /// first-derivative vectors. Use `<`/`>=` to compare two `ContinuityClass` values, and
+    /// ``satisfies(_:)`` to check a ``ParametricContinuity`` floor — never a raw-value
+    /// comparison across the two types, whose encodings differ (#485, #623).
     public static func < (lhs: ContinuityClass, rhs: ContinuityClass) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
@@ -253,17 +261,40 @@ extension ContinuityClass {
     ///
     /// Use this instead of comparing raw values against ``ParametricContinuity``. The two
     /// encodings differ (`ContinuityClass.c1` is 2, `ParametricContinuity.c1` is 1), so a
-    /// direct `>=` silently misreports, and a ``g1``/``g2`` result is not a parametric
-    /// guarantee at any order however smooth it looks.
+    /// direct `>=` between the two types silently misreports.
+    ///
+    /// This asks a *parametric* question — "are the derivative vectors continuous up to order
+    /// n?" — which is not the question ``<`` answers. `<` ranks two measured classes by their
+    /// place in `GeomAbs_Shape`'s ladder; outranking a class in that ladder is not the same as
+    /// entailing it, because the ladder interleaves the geometric classes with the parametric
+    /// ones. The two answers differ at exactly one pair: ``g2`` sorts above ``c1`` (raw 3 > 2)
+    /// yet guarantees nothing about first-derivative vectors, so `.g2.satisfies(.c1)` is
+    /// `false` while `.g2 >= .c1` is `true`.
+    ///
+    /// Everywhere else they agree, ``ParametricContinuity/c0`` included: a geometric class
+    /// *does* meet the C0 floor. G1 entails G0 entails positional continuity, and positional
+    /// continuity is exactly what C0 is — there is no parametrisation subtlety at order zero,
+    /// a curve is either connected or it is not. Reporting a tangent-continuous surface as
+    /// failing `.c0` was the defect #623 was filed about.
     ///
     /// ```swift
-    /// if surface.continuityClass.satisfies(.c2) {
+    /// let measured = surface.continuityClass
+    ///
+    /// if measured.satisfies(.c2) {
     ///     // safe to ask for second derivatives across the whole surface
     /// }
+    ///
+    /// // A tangent-continuous surface is positionally continuous ...
+    /// ContinuityClass.g1.satisfies(.c0)   // true
+    /// // ... but promises nothing about the derivative vectors themselves.
+    /// ContinuityClass.g1.satisfies(.c1)   // false
+    /// ContinuityClass.g2.satisfies(.c1)   // false — even though .g2 > .c1 in the ladder
     /// ```
     public func satisfies(_ required: ParametricContinuity) -> Bool {
-        guard let order = derivativeOrder else { return false }
-        return order >= Int(required.rawValue)
+        // A geometric class has no `derivativeOrder`, but that is a floor of 0 rather than a
+        // blanket failure: it promises nothing about derivative *vectors*, and promises
+        // position, which is order 0. Anything above C0 is still correctly refused. (#623)
+        (derivativeOrder ?? 0) >= Int(required.rawValue)
     }
 }
 

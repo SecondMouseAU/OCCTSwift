@@ -17,6 +17,50 @@ All notable changes to OCCTSwift.
 
 ### Pass 1b of the #377 duplication audit
 
+#### A tangent-continuous surface stops being reported as not even connected (#623)
+
+`ContinuityClass` offers two ways to ask "is this at least X", and they disagreed.
+`satisfies(_:)` short-circuited on the `nil` `derivativeOrder` that the geometric classes carry,
+returning `false` before it ever read the requested floor:
+
+```swift
+surface.continuityClass                  // .g1
+surface.continuityClass.satisfies(.c0)   // false
+surface.continuityClass >= .c0           // true
+```
+
+So a caller gating on "is this at least positionally continuous?" through the API the docs steer
+them to rejected every G1 and G2 result — surfaces *smoother* than the C0 ones it accepted.
+
+The old justification, "a `g1`/`g2` result is not a parametric guarantee at any order", is right
+for C1 and above and wrong for C0. G1 entails G0 entails positional continuity, and positional
+continuity is exactly what C0 is; there is no parametrisation subtlety at order zero, a curve is
+either connected or it is not. The `nil` branch now floors at order 0 instead of failing
+unconditionally, so `.g1`/`.g2` satisfy `.c0` and still correctly refuse `.c1` and above.
+`derivativeOrder` is unchanged — it still reports `nil`, because a geometric class genuinely has
+no parametric order; the floor lives in `satisfies` alone.
+
+**Sweeping the full 7×7 matrix of `satisfies` against `>=` found one more disagreement than the
+reported cell, and it is not a bug.** Of the 49 (measured, required) pairs, 28 name a
+`ParametricContinuity` floor that both APIs can answer. Before: three disagreed — `(.g1, .c0)`,
+`(.g2, .c0)` and `(.g2, .c1)`. After: exactly one, `(.g2, .c1)`, and it is correct. `GeomAbs_Shape`
+ranks G2 (3) above C1 (2), but curvature continuity does not entail first-derivative continuity,
+so the parametric floor rightly refuses what the ladder allows. That is a genuine difference in
+what the two APIs are *for*, not drift, and both doc comments now say so: `satisfies(_:)` tests a
+measured class against a requested parametric floor, `<`/`>=` ranks two measured classes by their
+place in the ladder, and outranking is not entailing. The one exception is named in both.
+
+A third contract in the same file, `ContinuityAnalysis.holds(_:)` and the `GeomAbs_Shape`-ordinal
+junction-analysis bitmask behind it, asks exact-class membership rather than a floor or a ranking
+and is deliberately untouched; a regression test pins that it stayed independent.
+
+`Issue623ContinuityFloorTests` (`Tests/OCCTSurfaceTests/`) carries the matrix sweep, the
+monotonicity property (whatever a class satisfies, it satisfies everything weaker — which the
+unconditional `false` broke), and the one-directional soundness half that must hold with no
+exceptions at all: a floor check may be stricter than the ladder, never looser. The matrix is what
+would have caught this; the single cell would not have. `Issue485SurfaceContinuityTests` had
+pinned the old answer as correct and is corrected.
+
 #### A NaN parameter bound stops being a plausible arc length (#548)
 
 `Curve3D.length(from:to:)` documents itself as the entry point that tells failure apart from a real
