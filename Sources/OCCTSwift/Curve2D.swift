@@ -512,14 +512,18 @@ public final class Curve2D: @unchecked Sendable {
         return l >= 0 ? l : nil
     }
 
-    /// Arc length between two parameter values. Unlike `arcLength(from:to:)`, `u1` may be
-    /// greater than `u2` (order doesn't affect the result). Returns `nil` on failure (e.g. a
-    /// released curve), never a sentinel value that could be mistaken for a real zero-length
-    /// segment.
+    /// Arc length between two parameter values.
     ///
-    /// Both bounds must be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator does
-    /// not check them, and on a multi-span BSpline a NaN upper bound measured `0` and a NaN lower
-    /// bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the mechanism (#548).
+    /// This is the canonical, failure-distinguishing entry point: `nil` when the computation
+    /// fails, rather than a number that could be mistaken for a real zero-length segment.
+    /// `arcLength(from:to:)` delegates to this and collapses failure back to `-1.0`.
+    ///
+    /// The range may be given in either order; equal parameters measure `0`.
+    ///
+    /// Both bounds must also be finite: `.nan` and `±.infinity` report `nil`. OCCT's integrator
+    /// does not check them itself, and on a multi-span BSpline a NaN upper bound measured `0`
+    /// and a NaN lower bound the curve's whole length — see ``Curve3D/length(from:to:)`` for the
+    /// mechanism (#548).
     ///
     /// A range reaching outside the curve's domain measures the part of it that lies on the curve,
     /// so a range wholly outside measures `0`. A curve whose domain covers a whole period exists at
@@ -533,7 +537,9 @@ public final class Curve2D: @unchecked Sendable {
     /// let bad = c.length(from: d.lowerBound, to: .nan)   // nil
     ///
     /// let circle = Curve2D.circle(center: .zero, radius: 5)!
-    /// let two = circle.length(from: 0, to: 4 * .pi)      // two circumferences
+    /// let quarter = circle.length(from: 0, to: .pi / 2)   // ≈ 7.854
+    /// let reversed = circle.length(from: .pi / 2, to: 0)  // the same 7.854
+    /// let two = circle.length(from: 0, to: 4 * .pi)       // two circumferences
     /// ```
     public func length(from u1: Double, to u2: Double) -> Double? {
         let l = OCCTCurve2DGetLengthBetween(handle, u1, u2)
@@ -561,10 +567,25 @@ public final class Curve2D: @unchecked Sendable {
 
     // MARK: - Local Properties (Curvature, Normal, Inflection)
 
-    /// The curvature (1/radius) at parameter `u`.
-    /// Returns 0 for straight segments or on error.
-    public func curvature(at u: Double) -> Double {
-        OCCTCurve2DGetCurvature(handle, u)
+    /// The curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The curvature — `0` for a straight segment, which is a real answer — or `nil` at
+    ///   a parameter the curve cannot be evaluated at and where
+    ///   `GeomLProp_CLProps2d::IsTangentDefined()` is false. Straight and undefined used to be the
+    ///   same `0` (#595).
+    ///
+    /// A **cusp** is still reported, as `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`,
+    /// meaning infinite curvature): an answer, not an absence. Matches ``Curve3D/curvature(at:)``.
+    ///
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 4)!
+    /// if let k = circle.curvature(at: 1) { #expect(abs(k - 0.25) < 1e-12) }
+    /// ```
+    public func curvature(at u: Double) -> Double? {
+        var k = 0.0
+        guard OCCTCurve2DGetCurvature(handle, u, &k) else { return nil }
+        return k
     }
 
     /// The unit normal vector at parameter `u`, or `nil` if undefined (e.g. on a straight line).
@@ -706,10 +727,21 @@ public final class Curve2D: @unchecked Sendable {
     ///   saturates there (#480).
     /// - Returns: Array of knot indices where the curve drops below the requested continuity, or nil if not a B-spline.
     public func splitIndicesAtDiscontinuities(continuity: ParametricContinuity = .c1) -> [Int]? {
-        var buffer = [Int32](repeating: 0, count: 256)
-        let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue, &buffer, 256))
+        // Read-then-retry, the #481 pattern the rest of this family shares: the bridge reports the
+        // true split count even when it wrote fewer, so one retry sized to it is always enough.
+        // Before #562 this read a fixed 256 entries and took whatever came back, so a curve with
+        // more splits than that was silently cut off at 256 with nothing to notice it by.
+        func read(capacity: Int) -> (count: Int, buffer: [Int32]) {
+            var buffer = [Int32](repeating: 0, count: capacity)
+            let n = Int(OCCTCurve2DSplitAtDiscontinuities(handle, continuity.rawValue,
+                                                          &buffer, Int32(capacity)))
+            return (n, buffer)
+        }
+
+        var (n, buffer) = read(capacity: 256)
         guard n > 0 else { return nil }
-        return (0..<n).map { Int(buffer[$0]) }
+        if n > 256 { (n, buffer) = read(capacity: n) }
+        return buffer.prefix(n).map(Int.init)
     }
 
     /// Approximate this curve as a sequence of arcs and line segments.
@@ -2684,20 +2716,27 @@ extension Curve2D {
 
     /// Compute the arc length of this curve between parameters `u1` and `u2` (non-optional).
     ///
-    /// Unlike `length(from:to:)`, `u1` must not exceed `u2` — the underlying computation uses a
-    /// range-checked adaptor that fails on a reversed range. Returns `-1.0` on failure (a
-    /// reversed range, a non-finite bound, a released curve, or any other computation error) —
-    /// arc length is otherwise always non-negative, so this is an unambiguous failure sentinel,
-    /// never confusable with a genuine zero-length segment (e.g. `u1 == u2`). Use
-    /// `length(from:to:)` directly if you need an optional rather than a sentinel value (and
-    /// order tolerance).
+    /// Delegates to ``length(from:to:)``, the failure-distinguishing entry point, and shares its
+    /// contract: the range may be given in either order, equal parameters measure `0`, an
+    /// out-of-domain range measures only the part that lies on the curve (winding a periodic
+    /// one, #600), and a non-finite bound (`.nan` or `±.infinity`) fails rather than propagating
+    /// (#548). Returns `-1.0` if the computation fails. Arc length is otherwise always
+    /// non-negative, so this is an unambiguous failure sentinel, never confusable with a genuine
+    /// zero-length segment. Use ``length(from:to:)`` directly if you need an optional rather
+    /// than a sentinel value.
     ///
-    /// A range reaching outside the curve's domain measures only the part that lies on the curve,
-    /// matching `length(from:to:)`; this spelling used to evaluate the curve past its domain
-    /// instead, reporting 4771.88 for a BSpline 457.26 long (#600).
+    /// ```swift
+    /// let circle = Curve2D.circle(center: .zero, radius: 5)!
+    /// let half = circle.arcLength(from: 0, to: .pi)      // ≈ 15.71
+    /// let same = circle.arcLength(from: .pi, to: 0)      // the same 15.71
+    /// ```
+    ///
+    /// - Note: Until #549 this measured through a pre-bounded `Geom2dAdaptor_Curve`, which
+    ///   reported a reversed range as `-1.0` and extrapolated past a multi-span curve's knots —
+    ///   4771.88 for a BSpline 457.26 long, past what #600 fixed on the surviving delegate.
+    ///   `Curve3D.arcLength(from:to:)` dropped the same adaptor in #506.
     public func arcLength(from u1: Double, to u2: Double) -> Double {
-        let l = OCCTCurve2DLength(handle, u1, u2)
-        return l >= 0 ? l : -1.0
+        length(from: u1, to: u2) ?? -1.0
     }
 
     /// Split this curve at C1 discontinuities.

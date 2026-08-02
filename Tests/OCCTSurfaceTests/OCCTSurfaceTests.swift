@@ -486,9 +486,83 @@ struct FillingSupportFaceTests {
         let rejecting = FillingSurface()
         #expect(!rejecting.add(edge: rim, support: strangerFace))
     }
+
+    @Test("A refused add poisons build(), matching Shape.fill(constraints:) (#482)")
+    func fillingSurfaceRefusedConstraintPoisonsBuild() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        // Control: the rim alone builds. Without this the poisoned build() below would pass
+        // for the wrong reason: a fill that was never going to succeed anyway.
+        let control = FillingSurface()
+        #expect(control.add(edge: rim, continuity: .g0))
+        #expect(control.build() != nil)
+        #expect(!control.hasRefusedConstraint)
+        #expect(control.refusedConstraintCount == 0)
+
+        // Same buildable constraint, plus one the builder refuses: the stranger face carries no
+        // pcurve for the rim, so that constraint is never added. Before #482 build() went ahead
+        // and fitted a surface to whatever did make it in: here, a face bounded by the rim with
+        // no tangency at all, silently answering a question the caller did not ask. The refusal
+        // is now sticky.
+        let poisoned = FillingSurface()
+        #expect(poisoned.add(edge: rim, continuity: .g0))
+        #expect(!poisoned.add(edge: rim, support: strangerFace, continuity: .g1))
+        #expect(poisoned.hasRefusedConstraint)
+        #expect(poisoned.refusedConstraintCount == 1)
+        #expect(poisoned.build() == nil)
+        // Build() is not attempted at all, so nothing downstream reports a result either.
+        #expect(!poisoned.isDone)
+        #expect(poisoned.g0Error == nil)
+
+        // The same geometry through the other entry point has always returned nil. That the two
+        // now agree is the point of the change.
+        #expect(Shape.fill(constraints: [
+            FillConstraint(edge: rim, continuity: .g0, isBoundary: true),
+            FillConstraint(edge: rim, support: strangerFace, continuity: .g1)
+        ]) == nil)
+    }
+
+    @Test("Refusals accumulate and stay sticky across later successful adds (#482)")
+    func fillingSurfaceRefusalIsStickyAndCounted() {
+        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+            Issue.record("Failed to build the truncated-sphere fixture")
+            return
+        }
+        guard let wall = rim.adjacentFaces(in: bowl)?.0 else {
+            Issue.record("The rim should have an adjacent face to be tangent to")
+            return
+        }
+        guard let unrelated = Shape.sphere(at: SIMD3(100, 0, 0), direction: SIMD3(0, 0, 1),
+                                           radius: 3, angle1: -.pi / 2, angle2: .pi / 4),
+              let strangerFace = unrelated.faces().first else {
+            Issue.record("Failed to create the unrelated support face")
+            return
+        }
+
+        let filling = FillingSurface()
+        #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g1))
+        #expect(!filling.add(edge: rim, support: strangerFace, continuity: .g2))
+        #expect(filling.refusedConstraintCount == 2)
+
+        // A later add that succeeds (with the face that genuinely does carry the rim's pcurve,
+        // so this one would build on its own) does not clear the earlier refusals.
+        #expect(filling.add(edge: rim, support: wall, continuity: .g1))
+        #expect(filling.refusedConstraintCount == 2)
+        #expect(filling.hasRefusedConstraint)
+        #expect(filling.build() == nil)
+    }
 }
 
-@Suite("Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Plate Surface Tests")
 struct PlateSurfaceTests {
 
     @Test("Plate surface through grid of points")
@@ -656,7 +730,7 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let gc = sphere.gaussianCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / (r * r)
-        #expect(abs(gc - expected) < 1e-10)
+        if let gc { #expect(abs(gc - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Sphere mean curvature = 1/r")
@@ -665,14 +739,15 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         let mc = sphere.meanCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / r
-        #expect(abs(abs(mc) - expected) < 1e-10)
+        if let mc { #expect(abs(abs(mc) - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Plane Gaussian curvature = 0")
     func planeGaussianCurvature() {
         let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        // #595: a plane's Gaussian curvature is 0 and defined, so this asserts a reported 0, not nil.
         let gc = plane.gaussianCurvature(atU: 0, v: 0)
-        #expect(abs(gc) < 1e-10)
+        if let gc { #expect(abs(gc) < 1e-10) } else { Issue.record("a plane has Gaussian curvature 0") }
     }
 
     @Test("Cylinder principal curvatures = (0, 1/r)")
@@ -1323,7 +1398,7 @@ struct AdvancedPlateSurfaceTests {
     }
 }
 
-@Suite("Parametric Plate Surface Tests", .disabled("Plate surface operations cause segfault in OCCT — pre-existing issue"))
+@Suite("Parametric Plate Surface Tests")
 struct ParametricPlateSurfaceTests {
 
     @Test("Plate through points returns parametric surface")
@@ -3360,7 +3435,8 @@ struct BSplineSurfaceKnotSplitTests {
         // Create a sphere surface and convert to BSpline
         if let sphere = Surface.sphere(center: .zero, radius: 5) {
             if let bsp = sphere.toBSpline() {
-                let n = bsp.bsplineKnotSplitsU(continuity: .c0)
+                // #562: was bsplineKnotSplitsU, now deprecated onto this one analyzer call.
+                let n = bsp.knotSplitting(uContinuity: .c0, vContinuity: .c0).uSplitCount
                 #expect(n >= 0)
             }
         }
@@ -3965,11 +4041,14 @@ struct SurfaceFromGridTests {
 
     @Test func surfaceCurvatures() {
         if let sphere = Surface.sphere(center: SIMD3(0,0,0), radius: 5) {
-            let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4)
-            // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
-            #expect(abs(gaussian - 0.04) < 0.01)
-            // Mean curvature = 1/R = 0.2
-            #expect(abs(abs(mean) - 0.2) < 0.01)
+            if let (gaussian, mean) = sphere.curvatures(u: 0, v: Double.pi / 4) {
+                // Gaussian curvature of sphere radius R = 1/R^2 = 0.04
+                #expect(abs(gaussian - 0.04) < 0.01)
+                // Mean curvature = 1/R = 0.2
+                #expect(abs(abs(mean) - 0.2) < 0.01)
+            } else {
+                Issue.record("a sphere away from its poles has curvature")
+            }
         }
     }
 
@@ -5805,9 +5884,11 @@ struct SurfaceCurvatureParityTests {
 
     private func expectAgreement(_ surface: Surface, u: Double, v: Double,
                                  _ comment: Comment? = nil) {
+        // #595: agreement is now on definedness too, not only on the value -- which is what this
+        // suite's own doc comment always claimed and could not assert while all three returned 0.
         let pair = surface.curvatures(u: u, v: v)
-        #expect(pair.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
-        #expect(pair.mean == surface.meanCurvature(atU: u, v: v), comment)
+        #expect(pair?.gaussian == surface.gaussianCurvature(atU: u, v: v), comment)
+        #expect(pair?.mean == surface.meanCurvature(atU: u, v: v), comment)
     }
 
     @Test("Well-conditioned points agree across all three entry points")
@@ -5842,18 +5923,18 @@ struct SurfaceCurvatureParityTests {
         // v = 1e-6 specifically: curvature IS defined at Precision::Confusion(), and both
         // entry points must now report the same non-zero mean curvature.
         let pair = cone.curvatures(u: 0, v: 1e-6)
-        #expect(pair.mean < -1e5)
-        #expect(pair.mean == cone.meanCurvature(atU: 0, v: 1e-6))
+        #expect((pair?.mean ?? 0) < -1e5)
+        #expect(pair?.mean == cone.meanCurvature(atU: 0, v: 1e-6))
     }
 
-    @Test("Genuinely undefined points return zero from all three entry points")
+    @Test("Genuinely undefined points return nil from all three entry points")
     func undefinedPointsAgree() {
         let cone = Self.apexCone()
+        // #595: was `== 0` on all four, which a plane also satisfies with the curvature defined.
         let pair = cone.curvatures(u: 0, v: 0)          // exactly at the apex
-        #expect(pair.gaussian == 0)
-        #expect(pair.mean == 0)
-        #expect(cone.gaussianCurvature(atU: 0, v: 0) == 0)
-        #expect(cone.meanCurvature(atU: 0, v: 0) == 0)
+        #expect(pair == nil)
+        #expect(cone.gaussianCurvature(atU: 0, v: 0) == nil)
+        #expect(cone.meanCurvature(atU: 0, v: 0) == nil)
 
         // Sphere pole: curvature (unlike the normal) is undefined there for both.
         let sphere = Surface.sphere(center: .zero, radius: 5)!

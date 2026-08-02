@@ -711,9 +711,16 @@ extension Wire {
     /// Get curvature at normalized parameter.
     ///
     /// - Parameter parameter: Value from 0.0 (start) to 1.0 (end)
-    /// - Returns: Curvature value (1/radius), or nil on error
+    /// - Returns: Curvature value (1/radius), or nil where the wire has none there.
     ///
     /// A straight line has curvature 0. A circle with radius R has curvature 1/R.
+    ///
+    /// `nil` means the wire cannot be evaluated at that parameter, or that its first derivative is
+    /// null there — a cusp, where the curvature formula divides by zero. That second case used to
+    /// come back as `0`, a straight wire's real answer, because only the error path reached this
+    /// optional (#595). Unlike ``Curve3D/curvature(at:)`` a wire has no infinity sentinel to report
+    /// at a cusp: `BRepAdaptor_CompCurve` computes the formula directly rather than through
+    /// `GeomLProp_CLProps`, so there is nothing to say but nothing.
     ///
     /// ## Example
     ///
@@ -722,8 +729,9 @@ extension Wire {
     /// let curvature = circle?.curvature(at: 0.5)  // Returns 0.1 (1/10)
     /// ```
     public func curvature(at parameter: Double) -> Double? {
-        let k = OCCTWireGetCurvatureAt(handle, parameter)
-        return k >= 0 ? k : nil
+        var k = 0.0
+        guard OCCTWireGetCurvatureAt(handle, parameter, &k) else { return nil }
+        return k
     }
 
     /// Get full curve point with position, tangent, curvature, and normal.

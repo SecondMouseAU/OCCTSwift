@@ -919,25 +919,31 @@ public static func dumpLengthUnit(_ unit: OCCTLengthUnit) -> String?
 
 Extensions on `Curve3D` wrapping `LProp3d_CLProps` for local differential properties.
 
-These four are alternative spellings of `Curve3D.curvature(at:)`, `tangentDirection(at:)`,
-`normal(at:)` and `centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only
-in shape. They are guaranteed to agree with their counterparts for the same curve at the same
-parameter; before #494 they asked at a hardcoded `1e-10` resolution against the canonical family's
-`Precision::Confusion()` (`1e-7`), and the two disagreed near a degeneracy.
+These are alternative spellings of `Curve3D.tangentDirection(at:)`, `normal(at:)` and
+`centerOfCurvature(at:)` — same OCCT computation, same tolerance, differing only in shape. They are
+guaranteed to agree with their counterparts for the same curve at the same parameter; before #494
+they asked at a hardcoded `1e-10` resolution against the canonical family's `Precision::Confusion()`
+(`1e-7`), and the two disagreed near a degeneracy.
 
-### `Curve3D.localCurvature(at:)`
+There were four. `localCurvature(at:)` is **deprecated** as of #595 and forwards to
+`curvature(at:)`: once #494 gave the two the same resolution they were the same call line for line,
+and measured over the same curves — degenerate rows included — they never disagreed on any row. The
+bridge function behind it, `OCCTCurve3DLocalCurvature`, is deleted.
+
+### `Curve3D.localCurvature(at:)` (deprecated)
 
 Curvature of the curve at a parameter value.
 
 ```swift
-public func localCurvature(at u: Double) -> Double
+@available(*, deprecated, renamed: "curvature(at:)")
+public func localCurvature(at u: Double) -> Double?
 ```
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature (1/radius); `0` where the tangent is undefined, and
+- **Returns:** Whatever `curvature(at:)` returns: the curvature (1/radius), `nil` where the tangent
+  is undefined (`0` until #595, which is also every straight curve's real curvature), and
   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
-- **Equivalent to:** `Curve3D.curvature(at:)`.
-- **OCCT:** `OCCTCurve3DLocalCurvature` → `LProp3d_CLProps::Curvature`.
+- **Use instead:** `Curve3D.curvature(at:)`.
 
 ---
 
@@ -992,7 +998,7 @@ Extensions on `Surface` wrapping `LProp3d_SLProps` for local surface differentia
 
 Both report quantities `Surface.curvatures(u:v:)`, `gaussianCurvature(atU:v:)`,
 `meanCurvature(atU:v:)` and `principalCurvatures(atU:v:)` also report, at the same tolerance since
-#494 — they previously asked at a hardcoded `1e-10` against those entry points'
+#494 and with the same optionality since #595 — they previously asked at a hardcoded `1e-10` against those entry points'
 `Precision::Confusion()`, so they could report curvature at a point the rest called undefined. The
 one remaining asymmetry is by design: `localCurvatureDirections` also returns `nil` at umbilic
 points, where curvature is perfectly well defined but no principal direction is distinguished.
@@ -1374,8 +1380,10 @@ Remove feature faces (fillets, holes, pockets) from a solid shape. The canonical
 public func defeature(faces: [Shape]) -> Shape?
 ```
 
-- **Parameters:** `faces` — the face shapes to remove as features.
-- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty.
+- **Parameters:** `faces` — each element either a face of this shape, or a shape whose faces all
+  belong to this shape.
+- **Returns:** Defeatured shape, or `nil` on failure — including when `faces` is empty and when the
+  request names a face this shape does not have.
 - **OCCT:** `OCCTShapeDefeature` → `BRepAlgoAPI_Defeaturing`.
 - **Example:**
   ```swift
@@ -1384,13 +1392,22 @@ public func defeature(faces: [Shape]) -> Shape?
   }
   ```
 
-**Faces that are not part of this shape.** A face can only be removed from the shape it belongs to.
-OCCT drops a foreign face from the request and carries on with the rest, so a request mixing real
-faces with foreign ones succeeds and removes only the real ones, while a request of nothing but
-foreign faces fails. Membership is by identity, not geometry: the same face measured off an
-identically-built shape is foreign. The index-addressed `withoutFeatures(faces:)` is stricter —
-since #497 one bad index fails the whole call. Measured in
-[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify).
+**What may be named, and what must belong.** Each element names faces rather than having to be one: a
+compound of faces, a shell, or this whole shape all name the faces they contain, and naming a carrier
+is the same request as naming the faces it holds. The rule every element must satisfy:
+
+> Every element must name at least one face, and every face it names must be a face of this shape.
+> Otherwise the whole call returns `nil` and nothing is removed.
+
+So a request mixing this shape's faces with another shape's fails, as does one carrying an edge or a
+vertex, which name no face at all. Membership is by identity, not geometry: the same face measured off
+an identically-built shape is foreign, while the same face reversed is not.
+
+Until #578 a foreign face was dropped from the request and the rest proceeded — OCCT's own documented
+rule ("those that do not belong will be ignored"), which answered a silent success on a shape still
+carrying the feature the caller asked to remove. The index-addressed `withoutFeatures(faces:)` has
+failed the whole call on one bad index since #497; both spellings now agree. Measured in
+[`Scripts/repro/578-defeature-face-membership/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/578-defeature-face-membership).
 
 **The rest of the family.** Five Swift spellings reach the same `BRepAlgoAPI_Defeaturing`
 operation, over one shared bridge path (#497, #536):

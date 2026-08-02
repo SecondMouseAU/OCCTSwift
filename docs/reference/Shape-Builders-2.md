@@ -1817,12 +1817,14 @@ public enum CylindricalHoleExtent: Sendable, Equatable {
 `.range` is the subtle one: the window **chooses a face pair, it does not trim the cut**. A window
 lying strictly inside one body still drills all the way through that body; a window naming no face
 pair (the gap between two plates) is `.invalidPlacement`. Its use is picking *which* body to drill in
-a stack.
+a stack — a window over one plate drills that plate, one spanning several drills all of them.
 
-> **Multi-body warning.** `.untilEnd` and `.range` both end in an OCCT branch that keeps a single part
-> of the cutting tool. When the axis crosses more than one body, that part can be one which
-> intersects nothing — and the operation then reports `.noError` while removing **no material at
-> all**. Use `.throughAll` or `drilled(at:…)` for a stack. Tracked as [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532).
+On a stack, every extent that bounds the hole by the stock's own faces drills every body the axis
+crosses: `.untilEnd`, a spanning `.range`, `.throughAll` and `drilled(at:…)` all agree. Until the
+kernel patch carried for [#532](https://github.com/SecondMouseAU/OCCTSwift/issues/532) they did not —
+`.untilEnd`, `.range` and `.blind(depth:)` reported `.noError` while removing **no material at all**,
+because OCCT selected which piece of its drilling tool to keep from the *cut result* rather than from
+the split tool.
 
 ---
 

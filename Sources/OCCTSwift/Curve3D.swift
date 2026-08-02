@@ -605,9 +605,28 @@ public final class Curve3D: @unchecked Sendable {
 
     // MARK: - Local Properties
 
-    /// Curvature at parameter u
-    public func curvature(at u: Double) -> Double {
-        OCCTCurve3DGetCurvature(handle, u)
+    /// Curvature (1/radius) at parameter `u`, or `nil` where the curve has none.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The curvature, or `nil` at a parameter the curve cannot be evaluated at or where
+    ///   `GeomLProp_CLProps::IsTangentDefined()` is false — a point with no significant derivative
+    ///   of any order, such as a Bezier whose control points all coincide. This used to be `0`,
+    ///   which is also every straight curve's real curvature (#595).
+    ///
+    /// A **cusp** is not an absence and is still reported: OCCT calls the curvature there infinite
+    /// and returns `Double.greatestFiniteMagnitude` (`RealLast()`), which passes through as a value.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let k = circle.curvature(at: 0) { print(k) }   // 0.2, i.e. 1/5
+    ///
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// line.curvature(at: 3)   // 0 — straight, and that is the answer, not a failure
+    /// ```
+    public func curvature(at u: Double) -> Double? {
+        var k = 0.0
+        guard OCCTCurve3DGetCurvature(handle, u, &k) else { return nil }
+        return k
     }
 
     /// Unit tangent direction at parameter u
@@ -631,9 +650,26 @@ public final class Curve3D: @unchecked Sendable {
         return SIMD3(cx, cy, cz)
     }
 
-    /// Torsion at parameter u (twist out of the osculating plane)
-    public func torsion(at u: Double) -> Double {
-        OCCTCurve3DGetTorsion(handle, u)
+    /// Torsion at parameter `u` — the rate the curve twists out of its osculating plane — or `nil`
+    /// where there is no osculating plane to twist out of.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The torsion, or `nil` at a parameter the curve cannot be evaluated at or where
+    ///   the first two derivatives are parallel (a straight stretch), so no osculating plane is
+    ///   defined. That case used to be `0`, which is also every **planar** curve's real torsion —
+    ///   a circle and a straight line reported the same answer (#595).
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// circle.torsion(at: 1)   // 0 — planar, and that is the answer
+    ///
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))!
+    /// line.torsion(at: 5)     // nil — no osculating plane at all
+    /// ```
+    public func torsion(at u: Double) -> Double? {
+        var t = 0.0
+        guard OCCTCurve3DGetTorsion(handle, u, &t) else { return nil }
+        return t
     }
 
     // MARK: - Bounding Box

@@ -3375,32 +3375,11 @@ OCCTCurve2DRef OCCTConcatenateCurves2D(OCCTCurve2DRef* curves, int32_t count, do
         return r;
     } catch (...) { return nullptr; }
 }
-// MARK: - Geom2dConvert_BSplineCurveKnotSplitting (v0.105.0)
-
-#include <Geom2dConvert_BSplineCurveKnotSplitting.hxx>
-
-int32_t OCCTBSplineCurve2dKnotSplits(OCCTCurve2DRef curve, int32_t continuity) {
-    if (!curve) return 0;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return 0;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        return (int32_t)splitter.NbSplits();
-    } catch (...) { return 0; }
-}
-
-void OCCTBSplineCurve2dKnotSplitValues(OCCTCurve2DRef curve, int32_t continuity,
-                                        int32_t* splits) {
-    if (!curve || !splits) return;
-    try {
-        Handle(Geom2d_BSplineCurve) bc = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);
-        if (bc.IsNull()) return;
-        Geom2dConvert_BSplineCurveKnotSplitting splitter(bc, continuity);
-        for (int i = 1; i <= splitter.NbSplits(); i++) {
-            splits[i - 1] = splitter.SplitValue(i);
-        }
-    } catch (...) {}
-}
+// #562: OCCTBSplineCurve2dKnotSplits and OCCTBSplineCurve2dKnotSplitValues stood here, a second
+// wrap of Geom2dConvert_BSplineCurveKnotSplitting added three releases after
+// OCCTCurve2DSplitAtDiscontinuities (further down this file) already wrapped it. Deleted; that
+// one returns the same indices, and now reports the true count when truncated, which is the one
+// respect in which these were the stronger pair rather than the weaker.
 
 // MARK: - v0.106: BRepLib_MakeEdge2d extensions + Curve2D continuity
 // MARK: - BRepLib_MakeEdge2d extensions (v0.106.0)
@@ -4196,33 +4175,15 @@ OCCTCurve2DRef OCCTCurve2DTrimmed(OCCTCurve2DRef curve, double u1, double u2) {
     } catch (...) { return nullptr; }
 }
 
-#include <Geom2dAdaptor_Curve.hxx>
-
-// Range-checked: Geom2dAdaptor_Curve's (curve,u1,u2) constructor raises
-// Standard_ConstructionError if u1 > u2, unlike OCCTCurve2DGetLengthBetween's
-// unrestricted adaptor, which tolerates either order.
-double OCCTCurve2DLength(OCCTCurve2DRef curve, double u1, double u2) {
-    if (!curve || curve->curve.IsNull()) return -1.0;
-    // The pre-bounded adaptor happens to propagate a NaN bound already (it never reaches the
-    // composite branch's std::min/std::max reduction), but it returns +inf for an infinite one.
-    // Rejected here so both spellings answer a non-finite range the same way. #548.
-    if (!occtValidParameterRange(u1, u2)) return -1.0;
-    try {
-        // #600: the pre-bounded adaptor extrapolates every curve type past its domain (4771.88
-        // for a BSpline 457.26 long), so confine the bounds first -- but keep this spelling's own
-        // range check by clamping each bound in place rather than routing through
-        // occtAdaptorLengthBetween: a reversed range must still raise, which is #549's decision to
-        // make, not this one's. A curve that winds is left alone, since the pre-bounded adaptor
-        // already measures its extra turns correctly (62.83 for a circle over two periods).
-        Geom2dAdaptor_Curve unrestricted(curve->curve);
-        double lo = u1, hi = u2;
-        if (!occtAdaptorWindsPeriodically(unrestricted)) {
-            occtConfineToDomain(unrestricted, lo, hi);
-        }
-        Geom2dAdaptor_Curve ac(curve->curve, lo, hi);
-        return GCPnts_AbscissaPoint::Length(ac);
-    } catch (...) { return -1.0; }
-}
+// OCCTCurve2DLength lived here: GCPnts_AbscissaPoint::Length over a pre-bounded
+// Geom2dAdaptor_Curve(curve, u1, u2), which raises on a reversed range (so the catch reported a
+// reversed range as -1.0) and extrapolates past a multi-span curve's knots instead of clamping to
+// its domain. Removed by #549, which is what #506 did to the 3D spelling of the same call;
+// Curve2D.arcLength(from:to:) now routes through OCCTCurve2DGetLengthBetween, which does neither.
+// OCCTCurve2DGetLengthBetween (below) carries this PR's (#548) non-finite-bound rejection via
+// occtValidParameterRange, so the guard #602 originally added here now lives on the surviving
+// spelling instead of being re-added to the removed one. Its winding/domain-confinement fix (#600)
+// is on the same surviving spelling -- see OCCTCurve2DGetLengthBetween below.
 
 // MARK: - v0.116: gp_GTrsf2d + gp_Mat2d
 void OCCTGTrsf2dAffinity(double axPx, double axPy, double axDx, double axDy, double ratio,
@@ -5802,17 +5763,21 @@ OCCTCurve2DRef OCCTCurve2DJoinToBSpline(const OCCTCurve2DRef* curves, int32_t co
 #include <Geom2dGcc_QualifiedCurve.hxx>
 #include <GccEnt_Position.hxx>
 
-double OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u) {
-    if (!c || c->curve.IsNull()) return 0.0;
+// #595: reports whether there is a curvature rather than spelling its absence 0, which is also a
+// straight 2D curve's real answer. Matches OCCTCurve3DGetCurvature, here as in #494.
+bool OCCTCurve2DGetCurvature(OCCTCurve2DRef c, double u, double* curvature) {
+    *curvature = 0.0;
+    if (!c || c->curve.IsNull()) return false;
     try {
         GeomLProp_CLProps2d props = occtCurve2dLocalProps(c->curve, u, 2);
         // Curvature() is only meaningful once the tangent is established. It does raise otherwise,
         // but through LProp_NotDefined_Raise_if, which compiles out under No_Exception — defined
         // for the OCCT build, not for this one. Matches OCCTCurve3DGetCurvature (#494).
-        if (!props.IsTangentDefined()) return 0.0;
-        return props.Curvature();
+        if (!props.IsTangentDefined()) return false;
+        *curvature = props.Curvature();
+        return true;
     } catch (...) {
-        return 0.0;
+        return false;
     }
 }
 
@@ -5986,6 +5951,10 @@ OCCTCurve2DRef OCCTCurve2DApproximate(OCCTCurve2DRef c, double tolerance,
     }
 }
 
+// #562: reports the TRUE split count even when `max` truncated the write, so the Swift caller can
+// retry at the size it was just told -- the #481 contract shared by every other member of this
+// family. It used to return the written count, which capped it silently at its caller's 256-entry
+// first pass and was indistinguishable from a curve with exactly 256 splits.
 int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
                                           int32_t* outKnotIndices, int32_t max) {
     if (!c || c->curve.IsNull() || !outKnotIndices || max <= 0) return 0;
@@ -5993,13 +5962,9 @@ int32_t OCCTCurve2DSplitAtDiscontinuities(OCCTCurve2DRef c, int32_t continuity,
         Handle(Geom2d_BSplineCurve) bsp = Handle(Geom2d_BSplineCurve)::DownCast(c->curve);
         if (bsp.IsNull()) return 0;
         Geom2dConvert_BSplineCurveKnotSplitting splitter(bsp, continuity);
-        int32_t n = std::min((int32_t)splitter.NbSplits(), max);
-        TColStd_Array1OfInteger indices(1, splitter.NbSplits());
-        splitter.Splitting(indices);
-        for (int32_t i = 0; i < n; i++) {
-            outKnotIndices[i] = indices(i + 1);
-        }
-        return n;
+        return occtWriteKnotSplits<int32_t>(splitter.NbSplits(),
+            [&](int32_t i) { return (int32_t)splitter.SplitValue(i); },
+            outKnotIndices, max);
     } catch (...) {
         return 0;
     }

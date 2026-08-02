@@ -398,7 +398,12 @@ struct IntegrationScallopAnalysisTests {
 
         var curvatures: [Double] = []
         for (u, v) in params {
-            let gauss = sphere.gaussianCurvature(atU: u, v: v)
+            // #595: nil is now available for "no curvature here", and a sphere away from its
+            // poles is not such a point, so an absence is a failure rather than a 0 to average in.
+            guard let gauss = sphere.gaussianCurvature(atU: u, v: v) else {
+                Issue.record("Sphere curvature should be defined at (\(u), \(v))")
+                continue
+            }
             #expect(gauss.isFinite, "Curvature should be finite")
             #expect(abs(gauss - expectedGaussian) < 0.001, "Sphere curvature should be constant 1/R^2")
             curvatures.append(gauss)
@@ -425,8 +430,8 @@ struct IntegrationScallopAnalysisTests {
             let vMid = (dom.vMin + dom.vMax) / 2.0
             let g1 = bezSurf.gaussianCurvature(atU: dom.uMin + 0.1, v: dom.vMin + 0.1)
             let g2 = bezSurf.gaussianCurvature(atU: uMid, v: vMid)
-            #expect(g1.isFinite)
-            #expect(g2.isFinite)
+            #expect(g1?.isFinite == true)
+            #expect(g2?.isFinite == true)
             // On a non-trivial Bezier surface, curvature should vary
             // (It may be zero at some points, but both should be finite)
         }

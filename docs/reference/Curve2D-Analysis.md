@@ -24,18 +24,21 @@ Differential geometry queries evaluated at a parametric point on the curve, back
 Returns the signed curvature (1 / radius of curvature) at parameter `u`.
 
 ```swift
-public func curvature(at u: Double) -> Double
+public func curvature(at u: Double) -> Double?
 ```
 
-Returns `0` for straight segments or when `Geom2dLProp_CLProps2d` cannot compute the value at the given point.
+Returns `0` for straight segments — a real answer — and `nil` where `GeomLProp_CLProps2d::IsTangentDefined()` is false. Those two used to be the same `0` (#595).
 
 - **Parameters:** `u` — curve parameter.
-- **Returns:** Curvature value; `0` on error or for a straight segment.
+- **Returns:** Curvature value, `0` for a straight segment, or `nil` where the curve has no tangent there (a Bezier whose control points all coincide) or the parameter cannot be evaluated. A **cusp** still reports `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature): an answer, not an absence.
 - **OCCT:** `Geom2dLProp_CLProps2d::Curvature`.
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
       let k = circle.curvature(at: 0)  // ≈ 0.2 (1/R)
+  }
+  if let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)) {
+      seg.curvature(at: 5)             // 0 — straight, and that is the answer
   }
   ```
 
@@ -1023,35 +1026,38 @@ public static func approximate(
 
 ### `arcLength(from:to:)`
 
-Computes the arc length of this curve between two parameter values (non-optional). `u1` must not
-exceed `u2` — unlike `length(from:to:)`, which tolerates either order — since this entry point is
-backed by `Geom2dAdaptor_Curve`'s range-checked constructor. Unlike `Curve3D.arcLength(from:to:)`,
-this does not delegate to `length(from:to:)`: the two use genuinely different adaptor
-constructions (range-checked vs. unrestricted), so collapsing them onto one call would silently
-drop the order validation.
+Computes the arc length of this curve between two parameter values (non-optional). Delegates to
+[`length(from:to:)`](Curve2D.md), the failure-distinguishing entry point, and shares its contract:
+either parameter order, `0` for equal parameters, and a range outside the curve's domain measuring
+only the part that lies on the curve (winding a periodic one, #600). `Curve3D.arcLength(from:to:)`
+has had the same shape since #408.
 
 ```swift
 public func arcLength(from u1: Double, to u2: Double) -> Double
 ```
 
-- **Parameters:** `u1`/`u2` — parameter range, with `u1 ≤ u2`. Both must be finite.
-- **Returns:** Arc length value, or `-1.0` on failure (e.g. a reversed range, or a non-finite
-  bound) — arc length is otherwise always non-negative, so `-1.0` is unambiguous and never
-  collides with a genuine zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly
-  if you need an optional.
-- **OCCT:** `Geom2dAdaptor_Curve(curve, u1, u2)` + `GCPnts_AbscissaPoint::Length(adaptor)`.
-- **Note:** `.nan` and `±.infinity` return `-1.0`. The pre-bounded adaptor propagated NaN on its
-  own, but returned `+infinity` for an infinite bound on a segment or a circle, and `+infinity`
-  passes the bridge's non-negative check (#548).
+- **Parameters:** `u1`/`u2`: parameter range, in either order. Both must be finite.
+- **Returns:** Arc length value, or `-1.0` on failure (e.g. a non-finite bound). Arc length is
+  otherwise always non-negative, so `-1.0` is unambiguous and never collides with a genuine
+  zero-length result (e.g. `u1 == u2`). Use `length(from:to:)` directly if you need an optional.
+- **OCCT:** `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)`.
+- **Note:** `.nan` and `±.infinity` return `-1.0` rather than propagating into the result. The
+  pre-#548 unranged path could return `+infinity` for an infinite bound on a segment or a circle,
+  which passed the bridge's non-negative check unnoticed (#548).
 - **Note:** A range reaching outside the curve's domain measures only the part that lies on the
-  curve, matching `length(from:to:)`. This spelling used to evaluate the curve past its domain:
-  4771.88 for a BSpline 457.26 long (#600).
+  curve, matching `length(from:to:)`. The pre-bounded adaptor this used to delegate to (see
+  History) evaluated the curve past its domain instead: 4771.88 for a BSpline 457.26 long (#600).
 - **Example:**
   ```swift
   if let circle = Curve2D.circle(center: .zero, radius: 5) {
-      let halfCircumference = circle.arcLength(from: 0, to: .pi)  // ≈ 15.71
+      let halfCircumference = circle.arcLength(from: 0, to: .pi)   // ≈ 15.71
+      let same = circle.arcLength(from: .pi, to: 0)                // the same 15.71
   }
   ```
+- **History:** until #549 this measured through `Geom2dAdaptor_Curve(curve, u1, u2)`, a
+  range-checked constructor that reported a reversed range as `-1.0` and extrapolated past a
+  multi-span curve's knots (8082 for a curve 353.5 long). #506 removed the same adaptor from the
+  3D path. #600 then fixed the same extrapolation-past-domain defect on the surviving delegate.
 
 ---
 
