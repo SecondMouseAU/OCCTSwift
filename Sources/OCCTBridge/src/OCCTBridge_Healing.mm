@@ -2026,8 +2026,15 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, 
 // sub-shape as geometry+topology, not as a key selecting one side of a shared boundary. Measured
 // rather than assumed -- over every box edge (12) and vertex (8) present in both orientations, the
 // full BRepCheck status list was identical for the FORWARD and the REVERSED occurrence, 0
-// differing. WIRE and SHELL never occurred twice with opposite orientations on any fixture tried,
-// so the conversion cannot move their answer at all.
+// differing.
+//
+// A plain box has no WIRE or SHELL occurring twice, so six fixtures were built to reach those:
+// compound{solid, solid.Reversed()} and the same for a shell, a face, a wire, an open (invalid,
+// non-closed) wire, and a fused two-body solid. Together 26 WIRE pairs and 4 SHELL pairs, BRepCheck
+// identical across orientation in every one, 0 differing, invalid geometry included. Note this does
+// NOT mean the conversion is a no-op for them: their index DOMAIN moves, and should -- on
+// compound{solid, solid.Reversed()} the WIRE enumeration goes 12 occurrences to 6 distinct. What is
+// unchanged is the answer for a wire or shell that both enumerations name.
 //
 // This function never handles FACE, which is the one type where the map/traversal choice changes a
 // result (#614) -- OCCTCheckFace takes an OCCTFaceRef directly and never indexes.

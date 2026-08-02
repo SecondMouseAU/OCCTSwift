@@ -348,7 +348,9 @@ struct Issue613IndexContractTests {
     /// The `faceIndex` argument was already map-backed (#541). What was not is the `Edge.index` on
     /// the way out: it was the position in the RESULT array, so it named a different edge — or no
     /// edge — through `edges()`. Measured before the fix: `edgesInFace(at: 3)` handed back
-    /// 0, 1, 2, 3 for edges whose real indices are 2, 8, 10 and 11.
+    /// 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11 — all four naming a different
+    /// edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from the edges those slot
+    /// numbers address.
     @Test("edgesInFace hands back indices that address the same edge through edges()")
     func edgesInFaceIndicesAddressTheSameEdge() throws {
         let box = try #require(Self.box())
@@ -403,7 +405,8 @@ struct Issue613IndexContractTests {
     func commonEdgesIndicesAddressTheSameEdge() throws {
         // Two solids sharing a wall, so there are edges in common at all.
         let block = try #require(Shape.box(origin: .zero, width: 20, height: 10, depth: 10))
-        let plate = try #require(Shape.face(from: Wire.rectangle(width: 60, height: 60)!))
+        let rect = try #require(Wire.rectangle(width: 60, height: 60))
+        let plate = try #require(Shape.face(from: rect))
         let upright = try #require(plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2))
         let knife = try #require(upright.translated(by: SIMD3(10, 0, 0)))
         let pieces = try #require(block.split(by: knife))
@@ -422,8 +425,11 @@ struct Issue613IndexContractTests {
                     "edge reported at index \(e.index) is at \(a), lower.edges()[\(e.index)] is at \(b)")
         }
 
-        // And they are not array positions: the seam edges do not sit at 0,1,2,3 of a 12-edge solid.
-        #expect(Set(common.map(\.index)) != Set(0..<4),
+        // And they are not array positions. Compare against `0..<common.count`, NOT a hardcoded
+        // `0..<4`: the finder returns 8 entries here, so `Set(0..<4)` never equals the reported set
+        // even with the defect fully present, and the assertion could not fire. (Proven: with site 6
+        // injected the reported set is {0...7}.)
+        #expect(Set(common.map(\.index)) != Set(0..<common.count),
                 "reported indices are the result-array positions, not real edge indices")
     }
 

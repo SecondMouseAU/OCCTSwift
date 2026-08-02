@@ -1039,10 +1039,11 @@ int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
         int32_t edgeCount = occtMapSubShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
         int32_t count = 0;
+        // No ShapeType re-check: occtMapSubShapes filters by TopAbs_EDGE, so every entry IS an edge.
+        // A `continue` here would be worse than useless -- it would advance `i` without advancing
+        // `count`, desynchronising the result array from edges(), which is the exact defect #613 fixes.
         for (int32_t i = 0; i < edgeCount && count < maxEntries; i++) {
-            const TopoDS_Shape& sub = edgeMap(i + 1);  // OCCT's indexed maps are 1-based
-            if (sub.ShapeType() != TopAbs_EDGE) continue;
-            const auto& intervals = analyser.Type(TopoDS::Edge(sub));
+            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i + 1)));  // maps are 1-based
             // Use the first interval's type for the overall edge classification
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 OCCTConcavityType type;
@@ -1079,9 +1080,7 @@ int32_t OCCTShapeCountEdgeConcavity(OCCTShapeRef shape, double angle, int32_t ty
 
         int32_t count = 0;
         for (int32_t i = 0; i < edgeCount; i++) {
-            const TopoDS_Shape& sub = edgeMap(i + 1);
-            if (sub.ShapeType() != TopAbs_EDGE) continue;
-            const auto& intervals = analyser.Type(TopoDS::Edge(sub));
+            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i + 1)));
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 if (it->Type() == targetType) {
                     count++;

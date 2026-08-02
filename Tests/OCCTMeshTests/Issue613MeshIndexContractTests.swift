@@ -37,11 +37,15 @@ struct Issue613MeshIndexContractTests {
 
     // MARK: - Fixture
 
-    /// Two solids sharing one cut face, from one ordinary modelling operation. Returns nil rather
-    /// than recording an issue so a caller can skip cleanly if the kernel stops sharing the wall.
+    /// Two solids sharing one cut face, from one ordinary modelling operation.
+    ///
+    /// Returns nil on any construction failure; every caller `#require`s it, so a kernel that
+    /// stopped sharing the wall fails these tests rather than skipping them silently — which is
+    /// what we want, since the shared wall IS the fixture.
     static func splitBoxCompound() -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-              let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+              let rect = Wire.rectangle(width: 60, height: 60),
+              let plate = Shape.face(from: rect),
               let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
               let knife = upright.translated(by: SIMD3(10, 0, 0)),
               let pieces = block.split(by: knife),
@@ -103,8 +107,12 @@ struct Issue613MeshIndexContractTests {
             #expect(compound.face(at: i) != nil,
                     "triangles claim faceIndex \(i), which face(at:) cannot address")
         }
-        #expect(indices.max()! < compound.faceCount,
-                "max faceIndex \(indices.max()!) vs faceCount \(compound.faceCount)")
+        // Bound it via #require rather than `indices.max()!` inside #expect: Swift Testing does not
+        // short-circuit, so the preceding emptiness check would not stop a force-unwrap from
+        // crashing the process on an empty mesh instead of failing the test.
+        let highest = try #require(indices.max())
+        #expect(highest < compound.faceCount,
+                "max faceIndex \(highest) vs faceCount \(compound.faceCount)")
     }
 
     /// Stronger than "in range": the index must name the face the triangle is actually ON.

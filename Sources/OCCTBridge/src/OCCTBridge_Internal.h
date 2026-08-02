@@ -1336,7 +1336,7 @@ inline TopoDS_Edge occtEdgeAt(const TopoDS_Shape& shape, int32_t index) {
 //
 // Doing it by hand is where the index contract leaks. Two bridge functions used to report the
 // position in their own RESULT array instead (Shape.edgesInFace / Shape.commonEdges, measured on a
-// 10mm box: edgesInFace(at: 3) handed back 0,1,2,3 for edges whose real indices are 2, 8, 10 and
+// 10mm box: edgesInFace(at: 3) handed back 0,1,2,3 for edges whose real indices are 2, 6, 10 and
 // 11), which is not an index into anything the caller can address.
 //
 // The lookup is cheap and exact because the map's equality IS TopoDS_Shape::IsSame

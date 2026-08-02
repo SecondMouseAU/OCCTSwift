@@ -132,7 +132,11 @@ occurrence, so every label past the first repeat landed on the wrong edge. Measu
 | `edgeConcavityCount(.concave)` | 2 (occurrences of that one edge) | 1 |
 | `box.edgeConcavityCount(.convex)` on a 12-edge box | **24** | 12 |
 
-So the recommended one-liner rounded nothing and reported success.
+So the recommended one-liner filleted an empty list. Measured on base, `filleted(edges: [], radius: 2)`
+returns **`nil`** — it reported *failure*, not success. The harm is not a silent wrong answer but a
+misattributed one: a `nil` from a fillet reads as "the fillet failed", and nothing pointed at the
+edge *selection* as the cause. On the fix it returns a shape, 28034.3 mm³ against the bracket's
+28000.0.
 
 **The six named sites, plus one the issue and its audit both missed:**
 
@@ -143,7 +147,7 @@ So the recommended one-liner rounded nothing and reported success.
 | `checkSubShape` (behind `checkEdge`/`Wire`/`Shell`/`Vertex(at:)`) | the sub-shape index | `checkEdge(at: 12)` reported a valid edge although `edge(at: 12)` is `nil`; `checkVertex` answered to index 47 on an 8-vertex box |
 | `OCCTLocOpeSplitShapeByVertex` | the edge-splitting index | index 9 split `edges()[4]`, index 11 split `edges()[0]`; 12 and 13 split successfully |
 | `OCCTShapeCreateMesh` / `…WithParams` | triangle `faceIndex` | 12 indices emitted on an 11-face compound |
-| `edgesInFace(at:)` — and its unlisted sibling `commonEdges(with:)` | the `Edge.index` handed back | result-array positions: `edgesInFace(at: 3)` returned 0, 1, 2, 3 for edges at 2, 8, 10, 11 |
+| `edgesInFace(at:)` — and its unlisted sibling `commonEdges(with:)` | the `Edge.index` handed back | result-array positions: `edgesInFace(at: 3)` returned 0, 1, 2, 3 for edges at 2, 6, 10, 11 — all four wrong, by 10.00, 12.25, 7.07 and 12.25 mm |
 | **`OCCTBiTgteBlend` / `OCCTBiTgteBlendInfo_`** — named by neither the issue nor its audit | a `std::vector` filled from an explorer, subscripted by the caller's indices | **no index blended the bracket's concave edge at all**; and an unresolvable index was silently dropped rather than refusing the batch (#568) |
 
 **Meshing is the one site where the two enumerations pull opposite ways, and it uses both.**
@@ -175,6 +179,24 @@ matches what the headers predict (`BRepOffset_Analyse.hxx:173`, `LocOpe_SplitSha
 `BiTgte_Blend.hxx:202` are all `TopTools_ShapeMapHasher`-keyed, and that hasher's equality operator
 *is* `IsSame`, `TopTools_ShapeMapHasher.hxx:35-38`) — but the headers are the reason to check, not
 the check.
+
+The `BRepCheck` WIRE and SHELL spellings go through the same converted helper, and a plain box has
+no wire or shell occurring twice, so the first pass could not exercise them. Six further fixtures
+were built for exactly that — `compound{solid, solid.Reversed()}`, and the same for a shell, a face,
+a wire, an open (invalid, non-closed) wire, and a fused two-body solid — giving **26 WIRE pairs and
+4 SHELL pairs, `BRepCheck` identical across orientation in every one, 0 differing**, invalid
+geometry included. Their index *domain* does move, which is the point of the conversion and is
+recorded in [`SEMVER.md`](SEMVER.md): on `compound{solid, solid.Reversed()}` the WIRE enumeration
+goes 12 occurrences → 6 distinct.
+
+**This is not a complete sweep of the per-occurrence idiom.** `Shape.nbEdges` / `nbVertices` /
+`nbFaces` return per-occurrence counts (a box answers **24** and **48** against `edgeCount` 12 and
+`vertexCount` 8; a split compound's `nbFaces` is **12** against `faceCount` 11) while their own
+published docs assert the deduplicated answers — filed separately as **#651**.
+`OCCTShapeFixEdgeSameParameter` and `OCCTShapeFixEdgeVertexTolerance` also document "number of edges
+fixed" while counting explorer occurrences; that one is source-visible but **unmeasured** (a box
+returns 0 either way), so it is recorded here as a candidate rather than converted on a pattern
+match.
 
 Bridge-only plus two Swift wrappers; no kernel patch and no `OCCT.xcframework` rebuild.
 `OCCTLocOpeFindEdges` and `OCCTLocOpeFindEdgesInFace` gained an optional `outIndices` parameter.

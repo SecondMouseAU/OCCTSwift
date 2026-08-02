@@ -1794,7 +1794,8 @@ block.edge(at: e.index)   // the very same edge
 - **Returns:** Array of edges found in the face (up to 100), each with a valid index into `edges()`.
 - **OCCT:** `LocOpe_FindEdgesInFace` (via `OCCTLocOpeFindEdgesInFace`).
 - **Changed in #613:** as for `commonEdges(with:)`. Measured on a 10 mm box, `edgesInFace(at: 3)`
-  handed back 0, 1, 2, 3 for edges whose real indices are 2, 8, 10 and 11.
+  handed back 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11 — all four naming a
+  different edge, 10.00, 12.25, 7.07 and 12.25 mm away.
 
 ---
 

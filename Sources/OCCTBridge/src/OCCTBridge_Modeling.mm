@@ -4780,11 +4780,12 @@ OCCTShapeRef OCCTLocOpeSplitDrafts(OCCTShapeRef shape, int32_t faceIndex, OCCTSh
 
 // #613: a finder returns a SELECTION, so the position of an entry in outEdges is a result slot, not
 // an index into anything. Swift wrote that slot number into Edge.index all the same. Measured on a
-// 10mm box, edgesInFace(at: 3) handed back indices 0,1,2,3 for the four edges of face 3, whose real
-// indices are 2, 8, 10 and 11 -- three of the four named a completely different edge (the midpoints
-// are 10.00, 16.75 and 13.80 mm apart), and the fourth matched by coincidence. So an Edge from
-// either finder could not be fed to filleted(edges:), chamfered(...) or any other index-taking
-// entry point, which is the whole purpose of carrying an index.
+// 10mm box (identically for the origin-centred and origin-at-zero spellings), edgesInFace(at: 3)
+// handed back 0,1,2,3 for the four edges of face 3, whose real indices are 2, 6, 10 and 11 -- so
+// ALL FOUR named a different edge, their arc-length midpoints 10.00, 12.25, 7.07 and 12.25 mm from
+// the edges those slot numbers address. An Edge from either finder therefore could not be fed to
+// filleted(edges:), chamfered(...) or any other index-taking entry point, which is the whole
+// purpose of carrying an index.
 //
 // The map lookup is the fix and it is exact: the enumeration's equality is TopoDS_Shape::IsSame, so
 // whichever orientation the finder hands back resolves to the one index that names that edge.
