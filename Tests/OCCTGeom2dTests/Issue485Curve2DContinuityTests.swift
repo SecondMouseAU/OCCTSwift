@@ -71,8 +71,10 @@ struct Issue485Curve2DContinuityTests {
         #expect(g1.continuity == 1)      // the old encoding said -2
     }
 
-    @Test("continuity and continuityOrder agree on the same curve, in every class")
-    @available(*, deprecated, message: "continuityOrder is deprecated; this is the regression guard")
+    // Originally compared `continuity` against `continuityOrder`, silencing the deprecation
+    // warning on the test function. `continuityOrder` is unavailable as of #619; the substance
+    // moved onto the two properties that survive.
+    @Test("continuity and continuityClass agree on the same curve, in every class")
     func bothPropertiesAgree() {
         var checked = 0
         for curve in [Self.bspline(interiorMultiplicity: 1),
@@ -80,10 +82,9 @@ struct Issue485Curve2DContinuityTests {
                       Self.bspline(interiorMultiplicity: 3),
                       Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)),
                       Self.offsetOfG1Basis()].compactMap({ $0 }) {
-            #expect(curve.continuity == curve.continuityOrder)
-            #expect(curve.continuityOrder == Int(curve.continuityClass.rawValue))
-            #expect(curve.continuityOrder != 99)
-            #expect(curve.continuityOrder != -2)
+            #expect(curve.continuity == Int(curve.continuityClass.rawValue))
+            #expect(curve.continuity != 99)
+            #expect(curve.continuity != -2)
             checked += 1
         }
         #expect(checked == 5)
