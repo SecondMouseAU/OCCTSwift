@@ -91,6 +91,86 @@ Two holes in the script's own `--self-test`, both of which had to be closed for 
 Both were verified by injecting the regression they describe and confirming 17/18. The suite is
 18/18 and the gate exits 0.
 
+#### A single iso-row stops being documented, accepted, and then silently refused (#620)
+
+Three layers disagreed about the minimum count `Surface.drawMesh(uCount:vCount:)` accepts. The doc
+comment said "at least 1", the Swift guard (`Sampling.gridTotal`, default `atLeast: 1`) accepted 1,
+and the bridge returned 0 for anything under 2. The wrapper's `guard n == total` turned that 0 into
+`SurfaceGrid.empty`, so `drawMesh(uCount: 1, vCount: 20)` — in range by its own documentation —
+came back empty, and the caller had no way to tell "you asked for something unsupported" from "this
+surface has no mesh".
+
+**The bridge was the layer that was wrong**, which is not what the issue expected ("a mesh of one
+row has no quads"). Measured against the kernel first: despite the name `OCCTSurfaceDrawMesh` does
+not mesh anything. There is no `BRepMesh`, no triangulation and no quad, just a uniform walk of the
+sampled range calling `Geom_Surface::D0`, and a single `(u, v)` is a valid OCCT evaluation — a
+1 × 20 iso-row off a sphere is 20 finite points. The 2 was never OCCT's rule, it was this
+function's own divisor: `i / (uCount - 1)` divides by zero at count 1. And the NaN that produces is
+worse than a throw would have been, because `D0` does not throw on NaN, it returns NaN coordinates
+silently. Every other member of the same U-major grid family already accepted 1 —
+`OCCTSurfaceDrawGrid` guards no count at all, `EvaluateGrid` and `EvaluateGridD1` guard `<= 0` — so
+`drawMesh` was the family's sole outlier. `OCCTSurfaceDrawGrid`, forty lines above in the same
+file, samples the same bounds and had spelled that divisor defensively since `b1cd75d`, the commit
+that introduced both functions. The bound moved to 1 rather than disappearing: below 1, and
+products past `Sampling.maximumSampleCount`, are still rejected at the Swift boundary before any
+allocation, which is #558's contract unchanged.
+
+That divisor is now `occtUniformParameter` in `OCCTBridge_Internal.h`, next to
+`occtSurfaceGridIndex` and for the same reason: it had been open-coded **ten** times in
+`OCCTBridge_Surface.mm` in four different spellings, and #620 is what a single copy written
+without the guard costs. Sharing the expression is what stops an eleventh loop re-deriving the
+unguarded form.
+
+Nine of the ten are bit-identical substitutions. **The tenth reassociates**: the Gordon network
+builder's `f + (l - f) * ((double)j / (guideCount - 1))` becomes `((l - f) * j) / (guideCount - 1)`,
+and across ten realistic `[FirstParameter, LastParameter]` ranges 25-33% of cases differ by 1-2 ulp
+(≤ 4e-15 over the whole span, exactly 0 on this repo's own Gordon fixture). One structural
+consequence beyond the magnitude: the old form always landed the last sample exactly on
+`f + (l - f)`, while the new one can land 1 ulp **past** `LastParameter` (4 cases of n = 2…60 on a
+0..2π profile). Harmless here, because the builder `SetNotPeriodic()`s the curves first so
+`Geom_BSplineCurve::D0` does not throw just outside the range, but it is a boundary the old
+expression structurally could not cross, so it is recorded at the site rather than left for
+someone to rediscover.
+
+Three open-coded lines remain, across two sites, both deliberately.
+`OCCTGeomFillAppSurf`'s `(double)i / (count - 1)` is
+**unguarded** — the exact #620 shape — but chasing it turned up a separate, larger defect
+(`Surface.appSurf(curves:)` segfaults on a single curve regardless of the parameter value, so it
+is a missing arity guard rather than a divisor bug), which is filed on its own; converting the
+divisor would not fix it and would muddy that fix. `OCCTGeomFillCoonsPatchEval`'s two lines are a
+different contract, not the same expression: their single-sample branch is `0.5`, the patch
+midpoint, where every other site's is the low end. The helper's own doc says so, so the next
+sweep does not fold them in on shape alone.
+
+**Recorded, not fixed: the Gordon family has no behavioural test coverage at all.** All five
+Gordon tests assert only nil-ness and status ordinals — not one checks a point, pole, degree or
+bound — and `networkSurfaceBuildsOrReportsStatus`, the only test reaching the changed line, accepts
+any status but `.notStarted`; on the repo's own `makeNetwork()` fixture the builder returns
+`KnotAlignmentFailed`, so it never builds a surface. Nothing in the repo would have caught the 1-ulp
+change above, or one many orders of magnitude larger. Filed separately.
+
+**A second wrong claim, caught reviewing the first fix.** The new contract sentence said
+`uCount: 1` is "the single iso-row at `uMin`". That holds only for a bounded surface: the bridge
+clamps infinite bounds to ±100 **before** deriving parameters, so on a plane `domain.uMin` is about
+-2e100 while the single row sits at -100. Same defect class as #620 itself — a claim true of the
+fixture in front of you and false in general — so the docs now name the **sampled range** (the
+domain, with infinite bounds clamped) rather than the domain, and a test pins the clamped value on
+an unbounded surface. The first version of that test checked only finiteness, which passes under
+either reading and so could not contradict the doc.
+
+**The sibling site keeps its 2.** `OCCTSurfaceCreateBezier` carries a visually identical
+`uCount < 2 || vCount < 2`, and that one is the kernel's: a Bezier's degree is its pole count minus
+1 and must be at least 1, so `Geom_BezierSurface` raises `Standard_ConstructionError` on a
+single-pole direction (measured; 2 × 2 builds a bilinear patch). `Surface.bezier(poles:weights:)`
+already guarded the same bound, so that site had no three-layer mismatch at all — only a doc that
+was silent about the bound rather than wrong about it. Both look-alike guards now say in a comment
+which kind they are, so the two are not "made consistent" by a later sweep. The accompanying test
+pins the *public* contract only, and says so: relaxing the bridge guard alone leaves it passing,
+because `Surface.bezier` rejects in Swift and never reaches the bridge — and if it did, OCCT would
+throw and `catch (...)` would return `nullptr`, so `nil` comes back either way. No black-box test
+can separate those two layers, and claiming otherwise would be the same kind of overstatement this
+entry is about.
+
 #### The one grid layout finally covers the third type holding a grid (#617)
 
 #486 declared **U-major** (`occtSurfaceGridIndex`, `iu * vCount + iv`) THE surface-grid buffer

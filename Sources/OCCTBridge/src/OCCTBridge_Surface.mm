@@ -388,6 +388,12 @@ OCCTSurfaceRef OCCTSurfaceCreateRevolution(OCCTCurve3DRef meridian,
 
 // Freeform Surfaces
 
+// Unlike OCCTSurfaceDrawMesh's superficially identical `< 2` (which was this function's own
+// divisor masquerading as a kernel rule, #620), the 2 here IS OCCT's constraint and must stay:
+// Geom_BezierSurface's header states it raises "if the number of poles of the surface is lower
+// than 2 ... in one of the two directions U or V", since a Bezier's degree is poles - 1 and must
+// be >= 1. Measured: a 1 x N pole array throws Standard_ConstructionError, 2 x 2 builds a
+// degree-1 x degree-1 surface. Surface.bezier(poles:weights:) already guards the same bound.
 OCCTSurfaceRef OCCTSurfaceCreateBezier(const double* poles,
                                         int32_t uCount, int32_t vCount,
                                         const double* weights) {
@@ -779,10 +785,10 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 
         // U-iso lines (constant U, varying V)
         for (int32_t i = 0; i < uCount && lineIdx < maxLines; i++) {
-            double u = uMin + (uMax - uMin) * i / (uCount > 1 ? (uCount - 1) : 1);
+            double u = occtUniformParameter(uMin, uMax, i, uCount);
             int32_t ptsInLine = 0;
             for (int32_t j = 0; j < pointsPerLine && totalPoints < maxPoints; j++) {
-                double v = vMin + (vMax - vMin) * j / (pointsPerLine > 1 ? (pointsPerLine - 1) : 1);
+                double v = occtUniformParameter(vMin, vMax, j, pointsPerLine);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[totalPoints * 3]     = p.X();
@@ -796,10 +802,10 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
 
         // V-iso lines (constant V, varying U)
         for (int32_t j = 0; j < vCount && lineIdx < maxLines; j++) {
-            double v = vMin + (vMax - vMin) * j / (vCount > 1 ? (vCount - 1) : 1);
+            double v = occtUniformParameter(vMin, vMax, j, vCount);
             int32_t ptsInLine = 0;
             for (int32_t i = 0; i < pointsPerLine && totalPoints < maxPoints; i++) {
-                double u = uMin + (uMax - uMin) * i / (pointsPerLine > 1 ? (pointsPerLine - 1) : 1);
+                double u = occtUniformParameter(uMin, uMax, i, pointsPerLine);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[totalPoints * 3]     = p.X();
@@ -817,10 +823,25 @@ int32_t OCCTSurfaceDrawGrid(OCCTSurfaceRef s,
     }
 }
 
+// The minimum here is 1 sample per direction, not 2. Despite the name this is not a mesher:
+// there is no BRepMesh, no triangulation and no quad, just a uniform walk of the parametric
+// bounds evaluating Geom_Surface::D0, and a single (u, v) is a perfectly valid OCCT evaluation
+// (measured: a 1 x 20 iso-row off a sphere is 20 finite points). The old `uCount < 2` guard was
+// not OCCT's constraint but this function's own divisor: `i / (uCount - 1)` divides by zero at
+// count 1, and the NaN parameter that produces is worse than a throw, because D0 does not throw
+// on NaN — it returns NaN coordinates silently. OCCTSurfaceDrawGrid, forty lines above, samples
+// the same bounds and had spelled the divisor defensively since the commit that introduced both
+// functions; that expression is now occtUniformParameter, so neither loop states it in its own
+// words and a single iso-row is served rather than rejected (#620). Every other member of this
+// U-major grid family already accepted 1 — DrawGrid guards no count at all, EvaluateGrid and
+// EvaluateGridD1 guard `<= 0` — so the 2 here was the family's sole outlier.
+//
+// Note the infinite-bounds clamp below happens BEFORE the sampling, so on an unbounded surface
+// the row a single sample lands on is the clamped -100, not the surface's own -2e100 uMin.
 int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
                              int32_t uCount, int32_t vCount,
                              double* outXYZ) {
-    if (!s || s->surface.IsNull() || !outXYZ || uCount < 2 || vCount < 2) return 0;
+    if (!s || s->surface.IsNull() || !outXYZ || uCount < 1 || vCount < 1) return 0;
     try {
         double uMin, uMax, vMin, vMax;
         s->surface->Bounds(uMin, uMax, vMin, vMax);
@@ -833,9 +854,9 @@ int32_t OCCTSurfaceDrawMesh(OCCTSurfaceRef s,
 
         int32_t idx = 0;
         for (int32_t i = 0; i < uCount; i++) {
-            double u = uMin + (uMax - uMin) * i / (uCount - 1);
+            double u = occtUniformParameter(uMin, uMax, i, uCount);
             for (int32_t j = 0; j < vCount; j++) {
-                double v = vMin + (vMax - vMin) * j / (vCount - 1);
+                double v = occtUniformParameter(vMin, vMax, j, vCount);
                 gp_Pnt p;
                 s->surface->D0(u, v, p);
                 outXYZ[idx * 3]     = p.X();
@@ -2468,7 +2489,7 @@ void OCCTAdaptor3dIsoCurveEval(OCCTShapeRef faceShape, int isoType, double param
         if (last > 1e6) last = 1e6;
 
         for (int i = 0; i < evalCount; i++) {
-            double t = (evalCount > 1) ? first + (last - first) * i / (evalCount - 1) : first;
+            double t = occtUniformParameter(first, last, i, evalCount);
             gp_Pnt pt;
             iso.D0(t, pt);
             outPoints[i*3]     = pt.X();
@@ -6559,10 +6580,10 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
         // Uniform locator parameters in [0,1].
         NCollection_Array1<double> profileParams(1, profileCount);
         for (int i = 0; i < profileCount; i++)
-            profileParams.SetValue(i + 1, profileCount > 1 ? (double)i / (profileCount - 1) : 0.0);
+            profileParams.SetValue(i + 1, occtUniformParameter(0.0, 1.0, i, profileCount));
         NCollection_Array1<double> guideParams(1, guideCount);
         for (int j = 0; j < guideCount; j++)
-            guideParams.SetValue(j + 1, guideCount > 1 ? (double)j / (guideCount - 1) : 0.0);
+            guideParams.SetValue(j + 1, occtUniformParameter(0.0, 1.0, j, guideCount));
 
         // Intersection grid: row = profile (i), col = guide (j). Sample profile i
         // at the parameter matching guide j's normalized position along the profile.
@@ -6572,7 +6593,19 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
             const Handle(Geom_BSplineCurve)& pc = profs.Value(i + 1);
             double f = pc->FirstParameter(), l = pc->LastParameter();
             for (int j = 0; j < guideCount; j++) {
-                double t = guideCount > 1 ? f + (l - f) * ((double)j / (guideCount - 1)) : f;
+                // The one site of the ten that is not a bit-identical substitution. It read
+                // `f + (l - f) * ((double)j / (guideCount - 1))`, so folding it into the shared
+                // helper reassociates the multiply and the divide: `(l-f)*(j/(n-1))` becomes
+                // `((l-f)*j)/(n-1)`. Measured across ten realistic [FirstParameter, LastParameter]
+                // ranges, 25-33% of cases differ by 1-2 ulp (<= 4e-15 over the whole span, and
+                // exactly 0 on this repo's own Gordon fixture). One structural consequence beyond
+                // the magnitude: the old form always landed the last sample exactly on
+                // f + (l - f), whereas this one can land 1 ulp PAST LastParameter (4 cases of
+                // n = 2..60 on a 0..2pi profile). Probed as harmless here because the builder
+                // SetNotPeriodic()s these curves first, so Geom_BSplineCurve::D0 does not throw
+                // just outside the range — but it is a boundary the old expression structurally
+                // could not cross, so a future caller that stops doing that must re-check it.
+                double t = occtUniformParameter(f, l, j, guideCount);
                 ipts.SetValue(i + 1, j + 1, pc->Value(t));
                 iwts.SetValue(i + 1, j + 1, 1.0);
             }
