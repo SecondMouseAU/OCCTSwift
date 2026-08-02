@@ -2535,10 +2535,12 @@ extension Shape {
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
-    /// box.volume                        // 6000
-    /// box.faces()[0].asShape?.volume    // nil, a face encloses nothing
-    /// openShell.volume                  // nil, not 4800
-    /// meshFaces.sewn()?.volume          // a number, once the faces share their edges
+    /// box.volume                                       // 6000
+    /// Shape.fromFace(box.faces()[0])?.volume           // nil, a face encloses nothing
+    ///
+    /// let loose = box.faces().compactMap { Shape.fromFace($0) }
+    /// Shape.compound(loose)?.volume                    // nil, unsewn faces are not a closed shell
+    /// Shape.sew(shapes: loose)?.volume                 // 6000, once the faces share their edges
     /// ```
     public var volume: Double? {
         var v = 0.0
@@ -2569,8 +2571,11 @@ extension Shape {
     /// let solid = Shape.box(width: 10, height: 10, depth: 10)!
     /// solid.signedVolume            //  1000, and here it IS the volume
     /// solid.reversed?.signedVolume  // -1000
-    /// openShell.signedVolume        //  a signed number that is not a volume
-    /// openShell.volume              //  nil, which is the measurement answer
+    ///
+    /// // Five of the six faces, sewn: closed everywhere except one opening.
+    /// let open = Shape.sew(shapes: solid.faces().dropLast().compactMap { Shape.fromFace($0) })!
+    /// open.signedVolume             //  a signed number that is not a volume
+    /// open.volume                   //  nil, which is the measurement answer
     /// ```
     public var signedVolume: Double {
         var v = 0.0
@@ -6451,10 +6456,10 @@ extension Shape {
     /// let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
     /// if let i = cone.inertiaProperties() {
     ///     i.mass                // 2094.4, the volume
-    ///     i.centerOfMass        // (0, 0, -5)
+    ///     i.centerOfMass        // (0, 0, 5), a quarter of the way up from the base
     ///     i.hasSymmetryAxis     // true
     /// }
-    /// cone.faces()[0].asShape?.inertiaProperties()   // nil
+    /// Shape.fromFace(cone.faces()[0])?.inertiaProperties()   // nil
     /// ```
     /// - Returns: Inertia properties, or nil when the shape has no volume or computation fails
     public func inertiaProperties() -> InertiaProperties? {
@@ -6488,10 +6493,13 @@ extension Shape {
     /// edge or vertex), where the reported centroid would be the shape's location origin (#609).
     ///
     /// ```swift
-    /// let sheet = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0].asShape!
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// let sheet = Shape.fromFace(box.faces()[0])!
     /// sheet.surfaceInertiaProperties()?.mass   // 600, the face area
-    /// sheet.inertiaProperties()               // nil, a face has no volume
-    /// someEdge.asShape?.surfaceInertiaProperties()   // nil, no faces
+    /// sheet.inertiaProperties()                // nil, a face has no volume
+    ///
+    /// let edge = Shape.fromEdge(box.edges()[0])!
+    /// edge.surfaceInertiaProperties()          // nil, no faces
     /// ```
     /// - Returns: Inertia properties, or nil when the shape has no area or computation fails
     public func surfaceInertiaProperties() -> InertiaProperties? {
@@ -7247,7 +7255,9 @@ extension Shape {
     /// let cyl = Shape.cylinder(radius: 3, height: 10)!
     /// cyl.volumeInertia?.volume          // 282.7
     /// cyl.volumeInertia?.centerOfMass    // (0, 0, 5)
-    /// cyl.shells().first?.asShape        // a closed shell still answers
+    ///
+    /// // A closed shell still answers: the key is closedness, not `ShapeType() == SOLID`.
+    /// cyl.subShapes(ofType: .shell).first?.volumeInertia?.volume   // 282.7
     /// ```
     ///
     /// - Returns: Volume inertia result, or nil when the shape has no volume or on error
@@ -7292,7 +7302,8 @@ extension Shape {
     /// (#609).
     ///
     /// ```swift
-    /// let sheet = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0].asShape!
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// let sheet = Shape.fromFace(box.faces()[0])!
     /// sheet.surfaceInertia?.area           // 600
     /// sheet.surfaceInertia?.centerOfMass   // the face's area centroid
     /// ```
@@ -12635,8 +12646,13 @@ extension Face {
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
-    /// coplanarFace.volumeInertia.volume                        // 0
-    /// coplanarFace.volumeInertia.centerOfMass                  // nil
+    ///
+    /// // A face whose own plane contains the reference point (the origin) contributes nothing.
+    /// // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
+    /// let shifted = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(0, 0, 5))!
+    /// let coplanar = shifted.faces().first { $0.volumeInertia.volume == 0 }!
+    /// coplanar.volumeInertia.volume         // 0, a real summand
+    /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid
     /// ```
     public var volumeInertia: FaceVolumeInertia {
         let r = OCCTBRepGPropVinert(handle)
@@ -14150,9 +14166,10 @@ extension Shape {
     /// Compute volume properties of a face using Gauss-Kronrod integration.
     ///
     /// ```swift
-    /// let r = face.asShape.vinertGK(tolerance: 1e-4)
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let r = Shape.fromFace(box.faces()[0])!.vinertGK(tolerance: 1e-4)
     /// r.mass      // this face's volume contribution about the location point
-    /// r.center    // its centroid, nil when the contribution is 0
+    /// r.center    // its centroid, nil when the contribution is 0 or computeCG was false
     /// ```
     public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
                          tolerance: Double = 0.001, computeCG: Bool = true) -> VinertGKResult {
@@ -14734,8 +14751,8 @@ extension Shape {
     ///
     /// ```swift
     /// let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
-    /// cone.centroid                        // (0, 0, -5)
-    /// cone.faces()[0].asShape?.centroid    // nil, was the location origin
+    /// cone.centroid                               // (0, 0, 5), a quarter of the way up
+    /// Shape.fromFace(cone.faces()[0])?.centroid   // nil, was the location origin
     /// ```
     public var centroid: SIMD3<Double>? {
         var x = 0.0, y = 0.0, z = 0.0

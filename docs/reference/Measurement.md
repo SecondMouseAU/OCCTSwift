@@ -466,7 +466,8 @@ Optional since #609, for the same reason `facePerimeters` always was: a zero-are
   ```swift
   let m = Shape.box(width: 10, height: 10, depth: 5)!.measure()
   for (i, c) in m.faceCentroids.enumerated() {
-      print("face \(i) centroid: \(c.map(String.init(describing:)) ?? "no area")")
+      guard let c else { print("face \(i): no area, so no centroid"); continue }
+      print("face \(i) centroid: \(c)")
   }
   ```
 

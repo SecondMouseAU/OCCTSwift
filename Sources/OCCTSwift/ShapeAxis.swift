@@ -76,9 +76,10 @@ extension Shape {
     /// shape's location origin that describe nothing (#609).
     ///
     /// ```swift
-    /// Shape.sphere(radius: 5)!.symmetryAxes().count        // 3
-    /// Shape.cylinder(radius: 2, height: 9)!.symmetryAxes() // 1, the cylinder's own axis
-    /// someFace.asShape!.symmetryAxes()                     // [], was 3
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// Shape.sphere(radius: 5)!.symmetryAxes().count              // 3
+    /// Shape.cylinder(radius: 2, height: 9)!.symmetryAxes().count // 1, the cylinder's own axis
+    /// Shape.fromFace(box.faces()[0])!.symmetryAxes()             // [], was 3
     /// ```
     ///
     /// - Parameter fractionalTolerance: Two principal moments are considered equal

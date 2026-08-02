@@ -37,9 +37,13 @@ The exceptions recorded below were each taken on the same terms: one or a few br
 shimmable, each named with its migration before the tag. **Some changes are too broad for that**,
 and rather than stretch the exception mechanism to cover them they are held for **v2.0.0**.
 
-v2.0.0 is not scheduled by a date. It ships when the in-flight correctness work is finished and the
-package is re-pinned onto OCCT 8.0.1. Neither condition alone drives the major, and no single held
-entry does either; the accumulated breaks are what makes it one.
+**What makes it a major is Rule 2 above**, the accumulated breaking changes to the public Swift API,
+not the OCCT version. Nothing in the trigger table changes: an 8.0.0 to 8.0.1 re-pin is a MINOR on
+its own, and no single held entry forces a major on its own either.
+
+v2.0.0 is not scheduled by a date. In practice it will be cut once the in-flight correctness work is
+finished, and the OCCT 8.0.1 re-pin is expected to ride along with it rather than to trigger it. A
+major for an OCCT major (8.x to 9.x) remains a separate, independently sufficient trigger.
 
 **A release cut before then must not include a `CHANGELOG.md` entry marked as containing source
 breaks.** Those entries name every break with its migration up front, which is the same treatment an
@@ -49,7 +53,7 @@ Currently held:
 
 | Entry | Breaks | Why held rather than taken as an exception |
 |---|---|---|
-| [#609](CHANGELOG.md), zero-mass `BRepGProp` results | 12 named signature changes across the mass-property surface, all compile errors, all with a documented migration | Scale. The four exceptions below cover one to six call-site shapes each; this one moves the whole mass-property surface at once, and a consumer measuring geometry would meet it everywhere rather than at a named method |
+| [#609](CHANGELOG.md#unreleased-fix-zero-mass-brepgprop-results-were-returned-as-successful-answers-609), zero-mass `BRepGProp` results | 12 named signature changes across the mass-property surface, all compile errors, all with a documented migration | Scale. The four exceptions below cover one to six call-site shapes each; this one moves the whole mass-property surface at once, and a consumer measuring geometry would meet it everywhere rather than at a named method |
 
 #### Recorded exception: v1.17.0 (2026-07-29)
 

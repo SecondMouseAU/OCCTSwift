@@ -2981,7 +2981,7 @@ public func linearProperties() -> LinearProperties?
 - **OCCT:** `GProp_GProps` linear analysis plus a `Mass()` test (via `OCCTShapeLinearProperties`).
 - **Example:**
   ```swift
-  let wire = Wire.rectangle(width: 10, height: 5)!.asShape()
+  let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 5)!)!
   if let lp = wire.linearProperties() {
       print("length:", lp.length)              // 30.0
       print("centroid:", lp.centerOfMass)
@@ -3005,7 +3005,8 @@ public struct InertiaTensor: Sendable {
 
 ### `Shape.momentOfInertia()`
 
-Get the inertia tensor for a volumetric shape about the world origin.
+Get the inertia tensor for a volumetric shape. It is referenced to the shape's centre of mass, not
+to the world origin (#605).
 
 ```swift
 public func momentOfInertia() -> InertiaTensor?

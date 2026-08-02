@@ -2825,6 +2825,15 @@ The mass alongside each of those stays non-optional on purpose. A zero volume co
 face of a shell is a real answer a caller summing the decomposition needs; only the centroid is
 missing.
 
+**That rule applies to the per-element results, not to the whole-shape queries**, and the difference
+is deliberate rather than an oversight. `Face.surfaceInertia` and `Face.volumeInertia` are summands
+of a decomposition, so they keep their `area` / `volume` of 0 and drop only the centroid.
+`Shape.surfaceInertia`, `Shape.volumeInertia`, `inertiaProperties()` and `linearProperties()` answer
+"measure this object", where a zero mass means the measure does not apply at all, so the whole result
+is nil. The plain mass accessors are unaffected either way: `Shape.surfaceArea` still returns `0.0`
+for an edge and `Shape.totalEdgeLength` still returns `0.0` for a vertex, because a mass with no
+centroid attached to it needs no refusal.
+
 `GeometryProperties`' analytic members keep answering for a valid element measured over an empty
 range: `GProp_CelGProps` computes its centroid analytically, so an arc with `u1 == u2` has a mass of
 0 and a *correct* centre. Only inputs OCCT rejects return nil there.
@@ -2846,6 +2855,16 @@ Shape.sew(shapes: imported.faces().compactMap { Shape.fromFace($0) })?.volume   
 `BRep_Tool::IsClosed` counts topological edge sharing, not geometric coincidence, so this is the
 one behaviour change with real teeth downstream. Both of our own IGES round-trip tests hit it.
 
+`volume`'s nil does not distinguish "no closed shell" from "closed, but with its faces pointing
+inward": a reversed solid has always returned nil there, since the accessor drops a negative. Sewing
+does not help the second case. A caller that needs to tell them apart should ask `signedVolume`,
+which answers for both, and normalise with `orientedForward()`:
+
+```swift
+shape.volume                          // nil for an open shell AND for a reversed solid
+shape.orientedForward()?.volume       // a number for the reversed solid, still nil for the shell
+```
+
 #### Downstream, tracked before the release train
 
 - **SecondMouseAU/OCCTReconstruct#553** (P1). Builds solids from mesh data and gates on
@@ -2860,11 +2879,23 @@ one behaviour change with real teeth downstream. Both of our own IGES round-trip
   omits `volume` / `centerOfMass` for a sheet body or unsewn import rather than reporting a figure.
   No code change needed; it already propagates nil.
 
-**Release-train checklist:** land OCCTReconstruct#553 and OCCTDesignLoop#67 before bumping either
-repo's OCCTSwift pin past this release.
+**Release-train checklist:**
 
-Bridge and Swift only. No kernel patch, no `OCCT.xcframework` rebuild. Reproducer and full measured
-output in [`Scripts/repro/609-zero-mass/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/609-zero-mass).
+1. Land OCCTReconstruct#553 and OCCTDesignLoop#67 before bumping either repo's OCCTSwift pin past
+   this release.
+2. **Rebuild `OCCTBridge.xcframework` and bump its `Package.swift` URL and checksum in the release
+   commit.** Nine C symbol signatures changed in the public `OCCTBridge.h`
+   (`OCCTShapeGetVolume`, `OCCTShapeLinearProperties`, `OCCTShapeMomentOfInertia`,
+   `OCCTShapePrincipalAxes`, `OCCTShapeRadiusOfGyration`, `OCCTShapeCentroid`,
+   `OCCTGPropLineSegment`, `OCCTGPropCircularArc`, `OCCTGPropBarycentre`), so a consumer building
+   with `OCCTSWIFT_BRIDGE_PREBUILT=1` against a stale prebuilt bridge gets a wall of compile errors
+   (`cannot convert value of type 'Double' to expected condition type 'Bool'`) until it is
+   refreshed. `Scripts/build-occtbridge.sh` builds it. Per #512 the URL and checksum bump belongs to
+   the release commit, not to this one.
+
+No kernel patch and no `OCCT.xcframework` rebuild: the pinned OCCT binary is untouched, and only the
+bridge and Swift sources changed. Reproducer and full measured output in
+[`Scripts/repro/609-zero-mass/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/609-zero-mass).
 
 Closes #609
 

@@ -922,9 +922,11 @@ Returns one axis for a body with rotational symmetry (two equal principal moment
 - **Example:**
   ```swift
   let sphere = Shape.sphere(radius: 5)!
-  sphere.symmetryAxes().count                       // 3 (spherical symmetry)
+  sphere.symmetryAxes().count                                  // 3 (spherical symmetry)
   Shape.cylinder(radius: 2, height: 9)!.symmetryAxes().count   // 1
-  someFace.asShape!.symmetryAxes()                  // [], was 3
+
+  let box = Shape.box(width: 10, height: 20, depth: 30)!
+  Shape.fromFace(box.faces()[0])!.symmetryAxes()               // [], was 3
   ```
 
 ---

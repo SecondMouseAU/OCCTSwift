@@ -43,16 +43,13 @@ struct ZeroMassResultsTests {
     func openShellHasNoVolume() throws {
         let open = try openShell()
 
-        #expect(open.volume == nil, "an open shell encloses no volume")
+        // Name the wrong answer so a regression cannot pass quietly. 4800 is what OCCT returns
+        // with OnlyClosed left at its default.
+        #expect(open.volume == nil,
+                "open shell reported a volume of \(String(describing: open.volume)); 4800 means OnlyClosed was dropped")
         #expect(open.properties() == nil)
         #expect(open.volumeInertia == nil)
         #expect(open.centroid == nil)
-
-        // Name the wrong answer so a regression cannot pass quietly. 4800 is what OCCT returns
-        // with OnlyClosed left at its default.
-        if let v = open.volume {
-            Issue.record("open shell reported a volume of \(v); 4800 means OnlyClosed was dropped")
-        }
 
         // The measures that DO apply to an open shell still work.
         let area = try #require(open.surfaceArea)
@@ -285,6 +282,80 @@ struct ZeroMassResultsTests {
         let ci = edge.curveInertia
         #expect(ci.length > 0)
         #expect(ci.centerOfMass != nil)
+    }
+
+    // MARK: - the nil branch of the per-element results
+
+    /// The other half of `perFaceInertiaKeepsMass`, and the case the reproducer names
+    /// (`Vinert(coplanar face) : mass=0.000000`). `BRepGProp_Vinert` integrates the volume between
+    /// a face and its location point, which the bridge fixes at the origin, so a planar face whose
+    /// own plane contains the origin contributes exactly nothing. The 0 is a real summand and stays;
+    /// the centroid it has no basis for does not.
+    @Test("a zero volume contribution keeps its 0 and drops its centroid")
+    func perFaceVolumeInertiaRefusesAZeroContribution() throws {
+        // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
+        let b = try #require(Shape.box(width: 10, height: 10, depth: 10)?
+            .translated(by: SIMD3(0, 0, 5)))
+
+        let coplanar = try #require(b.faces().first { abs($0.volumeInertia.volume) < 1e-9 },
+                                    "one face of this box lies in the z = 0 plane")
+        let vi = coplanar.volumeInertia
+        #expect(vi.volume == 0.0,
+                "the guard is an exact test, so a residual of \(vi.volume) would leave the centroid in place")
+        #expect(vi.centerOfMass == nil, "a zero contribution has no centroid")
+
+        // The faces that do contribute keep both.
+        let contributing = b.faces().filter { $0.volumeInertia.volume != 0 }
+        #expect(!contributing.isEmpty)
+        #expect(contributing.allSatisfy { $0.volumeInertia.centerOfMass != nil })
+    }
+
+    /// `OCCTMeshPropsCompute` returns a zeroed result when the face carries no triangulation, which
+    /// used to surface as a centroid of (0,0,0).
+    @Test("meshProps has no centroid until the face is triangulated")
+    func meshPropsWithoutTriangulationHasNoCentroid() throws {
+        let b = try #require(box())
+        let face = try #require(b.faces().first)
+
+        let bare = face.meshProps(type: .surface)
+        #expect(bare.mass == 0.0, "an untriangulated face has no mesh to measure")
+        #expect(bare.centerOfMass == nil, "and so no centroid; this used to be (0,0,0)")
+
+        // Meshing attaches the triangulation to the shape's faces, and the answer arrives.
+        #expect(b.mesh(linearDeflection: 0.1) != nil)
+        let meshed = try #require(b.faces().first).meshProps(type: .surface)
+        #expect(meshed.mass > 0, "a triangulated face has an area")
+        #expect(meshed.centerOfMass != nil)
+    }
+
+    /// `BRepGProp_MeshCinert` needs at least two points. Below that the bridge returns a zeroed
+    /// result, and the (0,0,0) in it was indistinguishable from a polygon centred on the origin.
+    @Test("meshCinertCompute has no centroid below two points")
+    func meshCinertBelowTwoPointsHasNoCentroid() {
+        #expect(meshCinertCompute(points: []).centerOfMass == nil)
+        #expect(meshCinertCompute(points: [(1, 2, 3)]).centerOfMass == nil,
+                "one point is not a polyline")
+
+        let real = meshCinertCompute(points: [(0, 0, 0), (10, 0, 0)])
+        #expect(abs(real.mass - 10.0) < 1e-9)
+        #expect(real.centerOfMass != nil)
+    }
+
+    /// `VinertGKResult.center` has two nil cases, and `computeCG: false` is the one with no
+    /// counterpart anywhere else: nothing was computed, so reporting (0,0,0) claimed an answer the
+    /// caller had explicitly declined to ask for.
+    @Test("vinertGK reports no centre when none was asked for")
+    func vinertGKWithoutCentreOfGravity() throws {
+        let b = try #require(box())
+        let firstFace = try #require(b.faces().first)
+        let face = try #require(Shape.fromFace(firstFace))
+
+        let asked = face.vinertGK(tolerance: 1e-4)
+        #expect(asked.center != nil, "computeCG defaults to true")
+
+        let declined = face.vinertGK(tolerance: 1e-4, computeCG: false)
+        #expect(abs(declined.mass - asked.mass) < 1e-6, "the mass is computed either way")
+        #expect(declined.center == nil, "nothing was computed, so there is nothing to report")
     }
 
     // MARK: - point sets

@@ -837,14 +837,19 @@ typedef struct {
 /// @return Properties structure with isValid indicating success
 OCCTShapeProperties OCCTShapeGetProperties(OCCTShapeRef shape, double density);
 
-/// Get the signed volume of a shape (convenience function)
+/// Measure the volume a shape encloses (convenience function)
 ///
 /// Computed with `OnlyClosed = true`, so a shape with no closed shell has no volume and this
 /// reports failure rather than the number the divergence integral returns over a surface that
-/// encloses nothing (#609). The sign is preserved: a reversed solid reports a negative volume.
+/// encloses nothing (#609). Use `OCCTShapeSignedVolumeFlux` when the question is which way the
+/// faces point rather than how much volume there is.
+///
+/// The value written keeps `BRepGProp`'s sign, so a reversed solid writes a negative volume and
+/// this still returns true. `Shape.volume` treats that as no answer; `Shape.signedVolume` is the
+/// accessor for it, and it goes through `OCCTShapeSignedVolumeFlux` rather than this.
 ///
 /// @param shape The shape to measure
-/// @param outVolume Output: signed volume in cubic units, untouched when this returns false
+/// @param outVolume Output: volume in cubic units, signed, untouched when this returns false
 /// @return true when the shape has a closed volume, false otherwise or on error
 bool OCCTShapeGetVolume(OCCTShapeRef shape, double* outVolume);
 
@@ -17492,7 +17497,9 @@ OCCTShapeRef _Nullable OCCTBRepLibReverseSortFaces(OCCTShapeRef _Nonnull shape);
 bool OCCTShapeLinearProperties(OCCTShapeRef _Nonnull shape, double* _Nonnull length,
                                double* _Nonnull cx, double* _Nonnull cy, double* _Nonnull cz);
 
-/// Get the static moments (Ix, Iy, Iz) and products of inertia (Ixy, Ixz, Iyz) for a shape.
+/// Get the moments of inertia (Ixx, Iyy, Izz) and products of inertia (Ixy, Ixz, Iyz) for a shape.
+/// These are the diagonal and off-diagonal terms of `GProp_GProps::MatrixOfInertia`, referenced to
+/// the centre of mass, not `StaticMoments()`, which is a different quantity about the origin.
 /// @return false when the shape has no closed volume, so no inertia tensor (#609).
 bool OCCTShapeMomentOfInertia(OCCTShapeRef _Nonnull shape,
                               double* _Nonnull ixx, double* _Nonnull iyy, double* _Nonnull izz,

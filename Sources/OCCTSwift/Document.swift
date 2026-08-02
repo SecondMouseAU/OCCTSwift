@@ -13337,9 +13337,11 @@ extension Shape {
     /// the shape's location origin, not a recognisable zero (#609).
     ///
     /// ```swift
-    /// let wire = Wire.rectangle(width: 10, height: 20)!
-    /// wire.asShape.linearProperties()?.length   // 60
-    /// vertexShape.linearProperties()            // nil
+    /// let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 20)!)!
+    /// wire.linearProperties()?.length   // 60
+    ///
+    /// let vertex = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .vertex)[0]
+    /// vertex.linearProperties()         // nil, a vertex has no length and no centroid
     /// ```
     public func linearProperties() -> LinearProperties? {
         var length = 0.0, cx = 0.0, cy = 0.0, cz = 0.0
@@ -13360,8 +13362,8 @@ extension Shape {
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
-    /// box.momentOfInertia()?.ixx            // 650000
-    /// box.faces()[0].asShape?.momentOfInertia()   // nil, a face has no volume
+    /// box.momentOfInertia()?.ixx                          // 650000
+    /// Shape.fromFace(box.faces()[0])?.momentOfInertia()   // nil, a face has no volume
     /// ```
     public func momentOfInertia() -> InertiaTensor? {
         var ixx = 0.0, iyy = 0.0, izz = 0.0
@@ -13385,8 +13387,8 @@ extension Shape {
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 20, depth: 30)!
-    /// box.principalAxes()?.axis1                 // a real principal direction
-    /// box.faces()[0].asShape?.principalAxes()    // nil, was (0,0,1)/(1,0,0)/(0,1,0)
+    /// box.principalAxes()?.axis1                       // a real principal direction
+    /// Shape.fromFace(box.faces()[0])?.principalAxes()  // nil, was (0,0,1)/(1,0,0)/(0,1,0)
     /// ```
     public func principalAxes() -> PrincipalAxes? {
         var axes = [Double](repeating: 0, count: 9)
@@ -13407,6 +13409,8 @@ extension Shape {
     /// ```swift
     /// let cyl = Shape.cylinder(radius: 3, height: 10)!
     /// cyl.radiusOfGyration(axisOrigin: .zero, direction: SIMD3(0, 0, 1))   // 2.12
+    ///
+    /// let sheet = Shape.fromFace(cyl.faces()[0])!
     /// sheet.radiusOfGyration(axisOrigin: .zero, direction: SIMD3(0, 0, 1)) // nil, was NaN
     /// ```
     public func radiusOfGyration(axisOrigin: SIMD3<Double>, direction: SIMD3<Double>) -> Double? {
