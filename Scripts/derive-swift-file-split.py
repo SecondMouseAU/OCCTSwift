@@ -30,9 +30,12 @@ FILES = {
     "Shape": "Sources/OCCTSwift/Shape.swift",
 }
 
+# `func` is in the list because top-level free functions are otherwise invisible here, and that
+# blindness cost real work: #659 moved 9 of them out of Shape.swift and only found them by diffing
+# every top-level line against the declaration ranges. Document.swift has 2 more waiting for #661.
 DECL = re.compile(
-    r"^(?:public |internal |private |package |)?(?:final )?"
-    r"(extension|class|struct|enum|protocol|actor)\s+([A-Za-z_]\w*)"
+    r"^(?:public |internal |private |package |fileprivate |)?(?:final )?"
+    r"(extension|class|struct|enum|protocol|actor|func)\s+([A-Za-z_]\w*)"
 )
 
 
@@ -59,14 +62,21 @@ def scan(path):
 def report(label, path, show_list):
     extended = collections.Counter()
     standalone = collections.Counter()
+    free_funcs = collections.Counter()
     for kind, name, size in scan(path):
-        (extended if kind == "extension" else standalone)[name] += size
+        if kind == "extension":
+            extended[name] += size
+        elif kind == "func":
+            free_funcs[name] += size
+        else:
+            standalone[name] += size
         if show_list:
-            print(f"{size:6d}\t{'extension' if kind == 'extension' else 'type'}\t{name}")
+            label = {"extension": "extension", "func": "free func"}.get(kind, "type")
+            print(f"{size:6d}\t{label}\t{name}")
     if show_list:
         return
 
-    total = sum(extended.values()) + sum(standalone.values())
+    total = sum(extended.values()) + sum(standalone.values()) + sum(free_funcs.values())
     file_lines = sum(1 for _ in open(path, errors="ignore"))
     print(f"### {os.path.basename(path)}: {file_lines} lines, {total} inside top-level declarations")
     print("    extensions, by the type they extend:")
@@ -77,6 +87,12 @@ def report(label, path, show_list):
         print(f"      {size:6d}  {name}")
     if len(standalone) > 8:
         print(f"      ... and {len(standalone) - 8} more")
+    if free_funcs:
+        print(f"    top-level free functions: {len(free_funcs)}, {sum(free_funcs.values())} lines")
+        for name, size in free_funcs.most_common(8):
+            print(f"      {size:6d}  {name}()")
+        if len(free_funcs) > 8:
+            print(f"      ... and {len(free_funcs) - 8} more")
     print()
 
 
