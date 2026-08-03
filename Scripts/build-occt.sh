@@ -117,7 +117,7 @@ else
         echo "       Check for work worth keeping first, anything not touched by a carried patch:" >&2
         echo "         git -C '$LIBRARIES_DIR/occt-src' status --porcelain" >&2
         echo "" >&2
-        echo "       Then remove the tree and re-run, so the clone below fetches $OCCT_TAG:" >&2
+        echo "       Then remove the tree and re-run, so the clone above fetches $OCCT_TAG:" >&2
         echo "         rm -rf '$LIBRARIES_DIR/occt-src'" >&2
         exit 1
     fi
