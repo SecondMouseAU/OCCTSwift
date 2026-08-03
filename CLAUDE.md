@@ -209,6 +209,12 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
   Not: `#expect(result != nil); #expect(result!.isValid)`
 - Edge indices may vary across runs — iterate edges to find a working one when testing edge-specific operations
 - Wrap OCCT calls that may throw `StdFail_NotDone` in try-catch on the C bridge side
+- **Prove the test fails.** Every new test, and every new `--self-test` case, is run once with its
+  subject broken: inject the defect, confirm the failure, restore, confirm the pass, report both.
+  Adding a self-test is not the rule, watching it fail is. See
+  [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) for why this is a
+  policy here rather than a preference, including the two occasions a `--self-test` passed 6/6
+  while one of its cases proved nothing.
 
 ## Known OCCT Bugs
 
