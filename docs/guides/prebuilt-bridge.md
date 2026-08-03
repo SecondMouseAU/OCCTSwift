@@ -1,5 +1,11 @@
 # Prebuilt OCCTBridge (opt-in)
 
+> **Disabled on the v2.0.0 line.** `Package.swift` currently forces the source build and ignores
+> `OCCTSWIFT_BRIDGE_PREBUILT` entirely. Nearly every issue in the 2.0.0 queue edits
+> `Sources/OCCTBridge/src/*.mm`, and a prebuilt that predates the edit links silently and reports a
+> pass for code that was never compiled. The OCCT 8.0.1 absorb hit exactly that. Everything below
+> describes the mechanism and applies again once the switch is restored in the release commit.
+
 `OCCTBridge` is 16 Objective-C++ files, ~62K lines, wrapping the OCCT header tree. By default
 SwiftPM compiles it from source on every consumer build. Since every `.mm` translation unit
 includes a large slice of OCCT's ~1,700 headers, this dominates rebuild time in any consumer

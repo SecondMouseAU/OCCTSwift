@@ -182,7 +182,8 @@ See [docs/guides/building-occt.md](docs/guides/building-occt.md) for details.
 ### Prebuilt OCCTBridge (opt-in)
 
 The Objective-C++ bridge (16 files, ~62K lines) compiles from source by default. Consumers who
-don't need to edit it can opt into a prebuilt binary instead — set `OCCTSWIFT_BRIDGE_PREBUILT=1`.
+don't need to edit it could opt into a prebuilt binary instead. That switch is **disabled on the
+v2.0.0 line** (see [the guide](docs/guides/prebuilt-bridge.md)); the bridge always builds from source.
 See [docs/guides/prebuilt-bridge.md](docs/guides/prebuilt-bridge.md).
 
 ## Documentation

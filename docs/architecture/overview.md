@@ -224,7 +224,7 @@ OCCTSwift/
 │           └── OCCTBridge.mm   # OCCT C++ implementations
 ├── Libraries/
 │   ├── OCCT.xcframework/       # Pre-built OCCT 8.0.0-rc5
-│   └── OCCTBridge.xcframework/ # Pre-built bridge (opt-in, see OCCTSWIFT_BRIDGE_PREBUILT)
+│   └── OCCTBridge.xcframework/ # Pre-built bridge (DISABLED on the v2.0.0 line)
 ├── Scripts/
 │   ├── build-occt.sh           # Build OCCT from source
 │   └── build-occtbridge.sh     # Build the prebuilt OCCTBridge.xcframework
