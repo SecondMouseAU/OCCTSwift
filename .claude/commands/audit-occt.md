@@ -1,12 +1,15 @@
 # Audit OCCT Wrapping Coverage
 
-Scan the OCCT headers in the xcframework against the functions already declared in `OCCTBridge.h` and produce a categorized gap report showing what remains to be wrapped.
+Scan the OCCT headers in the xcframework against the functions already declared across the bridge
+headers (`Sources/OCCTBridge/include/OCCTBridge*.h`) and produce a categorized gap report showing what remains to be wrapped.
 
 ## Instructions
 
 1. **Collect all OCCT header filenames** from `Libraries/OCCT.xcframework/macos-arm64/Headers/*.hxx`. Group them by module prefix (e.g., `BRepPrimAPI_`, `GeomFill_`, `ShapeFix_`, `GCPnts_`, etc.).
 
-2. **Collect all currently wrapped classes** by scanning `Sources/OCCTBridge/include/OCCTBridge.h` for OCCT class names referenced in comments and function names. Also scan `Sources/OCCTBridge/src/OCCTBridge.mm` `#include` directives to get the definitive list of OCCT classes already used.
+2. **Collect all currently wrapped classes** by scanning `Sources/OCCTBridge/include/OCCTBridge*.h`
+   (since #395 the declarations are spread across 15 domain headers; the umbrella `OCCTBridge.h`
+   keeps the class cross-reference index but only 2 function declarations)` for OCCT class names referenced in comments and function names. Also scan `Sources/OCCTBridge/src/OCCTBridge.mm` `#include` directives to get the definitive list of OCCT classes already used.
 
 3. **Classify each unwrapped header** into one of these tiers:
 
