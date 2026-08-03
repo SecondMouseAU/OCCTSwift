@@ -44,7 +44,7 @@ struct Issue484FaceFixContextTests {
         }
 
         // The call site under test. Before the fix this ran with a null Context(), which is the
-        // #317 null-deref on any kernel without Scripts/patches/0005.
+        // #317 null-deref on any kernel predating OCCT 8.0.1, which absorbed the carried patch 0005.
         guard let fixed = face.fixed(tolerance: 1e-6) else {
             Issue.record("Face.fixed returned nil"); return
         }

@@ -443,7 +443,8 @@ struct StressUnifySameDomainNullPCurveTests {
     // BRep_Tool::CurveOnSurface(...)->D1()/->Value() to disambiguate between multiple
     // candidate next-edges without checking whether the returned pcurve handle was null —
     // an edge with no pcurve on the current reference face (the common case for a raw
-    // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel (patch 0013).
+    // mesh-sewn solid) SIGSEGVs deterministically. Fixed in the kernel: carried as patch 0013,
+    // retired at the OCCT 8.0.1 re-pin once it shipped upstream as OCCT#1392.
     @Test func unifySameDomainOnMeshSewnSolidWithMissingPCurve() throws {
         let fixtureURL = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

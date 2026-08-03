@@ -8,8 +8,9 @@ import Testing
 /// override, but `IntegrationOrder` then read the pole count through a completely different,
 /// non-virtual accessor (`BAC.Curve().Curve()`) that is null whenever there is no 3D curve, and
 /// dereferenced the null down-cast. Fixed by using the adaptor's own (correctly-dispatching)
-/// `NbPoles()` instead (`Scripts/patches/0006-*`, upstream Open-Cascade-SAS/OCCT#1381 (repro) /
-/// OCCT#1382 (fix)).
+/// `NbPoles()` instead. The carried patch `0006` is **retired**: the fix shipped upstream as
+/// Open-Cascade-SAS/OCCT#1382 (repro Open-Cascade-SAS/OCCT#1381) and arrives with the OCCT 8.0.1
+/// re-pin, so this test now guards the kernel's own fix rather than ours.
 ///
 /// This exact shape is `Shape.sew(shapes:tolerance:)`'s real output sewing two adjacent (but not
 /// edge-sharing) mesh-derived planar candidate faces from OCCTReconstruct's plane-select spike
