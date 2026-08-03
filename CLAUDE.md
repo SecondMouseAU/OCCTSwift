@@ -115,8 +115,8 @@ upstream C++ API the bridge wraps, not the Swift surface.
 
 ```
 Sources/OCCTSwift/          Swift public API (Shape, Wire, Surface, Face, Edge, Curve3D, Mesh, etc.)
-Sources/OCCTBridge/include/ C function declarations (single file: OCCTBridge.h)
-Sources/OCCTBridge/src/     Objective-C++ implementations (single file: OCCTBridge.mm)
+Sources/OCCTBridge/include/ C function declarations (16 files: OCCTBridge.h umbrella + 15 per-domain headers, #395)
+Sources/OCCTBridge/src/     Objective-C++ implementations (16 files, one per domain, matching the headers)
 Libraries/OCCT.xcframework  Pre-built OCCT static library (arm64 macOS/iOS)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (see "Test Layout")
 Scripts/build-occt.sh       Builds OCCT.xcframework from source
@@ -128,8 +128,8 @@ Opaque handle types (`OCCTShapeRef`, `OCCTWireRef`, `OCCTFaceRef`, `OCCTEdgeRef`
 
 ### Adding a New Wrapped Operation
 
-1. **Bridge header** (`OCCTBridge.h`): Add C function declaration
-2. **Bridge impl** (`OCCTBridge.mm`): Add Objective-C++ implementation calling OCCT C++ API
+1. **Bridge header** (the matching `Sources/OCCTBridge/include/OCCTBridge_<Domain>.h`): Add C function declaration
+2. **Bridge impl** (the matching `Sources/OCCTBridge/src/OCCTBridge_<Domain>.mm`): Add Objective-C++ implementation calling OCCT C++ API
 3. **Swift wrapper** (appropriate `.swift` file): Add public method/static factory
 4. **Test**: Add `@Suite`/`@Test` to the matching `Tests/OCCT<Domain>Tests/` target (see "Test Layout")
 

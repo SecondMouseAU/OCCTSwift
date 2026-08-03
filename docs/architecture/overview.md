@@ -219,9 +219,10 @@ OCCTSwift/
 │   │   └── Exporter.swift      # Multi-format export
 │   └── OCCTBridge/             # Objective-C++ bridge
 │       ├── include/
-│       │   └── OCCTBridge.h    # C function declarations
+│       │   ├── OCCTBridge.h                  # Umbrella: handle typedefs, class index, imports (#395)
+│       │   └── OCCTBridge_<Domain>.h         # 15 per-domain C declaration files
 │       └── src/
-│           └── OCCTBridge.mm   # OCCT C++ implementations
+│           └── OCCTBridge_<Domain>.mm        # 16 files (15 domains + OCCTBridge.mm), OCCT C++ implementations
 ├── Libraries/
 │   ├── OCCT.xcframework/       # Pre-built OCCT 8.0.0-rc5
 │   └── OCCTBridge.xcframework/ # Pre-built bridge (DISABLED on the v2.0.0 line)
@@ -272,19 +273,19 @@ scene.rootNode.addChildNode(node)
 
 ### Adding New Shape Operations
 
-1. Add C function declaration to `OCCTBridge.h`
-2. Implement in `OCCTBridge.mm` using OCCT classes
+1. Add C function declaration to the matching `OCCTBridge_<Domain>.h` (e.g. `OCCTBridge_Modeling.h`)
+2. Implement in the matching `OCCTBridge_<Domain>.mm` using OCCT classes
 3. Add Swift wrapper method to `Shape.swift`
 4. Add tests and documentation
 
 ### Adding New Export Formats
 
-1. Add export function to `OCCTBridge.h`
+1. Add export function to `OCCTBridge_IO.h`
 2. Implement using OCCT's TKDExxx modules
 3. Add Swift wrapper to `Exporter.swift`
 
 ### Adding New Wire/Curve Types
 
-1. Add creation function to `OCCTBridge.h`
+1. Add creation function to the matching `OCCTBridge_<Domain>.h`
 2. Implement using OCCT's Geom/BRepBuilderAPI classes
 3. Add Swift factory method to `Wire.swift`

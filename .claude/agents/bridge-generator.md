@@ -13,16 +13,23 @@ You will receive header analysis output (from the occt-header-analyzer agent or 
 ## Process
 
 Read the existing code files to match current patterns exactly:
-- `Sources/OCCTBridge/include/OCCTBridge.h` — for declaration style, struct patterns, nullability annotations
-- `Sources/OCCTBridge/src/OCCTBridge.mm` — for implementation patterns, try/catch, TopExp_Explorer usage
+- `Sources/OCCTBridge/include/OCCTBridge_<Domain>.h` for declaration style, struct patterns,
+  nullability annotations. Pick the domain header matching the `.mm` the implementation goes in.
+- `Sources/OCCTBridge/src/OCCTBridge_<Domain>.mm` for implementation patterns, try/catch,
+  TopExp_Explorer usage
 - `Sources/OCCTSwift/Shape.swift` (and other Swift files in that directory) — for Swift wrapper patterns
 - `Tests/OCCTSwiftTests/ShapeTests.swift` — for test patterns
 
 Then generate four code blocks, each clearly labeled.
 
-### Artifact 1: Bridge Header Declarations (`OCCTBridge.h`)
+### Artifact 1: Bridge Header Declarations (`OCCTBridge_<Domain>.h`)
 
-Insert before the closing `#ifdef __cplusplus` / `}` / `#endif` block.
+**Do NOT put declarations in the umbrella `OCCTBridge.h`.** Since #395 it holds only the OCCT class
+cross-reference index, the handle typedefs, and the 16 `#import`s. Declarations live in the domain
+header matching the `.mm` that defines them, and
+`python3 Scripts/derive-bridge-header-split.py --verify` fails if a symbol lands anywhere else.
+
+Append to the end of the chosen domain header, inside its include guard.
 
 **Pattern rules:**
 - Group by OCCT class with a `// --- ClassName ---` comment
@@ -53,7 +60,7 @@ OCCTPointFaceExtremaResult OCCTBRepExtremaExtPF(double px, double py, double pz,
                                                  OCCTShapeRef shape, int32_t faceIndex);
 ```
 
-### Artifact 2: Bridge Implementation (`OCCTBridge.mm`)
+### Artifact 2: Bridge Implementation (`OCCTBridge_<Domain>.mm`)
 
 **Pattern rules:**
 - Add `#include` directives at the top of the file (grouped with existing includes)
@@ -167,10 +174,10 @@ struct BRepExtremaExtPFTests {
 Produce four clearly labeled code blocks:
 
 ```
-## 1. Bridge Header Additions (OCCTBridge.h)
-{code to insert before the closing #ifdef __cplusplus block}
+## 1. Bridge Header Additions (OCCTBridge_<Domain>.h)
+{code to append inside the domain header's include guard}
 
-## 2. Bridge Implementation Additions (OCCTBridge.mm)
+## 2. Bridge Implementation Additions (OCCTBridge_<Domain>.mm)
 ### New #include directives
 {includes to add at top}
 ### New function implementations

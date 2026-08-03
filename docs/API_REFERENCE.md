@@ -1229,8 +1229,8 @@ OCCT has thousands of classes. Some notable ones not yet exposed:
 
 To wrap additional OCCT functionality, you need to modify three files:
 
-1. **`Sources/OCCTBridge/include/OCCTBridge.h`** - Add C function declaration
-2. **`Sources/OCCTBridge/src/OCCTBridge.mm`** - Implement using OCCT C++ API
+1. **`Sources/OCCTBridge/include/OCCTBridge_<Domain>.h`** - Add C function declaration
+2. **`Sources/OCCTBridge/src/OCCTBridge_<Domain>.mm`** - Implement using OCCT C++ API
 3. **`Sources/OCCTSwift/Shape.swift`** (or Wire.swift) - Add Swift wrapper
 
 **See [docs/EXTENDING.md](docs/EXTENDING.md) for the complete guide** with:

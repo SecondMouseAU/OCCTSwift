@@ -140,9 +140,9 @@ try Exporter.writeGLB(shape: model, to: glbURL)
 
 ```
 Sources/OCCTSwift/          Swift public API
-Sources/OCCTBridge/include/ C function declarations (OCCTBridge.h)
-Sources/OCCTBridge/src/     Objective-C++ implementations (OCCTBridge.mm)
-Libraries/OCCT.xcframework  Pre-built OCCT 8.0.0p1 static library (arm64)
+Sources/OCCTBridge/include/ C function declarations (15 per-domain headers + a slim OCCTBridge.h umbrella)
+Sources/OCCTBridge/src/     Objective-C++ implementations (16 per-domain .mm files)
+Libraries/OCCT.xcframework  Pre-built OCCT 8.0.1 static library (arm64)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```
 

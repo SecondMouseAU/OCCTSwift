@@ -176,7 +176,8 @@ OCCTSwift maps errors to:
 
 ## Bridge Layer Naming
 
-The C bridge functions (in `OCCTBridge.h` / `OCCTBridge.mm`) follow their own conventions:
+The C bridge functions (declared in `OCCTBridge_<Domain>.h`, defined in the matching
+`OCCTBridge_<Domain>.mm`) follow their own conventions:
 
 | Pattern | Example |
 |---|---|
