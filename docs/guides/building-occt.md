@@ -288,7 +288,7 @@ OCCT_RC=""          # Pre-release suffix (rc4, beta2, p1); empty for a GA tag li
 ```
 
 Then **delete `Libraries/occt-src`**. The script reuses an existing tree only when its `HEAD` is at
-the tag these variables name, and aborts otherwise — editing the version without removing the tree
+the tag these variables name, and aborts otherwise. Editing the version without removing the tree
 used to build the previous kernel silently and package it under the new version's number.
 
 Make executable:

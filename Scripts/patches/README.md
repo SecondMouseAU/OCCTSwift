@@ -316,14 +316,14 @@ The writeups are kept because for several of these they are the only record of t
 this depth; read them as history, not as a description of anything the build still does.
 
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge — and for `0001` it did.
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
 
 ## 0001-ShapeFix_Face-guard-non-face-context-replacement-263.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1323](https://github.com/Open-Cascade-SAS/OCCT/pull/1323); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1323](https://github.com/Open-Cascade-SAS/OCCT/pull/1323); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
-**Equivalence check — the one that is not equivalent.** Upstream's merged form is *broader* than the one carried here: it guards `anApplied.IsNull() || anApplied.ShapeType() != TopAbs_FACE`, where this patch checked only the shape type. A face an earlier fix had *removed* rather than replaced would therefore have called `ShapeType()` on a null shape here. Retiring this patch is an upgrade, not a like-for-like swap — which is the reason every retirement gets diffed against its as-merged form rather than assumed identical because the PR says "merged".
+**Equivalence check, the one that is not equivalent.** Upstream's merged form is *broader* than the one carried here: it guards `anApplied.IsNull() || anApplied.ShapeType() != TopAbs_FACE`, where this patch checked only the shape type. A face an earlier fix had *removed* rather than replaced would therefore have called `ShapeType()` on a null shape here. Retiring this patch is an upgrade, not a like-for-like swap. That is the reason every retirement gets diffed against its as-merged form rather than assumed identical because the PR says "merged".
 
 
 **Fixes the upstream OCCT crash behind [#263](https://github.com/SecondMouseAU/OCCTSwift/issues/263)**
@@ -364,7 +364,7 @@ Until the xcframework is rebuilt with this patch, the in-wrapper guard shipped i
 
 ## 0002-STEPControl_Writer-initialize-missing-shape-processing-1334.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1334](https://github.com/Open-Cascade-SAS/OCCT/pull/1334); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
@@ -400,9 +400,9 @@ every full run because `OCCTIOTests` reads a STEP first.
 
 ## 0003-TopOpeBRep-non-reentrant-globals-fillet-298.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1374](https://github.com/Open-Cascade-SAS/OCCT/pull/1374); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
-**Equivalence check.** Identical symbol for symbol — all five files, the same declarations become `thread_local`. Only the comment wording differs (upstream prefers one-liners).
+**Equivalence check.** Identical symbol for symbol: all five files, the same declarations become `thread_local`. Only the comment wording differs (upstream prefers one-liners).
 
 
 **Fixes the upstream OCCT thread-safety defect behind [#298](https://github.com/SecondMouseAU/OCCTSwift/issues/298)** — concurrent `BRepFilletAPI_MakeFillet` builds on independent shapes corrupt each other.
@@ -424,14 +424,14 @@ This is the same class of fix, in the same engine, as [Open-Cascade-SAS/OCCT#118
 
 ## 0004-ShapeAnalysis_FreeBounds-init-owires-empty-input-310.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1377](https://github.com/Open-Cascade-SAS/OCCT/pull/1377); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1377](https://github.com/Open-Cascade-SAS/OCCT/pull/1377); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
-**Equivalence check.** Identical: the same `owires = new NCollection_HSequence<TopoDS_Shape>;` at the same place, upstream adding only a trailing comment. Note that `V8_0_1` rewrote far more of this function than this patch or `0007` did — see the carried-forward note below.
+**Equivalence check.** Identical: the same `owires = new NCollection_HSequence<TopoDS_Shape>;` at the same place, upstream adding only a trailing comment. Note that `V8_0_1` rewrote far more of this function than this patch or `0007` did; see the carried-forward note below.
 
 **Carried forward into 8.0.1 triage.** `V8_0_1` rewrote `connectWiresToWiresImpl` well beyond this
 one-line fix and `0007`'s: the seed wire is now the first wire that *has* edges rather than
 unconditionally wire 1, zero-edge non-manifold wires are appended straight to the output, the
-function returns early when no wire has any edges, and `isUsedManifoldMode` is gone entirely —
+function returns early when no wire has any edges, and `isUsedManifoldMode` is gone entirely,
 taking with it the separate vertex-map closure detection that non-manifold wires used to get, so
 `ShapeExtend_WireData` is now always constructed in manifold mode. `ConnectEdgesToWires` also skips
 INTERNAL and EXTERNAL edges outright and remaps the reversed-orientation write-back through an
@@ -462,7 +462,7 @@ Reported and isolated at SecondMouseAU/OCCTSwift#310; a repro-only report was fi
 
 ## 0005-ShapeFix_Face-guard-null-context-FixPeriodicDegenerated-317.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1380](https://github.com/Open-Cascade-SAS/OCCT/pull/1380); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1380](https://github.com/Open-Cascade-SAS/OCCT/pull/1380); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the same `if (!Context().IsNull())` guard around the same `Replace()`, differing only by our `// #317:` comment line.
 
@@ -488,7 +488,7 @@ Reported and isolated at SecondMouseAU/OCCTSwift#317; filed upstream as [Open-Ca
 
 ## 0006-BRepGProp_EdgeTool-use-adaptor-NbPoles-curve-on-surface-318.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1382](https://github.com/Open-Cascade-SAS/OCCT/pull/1382); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1382](https://github.com/Open-Cascade-SAS/OCCT/pull/1382); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
@@ -507,7 +507,7 @@ Reported and isolated at SecondMouseAU/OCCTSwift#318; filed upstream as [Open-Ca
 
 ## 0007-ShapeAnalysis_FreeBounds-reset-lwire-skipped-loop-323.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
@@ -536,7 +536,7 @@ Reported upstream as [OCCT#1330](https://github.com/Open-Cascade-SAS/OCCT/issues
 
 ## 0008-Geom_BSplineCurve-O1-PeriodicNormalization-323.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/pull/1329); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
@@ -555,7 +555,7 @@ Filed upstream by OCCT as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/p
 
 ## 0009-StepData_StepWriter-split-oversized-string-323.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1318](https://github.com/Open-Cascade-SAS/OCCT/pull/1318); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
 **Equivalence check.** Identical: the carried patch reverse-applies cleanly against `V8_0_1`.
 
@@ -572,9 +572,9 @@ Filed upstream by OCCT as [OCCT#1329](https://github.com/Open-Cascade-SAS/OCCT/p
 
 ## 0013-ShapeUpgrade_UnifySameDomain-guard-null-pcurve-348.patch
 
-**RETIRED 2026-08-03 — the `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1392](https://github.com/Open-Cascade-SAS/OCCT/pull/1392); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
+**RETIRED 2026-08-03. The `.patch` file is deleted.** Shipped upstream in OCCT `V8_0_1` as [OCCT#1392](https://github.com/Open-Cascade-SAS/OCCT/pull/1392); the pin moved from `V8_0_0_p1` to `V8_0_1` in the same change.
 
-**Equivalence check.** Identical: all five guards are present verbatim, our comment strings included. Upstream then went further in the same file — see the carried-forward note below.
+**Equivalence check.** Identical: all five guards are present verbatim, our comment strings included. Upstream then went further in the same file; see the carried-forward note below.
 
 **Carried forward into 8.0.1 triage.** `V8_0_1` added null-pcurve guards beyond these five, in
 `getCurveParams`, `FindClosestPoints` and `TransformPCurves`, and changed

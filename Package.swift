@@ -36,7 +36,7 @@ let occtTarget: Target = useLocalBinary
     // v1.15.18 rebuild: OCCT 8.0.0p1 + carried patches 0001-0016.
     //
     // NOTE: this URL is one kernel behind the source tree. Scripts/build-occt.sh now builds OCCT
-    // V8_0_1, which absorbed ten of those patches (0001-0009 and 0013 — their files are deleted,
+    // V8_0_1, which absorbed ten of those patches (0001-0009 and 0013; their files are deleted,
     // their writeups kept in Scripts/patches/README.md under "Retired patches"). The eleven that
     // survive are 0010 (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319),
     // 0011 (XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override, #341/#363), 0012

@@ -11,7 +11,7 @@ Documents breaking changes and migration steps for each OCCT version upgrade.
 
 | OCCTSwift | OCCT Version | Date | Notes |
 |-----------|-------------|------|-------|
-| Unreleased | 8.0.1 | Aug 2026 | Current source pin — first 8.0 maintenance release; retired ten carried patches |
+| Unreleased | 8.0.1 | Aug 2026 | Current source pin: first 8.0 maintenance release, retired ten carried patches |
 | v1.15.x | 8.0.0p1 | Jun 2026 | Hot-patch tag; the kernel every v1.15–v1.17 release was built from |
 | v1.0.0 | 8.0.0 GA | May 2026 | SemVer-stable; PointSetLib removed, EdgeRegularity consolidated |
 | v0.170.x | 8.0.0-beta2 | May 2026 | Last pre-GA release |
@@ -48,7 +48,7 @@ Nine came back unchanged. `0001` did not: upstream's merged form also guards a *
 per-patch verdicts are in [`Scripts/patches/README.md`](../Scripts/patches/README.md) under
 "Retired patches".
 
-Patch numbers are **not** reused — the carried sequence now reads 0010–0012, 0014–0021, and the
+Patch numbers are **not** reused: the carried sequence now reads 0010-0012, 0014-0021, and the
 gaps are the retirements.
 
 ### Behaviour changes to watch
@@ -63,7 +63,7 @@ Gordon-family tests assert only status ordinals and never build a surface.
 | [#1408](https://github.com/Open-Cascade-SAS/OCCT/pull/1408) + the merged form of [#1331](https://github.com/Open-Cascade-SAS/OCCT/pull/1331) | `ShapeAnalysis_FreeBounds` skips INTERNAL/EXTERNAL edges, seeds from the first wire that has edges, and drops `isUsedManifoldMode` along with its separate non-manifold closure detection | `Shape.freeBounds*` |
 | [#1402](https://github.com/Open-Cascade-SAS/OCCT/pull/1402) | `BRep_Tool::CurveOnPlane` validates the edge range and returns a **null pcurve** where p1 threw a catchable `Geom_TrimmedCurve::parameters out of range` | any planar-face pcurve read |
 | [#1335](https://github.com/Open-Cascade-SAS/OCCT/pull/1335) | `GeomFill_Gordon` rework: exact rational reparametrization, preserved homogeneous weights, stronger deviation validation, grid-evaluator fallback | `Surface.gordon(profiles:guides:tolerance:)` and `Surface.gordonReport(...)` |
-| [#1407](https://github.com/Open-Cascade-SAS/OCCT/pull/1407) | `ChFi3d_Builder::StartSol` hardened — invalid chamfer input now ends with `IsDone() == false` instead of crashing | the chamfer family |
+| [#1407](https://github.com/Open-Cascade-SAS/OCCT/pull/1407) | `ChFi3d_Builder::StartSol` hardened, so invalid chamfer input now ends with `IsDone() == false` instead of crashing | the chamfer family |
 | [#1338](https://github.com/Open-Cascade-SAS/OCCT/pull/1338) | `BRepMesh_BaseMeshAlgo` creates seam constraints only for the current wire occurrence's pcurve | meshing at periodic seams |
 | [#1375](https://github.com/Open-Cascade-SAS/OCCT/pull/1375) / [#1373](https://github.com/Open-Cascade-SAS/OCCT/pull/1373) | `BRepCheck_Face::ClassifyWires` and `GeomLib_CheckCurveOnSurface` fast paths, both claimed result-neutral | validity checks, boolean workloads |
 
@@ -196,7 +196,7 @@ cd ../Scripts && ./build-occt.sh
 
 Removing `occt-src` is the load-bearing step, not housekeeping. `build-occt.sh` reuses an existing
 tree only when its `HEAD` is at the tag the script names, and **aborts** otherwise rather than
-building the wrong kernel under the new version's name — which is what it silently did until the
+building the wrong kernel under the new version's name, which is what it silently did until the
 8.0.1 re-pin, when it tested only whether the directory existed. If the abort fires, check
 `git -C Libraries/occt-src status --porcelain` for work worth keeping (a diagnostic probe from an
 investigation, a half-written patch) before deleting.

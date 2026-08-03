@@ -8,7 +8,7 @@ OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0
 
 **Two OCCT versions are in play until v2.0.0 ships.** `Scripts/build-occt.sh` builds `V8_0_1`, but
 `Package.swift`'s `url:` still resolves the v1.15.18 release asset, which is `V8_0_0_p1` + patches
-0001-0016 — the `url:`/`checksum:` bump belongs to the release commit (#512). So a clean checkout
+0001-0016. The `url:`/`checksum:` bump belongs to the release commit (#512), so a clean checkout
 with no local `Libraries/` gets the **old** kernel. Build locally and use `OCCTSWIFT_LOCAL=1` to
 work against the new one, and read `kernel-integration.yml` rather than `ci.yml`'s macOS job for
 the real signal (#585). See [`docs/occt-upgrades.md`](docs/occt-upgrades.md#p1-to-801-unreleased).
@@ -107,7 +107,7 @@ generated from the repo's `dox/` guides) plus the wiki and headers are available
 as **`/open-cascade-sas/occt`**. Query it when wrapping new ops or checking C++ API usage
 (e.g. `BRepAlgoAPI` options, `ThruSections`, healing) — it complements `/audit-occt` and the
 header-analyzer agent. **Caveats:** context7's snapshot is the **occt-7.9** branch (+ some
-`master`), while this project pins **OCCT 8.0.1** — for version-sensitive details, the pinned
+`master`), while this project pins **OCCT 8.0.1**. For version-sensitive details, the pinned
 headers in `Libraries/OCCT.xcframework/.../Headers` are the source of truth. It documents the
 upstream C++ API the bridge wraps, not the Swift surface.
 

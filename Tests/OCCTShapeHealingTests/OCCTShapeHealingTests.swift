@@ -468,7 +468,7 @@ struct FreeBoundsTests {
     // Each disjoint face's boundary is entirely consumed by its own closed-loop detection with
     // nothing left over, which is exactly what tripped the kernel's uninitialized-handle bug (fixed
     // upstream as OCCT#1377, carried as patch 0004 until the OCCT 8.0.1 re-pin absorbed
-    // it). No #expect needed for the crash itself — a regression
+    // it). No #expect needed for the crash itself: a regression
     // would abort the whole test process; reaching the assertions below is the real assertion.
     @Test("Disjoint faces in a compound don't crash free-bounds analysis")
     func issue310DisjointFacesFreeBounds() {

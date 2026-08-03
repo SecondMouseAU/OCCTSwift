@@ -465,7 +465,7 @@ struct StressEvalAndUpdateTolNullPCurveTests {
     // OCCTBRepToolsEvalAndUpdateTol fetched c3d, c2d and surf but guarded only c3d and surf,
     // then handed c2d to BRepTools::EvalAndUpdateTol, which dereferences it unconditionally at
     // `if (!C2d->IsPeriodic())`. A null pcurve is an OS signal, so the bridge's catch(...) cannot
-    // absorb it — the same uncatchable family as #263/#310/#317/#318/#348.
+    // absorb it: the same uncatchable family as #263/#310/#317/#318/#348.
     //
     // The face has to be NON-planar. For a plane, BRep_Tool::CurveOnSurface falls through to
     // CurveOnPlane, which projects the 3D curve and always yields a pcurve; only a curved support
@@ -487,7 +487,7 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         for face in cylinderFaces {
             let tol = Shape.evalAndUpdateTolerance(edge: boxEdges[0], face: face)
             // The contract for "nothing to evaluate against this face" is the edge's own
-            // tolerance, which is finite and non-negative — not a fabricated zero.
+            // tolerance, which is finite and non-negative, not a fabricated zero.
             #expect(tol.isFinite)
             #expect(tol >= 0)
         }

@@ -19,7 +19,7 @@ All notable changes to OCCTSwift.
 
 The source pin moves from `V8_0_0_p1` to [`V8_0_1`](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8.0.1)
 (2026-07-30), the first maintenance release in the 8.0 series. Against p1 it is a clean
-fast-forward — 23 commits, 74 files, nothing reverted — and it carries **no API or ABI break**:
+fast-forward (23 commits, 74 files, nothing reverted) and it carries **no API or ABI break**:
 the only public header in the whole diff is `ShapeAnalysis_FreeBounds.hxx`, changed by one comment
 line. Nothing to migrate for the OCCT API itself.
 
@@ -42,9 +42,47 @@ Nine came back unchanged. `0001` did not: upstream's merged form also guards a *
 latent null dereference our own patch had. Per-patch verdicts are in
 [`Scripts/patches/README.md`](../Scripts/patches/README.md) under "Retired patches".
 
-Patch numbers are not reused — the carried sequence now reads 0010-0012, 0014-0021, and the gaps
+Patch numbers are not reused: the carried sequence now reads 0010-0012, 0014-0021, and the gaps
 are the retirements. Renumbering would have repointed every citation in `CLAUDE.md`, `docs/`,
 closed issues and `Scripts/repro/` at a different fix.
+
+#### Behaviour changes 8.0.1 brings, measured
+
+The full suite is green on the new kernel (**5313 tests, 1400 suites, 0 failures**), but a green
+suite is not evidence for two of these, because no test in the repo uses INTERNAL/EXTERNAL edge
+orientation and [#645](https://github.com/SecondMouseAU/OCCTSwift/issues/645) records that the
+Gordon tests assert only status ordinals. Those two were probed directly. Tracked in
+[#654](https://github.com/SecondMouseAU/OCCTSwift/issues/654).
+
+- **`GeomFill_Gordon` was returning a 5% wrong surface, and 8.0.1 fixes it.** Handed the isocurves
+  of the surface it should reproduce, a rational network (quarter cylinder, r=5) deviated
+  **0.251262658** from its own input while reporting `IsDone`; it is now **2.6e-15**. The 45° sample
+  moves from `3.713203436` to `3.535533906`, which is exactly `5/√2`. A non-rational control was
+  already exact on both kernels, so only rational networks ever moved. Affects
+  `Surface.gordon(profiles:guides:tolerance:)` and `Surface.gordonReport(...)`. Evidence added to #645.
+- **`Shape.freeBounds*` and INTERNAL/EXTERNAL edges** ([#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655)).
+  `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` now skips them: a sequence of one INTERNAL edge
+  plus a square returns 1 wire where it returned 2, and a sequence of nothing but INTERNAL/EXTERNAL
+  edges returns 0 wires where it returned 1. The constructor path the `freeBounds*` family actually
+  calls does **not** move; the change is confined to the direct entry point.
+- **`BRep_Tool::CurveOnPlane` fails differently.** An out-of-domain, inverted or zero-length edge
+  range now yields a null pcurve where 8.0.0p1 threw a catchable
+  `Geom_TrimmedCurve::parameters out of range`. All four probed cases changed.
+- **No movement** from the `BRepMesh` periodic-seam fix, the `ChFi3d_Builder::StartSol` hardening,
+  or the `BRepCheck_Face`/`GeomLib_CheckCurveOnSurface` fast paths. For those three the green suite
+  *is* evidence, since they are well covered.
+
+#### Fixed: `evalAndUpdateTolerance` handed OCCT an unguarded null pcurve
+
+`Shape.evalAndUpdateTolerance(edge:face:)` was an uncatchable SIGSEGV whenever the edge had no
+pcurve on the given face and that face was not planar, which is routine for mesh-sewn topology. The bridge
+guarded the 3D curve and the surface but passed the pcurve straight into
+`BRepTools::EvalAndUpdateTol`, which dereferences it at `if (!C2d->IsPeriodic())`.
+
+Fixed here rather than deferred because the re-pin **adds a second route to it**: with #1402
+returning null instead of throwing, the crash became reachable on a planar face too, where 8.0.0p1
+returned a safe `0.0`. Shipping the absorb without the guard would have introduced a new crash
+path. [#656](https://github.com/SecondMouseAU/OCCTSwift/issues/656).
 
 #### `build-occt.sh` could not change OCCT version
 
