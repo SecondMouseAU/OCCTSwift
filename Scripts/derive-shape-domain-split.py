@@ -21,6 +21,11 @@ Roughly four fifths map cleanly. The rest split two ways and both matter:
   UNTESTED   exercised by nothing. Place by behaviour, and treat the absence as worth reporting:
              an untested public method on the primary type is a finding in its own right.
 
+The coverage signal is textual co-occurrence, not a call graph: a target "exercises" a member if
+`.memberName` appears anywhere in its sources. Common names (`.count`, `.area`) therefore collide
+across types, so a suggestion is a starting point and not an answer. That is the whole framing of
+this script, but it is worth stating rather than leaving a reader to infer it from a wrong result.
+
 Exits 2 if run from anywhere but the repo root, matching the other scripts (#625).
 """
 
@@ -31,8 +36,15 @@ import os
 import re
 import sys
 
-SHAPE = "Sources/OCCTSwift/Shape.swift"
+SOURCES = "Sources/OCCTSwift"
 TESTS = "Tests"
+
+# A word boundary, not a prefix. `startswith("extension Shape")` also matches `extension ShapeAxis`
+# and `extension ShapeMeasurements`, both of which are real types here, and would silently fold
+# their members into Shape's census. No such extension exists in this file today; the point is that
+# it would be counted wrongly with no error, which is the same silent-contamination failure the
+# depth check below was added to fix.
+EXTENSION_SHAPE = re.compile(r"^extension Shape\b")
 
 MEMBER = re.compile(
     r"^\s+(?:public |internal |private |fileprivate |)?(?:static |)?"
@@ -44,8 +56,41 @@ NESTED = re.compile(r"^\s+(?:public |internal |private |fileprivate |)?(?:final 
 DOMAIN_FREE = {"Stress", "Integration", "Thread", "Misc", "Foundation"}
 
 
-def shape_members():
-    """Direct members of a top-level `extension Shape` block.
+def strip_block_comments(line, in_block):
+    """Return (code outside any block comment, whether a block comment is still open).
+
+    Mirrors what the compiler does with a same-line block comment rather than dropping the whole
+    physical line. Skipping the line is what the first version did, and it silently lost any code
+    sharing a line with the closing `*/`: both the member on that line and, if its braces did not
+    happen to balance, every later member in the block, because the depth counter desynced.
+    """
+    out = []
+    while line:
+        if in_block:
+            close = line.find("*/")
+            if close == -1:
+                return "".join(out), True
+            line = line[close + 2:]
+            in_block = False
+        else:
+            open_at = line.find("/*")
+            if open_at == -1:
+                out.append(line)
+                return "".join(out), False
+            out.append(line[:open_at])
+            line = line[open_at + 2:]
+            in_block = True
+    return "".join(out), in_block
+
+
+def shape_members(paths=None):
+    """Direct members of every top-level `extension Shape` block under Sources/OCCTSwift.
+
+    Scans the whole directory rather than one file. It used to hardcode Shape.swift, which was
+    right until #660 moved every extension out of it into Shape+<Domain>.swift: after that the
+    script reported 0 members and said nothing, which is the same silent-wrong-answer this file
+    keeps being fixed for. #662 still has 2,489 lines of `extension Shape` to move out of
+    Document.swift, so the census needs to keep working across files.
 
     The depth check is load-bearing. Without it the regex also matches local `var`s inside function
     bodies and the fields of nested result types, which is how the first version of this script
@@ -55,27 +100,40 @@ def shape_members():
     Comment-only lines are excluded from brace counting: doc comments carry multi-line Swift
     examples whose braces do not balance line by line, which throws the depth off.
     """
+    if paths is None:
+        paths = sorted(glob.glob(os.path.join(SOURCES, "*.swift")))
+    names = set()
+    for path in paths:
+        names |= _members_in_file(path)
+    return sorted(names)
+
+
+def _members_in_file(path):
     names, depth, inside, nested_until = set(), 0, False, None
-    for line in open(SHAPE, errors="ignore"):
-        if line.startswith("extension Shape"):
+    in_block_comment = False
+    for line in open(path, errors="ignore"):
+        if EXTENSION_SHAPE.match(line):
             inside, depth, nested_until = True, 0, None
         if not inside:
             continue
-        stripped = line.lstrip()
-        is_comment = stripped.startswith("//")
-        if not is_comment:
-            if nested_until is None and NESTED.match(line):
+        # Reduce the line to the code a compiler would see. Doc comments here carry multi-line
+        # Swift examples whose braces do not balance line by line, and a `/* */` span does the
+        # same, so both are removed before anything counts braces or matches a declaration.
+        code, in_block_comment = strip_block_comments(line, in_block_comment)
+        stripped = code.lstrip()
+        if stripped and not stripped.startswith("//"):
+            if nested_until is None and NESTED.match(code):
                 nested_until = depth  # everything deeper belongs to the nested type
             elif depth == 1:
-                m = MEMBER.match(line)
+                m = MEMBER.match(code)
                 if m:
                     names.add(m.group(1))
-            depth += line.count("{") - line.count("}")
+            depth += code.count("{") - code.count("}")
             if nested_until is not None and depth <= nested_until:
                 nested_until = None
-            if depth <= 0 and line.startswith("}"):
+            if depth <= 0 and stripped.startswith("}"):
                 inside = False
-    return sorted(names)
+    return names
 
 
 def test_corpus():
@@ -105,6 +163,10 @@ def classify(members, corpus):
 
 
 SELF_TEST_FIXTURE = """\
+extension ShapeAxis {
+    public func notOnShapeAtAll() {}
+}
+
 extension Shape {
     /// A doc comment whose example braces do not balance on one line:
     ///     if x {
@@ -116,7 +178,21 @@ extension Shape {
         return aLocalVariable
     }
 
+    /*
+       A block comment carrying an UNMATCHED brace, which is what actually corrupts a depth
+       counter that does not skip block comments: {
+    */
     public var realProperty: Int { 0 }
+
+    /* a one-liner sharing its line with code */ public func rightAfterClose() -> Int { 0 }
+
+    /* a span whose close shares a line with a
+       multi-line body */ public func spanThenBody() -> Int {
+        let n = 1
+        return n
+    }
+
+    public func afterTheSpan() {}
 
     public struct NestedResult {
         public var notAShapeMember: Double
@@ -128,23 +204,39 @@ extension Shape {
 # Only the two direct members belong to Shape. The other three names are the exact contamination
 # the first version of this script shipped: a local `var` inside a function body, and the fields of
 # a nested result type. It reported 557 members when the real figure was 446.
-SELF_TEST_EXPECTED = {"realMember", "realProperty"}
-SELF_TEST_REJECTED = {"aLocalVariable", "notAShapeMember", "alsoNotAShapeMember"}
+# rightAfterClose / spanThenBody / afterTheSpan cover the review finding on #680: closing a block
+# comment with `continue` dropped the whole physical line, so code sharing a line with `*/` was
+# lost, and an unbalanced brace on that line desynced depth for every later member too.
+SELF_TEST_EXPECTED = {
+    "realMember",
+    "realProperty",
+    "rightAfterClose",
+    "spanThenBody",
+    "afterTheSpan",
+}
+# Each rejection is a bug this script has actually had or was one edit away from having:
+#   aLocalVariable / notAShapeMember / alsoNotAShapeMember  no depth check (shipped, 557 vs 446)
+#   notOnShapeAtAll                                          `startswith` matched extension ShapeAxis
+# The unbalanced block comment above guards the third: `//`-only comment detection let a `/* */`
+# span throw off brace depth, the same way doc comments did before that was fixed.
+SELF_TEST_REJECTED = {
+    "aLocalVariable",
+    "notAShapeMember",
+    "alsoNotAShapeMember",
+    "notOnShapeAtAll",
+}
 
 
 def self_test():
     import tempfile
 
-    global SHAPE
-    original = SHAPE
     with tempfile.NamedTemporaryFile("w", suffix=".swift", delete=False) as handle:
         handle.write(SELF_TEST_FIXTURE)
-        SHAPE = handle.name
+        fixture = handle.name
     try:
-        found = set(shape_members())
+        found = set(shape_members([fixture]))
     finally:
-        os.unlink(SHAPE)
-        SHAPE = original
+        os.unlink(fixture)
 
     missing = SELF_TEST_EXPECTED - found
     leaked = SELF_TEST_REJECTED & found
@@ -168,11 +260,19 @@ def main():
     if args.self_test:
         return self_test()
 
-    if not os.path.isfile(SHAPE) or not os.path.isdir(TESTS):
-        print(f"error: run from the repo root (expected {SHAPE} and {TESTS}/)", file=sys.stderr)
+    if not os.path.isdir(SOURCES) or not os.path.isdir(TESTS):
+        print(f"error: run from the repo root (expected {SOURCES}/ and {TESTS}/)", file=sys.stderr)
         return 2
 
     members = shape_members()
+    if not members:
+        print(
+            "error: found no members of `extension Shape` anywhere in "
+            f"{SOURCES}/. That is almost certainly this script being wrong rather than the tree "
+            "being empty, so it is an error rather than a report of zero.",
+            file=sys.stderr,
+        )
+        return 1
     result = classify(members, test_corpus())
 
     if args.list or args.unmapped:
