@@ -33,21 +33,26 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.18 rebuild: OCCT 8.0.0p1 + our carried patches: 0001 (ShapeFix_Face guard, #263),
-    // 0002 (backport of upstream OCCT#1334, #280), 0003 (fillet TopOpeBRep thread_local, #298),
-    // 0004 (ShapeAnalysis_FreeBounds owires init, #310), 0005 (ShapeFix_Face null-Context guard
-    // in FixPeriodicDegenerated, #317), 0006 (BRepGProp_EdgeTool adaptor NbPoles, #318), 0007
-    // (ShapeAnalysis_FreeBounds lwire reset, #323), 0008 (Geom_BSplineCurve O(1)
-    // PeriodicNormalization, #323), 0009 (StepData_StepWriter split oversized string, #323), 0010
-    // (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319), 0011
-    // (XCAFDoc_ShapeTool::OwnAutoNamingScope, per-instance override, revised per upstream review
-    // from the original global-mutex AutoNamingScope, #341/#363), 0012
+    // v1.15.18 rebuild: OCCT 8.0.0p1 + carried patches 0001-0016.
+    //
+    // NOTE: this URL is one kernel behind the source tree. Scripts/build-occt.sh now builds OCCT
+    // V8_0_1, which absorbed ten of those patches (0001-0009 and 0013; their files are deleted,
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The eleven that
+    // survive are 0010 (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319),
+    // 0011 (XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override, #341/#363), 0012
     // (XCAFApp_Application::GetApplication/TDocStd_Application::Resources lazy-init races +
-    // CDF_Directory/Resource_Manager/CDF_Application reader-writer map synchronization, #344),
-    // 0013 (ShapeUpgrade_UnifySameDomain null-pcurve dereference guards, #348), 0014
+    // CDF_Directory/Resource_Manager/CDF_Application map synchronization, #344), 0014
     // (PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex, #349), 0015
-    // (CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes, #353), and 0016
-    // (Resource_Manager::Debug atomic + Storage_Schema::ICurrentData recursive mutex, #374).
+    // (CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes, #353), 0016
+    // (Resource_Manager::Debug atomic + Storage_Schema::ICurrentData per-instance, #374), 0017
+    // (null ReShape context in ComposeShell/WireDivide, #484), 0018 (GCPnts degenerate count +
+    // duplicate end point, #555), 0019 (AdvApp2Var Jacobi maxima workspace slot, #522), 0020
+    // (BRepFeat_MakeCylindricalHole tool-part selection, #532), and 0021 (CPnts adaptive
+    // arc-length integration, #603).
+    //
+    // The url:/checksum: pair below moves in the RELEASE commit, not here (#512): until then, work
+    // against the rebuilt kernel with a local Libraries/OCCT.xcframework and OCCTSWIFT_LOCAL=1, and
+    // read kernel-integration.yml rather than ci.yml's macOS job for the real signal (#585).
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
     // silently keep the previous kernel while local sibling builds get the new one.
     : .binaryTarget(

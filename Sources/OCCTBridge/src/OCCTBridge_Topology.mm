@@ -3548,7 +3548,13 @@ double OCCTBRepToolsEvalAndUpdateTol(OCCTShapeRef edge, OCCTShapeRef face) {
         Handle(Geom_Curve) c3d = BRep_Tool::Curve(e, first, last);
         Handle(Geom2d_Curve) c2d = BRep_Tool::CurveOnSurface(e, f, first, last);
         Handle(Geom_Surface) surf = BRep_Tool::Surface(f);
-        if (c3d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);
+        // c2d has to be guarded like the other two: BRepTools::EvalAndUpdateTol dereferences it
+        // unconditionally at `if (!C2d->IsPeriodic())`, so a null pcurve is an OS signal the
+        // catch(...) below cannot absorb. CurveOnSurface returns null whenever the edge has no
+        // pcurve on a NON-planar face (routine for mesh-sewn topology; a plane always projects
+        // one, which is why this hid), and as of OCCT 8.0.1 also when the edge's range is out of
+        // the basis curve's domain, where p1 threw a catchable Standard_Failure instead.
+        if (c3d.IsNull() || c2d.IsNull() || surf.IsNull()) return BRep_Tool::Tolerance(e);
         return BRepTools::EvalAndUpdateTol(e, c3d, c2d, surf, first, last);
     } catch (...) { return 0.0; }
 }

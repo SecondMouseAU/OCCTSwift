@@ -6,7 +6,9 @@ import simd
 /// single closed edge belting a `Surface.cone`'s full period — `ShapeFix_Face::FixPeriodicDegenerated`
 /// unconditionally dereferenced a null `Context()` at its last line (every other `Context()->Replace`
 /// call site in that OCCT source file guards it). Fixed by giving the bridge's `ShapeFix_Face` a
-/// context up front (`Scripts/patches/0005-*`, upstream Open-Cascade-SAS/OCCT#1379).
+/// context up front, and by the carried kernel patch `0005`. That patch is **retired**: the fix
+/// shipped upstream as Open-Cascade-SAS/OCCT#1380 and arrives with the OCCT 8.0.1 re-pin, so this
+/// test now guards the kernel's own guard rather than ours.
 @Suite("Issue #317 — single closed wire belting a periodic conical surface")
 struct Issue317PeriodicConicalSingleWireTests {
 
