@@ -456,3 +456,60 @@ struct StressUnifySameDomainNullPCurveTests {
         _ = unifier.shape
     }
 }
+
+// MARK: - evalAndUpdateTolerance Null PCurve
+
+@Suite("Stress: evalAndUpdateTolerance Null PCurve")
+struct StressEvalAndUpdateTolNullPCurveTests {
+
+    // OCCTBRepToolsEvalAndUpdateTol fetched c3d, c2d and surf but guarded only c3d and surf,
+    // then handed c2d to BRepTools::EvalAndUpdateTol, which dereferences it unconditionally at
+    // `if (!C2d->IsPeriodic())`. A null pcurve is an OS signal, so the bridge's catch(...) cannot
+    // absorb it — the same uncatchable family as #263/#310/#317/#318/#348.
+    //
+    // The face has to be NON-planar. For a plane, BRep_Tool::CurveOnSurface falls through to
+    // CurveOnPlane, which projects the 3D curve and always yields a pcurve; only a curved support
+    // the edge has no stored pcurve for produces the null. A crash here fails the whole target,
+    // not just this test, because the process dies.
+    @Test func edgePairedWithUnrelatedCylindricalFaceDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let cylinder = try #require(Shape.cylinder(radius: 5, height: 10))
+
+        let boxEdges = box.subShapes(ofType: .edge)
+        try #require(!boxEdges.isEmpty)
+
+        // The lateral face of a cylinder is the non-planar support; the box edge has no pcurve
+        // on it, so CurveOnSurface returns null. Every face of the cylinder is tried rather than
+        // guessing which index is the lateral one.
+        let cylinderFaces = cylinder.subShapes(ofType: .face)
+        try #require(!cylinderFaces.isEmpty)
+
+        for face in cylinderFaces {
+            let tol = Shape.evalAndUpdateTolerance(edge: boxEdges[0], face: face)
+            // The contract for "nothing to evaluate against this face" is the edge's own
+            // tolerance, which is finite and non-negative — not a fabricated zero.
+            #expect(tol.isFinite)
+            #expect(tol >= 0)
+        }
+    }
+
+    // The route OCCT 8.0.1 opened: #1402 made BRep_Tool::CurveOnPlane validate the edge range and
+    // return a null pcurve where 8.0.0p1 threw a catchable Geom_TrimmedCurve "parameters out of
+    // range" that the bridge turned into a safe 0.0. So the same crash became reachable on a
+    // PLANAR face too, with no exotic geometry at all.
+    @Test func edgePairedWithAnUnrelatedPlanarFaceDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let other = try #require(Shape.box(width: 3, height: 3, depth: 3))
+
+        let edges = box.subShapes(ofType: .edge)
+        let faces = other.subShapes(ofType: .face)
+        try #require(!edges.isEmpty)
+        try #require(!faces.isEmpty)
+
+        for face in faces {
+            let tol = Shape.evalAndUpdateTolerance(edge: edges[0], face: face)
+            #expect(tol.isFinite)
+            #expect(tol >= 0)
+        }
+    }
+}
