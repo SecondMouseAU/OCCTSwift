@@ -3575,3 +3575,248 @@ extension Surface {
         return Surface(handle: ref)
     }
 }
+
+extension Surface {
+    /// Convert surface to periodic form. Returns nil if already periodic or not convertible.
+    public func convertToPeriodic() -> Surface? {
+        guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Get conversion gap (distance between original and converted surface).
+    public var conversionGap: Double {
+        OCCTSurfaceConversionGap(handle)
+    }
+}
+
+extension Surface {
+    /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxSurface` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// surface; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `surface` is populated, and OCCT documents it as true
+    /// even for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find
+    /// out. So a non-nil `surface` is not by itself a promise that `tolerance` was met; on a
+    /// surface where `maxDegree` cannot reach the tolerance (a torus at 1e-9, say) OCCT returns a
+    /// usable best effort with `isDone` false.
+    ///
+    /// The continuity defaults are C2, matching ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``.
+    /// Before #491 they were C1 here, so the two no-continuity-argument calls fitted to different
+    /// smoothness and returned different surfaces. An infinite/unbounded surface must be trimmed to
+    /// a finite parameter domain first (see ``Surface/trimmed(u1:u2:v1:v2:)``).
+    ///
+    /// ```swift
+    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
+    /// let fit = sphere.approxWithDetails(tolerance: 1e-5)
+    /// if let bspline = fit.surface, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
+                                   vContinuity: ParametricContinuity = .c2,
+                                   maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
+        let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
+                                              vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
+        let surf: Surface? = r.surface.map { Surface(handle: $0) }
+        return ApproxSurfaceResult(surface: surf, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
+    }
+}
+
+extension Surface {
+    /// Find the UV parameters of a 3D point on this surface.
+    /// Returns nil if the point is beyond maxDistance from the surface.
+    public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (u: Double, v: Double)? {
+        var u: Double = 0, v: Double = 0
+        let ok = OCCTGeomLibToolParametersSurface(handle, point.x, point.y, point.z, maxDistance, &u, &v)
+        return ok ? (u, v) : nil
+    }
+}
+
+extension Surface {
+    /// Check if this surface is planar within tolerance.
+    public func isPlanar(tolerance: Double = 1e-7) -> Bool {
+        OCCTGeomLibIsPlanarSurface(handle, tolerance)
+    }
+
+    /// If planar, returns the plane parameters: origin, normal, X direction.
+    /// Returns nil if the surface is not planar.
+    public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)? {
+        var ox: Double = 0, oy: Double = 0, oz: Double = 0
+        var nx: Double = 0, ny: Double = 0, nz: Double = 0
+        var xx: Double = 0, xy: Double = 0, xz: Double = 0
+        let ok = OCCTGeomLibPlanarSurfacePlane(handle, tolerance,
+                                                &ox, &oy, &oz, &nx, &ny, &nz, &xx, &xy, &xz)
+        guard ok else { return nil }
+        return (SIMD3(ox, oy, oz), SIMD3(nx, ny, nz), SIMD3(xx, xy, xz))
+    }
+}
+
+extension Surface {
+    /// Result of surface splitting.
+    public struct SplitResult: Sendable {
+        public let uSplitCount: Int
+        public let vSplitCount: Int
+    }
+
+    /// Split this surface by continuity criterion, reporting U and V split counts.
+    ///
+    /// `criterion` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
+    /// above asks for CN). It used to be read as a `GeomAbs_Shape` ordinal here — 0=C0, 1=G1,
+    /// 2=C1, 3=G2, 4=C2 — even though ``Surface/splitByContinuity(criterion:tolerance:)`` wraps
+    /// the same `ShapeUpgrade_SplitSurfaceContinuity` and read the same integer as a parametric
+    /// continuity, so `criterion: 2` asked for C1 through one entry point and C2 through the
+    /// other. Both now agree. #490.
+    ///
+    /// ```swift
+    /// // Where does this surface drop below C2?
+    /// let split = bsplineSurface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
+    /// ```
+    public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceContinuity(handle, Int32(criterion), tolerance, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+
+    /// Split this surface by maximum angle (radians).
+    public func splitByAngle(_ maxAngle: Double) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceAngle(handle, maxAngle, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+
+    /// Split this surface into approximately equal-area parts.
+    public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult? {
+        var uCount: Int32 = 0
+        var vCount: Int32 = 0
+        let n = OCCTSplitSurfaceArea(handle, Int32(parts), intoSquares, &uCount, &vCount)
+        if n == 0 { return nil }
+        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
+    }
+}
+
+extension Surface {
+    /// Attempt to convert this surface to an analytical form, reporting the deviation.
+    ///
+    /// The detailed spelling of ``Surface/toAnalytical(tolerance:)``: same recognition, same
+    /// success and failure cases, plus the gap.
+    ///
+    /// ```swift
+    /// let bspline = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(u1: 0, u2: .pi, v1: -5, v2: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.surface.surfaceKind, r.gap)   // .cylinder, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult? {
+        let result = OCCTGeomConvertSurfToAnalytical(handle, tolerance)
+        guard result.success, let surfRef = result.surface else { return nil }
+        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
+    }
+
+    /// Attempt to convert a UV sub-patch of this surface to an analytical form.
+    ///
+    /// Fits only `[uMin, uMax] × [vMin, vMax]`, so a surface that is a cylinder over part of its
+    /// domain can be recognized there even when the whole domain is not. Inverted bounds
+    /// (`uMin > uMax`) are rejected rather than normalized.
+    ///
+    /// ```swift
+    /// let d = bsplineSurface.domain
+    /// if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
+    ///                                               uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
+    ///                                               vMin: d.vMin, vMax: d.vMax) {
+    ///     print(r.surface.surfaceKind)
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - uMin: Lower U bound of the patch to fit.
+    ///   - uMax: Upper U bound of the patch to fit.
+    ///   - vMin: Lower V bound of the patch to fit.
+    ///   - vMax: Upper V bound of the patch to fit.
+    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double,
+                                      uMin: Double, uMax: Double,
+                                      vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {
+        let result = OCCTGeomConvertSurfToAnalyticalBounded(handle, tolerance, uMin, uMax, vMin, vMax)
+        guard result.success, let surfRef = result.surface else { return nil }
+        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
+    }
+
+    /// Check if this surface is already a canonical (analytical) form.
+    public var isCanonical: Bool {
+        OCCTGeomConvertIsCanonical(handle)
+    }
+}
+
+extension Surface {
+    /// Result of stretch fill operation.
+    public struct StretchFillResult {
+        public let nbUPoles: Int
+        public let nbVPoles: Int
+        public let isRational: Bool
+        public let poles: [SIMD3<Double>]
+    }
+
+    /// Create a stretch-filled surface from 4 boundary point arrays.
+    public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
+                                   p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult? {
+        let count = p1.count
+        guard count == p2.count && count == p3.count && count == p4.count && count >= 2 else { return nil }
+
+        let flat1 = p1.flatMap { [$0.x, $0.y, $0.z] }
+        let flat2 = p2.flatMap { [$0.x, $0.y, $0.z] }
+        let flat3 = p3.flatMap { [$0.x, $0.y, $0.z] }
+        let flat4 = p4.flatMap { [$0.x, $0.y, $0.z] }
+
+        let maxPoles = 1000
+        var outPoles = [Double](repeating: 0, count: maxPoles * 3)
+        let r = OCCTGeomFillStretch(flat1, flat2, flat3, flat4, Int32(count), &outPoles, Int32(maxPoles))
+
+        guard r.nbUPoles > 0 && r.nbVPoles > 0 else { return nil }
+        let totalPoles = Int(r.nbUPoles) * Int(r.nbVPoles)
+        let poles = (0..<totalPoles).map { i in
+            SIMD3(outPoles[i * 3], outPoles[i * 3 + 1], outPoles[i * 3 + 2])
+        }
+        return StretchFillResult(nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+                                 isRational: r.isRational, poles: poles)
+    }
+}
+
+extension Surface {
+    /// Result of surface approximation from section curves.
+    public struct AppSurfResult {
+        public let uDegree: Int
+        public let vDegree: Int
+        public let nbUPoles: Int
+        public let nbVPoles: Int
+        public let nbUKnots: Int
+        public let nbVKnots: Int
+        public let isDone: Bool
+    }
+
+    /// Approximate a surface from N section curves using GeomFill_AppSurf.
+    public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
+                               tol3d: Double = 1e-3, tol2d: Double = 1e-3) -> AppSurfResult? {
+        let refs = curves.map { $0.handle as OCCTCurve3DRef }
+        return refs.withUnsafeBufferPointer { buf in
+            let r = OCCTGeomFillAppSurf(buf.baseAddress!, Int32(curves.count),
+                                         Int32(degMin), Int32(degMax), tol3d, tol2d)
+            guard r.isDone else { return nil }
+            return AppSurfResult(uDegree: Int(r.uDegree), vDegree: Int(r.vDegree),
+                                 nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
+                                 nbUKnots: Int(r.nbUKnots), nbVKnots: Int(r.nbVKnots),
+                                 isDone: r.isDone)
+        }
+    }
+}

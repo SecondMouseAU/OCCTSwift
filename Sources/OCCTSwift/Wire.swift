@@ -1324,3 +1324,26 @@ extension Wire {
         )
     }
 }
+
+extension Wire {
+
+    // MARK: - Wire Fixing (v0.13.0)
+
+    /// Fix wire problems such as gaps, degenerate edges, and incorrect ordering.
+    ///
+    /// - Parameter tolerance: Tolerance for fixing operations
+    /// - Returns: Fixed wire, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Fix a wire with small gaps between edges
+    /// let fixedWire = problematicWire.fixed(tolerance: 0.001)
+    /// ```
+    public func fixed(tolerance: Double = 1e-6) -> Wire? {
+        guard let result = OCCTWireFix(handle, tolerance) else {
+            return nil
+        }
+        return Wire(handle: result)
+    }
+}

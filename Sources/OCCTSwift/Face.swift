@@ -542,3 +542,190 @@ extension Face {
         )
     }
 }
+
+extension Face {
+
+    // MARK: - Face Fixing (v0.13.0)
+
+    /// Fix face problems such as incorrect wire orientation, missing seams, and surface parameters.
+    ///
+    /// The underlying `ShapeFix_Face` is given a `ShapeBuild_ReShape` context up front (#484), so
+    /// the fixes that record replacements — a missing seam, or the degenerate apex edge a wire
+    /// belting a cone's full period needs — actually apply. Without one they silently no-op and the
+    /// face comes back unhealed.
+    ///
+    /// - Parameter tolerance: Tolerance for fixing operations
+    /// - Returns: Fixed face as a shape, or nil on failure
+    ///
+    /// ## Example
+    ///
+    /// ```swift
+    /// // Fix a face with wire orientation issues
+    /// let fixedShape = problematicFace.fixed(tolerance: 0.001)
+    /// ```
+    public func fixed(tolerance: Double = 1e-6) -> Shape? {
+        guard let result = OCCTFaceFix(handle, tolerance) else {
+            return nil
+        }
+        return Shape(handle: result)
+    }
+}
+
+extension Face {
+
+    /// Classify a point relative to this face using a 3D point
+    ///
+    /// - Parameters:
+    ///   - point: The 3D point to classify
+    ///   - tolerance: Tolerance for boundary detection (default: 1e-6)
+    /// - Returns: Classification result
+    public func classify(point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointClassification {
+        let state = OCCTClassifyPointOnFace(handle, point.x, point.y, point.z, tolerance)
+        return PointClassification(rawValue: state) ?? .unknown
+    }
+
+    /// Classify a point relative to this face using UV parameters
+    ///
+    /// - Parameters:
+    ///   - u: U parameter on the face surface
+    ///   - v: V parameter on the face surface
+    ///   - tolerance: Tolerance for boundary detection (default: 1e-6)
+    /// - Returns: Classification result
+    public func classify(u: Double, v: Double, tolerance: Double = 1e-6) -> PointClassification {
+        let state = OCCTClassifyPointOnFaceUV(handle, u, v, tolerance)
+        return PointClassification(rawValue: state) ?? .unknown
+    }
+}
+
+extension Face {
+    /// Create a draft prism (tapered extrusion) from this face.
+    ///
+    /// Uses LocOpe_DPrism for creating tapered extrusions with different
+    /// heights on each end and a draft angle.
+    ///
+    /// - Parameters:
+    ///   - height1: First height
+    ///   - height2: Second height
+    ///   - angle: Draft angle in radians
+    /// - Returns: Draft prism shape, or nil on failure
+    public func draftPrism(height1: Double, height2: Double, angle: Double) -> Shape? {
+        guard let ref = OCCTLocOpeDPrism(handle, height1, height2, angle) else {
+            return nil
+        }
+        return Shape(handle: ref)
+    }
+
+    /// Create a draft prism with single height.
+    ///
+    /// - Parameters:
+    ///   - height: Extrusion height
+    ///   - angle: Draft angle in radians
+    /// - Returns: Draft prism shape, or nil on failure
+    public func draftPrism(height: Double, angle: Double) -> Shape? {
+        guard let ref = OCCTLocOpeDPrismSingleHeight(handle, height, angle) else {
+            return nil
+        }
+        return Shape(handle: ref)
+    }
+}
+
+extension Face {
+    /// Check the validity of this face using BRepCheck_Face.
+    ///
+    /// Uses BRepCheck_Face for face-specific validation including
+    /// wire intersection checks, surface validity, etc.
+    ///
+    /// - Returns: Check result
+    public var faceCheckResult: Shape.CheckResult {
+        let result = OCCTCheckFace(handle)
+        let status = Shape.CheckStatus(rawValue: Int32(result.firstError.rawValue))
+        return Shape.CheckResult(
+            isValid: result.isValid,
+            errorCount: Int(result.errorCount),
+            firstError: result.errorCount > 0 ? status : nil
+        )
+    }
+}
+
+extension Face {
+    /// Compute mesh properties for a triangulated face.
+    ///
+    /// ```swift
+    /// shape.triangulate(deflection: 0.1)
+    /// let p = shape.faces()[0].meshProps(type: .surface)
+    /// p.mass            // the triangulated area
+    /// p.centerOfMass    // its centroid, nil if the face carries no triangulation
+    /// ```
+    public func meshProps(type: MeshPropsType) -> MeshPropsResult {
+        let t: OCCTMeshPropsType = (type == .surface) ? OCCTMeshPropsSurface : OCCTMeshPropsVolume
+        let r = OCCTMeshPropsCompute(handle, t)
+        return MeshPropsResult(mass: r.mass,
+                               centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+    }
+}
+
+extension Face {
+    /// Maximum tolerance of edges/vertices on this face.
+    public var maxMeshTolerance: Double {
+        OCCTMeshShapeToolMaxFaceTolerance(handle)
+    }
+
+    /// Get UV parameter points of an edge on this face.
+    public func uvPoints(edge: Edge) -> (u1: Double, v1: Double, u2: Double, v2: Double)? {
+        let r = OCCTMeshShapeToolUVPoints(edge.handle, handle)
+        guard r.success else { return nil }
+        return (r.u1, r.v1, r.u2, r.v2)
+    }
+}
+
+extension Face {
+    /// Compute surface inertia (area and center of mass).
+    ///
+    /// ```swift
+    /// let f = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0]
+    /// f.surfaceInertia.area          // 600
+    /// f.surfaceInertia.centerOfMass  // the face's area centroid
+    /// ```
+    public var surfaceInertia: FaceSurfaceInertia {
+        let r = OCCTBRepGPropSinert(handle)
+        return FaceSurfaceInertia(area: r.mass,
+                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  epsilon: 0)
+    }
+
+    /// Compute surface inertia with adaptive integration.
+    public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia {
+        let r = OCCTBRepGPropSinertAdaptive(handle, epsilon)
+        return FaceSurfaceInertia(area: r.mass,
+                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
+                                  epsilon: r.epsilon)
+    }
+}
+
+extension Face {
+    /// Compute volume inertia contribution from this face.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
+    ///
+    /// // A face whose own plane contains the reference point (the origin) contributes nothing.
+    /// // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
+    /// let shifted = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(0, 0, 5))!
+    /// let coplanar = shifted.faces().first { $0.volumeInertia.volume == 0 }!
+    /// coplanar.volumeInertia.volume         // 0, a real summand
+    /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid
+    /// ```
+    public var volumeInertia: FaceVolumeInertia {
+        let r = OCCTBRepGPropVinert(handle)
+        return FaceVolumeInertia(volume: r.mass,
+                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+    }
+
+    /// Compute volume inertia with reference plane.
+    public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0) -> FaceVolumeInertia {
+        let r = OCCTBRepGPropVinertPlane(handle, planeNormal.x, planeNormal.y, planeNormal.z, planeDistance)
+        return FaceVolumeInertia(volume: r.mass,
+                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+    }
+}
