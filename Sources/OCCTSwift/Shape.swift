@@ -2312,91 +2312,12 @@ public final class Shape: @unchecked Sendable {
 
 // MARK: - Errors
 
-public enum ImportError: Error, LocalizedError {
-    case importFailed(String)
-    /// The import was cancelled cooperatively via `ImportProgress.shouldCancel()`.
-    case cancelled
-
-    public var errorDescription: String? {
-        switch self {
-        case .importFailed(let message):
-            return message
-        case .cancelled:
-            return "Import cancelled"
-        }
-    }
-}
 
 // MARK: - Shape Type
 
-/// Topological type of a shape (matches OCCT TopAbs_ShapeEnum)
-public enum ShapeType: Int, CustomStringConvertible, Sendable {
-    case compound = 0
-    case compSolid = 1
-    case solid = 2
-    case shell = 3
-    case face = 4
-    case wire = 5
-    case edge = 6
-    case vertex = 7
-    case unknown = -1
-
-    public var description: String {
-        switch self {
-        case .compound: return "Compound"
-        case .compSolid: return "CompSolid"
-        case .solid: return "Solid"
-        case .shell: return "Shell"
-        case .face: return "Face"
-        case .wire: return "Wire"
-        case .edge: return "Edge"
-        case .vertex: return "Vertex"
-        case .unknown: return "Unknown"
-        }
-    }
-}
 
 // MARK: - Import Result
 
-/// Result of a robust STEP import with diagnostic information
-public struct ImportResult: Sendable {
-    /// The imported and processed shape
-    public let shape: Shape
-
-    /// Original shape type as read from STEP file
-    public let originalType: ShapeType
-
-    /// Final shape type after processing
-    public let resultType: ShapeType
-
-    /// Whether sewing was applied to connect disconnected faces
-    public let sewingApplied: Bool
-
-    /// Whether a solid was created from a shell
-    public let solidCreated: Bool
-
-    /// Whether shape healing was applied
-    public let healingApplied: Bool
-
-    /// How many shells were turned into solids.
-    ///
-    /// `> 1` means the file held several bodies and ``shape`` is a compound of that many solids.
-    /// Before v1.11.3 every body after the first was silently discarded, so this count is the fact
-    /// that was quietly wrong — a truncated import still returned a perfectly valid solid (#302).
-    public let solidsCreated: Int
-
-    /// Human-readable summary of the import processing
-    public var summary: String {
-        var steps: [String] = []
-        if sewingApplied { steps.append("sewing") }
-        if solidCreated {
-            steps.append(solidsCreated > 1 ? "solid creation (\(solidsCreated) bodies)" : "solid creation")
-        }
-        if healingApplied { steps.append("healing") }
-        let processing = steps.isEmpty ? "none" : steps.joined(separator: ", ")
-        return "\(originalType) → \(resultType) (processing: \(processing))"
-    }
-}
 
 // MARK: - Operators
 
@@ -2416,64 +2337,7 @@ extension Shape {
 
 // MARK: - Measurement & Analysis (v0.7.0)
 
-/// Mass and geometric properties of a shape
-public struct ShapeProperties: Sendable, Equatable {
-    /// Volume in cubic units
-    public var volume: Double
 
-    /// Surface area in square units
-    public var surfaceArea: Double
-
-    /// Mass (volume × density)
-    public var mass: Double
-
-    /// Center of mass location
-    public var centerOfMass: SIMD3<Double>
-
-    /// Moment of inertia tensor (3x3 matrix)
-    public var momentOfInertia: simd_double3x3
-
-    public init(
-        volume: Double,
-        surfaceArea: Double,
-        mass: Double,
-        centerOfMass: SIMD3<Double>,
-        momentOfInertia: simd_double3x3
-    ) {
-        self.volume = volume
-        self.surfaceArea = surfaceArea
-        self.mass = mass
-        self.centerOfMass = centerOfMass
-        self.momentOfInertia = momentOfInertia
-    }
-}
-
-/// Result of distance measurement between two shapes
-public struct DistanceResult: Sendable, Equatable {
-    /// Minimum distance between the shapes
-    public var distance: Double
-
-    /// Closest point on the first shape
-    public var pointOnShape1: SIMD3<Double>
-
-    /// Closest point on the second shape
-    public var pointOnShape2: SIMD3<Double>
-
-    /// Number of solutions found (may be > 1 for symmetric cases)
-    public var solutionCount: Int
-
-    public init(
-        distance: Double,
-        pointOnShape1: SIMD3<Double>,
-        pointOnShape2: SIMD3<Double>,
-        solutionCount: Int
-    ) {
-        self.distance = distance
-        self.pointOnShape1 = pointOnShape1
-        self.pointOnShape2 = pointOnShape2
-        self.solutionCount = solutionCount
-    }
-}
 
 // MARK: - Shape Measurement Extensions
 
@@ -2752,27 +2616,7 @@ extension Shape {
 
 // MARK: - Advanced Modeling (v0.8.0)
 
-/// Sweep mode for advanced pipe creation
-public enum PipeSweepMode: Sendable {
-    /// Standard Frenet trihedron - profile orientation follows spine curvature
-    case frenet
-    /// Corrected Frenet - avoids twisting at inflection points
-    case correctedFrenet
-    /// Fixed binormal direction - profile maintains constant orientation
-    case fixed(binormal: SIMD3<Double>)
-    /// Auxiliary spine - twist controlled by secondary curve
-    case auxiliary(spine: Wire)
-}
 
-/// Transition mode for pipe shell at spine discontinuities (corners).
-public enum PipeTransitionMode: Int32, Sendable {
-    /// Transformed — smooth transition (default)
-    case transformed = 0
-    /// Right corner — sharp right-angle transitions
-    case rightCorner = 1
-    /// Round corner — filleted transitions
-    case roundCorner = 2
-}
 
 extension Shape {
     // MARK: - Selective Fillet
@@ -3342,39 +3186,6 @@ extension Shape {
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
-/// Result of shape analysis, containing counts of various problems found.
-public struct ShapeAnalysisResult {
-    /// Number of edges smaller than tolerance
-    public let smallEdgeCount: Int
-
-    /// Number of faces smaller than tolerance
-    public let smallFaceCount: Int
-
-    /// Number of gaps between edges/faces
-    public let gapCount: Int
-
-    /// Number of self-intersections detected
-    public let selfIntersectionCount: Int
-
-    /// Number of free (unconnected) edges
-    public let freeEdgeCount: Int
-
-    /// Number of free faces (shell not closed)
-    public let freeFaceCount: Int
-
-    /// Whether the topology is invalid
-    public let hasInvalidTopology: Bool
-
-    /// Total number of problems found
-    public var totalProblems: Int {
-        smallEdgeCount + smallFaceCount + gapCount + selfIntersectionCount + freeEdgeCount + freeFaceCount + (hasInvalidTopology ? 1 : 0)
-    }
-
-    /// Whether the shape appears to be healthy (no problems found)
-    public var isHealthy: Bool {
-        totalProblems == 0 && !hasInvalidTopology
-    }
-}
 
 extension Shape {
 
@@ -3529,148 +3340,14 @@ extension Shape {
     }
 }
 
-extension Wire {
 
-    // MARK: - Wire Fixing (v0.13.0)
-
-    /// Fix wire problems such as gaps, degenerate edges, and incorrect ordering.
-    ///
-    /// - Parameter tolerance: Tolerance for fixing operations
-    /// - Returns: Fixed wire, or nil on failure
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// // Fix a wire with small gaps between edges
-    /// let fixedWire = problematicWire.fixed(tolerance: 0.001)
-    /// ```
-    public func fixed(tolerance: Double = 1e-6) -> Wire? {
-        guard let result = OCCTWireFix(handle, tolerance) else {
-            return nil
-        }
-        return Wire(handle: result)
-    }
-}
-
-extension Face {
-
-    // MARK: - Face Fixing (v0.13.0)
-
-    /// Fix face problems such as incorrect wire orientation, missing seams, and surface parameters.
-    ///
-    /// The underlying `ShapeFix_Face` is given a `ShapeBuild_ReShape` context up front (#484), so
-    /// the fixes that record replacements — a missing seam, or the degenerate apex edge a wire
-    /// belting a cone's full period needs — actually apply. Without one they silently no-op and the
-    /// face comes back unhealed.
-    ///
-    /// - Parameter tolerance: Tolerance for fixing operations
-    /// - Returns: Fixed face as a shape, or nil on failure
-    ///
-    /// ## Example
-    ///
-    /// ```swift
-    /// // Fix a face with wire orientation issues
-    /// let fixedShape = problematicFace.fixed(tolerance: 0.001)
-    /// ```
-    public func fixed(tolerance: Double = 1e-6) -> Shape? {
-        guard let result = OCCTFaceFix(handle, tolerance) else {
-            return nil
-        }
-        return Shape(handle: result)
-    }
-}
 
 // MARK: - Advanced Blends & Surface Filling (v0.14.0)
 
 // `SurfaceContinuity` (formerly declared here, alongside a second `PlateConstraintOrder` copy
 // of the same vocabulary) now lives in Continuity.swift. See #398.
 
-/// One edge constraint for ``Shape/fill(constraints:parameters:)``.
-///
-/// Pairs an edge with the face the filled surface should be continuous with. Tangency and
-/// curvature are relative to *something* — without a `support` face, the edge's own
-/// underlying surface is used, and an edge that has neither can only be constrained
-/// positionally.
-///
-/// ```swift
-/// // Tangent to the wall the rim came from
-/// let tangent = FillConstraint(edge: rimEdge, support: wallFace, continuity: .g1)
-///
-/// // Pass through this edge, but let it float otherwise
-/// let positional = FillConstraint(edge: freeEdge, continuity: .g0)
-///
-/// // Pull the surface through an interior edge without it bounding the face
-/// let interior = FillConstraint(edge: ridgeEdge, continuity: .g0, isBoundary: false)
-/// ```
-public struct FillConstraint {
-    /// Edge the filled surface must satisfy
-    public var edge: Edge
-    /// Face to be continuous with, or nil to derive one from the edge itself.
-    ///
-    /// A face named here is used or the fill fails: if it carries no pcurve for `edge` it
-    /// cannot serve as the continuity reference, and the whole fill returns nil rather than
-    /// quietly substituting a different surface. Leave it nil to accept whichever surface the
-    /// edge itself resolves.
-    public var support: Face?
-    /// Continuity order at this edge
-    public var continuity: SurfaceContinuity
-    /// Whether this edge bounds the resulting face (true) or is an internal constraint (false)
-    public var isBoundary: Bool
 
-    /// Create an edge constraint.
-    ///
-    /// - Parameters:
-    ///   - edge: Edge the filled surface must satisfy
-    ///   - support: Face to be continuous with, used or the fill fails (default nil — derived
-    ///     from the edge)
-    ///   - continuity: Continuity order at this edge (default .g1)
-    ///   - isBoundary: Whether the edge bounds the resulting face (default true)
-    public init(
-        edge: Edge,
-        support: Face? = nil,
-        continuity: SurfaceContinuity = .g1,
-        isBoundary: Bool = true
-    ) {
-        self.edge = edge
-        self.support = support
-        self.continuity = continuity
-        self.isBoundary = isBoundary
-    }
-}
-
-/// Parameters for surface filling operations
-public struct FillingParameters {
-    /// Surface continuity at boundaries
-    public var continuity: SurfaceContinuity
-    /// Surface tolerance
-    public var tolerance: Double
-    /// Maximum surface degree
-    public var maxDegree: Int
-    /// Maximum number of segments
-    public var maxSegments: Int
-
-    /// Create filling parameters with defaults
-    public init(
-        continuity: SurfaceContinuity = .g1,
-        tolerance: Double = 1e-4,
-        maxDegree: Int = 8,
-        maxSegments: Int = 9
-    ) {
-        self.continuity = continuity
-        self.tolerance = tolerance
-        self.maxDegree = maxDegree
-        self.maxSegments = maxSegments
-    }
-
-    internal var cParams: OCCTFillingParams {
-        OCCTFillingParams(
-            continuity: continuity.rawValue,
-            tolerance: tolerance,
-            maxDegree: Int32(maxDegree),
-            maxSegments: Int32(maxSegments)
-        )
-    }
-}
 
 extension Shape {
     // MARK: - Variable Radius Fillet (v0.14.0)
@@ -4272,17 +3949,6 @@ extension Shape {
 
 // MARK: - Point Classification (v0.17.0)
 
-/// Classification of a point relative to a shape
-public enum PointClassification: Int32, Sendable {
-    /// Point is inside the shape
-    case inside = 0      // TopAbs_IN
-    /// Point is outside the shape
-    case outside = 1     // TopAbs_OUT
-    /// Point is on the boundary of the shape
-    case onBoundary = 2  // TopAbs_ON
-    /// Classification could not be determined
-    case unknown = 3     // TopAbs_UNKNOWN
-}
 
 extension Shape {
 
@@ -4301,31 +3967,6 @@ extension Shape {
     }
 }
 
-extension Face {
-
-    /// Classify a point relative to this face using a 3D point
-    ///
-    /// - Parameters:
-    ///   - point: The 3D point to classify
-    ///   - tolerance: Tolerance for boundary detection (default: 1e-6)
-    /// - Returns: Classification result
-    public func classify(point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointClassification {
-        let state = OCCTClassifyPointOnFace(handle, point.x, point.y, point.z, tolerance)
-        return PointClassification(rawValue: state) ?? .unknown
-    }
-
-    /// Classify a point relative to this face using UV parameters
-    ///
-    /// - Parameters:
-    ///   - u: U parameter on the face surface
-    ///   - v: V parameter on the face surface
-    ///   - tolerance: Tolerance for boundary detection (default: 1e-6)
-    /// - Returns: Classification result
-    public func classify(u: Double, v: Double, tolerance: Double = 1e-6) -> PointClassification {
-        let state = OCCTClassifyPointOnFaceUV(handle, u, v, tolerance)
-        return PointClassification(rawValue: state) ?? .unknown
-    }
-}
 
 
 // MARK: - Shape Proximity (v0.18.0)
@@ -4713,22 +4354,6 @@ extension Shape {
 
 // MARK: - Shape Contents (v0.30.0)
 
-/// Census of sub-shape counts in a shape.
-///
-/// These are **occurrence** counts, not the distinct-sub-shape counts ``Shape/faceCount``,
-/// ``Shape/edgeCount`` and ``Shape/subShapeCount(ofType:)`` report. See ``Shape/contents`` for
-/// what that difference means and when the two disagree.
-public struct ShapeContents: Sendable {
-    public let solids: Int
-    public let shells: Int
-    public let faces: Int
-    public let wires: Int
-    public let edges: Int
-    public let vertices: Int
-    public let freeEdges: Int
-    public let freeWires: Int
-    public let freeFaces: Int
-}
 
 extension Shape {
     /// A census of sub-shape *occurrences* in this shape, from `ShapeAnalysis_ShapeContents`.
@@ -4773,27 +4398,6 @@ extension Shape {
 
 // MARK: - Canonical Recognition (v0.30.0)
 
-/// Recognized canonical geometric form.
-public struct CanonicalForm: Sendable {
-    /// Type of the recognized form.
-    public enum FormType: Int32, Sendable {
-        case unknown = 0
-        case plane = 1
-        case cylinder = 2
-        case cone = 3
-        case sphere = 4
-        case line = 5
-        case circle = 6
-        case ellipse = 7
-    }
-
-    public let type: FormType
-    public let origin: SIMD3<Double>
-    public let direction: SIMD3<Double>
-    public let radius: Double
-    public let radius2: Double
-    public let gap: Double
-}
 
 extension Shape {
     /// Recognize canonical geometric forms in this shape.
@@ -4972,15 +4576,6 @@ extension Shape {
 
 // MARK: - Offset Join Type (v0.32.0)
 
-/// Join type for offset operations.
-public enum OffsetJoinType: Int32, Sendable {
-    /// Arc — fill gaps with pipe arcs and spheres (smooth, rounded)
-    case arc = 0
-    /// Tangent — tangent extension of faces
-    case tangent = 1
-    /// Intersection — extend and intersect adjacent faces (sharp edges)
-    case intersection = 2
-}
 
 // MARK: - Revolution Form Feature (v0.32.0)
 
@@ -5476,13 +5071,6 @@ extension Shape {
 
 // MARK: - Boolean with History (v0.36.0)
 
-/// Result of a boolean operation with shape tracking.
-public struct BooleanResult: Sendable {
-    /// The result shape
-    public let shape: Shape
-    /// Shapes in the result that are modifications of faces from the first operand
-    public let modifiedFaces: [Shape]
-}
 
 extension Shape {
     /// Fuse this shape with another and track which faces were modified.
@@ -5508,63 +5096,7 @@ extension Shape {
 
 // MARK: - Boolean with Full Per-Input History (issue #165)
 
-/// Per-input-subshape history for a boolean operation: which output
-/// sub-shapes the input was modified into, which output sub-shapes were
-/// generated FROM it, and whether it was deleted with no replacement.
-public struct ShapeHistoryRecord: Sendable {
-    /// Output sub-shapes that are modifications of the input (1:1 or 1:N).
-    /// Example: a face split by a boolean cut → multiple modified faces.
-    public let modified: [Shape]
-    /// Output sub-shapes generated FROM the input but not replacing it.
-    /// Example: filleting an edge generates new fillet faces from that edge,
-    /// while the edge itself is deleted.
-    public let generated: [Shape]
-    /// True if the input was deleted with no replacement.
-    public let isDeleted: Bool
-}
 
-/// Retained handle to a boolean operation's builder, queryable for per-input
-/// history after the operation completes. Used by tools that need to track
-/// selection IDs across boolean / split mutations (e.g. OCCTMCP's
-/// `remap_selection`, parametric editors that want feature replay).
-public final class ShapeHistoryRef: @unchecked Sendable {
-    // internal, not fileprivate: BRepGraph.add(_:absorbing:inputRoots:operationName:)
-    // in BRepGraph.swift needs it to synthesize a BRepTools_History (issue #290).
-    let handle: OCCTBooleanHistoryRef
-
-    fileprivate init(_ handle: OCCTBooleanHistoryRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTBooleanHistoryRelease(handle)
-    }
-
-    /// Look up the post-mutation history of one input sub-shape (any face,
-    /// edge, or vertex from the original input shape).
-    public func record(of inputSubShape: Shape) -> ShapeHistoryRecord {
-        ShapeHistoryRecord(
-            modified: collect { buf, max in
-                OCCTBooleanHistoryModified(handle, inputSubShape.handle, buf, max)
-            },
-            generated: collect { buf, max in
-                OCCTBooleanHistoryGenerated(handle, inputSubShape.handle, buf, max)
-            },
-            isDeleted: OCCTBooleanHistoryIsDeleted(handle, inputSubShape.handle)
-        )
-    }
-
-    private func collect(_ fill: (UnsafeMutablePointer<OCCTShapeRef?>?, Int32) -> Int32) -> [Shape] {
-        // Probe with a max=0 call to get the count, then size the buffer exactly.
-        let count = fill(nil, 0)
-        guard count > 0 else { return [] }
-        var refs = [OCCTShapeRef?](repeating: nil, count: Int(count))
-        _ = refs.withUnsafeMutableBufferPointer { buf in
-            fill(buf.baseAddress, count)
-        }
-        return refs.compactMap { ref in ref.map(Shape.init(handle:)) }
-    }
-}
 
 extension Shape {
     /// Boolean union (`self ∪ other`) with full per-input-subshape history.
@@ -5991,25 +5523,6 @@ extension Shape {
 
 // MARK: - Oriented Bounding Box (v0.38.0)
 
-/// An oriented (rotated) bounding box that fits tightly around a shape.
-public struct OrientedBoundingBox: Sendable {
-    /// Center of the bounding box.
-    public var center: SIMD3<Double>
-    /// X-axis direction of the box.
-    public var xDirection: SIMD3<Double>
-    /// Y-axis direction of the box.
-    public var yDirection: SIMD3<Double>
-    /// Z-axis direction of the box.
-    public var zDirection: SIMD3<Double>
-    /// Half-dimensions along each axis.
-    public var halfSizes: SIMD3<Double>
-
-    /// Volume of the bounding box.
-    public var volume: Double { 8.0 * halfSizes.x * halfSizes.y * halfSizes.z }
-
-    /// Full dimensions of the bounding box.
-    public var dimensions: SIMD3<Double> { 2.0 * halfSizes }
-}
 
 extension Shape {
     /// Compute an oriented (tight-fit, rotated) bounding box.
@@ -6235,60 +5748,6 @@ extension Shape {
 
 // MARK: - Multi-Edge Evolving Fillet (v0.38.0)
 
-/// Describes an evolving radius along an edge for filleting.
-///
-/// The radius follows the `radiusPoints` law, whose parameters are *relative*: 0.0 is the start of
-/// the edge and 1.0 its end, the same convention ``Shape/filletedVariable(edgeIndex:radiusProfile:)``
-/// uses. Every radius must be positive, and the parameters must lie in `0...1` and strictly
-/// increase, or ``Shape/filletEvolving(_:)`` returns `nil`.
-///
-/// ```swift
-/// let box = Shape.box(width: 20, height: 20, depth: 20)!
-/// let spec = EvolvingFilletEdge(edge: box.edges()[0],
-///                               radiusPoints: [(0.0, 1.0), (1.0, 3.0)])
-/// let tapered = box.filletEvolving([spec])
-/// ```
-///
-/// > Note: OCCT stretches the law across the whole edge. With one or two points the parameters are
-/// > ignored entirely (a single point is a constant radius); with three or more only the *relative*
-/// > spacing of the interior points survives, because OCCT renormalises the first parameter to 0
-/// > and the last to 1. A profile cannot fillet part of an edge and leave the rest alone.
-public struct EvolvingFilletEdge: Sendable {
-    /// 0-based index of the edge to fillet, as reported by ``Edge/index``.
-    ///
-    /// This was 1-based until #520, the one edge index in the fillet family that was. It now
-    /// matches ``Edge/index``, ``Shape/filletedVariable(edgeIndex:radiusProfile:)`` and
-    /// ``Shape/blendedEdges(_:)``.
-    public var edgeIndex: Int
-    /// Array of (parameter, radius) pairs defining the radius evolution along the edge.
-    public var radiusPoints: [(parameter: Double, radius: Double)]
-
-    /// Fillet `edge` with an evolving radius.
-    ///
-    /// - Parameters:
-    ///   - edge: The edge to fillet; it must belong to the shape being filleted, since only its
-    ///     ``Edge/index`` is carried across.
-    ///   - radiusPoints: The radius law, as (relative parameter, radius) pairs.
-    public init(edge: Edge, radiusPoints: [(parameter: Double, radius: Double)]) {
-        self.edgeIndex = edge.index
-        self.radiusPoints = radiusPoints
-    }
-
-    /// Unavailable: this initializer took a **1-based** edge index, and `edgeIndex` is now 0-based.
-    ///
-    /// Passing the same numbers to a 0-based API would fillet the neighbouring edge without any
-    /// diagnostic, so the spelling was retired rather than reinterpreted. Build the spec from the
-    /// `Edge` itself — `EvolvingFilletEdge(edge: shape.edges()[0], radiusPoints: …)` — or, if you
-    /// only hold an index, construct from any edge and assign ``edgeIndex`` (0-based).
-    @available(*, unavailable, message: """
-        edgeIndex was 1-based and is now 0-based (#520). Use init(edge:radiusPoints:) with the Edge \
-        itself, or assign the 0-based edgeIndex property, after re-checking the index you pass.
-        """)
-    public init(edgeIndex: Int, radiusPoints: [(parameter: Double, radius: Double)]) {
-        self.edgeIndex = edgeIndex
-        self.radiusPoints = radiusPoints
-    }
-}
 
 extension Shape {
     /// Apply evolving-radius fillets to multiple edges simultaneously.
@@ -7476,37 +6935,6 @@ extension Shape {
 
 // MARK: - Draft Prism (v0.47.0)
 
-extension Face {
-    /// Create a draft prism (tapered extrusion) from this face.
-    ///
-    /// Uses LocOpe_DPrism for creating tapered extrusions with different
-    /// heights on each end and a draft angle.
-    ///
-    /// - Parameters:
-    ///   - height1: First height
-    ///   - height2: Second height
-    ///   - angle: Draft angle in radians
-    /// - Returns: Draft prism shape, or nil on failure
-    public func draftPrism(height1: Double, height2: Double, angle: Double) -> Shape? {
-        guard let ref = OCCTLocOpeDPrism(handle, height1, height2, angle) else {
-            return nil
-        }
-        return Shape(handle: ref)
-    }
-
-    /// Create a draft prism with single height.
-    ///
-    /// - Parameters:
-    ///   - height: Extrusion height
-    ///   - angle: Draft angle in radians
-    /// - Returns: Draft prism shape, or nil on failure
-    public func draftPrism(height: Double, angle: Double) -> Shape? {
-        guard let ref = OCCTLocOpeDPrismSingleHeight(handle, height, angle) else {
-            return nil
-        }
-        return Shape(handle: ref)
-    }
-}
 
 // MARK: - Constrained Filling (v0.47.0)
 
@@ -7720,23 +7148,6 @@ extension Shape {
 
 // MARK: - Face Validity Checking (v0.47.0)
 
-extension Face {
-    /// Check the validity of this face using BRepCheck_Face.
-    ///
-    /// Uses BRepCheck_Face for face-specific validation including
-    /// wire intersection checks, surface validity, etc.
-    ///
-    /// - Returns: Check result
-    public var faceCheckResult: Shape.CheckResult {
-        let result = OCCTCheckFace(handle)
-        let status = Shape.CheckStatus(rawValue: Int32(result.firstError.rawValue))
-        return Shape.CheckResult(
-            isValid: result.isValid,
-            errorCount: Int(result.errorCount),
-            firstError: result.errorCount > 0 ? status : nil
-        )
-    }
-}
 
 // MARK: - Local Operations, Validation, Fixing, Extrema (v0.48.0)
 
@@ -9431,59 +8842,6 @@ extension Shape {
 
 // MARK: - CellsBuilder (v0.61.0)
 
-/// Builder for Boolean cell operations on shapes.
-///
-/// Partitions input shapes into cells (volumetric fragments), then lets you
-/// select which cells to include in the result by material ID, and optionally
-/// merge cells that share the same material.
-public final class CellsBuilder: @unchecked Sendable {
-    internal let handle: OCCTCellsBuilderRef
-
-    /// Create a CellsBuilder from input shapes.
-    ///
-    /// The shapes are partitioned into cells during construction.
-    ///
-    /// - Parameter shapes: Input shapes to partition
-    /// - Returns: CellsBuilder, or nil on failure
-    public init?(shapes: [Shape]) {
-        let ptrs = shapes.map { $0.handle as OCCTShapeRef? }
-        guard let h = ptrs.withUnsafeBufferPointer({ buf in
-            OCCTCellsBuilderCreate(buf.baseAddress, Int32(buf.count))
-        }) else { return nil }
-        self.handle = h
-    }
-
-    deinit {
-        OCCTCellsBuilderRelease(handle)
-    }
-
-    /// Add all split cells to the result with a material ID.
-    ///
-    /// - Parameter material: Material ID to assign (default 0)
-    public func addAllToResult(material: Int32 = 0) {
-        OCCTCellsBuilderAddAllToResult(handle, material)
-    }
-
-    /// Remove all cells from the result.
-    public func removeAllFromResult() {
-        OCCTCellsBuilderRemoveAllFromResult(handle)
-    }
-
-    /// Remove internal boundaries between cells with the same material.
-    ///
-    /// Merges adjacent cells that share the same material ID.
-    public func removeInternalBoundaries() {
-        OCCTCellsBuilderRemoveInternalBoundaries(handle)
-    }
-
-    /// Get the current result shape.
-    ///
-    /// - Returns: Result shape, or nil if empty
-    public func result() -> Shape? {
-        guard let h = OCCTCellsBuilderGetResult(handle) else { return nil }
-        return Shape(handle: h)
-    }
-}
 
 // MARK: - BRepLib, LocOpe, ShapeUpgrade, ShapeCustom, CPnts, IntCurvesFace (v0.62.0)
 
@@ -9878,144 +9236,13 @@ extension Shape {
 
 // MARK: - GeomLProp, SimpleOffset, Approx, GeomInt, Contap, BRepFeat, GeomFill (v0.63.0)
 
-/// Curve local properties at a parameter point
-public struct CurveLocalProperties: Sendable {
-    public let point: SIMD3<Double>
-    public let tangent: SIMD3<Double>?
-    public let normal: SIMD3<Double>?
-    public let centerOfCurvature: SIMD3<Double>?
-    public let curvature: Double
-}
 
-/// Surface local properties at a (U,V) parameter point
-public struct SurfaceLocalProperties: Sendable {
-    public let point: SIMD3<Double>
-    public let normal: SIMD3<Double>?
-    public let tangentU: SIMD3<Double>?
-    public let tangentV: SIMD3<Double>?
-    public let maxCurvature: Double
-    public let minCurvature: Double
-    public let meanCurvature: Double
-    public let gaussianCurvature: Double
-    /// Whether the four curvature values above mean anything.
-    ///
-    /// They are all `0` where curvature is undefined — a cone's apex, a sphere's pole, any point
-    /// with no defined normal — which is indistinguishable from a genuinely flat point without
-    /// this flag. The bridge has always computed it; it was simply not carried through to Swift
-    /// until #494, which is why the per-scalar siblings (`Face.gaussianCurvature(atU:v:)` and
-    /// friends, all returning optionals) were the only way to tell the two apart.
-    public let curvatureDefined: Bool
-    public let isUmbilic: Bool
-}
 
-/// Trihedron frame (tangent, normal, binormal) at a curve parameter
-public struct TrihedronFrame: Sendable {
-    public let tangent: SIMD3<Double>
-    public let normal: SIMD3<Double>
-    public let binormal: SIMD3<Double>
-}
 
-/// Contour line type
-public enum ContourLineType: Int32, Sendable {
-    case line = 0
-    case circle = 1
-    case walking = 2
-    case restriction = 3
-}
 
-/// Filling pole grid result from GeomFill_Coons/Curved
-public struct FillingPoleGrid: Sendable {
-    public let poles: [SIMD3<Double>]
-    public let nbU: Int
-    public let nbV: Int
-}
 
-/// Evolved section shape info
-public struct EvolvedSectionInfo: Sendable {
-    public let nbPoles: Int
-    public let nbKnots: Int
-    public let degree: Int
-    public let isRational: Bool
-}
 
-/// Contour computation result
-public class ContapContourResult {
-    let ref: OCCTContapContourRef
 
-    init(_ ref: OCCTContapContourRef) {
-        self.ref = ref
-    }
-
-    deinit {
-        OCCTContapContourRelease(ref)
-    }
-
-    /// Number of contour lines
-    public var lineCount: Int {
-        Int(OCCTContapContourLineCount(ref))
-    }
-
-    /// Number of points on a specific contour line (1-based index)
-    public func pointCount(line: Int) -> Int {
-        Int(OCCTContapContourLinePointCount(ref, Int32(line)))
-    }
-
-    /// Get a point on a contour line (1-based indices)
-    public func point(line: Int, index: Int) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTContapContourLinePoint(ref, Int32(line), Int32(index), &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    /// Get all points on a contour line (1-based line index)
-    public func points(line: Int) -> [SIMD3<Double>] {
-        let count = pointCount(line: line)
-        guard count > 0 else { return [] }
-        return (1...count).map { point(line: line, index: $0) }
-    }
-
-    /// Get the type of a contour line (1-based index)
-    public func lineType(_ line: Int) -> ContourLineType? {
-        let t = OCCTContapContourLineType(ref, Int32(line))
-        return ContourLineType(rawValue: t)
-    }
-}
-
-/// Surface-surface intersection result
-public class SurfaceIntersectionResult {
-    let ref: OCCTGeomIntSSRef
-
-    init(_ ref: OCCTGeomIntSSRef) {
-        self.ref = ref
-    }
-
-    deinit {
-        OCCTGeomIntSSRelease(ref)
-    }
-
-    /// Number of intersection curves
-    public var curveCount: Int {
-        Int(OCCTGeomIntSSLineCount(ref))
-    }
-
-    /// Get an intersection curve as an edge shape (1-based index)
-    public func curve(_ index: Int) -> Shape? {
-        guard let h = OCCTGeomIntSSLine(ref, Int32(index)) else { return nil }
-        return Shape(handle: h)
-    }
-
-    /// Number of isolated intersection points
-    public var pointCount: Int {
-        Int(OCCTGeomIntSSPointCount(ref))
-    }
-
-    /// Get an intersection point (1-based index)
-    public func point(_ index: Int) -> SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTGeomIntSSPoint(ref, Int32(index), &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-}
 
 extension Shape {
 
@@ -12194,209 +11421,12 @@ extension Shape {
 
 // MARK: - Intrv_Interval (Interval with Tolerances)
 
-/// A real interval [start, end] with optional start/end tolerances.
-public final class Interval: @unchecked Sendable {
-    public let handle: OCCTIntrvIntervalRef
-
-    /// Create an interval with bounds and optional tolerances.
-    public init(start: Double, end: Double, tolStart: Float = 0, tolEnd: Float = 0) {
-        handle = OCCTIntrvIntervalCreate(start, end, tolStart, tolEnd)
-    }
-
-    deinit {
-        OCCTIntrvIntervalRelease(handle)
-    }
-
-    /// Interval bounds.
-    public struct Bounds: Sendable {
-        public let start: Double
-        public let end: Double
-        public let tolStart: Float
-        public let tolEnd: Float
-    }
-
-    /// Get interval bounds and tolerances.
-    public var bounds: Bounds {
-        let b = OCCTIntrvIntervalBounds(handle)
-        return Bounds(start: b.start, end: b.end, tolStart: b.tolStart, tolEnd: b.tolEnd)
-    }
-
-    /// True if the interval is probably empty (start + tolStart > end - tolEnd).
-    public var isProbablyEmpty: Bool {
-        OCCTIntrvIntervalIsProbablyEmpty(handle)
-    }
-
-    /// Position of this interval relative to another.
-    /// Returns Intrv_Position enum value (0=Before, ..., 12=After).
-    public func position(relativeTo other: Interval) -> Int {
-        Int(OCCTIntrvIntervalPosition(handle, other.handle))
-    }
-
-    /// True if this interval is entirely before the other.
-    public func isBefore(_ other: Interval) -> Bool {
-        OCCTIntrvIntervalIsBefore(handle, other.handle)
-    }
-
-    /// True if this interval is entirely after the other.
-    public func isAfter(_ other: Interval) -> Bool {
-        OCCTIntrvIntervalIsAfter(handle, other.handle)
-    }
-
-    /// True if this interval is entirely inside the other.
-    public func isInside(_ other: Interval) -> Bool {
-        OCCTIntrvIntervalIsInside(handle, other.handle)
-    }
-
-    /// True if this interval entirely encloses the other.
-    public func isEnclosing(_ other: Interval) -> Bool {
-        OCCTIntrvIntervalIsEnclosing(handle, other.handle)
-    }
-
-    /// True if this interval has the same bounds as the other.
-    public func isSimilar(to other: Interval) -> Bool {
-        OCCTIntrvIntervalIsSimilar(handle, other.handle)
-    }
-
-    /// Set the start bound.
-    public func setStart(_ start: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalSetStart(handle, start, tolerance)
-    }
-
-    /// Set the end bound.
-    public func setEnd(_ end: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalSetEnd(handle, end, tolerance)
-    }
-
-    /// Extend start bound outward (fuse).
-    public func fuseAtStart(_ start: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalFuseAtStart(handle, start, tolerance)
-    }
-
-    /// Extend end bound outward (fuse).
-    public func fuseAtEnd(_ end: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalFuseAtEnd(handle, end, tolerance)
-    }
-
-    /// Cut (trim) start bound inward.
-    public func cutAtStart(_ start: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalCutAtStart(handle, start, tolerance)
-    }
-
-    /// Cut (trim) end bound inward.
-    public func cutAtEnd(_ end: Double, tolerance: Float = 0) {
-        OCCTIntrvIntervalCutAtEnd(handle, end, tolerance)
-    }
-}
 
 // MARK: - Intrv_Intervals (Sorted Non-Overlapping Interval Sequence)
 
-/// A sorted sequence of non-overlapping intervals with set-theoretic operations.
-public final class IntervalSet: @unchecked Sendable {
-    public let handle: OCCTIntrvIntervalsRef
-
-    /// Create an interval set containing a single interval.
-    public init(start: Double, end: Double) {
-        handle = OCCTIntrvIntervalsCreate(start, end)
-    }
-
-    /// Create an empty interval set.
-    public init() {
-        handle = OCCTIntrvIntervalsCreateEmpty()
-    }
-
-    deinit {
-        OCCTIntrvIntervalsRelease(handle)
-    }
-
-    /// Number of intervals in the set.
-    public var count: Int {
-        Int(OCCTIntrvIntervalsCount(handle))
-    }
-
-    /// Get bounds of interval at index (0-based).
-    public func bounds(at index: Int) -> Interval.Bounds {
-        let b = OCCTIntrvIntervalsValue(handle, Int32(index + 1)) // 1-based in OCCT
-        return Interval.Bounds(start: b.start, end: b.end, tolStart: b.tolStart, tolEnd: b.tolEnd)
-    }
-
-    /// Add an interval (union).
-    public func unite(start: Double, end: Double) {
-        OCCTIntrvIntervalsUnite(handle, start, end)
-    }
-
-    /// Subtract an interval.
-    public func subtract(start: Double, end: Double) {
-        OCCTIntrvIntervalsSubtract(handle, start, end)
-    }
-
-    /// Intersect with an interval.
-    public func intersect(start: Double, end: Double) {
-        OCCTIntrvIntervalsIntersect(handle, start, end)
-    }
-
-    /// Symmetric difference (exclusive union) with an interval.
-    public func xUnite(start: Double, end: Double) {
-        OCCTIntrvIntervalsXUnite(handle, start, end)
-    }
-}
 
 // MARK: - ShapeRayIntersection (BRepIntCurveSurface_Inter)
 
-/// Iterator for line/curve–shape intersection results.
-public final class ShapeRayIntersection: @unchecked Sendable {
-    let handle: OCCTCurveSurfaceInterRef
-
-    /// A single intersection hit.
-    public struct Hit {
-        public let x: Double, y: Double, z: Double
-        public let u: Double, v: Double
-        public let w: Double
-    }
-
-    /// Create intersection of a line with a shape.
-    public init?(shape: Shape, originX: Double, originY: Double, originZ: Double,
-                 dirX: Double, dirY: Double, dirZ: Double, tolerance: Double = 1e-6) {
-        guard let h = OCCTCurveSurfaceInterCreateLine(
-            shape.handle, originX, originY, originZ, dirX, dirY, dirZ, tolerance) else { return nil }
-        self.handle = h
-    }
-
-    /// Create intersection of a curve with a shape.
-    public init?(shape: Shape, curve: Curve3D, tolerance: Double = 1e-6) {
-        guard let h = OCCTCurveSurfaceInterCreateCurve(shape.handle, curve.handle, tolerance) else { return nil }
-        self.handle = h
-    }
-
-    deinit { OCCTCurveSurfaceInterRelease(handle) }
-
-    /// Check if more results are available.
-    public var hasMore: Bool { OCCTCurveSurfaceInterMore(handle) }
-
-    /// Advance to next result.
-    public func next() { OCCTCurveSurfaceInterNext(handle) }
-
-    /// Get current hit data.
-    public var currentHit: Hit {
-        let h = OCCTCurveSurfaceInterHit(handle)
-        return Hit(x: h.x, y: h.y, z: h.z, u: h.u, v: h.v, w: h.w)
-    }
-
-    /// Get face at current hit.
-    public var currentFace: Face? {
-        guard let f = OCCTCurveSurfaceInterFace(handle) else { return nil }
-        return Face(handle: f)
-    }
-
-    /// Collect all hits.
-    public func allHits() -> [Hit] {
-        var hits: [Hit] = []
-        while hasMore {
-            hits.append(currentHit)
-            next()
-        }
-        return hits
-    }
-}
 
 // MARK: - ShapeConstruct (Triangulation)
 
@@ -12420,104 +11450,19 @@ extension Shape {
 
 // MARK: - Surface Extensions (ShapeCustom_Surface periodic + gap)
 
-extension Surface {
-    /// Convert surface to periodic form. Returns nil if already periodic or not convertible.
-    public func convertToPeriodic() -> Surface? {
-        guard let ref = OCCTSurfaceConvertToPeriodic(handle) else { return nil }
-        return Surface(handle: ref)
-    }
-
-    /// Get conversion gap (distance between original and converted surface).
-    public var conversionGap: Double {
-        OCCTSurfaceConversionGap(handle)
-    }
-}
 
 // MARK: - MeshCinert (Linear Mass Properties from Mesh)
 
-/// Linear mass properties computed from mesh polygon points.
-///
-/// ``centerOfMass`` is nil when ``mass`` is 0, which covers a polygon of fewer than two points and
-/// one whose points are all coincident (#609).
-public struct MeshCinertResult {
-    public let mass: Double
-    public let centerOfMass: SIMD3<Double>?
-}
 
-extension Edge {
-    /// Prepare polygon points from a meshed edge.
-    public func meshPolygonPoints() -> [(Double, Double, Double)] {
-        var coords = [Double](repeating: 0, count: 3000) // up to 1000 points
-        let count = OCCTMeshCinertPreparePolygon(handle, &coords, 1000)
-        var points: [(Double, Double, Double)] = []
-        for i in 0..<Int(count) {
-            points.append((coords[i*3], coords[i*3+1], coords[i*3+2]))
-        }
-        return points
-    }
-}
 
-/// Compute linear mass properties from polygon points.
-public func meshCinertCompute(points: [(Double, Double, Double)]) -> MeshCinertResult {
-    var coords: [Double] = []
-    for p in points {
-        coords.append(p.0); coords.append(p.1); coords.append(p.2)
-    }
-    let r = OCCTMeshCinertCompute(coords, Int32(points.count))
-    return MeshCinertResult(mass: r.mass,
-                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
-}
 
 // MARK: - MeshProps (Surface/Volume Properties from Mesh)
 
-/// Mesh property type.
-public enum MeshPropsType {
-    case volume
-    case surface
-}
 
-/// Mesh surface/volume properties result.
-///
-/// ``centerOfMass`` is nil when ``mass`` is 0, which covers both an untriangulated face and a
-/// volume contribution that cancels. See ``FaceVolumeInertia`` for why the mass itself stays
-/// non-optional (#609).
-public struct MeshPropsResult {
-    public let mass: Double
-    public let centerOfMass: SIMD3<Double>?
-}
 
-extension Face {
-    /// Compute mesh properties for a triangulated face.
-    ///
-    /// ```swift
-    /// shape.triangulate(deflection: 0.1)
-    /// let p = shape.faces()[0].meshProps(type: .surface)
-    /// p.mass            // the triangulated area
-    /// p.centerOfMass    // its centroid, nil if the face carries no triangulation
-    /// ```
-    public func meshProps(type: MeshPropsType) -> MeshPropsResult {
-        let t: OCCTMeshPropsType = (type == .surface) ? OCCTMeshPropsSurface : OCCTMeshPropsVolume
-        let r = OCCTMeshPropsCompute(handle, t)
-        return MeshPropsResult(mass: r.mass,
-                               centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
-    }
-}
 
 // MARK: - MeshShapeTool (Static Mesh Utilities)
 
-extension Face {
-    /// Maximum tolerance of edges/vertices on this face.
-    public var maxMeshTolerance: Double {
-        OCCTMeshShapeToolMaxFaceTolerance(handle)
-    }
-
-    /// Get UV parameter points of an edge on this face.
-    public func uvPoints(edge: Edge) -> (u1: Double, v1: Double, u2: Double, v2: Double)? {
-        let r = OCCTMeshShapeToolUVPoints(edge.handle, handle)
-        guard r.success else { return nil }
-        return (r.u1, r.v1, r.u2, r.v2)
-    }
-}
 
 extension Shape {
     /// Maximum dimension of the shape's bounding box (for mesh sizing).
@@ -12528,22 +11473,7 @@ extension Shape {
 
 // MARK: - ValidateEdge (BRepLib_ValidateEdge)
 
-/// Edge validation result (3D curve vs curve-on-surface consistency).
-public struct ValidateEdgeResult {
-    public let isDone: Bool
-    public let isWithinTolerance: Bool
-    public let maxDistance: Double
-    public let tolerance: Double
-}
 
-extension Edge {
-    /// Validate edge geometry on a face (3D curve vs curve-on-surface consistency).
-    public func validate(on face: Face, tolerance: Double = 1e-3) -> ValidateEdgeResult {
-        let r = OCCTValidateEdge(handle, face.handle, tolerance)
-        return ValidateEdgeResult(isDone: r.isDone, isWithinTolerance: r.isWithinTolerance,
-                                   maxDistance: r.maxDistance, tolerance: r.tolerance)
-    }
-}
 
 // MARK: - BiTgte_Blend (Rolling-Ball Blend)
 
@@ -12574,254 +11504,31 @@ extension Shape {
 // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
 // `ApproxContinuity` copy this file used to declare is now a deprecated alias of it. See #398.
 
-/// Result of curve approximation as BSpline.
-public struct ApproxCurveResult {
-    public let curve: Curve3D?
-    public let maxError: Double
-    public let isDone: Bool
-    public let hasResult: Bool
-}
 
-extension Curve3D {
-    /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
-    ///
-    /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
-    /// performs — one shared `GeomConvert_ApproxCurve` run behind both (#491) — with the
-    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
-    /// curve; use this one when you need to know how close the fit actually came.
-    ///
-    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
-    /// for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find out.
-    /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
-    ///
-    /// ```swift
-    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
-    /// let fit = circle.approxWithDetails(tolerance: 1e-6)
-    /// if let bspline = fit.curve, fit.isDone {
-    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
-    /// }
-    /// ```
-    public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
-                                   maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
-        let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
-                                            Int32(maxSegments), Int32(maxDegree))
-        let curve: Curve3D? = r.curve.map { Curve3D(handle: $0) }
-        return ApproxCurveResult(curve: curve, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
-    }
-}
 
-/// Result of surface approximation as BSpline.
-public struct ApproxSurfaceResult {
-    public let surface: Surface?
-    public let maxError: Double
-    public let isDone: Bool
-    public let hasResult: Bool
-}
 
-extension Surface {
-    /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
-    ///
-    /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
-    /// performs — one shared `GeomConvert_ApproxSurface` run behind both (#491) — with the
-    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
-    /// surface; use this one when you need to know how close the fit actually came.
-    ///
-    /// `hasResult` is what decides whether `surface` is populated, and OCCT documents it as true
-    /// even for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find
-    /// out. So a non-nil `surface` is not by itself a promise that `tolerance` was met; on a
-    /// surface where `maxDegree` cannot reach the tolerance (a torus at 1e-9, say) OCCT returns a
-    /// usable best effort with `isDone` false.
-    ///
-    /// The continuity defaults are C2, matching ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``.
-    /// Before #491 they were C1 here, so the two no-continuity-argument calls fitted to different
-    /// smoothness and returned different surfaces. An infinite/unbounded surface must be trimmed to
-    /// a finite parameter domain first (see ``Surface/trimmed(u1:u2:v1:v2:)``).
-    ///
-    /// ```swift
-    /// let sphere = Surface.sphere(center: .zero, radius: 10)!
-    /// let fit = sphere.approxWithDetails(tolerance: 1e-5)
-    /// if let bspline = fit.surface, fit.isDone {
-    ///     print("fitted to \(fit.maxError) with \(bspline.uPoleCount)x\(bspline.vPoleCount) poles")
-    /// }
-    /// ```
-    public func approxWithDetails(tolerance: Double, uContinuity: ParametricContinuity = .c2,
-                                   vContinuity: ParametricContinuity = .c2,
-                                   maxDegree: Int = 8, maxSegments: Int = 100) -> ApproxSurfaceResult {
-        let r = OCCTGeomConvertApproxSurface(handle, tolerance, uContinuity.rawValue,
-                                              vContinuity.rawValue, Int32(maxDegree), Int32(maxSegments))
-        let surf: Surface? = r.surface.map { Surface(handle: $0) }
-        return ApproxSurfaceResult(surface: surf, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
-    }
-}
 
 // MARK: - GCPnts_QuasiUniformAbscissa
 
-extension Edge {
-    /// Compute quasi-uniform parameter distribution on this edge.
-    ///
-    /// The first parameter is always the start of the edge and the last is always its end.
-    ///
-    /// ```swift
-    /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
-    ///     let params = edge.quasiUniformParameters(count: 10)
-    ///     #expect(params.count == 10)
-    /// }
-    /// ```
-    ///
-    /// - Parameter count: Desired number of sample points, honoured within `2...`
-    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). Shares
-    ///   the contract of ``Curve3D/quasiUniformParameters(count:)``, which wraps the same
-    ///   `GCPnts_QuasiUniformAbscissa` for the standalone-curve case.
-    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
-    public func quasiUniformParameters(count: Int) -> [Double] {
-        guard let count = Sampling.requested(count) else { return [] }
-        var params = [Double](repeating: 0, count: count)
-        let n = OCCTGCPntsQuasiUniform(handle, Int32(count), &params, Int32(count))
-        return Array(params.prefix(Int(n)))
-    }
-}
 
 // MARK: - GCPnts_TangentialDeflection
 
-/// A sampled point from tangential deflection.
-public struct TangentialDeflectionPoint {
-    public let parameter: Double
-    public let x: Double, y: Double, z: Double
-}
 
-extension Edge {
-    /// Sample this edge using tangential deflection criteria.
-    public func tangentialDeflectionPoints(angularDeflection: Double = 0.1,
-                                           curvatureDeflection: Double = 0.1,
-                                           minPoints: Int = 2) -> [TangentialDeflectionPoint] {
-        let maxPts: Int32 = 10000
-        var params = [Double](repeating: 0, count: Int(maxPts))
-        var coords = [Double](repeating: 0, count: Int(maxPts) * 3)
-        let n = OCCTGCPntsTangentialDeflection(handle, angularDeflection, curvatureDeflection,
-                                                Int32(minPoints), &params, &coords, maxPts)
-        return (0..<Int(n)).map { i in
-            TangentialDeflectionPoint(parameter: params[i], x: coords[i*3], y: coords[i*3+1], z: coords[i*3+2])
-        }
-    }
-}
 
 // MARK: - BRepGProp_Cinert (Curve Inertia per Edge)
 
-/// Curve inertia properties (length and center of mass).
-///
-/// ``centerOfMass`` is nil when ``length`` is 0, which is what OCCT reports when there is nothing
-/// to integrate. The (0,0,0) it used to expose in that case was the framework's location seed, not
-/// a point on the curve (#609).
-public struct CurveInertia {
-    public let length: Double
-    public let centerOfMass: SIMD3<Double>?
-}
 
-extension Edge {
-    /// Compute curve linear inertia (length and center of mass).
-    ///
-    /// ```swift
-    /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
-    /// e.curveInertia.length          // 10
-    /// e.curveInertia.centerOfMass    // (5,0,0)
-    /// ```
-    public var curveInertia: CurveInertia {
-        let r = OCCTBRepGPropCinert(handle)
-        return CurveInertia(length: r.mass,
-                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
-    }
-}
 
 // MARK: - BRepGProp_Sinert (Surface Inertia per Face)
 
-/// Face surface inertia properties (area and center of mass).
-///
-/// ``centerOfMass`` is nil when ``area`` is 0. See ``CurveInertia`` for why that is not a zero.
-public struct FaceSurfaceInertia {
-    public let area: Double
-    public let centerOfMass: SIMD3<Double>?
-    public let epsilon: Double
-}
 
-extension Face {
-    /// Compute surface inertia (area and center of mass).
-    ///
-    /// ```swift
-    /// let f = Shape.box(width: 10, height: 20, depth: 30)!.faces()[0]
-    /// f.surfaceInertia.area          // 600
-    /// f.surfaceInertia.centerOfMass  // the face's area centroid
-    /// ```
-    public var surfaceInertia: FaceSurfaceInertia {
-        let r = OCCTBRepGPropSinert(handle)
-        return FaceSurfaceInertia(area: r.mass,
-                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
-                                  epsilon: 0)
-    }
-
-    /// Compute surface inertia with adaptive integration.
-    public func surfaceInertia(epsilon: Double) -> FaceSurfaceInertia {
-        let r = OCCTBRepGPropSinertAdaptive(handle, epsilon)
-        return FaceSurfaceInertia(area: r.mass,
-                                  centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ),
-                                  epsilon: r.epsilon)
-    }
-}
 
 // MARK: - BRepGProp_Vinert (Volume Inertia per Face)
 
-/// Face volume inertia contribution.
-///
-/// ``volume`` stays non-optional because a zero contribution is a real, useful answer: this is the
-/// divergence-theorem decomposition, so a face whose plane contains the reference point contributes
-/// exactly nothing and a caller summing over a shell needs that 0. ``centerOfMass`` is nil there,
-/// because a zero contribution has no centroid and the (0,0,0) reported before was the framework's
-/// location seed (#609).
-public struct FaceVolumeInertia {
-    public let volume: Double
-    public let centerOfMass: SIMD3<Double>?
-}
 
-extension Face {
-    /// Compute volume inertia contribution from this face.
-    ///
-    /// ```swift
-    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 1000, summed per face
-    ///
-    /// // A face whose own plane contains the reference point (the origin) contributes nothing.
-    /// // Shape.box is centred on the origin, so shift it to put one face in the z = 0 plane.
-    /// let shifted = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(0, 0, 5))!
-    /// let coplanar = shifted.faces().first { $0.volumeInertia.volume == 0 }!
-    /// coplanar.volumeInertia.volume         // 0, a real summand
-    /// coplanar.volumeInertia.centerOfMass   // nil, a zero contribution has no centroid
-    /// ```
-    public var volumeInertia: FaceVolumeInertia {
-        let r = OCCTBRepGPropVinert(handle)
-        return FaceVolumeInertia(volume: r.mass,
-                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
-    }
-
-    /// Compute volume inertia with reference plane.
-    public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0) -> FaceVolumeInertia {
-        let r = OCCTBRepGPropVinertPlane(handle, planeNormal.x, planeNormal.y, planeNormal.z, planeDistance)
-        return FaceVolumeInertia(volume: r.mass,
-                                 centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
-    }
-}
 
 // MARK: - ShapeConstruct_ProjectCurveOnSurface
 
-extension Curve3D {
-    /// Project this 3D curve onto a surface as a 2D curve.
-    public func projectOnSurface(_ surface: Surface, firstParam: Double? = nil,
-                                  lastParam: Double? = nil, precision: Double = 1e-6) -> Curve2D? {
-        let domain = self.domain
-        let f = firstParam ?? domain.lowerBound
-        let l = lastParam ?? domain.upperBound
-        guard let ref = OCCTProjectCurveOnSurface(handle, surface.handle, f, l, precision) else { return nil }
-        return Curve2D(handle: ref)
-    }
-}
 
 // MARK: - BRepPreviewAPI_MakeBox
 
@@ -12837,624 +11544,64 @@ extension Shape {
 
 // MARK: - GeomPoint3D (Geom_CartesianPoint)
 
-/// A 3D geometric point with Handle-based memory management.
-public final class GeomPoint3D: @unchecked Sendable {
-    public let handle: OCCTGeomPoint3DRef
-
-    public init(x: Double, y: Double, z: Double) {
-        handle = OCCTGeomPoint3DCreate(x, y, z)
-    }
-
-    public init(simd: SIMD3<Double>) {
-        handle = OCCTGeomPoint3DCreate(simd.x, simd.y, simd.z)
-    }
-
-    deinit { OCCTGeomPoint3DRelease(handle) }
-
-    public var x: Double { OCCTGeomPoint3DX(handle) }
-    public var y: Double { OCCTGeomPoint3DY(handle) }
-    public var z: Double { OCCTGeomPoint3DZ(handle) }
-
-    public var coordinates: SIMD3<Double> { SIMD3(x, y, z) }
-
-    public func setCoordinates(x: Double, y: Double, z: Double) {
-        OCCTGeomPoint3DSetCoord(handle, x, y, z)
-    }
-
-    public func distance(to other: GeomPoint3D) -> Double {
-        OCCTGeomPoint3DDistance(handle, other.handle)
-    }
-
-    public func squareDistance(to other: GeomPoint3D) -> Double {
-        OCCTGeomPoint3DSquareDistance(handle, other.handle)
-    }
-
-    public func translate(dx: Double, dy: Double, dz: Double) {
-        OCCTGeomPoint3DTranslate(handle, dx, dy, dz)
-    }
-}
 
 // MARK: - GeomDirection (Geom_Direction)
 
-/// A 3D unit vector (always normalized).
-public final class GeomDirection: @unchecked Sendable {
-    public let handle: OCCTGeomDirectionRef
-
-    public init(x: Double, y: Double, z: Double) {
-        handle = OCCTGeomDirectionCreate(x, y, z)
-    }
-
-    public init(simd: SIMD3<Double>) {
-        handle = OCCTGeomDirectionCreate(simd.x, simd.y, simd.z)
-    }
-
-    internal init(handle: OCCTGeomDirectionRef) {
-        self.handle = handle
-    }
-
-    deinit { OCCTGeomDirectionRelease(handle) }
-
-    public var coordinates: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTGeomDirectionCoords(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public func setCoordinates(x: Double, y: Double, z: Double) {
-        OCCTGeomDirectionSetCoord(handle, x, y, z)
-    }
-
-    /// Cross product with another direction. Returns nil if parallel.
-    public func crossed(with other: GeomDirection) -> GeomDirection? {
-        guard let ref = OCCTGeomDirectionCrossed(handle, other.handle) else { return nil }
-        return GeomDirection(handle: ref)
-    }
-}
 
 // MARK: - GeomVector3D (Geom_VectorWithMagnitude)
 
-/// A 3D vector with magnitude (can have zero length).
-public final class GeomVector3D: @unchecked Sendable {
-    public let handle: OCCTGeomVector3DRef
-
-    public init(x: Double, y: Double, z: Double) {
-        handle = OCCTGeomVector3DCreate(x, y, z)
-    }
-
-    public init(simd: SIMD3<Double>) {
-        handle = OCCTGeomVector3DCreate(simd.x, simd.y, simd.z)
-    }
-
-    public init(from p1: SIMD3<Double>, to p2: SIMD3<Double>) {
-        handle = OCCTGeomVector3DFromPoints(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z)
-    }
-
-    internal init(handle: OCCTGeomVector3DRef) {
-        self.handle = handle
-    }
-
-    deinit { OCCTGeomVector3DRelease(handle) }
-
-    public var coordinates: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTGeomVector3DCoords(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public var magnitude: Double { OCCTGeomVector3DMagnitude(handle) }
-
-    public func dot(_ other: GeomVector3D) -> Double {
-        OCCTGeomVector3DDot(handle, other.handle)
-    }
-
-    public func added(_ other: GeomVector3D) -> GeomVector3D {
-        GeomVector3D(handle: OCCTGeomVector3DAdded(handle, other.handle))
-    }
-
-    public func multiplied(by scalar: Double) -> GeomVector3D {
-        GeomVector3D(handle: OCCTGeomVector3DMultiplied(handle, scalar))
-    }
-
-    /// Returns normalized copy. Nil if magnitude is near zero.
-    public func normalized() -> GeomVector3D? {
-        guard let ref = OCCTGeomVector3DNormalized(handle) else { return nil }
-        return GeomVector3D(handle: ref)
-    }
-
-    public func crossed(_ other: GeomVector3D) -> GeomVector3D {
-        GeomVector3D(handle: OCCTGeomVector3DCrossed(handle, other.handle))
-    }
-}
 
 // MARK: - Axis1Placement (Geom_Axis1Placement)
 
-/// A 3D axis defined by an origin point and a direction.
-public final class Axis1Placement: @unchecked Sendable {
-    public let handle: OCCTAxis1PlacementRef
-
-    public init(origin: SIMD3<Double>, direction: SIMD3<Double>) {
-        handle = OCCTAxis1PlacementCreate(origin.x, origin.y, origin.z,
-                                           direction.x, direction.y, direction.z)
-    }
-
-    internal init(handle: OCCTAxis1PlacementRef) {
-        self.handle = handle
-    }
-
-    deinit { OCCTAxis1PlacementRelease(handle) }
-
-    public var location: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis1PlacementLocation(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public var direction: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis1PlacementDirection(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    /// Reverse the direction in place.
-    public func reverse() {
-        OCCTAxis1PlacementReverse(handle)
-    }
-
-    /// Return a new axis with reversed direction.
-    public func reversed() -> Axis1Placement {
-        Axis1Placement(handle: OCCTAxis1PlacementReversed(handle))
-    }
-
-    public func setDirection(_ dir: SIMD3<Double>) {
-        OCCTAxis1PlacementSetDirection(handle, dir.x, dir.y, dir.z)
-    }
-
-    public func setLocation(_ loc: SIMD3<Double>) {
-        OCCTAxis1PlacementSetLocation(handle, loc.x, loc.y, loc.z)
-    }
-}
 
 // MARK: - Axis2Placement (Geom_Axis2Placement)
 
-/// A 3D right-handed coordinate system (origin, main direction, X direction).
-public final class Axis2Placement: @unchecked Sendable {
-    public let handle: OCCTAxis2PlacementRef
-
-    public init(origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>) {
-        handle = OCCTAxis2PlacementCreate(origin.x, origin.y, origin.z,
-                                           normal.x, normal.y, normal.z,
-                                           xDirection.x, xDirection.y, xDirection.z)
-    }
-
-    deinit { OCCTAxis2PlacementRelease(handle) }
-
-    public var location: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis2PlacementLocation(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public var mainDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis2PlacementDirection(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public var xDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis2PlacementXDirection(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public var yDirection: SIMD3<Double> {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        OCCTAxis2PlacementYDirection(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-
-    public func setDirection(_ dir: SIMD3<Double>) {
-        OCCTAxis2PlacementSetDirection(handle, dir.x, dir.y, dir.z)
-    }
-
-    public func setXDirection(_ dir: SIMD3<Double>) {
-        OCCTAxis2PlacementSetXDirection(handle, dir.x, dir.y, dir.z)
-    }
-}
 
 // MARK: - ShapeConstruct_Curve extensions
 
-extension Curve3D {
-    /// Convert this curve segment to a BSpline using ShapeConstruct_Curve.
-    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve3D? {
-        guard let ref = OCCTShapeConstructConvertToBSpline3D(handle, first, last, precision) else { return nil }
-        return Curve3D(handle: ref)
-    }
 
-    /// Adjust curve endpoints to match given points.
-    public func adjustEndpoints(start: SIMD3<Double>, end: SIMD3<Double>) -> Bool {
-        OCCTShapeConstructAdjustCurve3D(handle, start.x, start.y, start.z, end.x, end.y, end.z)
-    }
-}
-
-extension Curve2D {
-    /// Convert this 2D curve segment to a BSpline using ShapeConstruct_Curve.
-    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve2D? {
-        guard let ref = OCCTShapeConstructConvertToBSpline2D(handle, first, last, precision) else { return nil }
-        return Curve2D(handle: ref)
-    }
-
-    /// Adjust 2D curve endpoints to match given points.
-    public func adjustEndpoints(start: (Double, Double), end: (Double, Double)) -> Bool {
-        OCCTShapeConstructAdjustCurve2D(handle, start.0, start.1, end.0, end.1)
-    }
-}
 
 // MARK: - Bisector utilities
 
-/// Point on a bisector curve with parameter and distance information.
-public struct BisectorPoint {
-    public let paramOnC1: Double
-    public let paramOnC2: Double
-    public let paramOnBis: Double
-    public let distance: Double
-    public let x: Double
-    public let y: Double
-    public let isInfinite: Bool
-}
 
-/// Result of bisector intersection computation.
-public struct BisectorIntersection {
-    public let x: Double
-    public let y: Double
-    public let paramOnFirst: Double
-    public let paramOnSecond: Double
-}
 
-/// Compute intersections between perpendicular bisectors of two point pairs.
-/// The bisector of (a,b) is intersected with the bisector of (c,d).
-/// Returns intersection points (the circumcenter for triangle problems).
-public func bisectorIntersections(
-    a: (Double, Double), b: (Double, Double),
-    c: (Double, Double), d: (Double, Double)
-) -> [BisectorIntersection] {
-    var points = [OCCTBisectorIntersectionPoint](repeating: OCCTBisectorIntersectionPoint(), count: 10)
-    let count = points.withUnsafeMutableBufferPointer { buf in
-        OCCTBisectorInterPointPoint(a.0, a.1, b.0, b.1,
-                                     c.0, c.1, d.0, d.1,
-                                     buf.baseAddress, Int32(buf.count))
-    }
-    return (0..<Int(count)).map { i in
-        BisectorIntersection(x: points[i].x, y: points[i].y,
-                             paramOnFirst: points[i].paramOnFirst,
-                             paramOnSecond: points[i].paramOnSecond)
-    }
-}
 
 // MARK: - GeomLib_Tool (Parameter Finding)
 
-extension Curve3D {
-    /// Find the parameter of a 3D point on this curve.
-    /// Returns nil if the point is beyond maxDistance from the curve.
-    public func parameterOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> Double? {
-        var param: Double = 0
-        let ok = OCCTGeomLibToolParameter3D(handle, point.x, point.y, point.z, maxDistance, &param)
-        return ok ? param : nil
-    }
-}
 
-extension Surface {
-    /// Find the UV parameters of a 3D point on this surface.
-    /// Returns nil if the point is beyond maxDistance from the surface.
-    public func parametersOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> (u: Double, v: Double)? {
-        var u: Double = 0, v: Double = 0
-        let ok = OCCTGeomLibToolParametersSurface(handle, point.x, point.y, point.z, maxDistance, &u, &v)
-        return ok ? (u, v) : nil
-    }
-}
 
-extension Curve2D {
-    /// Find the parameter of a 2D point on this curve.
-    /// Returns nil if the point is beyond maxDistance from the curve.
-    public func parameterOf(point: SIMD2<Double>, maxDistance: Double = 1.0) -> Double? {
-        var param: Double = 0
-        let ok = OCCTGeomLibToolParameter2D(handle, point.x, point.y, maxDistance, &param)
-        return ok ? param : nil
-    }
-}
 
 // MARK: - GeomLib_IsPlanarSurface
 
-extension Surface {
-    /// Check if this surface is planar within tolerance.
-    public func isPlanar(tolerance: Double = 1e-7) -> Bool {
-        OCCTGeomLibIsPlanarSurface(handle, tolerance)
-    }
-
-    /// If planar, returns the plane parameters: origin, normal, X direction.
-    /// Returns nil if the surface is not planar.
-    public func planarPlane(tolerance: Double = 1e-7) -> (origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>)? {
-        var ox: Double = 0, oy: Double = 0, oz: Double = 0
-        var nx: Double = 0, ny: Double = 0, nz: Double = 0
-        var xx: Double = 0, xy: Double = 0, xz: Double = 0
-        let ok = OCCTGeomLibPlanarSurfacePlane(handle, tolerance,
-                                                &ox, &oy, &oz, &nx, &ny, &nz, &xx, &xy, &xz)
-        guard ok else { return nil }
-        return (SIMD3(ox, oy, oz), SIMD3(nx, ny, nz), SIMD3(xx, xy, xz))
-    }
-}
 
 // MARK: - GeomLib_CheckBSplineCurve / Check2dBSplineCurve
 
-extension Curve3D {
-    /// Check if this BSpline curve has reversed end tangents.
-    /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
-    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
-        var first = false, last = false
-        let ok = OCCTGeomLibCheckBSpline3D(handle, tolerance, angularTolerance, &first, &last)
-        return ok ? (first, last) : nil
-    }
 
-    /// Fix reversed end tangents on a BSpline curve. Returns new curve or nil.
-    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
-                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve3D? {
-        guard let ref = OCCTGeomLibFixBSpline3D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
-        return Curve3D(handle: ref)
-    }
-}
-
-extension Curve2D {
-    /// Check if this BSpline 2D curve has reversed end tangents.
-    /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
-    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
-        var first = false, last = false
-        let ok = OCCTGeomLibCheckBSpline2D(handle, tolerance, angularTolerance, &first, &last)
-        return ok ? (first, last) : nil
-    }
-
-    /// Fix reversed end tangents on a BSpline 2D curve. Returns new curve or nil.
-    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
-                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve2D? {
-        guard let ref = OCCTGeomLibFixBSpline2D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
-        return Curve2D(handle: ref)
-    }
-}
 
 // MARK: - GeomLib_Interpolate
 
-extension Curve3D {
-    /// Create a BSpline curve by polynomial interpolation of points at given parameters.
-    public static func polynomialInterpolation(degree: Int, points: [SIMD3<Double>], parameters: [Double]) -> Curve3D? {
-        guard points.count == parameters.count, points.count >= 2 else { return nil }
-        var xyz = [Double]()
-        xyz.reserveCapacity(points.count * 3)
-        for p in points { xyz.append(p.x); xyz.append(p.y); xyz.append(p.z) }
-        guard let ref = OCCTGeomLibInterpolate(Int32(degree), Int32(points.count), xyz, parameters) else { return nil }
-        return Curve3D(handle: ref)
-    }
-}
 
 // MARK: - GccAna_Circ2d2TanRad
 
-/// Circle solution in 2D (center + radius).
-public struct Circle2DSolution: Sendable {
-    public let center: SIMD2<Double>
-    public let radius: Double
-}
 
-/// Find circles tangent to two lines with given radius.
-///
-/// `radius` is the radius of the circles to find, and it must be positive. Asked for zero,
-/// `GccAna_Circ2d2TanRad` obliges and returns solution circles of radius zero (#553). A
-/// non-positive radius returns an empty array.
-///
-/// ```swift
-/// let circles = circlesTangentToLines(SIMD2(0, 0), SIMD2(1, 0),
-///                                     SIMD2(0, 0), SIMD2(0, 1), radius: 2)
-/// print(circles.count)   // 4, one per quadrant
-/// ```
-public func circlesTangentToLines(_ l1Origin: SIMD2<Double>, _ l1Direction: SIMD2<Double>,
-                                   _ l2Origin: SIMD2<Double>, _ l2Direction: SIMD2<Double>,
-                                   radius: Double, tolerance: Double = 1e-6) -> [Circle2DSolution] {
-    var solutions = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(), count: 8)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaCirc2d2TanRadLineLin(l1Origin.x, l1Origin.y, l1Direction.x, l1Direction.y,
-                                        l2Origin.x, l2Origin.y, l2Direction.x, l2Direction.y,
-                                        radius, tolerance, buf.baseAddress, Int32(buf.count))
-    }
-    return (0..<Int(n)).map { i in
-        Circle2DSolution(center: SIMD2(solutions[i].centerX, solutions[i].centerY),
-                         radius: solutions[i].radius)
-    }
-}
 
-/// Find circles through two points with given radius.
-///
-/// `radius` is the radius of the circles to find, and it must be positive; zero would ask for a
-/// solution circle that is a point (#553). A non-positive radius returns an empty array, as does a
-/// radius too small to reach both points.
-///
-/// ```swift
-/// let circles = circlesThroughPointsWithRadius(SIMD2(0, 0), SIMD2(4, 0), radius: 3)
-/// ```
-public func circlesThroughPointsWithRadius(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
-                                            radius: Double, tolerance: Double = 1e-6) -> [Circle2DSolution] {
-    var solutions = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(), count: 8)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaCirc2d2TanRadPntPnt(p1.x, p1.y, p2.x, p2.y, radius, tolerance,
-                                       buf.baseAddress, Int32(buf.count))
-    }
-    return (0..<Int(n)).map { i in
-        Circle2DSolution(center: SIMD2(solutions[i].centerX, solutions[i].centerY),
-                         radius: solutions[i].radius)
-    }
-}
 
 // MARK: - GccAna_Circ2dTanCen
 
-/// Find circle centered at a point passing through another point.
-public func circleThroughPointCentered(point: SIMD2<Double>, center: SIMD2<Double>) -> Circle2DSolution? {
-    var solutions = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(), count: 4)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaCirc2dTanCenPntPnt(point.x, point.y, center.x, center.y,
-                                      buf.baseAddress, Int32(buf.count))
-    }
-    guard n > 0 else { return nil }
-    return Circle2DSolution(center: SIMD2(solutions[0].centerX, solutions[0].centerY),
-                            radius: solutions[0].radius)
-}
 
-/// Find circle tangent to a line centered at a point.
-public func circleTangentToLineCentered(lineOrigin: SIMD2<Double>, lineDirection: SIMD2<Double>,
-                                         center: SIMD2<Double>) -> Circle2DSolution? {
-    var solutions = [OCCTCircle2DSolution](repeating: OCCTCircle2DSolution(), count: 4)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaCirc2dTanCenLinPnt(lineOrigin.x, lineOrigin.y, lineDirection.x, lineDirection.y,
-                                      center.x, center.y, buf.baseAddress, Int32(buf.count))
-    }
-    guard n > 0 else { return nil }
-    return Circle2DSolution(center: SIMD2(solutions[0].centerX, solutions[0].centerY),
-                            radius: solutions[0].radius)
-}
 
 // MARK: - GccAna_Lin2d2Tan
 
-/// Line solution in 2D (origin + direction).
-public struct Line2DSolution: Sendable {
-    public let origin: SIMD2<Double>
-    public let direction: SIMD2<Double>
-}
 
-/// Find line through two points.
-public func lineThroughPoints(_ p1: SIMD2<Double>, _ p2: SIMD2<Double>,
-                               tolerance: Double = 1e-6) -> Line2DSolution? {
-    var solutions = [OCCTLine2DSolution](repeating: OCCTLine2DSolution(), count: 4)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaLin2d2TanPntPnt(p1.x, p1.y, p2.x, p2.y, tolerance,
-                                   buf.baseAddress, Int32(buf.count))
-    }
-    guard n > 0 else { return nil }
-    return Line2DSolution(origin: SIMD2(solutions[0].originX, solutions[0].originY),
-                          direction: SIMD2(solutions[0].dirX, solutions[0].dirY))
-}
 
-/// Find lines tangent to a circle through a point.
-///
-/// `circleRadius` must be positive. With a radius of zero the solver returns the single line
-/// through the centre twice (#553); ``Curve2DGcc/linesTangentToPoint(_:_:)`` and the point/point
-/// entry points answer that question once. A non-positive radius returns an empty array.
-///
-/// ```swift
-/// let tangents = linesTangentToCircleThroughPoint(circleCenter: SIMD2(0, 0), circleRadius: 3,
-///                                                 point: SIMD2(10, 0))
-/// print(tangents.count)   // 2
-/// ```
-public func linesTangentToCircleThroughPoint(circleCenter: SIMD2<Double>, circleRadius: Double,
-                                              point: SIMD2<Double>,
-                                              tolerance: Double = 1e-6) -> [Line2DSolution] {
-    var solutions = [OCCTLine2DSolution](repeating: OCCTLine2DSolution(), count: 4)
-    let n = solutions.withUnsafeMutableBufferPointer { buf in
-        OCCTGccAnaLin2d2TanCircPnt(circleCenter.x, circleCenter.y, circleRadius,
-                                    point.x, point.y, tolerance,
-                                    buf.baseAddress, Int32(buf.count))
-    }
-    return (0..<Int(n)).map { i in
-        Line2DSolution(origin: SIMD2(solutions[i].originX, solutions[i].originY),
-                       direction: SIMD2(solutions[i].dirX, solutions[i].dirY))
-    }
-}
 
 // MARK: - Approx_SameParameter
 
-/// Result of same-parameter check between 3D and 2D curves on a surface.
-public struct SameParameterResult: Sendable {
-    /// True if the curves already have the same parameterization.
-    public let isSameParameter: Bool
-    /// Maximum distance between the 3D curve and the surface evaluation of the 2D curve.
-    public let toleranceReached: Double
-}
 
-extension Curve3D {
-    /// Check if a 2D curve on a surface has the same parameterization as this 3D curve.
-    public func checkSameParameter(curve2D: Curve2D, surface: Surface,
-                                    tolerance: Double = 1e-6) -> SameParameterResult? {
-        var isSame = false
-        var tolReached: Double = 0
-        let ok = OCCTApproxSameParameter(handle, curve2D.handle, surface.handle,
-                                          tolerance, &isSame, &tolReached)
-        guard ok else { return nil }
-        return SameParameterResult(isSameParameter: isSame, toleranceReached: tolReached)
-    }
-}
 
 // MARK: - ShapeUpgrade Curve Splitting
 
-extension Curve3D {
-    /// Split this 3D curve at continuity breaks.
-    ///
-    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
-    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
-    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
-    ///
-    /// ```swift
-    /// // A cubic interpolated BSpline is C2 at its interior knots, so .c3 is what splits it
-    /// let pieces = curve.splitByContinuity(criterion: 3)
-    /// ```
-    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D] {
-        var refs = [OCCTCurve3DRef?](repeating: nil, count: 32)
-        let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTSplitCurve3dContinuity(handle, Int32(criterion), tolerance,
-                                        buf.baseAddress, Int32(buf.count))
-        }
-        return (0..<Int(n)).compactMap { i in
-            guard let ref = refs[i] else { return nil }
-            return Curve3D(handle: ref)
-        }
-    }
-}
 
-extension Curve2D {
-    /// Split this 2D curve at continuity breaks.
-    ///
-    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
-    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
-    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
-    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D] {
-        var refs = [OCCTCurve2DRef?](repeating: nil, count: 32)
-        let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTSplitCurve2dContinuity(handle, Int32(criterion), tolerance,
-                                        buf.baseAddress, Int32(buf.count))
-        }
-        return (0..<Int(n)).compactMap { i in
-            guard let ref = refs[i] else { return nil }
-            return Curve2D(handle: ref)
-        }
-    }
-
-    /// Convert this 2D curve to Bezier segments (via ShapeUpgrade).
-    public func convertToBezierSegments() -> [Curve2D] {
-        var refs = [OCCTCurve2DRef?](repeating: nil, count: 64)
-        let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTConvertCurve2dToBezier(handle, buf.baseAddress, Int32(buf.count))
-        }
-        return (0..<Int(n)).compactMap { i in
-            guard let ref = refs[i] else { return nil }
-            return Curve2D(handle: ref)
-        }
-    }
-
-    /// Approximate this 2D curve as arcs and line segments.
-    public func approxArcsAndSegments(tolerance: Double, angleTolerance: Double) -> [Curve2D] {
-        var refs = [OCCTCurve2DRef?](repeating: nil, count: 256)
-        let n = refs.withUnsafeMutableBufferPointer { buf in
-            OCCTGeom2dConvertApproxArcsSegments(handle, tolerance, angleTolerance,
-                                                  buf.baseAddress, Int32(buf.count))
-        }
-        return (0..<Int(n)).compactMap { i in
-            guard let ref = refs[i] else { return nil }
-            return Curve2D(handle: ref)
-        }
-    }
-}
 
 // MARK: - Shape Modifications, Surface Recognition, Polygon Data (v0.78.0)
 
@@ -13585,630 +11732,31 @@ extension Shape {
 
 // MARK: - Surface Splitting
 
-extension Surface {
-    /// Result of surface splitting.
-    public struct SplitResult: Sendable {
-        public let uSplitCount: Int
-        public let vSplitCount: Int
-    }
-
-    /// Split this surface by continuity criterion, reporting U and V split counts.
-    ///
-    /// `criterion` is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything
-    /// above asks for CN). It used to be read as a `GeomAbs_Shape` ordinal here — 0=C0, 1=G1,
-    /// 2=C1, 3=G2, 4=C2 — even though ``Surface/splitByContinuity(criterion:tolerance:)`` wraps
-    /// the same `ShapeUpgrade_SplitSurfaceContinuity` and read the same integer as a parametric
-    /// continuity, so `criterion: 2` asked for C1 through one entry point and C2 through the
-    /// other. Both now agree. #490.
-    ///
-    /// ```swift
-    /// // Where does this surface drop below C2?
-    /// let split = bsplineSurface.splitSurfaceByContinuity(criterion: 2, tolerance: 1e-6)
-    /// ```
-    public func splitSurfaceByContinuity(criterion: Int, tolerance: Double) -> SplitResult? {
-        var uCount: Int32 = 0
-        var vCount: Int32 = 0
-        let n = OCCTSplitSurfaceContinuity(handle, Int32(criterion), tolerance, &uCount, &vCount)
-        if n == 0 { return nil }
-        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
-    }
-
-    /// Split this surface by maximum angle (radians).
-    public func splitByAngle(_ maxAngle: Double) -> SplitResult? {
-        var uCount: Int32 = 0
-        var vCount: Int32 = 0
-        let n = OCCTSplitSurfaceAngle(handle, maxAngle, &uCount, &vCount)
-        if n == 0 { return nil }
-        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
-    }
-
-    /// Split this surface into approximately equal-area parts.
-    public func splitByArea(parts: Int, intoSquares: Bool = false) -> SplitResult? {
-        var uCount: Int32 = 0
-        var vCount: Int32 = 0
-        let n = OCCTSplitSurfaceArea(handle, Int32(parts), intoSquares, &uCount, &vCount)
-        if n == 0 { return nil }
-        return SplitResult(uSplitCount: Int(uCount), vSplitCount: Int(vCount))
-    }
-}
 
 // MARK: - Curve/Surface Recognition
 
-/// Result of converting a curve to its analytical form.
-public struct CurveToAnalyticalResult: Sendable {
-    /// The recognized curve. Independent of the curve it was recognized from.
-    public let curve: Curve3D
-    /// Range start, expressed in `curve`'s own parameterization — not the input's.
-    public let newFirst: Double
-    /// Range end, expressed in `curve`'s own parameterization — not the input's.
-    public let newLast: Double
-    /// Maximum deviation from the input curve. Exactly `0` when the input was already analytical.
-    public let gap: Double
-}
 
-extension Curve3D {
-    /// Attempt to convert this curve to an analytical form (line, circle, ellipse).
-    ///
-    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its
-    /// domain can be recognized there even when the whole domain is not. The result carries the
-    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
-    /// reports a range starting at 0 on the `Geom_Circle` it returns.
-    ///
-    /// ```swift
-    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
-    /// let domain = bspline.domain
-    /// if let r = bspline.toAnalytical(tolerance: 1e-4,
-    ///                                 first: domain.lowerBound,
-    ///                                 last: domain.upperBound) {
-    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
-    /// }
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - tolerance: Recognition tolerance.
-    ///   - first: Start of the parameter range to examine.
-    ///   - last: End of the parameter range to examine.
-    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
-    public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult? {
-        let result = OCCTGeomConvertCurveToAnalytical(handle, tolerance, first, last)
-        guard result.success, let curveRef = result.curve else { return nil }
-        return CurveToAnalyticalResult(
-            curve: Curve3D(handle: curveRef),
-            newFirst: result.newFirst,
-            newLast: result.newLast,
-            gap: result.gap
-        )
-    }
 
-    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the
-    /// deviation.
-    ///
-    /// The full-range spelling of ``toAnalytical(tolerance:first:last:)``, and the curve counterpart
-    /// of ``Surface/toAnalyticalWithGap(tolerance:)``.
-    ///
-    /// ```swift
-    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
-    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
-    ///     print(r.gap)   // how far the BSpline strayed from the circle
-    /// }
-    /// ```
-    ///
-    /// - Parameter tolerance: Recognition tolerance.
-    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
-    public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult? {
-        let domain = self.domain
-        return toAnalytical(tolerance: tolerance,
-                            first: domain.lowerBound,
-                            last: domain.upperBound)
-    }
 
-    /// Check if a set of 3D points are collinear within tolerance.
-    public static func arePointsLinear(_ points: [SIMD3<Double>], tolerance: Double) -> (isLinear: Bool, deviation: Double) {
-        var flat = [Double]()
-        flat.reserveCapacity(points.count * 3)
-        for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
-        }
-        var deviation: Double = 0
-        let result = flat.withUnsafeBufferPointer { buf in
-            OCCTGeomConvertIsLinear(buf.baseAddress!, Int32(points.count), tolerance, &deviation)
-        }
-        return (result, deviation)
-    }
-}
-
-/// Result of converting a surface to its analytical form.
-public struct SurfaceToAnalyticalResult: Sendable {
-    /// The recognized surface. Independent of the surface it was recognized from.
-    public let surface: Surface
-    /// Maximum deviation from the input surface. Exactly `0` when the input was already analytical.
-    public let gap: Double
-}
-
-extension Surface {
-    /// Attempt to convert this surface to an analytical form, reporting the deviation.
-    ///
-    /// The detailed spelling of ``Surface/toAnalytical(tolerance:)``: same recognition, same
-    /// success and failure cases, plus the gap.
-    ///
-    /// ```swift
-    /// let bspline = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
-    ///     .trimmed(u1: 0, u2: .pi, v1: -5, v2: 5)!.toBSpline()!
-    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
-    ///     print(r.surface.surfaceKind, r.gap)   // .cylinder, ~1e-15
-    /// }
-    /// ```
-    ///
-    /// - Parameter tolerance: Recognition tolerance.
-    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
-    public func toAnalyticalWithGap(tolerance: Double) -> SurfaceToAnalyticalResult? {
-        let result = OCCTGeomConvertSurfToAnalytical(handle, tolerance)
-        guard result.success, let surfRef = result.surface else { return nil }
-        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
-    }
-
-    /// Attempt to convert a UV sub-patch of this surface to an analytical form.
-    ///
-    /// Fits only `[uMin, uMax] × [vMin, vMax]`, so a surface that is a cylinder over part of its
-    /// domain can be recognized there even when the whole domain is not. Inverted bounds
-    /// (`uMin > uMax`) are rejected rather than normalized.
-    ///
-    /// ```swift
-    /// let d = bsplineSurface.domain
-    /// if let r = bsplineSurface.toAnalyticalWithGap(tolerance: 1e-4,
-    ///                                               uMin: d.uMin, uMax: (d.uMin + d.uMax) / 2,
-    ///                                               vMin: d.vMin, vMax: d.vMax) {
-    ///     print(r.surface.surfaceKind)
-    /// }
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - tolerance: Recognition tolerance.
-    ///   - uMin: Lower U bound of the patch to fit.
-    ///   - uMax: Upper U bound of the patch to fit.
-    ///   - vMin: Lower V bound of the patch to fit.
-    ///   - vMax: Upper V bound of the patch to fit.
-    /// - Returns: The recognized surface with its deviation, or nil if not recognizable.
-    public func toAnalyticalWithGap(tolerance: Double,
-                                      uMin: Double, uMax: Double,
-                                      vMin: Double, vMax: Double) -> SurfaceToAnalyticalResult? {
-        let result = OCCTGeomConvertSurfToAnalyticalBounded(handle, tolerance, uMin, uMax, vMin, vMax)
-        guard result.success, let surfRef = result.surface else { return nil }
-        return SurfaceToAnalyticalResult(surface: Surface(handle: surfRef), gap: result.gap)
-    }
-
-    /// Check if this surface is already a canonical (analytical) form.
-    public var isCanonical: Bool {
-        OCCTGeomConvertIsCanonical(handle)
-    }
-}
 
 // MARK: - Polygon2D
 
-/// A 2D polygon (sequence of 2D points).
-public final class Polygon2D: @unchecked Sendable {
-    let handle: OCCTPolyPolygon2DRef
-
-    init(handle: OCCTPolyPolygon2DRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTPolyPolygon2DRelease(handle)
-    }
-
-    /// Create a 2D polygon from points.
-    public static func create(points: [SIMD2<Double>]) -> Polygon2D? {
-        var flat = [Double]()
-        flat.reserveCapacity(points.count * 2)
-        for p in points {
-            flat.append(p.x); flat.append(p.y)
-        }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygon2DCreate(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
-        return Polygon2D(handle: ref)
-    }
-
-    /// Number of nodes.
-    public var nodeCount: Int {
-        Int(OCCTPolyPolygon2DNbNodes(handle))
-    }
-
-    /// Get node at index (0-based).
-    public func node(at index: Int) -> SIMD2<Double>? {
-        var x: Double = 0, y: Double = 0
-        guard OCCTPolyPolygon2DNode(handle, Int32(index), &x, &y) else { return nil }
-        return SIMD2(x, y)
-    }
-
-    /// All nodes.
-    public func nodes() -> [SIMD2<Double>] {
-        (0..<nodeCount).compactMap { node(at: $0) }
-    }
-
-    /// Deflection value.
-    public var deflection: Double {
-        get { OCCTPolyPolygon2DDeflection(handle) }
-        set { OCCTPolyPolygon2DSetDeflection(handle, newValue) }
-    }
-
-    /// Create a deep copy of this polygon (`Poly_Polygon2D::Copy()`).
-    public func copy() -> Polygon2D? {
-        guard let ref = OCCTPolyPolygon2DCopy(handle) else { return nil }
-        return Polygon2D(handle: ref)
-    }
-}
 
 // MARK: - Triangulation (v0.160.0)
 
-/// A `Poly_Triangulation` — a 3D mesh defined by node positions and triangle vertex indices.
-///
-/// Used as input to `BRepGraph.createTriangulationRep(_:)` when populating the cached
-/// mesh tier of a graph (`BRepGraph_MeshCache`). Triangle indices are 0-based on the Swift
-/// boundary; the bridge handles the OCCT 1-based conversion internally.
-public final class Triangulation: @unchecked Sendable {
-    let handle: OCCTPolyTriangulationRef
-
-    init(handle: OCCTPolyTriangulationRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTPolyTriangulationRelease(handle)
-    }
-
-    /// Create a triangulation from nodes and triangle vertex indices.
-    /// - Parameter nodes: sequence of node positions.
-    /// - Parameter triangles: triangle vertex indices, 0-based, three per triangle.
-    /// - Returns: nil if any index is out of range or the inputs are empty.
-    public static func create(nodes: [SIMD3<Double>], triangles: [Int]) -> Triangulation? {
-        guard !nodes.isEmpty, triangles.count > 0, triangles.count % 3 == 0 else { return nil }
-        for idx in triangles where idx < 0 || idx >= nodes.count { return nil }
-        var flatNodes = [Double]()
-        flatNodes.reserveCapacity(nodes.count * 3)
-        for n in nodes {
-            flatNodes.append(n.x); flatNodes.append(n.y); flatNodes.append(n.z)
-        }
-        let triInts = triangles.map { Int32($0) }
-        guard let ref = flatNodes.withUnsafeBufferPointer({ nodeBuf in
-            triInts.withUnsafeBufferPointer { triBuf in
-                OCCTPolyTriangulationCreate(
-                    nodeBuf.baseAddress!, Int32(nodes.count),
-                    triBuf.baseAddress!, Int32(triangles.count / 3))
-            }
-        }) else { return nil }
-        return Triangulation(handle: ref)
-    }
-
-    /// Number of nodes.
-    public var nodeCount: Int { Int(OCCTPolyTriangulationNbNodes(handle)) }
-
-    /// Number of triangles.
-    public var triangleCount: Int { Int(OCCTPolyTriangulationNbTriangles(handle)) }
-
-    /// Get node at index (0-based).
-    public func node(at index: Int) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        guard OCCTPolyTriangulationNode(handle, Int32(index), &x, &y, &z) else { return nil }
-        return SIMD3(x, y, z)
-    }
-
-    /// Get triangle's three node indices at the given triangle index (0-based; returns 0-based vertex indices).
-    public func triangle(at index: Int) -> (Int, Int, Int)? {
-        var n1: Int32 = 0, n2: Int32 = 0, n3: Int32 = 0
-        guard OCCTPolyTriangulationTriangle(handle, Int32(index), &n1, &n2, &n3) else { return nil }
-        return (Int(n1), Int(n2), Int(n3))
-    }
-
-    /// Deflection value.
-    public var deflection: Double {
-        get { OCCTPolyTriangulationDeflection(handle) }
-        set { OCCTPolyTriangulationSetDeflection(handle, newValue) }
-    }
-}
 
 // MARK: - Polygon3D
 
-/// A 3D polygon (sequence of 3D points with optional parameters).
-public final class Polygon3D: @unchecked Sendable {
-    let handle: OCCTPolyPolygon3DRef
-
-    init(handle: OCCTPolyPolygon3DRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTPolyPolygon3DRelease(handle)
-    }
-
-    /// Create a 3D polygon from points.
-    public static func create(points: [SIMD3<Double>]) -> Polygon3D? {
-        var flat = [Double]()
-        flat.reserveCapacity(points.count * 3)
-        for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
-        }
-        guard let ref = flat.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygon3DCreate(buf.baseAddress!, Int32(points.count))
-        }) else { return nil }
-        return Polygon3D(handle: ref)
-    }
-
-    /// Create a 3D polygon from points with parameters.
-    public static func create(points: [SIMD3<Double>], parameters: [Double]) -> Polygon3D? {
-        var flat = [Double]()
-        flat.reserveCapacity(points.count * 3)
-        for p in points {
-            flat.append(p.x); flat.append(p.y); flat.append(p.z)
-        }
-        guard let ref = flat.withUnsafeBufferPointer({ ptsBuf in
-            parameters.withUnsafeBufferPointer { paramBuf in
-                OCCTPolyPolygon3DCreateWithParams(ptsBuf.baseAddress!, Int32(points.count), paramBuf.baseAddress!)
-            }
-        }) else { return nil }
-        return Polygon3D(handle: ref)
-    }
-
-    /// Number of nodes.
-    public var nodeCount: Int {
-        Int(OCCTPolyPolygon3DNbNodes(handle))
-    }
-
-    /// Get node at index (0-based).
-    public func node(at index: Int) -> SIMD3<Double>? {
-        var x: Double = 0, y: Double = 0, z: Double = 0
-        guard OCCTPolyPolygon3DNode(handle, Int32(index), &x, &y, &z) else { return nil }
-        return SIMD3(x, y, z)
-    }
-
-    /// All nodes.
-    public func nodes() -> [SIMD3<Double>] {
-        (0..<nodeCount).compactMap { node(at: $0) }
-    }
-
-    /// Whether this polygon has parameters.
-    public var hasParameters: Bool {
-        OCCTPolyPolygon3DHasParameters(handle)
-    }
-
-    /// Get parameter at index (0-based).
-    public func parameter(at index: Int) -> Double {
-        OCCTPolyPolygon3DParameter(handle, Int32(index))
-    }
-
-    /// Deflection value.
-    public var deflection: Double {
-        get { OCCTPolyPolygon3DDeflection(handle) }
-        set { OCCTPolyPolygon3DSetDeflection(handle, newValue) }
-    }
-}
 
 // MARK: - PolygonOnTriangulation
 
-/// A polygon defined as indices into a shared triangulation.
-public final class PolygonOnTriangulation: @unchecked Sendable {
-    let handle: OCCTPolyPolygonOnTriRef
-
-    init(handle: OCCTPolyPolygonOnTriRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTPolyPolygonOnTriRelease(handle)
-    }
-
-    /// Create from node indices.
-    public static func create(nodeIndices: [Int32]) -> PolygonOnTriangulation? {
-        guard let ref = nodeIndices.withUnsafeBufferPointer({ buf in
-            OCCTPolyPolygonOnTriCreate(buf.baseAddress!, Int32(nodeIndices.count))
-        }) else { return nil }
-        return PolygonOnTriangulation(handle: ref)
-    }
-
-    /// Create from node indices with parameters.
-    public static func create(nodeIndices: [Int32], parameters: [Double]) -> PolygonOnTriangulation? {
-        guard let ref = nodeIndices.withUnsafeBufferPointer({ idxBuf in
-            parameters.withUnsafeBufferPointer { paramBuf in
-                OCCTPolyPolygonOnTriCreateWithParams(idxBuf.baseAddress!, Int32(nodeIndices.count), paramBuf.baseAddress!)
-            }
-        }) else { return nil }
-        return PolygonOnTriangulation(handle: ref)
-    }
-
-    /// Number of nodes.
-    public var nodeCount: Int {
-        Int(OCCTPolyPolygonOnTriNbNodes(handle))
-    }
-
-    /// Get node index at position (0-based).
-    public func nodeIndex(at position: Int) -> Int {
-        Int(OCCTPolyPolygonOnTriNode(handle, Int32(position)))
-    }
-
-    /// Whether this polygon has parameters.
-    public var hasParameters: Bool {
-        OCCTPolyPolygonOnTriHasParameters(handle)
-    }
-
-    /// Get parameter at index (0-based).
-    public func parameter(at index: Int) -> Double {
-        OCCTPolyPolygonOnTriParameter(handle, Int32(index))
-    }
-
-    /// Deflection value.
-    public var deflection: Double {
-        get { OCCTPolyPolygonOnTriDeflection(handle) }
-        set { OCCTPolyPolygonOnTriSetDeflection(handle, newValue) }
-    }
-
-    /// Create a deep copy of this polygon (`Poly_PolygonOnTriangulation::Copy()`).
-    public func copy() -> PolygonOnTriangulation? {
-        guard let ref = OCCTPolyPolygonOnTriCopy(handle) else { return nil }
-        return PolygonOnTriangulation(handle: ref)
-    }
-
-    /// Overwrite the node-index array in place (`ChangeNodeArray()`).
-    /// The supplied array must have the same length as `nodeCount`.
-    /// - Returns: true on success, false on size mismatch.
-    @discardableResult
-    public func setNodes(_ nodeIndices: [Int32]) -> Bool {
-        nodeIndices.withUnsafeBufferPointer { buf in
-            OCCTPolyPolygonOnTriSetNodes(handle, buf.baseAddress!, Int32(nodeIndices.count))
-        }
-    }
-
-    /// Overwrite the parameter array in place (`ChangeParameterArray()`).
-    /// Requires `hasParameters` and an array length equal to `nodeCount`.
-    /// - Returns: true on success, false otherwise.
-    @discardableResult
-    public func setParameters(_ params: [Double]) -> Bool {
-        params.withUnsafeBufferPointer { buf in
-            OCCTPolyPolygonOnTriSetParameters(handle, buf.baseAddress!, Int32(params.count))
-        }
-    }
-}
 
 // MARK: - Mesh Node Merging
 
-/// Result of merging triangulation nodes.
-public struct MergedMeshData: Sendable {
-    public let vertices: [SIMD3<Float>]
-    public let normals: [SIMD3<Float>]
-    public let indices: [UInt32]
-    public let triangleCount: Int
-    public let vertexCount: Int
-}
 
-/// Merge nodes from all face triangulations of a meshed shape.
-/// - Parameters:
-///   - shape: A shape that has been triangulated (e.g., via Mesh.from(shape:))
-///   - smoothAngle: Normal smoothing angle threshold in radians
-///   - mergeTolerance: Distance threshold for merging nodes (0 = positional only)
-/// - Returns: Merged mesh data, or nil on failure
-public func mergedMeshNodes(from shape: Shape,
-                              smoothAngle: Double,
-                              mergeTolerance: Double = 0.0) -> MergedMeshData? {
-    let maxVerts: Int32 = 1_000_000
-    let maxIdx: Int32 = 3_000_000
-    var vertices = [Float](repeating: 0, count: Int(maxVerts) * 3)
-    var normals = [Float](repeating: 0, count: Int(maxVerts) * 3)
-    var indices = [UInt32](repeating: 0, count: Int(maxIdx))
-    var triCount: Int32 = 0
-
-    let nVerts = vertices.withUnsafeMutableBufferPointer { vBuf in
-        normals.withUnsafeMutableBufferPointer { nBuf in
-            indices.withUnsafeMutableBufferPointer { iBuf in
-                OCCTPolyMergeNodes(shape.handle, smoothAngle, mergeTolerance,
-                                     vBuf.baseAddress, nBuf.baseAddress,
-                                     iBuf.baseAddress,
-                                     maxVerts, maxIdx,
-                                     &triCount)
-            }
-        }
-    }
-    if nVerts == 0 { return nil }
-
-    let nv = Int(nVerts)
-    let nt = Int(triCount)
-    let verts: [SIMD3<Float>] = unpackSIMD3(vertices, count: nv)
-    let norms: [SIMD3<Float>] = unpackSIMD3(normals, count: nv)
-    let idxSlice = Array(indices.prefix(nt * 3))
-
-    return MergedMeshData(vertices: verts, normals: norms, indices: idxSlice,
-                            triangleCount: nt, vertexCount: nv)
-}
 
 // MARK: - Poly_CoherentTriangulation, BRepFill, BRepExtrema, BRepGProp, GeomFill, ShapeFix (v0.79.0)
 
-/// Mutable coherent triangulation for mesh editing operations.
-public final class CoherentTriangulation: @unchecked Sendable {
-    let handle: OCCTCoherentTriangulationRef
-
-    init(handle: OCCTCoherentTriangulationRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTCoherentTriangulationRelease(handle)
-    }
-
-    /// Create an empty coherent triangulation.
-    public static func create() -> CoherentTriangulation {
-        let ref = OCCTCoherentTriangulationCreate()!
-        return CoherentTriangulation(handle: ref)
-    }
-
-    /// Create a coherent triangulation from a meshed shape's first face triangulation.
-    /// - Parameter deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
-    public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1) -> CoherentTriangulation? {
-        guard let ref = OCCTCoherentTriangulationCreateFromMesh(shape.handle, deflection) else { return nil }
-        return CoherentTriangulation(handle: ref)
-    }
-
-    /// Add a node at (x, y, z). Returns the 0-based node index.
-    public func setNode(x: Double, y: Double, z: Double) -> Int {
-        Int(OCCTCoherentTriangulationSetNode(handle, x, y, z))
-    }
-
-    /// Add a triangle from three 0-based node indices. Returns true on success.
-    @discardableResult
-    public func addTriangle(_ n0: Int, _ n1: Int, _ n2: Int) -> Bool {
-        OCCTCoherentTriangulationAddTriangle(handle, Int32(n0), Int32(n1), Int32(n2))
-    }
-
-    /// Remove a triangle by 0-based index. Returns true on success.
-    @discardableResult
-    public func removeTriangle(at index: Int) -> Bool {
-        OCCTCoherentTriangulationRemoveTriangle(handle, Int32(index))
-    }
-
-    /// Number of triangles.
-    public var triangleCount: Int {
-        Int(OCCTCoherentTriangulationNTriangles(handle))
-    }
-
-    /// Compute edge links between triangles. Returns the number of links.
-    public func computeLinks() -> Int {
-        Int(OCCTCoherentTriangulationComputeLinks(handle))
-    }
-
-    /// Number of links (edges). Call computeLinks() first.
-    public var linkCount: Int {
-        Int(OCCTCoherentTriangulationNLinks(handle))
-    }
-
-    /// Set the deflection value.
-    public func setDeflection(_ value: Double) {
-        OCCTCoherentTriangulationSetDeflection(handle, value)
-    }
-
-    /// Get the deflection value.
-    public var deflection: Double {
-        OCCTCoherentTriangulationDeflection(handle)
-    }
-
-    /// Remove degenerated triangles within tolerance. Returns true if any were removed.
-    @discardableResult
-    public func removeDegenerated(tolerance: Double) -> Bool {
-        OCCTCoherentTriangulationRemoveDegenerated(handle, tolerance)
-    }
-
-    /// Convert back to standard triangulation data. Returns (nodeCount, triangleCount) or nil.
-    public func getResult() -> (nodeCount: Int, triangleCount: Int)? {
-        var nbNodes: Int32 = 0
-        var nbTris: Int32 = 0
-        guard OCCTCoherentTriangulationGetResult(handle, &nbNodes, &nbTris) else { return nil }
-        return (Int(nbNodes), Int(nbTris))
-    }
-
-    /// Get node coordinates by 1-based index (after getResult).
-    public func nodeCoords(at index: Int) -> (x: Double, y: Double, z: Double)? {
-        var x = 0.0, y = 0.0, z = 0.0
-        guard OCCTCoherentTriangulationNodeCoords(handle, Int32(index), &x, &y, &z) else { return nil }
-        return (x, y, z)
-    }
-}
 
 // MARK: - BRepFill_Evolved
 
@@ -14230,41 +11778,6 @@ extension Shape {
 
 // MARK: - BRepFill_OffsetAncestors
 
-/// Traces ancestry of edges in an offset wire back to original edges.
-public final class OffsetAncestors: @unchecked Sendable {
-    let handle: OCCTOffsetAncestorsRef
-
-    init(handle: OCCTOffsetAncestorsRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTBRepFillOffsetAncestorsRelease(handle)
-    }
-
-    /// Create offset ancestors from a face with given offset distance.
-    /// joinType: 0=Arc, 1=Tangent, 2=Intersection
-    public static func create(face: Shape, offset: Double, joinType: Int = 0) -> OffsetAncestors? {
-        guard let ref = OCCTBRepFillOffsetAncestorsCreate(face.handle, offset, Int32(joinType)) else { return nil }
-        return OffsetAncestors(handle: ref)
-    }
-
-    /// Whether the offset and ancestry computation succeeded.
-    public var isDone: Bool {
-        OCCTBRepFillOffsetAncestorsIsDone(handle)
-    }
-
-    /// Check if an edge has an ancestor in the original wire.
-    public func hasAncestor(_ edge: Shape) -> Bool {
-        OCCTBRepFillOffsetAncestorsHasAncestor(handle, edge.handle)
-    }
-
-    /// Get the ancestor shape of an offset edge.
-    public func ancestor(of edge: Shape) -> Shape? {
-        guard let ref = OCCTBRepFillOffsetAncestorsGetAncestor(handle, edge.handle) else { return nil }
-        return Shape(handle: ref)
-    }
-}
 
 // MARK: - BRepExtrema_DistanceSS
 
@@ -14324,312 +11837,27 @@ extension Shape {
 
 // MARK: - GeomFill_Profiler
 
-/// Homogenizes a set of curves to the same BSpline representation.
-public final class CurveProfiler: @unchecked Sendable {
-    let handle: OCCTGeomFillProfilerRef
-
-    init(handle: OCCTGeomFillProfilerRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTGeomFillProfilerRelease(handle)
-    }
-
-    /// Create a new curve profiler.
-    public static func create() -> CurveProfiler {
-        let ref = OCCTGeomFillProfilerCreate()!
-        return CurveProfiler(handle: ref)
-    }
-
-    /// Add a curve to the profiler.
-    public func addCurve(_ curve: Curve3D) {
-        OCCTGeomFillProfilerAddCurve(handle, curve.handle)
-    }
-
-    /// Perform the homogenization. Returns true on success.
-    @discardableResult
-    public func perform(tolerance: Double = 1e-6) -> Bool {
-        OCCTGeomFillProfilerPerform(handle, tolerance)
-    }
-
-    /// Degree of the homogenized curves.
-    public var degree: Int { Int(OCCTGeomFillProfilerDegree(handle)) }
-
-    /// Number of poles per curve.
-    public var poleCount: Int { Int(OCCTGeomFillProfilerNbPoles(handle)) }
-
-    /// Number of knots.
-    public var knotCount: Int { Int(OCCTGeomFillProfilerNbKnots(handle)) }
-
-    /// Whether the curves are periodic.
-    public var isPeriodic: Bool { OCCTGeomFillProfilerIsPeriodic(handle) }
-
-    /// Get poles for a curve at 1-based index.
-    public func poles(curveIndex: Int) -> [SIMD3<Double>] {
-        let n = poleCount
-        guard n > 0 else { return [] }
-        var xs = [Double](repeating: 0, count: n)
-        var ys = [Double](repeating: 0, count: n)
-        var zs = [Double](repeating: 0, count: n)
-        guard OCCTGeomFillProfilerPoles(handle, Int32(curveIndex), &xs, &ys, &zs, Int32(n)) else { return [] }
-        return (0..<n).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
-    }
-
-    /// Get knots and multiplicities.
-    public func knotsAndMults() -> (knots: [Double], mults: [Int]) {
-        let n = knotCount
-        guard n > 0 else { return ([], []) }
-        var knots = [Double](repeating: 0, count: n)
-        var mults = [Int32](repeating: 0, count: n)
-        guard OCCTGeomFillProfilerKnotsAndMults(handle, &knots, &mults, Int32(n)) else { return ([], []) }
-        return (knots, mults.map { Int($0) })
-    }
-}
 
 // MARK: - GeomFill_Stretch
 
-extension Surface {
-    /// Result of stretch fill operation.
-    public struct StretchFillResult {
-        public let nbUPoles: Int
-        public let nbVPoles: Int
-        public let isRational: Bool
-        public let poles: [SIMD3<Double>]
-    }
-
-    /// Create a stretch-filled surface from 4 boundary point arrays.
-    public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
-                                   p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult? {
-        let count = p1.count
-        guard count == p2.count && count == p3.count && count == p4.count && count >= 2 else { return nil }
-
-        let flat1 = p1.flatMap { [$0.x, $0.y, $0.z] }
-        let flat2 = p2.flatMap { [$0.x, $0.y, $0.z] }
-        let flat3 = p3.flatMap { [$0.x, $0.y, $0.z] }
-        let flat4 = p4.flatMap { [$0.x, $0.y, $0.z] }
-
-        let maxPoles = 1000
-        var outPoles = [Double](repeating: 0, count: maxPoles * 3)
-        let r = OCCTGeomFillStretch(flat1, flat2, flat3, flat4, Int32(count), &outPoles, Int32(maxPoles))
-
-        guard r.nbUPoles > 0 && r.nbVPoles > 0 else { return nil }
-        let totalPoles = Int(r.nbUPoles) * Int(r.nbVPoles)
-        let poles = (0..<totalPoles).map { i in
-            SIMD3(outPoles[i * 3], outPoles[i * 3 + 1], outPoles[i * 3 + 2])
-        }
-        return StretchFillResult(nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
-                                 isRational: r.isRational, poles: poles)
-    }
-}
 
 // MARK: - GeomFill_LocationDraft
 
-/// Draft angle location law for sweep operations.
-public final class LocationDraft: @unchecked Sendable {
-    let handle: OCCTLocationDraftRef
-
-    init(handle: OCCTLocationDraftRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTGeomFillLocationDraftRelease(handle)
-    }
-
-    /// Create a location draft with given direction and angle (radians).
-    public static func create(direction: SIMD3<Double>, angle: Double) -> LocationDraft {
-        let ref = OCCTGeomFillLocationDraftCreate(direction.x, direction.y, direction.z, angle)!
-        return LocationDraft(handle: ref)
-    }
-
-    /// Set the sweep path curve. Returns true on success.
-    @discardableResult
-    public func setCurve(_ curve: Curve3D) -> Bool {
-        OCCTGeomFillLocationDraftSetCurve(handle, curve.handle)
-    }
-
-    /// Evaluate the frame at a parameter. Returns (matrix3x3, translation) or nil.
-    public func evaluate(at param: Double) -> (matrix: [Double], translation: SIMD3<Double>)? {
-        var mat = [Double](repeating: 0, count: 9)
-        var vx = 0.0, vy = 0.0, vz = 0.0
-        guard OCCTGeomFillLocationDraftD0(handle, param, &mat, &vx, &vy, &vz) else { return nil }
-        return (mat, SIMD3(vx, vy, vz))
-    }
-
-    /// Set the draft angle (radians).
-    public func setAngle(_ angle: Double) {
-        OCCTGeomFillLocationDraftSetAngle(handle, angle)
-    }
-
-    /// Get the draft direction.
-    public var direction: SIMD3<Double> {
-        var x = 0.0, y = 0.0, z = 0.0
-        OCCTGeomFillLocationDraftDirection(handle, &x, &y, &z)
-        return SIMD3(x, y, z)
-    }
-}
 
 // MARK: - GeomFill_GuideTrihedronAC
 
-/// Arc-length corrected guide trihedron for sweep operations.
-public final class GuideTrihedronAC: @unchecked Sendable {
-    let handle: OCCTGuideTrihedronACRef
-
-    init(handle: OCCTGuideTrihedronACRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTGeomFillGuideTrihedronACRelease(handle)
-    }
-
-    /// Create from a guide curve.
-    public static func create(guideCurve: Curve3D) -> GuideTrihedronAC {
-        let ref = OCCTGeomFillGuideTrihedronACCreate(guideCurve.handle)!
-        return GuideTrihedronAC(handle: ref)
-    }
-
-    /// Set the sweep path curve. Returns true on success.
-    @discardableResult
-    public func setCurve(_ curve: Curve3D) -> Bool {
-        OCCTGeomFillGuideTrihedronACSetCurve(handle, curve.handle)
-    }
-
-    /// Evaluate the trihedron frame at a parameter.
-    public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-        var tx = 0.0, ty = 0.0, tz = 0.0
-        var nx = 0.0, ny = 0.0, nz = 0.0
-        var bx = 0.0, by = 0.0, bz = 0.0
-        guard OCCTGeomFillGuideTrihedronACD0(handle, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
-        return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
-    }
-}
 
 // MARK: - GeomFill_GuideTrihedronPlan
 
-/// Planar guide trihedron for sweep operations.
-public final class GuideTrihedronPlan: @unchecked Sendable {
-    let handle: OCCTGuideTrihedronPlanRef
-
-    init(handle: OCCTGuideTrihedronPlanRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTGeomFillGuideTrihedronPlanRelease(handle)
-    }
-
-    /// Create from a guide curve.
-    public static func create(guideCurve: Curve3D) -> GuideTrihedronPlan {
-        let ref = OCCTGeomFillGuideTrihedronPlanCreate(guideCurve.handle)!
-        return GuideTrihedronPlan(handle: ref)
-    }
-
-    /// Set the sweep path curve. Returns true on success.
-    @discardableResult
-    public func setCurve(_ curve: Curve3D) -> Bool {
-        OCCTGeomFillGuideTrihedronPlanSetCurve(handle, curve.handle)
-    }
-
-    /// Evaluate the trihedron frame at a parameter.
-    public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3<Double>, binormal: SIMD3<Double>)? {
-        var tx = 0.0, ty = 0.0, tz = 0.0
-        var nx = 0.0, ny = 0.0, nz = 0.0
-        var bx = 0.0, by = 0.0, bz = 0.0
-        guard OCCTGeomFillGuideTrihedronPlanD0(handle, param, &tx, &ty, &tz, &nx, &ny, &nz, &bx, &by, &bz) else { return nil }
-        return (SIMD3(tx, ty, tz), SIMD3(nx, ny, nz), SIMD3(bx, by, bz))
-    }
-}
 
 // MARK: - GeomFill_SectionPlacement
 
-extension Curve3D {
-    /// Result of section placement on a path.
-    public struct SectionPlacementResult {
-        public let parameterOnPath: Double
-        public let parameterOnSection: Double
-        public let distance: Double
-        public let angle: Double
-        public let isDone: Bool
-    }
-
-    /// Place a section curve on a path using a draft location law.
-    public func sectionPlacement(section: Curve3D,
-                                 direction: SIMD3<Double> = SIMD3(0, 0, 1),
-                                 draftAngle: Double = 0,
-                                 tolerance: Double = 1e-3) -> SectionPlacementResult {
-        let r = OCCTGeomFillSectionPlacement(handle, section.handle,
-                                              direction.x, direction.y, direction.z,
-                                              draftAngle, tolerance)
-        return SectionPlacementResult(parameterOnPath: r.parameterOnPath,
-                                      parameterOnSection: r.parameterOnSection,
-                                      distance: r.distance, angle: r.angle, isDone: r.isDone)
-    }
-}
 
 // MARK: - BRepFill_NSections
 
-/// N-section law for sweep/loft operations with multiple wire cross-sections.
-public final class NSections: @unchecked Sendable {
-    let handle: OCCTNSectionsRef
-
-    init(handle: OCCTNSectionsRef) {
-        self.handle = handle
-    }
-
-    deinit {
-        OCCTBRepFillNSectionsRelease(handle)
-    }
-
-    /// Create from an array of wire shapes.
-    public static func create(wires: [Shape]) -> NSections? {
-        let refs = wires.map { $0.handle as OCCTShapeRef }
-        return refs.withUnsafeBufferPointer { buf in
-            guard let ref = OCCTBRepFillNSectionsCreate(buf.baseAddress!, Int32(wires.count)) else { return nil }
-            return NSections(handle: ref)
-        }
-    }
-
-    /// Number of section laws.
-    public var lawCount: Int { Int(OCCTBRepFillNSectionsNbLaw(handle)) }
-
-    /// Whether the section is constant along the path.
-    public var isConstant: Bool { OCCTBRepFillNSectionsIsConstant(handle) }
-
-    /// Whether the section degenerates to a vertex.
-    public var isVertex: Bool { OCCTBRepFillNSectionsIsVertex(handle) }
-}
 
 // MARK: - GeomFill_AppSurf
 
-extension Surface {
-    /// Result of surface approximation from section curves.
-    public struct AppSurfResult {
-        public let uDegree: Int
-        public let vDegree: Int
-        public let nbUPoles: Int
-        public let nbVPoles: Int
-        public let nbUKnots: Int
-        public let nbVKnots: Int
-        public let isDone: Bool
-    }
-
-    /// Approximate a surface from N section curves using GeomFill_AppSurf.
-    public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
-                               tol3d: Double = 1e-3, tol2d: Double = 1e-3) -> AppSurfResult? {
-        let refs = curves.map { $0.handle as OCCTCurve3DRef }
-        return refs.withUnsafeBufferPointer { buf in
-            let r = OCCTGeomFillAppSurf(buf.baseAddress!, Int32(curves.count),
-                                         Int32(degMin), Int32(degMax), tol3d, tol2d)
-            guard r.isDone else { return nil }
-            return AppSurfResult(uDegree: Int(r.uDegree), vDegree: Int(r.vDegree),
-                                 nbUPoles: Int(r.nbUPoles), nbVPoles: Int(r.nbVPoles),
-                                 nbUKnots: Int(r.nbUKnots), nbVKnots: Int(r.nbVKnots),
-                                 isDone: r.isDone)
-        }
-    }
-}
 
 // MARK: - ShapeFix_ComposeShell
 
@@ -14960,112 +12188,9 @@ extension Shape {
 
 // MARK: - ThruSections builder (v0.115.0)
 
-/// Builder for lofted shapes through multiple wire sections.
-public final class ThruSectionsBuilder: @unchecked Sendable {
-    internal let ref: OCCTThruSectionsRef
-
-    /// Create a ThruSections builder.
-    /// - Parameters:
-    ///   - isSolid: Whether to create a solid (true) or shell (false)
-    ///   - isRuled: Whether to use ruled surfaces
-    ///   - precision: 3D tolerance
-    public init(isSolid: Bool = true, isRuled: Bool = false, precision: Double = 1e-6) {
-        ref = OCCTThruSectionsCreate(isSolid, isRuled, precision)
-    }
-
-    deinit {
-        OCCTThruSectionsRelease(ref)
-    }
-
-    /// Add a wire profile.
-    public func addWire(_ wire: Shape) {
-        OCCTThruSectionsAddWire(ref, wire.handle)
-    }
-
-    /// Add a vertex (point) as a degenerate section.
-    public func addVertex(_ vertex: Shape) {
-        OCCTThruSectionsAddVertex(ref, vertex.handle)
-    }
-
-    /// Enable/disable smoothing.
-    public func setSmoothing(_ smoothing: Bool) {
-        OCCTThruSectionsSetSmoothing(ref, smoothing)
-    }
-
-    /// Set the maximum BSpline degree.
-    public func setMaxDegree(_ maxDeg: Int) {
-        OCCTThruSectionsSetMaxDegree(ref, Int32(maxDeg))
-    }
-
-    /// Set the continuity criterion for the lofted surface.
-    ///
-    /// A ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3; anything above asks for CN).
-    /// `BRepOffsetAPI_ThruSections` accepts every value without failing. This used to read only
-    /// 0 and 1, mapping everything else to C2 (#490).
-    public func setContinuity(_ continuity: Int) {
-        OCCTThruSectionsSetContinuity(ref, Int32(continuity))
-    }
-
-    /// Build the lofted shape.
-    @discardableResult
-    public func build() -> Bool {
-        OCCTThruSectionsBuild(ref)
-    }
-
-    /// Get the result shape.
-    public var shape: Shape? {
-        guard let h = OCCTThruSectionsShape(ref) else { return nil }
-        return Shape(handle: h)
-    }
-}
 
 // MARK: - ShapeFixer builder (v0.115.0)
 
-/// Configurable shape repair using ShapeFix_Shape.
-public final class ShapeFixer: @unchecked Sendable {
-    private let ref: OCCTShapeFixerRef
-
-    /// Create a shape fixer for the given shape.
-    public init(shape: Shape) {
-        ref = OCCTShapeFixerCreate(shape.handle)
-    }
-
-    deinit {
-        OCCTShapeFixerRelease(ref)
-    }
-
-    /// Set the precision for shape fixing.
-    public func setPrecision(_ precision: Double) {
-        OCCTShapeFixerSetPrecision(ref, precision)
-    }
-
-    /// Set the maximum tolerance.
-    public func setMaxTolerance(_ maxTol: Double) {
-        OCCTShapeFixerSetMaxTolerance(ref, maxTol)
-    }
-
-    /// Set the minimum tolerance.
-    public func setMinTolerance(_ minTol: Double) {
-        OCCTShapeFixerSetMinTolerance(ref, minTol)
-    }
-
-    /// Perform the shape fix. Returns true if something was fixed.
-    @discardableResult
-    public func perform() -> Bool {
-        OCCTShapeFixerPerform(ref)
-    }
-
-    /// Get the result shape after fixing.
-    public var shape: Shape? {
-        guard let h = OCCTShapeFixerShape(ref) else { return nil }
-        return Shape(handle: h)
-    }
-
-    /// Query status: 1=OK, 2=DONE, 3=FAIL.
-    public func status(_ type: Int) -> Bool {
-        OCCTShapeFixerStatus(ref, Int32(type))
-    }
-}
 
 // MARK: - BRep_Tool completions (v0.126.0)
 

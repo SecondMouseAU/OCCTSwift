@@ -3088,3 +3088,87 @@ extension Curve2D {
         return Curve2D(handle: ref)
     }
 }
+
+extension Curve2D {
+    /// Convert this 2D curve segment to a BSpline using ShapeConstruct_Curve.
+    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve2D? {
+        guard let ref = OCCTShapeConstructConvertToBSpline2D(handle, first, last, precision) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Adjust 2D curve endpoints to match given points.
+    public func adjustEndpoints(start: (Double, Double), end: (Double, Double)) -> Bool {
+        OCCTShapeConstructAdjustCurve2D(handle, start.0, start.1, end.0, end.1)
+    }
+}
+
+extension Curve2D {
+    /// Find the parameter of a 2D point on this curve.
+    /// Returns nil if the point is beyond maxDistance from the curve.
+    public func parameterOf(point: SIMD2<Double>, maxDistance: Double = 1.0) -> Double? {
+        var param: Double = 0
+        let ok = OCCTGeomLibToolParameter2D(handle, point.x, point.y, maxDistance, &param)
+        return ok ? param : nil
+    }
+}
+
+extension Curve2D {
+    /// Check if this BSpline 2D curve has reversed end tangents.
+    /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
+    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
+        var first = false, last = false
+        let ok = OCCTGeomLibCheckBSpline2D(handle, tolerance, angularTolerance, &first, &last)
+        return ok ? (first, last) : nil
+    }
+
+    /// Fix reversed end tangents on a BSpline 2D curve. Returns new curve or nil.
+    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
+                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve2D? {
+        guard let ref = OCCTGeomLibFixBSpline2D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Split this 2D curve at continuity breaks.
+    ///
+    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
+    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
+    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve2D] {
+        var refs = [OCCTCurve2DRef?](repeating: nil, count: 32)
+        let n = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTSplitCurve2dContinuity(handle, Int32(criterion), tolerance,
+                                        buf.baseAddress, Int32(buf.count))
+        }
+        return (0..<Int(n)).compactMap { i in
+            guard let ref = refs[i] else { return nil }
+            return Curve2D(handle: ref)
+        }
+    }
+
+    /// Convert this 2D curve to Bezier segments (via ShapeUpgrade).
+    public func convertToBezierSegments() -> [Curve2D] {
+        var refs = [OCCTCurve2DRef?](repeating: nil, count: 64)
+        let n = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTConvertCurve2dToBezier(handle, buf.baseAddress, Int32(buf.count))
+        }
+        return (0..<Int(n)).compactMap { i in
+            guard let ref = refs[i] else { return nil }
+            return Curve2D(handle: ref)
+        }
+    }
+
+    /// Approximate this 2D curve as arcs and line segments.
+    public func approxArcsAndSegments(tolerance: Double, angleTolerance: Double) -> [Curve2D] {
+        var refs = [OCCTCurve2DRef?](repeating: nil, count: 256)
+        let n = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTGeom2dConvertApproxArcsSegments(handle, tolerance, angleTolerance,
+                                                  buf.baseAddress, Int32(buf.count))
+        }
+        return (0..<Int(n)).compactMap { i in
+            guard let ref = refs[i] else { return nil }
+            return Curve2D(handle: ref)
+        }
+    }
+}

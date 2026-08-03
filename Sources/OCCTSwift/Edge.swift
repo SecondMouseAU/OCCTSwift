@@ -463,3 +463,81 @@ extension Edge {
         return Shape(handle: h)
     }
 }
+
+extension Edge {
+    /// Prepare polygon points from a meshed edge.
+    public func meshPolygonPoints() -> [(Double, Double, Double)] {
+        var coords = [Double](repeating: 0, count: 3000) // up to 1000 points
+        let count = OCCTMeshCinertPreparePolygon(handle, &coords, 1000)
+        var points: [(Double, Double, Double)] = []
+        for i in 0..<Int(count) {
+            points.append((coords[i*3], coords[i*3+1], coords[i*3+2]))
+        }
+        return points
+    }
+}
+
+extension Edge {
+    /// Validate edge geometry on a face (3D curve vs curve-on-surface consistency).
+    public func validate(on face: Face, tolerance: Double = 1e-3) -> ValidateEdgeResult {
+        let r = OCCTValidateEdge(handle, face.handle, tolerance)
+        return ValidateEdgeResult(isDone: r.isDone, isWithinTolerance: r.isWithinTolerance,
+                                   maxDistance: r.maxDistance, tolerance: r.tolerance)
+    }
+}
+
+extension Edge {
+    /// Compute quasi-uniform parameter distribution on this edge.
+    ///
+    /// The first parameter is always the start of the edge and the last is always its end.
+    ///
+    /// ```swift
+    /// if let edge = Shape.box(width: 10, height: 10, depth: 10)?.edges().first {
+    ///     let params = edge.quasiUniformParameters(count: 10)
+    ///     #expect(params.count == 10)
+    /// }
+    /// ```
+    ///
+    /// - Parameter count: Desired number of sample points, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). Shares
+    ///   the contract of ``Curve3D/quasiUniformParameters(count:)``, which wraps the same
+    ///   `GCPnts_QuasiUniformAbscissa` for the standalone-curve case.
+    /// - Returns: Array of parameter values, never more than `count` of them, or empty on failure
+    public func quasiUniformParameters(count: Int) -> [Double] {
+        guard let count = Sampling.requested(count) else { return [] }
+        var params = [Double](repeating: 0, count: count)
+        let n = OCCTGCPntsQuasiUniform(handle, Int32(count), &params, Int32(count))
+        return Array(params.prefix(Int(n)))
+    }
+}
+
+extension Edge {
+    /// Sample this edge using tangential deflection criteria.
+    public func tangentialDeflectionPoints(angularDeflection: Double = 0.1,
+                                           curvatureDeflection: Double = 0.1,
+                                           minPoints: Int = 2) -> [TangentialDeflectionPoint] {
+        let maxPts: Int32 = 10000
+        var params = [Double](repeating: 0, count: Int(maxPts))
+        var coords = [Double](repeating: 0, count: Int(maxPts) * 3)
+        let n = OCCTGCPntsTangentialDeflection(handle, angularDeflection, curvatureDeflection,
+                                                Int32(minPoints), &params, &coords, maxPts)
+        return (0..<Int(n)).map { i in
+            TangentialDeflectionPoint(parameter: params[i], x: coords[i*3], y: coords[i*3+1], z: coords[i*3+2])
+        }
+    }
+}
+
+extension Edge {
+    /// Compute curve linear inertia (length and center of mass).
+    ///
+    /// ```swift
+    /// let e = Edge.line(from: SIMD3(0,0,0), to: SIMD3(10,0,0))!
+    /// e.curveInertia.length          // 10
+    /// e.curveInertia.centerOfMass    // (5,0,0)
+    /// ```
+    public var curveInertia: CurveInertia {
+        let r = OCCTBRepGPropCinert(handle)
+        return CurveInertia(length: r.mass,
+                            centerOfMass: r.mass == 0 ? nil : SIMD3(r.centerX, r.centerY, r.centerZ))
+    }
+}

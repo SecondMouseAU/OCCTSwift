@@ -2622,3 +2622,227 @@ extension Curve3D {
         return Curve3D(handle: ref)
     }
 }
+
+extension Curve3D {
+    /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
+    ///
+    /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
+    /// performs — one shared `GeomConvert_ApproxCurve` run behind both (#491) — with the
+    /// diagnostics OCCT already computed for it. For identical arguments the two return the same
+    /// curve; use this one when you need to know how close the fit actually came.
+    ///
+    /// `hasResult` is what decides whether `curve` is populated, and OCCT documents it as true even
+    /// for a fit that is *not* within `tolerance` — `isDone` and `maxError` are how you find out.
+    /// So a non-nil `curve` is not by itself a promise that `tolerance` was met.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let fit = circle.approxWithDetails(tolerance: 1e-6)
+    /// if let bspline = fit.curve, fit.isDone {
+    ///     print("fitted to \(fit.maxError) with \(bspline.poleCount ?? 0) poles")
+    /// }
+    /// ```
+    public func approxWithDetails(tolerance: Double, continuity: ParametricContinuity = .c2,
+                                   maxSegments: Int = 100, maxDegree: Int = 8) -> ApproxCurveResult {
+        let r = OCCTGeomConvertApproxCurve(handle, tolerance, continuity.rawValue,
+                                            Int32(maxSegments), Int32(maxDegree))
+        let curve: Curve3D? = r.curve.map { Curve3D(handle: $0) }
+        return ApproxCurveResult(curve: curve, maxError: r.maxError, isDone: r.isDone, hasResult: r.hasResult)
+    }
+}
+
+extension Curve3D {
+    /// Project this 3D curve onto a surface as a 2D curve.
+    public func projectOnSurface(_ surface: Surface, firstParam: Double? = nil,
+                                  lastParam: Double? = nil, precision: Double = 1e-6) -> Curve2D? {
+        let domain = self.domain
+        let f = firstParam ?? domain.lowerBound
+        let l = lastParam ?? domain.upperBound
+        guard let ref = OCCTProjectCurveOnSurface(handle, surface.handle, f, l, precision) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Convert this curve segment to a BSpline using ShapeConstruct_Curve.
+    public func convertSegmentToBSpline(first: Double, last: Double, precision: Double = 1e-6) -> Curve3D? {
+        guard let ref = OCCTShapeConstructConvertToBSpline3D(handle, first, last, precision) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Adjust curve endpoints to match given points.
+    public func adjustEndpoints(start: SIMD3<Double>, end: SIMD3<Double>) -> Bool {
+        OCCTShapeConstructAdjustCurve3D(handle, start.x, start.y, start.z, end.x, end.y, end.z)
+    }
+}
+
+extension Curve3D {
+    /// Find the parameter of a 3D point on this curve.
+    /// Returns nil if the point is beyond maxDistance from the curve.
+    public func parameterOf(point: SIMD3<Double>, maxDistance: Double = 1.0) -> Double? {
+        var param: Double = 0
+        let ok = OCCTGeomLibToolParameter3D(handle, point.x, point.y, point.z, maxDistance, &param)
+        return ok ? param : nil
+    }
+}
+
+extension Curve3D {
+    /// Check if this BSpline curve has reversed end tangents.
+    /// Returns (needFixFirst, needFixLast) or nil if not a BSpline or check failed.
+    public func checkBSplineTangents(tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> (fixFirst: Bool, fixLast: Bool)? {
+        var first = false, last = false
+        let ok = OCCTGeomLibCheckBSpline3D(handle, tolerance, angularTolerance, &first, &last)
+        return ok ? (first, last) : nil
+    }
+
+    /// Fix reversed end tangents on a BSpline curve. Returns new curve or nil.
+    public func fixBSplineTangents(fixFirst: Bool, fixLast: Bool,
+                                    tolerance: Double = 0.01, angularTolerance: Double = 0.1) -> Curve3D? {
+        guard let ref = OCCTGeomLibFixBSpline3D(handle, tolerance, angularTolerance, fixFirst, fixLast) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Create a BSpline curve by polynomial interpolation of points at given parameters.
+    public static func polynomialInterpolation(degree: Int, points: [SIMD3<Double>], parameters: [Double]) -> Curve3D? {
+        guard points.count == parameters.count, points.count >= 2 else { return nil }
+        var xyz = [Double]()
+        xyz.reserveCapacity(points.count * 3)
+        for p in points { xyz.append(p.x); xyz.append(p.y); xyz.append(p.z) }
+        guard let ref = OCCTGeomLibInterpolate(Int32(degree), Int32(points.count), xyz, parameters) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Check if a 2D curve on a surface has the same parameterization as this 3D curve.
+    public func checkSameParameter(curve2D: Curve2D, surface: Surface,
+                                    tolerance: Double = 1e-6) -> SameParameterResult? {
+        var isSame = false
+        var tolReached: Double = 0
+        let ok = OCCTApproxSameParameter(handle, curve2D.handle, surface.handle,
+                                          tolerance, &isSame, &tolReached)
+        guard ok else { return nil }
+        return SameParameterResult(isSameParameter: isSame, toleranceReached: tolReached)
+    }
+}
+
+extension Curve3D {
+    /// Split this 3D curve at continuity breaks.
+    ///
+    /// Criterion is a ``ParametricContinuity`` raw value (0=C0, 1=C1, 2=C2, 3=C3); anything above
+    /// asks for CN, i.e. split at every break. `ShapeUpgrade_Split*Continuity::SetCriterion` is
+    /// the one consumer of this vocabulary that recognises the whole ladder including CN.
+    ///
+    /// ```swift
+    /// // A cubic interpolated BSpline is C2 at its interior knots, so .c3 is what splits it
+    /// let pieces = curve.splitByContinuity(criterion: 3)
+    /// ```
+    public func splitByContinuity(criterion: Int = 2, tolerance: Double = 1e-6) -> [Curve3D] {
+        var refs = [OCCTCurve3DRef?](repeating: nil, count: 32)
+        let n = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTSplitCurve3dContinuity(handle, Int32(criterion), tolerance,
+                                        buf.baseAddress, Int32(buf.count))
+        }
+        return (0..<Int(n)).compactMap { i in
+            guard let ref = refs[i] else { return nil }
+            return Curve3D(handle: ref)
+        }
+    }
+}
+
+extension Curve3D {
+    /// Attempt to convert this curve to an analytical form (line, circle, ellipse).
+    ///
+    /// Recognition runs over `[first, last]` only, so a curve that is a circle along part of its
+    /// domain can be recognized there even when the whole domain is not. The result carries the
+    /// recognized curve's own parameterization: a BSpline circle examined over `[π/2, 3π/2]`
+    /// reports a range starting at 0 on the `Geom_Circle` it returns.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// let domain = bspline.domain
+    /// if let r = bspline.toAnalytical(tolerance: 1e-4,
+    ///                                 first: domain.lowerBound,
+    ///                                 last: domain.upperBound) {
+    ///     print(r.curve.curveKind, r.gap)   // .circle, ~1e-15
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - tolerance: Recognition tolerance.
+    ///   - first: Start of the parameter range to examine.
+    ///   - last: End of the parameter range to examine.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
+    public func toAnalytical(tolerance: Double, first: Double, last: Double) -> CurveToAnalyticalResult? {
+        let result = OCCTGeomConvertCurveToAnalytical(handle, tolerance, first, last)
+        guard result.success, let curveRef = result.curve else { return nil }
+        return CurveToAnalyticalResult(
+            curve: Curve3D(handle: curveRef),
+            newFirst: result.newFirst,
+            newLast: result.newLast,
+            gap: result.gap
+        )
+    }
+
+    /// Attempt to convert this curve to an analytical form over its whole domain, reporting the
+    /// deviation.
+    ///
+    /// The full-range spelling of ``toAnalytical(tolerance:first:last:)``, and the curve counterpart
+    /// of ``Surface/toAnalyticalWithGap(tolerance:)``.
+    ///
+    /// ```swift
+    /// let bspline = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!.toBSpline()!
+    /// if let r = bspline.toAnalyticalWithGap(tolerance: 1e-4) {
+    ///     print(r.gap)   // how far the BSpline strayed from the circle
+    /// }
+    /// ```
+    ///
+    /// - Parameter tolerance: Recognition tolerance.
+    /// - Returns: The recognized curve with its range and deviation, or nil if not recognizable.
+    public func toAnalyticalWithGap(tolerance: Double = 1e-4) -> CurveToAnalyticalResult? {
+        let domain = self.domain
+        return toAnalytical(tolerance: tolerance,
+                            first: domain.lowerBound,
+                            last: domain.upperBound)
+    }
+
+    /// Check if a set of 3D points are collinear within tolerance.
+    public static func arePointsLinear(_ points: [SIMD3<Double>], tolerance: Double) -> (isLinear: Bool, deviation: Double) {
+        var flat = [Double]()
+        flat.reserveCapacity(points.count * 3)
+        for p in points {
+            flat.append(p.x); flat.append(p.y); flat.append(p.z)
+        }
+        var deviation: Double = 0
+        let result = flat.withUnsafeBufferPointer { buf in
+            OCCTGeomConvertIsLinear(buf.baseAddress!, Int32(points.count), tolerance, &deviation)
+        }
+        return (result, deviation)
+    }
+}
+
+extension Curve3D {
+    /// Result of section placement on a path.
+    public struct SectionPlacementResult {
+        public let parameterOnPath: Double
+        public let parameterOnSection: Double
+        public let distance: Double
+        public let angle: Double
+        public let isDone: Bool
+    }
+
+    /// Place a section curve on a path using a draft location law.
+    public func sectionPlacement(section: Curve3D,
+                                 direction: SIMD3<Double> = SIMD3(0, 0, 1),
+                                 draftAngle: Double = 0,
+                                 tolerance: Double = 1e-3) -> SectionPlacementResult {
+        let r = OCCTGeomFillSectionPlacement(handle, section.handle,
+                                              direction.x, direction.y, direction.z,
+                                              draftAngle, tolerance)
+        return SectionPlacementResult(parameterOnPath: r.parameterOnPath,
+                                      parameterOnSection: r.parameterOnSection,
+                                      distance: r.distance, angle: r.angle, isDone: r.isDone)
+    }
+}
