@@ -72,7 +72,18 @@ let occtTarget: Target = useLocalBinary
 // same core slices as OCCT.xcframework (macOS, iOS device, iOS simulator, see Scripts/build-occt.sh);
 // visionOS/tvOS consumers must leave the env var unset (source build) or rebuild the prebuilt locally
 // with BUILD_ALL_PLATFORMS=1.
-let useBridgePrebuilt = ProcessInfo.processInfo.environment["OCCTSWIFT_BRIDGE_PREBUILT"] == "1"
+// DISABLED FOR THE v2.0.0 LINE. The prebuilt path is switched off here rather than deleted: nearly
+// every issue in the 2.0.0 queue edits Sources/OCCTBridge/src/*.mm, and a prebuilt binary that
+// predates the edit links silently and reports a pass for code that was never compiled. The 8.0.1
+// absorb hit exactly that: the shared prebuilt predated the #656 null-pcurve guard while
+// OCCTSWIFT_BRIDGE_PREBUILT=1 was set in the environment, so the default path would have linked a
+// guard-less bridge against a kernel whose OCCT#1402 had started returning null, which is the
+// combination that SIGSEGVs. Paying ~50s per rebuild is the cheaper side of that trade.
+//
+// To restore (release commit, once the bridge stops changing every PR): delete the `false &&` and
+// bump the url:/checksum: below to a freshly built asset.
+let useBridgePrebuilt = false
+    && ProcessInfo.processInfo.environment["OCCTSWIFT_BRIDGE_PREBUILT"] == "1"
 let useBridgeLocalBinary = useBridgePrebuilt
     && FileManager.default.fileExists(atPath: occtPackageDir + "/Libraries/OCCTBridge.xcframework/Info.plist")
 
