@@ -33,9 +33,13 @@ FILES = {
 # `func` is in the list because top-level free functions are otherwise invisible here, and that
 # blindness cost real work: #659 moved 9 of them out of Shape.swift and only found them by diffing
 # every top-level line against the declaration ranges. Document.swift has 2 more waiting for #661.
+# The name alternation admits operator characters as well as identifiers, so a top-level operator
+# overload (`func + (lhs: V, rhs: V) -> V`) is not invisible the way plain `func` used to be. None
+# exist in the tree today; the point is that the next one does not have to be found by hand.
 DECL = re.compile(
     r"^(?:public |internal |private |package |fileprivate |)?(?:final )?"
-    r"(extension|class|struct|enum|protocol|actor|func)\s+([A-Za-z_]\w*)"
+    r"(extension|class|struct|enum|protocol|actor|func)\s+"
+    r"([A-Za-z_]\w*|[-+*/%<>=!&|^~?]+)"
 )
 
 
@@ -59,7 +63,7 @@ def scan(path):
         yield kind, name, i - start
 
 
-def report(label, path, show_list):
+def report(path, show_list):
     extended = collections.Counter()
     standalone = collections.Counter()
     free_funcs = collections.Counter()
@@ -71,8 +75,8 @@ def report(label, path, show_list):
         else:
             standalone[name] += size
         if show_list:
-            label = {"extension": "extension", "func": "free func"}.get(kind, "type")
-            print(f"{size:6d}\t{label}\t{name}")
+            kind_label = {"extension": "extension", "func": "free func"}.get(kind, "type")
+            print(f"{size:6d}\t{kind_label}\t{name}")
     if show_list:
         return
 
@@ -96,10 +100,75 @@ def report(label, path, show_list):
     print()
 
 
+SELF_TEST_FIXTURE = """\
+import Foundation
+
+public extension Shape {
+    func inAnExtension() {}
+}
+
+public final class SomeType {
+    fileprivate init() {}
+}
+
+public struct AValue {}
+
+public func aFreeFunction(x: Int) -> Int {
+    return x
+}
+
+fileprivate func aFileprivateFreeFunction() {}
+
+public func + (lhs: AValue, rhs: AValue) -> AValue {
+    return lhs
+}
+"""
+
+# What the fixture must classify as. The point of each entry is a failure mode this script has
+# actually had: `func` was missing from DECL entirely until #659 found 9 free functions by hand,
+# `fileprivate` was missing from the access alternation, and an operator name does not match an
+# identifier pattern. A detector that reports "all clear" because it is blind looks exactly like
+# one reporting "all clear" on a clean tree, which is why this exists.
+SELF_TEST_EXPECTED = {
+    ("extension", "Shape"),
+    ("class", "SomeType"),
+    ("struct", "AValue"),
+    ("func", "aFreeFunction"),
+    ("func", "aFileprivateFreeFunction"),
+    ("func", "+"),
+}
+
+
+def self_test():
+    import tempfile
+
+    with tempfile.NamedTemporaryFile("w", suffix=".swift", delete=False) as handle:
+        handle.write(SELF_TEST_FIXTURE)
+        fixture = handle.name
+    try:
+        found = {(kind, name) for kind, name, _ in scan(fixture)}
+    finally:
+        os.unlink(fixture)
+
+    missing = SELF_TEST_EXPECTED - found
+    extra = found - SELF_TEST_EXPECTED
+    for kind, name in sorted(missing):
+        print(f"  MISSED   {kind} {name}", file=sys.stderr)
+    for kind, name in sorted(extra):
+        print(f"  SPURIOUS {kind} {name}", file=sys.stderr)
+    ok = len(SELF_TEST_EXPECTED) - len(missing)
+    print(f"self-test: {ok}/{len(SELF_TEST_EXPECTED)} cases correct" + (", 0 spurious" if not extra else ""))
+    return 0 if not missing and not extra else 1
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", metavar="WHICH", choices=sorted(FILES), help="print every declaration")
+    ap.add_argument("--self-test", action="store_true", help="prove the detector catches each shape")
     args = ap.parse_args()
+
+    if args.self_test:
+        return self_test()
 
     for path in FILES.values():
         if not os.path.isfile(path):
@@ -109,7 +178,7 @@ def main():
     for label, path in FILES.items():
         if args.list and args.list != label:
             continue
-        report(label, path, bool(args.list))
+        report(path, bool(args.list))
     return 0
 
 
