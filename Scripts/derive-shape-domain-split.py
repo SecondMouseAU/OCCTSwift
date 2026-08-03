@@ -56,6 +56,33 @@ NESTED = re.compile(r"^\s+(?:public |internal |private |fileprivate |)?(?:final 
 DOMAIN_FREE = {"Stress", "Integration", "Thread", "Misc", "Foundation"}
 
 
+def strip_block_comments(line, in_block):
+    """Return (code outside any block comment, whether a block comment is still open).
+
+    Mirrors what the compiler does with a same-line block comment rather than dropping the whole
+    physical line. Skipping the line is what the first version did, and it silently lost any code
+    sharing a line with the closing `*/`: both the member on that line and, if its braces did not
+    happen to balance, every later member in the block, because the depth counter desynced.
+    """
+    out = []
+    while line:
+        if in_block:
+            close = line.find("*/")
+            if close == -1:
+                return "".join(out), True
+            line = line[close + 2:]
+            in_block = False
+        else:
+            open_at = line.find("/*")
+            if open_at == -1:
+                out.append(line)
+                return "".join(out), False
+            out.append(line[:open_at])
+            line = line[open_at + 2:]
+            in_block = True
+    return "".join(out), in_block
+
+
 def shape_members(paths=None):
     """Direct members of every top-level `extension Shape` block under Sources/OCCTSwift.
 
@@ -89,29 +116,22 @@ def _members_in_file(path):
             inside, depth, nested_until = True, 0, None
         if not inside:
             continue
-        stripped = line.lstrip()
-        # Skip anything the compiler would not read as code. Doc comments here carry multi-line
-        # Swift examples whose braces do not balance line by line, which throws the depth off; a
-        # `/* */` block spanning lines would do the same, so both are excluded rather than just
-        # the `//` case that was fixed first.
-        was_in_block = in_block_comment
-        if not in_block_comment and "/*" in line and "*/" not in line.split("/*", 1)[1]:
-            in_block_comment = True
-        elif in_block_comment and "*/" in line:
-            in_block_comment = False
-            continue
-        is_comment = was_in_block or in_block_comment or stripped.startswith("//")
-        if not is_comment:
-            if nested_until is None and NESTED.match(line):
+        # Reduce the line to the code a compiler would see. Doc comments here carry multi-line
+        # Swift examples whose braces do not balance line by line, and a `/* */` span does the
+        # same, so both are removed before anything counts braces or matches a declaration.
+        code, in_block_comment = strip_block_comments(line, in_block_comment)
+        stripped = code.lstrip()
+        if stripped and not stripped.startswith("//"):
+            if nested_until is None and NESTED.match(code):
                 nested_until = depth  # everything deeper belongs to the nested type
             elif depth == 1:
-                m = MEMBER.match(line)
+                m = MEMBER.match(code)
                 if m:
                     names.add(m.group(1))
-            depth += line.count("{") - line.count("}")
+            depth += code.count("{") - code.count("}")
             if nested_until is not None and depth <= nested_until:
                 nested_until = None
-            if depth <= 0 and line.startswith("}"):
+            if depth <= 0 and stripped.startswith("}"):
                 inside = False
     return names
 
@@ -164,6 +184,16 @@ extension Shape {
     */
     public var realProperty: Int { 0 }
 
+    /* a one-liner sharing its line with code */ public func rightAfterClose() -> Int { 0 }
+
+    /* a span whose close shares a line with a
+       multi-line body */ public func spanThenBody() -> Int {
+        let n = 1
+        return n
+    }
+
+    public func afterTheSpan() {}
+
     public struct NestedResult {
         public var notAShapeMember: Double
         public func alsoNotAShapeMember() {}
@@ -174,7 +204,16 @@ extension Shape {
 # Only the two direct members belong to Shape. The other three names are the exact contamination
 # the first version of this script shipped: a local `var` inside a function body, and the fields of
 # a nested result type. It reported 557 members when the real figure was 446.
-SELF_TEST_EXPECTED = {"realMember", "realProperty"}
+# rightAfterClose / spanThenBody / afterTheSpan cover the review finding on #680: closing a block
+# comment with `continue` dropped the whole physical line, so code sharing a line with `*/` was
+# lost, and an unbalanced brace on that line desynced depth for every later member too.
+SELF_TEST_EXPECTED = {
+    "realMember",
+    "realProperty",
+    "rightAfterClose",
+    "spanThenBody",
+    "afterTheSpan",
+}
 # Each rejection is a bug this script has actually had or was one edit away from having:
 #   aLocalVariable / notAShapeMember / alsoNotAShapeMember  no depth check (shipped, 557 vs 446)
 #   notOnShapeAtAll                                          `startswith` matched extension ShapeAxis
