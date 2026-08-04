@@ -332,11 +332,13 @@ extension Shape {
     /// Free boundaries indicate gaps in a shell. A watertight shell has no free boundaries.
     ///
     /// - Note: Unlike `Shape.sectionWiresAtZ(_:tolerance:)`, this method (and the rest of the
-    ///   `freeBounds*` family) is unaffected by OCCT 8.0.1's `ConnectEdgesToWires`
-    ///   INTERNAL/EXTERNAL skip (OCCT#1408): edges or wires carrying `.internal`/`.external`
-    ///   orientation are never picked up as free-bound candidates in the first place, on either
-    ///   kernel version, since this family goes through `ShapeAnalysis_FreeBounds`'s constructor
-    ///   rather than its `ConnectEdgesToWires` entry point. See #655.
+    ///   `freeBounds*` family: ``freeBoundsAnalysis(tolerance:)``, ``freeBoundsClosedCount(tolerance:)``,
+    ///   ``freeBoundsClosedWires(tolerance:)``, ``freeBoundsOpenWires(tolerance:)``) is unaffected by
+    ///   OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408). The constructor this
+    ///   family uses does reach that same skip, in its own chainage step, so the reason is not that
+    ///   the call graph avoids it. What keeps the result unchanged is upstream: the edges this family
+    ///   feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case measured that sewing
+    ///   stage never produced an `.internal`/`.external` free edge for the skip to act on. See #655.
     /// - Parameter sewingTolerance: Tolerance for grouping free edges into wires
     /// - Returns: Free bounds result, or nil if no free boundaries found
     public func freeBounds(sewingTolerance: Double = 1e-6) -> FreeBoundsResult? {
@@ -652,6 +654,8 @@ extension Shape {
     /// }
     /// ```
     ///
+    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
     /// - Parameter tolerance: Sewing tolerance used to chain free edges into contours. 0 or below
     ///   selects a different OCCT algorithm, taking free edges from the shape's already-shared
     ///   topology instead of from a sewing pass.
@@ -1368,6 +1372,9 @@ extension Shape {
 extension Shape {
 
     /// Count the number of closed free-boundary wires.
+    ///
+    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Number of closed free-boundary wires.
     public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int {
@@ -1375,6 +1382,9 @@ extension Shape {
     }
 
     /// Get the compound of closed free-boundary wires.
+    ///
+    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of closed wires, or nil if none.
     public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape? {
@@ -1383,6 +1393,9 @@ extension Shape {
     }
 
     /// Get the compound of open free-boundary wires.
+    ///
+    /// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408);
+    ///   see ``freeBounds(sewingTolerance:)`` for why. See #655.
     /// - Parameter tolerance: Sewing tolerance for boundary detection.
     /// - Returns: Compound shape of open wires, or nil if none.
     public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape? {

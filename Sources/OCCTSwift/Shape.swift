@@ -2221,7 +2221,7 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Get closed wires from a section at Z level.
+    /// Get wires from a section at a Z level, chained where the section closes.
     ///
     /// This is useful for CAM operations where you need to work with closed contours
     /// that can be offset for tool compensation.
@@ -2230,11 +2230,12 @@ public final class Shape: @unchecked Sendable {
     ///   - z: The Z level to section at
     ///   - tolerance: Tolerance for connecting edges into wires. Use larger values
     ///                (e.g., 1e-4) for imprecise geometry. Default is 1e-6.
-    /// - Returns: Array of closed wires representing contours at that Z level.
+    /// - Returns: Array of wires representing contours at that Z level, closed where the section
+    ///            forms a loop and open otherwise (e.g. a section edge with nothing to close onto).
     ///            Returns empty array if no contours exist at that level.
     ///
     /// Unlike `sliceAtZ(_:)` which returns a shape with loose edges, this method
-    /// chains the edges into closed wires that can be used with `Wire.offset(by:)`.
+    /// chains the edges into wires (closed where possible) that can be used with `Wire.offset(by:)`.
     ///
     /// - Note: Edges whose orientation is `.internal` or `.external` (see
     ///   `Shape.Orientation`/`Shape.setOrientation(_:)`) are silently excluded from the result

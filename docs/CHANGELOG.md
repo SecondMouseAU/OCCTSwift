@@ -88,11 +88,21 @@ Gordon tests assert only status ordinals. Those two were probed directly. Tracke
   moves from `3.713203436` to `3.535533906`, which is exactly `5/√2`. A non-rational control was
   already exact on both kernels, so only rational networks ever moved. Affects
   `Surface.gordon(profiles:guides:tolerance:)` and `Surface.gordonReport(...)`. Evidence added to #645.
-- **`Shape.freeBounds*` and INTERNAL/EXTERNAL edges** ([#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655)).
-  `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` now skips them: a sequence of one INTERNAL edge
-  plus a square returns 1 wire where it returned 2, and a sequence of nothing but INTERNAL/EXTERNAL
-  edges returns 0 wires where it returned 1. The constructor path the `freeBounds*` family actually
-  calls does **not** move; the change is confined to the direct entry point.
+- **`Shape.sectionWiresAtZ(_:tolerance:)`, not `freeBounds*`, sees the INTERNAL/EXTERNAL skip**
+  ([#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655)).
+  `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` now skips edges oriented `.internal`/`.external`:
+  a sequence of one INTERNAL edge plus a square returns 1 wire where it returned 2, and a sequence
+  of nothing but INTERNAL/EXTERNAL edges returns 0 wires where it returned 1. That C++ function
+  appears exactly once in this bridge, inside `OCCTShapeSectionWiresAtZ`, which backs
+  `Shape.sectionWiresAtZ(_:tolerance:)`, a CAM sectioning API: an ordinary transverse cut never
+  produces such an edge, but a cut plane coincident with an edge a caller already marked
+  `.internal`/`.external` via `Shape.setOrientation(_:)` does move, 2 wires to 1 on a measured
+  fixture. The `freeBounds*` family calls a different entry point, `ShapeAnalysis_FreeBounds`'s
+  `(shape, tolerance)` constructor, and that constructor's own chainage step does reach the same
+  skip, so the reason `freeBounds*` does **not** move is not that its call graph avoids the change.
+  It is upstream: the edges that family feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in
+  every case measured that sewing stage never produced an `.internal`/`.external` free edge for the
+  skip to act on.
 - **`BRep_Tool::CurveOnPlane` fails differently.** An out-of-domain, inverted or zero-length edge
   range now yields a null pcurve where 8.0.0p1 threw a catchable
   `Geom_TrimmedCurve::parameters out of range`. All four probed cases changed.

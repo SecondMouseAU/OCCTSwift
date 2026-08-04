@@ -660,17 +660,18 @@ public func sliceAtZ(_ z: Double) -> Shape?
 
 ### `sectionWiresAtZ(_:tolerance:)`
 
-Returns closed wires from a section at a Z level.
+Returns wires from a section at a Z level, chained where the section closes.
 
 ```swift
 public func sectionWiresAtZ(_ z: Double, tolerance: Double = 1e-6) -> [Wire]
 ```
 
-Unlike `sliceAtZ`, this chains the section edges into closed wires suitable for offset or CAM operations. Use a larger `tolerance` (e.g. `1e-4`) for imprecise geometry.
+Unlike `sliceAtZ`, this chains the section edges into wires (closed where the section forms a loop, open otherwise) suitable for offset or CAM operations. Use a larger `tolerance` (e.g. `1e-4`) for imprecise geometry.
 
+- **Note:** Edges whose orientation is `.internal` or `.external` are silently excluded from the result wires (OCCT 8.0.1, upstream OCCT#1408). This only matters if the input `Shape` was assembled with such edges via `Shape.setOrientation(_:)` and one happens to lie exactly in the cutting plane; an ordinary transverse section never produces `.internal`/`.external` edges on its own. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `z` — Z level to section at; `tolerance` — tolerance for connecting edges into wires.
-- **Returns:** Array of closed `Wire` objects; empty if no contours exist at that level.
-- **OCCT:** `BRepAlgoAPI_Section` + `BRepBuilderAPI_MakeWire` (via `OCCTShapeSectionWiresAtZ`).
+- **Returns:** Array of `Wire` objects, closed where the section forms a loop and open otherwise; empty if no contours exist at that level.
+- **OCCT:** `BRepAlgoAPI_Section` + `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` (via `OCCTShapeSectionWiresAtZ`).
 - **Example:**
   ```swift
   let model = try Shape.load(from: stepFile)

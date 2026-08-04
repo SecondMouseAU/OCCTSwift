@@ -485,6 +485,100 @@ struct FreeBoundsTests {
     }
 }
 
+// MARK: - #655: freeBounds* unaffected by OCCT 8.0.1 INTERNAL/EXTERNAL skip
+
+/// #655 documents `Shape.sectionWiresAtZ(_:tolerance:)` as the one entry point OCCT 8.0.1's
+/// `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408) reaches, and the `freeBounds*` family
+/// (this suite) as unaffected, not because its `ShapeAnalysis_FreeBounds` constructor avoids the
+/// skip (its own chainage step calls the same `ConnectEdgesToWires`), but because the
+/// `BRepBuilderAPI_Sewing::FreeEdge` stage this family runs first never hands it an
+/// `.internal`/`.external` free edge to begin with. See `Shape.freeBounds(sewingTolerance:)`'s doc
+/// comment for the corrected mechanism, and `Issue655SectionWiresOrientationTests`
+/// (`OCCTModelingTests`) for the `sectionWiresAtZ` side that IS affected.
+///
+/// Fixture: a face with an embedded, fully-`.internal` closed 4-edge loop (not a hole, holes get
+/// REVERSED, not INTERNAL), plus a second, disjoint plain face, both in a compound (the
+/// `(shape, tolerance)` constructor's documented input shape). Built via the public
+/// `Shape.builderMakeWire()`/`.builderAdd(_:)`/`.setOrientation(_:)` API, the same primitives OCCT
+/// itself uses to model an embedded (non-hole) feature edge on a face.
+@Suite("#655: freeBounds* unaffected by INTERNAL orientation")
+struct Issue655FreeBoundsInternalOrientationTests {
+
+    /// Builds a compound of two disjoint square faces. `loopOrientation` sets the orientation of a
+    /// second, smaller closed 4-edge loop embedded inside the first face: `.internal` reproduces the
+    /// shape #655 measured directly against `ShapeAnalysis_FreeBounds::GetClosedWires()`/
+    /// `GetOpenWires()`; `.forward` is the "prove the test fails" injection, the same geometry, with
+    /// the loop now a genuine (non-embedded-feature) free-standing boundary the analyzer must report.
+    ///
+    /// The loop has to be embedded ON a face, not a sibling shape in the compound: a loose wire with
+    /// no face ancestor is invisible to `ShapeAnalysis_FreeBounds` regardless of orientation, which
+    /// would make this fixture prove nothing about the orientation skip at all.
+    static func fixture(loopOrientation: Shape.Orientation) -> Shape? {
+        guard let outerWire1 = Wire.polygon3D(
+            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
+        ), let face1 = Shape.face(from: outerWire1) else { return nil }
+
+        let loopPoints: [SIMD3<Double>] = [
+            SIMD3(2, 2, 0), SIMD3(8, 2, 0), SIMD3(8, 8, 0), SIMD3(2, 8, 0)
+        ]
+        guard let loopWireShape = Shape.builderMakeWire() else { return nil }
+        for i in 0..<loopPoints.count {
+            guard let edgeWire = Wire.line(from: loopPoints[i], to: loopPoints[(i + 1) % loopPoints.count]),
+                  let edge = edgeWire.edges().first,
+                  let edgeShape = Shape.fromEdge(edge) else { return nil }
+            edgeShape.setOrientation(loopOrientation)
+            loopWireShape.builderAdd(edgeShape)
+        }
+        loopWireShape.setOrientation(loopOrientation)
+        face1.builderAdd(loopWireShape)
+
+        guard let outerWire2 = Wire.polygon3D(
+            [SIMD3(50, 50, 0), SIMD3(60, 50, 0), SIMD3(60, 60, 0), SIMD3(50, 60, 0)], closed: true
+        ), let face2 = Shape.face(from: outerWire2) else { return nil }
+
+        return Shape.compound([face1, face2])
+    }
+
+    @Test("An embedded INTERNAL loop is absent from both closed and open free bounds")
+    func freeBoundsUnaffectedByInternalOrientation() {
+        guard let shape = Self.fixture(loopOrientation: .internal) else {
+            Issue.record("fixture build failed")
+            return
+        }
+        // Only the two faces' own 4-edge outer boundaries come back; the embedded INTERNAL loop
+        // never becomes a free-bound candidate in the first place (see doc comment above).
+        #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 2,
+                "expected 2 closed wires (the two faces' outer boundaries only)")
+        #expect(shape.freeBoundsClosedWires(tolerance: 1e-6)?.subShapeCount(ofType: .edge) == 8,
+                "expected 8 edges total (4 per face); the INTERNAL loop's 4 must not be counted")
+        #expect((shape.freeBoundsOpenWires(tolerance: 1e-6)?.subShapeCount(ofType: .wire) ?? 0) == 0,
+                "the INTERNAL loop must not surface as an open free bound either")
+
+        if let result = shape.freeBounds(sewingTolerance: 1e-6) {
+            #expect(result.closedCount == 2, "freeBounds() must agree with freeBoundsClosedCount")
+            #expect(result.openCount == 0, "freeBounds() must agree with freeBoundsOpenWires")
+        } else {
+            Issue.record("freeBounds() returned nil; expected the two outer boundaries")
+        }
+    }
+
+    /// The "prove the test fails" injection for the test above: the same fixture with the embedded
+    /// loop's orientation changed from `.internal` to `.forward`. A FORWARD loop entirely inside
+    /// face1, sharing no vertex with face1's outer boundary, is a genuine second free-bound
+    /// candidate on that face, so it must now be counted, as its own closed wire, alongside the two
+    /// outer boundaries. Run as a live contrast fixture (not a disabled test) so a future change
+    /// that stops the exclusion from mattering fails this test too.
+    @Test("The same loop, left FORWARD, IS counted (contrast fixture)")
+    func forwardLoopIsCounted() {
+        guard let shape = Self.fixture(loopOrientation: .forward) else {
+            Issue.record("fixture build failed")
+            return
+        }
+        #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 3,
+                "expected 3 closed wires (2 outer boundaries + the now-visible loop)")
+    }
+}
+
 // MARK: - v0.41.0: Geometry Conversion
 
 @Suite("ShapeCustom Geometry Conversion")

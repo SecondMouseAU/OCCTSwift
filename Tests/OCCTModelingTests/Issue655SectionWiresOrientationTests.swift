@@ -5,11 +5,16 @@ import Foundation
 /// OCCT 8.0.1 (OCCT#1408, the merged form of OCCT#1331) makes
 /// `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` skip edges whose orientation is `.internal` or
 /// `.external`. That C++ entry point appears exactly once in this bridge, inside
-/// `OCCTShapeSectionWiresAtZ` (`OCCTBridge_Modeling.mm:10916`), which backs
+/// `OCCTShapeSectionWiresAtZ` (`OCCTBridge_Modeling.mm`), which backs
 /// `Shape.sectionWiresAtZ(_:tolerance:)` -- a CAM sectioning API. The `freeBounds*` family
 /// (`Shape.freeBounds`, `freeBoundsAnalysis`, `freeBoundsClosedCount`, `freeBoundsClosedWires`,
-/// `freeBoundsOpenWires`) uses a different (constructor) entry point that never reaches the
-/// changed code.
+/// `freeBoundsOpenWires`) goes through `ShapeAnalysis_FreeBounds`'s constructor instead, and that
+/// constructor's own chainage step *does* call `ConnectEdgesToWires`, so it is not a different
+/// entry point that avoids the changed code. What actually keeps this family unaffected is
+/// upstream: the edges it feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case
+/// measured that sewing stage never produced an `.internal`/`.external` free edge for the skip to
+/// act on (see `Issue655FreeBoundsInternalOrientationTests` in `OCCTShapeHealingTests`, which
+/// covers this half directly).
 ///
 /// `BRepAlgoAPI_Section` does not invent `.internal`/`.external` edges out of an ordinary
 /// transverse cut, but it DOES pass an already-`.internal`/`.external` input edge through
@@ -48,6 +53,13 @@ struct Issue655SectionWiresOrientationTests {
     /// first in the compound (matching the order the issue's own repro used, where the affected
     /// edge is `arrwires->Value(1)`).
     ///
+    /// Compound order is NOT load-bearing for these assertions: the floating edge shares no vertex
+    /// with the square, so nothing here needs a merge-order or reversal decision to come out right
+    /// (measured directly by reordering the compound and re-running; all three tests below were
+    /// unchanged). That's different from the issue's own case B, where an INTERNAL edge visited
+    /// before a square that still needs a reversal genuinely does depend on order; this fixture just
+    /// doesn't build that case, since it never merges with anything.
+    ///
     /// `orientation` is the fixture's single dial: swapping it from `.internal` to `.forward` is
     /// the "prove the test fails" injection for `internalEdgeExcluded()` below -- it changes
     /// nothing about the geometry, only whether the skip applies.
@@ -76,8 +88,8 @@ struct Issue655SectionWiresOrientationTests {
         // 8.0.1's ConnectEdgesToWires (OCCT#1408).
         #expect(wires.count == 1, "expected 1 wire (the square only), got \(wires.count)")
         if let only = wires.first {
-            #expect(only.edges().count == 4)
-            #expect(only.curveInfo?.isClosed == true)
+            #expect(only.edges().count == 4, "expected the square's 4 edges, got \(only.edges().count)")
+            #expect(only.curveInfo?.isClosed == true, "expected the surviving wire to be closed")
         }
     }
 
