@@ -2627,6 +2627,10 @@ extension Shape {
     public var isClosedShape: Bool { OCCTShapeIsClosed(handle) }
 }
 
+// Older spellings of the counts on `subShapeCount(ofType:)`, kept because they are public. The
+// "unique" in the name is not a distinction: every sub-shape count in this API reads the one
+// deduplicated enumeration, so these agree with `edgeCount`, `faceCount`, `vertexCount` and
+// `subShapeCount(ofType:)` by construction rather than by coincidence. (#502)
 extension Shape {
 
     /// Number of unique edges in this shape. Same value as ``edgeCount``.
