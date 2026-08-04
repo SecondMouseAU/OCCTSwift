@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — XCAF Notes, Views & Materials
 
-This page covers the XCAF annotation, view, material, and utility subsystems exposed on `Document`, `AssemblyNode`, and several standalone types (lines 2381–3349 of `Document.swift`). For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers the XCAF annotation, view, material, and utility subsystems exposed on `Document`, `AssemblyNode`, and several standalone types in `Document.swift`. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 

@@ -5,7 +5,7 @@ parent: API Reference
 
 # Shape — Geometry Recognition & Polygon/Triangulation Data
 
-This page documents the geometry-utility and polygon/triangulation public API from `Sources/OCCTSwift/Shape.swift` (lines 11078–12192). It covers coordinate-system helpers, curve/surface construction utilities, 2D constraint solvers, shape modification tools, and the full polygon and triangulation layer. See the main [Shape](Shape.md) page for the core B-Rep API.
+This page documents the geometry-utility and polygon/triangulation public API from `Sources/OCCTSwift/Shape.swift`. It covers coordinate-system helpers, curve/surface construction utilities, 2D constraint solvers, shape modification tools, and the full polygon and triangulation layer. See the main [Shape](Shape.md) page for the core B-Rep API.
 
 ## Topics
 

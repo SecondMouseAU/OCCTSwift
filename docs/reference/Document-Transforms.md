@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Coordinate Systems, Transforms & Completions
 
-This page covers the geometry, math, and completion APIs exposed in `Document.swift` (lines 12717–14159): coordinate systems, 2D transforms, matrix math, quaternion interpolation, vector utilities, numeric solvers, unit conversion, local surface/curve properties, projection, bounding boxes, shape analysis, boolean checking, defeaturing, polynomial conversion, transform extras, topology extras, sewing extras, and BREP serialization. See the main [`Document`](Document.md) page for XCAF assembly, attribute, and STEP/OCAF I/O.
+This page covers the geometry, math, and completion APIs exposed in `Document.swift`: coordinate systems, 2D transforms, matrix math, quaternion interpolation, vector utilities, numeric solvers, unit conversion, local surface/curve properties, projection, bounding boxes, shape analysis, boolean checking, defeaturing, polynomial conversion, transform extras, topology extras, sewing extras, and BREP serialization. See the main [`Document`](Document.md) page for XCAF assembly, attribute, and STEP/OCAF I/O.
 
 ## Topics
 

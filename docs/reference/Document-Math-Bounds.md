@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Math, Bounds, OSD & Conversions
 
-This page covers the math solvers, bounding-box types, quaternion/timer utilities, point classification, curve/surface conversion helpers, and OSD utilities found in lines 4959–6350 of `Document.swift`. For the core document lifecycle, shape tools, and XCAF I/O see the main [Document](Document.md) page.
+This page covers the math solvers, bounding-box types, quaternion/timer utilities, point classification, curve/surface conversion helpers, and OSD utilities found in `Document.swift`. For the core document lifecycle, shape tools, and XCAF I/O see the main [Document](Document.md) page.
 
 ## Topics
 

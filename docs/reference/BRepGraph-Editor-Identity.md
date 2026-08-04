@@ -5,7 +5,7 @@ parent: API Reference
 
 # BRepGraph — Editor Geometry, Sampling & Durable Identity
 
-This page covers the final sections of `BRepGraph` (source lines 1622–2055): geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **BRepGraph — …** pages for the core read API, write helpers, and I/O.
+This page covers the final sections of `BRepGraph`: geometric setters for the EditorView, assembly-building ProductOps, in-place RepOps swaps, MeshView cache inspection, UV-grid and edge-curve sampling, and the durable-identity UID/RefUID/ItemUID API. See the other **BRepGraph — …** pages for the core read API, write helpers, and I/O.
 
 ## Topics
 

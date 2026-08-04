@@ -5,7 +5,7 @@ parent: API Reference
 
 # Shape — Measurement, Sub-Shapes & Local Operations
 
-This page covers the measurement, decomposition, healing, and local-operation APIs on `Shape` (source lines 4955–6935). For the core primitives, Boolean operations, and transforms, see the main **[Shape](Shape.md)** page.
+This page covers the measurement, decomposition, healing, and local-operation APIs on `Shape`, declared in `Shape.swift`. For the core primitives, Boolean operations, and transforms, see the main **[Shape](Shape.md)** page.
 
 ## Topics
 

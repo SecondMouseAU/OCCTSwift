@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Math Solvers & Local Properties
 
-This page covers `Document.swift` lines 9930-11279: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, the deprecated `GeomGridEval` batch-evaluation spellings (#486), single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
+This page covers `Document.swift`'s Math Solvers & Local Properties additions: 2D conic utilities, normal projection, disk/shared-library/message system helpers, `PlateSolver` constraint extensions, extra methods on `Shape`, `Curve3D`, `Curve2D`, and `Surface`, the full `MathSolver` numerical toolkit, `PolynomialSolver` Laguerre extensions, `BRepLProp` edge/face local properties, the deprecated `GeomGridEval` batch-evaluation spellings (#486), single-parameter curve/surface evaluators, and the Newton-Hessian minimizer.
 
 > See also the main **[Document](Document.md)** page for the `Document` class itself and the other chunk pages.
 
