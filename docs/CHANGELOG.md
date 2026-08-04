@@ -97,12 +97,15 @@ Gordon tests assert only status ordinals. Those two were probed directly. Tracke
   `Shape.sectionWiresAtZ(_:tolerance:)`, a CAM sectioning API: in every case measured, an ordinary
   transverse cut does not produce such an edge, but a cut plane coincident with an edge a caller
   already marked `.internal`/`.external` via `Shape.setOrientation(_:)` does move, 2 wires to 1 on
-  a measured fixture. The `freeBounds*` family calls a different entry point, `ShapeAnalysis_FreeBounds`'s
-  `(shape, tolerance)` constructor, and that constructor's own chainage step does reach the same
-  skip, so the reason `freeBounds*` does **not** move is not that its call graph avoids the change.
-  It is upstream: the edges that family feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in
-  every case measured that sewing stage never produced an `.internal`/`.external` free edge for the
-  skip to act on.
+  a measured fixture. The `freeBounds*` family does **not** move, but not because its call graph
+  avoids the change: `Shape.freeBounds`, `freeBoundsClosedCount`, `freeBoundsClosedWires` and
+  `freeBoundsOpenWires` build `ShapeAnalysis_FreeBounds`'s `(shape, tolerance)` constructor, whose own
+  chainage step reaches the same skip. The reason is upstream, the edges that constructor feeds in
+  come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case measured that sewing stage never
+  produced an `.internal`/`.external` free edge for the skip to act on. `freeBoundsAnalysis`,
+  `FreeBoundsProperties` and its four accessors take a **second** constructor at `tolerance <= 0`,
+  with no sewing stage at all, so that reason does not apply to them; measured separately, the
+  exclusion holds there too.
 - **`BRep_Tool::CurveOnPlane` fails differently.** An out-of-domain, inverted or zero-length edge
   range now yields a null pcurve where 8.0.0p1 threw a catchable
   `Geom_TrimmedCurve::parameters out of range`. All four probed cases changed.

@@ -2438,6 +2438,10 @@ public init?(shape: Shape, tolerance: Double = 1e-7)
   selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
   instead of from a sewing pass.
 - **Returns:** The analyser, or `nil` on failure.
+- **Note:** This is the call that selects the branch. Both are unaffected by OCCT 8.0.1's
+  `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), but for different reasons and measured
+  separately; see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance).
+  See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **OCCT:** `ShapeAnalysis_FreeBoundsProperties` (via `OCCTFreeBoundsPropsCreate`).
 
 ---
