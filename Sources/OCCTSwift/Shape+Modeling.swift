@@ -2723,3 +2723,310 @@ extension Shape {
         defeature(faces: faces)
     }
 }
+
+extension Shape {
+
+    /// Restrict a face to its wires using BRepAlgo_FaceRestrictor.
+    /// - Parameter faceIndex: Index of the face (0-based)
+    /// - Returns: Number of result faces
+    public func faceRestrictAlgo(faceIndex: Int) -> Int {
+        Int(OCCTShapeFaceRestrictAlgo(handle, Int32(faceIndex), nil, 0))
+    }
+}
+
+extension Shape {
+
+    /// Build loops (wires) from edges on a face.
+    /// - Returns: Number of result wires, or -1 on error
+    public func buildLoops(faceIndex: Int) -> Int {
+        Int(OCCTShapeBuildLoops(handle, Int32(faceIndex)))
+    }
+}
+
+extension Shape {
+
+    /// Apply a draft angle modification to a face.
+    /// - Parameters:
+    ///   - faceIndex: Index of the face to draft
+    ///   - direction: Draft direction
+    ///   - angle: Draft angle in radians
+    ///   - neutralPlaneOrigin: Origin of the neutral plane
+    ///   - neutralPlaneNormal: Normal of the neutral plane
+    /// - Returns: Modified shape, or nil on failure
+    public func draftModification(faceIndex: Int, direction: SIMD3<Double>, angle: Double,
+                                   neutralPlaneOrigin: SIMD3<Double>,
+                                   neutralPlaneNormal: SIMD3<Double>) -> Shape? {
+        guard let ref = OCCTShapeDraftModification(handle, Int32(faceIndex),
+                                                     direction.x, direction.y, direction.z, angle,
+                                                     neutralPlaneOrigin.x, neutralPlaneOrigin.y, neutralPlaneOrigin.z,
+                                                     neutralPlaneNormal.x, neutralPlaneNormal.y, neutralPlaneNormal.z) else {
+            return nil
+        }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Concavity classification for edges.
+    public enum ConcavityType: Int, Sendable {
+        case convex = 0
+        case concave = 1
+        case tangent = 2
+        case freeBound = 3
+        case other = 4
+    }
+
+    /// Analyze edge concavity for all edges. angle is the tangency threshold in radians.
+    public func analyseEdgeConcavity(angle: Double = .pi / 6.0) -> [ConcavityType] {
+        let count = Int(OCCTAnalyseEdgeConcavity(handle, angle, nil))
+        guard count > 0 else { return [] }
+        var types = [Int32](repeating: 0, count: count)
+        _ = OCCTAnalyseEdgeConcavity(handle, angle, &types)
+        return types.map { ConcavityType(rawValue: Int($0)) ?? .other }
+    }
+
+    /// Explode shape into groups of faces connected by edges of a given concavity type.
+    public func analyseExplode(angle: Double = .pi / 6.0, type: ConcavityType) -> Shape? {
+        guard let ref = OCCTAnalyseExplode(handle, angle, Int32(type.rawValue)) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Count edges of a given concavity type on a specific face.
+    public func analyseEdgesOnFace(_ face: Shape, angle: Double = .pi / 6.0, type: ConcavityType) -> Int {
+        Int(OCCTAnalyseEdgesOnFace(handle, angle, face.handle, Int32(type.rawValue)))
+    }
+
+    /// Count ancestor faces for an edge in offset analysis.
+    public func analyseAncestorCount(edge: Shape, angle: Double = .pi / 6.0) -> Int {
+        Int(OCCTAnalyseAncestorCount(handle, angle, edge.handle))
+    }
+
+    /// Count tangent edges at a vertex along a given edge.
+    public func analyseTangentEdgeCount(edge: Shape, vertex: Shape, angle: Double = .pi / 6.0) -> Int {
+        Int(OCCTAnalyseTangentEdgeCount(handle, angle, edge.handle, vertex.handle))
+    }
+}
+
+extension Shape {
+
+    /// Fuse two shapes with fuzzy tolerance.
+    public func fused(with other: Shape, tolerance: Double) -> Shape? {
+        guard let ref = OCCTBooleanFuseWithTolerance(handle, other.handle, tolerance) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Cut another shape from this shape with fuzzy tolerance.
+    public func subtracted(_ other: Shape, tolerance: Double) -> Shape? {
+        guard let ref = OCCTBooleanCutWithTolerance(handle, other.handle, tolerance) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Common of two shapes with fuzzy tolerance.
+    public func intersected(with other: Shape, tolerance: Double) -> Shape? {
+        guard let ref = OCCTBooleanCommonWithTolerance(handle, other.handle, tolerance) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Glue mode for boolean operations.
+    public enum GlueMode: Int32, Sendable {
+        case shift = 0
+        case full = 1
+        case off = 2
+    }
+
+    /// Fuse two shapes with glue mode.
+    public func fused(with other: Shape, glue: GlueMode) -> Shape? {
+        guard let ref = OCCTBooleanFuseGlue(handle, other.handle, glue.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Cut another shape with glue mode.
+    public func subtracted(_ other: Shape, glue: GlueMode) -> Shape? {
+        guard let ref = OCCTBooleanCutGlue(handle, other.handle, glue.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Common of two shapes with glue mode.
+    public func intersected(with other: Shape, glue: GlueMode) -> Shape? {
+        guard let ref = OCCTBooleanCommonGlue(handle, other.handle, glue.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Join type for offset operations.
+    public enum OffsetJoinType: Int32, Sendable {
+        case arc = 0
+        case tangent = 1
+        case intersection = 2
+    }
+
+    /// Offset a wire on a plane.
+    public func offsetWireOnPlane(distance: Double, joinType: OffsetJoinType = .arc) -> Shape? {
+        guard let ref = OCCTOffsetWireOnPlane(handle, distance, joinType.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Offset a face.
+    public func offsetFace(distance: Double, joinType: OffsetJoinType = .arc) -> Shape? {
+        guard let ref = OCCTOffsetFace(handle, distance, joinType.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+    /// Check shape validity for boolean operations (small edges, self-interference).
+    public func isBooleanValid(testSmallEdges: Bool = true, testSelfInterference: Bool = true) -> Bool {
+        OCCTShapeBooleanCheckSingle(handle, testSmallEdges, testSelfInterference)
+    }
+
+    /// Check if two shapes are valid for a boolean operation.
+    /// Operation: 0=unknown, 1=common, 2=fuse, 3=cut, 4=section.
+    public func isBooleanValidWith(_ other: Shape, operation: Int32 = 0,
+                                    testSmallEdges: Bool = true,
+                                    testSelfInterference: Bool = true) -> Bool {
+        OCCTShapeBooleanCheckPair(handle, other.handle, operation, testSmallEdges, testSelfInterference)
+    }
+}
+
+extension Shape {
+    /// Remove feature faces from a solid shape (e.g., fillets, holes).
+    ///
+    /// The canonical defeaturing call. `withoutFeatures(faces:)` is the same operation addressing
+    /// its faces by index instead of by shape, and `defeaturedWithFullHistory(faces:)` is the same
+    /// operation again with the removal history retained; all three run one shared
+    /// `BRepAlgoAPI_Defeaturing` path in the bridge. `removeFeatures(faces:)` was a fourth spelling
+    /// of this call, reaching the same algorithm one OCCT layer down, and is deprecated in favour
+    /// of this one (#536).
+    ///
+    /// Returns `nil` when `faces` is empty, and when the operation itself fails — defeaturing
+    /// cannot always reconnect the surrounding topology, so a `nil` here is an ordinary outcome,
+    /// not necessarily a caller error.
+    ///
+    /// ## What may be named, and what must belong
+    ///
+    /// Each element of `faces` names faces rather than having to be one: a compound of faces, a
+    /// shell, or this whole shape all name the faces they contain, and naming a carrier is the same
+    /// request as naming the faces it holds. The rule every element must satisfy:
+    ///
+    /// > Every element must name at least one face, and every face it names must be a face of this
+    /// > shape. Otherwise the whole call returns `nil` and nothing is removed.
+    ///
+    /// So a request that mixes this shape's faces with another shape's fails, as does one carrying
+    /// an edge or a vertex, which name no face at all. Membership is by identity, not by geometry:
+    /// the same face measured off an identically-built shape is foreign, while the same face
+    /// reversed is not — orientation is not identity.
+    ///
+    /// Until #578 a foreign face was dropped from the request and the rest proceeded, which is
+    /// OCCT's own documented rule ("those that do not belong will be ignored"). That answered a
+    /// success, with no warning, on a shape still carrying the feature the caller asked to remove —
+    /// indistinguishable from a real removal. The index-addressed ``Shape/withoutFeatures(faces:)``
+    /// has failed the whole call on one bad index since #497; both spellings now agree.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let filleted = box.filleted(radius: 2.0)!
+    ///
+    /// // The fillet added faces beyond the box's own six; remove one of them again.
+    /// let filletFaces = Array(filleted.subShapes(ofType: .face).dropFirst(6).prefix(1))
+    /// if let plain = filleted.defeature(faces: filletFaces) {
+    ///     print(plain.volume ?? 0)   // back to 8000.0, the unfilleted box
+    /// }
+    ///
+    /// // A face from somewhere else fails the request rather than being ignored.
+    /// let elsewhere = Shape.box(width: 11, height: 11, depth: 11)!.subShapes(ofType: .face)[0]
+    /// print(filleted.defeature(faces: filletFaces + [elsewhere]) == nil)   // true
+    /// ```
+    ///
+    /// - Parameter faces: The faces to remove — each element either a face of this shape, or a
+    ///   shape whose faces all belong to this shape.
+    /// - Returns: The defeatured shape, or `nil` on failure, including when the request names a
+    ///   face this shape does not have.
+    public func defeature(faces: [Shape]) -> Shape? {
+        let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
+        return faceHandles.withUnsafeBufferPointer { buf -> Shape? in
+            guard let baseAddress = buf.baseAddress else { return nil }
+            // Need to cast from UnsafePointer<OCCTShapeRef?> to UnsafePointer<OCCTShapeRef>
+            let ptr = UnsafeRawPointer(baseAddress).assumingMemoryBound(to: OCCTShapeRef.self)
+            guard let result = OCCTShapeDefeature(handle, ptr, Int32(faces.count)) else { return nil }
+            return Shape(handle: result)
+        }
+    }
+}
+
+extension Shape.History {
+    /// Merge another history into this one.
+    public func merge(_ other: Shape.History) {
+        OCCTHistoryMerge(historyRef, other.historyRef)
+    }
+
+    /// Replace a generated entry.
+    public func replaceGenerated(initial: Shape, generated: Shape) {
+        OCCTHistoryReplaceGenerated(historyRef, initial.handle, generated.handle)
+    }
+
+    /// Replace a modified entry.
+    public func replaceModified(initial: Shape, modified: Shape) {
+        OCCTHistoryReplaceModified(historyRef, initial.handle, modified.handle)
+    }
+
+    /// Get the shapes that the given initial shape was modified to.
+    public func modifiedShapes(of initial: Shape) -> [Shape] {
+        let maxCount: Int32 = 64
+        var refs = [OCCTShapeRef?](repeating: nil, count: Int(maxCount))
+        let count = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTHistoryGetModifiedShapes(historyRef, initial.handle, buf.baseAddress!, maxCount)
+        }
+        return (0..<Int(count)).compactMap { i -> Shape? in
+            guard let ref = refs[i] else { return nil }
+            return Shape(handle: ref)
+        }
+    }
+
+    /// Get the shapes generated from the given initial shape.
+    public func generatedShapes(of initial: Shape) -> [Shape] {
+        let maxCount: Int32 = 64
+        var refs = [OCCTShapeRef?](repeating: nil, count: Int(maxCount))
+        let count = refs.withUnsafeMutableBufferPointer { buf in
+            OCCTHistoryGetGeneratedShapes(historyRef, initial.handle, buf.baseAddress!, maxCount)
+        }
+        return (0..<Int(count)).compactMap { i -> Shape? in
+            guard let ref = refs[i] else { return nil }
+            return Shape(handle: ref)
+        }
+    }
+}
+
+extension Shape {
+    /// Compute section between two shapes with approximation and pcurve options.
+    public static func sectionWithOptions(_ shape1: Shape, _ shape2: Shape,
+                                           approximation: Bool = false,
+                                           computePCurve1: Bool = false,
+                                           computePCurve2: Bool = false) -> Shape? {
+        guard let h = OCCTShapeSectionWithOptions(shape1.handle, shape2.handle,
+                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Get the ancestor face on shape1 for a section edge.
+    public static func sectionAncestorFaceOn1(_ shape1: Shape, _ shape2: Shape, edge: Shape,
+                                               approximation: Bool = false,
+                                               computePCurve1: Bool = false,
+                                               computePCurve2: Bool = false) -> Shape? {
+        guard let h = OCCTSectionAncestorFaceOn1(shape1.handle, shape2.handle, edge.handle,
+                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Get the ancestor face on shape2 for a section edge.
+    public static func sectionAncestorFaceOn2(_ shape1: Shape, _ shape2: Shape, edge: Shape,
+                                               approximation: Bool = false,
+                                               computePCurve1: Bool = false,
+                                               computePCurve2: Bool = false) -> Shape? {
+        guard let h = OCCTSectionAncestorFaceOn2(shape1.handle, shape2.handle, edge.handle,
+                                                    approximation, computePCurve1, computePCurve2) else { return nil }
+        return Shape(handle: h)
+    }
+}

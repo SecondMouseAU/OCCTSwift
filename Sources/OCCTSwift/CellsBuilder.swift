@@ -55,3 +55,43 @@ public final class CellsBuilder: @unchecked Sendable {
         return Shape(handle: h)
     }
 }
+
+extension CellsBuilder {
+    /// Add cells to result selectively: cells present in all take shapes but none of avoid shapes.
+    public func addToResult(take: [Shape], avoid: [Shape] = [], material: Int32 = 0, update: Bool = false) {
+        let takePtrs: [OCCTShapeRef] = take.map { $0.handle }
+        let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
+        takePtrs.withUnsafeBufferPointer { takeBuf in
+            avoidPtrs.withUnsafeBufferPointer { avoidBuf in
+                OCCTCellsBuilderAddToResultSelective(handle,
+                    takeBuf.baseAddress!, Int32(takeBuf.count),
+                    avoidBuf.baseAddress ?? UnsafePointer(bitPattern: 1)!, Int32(avoidBuf.count),
+                    material, update)
+            }
+        }
+    }
+
+    /// Remove cells from result: cells present in all take shapes but none of avoid shapes.
+    public func removeFromResult(take: [Shape], avoid: [Shape] = []) {
+        let takePtrs: [OCCTShapeRef] = take.map { $0.handle }
+        let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
+        takePtrs.withUnsafeBufferPointer { takeBuf in
+            avoidPtrs.withUnsafeBufferPointer { avoidBuf in
+                OCCTCellsBuilderRemoveFromResult(handle,
+                    takeBuf.baseAddress!, Int32(takeBuf.count),
+                    avoidBuf.baseAddress ?? UnsafePointer(bitPattern: 1)!, Int32(avoidBuf.count))
+            }
+        }
+    }
+
+    /// Get all split parts (before any result composition).
+    public func allParts() -> Shape? {
+        guard let h = OCCTCellsBuilderGetAllParts(handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Make containers (wires from edges, shells from faces, etc.).
+    public func makeContainers() {
+        OCCTCellsBuilderMakeContainers(handle)
+    }
+}

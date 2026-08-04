@@ -1053,3 +1053,41 @@ extension Shape {
         return Shape(handle: h)
     }
 }
+
+extension Shape {
+
+    /// Find a surface (typically plane) through the edges of this shape.
+    public func findSurface(tolerance: Double = -1, onlyPlane: Bool = false) -> Surface? {
+        guard let ref = OCCTFindSurface(handle, tolerance, onlyPlane) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Find surface tolerance reached.
+    public func findSurfaceTolerance(tolerance: Double = -1, onlyPlane: Bool = false) -> Double? {
+        let tol = OCCTFindSurfaceTolerance(handle, tolerance, onlyPlane)
+        return tol >= 0 ? tol : nil
+    }
+
+    /// Check if a surface already existed on the shape edges.
+    public func findSurfaceExisted(tolerance: Double = -1, onlyPlane: Bool = false) -> Bool {
+        OCCTFindSurfaceExisted(handle, tolerance, onlyPlane)
+    }
+}
+
+extension Shape {
+
+    /// Get tangent in U direction on a face at (u, v). Returns nil if tangent is undefined.
+    public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTFaceLPropTangentU(handle, u, v, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
+
+    /// Get tangent in V direction on a face at (u, v) — the second axis of the tangent plane
+    /// (companion to ``faceLPropTangentU(u:v:)``). Returns nil if the V tangent is undefined.
+    public func faceLPropTangentV(u: Double, v: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTFaceLPropTangentV(handle, u, v, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
+}

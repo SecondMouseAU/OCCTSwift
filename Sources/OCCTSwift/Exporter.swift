@@ -761,3 +761,16 @@ extension Shape {
         try Exporter.writePLY(shape: self, to: url, deflection: deflection)
     }
 }
+
+extension Exporter {
+    /// Export a shape to GLTF or GLB format.
+    /// - Parameters:
+    ///   - shape: Shape to export (will be meshed internally).
+    ///   - url: Output file URL (.gltf or .glb).
+    ///   - binary: If true, writes binary GLB. If false, writes text GLTF.
+    ///   - deflection: Mesh deflection tolerance.
+    public static func writeGLTF(shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1) throws {
+        let ok = OCCTExportGLTF(shape.handle, url.path, binary, deflection)
+        if !ok { throw Exporter.ExportError.exportFailed("GLTF export to \(url.lastPathComponent) failed") }
+    }
+}

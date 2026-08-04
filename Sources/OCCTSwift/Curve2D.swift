@@ -3172,3 +3172,633 @@ extension Curve2D {
         }
     }
 }
+
+extension Curve2D {
+
+    /// Interpolate a 2D BSpline curve through points.
+    /// - Parameters:
+    ///   - points: Array of 2D points (x, y)
+    ///   - periodic: If true, create a periodic (closed) curve
+    ///   - tolerance: Interpolation tolerance
+    /// - Returns: The interpolated curve, or nil on failure
+    public static func interpolate2D(points: [(Double, Double)], periodic: Bool = false, tolerance: Double = 1e-6) -> Curve2D? {
+        let xs = points.map(\.0)
+        let ys = points.map(\.1)
+        return xs.withUnsafeBufferPointer { xBuf in
+            ys.withUnsafeBufferPointer { yBuf in
+                guard let ref = OCCTCurve2DInterpolate2D(xBuf.baseAddress!, yBuf.baseAddress!,
+                                                         Int32(points.count), periodic, tolerance) else {
+                    return nil
+                }
+                return Curve2D(handle: ref)
+            }
+        }
+    }
+}
+
+extension Curve2D {
+
+    /// Approximate a 2D BSpline curve through points.
+    /// - Parameter points: Array of 2D points (x, y)
+    /// - Returns: The approximated curve, or nil on failure
+    public static func approximate2D(points: [(Double, Double)]) -> Curve2D? {
+        let xs = points.map(\.0)
+        let ys = points.map(\.1)
+        return xs.withUnsafeBufferPointer { xBuf in
+            ys.withUnsafeBufferPointer { yBuf in
+                guard let ref = OCCTCurve2DApproximate2D(xBuf.baseAddress!, yBuf.baseAddress!,
+                                                          Int32(points.count)) else {
+                    return nil
+                }
+                return Curve2D(handle: ref)
+            }
+        }
+    }
+}
+
+extension Curve2D {
+
+    /// Convert a 2D circle arc to a BSpline curve.
+    ///
+    /// - Parameter radius: circle radius. Must be greater than zero.
+    /// - Returns: the converted curve, or `nil` if the circle is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromCircleArc(centerX: 0, centerY: 0, radius: 5, u1: 0, u2: .pi) {
+    ///     print(c.degree)
+    /// }
+    /// ```
+    public static func fromCircleArc(centerX: Double, centerY: Double, radius: Double,
+                                      u1: Double, u2: Double) -> Curve2D? {
+        guard let ref = OCCTConvertCircleToBSpline2D(centerX, centerY, radius, u1, u2) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+
+    /// Convert a 2D ellipse arc to a BSpline curve.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the converted curve, or `nil` if the ellipse is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
+    ///                                   majorRadius: 20, minorRadius: 10,
+    ///                                   u1: 0, u2: .pi) {
+    ///     print(c.degree)
+    /// }
+    /// ```
+    public static func fromEllipseArc(centerX: Double, centerY: Double,
+                                       majorRadius: Double, minorRadius: Double,
+                                       u1: Double, u2: Double) -> Curve2D? {
+        guard let ref = OCCTConvertEllipseToBSpline2D(centerX, centerY, majorRadius, minorRadius, u1, u2) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Convert a 2D hyperbola arc to a BSpline curve.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: major radius. Must be greater than zero.
+    ///   - minorRadius: minor radius. Must be greater than zero. A hyperbola puts no ordering on
+    ///     its radii, so a minor radius larger than the major is an ordinary hyperbola.
+    /// - Returns: the converted curve, or `nil` if the hyperbola is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromHyperbolaArc(centerX: 0, centerY: 0,
+    ///                                     majorRadius: 10, minorRadius: 5,
+    ///                                     u1: -1, u2: 1) {
+    ///     print(c.degree)
+    /// }
+    /// ```
+    public static func fromHyperbolaArc(centerX: Double, centerY: Double,
+                                         majorRadius: Double, minorRadius: Double,
+                                         u1: Double, u2: Double) -> Curve2D? {
+        guard let ref = OCCTConvertHyperbolaToBSpline2D(centerX, centerY, majorRadius, minorRadius, u1, u2) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Convert a 2D parabola arc to a BSpline curve.
+    ///
+    /// - Parameter focal: focal length. Must be greater than zero: OCCT converts a focal length of
+    ///   zero without complaint, into a curve whose poles are all NaN.
+    /// - Returns: the converted curve, or `nil` if the parabola is degenerate.
+    ///
+    /// ```swift
+    /// if let c = Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 5, u1: -2, u2: 2) {
+    ///     print(c.degree)
+    /// }
+    /// ```
+    public static func fromParabolaArc(centerX: Double, centerY: Double, focal: Double,
+                                        u1: Double, u2: Double) -> Curve2D? {
+        guard let ref = OCCTConvertParabolaToBSpline2D(centerX, centerY, focal, u1, u2) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Create a 2D circle from center and radius.
+    public static func gceCircle(center: SIMD2<Double>, radius: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeCircleCenterRadius(center.x, center.y, radius) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D circle through 3 points.
+    public static func gceCircle(p1: SIMD2<Double>, p2: SIMD2<Double>, p3: SIMD2<Double>) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeCircle3Points(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D circle from center and point on circle.
+    public static func gceCircle(center: SIMD2<Double>, pointOn: SIMD2<Double>) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeCircleCenterPoint(center.x, center.y, pointOn.x, pointOn.y) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D circle parallel to existing circle at distance.
+    public static func gceCircleParallel(center: SIMD2<Double>, direction: SIMD2<Double>,
+                                          radius: Double, distance: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeCircleParallel(center.x, center.y,
+                                                      direction.x, direction.y,
+                                                      radius, distance) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D circle from axis and radius.
+    public static func gceCircle(axisCenter: SIMD2<Double>, axisDirection: SIMD2<Double>,
+                                  radius: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeCircleAxis(axisCenter.x, axisCenter.y,
+                                                  axisDirection.x, axisDirection.y,
+                                                  radius) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Create a 2D ellipse from axis and radii.
+    public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
+                                   majorRadius: Double, minorRadius: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeEllipse(center.x, center.y,
+                                               xDirection.x, xDirection.y,
+                                               majorRadius, minorRadius) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D ellipse from 3 points (S1, S2, center).
+    public static func gceEllipse(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeEllipse3Points(s1.x, s1.y, s2.x, s2.y,
+                                                      center.x, center.y) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D ellipse from full Ax22d and radii.
+    public static func gceEllipse(center: SIMD2<Double>, xDirection: SIMD2<Double>,
+                                   yDirection: SIMD2<Double>,
+                                   majorRadius: Double, minorRadius: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeEllipseAxis22d(center.x, center.y,
+                                                      xDirection.x, xDirection.y,
+                                                      yDirection.x, yDirection.y,
+                                                      majorRadius, minorRadius) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Create a 2D hyperbola from axis and radii.
+    public static func gceHyperbola(center: SIMD2<Double>, xDirection: SIMD2<Double>,
+                                     majorRadius: Double, minorRadius: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeHyperbola(center.x, center.y,
+                                                 xDirection.x, xDirection.y,
+                                                 majorRadius, minorRadius) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D hyperbola from 3 points (S1, S2, center).
+    public static func gceHyperbola(s1: SIMD2<Double>, s2: SIMD2<Double>, center: SIMD2<Double>) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeHyperbola3Points(s1.x, s1.y, s2.x, s2.y,
+                                                        center.x, center.y) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Create a 2D parabola from axis and focal distance.
+    public static func gceParabola(center: SIMD2<Double>, direction: SIMD2<Double>,
+                                    focalDistance: Double) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeParabola(center.x, center.y,
+                                                direction.x, direction.y, focalDistance) else { return nil }
+        return Curve2D(handle: ref)
+    }
+
+    /// Create a 2D parabola from directrix and focus.
+    public static func gceParabola(directrixPoint: SIMD2<Double>, directrixDirection: SIMD2<Double>,
+                                    focus: SIMD2<Double>) -> Curve2D? {
+        guard let ref = OCCTCurve2DMakeParabolaDirectrixFocus(directrixPoint.x, directrixPoint.y,
+                                                              directrixDirection.x, directrixDirection.y,
+                                                              focus.x, focus.y) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Concatenate multiple bounded 2D curves into a single BSpline.
+    public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) -> Curve2D? {
+        guard !curves.isEmpty else { return nil }
+        var handles = curves.map { $0.handle as OCCTCurve2DRef }
+        guard let ref = OCCTConcatenateCurves2D(&handles, Int32(curves.count), tolerance) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+    /// Get number of knot splits for a 2D BSpline curve at given continuity.
+    @available(*, deprecated,
+               message: "Use splitIndicesAtDiscontinuities(continuity:)?.count, the same analyzer under one spelling (#562)")
+    public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int {
+        splitIndicesAtDiscontinuities(continuity: continuity)?.count ?? 0
+    }
+
+    /// Get knot split indices for a 2D BSpline curve at given continuity.
+    @available(*, deprecated,
+               message: "Use splitIndicesAtDiscontinuities(continuity:), which returns these same indices as [Int] and nil rather than [] for a non-BSpline curve (#562)")
+    public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32] {
+        splitIndicesAtDiscontinuities(continuity: continuity)?.map(Int32.init) ?? []
+    }
+}
+
+extension Curve2D {
+    /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// - Warning: The migration target for the retired `continuityOrder`, but not a drop-in one —
+    ///   see ``Curve3D/continuity`` for the constants that shift (#619).
+    public var continuity: Int {
+        Int(OCCTCurve2DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 2D curve.
+    ///
+    /// ```swift
+    /// let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
+    /// print(segment?.continuityClass)   // .cN
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve2DGetContinuity(handle)) ?? .c0
+    }
+}
+
+extension Curve2D {
+
+    /// BSpline-specific 2D curve operations.
+    public struct BSpline {
+        let curve: Curve2D
+
+        /// Number of knots.
+        public var knotCount: Int { Int(OCCTCurve2DBSplineKnotCount(curve.handle)) }
+
+        /// Number of poles.
+        public var poleCount: Int { Int(OCCTCurve2DBSplinePoleCount(curve.handle)) }
+
+        /// Degree.
+        public var degree: Int { Int(OCCTCurve2DBSplineDegree(curve.handle)) }
+
+        /// Whether rational.
+        public var isRational: Bool { OCCTCurve2DBSplineIsRational(curve.handle) }
+
+        /// Get a pole at 1-based index.
+        public func pole(at index: Int) -> SIMD2<Double> {
+            var x = 0.0, y = 0.0
+            OCCTCurve2DBSplineGetPole(curve.handle, Int32(index), &x, &y)
+            return SIMD2(x, y)
+        }
+
+        /// Set a pole at 1-based index.
+        @discardableResult
+        public func setPole(at index: Int, to point: SIMD2<Double>) -> Bool {
+            OCCTCurve2DBSplineSetPole(curve.handle, Int32(index), point.x, point.y)
+        }
+
+        /// Set the weight at 1-based index.
+        @discardableResult
+        public func setWeight(at index: Int, to weight: Double) -> Bool {
+            OCCTCurve2DBSplineSetWeight(curve.handle, Int32(index), weight)
+        }
+
+        /// Insert a knot.
+        @discardableResult
+        public func insertKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+            OCCTCurve2DBSplineInsertKnot(curve.handle, u, Int32(multiplicity), tolerance)
+        }
+
+        /// Remove a knot at 1-based index.
+        @discardableResult
+        public func removeKnot(at index: Int, multiplicity: Int, tolerance: Double) -> Bool {
+            OCCTCurve2DBSplineRemoveKnot(curve.handle, Int32(index), Int32(multiplicity), tolerance)
+        }
+
+        /// Segment to [u1, u2].
+        @discardableResult
+        public func segment(u1: Double, u2: Double) -> Bool {
+            OCCTCurve2DBSplineSegment(curve.handle, u1, u2)
+        }
+
+        /// Increase degree.
+        @discardableResult
+        public func increaseDegree(to degree: Int) -> Bool {
+            OCCTCurve2DBSplineIncreaseDegree(curve.handle, Int32(degree))
+        }
+
+        /// Compute parametric resolution for a given tolerance.
+        public func resolution(tolerance: Double) -> Double {
+            OCCTCurve2DBSplineResolution(curve.handle, tolerance)
+        }
+    }
+
+    /// Access BSpline-specific operations. Works only if the underlying curve is a Geom2d_BSplineCurve.
+    public var bspline: BSpline { BSpline(curve: self) }
+}
+
+extension Curve2D {
+
+    /// Reverse the curve in-place.
+    @discardableResult
+    public func reverse() -> Bool {
+        OCCTCurve2DReverse(handle)
+    }
+
+    /// Create a deep copy of this curve.
+    public func copy() -> Curve2D? {
+        guard let ref = OCCTCurve2DCopy(handle) else { return nil }
+        return Curve2D(handle: ref)
+    }
+}
+
+extension Curve2D {
+
+    /// Evaluate 2D curve at multiple parameters (batch D0).
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
+    public func gridEvalD0(params: [Double]) -> [SIMD2<Double>] {
+        evaluateGrid(params)
+    }
+
+    /// Evaluate 2D curve at multiple parameters (batch D1).
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
+    public func gridEvalD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
+    }
+}
+
+extension Curve2D {
+
+    /// Evaluate the 2D curve point at parameter u.
+    public func evalD0(at u: Double) -> SIMD2<Double> {
+        var x = 0.0, y = 0.0
+        OCCTCurve2DEvalD0(handle, u, &x, &y)
+        return SIMD2(x, y)
+    }
+
+    /// Evaluate the 2D curve point and first derivative at parameter u.
+    public func evalD1(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>) {
+        var px = 0.0, py = 0.0, d1x = 0.0, d1y = 0.0
+        OCCTCurve2DEvalD1(handle, u, &px, &py, &d1x, &d1y)
+        return (SIMD2(px, py), SIMD2(d1x, d1y))
+    }
+
+    /// Evaluate the 2D curve point, first and second derivatives at parameter u.
+    public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2: SIMD2<Double>) {
+        var px = 0.0, py = 0.0, d1x = 0.0, d1y = 0.0, d2x = 0.0, d2y = 0.0
+        OCCTCurve2DEvalD2(handle, u, &px, &py, &d1x, &d1y, &d2x, &d2y)
+        return (SIMD2(px, py), SIMD2(d1x, d1y), SIMD2(d2x, d2y))
+    }
+
+    /// Evaluate 2D curve points at multiple parameters (batch D0).
+    ///
+    /// - Note: #486. This used to call `Geom2d_Curve::EvalD0` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
+    public func evalBatchD0(params: [Double]) -> [SIMD2<Double>] {
+        evaluateGrid(params)
+    }
+
+    /// Evaluate 2D curve points and first derivatives at multiple parameters (batch D1).
+    ///
+    /// - Note: #486. This used to call `Geom2d_Curve::EvalD1` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
+    public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
+    }
+}
+
+extension Curve2D {
+
+    /// The geometric curve type.
+    public var curveType: Int {
+        Int(OCCTCurve2DCurveType(handle))
+    }
+
+    /// Find parameter on 2D curve nearest to a 2D point.
+    @available(*, deprecated, message: """
+        No Double can signal failure here: every value is a legitimate parameter on some curve, \
+        and this used to return the curve's firstParameter, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
+        """)
+    public func parameterAtPoint(_ point: SIMD2<Double>) -> Double {
+        nearestParameter(to: point) ?? .nan
+    }
+}
+
+extension Curve2D {
+
+    /// Whether this curve is bounded (Geom2d_BoundedCurve subclass).
+    public var isBounded: Bool { OCCTCurve2DIsBounded(handle) }
+}
+
+extension Curve2D {
+
+    /// Evaluate the N-th derivative at parameter u.
+    public func dn(at u: Double, order n: Int) -> SIMD2<Double> {
+        var x = 0.0, y = 0.0
+        OCCTCurve2DDN(handle, u, Int32(n), &x, &y)
+        return SIMD2(x, y)
+    }
+
+    /// The type name of this curve (e.g. "Geom2d_Line", "Geom2d_Circle").
+    public var typeName: String? {
+        guard let ptr = OCCTCurve2DTypeName(handle) else { return nil }
+        return String(cString: ptr)
+    }
+}
+
+extension Curve2D {
+    /// 2D Bezier curve properties (meaningful only when the underlying curve is Geom2d_BezierCurve).
+    public struct BezierProperties: @unchecked Sendable {
+        fileprivate let handle: OCCTCurve2DRef
+
+        /// Degree of the Bezier curve.
+        public var degree: Int { Int(OCCTCurve2DBezierDegree(handle)) }
+
+        /// Number of poles.
+        public var poleCount: Int { Int(OCCTCurve2DBezierPoleCount(handle)) }
+
+        /// Whether the Bezier curve is rational.
+        public var isRational: Bool { OCCTCurve2DBezierIsRational(handle) }
+
+        /// Get a pole (1-based index).
+        public func pole(at index: Int) -> SIMD2<Double> {
+            var x = 0.0, y = 0.0
+            OCCTCurve2DBezierGetPole(handle, Int32(index), &x, &y)
+            return SIMD2(x, y)
+        }
+
+        /// Set a pole (1-based index).
+        @discardableResult
+        public func setPole(at index: Int, point: SIMD2<Double>) -> Bool {
+            OCCTCurve2DBezierSetPole(handle, Int32(index), point.x, point.y)
+        }
+
+        /// Set a weight (1-based index).
+        @discardableResult
+        public func setWeight(at index: Int, weight: Double) -> Bool {
+            OCCTCurve2DBezierSetWeight(handle, Int32(index), weight)
+        }
+
+        /// Compute parameter resolution from 2D tolerance.
+        public func resolution(tolerance: Double) -> Double {
+            OCCTCurve2DBezierResolution(handle, tolerance)
+        }
+    }
+
+    /// 2D Bezier curve-specific properties.
+    public var bezierProperties: BezierProperties { BezierProperties(handle: handle) }
+
+    // --- Curve2D BSpline extras ---
+
+    /// Set periodic/non-periodic on a 2D BSpline curve.
+    @discardableResult
+    public func bsplineSetPeriodic(_ periodic: Bool) -> Bool {
+        OCCTCurve2DBSplineSetPeriodic(handle, periodic)
+    }
+
+    /// Get weight at index (1-based) from a 2D BSpline curve.
+    public func bsplineWeight(at index: Int) -> Double {
+        OCCTCurve2DBSplineGetWeight(handle, Int32(index))
+    }
+
+    /// Get all weights from a 2D BSpline curve.
+    public func bsplineWeights() -> [Double] {
+        let count = Int(OCCTCurve2DBSplinePoleCount(handle))
+        guard count > 0 else { return [] }
+        var weights = [Double](repeating: 0, count: count)
+        weights.withUnsafeMutableBufferPointer { buf in
+            OCCTCurve2DBSplineGetWeights(handle, buf.baseAddress!)
+        }
+        return weights
+    }
+}
+
+extension Curve2D {
+
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    ///
+    /// Same retirement, same reasons, as ``Curve3D/continuityOrder``: the pre-#485 encoding was
+    /// `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` and the value is now the real
+    /// `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4, C3=5, CN=6`), so every threshold
+    /// check kept compiling and quietly changed meaning (#619).
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1.
+    /// if pcurve.continuityOrder >= 2 { treatAsC2() }
+    ///
+    /// // Ask it so it cannot drift again:
+    /// if pcurve.continuityClass.satisfies(.c2) { treatAsC2() }
+    /// ```
+    @available(*, unavailable, message: """
+        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
+    public var continuityOrder: Int { Int(OCCTCurve2DGetContinuity(handle)) }
+
+    /// Check if this curve has at least Cn continuity.
+    public func isCN(_ n: Int) -> Bool {
+        OCCTCurve2DIsCN(handle, Int32(n))
+    }
+
+    /// Get the parameter on the reversed curve corresponding to parameter u on this curve.
+    public func reversedParameter(_ u: Double) -> Double {
+        OCCTCurve2DReversedParameter(handle, u)
+    }
+
+    /// Maximum degree for 2D Bezier curves (static).
+    public static var bezierMaxDegree: Int { Int(OCCTCurve2DBezierMaxDegree()) }
+
+    /// Maximum degree for 2D BSpline curves (static).
+    public static var bsplineMaxDegree: Int { Int(OCCTCurve2DBSplineMaxDegree()) }
+}
+
+extension Curve2D {
+
+    /// Remove periodicity from 2D BSpline curve.
+    @discardableResult
+    public func bsplineSetNotPeriodic() -> Bool {
+        OCCTCurve2DBSplineSetNotPeriodic(handle)
+    }
+
+    /// Set origin knot index (1-based) on periodic 2D BSpline curve.
+    @discardableResult
+    public func bsplineSetOrigin(index: Int) -> Bool {
+        OCCTCurve2DBSplineSetOrigin(handle, Int32(index))
+    }
+
+    /// Increase multiplicity of knot at index to at least mult (1-based).
+    @discardableResult
+    public func bsplineIncreaseMultiplicity(index: Int, multiplicity: Int) -> Bool {
+        OCCTCurve2DBSplineIncreaseMultiplicity(handle, Int32(index), Int32(multiplicity))
+    }
+
+    /// Increment multiplicity of all knots from index1 to index2 by step (1-based).
+    @discardableResult
+    public func bsplineIncrementMultiplicity(from: Int, to: Int, step: Int = 1) -> Bool {
+        OCCTCurve2DBSplineIncrementMultiplicity(handle, Int32(from), Int32(to), Int32(step))
+    }
+
+    /// Set all knot values at once (count must match NbKnots).
+    @discardableResult
+    public func bsplineSetKnots(_ knots: [Double]) -> Bool {
+        OCCTCurve2DBSplineSetKnots(handle, knots, Int32(knots.count))
+    }
+
+    /// Reverse parameterization of 2D BSpline curve.
+    @discardableResult
+    public func bsplineReverse() -> Bool {
+        OCCTCurve2DBSplineReverse(handle)
+    }
+
+    /// Move point and tangent at parameter u on 2D BSpline curve.
+    @discardableResult
+    public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent: SIMD2<Double>,
+                                           tolerance: Double, poleRange: ClosedRange<Int>) -> Bool {
+        OCCTCurve2DBSplineMovePointAndTangent(handle, u, point.x, point.y,
+                                               tangent.x, tangent.y,
+                                               tolerance,
+                                               Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    }
+}

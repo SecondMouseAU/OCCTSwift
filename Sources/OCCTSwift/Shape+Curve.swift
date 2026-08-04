@@ -273,3 +273,52 @@ extension Shape {
         return first...last
     }
 }
+
+extension Shape {
+    /// Uniformly sample an edge by point count. Returns parameter values.
+    ///
+    /// - Parameter pointCount: Desired number of samples, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``, else `nil`. OCCT's sampler documents the lower bound but
+    ///   cannot enforce it in a Release kernel, and used to answer a request for zero with five
+    ///   parameters (#501); the upper bound is this layer's, since `pointCount` is cast to the
+    ///   bridge's `int32_t` and used to abort the process past it (#558).
+    public func uniformAbscissa(pointCount: Int) -> [Double]? {
+        guard let pointCount = Sampling.requested(pointCount) else { return nil }
+        let n = Int(OCCTUniformAbscissaByCount(handle, Int32(pointCount), nil))
+        guard n > 0 else { return nil }
+        var params = [Double](repeating: 0, count: n)
+        _ = OCCTUniformAbscissaByCount(handle, Int32(pointCount), &params)
+        return params
+    }
+
+    /// Uniformly sample an edge by arc distance. Returns parameter values.
+    public func uniformAbscissa(distance: Double) -> [Double]? {
+        let n = Int(OCCTUniformAbscissaByDistance(handle, distance, nil))
+        guard n > 0 else { return nil }
+        var params = [Double](repeating: 0, count: n)
+        _ = OCCTUniformAbscissaByDistance(handle, distance, &params)
+        return params
+    }
+
+    /// Uniformly sample an edge by point count within parameter range.
+    ///
+    /// - Parameter pointCount: Desired number of samples, honoured within `2...`
+    ///   ``Sampling/maximumSampleCount``, else `nil` (#501, #558).
+    public func uniformAbscissa(pointCount: Int, u1: Double, u2: Double) -> [Double]? {
+        guard let pointCount = Sampling.requested(pointCount) else { return nil }
+        let n = Int(OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, nil))
+        guard n > 0 else { return nil }
+        var params = [Double](repeating: 0, count: n)
+        _ = OCCTUniformAbscissaByCountRange(handle, Int32(pointCount), u1, u2, &params)
+        return params
+    }
+
+    /// Uniformly sample an edge by arc distance within parameter range.
+    public func uniformAbscissa(distance: Double, u1: Double, u2: Double) -> [Double]? {
+        let n = Int(OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, nil))
+        guard n > 0 else { return nil }
+        var params = [Double](repeating: 0, count: n)
+        _ = OCCTUniformAbscissaByDistanceRange(handle, distance, u1, u2, &params)
+        return params
+    }
+}

@@ -44,7 +44,14 @@ TESTS = "Tests"
 # their members into Shape's census. No such extension exists in this file today; the point is that
 # it would be counted wrongly with no error, which is the same silent-contamination failure the
 # depth check below was added to fix.
-EXTENSION_SHAPE = re.compile(r"^extension Shape\b")
+#
+# The access-modifier prefix is required too, not optional dressing: `public extension Shape {`
+# puts every member inside it (public or not) on the same standing as an explicit `public` member
+# of a plain `extension Shape {`, and #662 found 5 such blocks in Document.swift (plus one more in
+# PresentationMesh.swift) that this regex skipped outright before the prefix was added -- 7 real
+# members and 4 nested types, invisible with no error, the same failure shape the comment above
+# already names for a different cause.
+EXTENSION_SHAPE = re.compile(r"^(?:public |internal |private |package |fileprivate |)?extension Shape\b")
 
 MEMBER = re.compile(
     r"^\s+(?:public |internal |private |fileprivate |)?(?:static |)?"
@@ -199,6 +206,12 @@ extension Shape {
         public func alsoNotAShapeMember() {}
     }
 }
+
+public extension Shape {
+    /// The access modifier is on the `extension` keyword, not this member (#662): a member with
+    /// no modifier of its own is still public because the enclosing extension is.
+    func memberOfPublicExtension() -> Int { 0 }
+}
 """
 
 # Only the two direct members belong to Shape. The other three names are the exact contamination
@@ -207,12 +220,17 @@ extension Shape {
 # rightAfterClose / spanThenBody / afterTheSpan cover the review finding on #680: closing a block
 # comment with `continue` dropped the whole physical line, so code sharing a line with `*/` was
 # lost, and an unbalanced brace on that line desynced depth for every later member too.
+# memberOfPublicExtension covers #662's finding: `EXTENSION_SHAPE` matched only a line starting
+# with the literal word "extension", so `public extension Shape {` (5 blocks in Document.swift,
+# one more in PresentationMesh.swift) was never recognised as a Shape extension at all -- not one
+# member inside any of them was counted, silently. 237 reported for Document.swift, 244 real.
 SELF_TEST_EXPECTED = {
     "realMember",
     "realProperty",
     "rightAfterClose",
     "spanThenBody",
     "afterTheSpan",
+    "memberOfPublicExtension",
 }
 # Each rejection is a bug this script has actually had or was one edit away from having:
 #   aLocalVariable / notAShapeMember / alsoNotAShapeMember  no depth check (shipped, 557 vs 446)

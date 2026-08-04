@@ -121,3 +121,97 @@ extension Shape {
         return SIMD2(u, v)
     }
 }
+
+extension Shape {
+    /// Write shape to VRML file.
+    /// - Parameters:
+    ///   - url: File URL to write to (.wrl extension)
+    ///   - version: VRML version (1 or 2, default 2)
+    ///   - deflection: Mesh deflection for triangulation (default 0.01)
+    ///   - representation: Visual representation mode (default .shaded)
+    /// - Returns: true if successful
+    @discardableResult
+    public func writeVRML(to url: URL,
+                          version: Int = 2,
+                          deflection: Double = 0.01,
+                          representation: VrmlRepresentation = .shaded) -> Bool {
+        OCCTVrmlWriteShape(handle, url.path, Int32(version), deflection, representation.rawValue)
+    }
+}
+
+extension Shape {
+
+    /// Write this shape's triangulation to a binary STL file.
+    /// The shape is meshed automatically.
+    /// - Parameters:
+    ///   - filePath: Output file path.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    /// - Returns: true on success.
+    public func writeSTLBinary(to filePath: String, deflection: Double = 0.1) -> Bool {
+        OCCTShapeWriteSTLBinary(handle, filePath, deflection)
+    }
+
+    /// Write this shape's triangulation to an ASCII STL file.
+    /// The shape is meshed automatically.
+    /// - Parameters:
+    ///   - filePath: Output file path.
+    ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    /// - Returns: true on success.
+    public func writeSTLAscii(to filePath: String, deflection: Double = 0.1) -> Bool {
+        OCCTShapeWriteSTLAscii(handle, filePath, deflection)
+    }
+
+    /// Read an STL file and return as a triangulated shape.
+    /// - Parameter filePath: Input STL file path.
+    /// - Returns: Shape with triangulation, or nil on failure.
+    public static func readSTL(from filePath: String) -> Shape? {
+        guard let ref = OCCTShapeReadSTL(filePath) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Get adjacent triangles for a triangle in a meshed face.
+    /// The three triangles adjacent to one triangle of a face's triangulation.
+    ///
+    /// `faceIndex` is 0-based, like ``Face/index`` and every other face index in this API (#541).
+    /// `triangleIndex` and the returned neighbour indices are `Poly_Triangulation`'s own 1-based
+    /// triangle numbers; 0 means no neighbour on that side.
+    public func meshTriangleAdjacency(faceIndex: Int, triangleIndex: Int) -> (Int, Int, Int)? {
+        var a1: Int32 = 0, a2: Int32 = 0, a3: Int32 = 0
+        guard OCCTMeshTriangleAdjacency(handle, Int32(faceIndex), Int32(triangleIndex), &a1, &a2, &a3) else {
+            return nil
+        }
+        return (Int(a1), Int(a2), Int(a3))
+    }
+
+    /// A triangle containing the given node of a face's triangulation.
+    ///
+    /// `faceIndex` is 0-based (#541); `nodeIndex` and the returned triangle index are
+    /// `Poly_Triangulation`'s own 1-based numbers.
+    public func meshNodeTriangle(faceIndex: Int, nodeIndex: Int) -> Int? {
+        let idx = Int(OCCTMeshNodeTriangle(handle, Int32(faceIndex), Int32(nodeIndex)))
+        return idx > 0 ? idx : nil
+    }
+
+    /// Count triangles sharing a node (triangle fan count).
+    ///
+    /// `faceIndex` is 0-based (#541); `nodeIndex` is `Poly_Triangulation`'s own 1-based number.
+    public func meshNodeTriangleCount(faceIndex: Int, nodeIndex: Int) -> Int {
+        Int(OCCTMeshNodeTriangleCount(handle, Int32(faceIndex), Int32(nodeIndex)))
+    }
+}
+
+extension Shape {
+    /// Load a shape from a GLTF or GLB file.
+    public static func loadGLTF(fromPath path: String) -> Shape? {
+        guard let ref = OCCTImportGLTF(path) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Load a shape from a GLTF or GLB file URL.
+    public static func loadGLTF(from url: URL) -> Shape? {
+        loadGLTF(fromPath: url.path)
+    }
+}

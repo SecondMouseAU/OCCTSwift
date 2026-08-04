@@ -112,3 +112,48 @@ extension Shape {
         return Shape(handle: ref)
     }
 }
+
+extension Shape {
+    /// Transform shape using a 3x4 matrix (row-major: [a11..a14, a21..a24, a31..a34]).
+    public func transformed(byMatrix matrix: [Double]) -> Shape? {
+        guard matrix.count == 12 else { return nil }
+        var result: OCCTShapeRef?
+        OCCTShapeTransformFromMatrix(handle,
+            matrix[0], matrix[1], matrix[2], matrix[3],
+            matrix[4], matrix[5], matrix[6], matrix[7],
+            matrix[8], matrix[9], matrix[10], matrix[11],
+            &result)
+        guard let r = result else { return nil }
+        return Shape(handle: r)
+    }
+
+    /// Check if the shape's location transform has negative determinant (mirror/reflection).
+    public var isTransformNegative: Bool {
+        OCCTShapeTransformIsNegative(handle)
+    }
+}
+
+extension Shape {
+
+    /// Compute the magnitude of the cross product of two vectors.
+    public static func vecCrossMagnitude(_ v1: SIMD3<Double>, _ v2: SIMD3<Double>) -> Double {
+        OCCTVecCrossMagnitude(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z)
+    }
+
+    /// Compute the square magnitude of the cross product of two vectors.
+    public static func vecCrossSquareMagnitude(_ v1: SIMD3<Double>, _ v2: SIMD3<Double>) -> Double {
+        OCCTVecCrossSquareMagnitude(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z)
+    }
+
+    /// Check if two directions are opposite within angular tolerance (radians).
+    public static func dirIsOpposite(_ d1: SIMD3<Double>, _ d2: SIMD3<Double>,
+                                     tolerance: Double = 1e-10) -> Bool {
+        OCCTDirIsOpposite(d1.x, d1.y, d1.z, d2.x, d2.y, d2.z, tolerance)
+    }
+
+    /// Check if two directions are normal (perpendicular) within angular tolerance (radians).
+    public static func dirIsNormal(_ d1: SIMD3<Double>, _ d2: SIMD3<Double>,
+                                   tolerance: Double = 1e-10) -> Bool {
+        OCCTDirIsNormal(d1.x, d1.y, d1.z, d2.x, d2.y, d2.z, tolerance)
+    }
+}

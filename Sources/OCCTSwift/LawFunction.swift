@@ -198,3 +198,23 @@ public final class LawFunction: @unchecked Sendable {
         return Array(params.prefix(Int(count)))
     }
 }
+
+extension LawFunction {
+    /// Create an interpolated law function from values.
+    public static func interpolated(values: [Double], parameters: [Double]? = nil, periodic: Bool = false) -> LawFunction? {
+        let ref: OCCTLawFunctionRef?
+        if let params = parameters {
+            ref = params.withUnsafeBufferPointer { paramBuf in
+                values.withUnsafeBufferPointer { valBuf in
+                    OCCTLawInterpolate(valBuf.baseAddress!, Int32(values.count), paramBuf.baseAddress!, periodic)
+                }
+            }
+        } else {
+            ref = values.withUnsafeBufferPointer { valBuf in
+                OCCTLawInterpolate(valBuf.baseAddress!, Int32(values.count), nil, periodic)
+            }
+        }
+        guard let r = ref else { return nil }
+        return LawFunction(handle: r)
+    }
+}

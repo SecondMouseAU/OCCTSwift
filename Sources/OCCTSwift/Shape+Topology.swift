@@ -1652,3 +1652,1242 @@ extension Shape {
         OCCTBRepToolSetUVPoints(edge.handle, face.handle, first.x, first.y, last.x, last.y)
     }
 }
+
+extension Shape {
+
+    /// Create a deep copy of this shape (independent copy with new topology).
+    public func deepCopy() -> Shape? {
+        guard let ref = OCCTShapeDeepCopy(handle) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+    /// Write shape to binary data.
+    public func toBinaryData() -> Data? {
+        var length: Int32 = 0
+        guard let ptr = OCCTBinToolsWriteShape(handle, &length) else { return nil }
+        let data = Data(bytes: ptr, count: Int(length))
+        free(UnsafeMutableRawPointer(mutating: ptr))
+        return data
+    }
+
+    /// Read shape from binary data.
+    public static func fromBinaryData(_ data: Data) -> Shape? {
+        data.withUnsafeBytes { rawBuffer in
+            guard let ptr = rawBuffer.baseAddress else { return nil }
+            guard let ref = OCCTBinToolsReadShape(ptr, Int32(data.count)) else { return nil }
+            return Shape(handle: ref)
+        }
+    }
+
+    /// Write shape to binary file.
+    @discardableResult
+    public func writeBinary(to url: URL) -> Bool {
+        OCCTBinToolsWriteShapeToFile(handle, url.path)
+    }
+
+    /// Read shape from binary file.
+    public static func loadBinary(from url: URL) -> Shape? {
+        guard let ref = OCCTBinToolsReadShapeFromFile(url.path) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+public extension Shape {
+    /// Result of contiguous edge finding.
+    struct ContigousEdgeResult: Sendable {
+        public let contigousEdgeCount: Int
+        public let degeneratedShapeCount: Int
+    }
+
+    /// Find contiguous edges in a shape.
+    func findContigousEdges(tolerance: Double = 1.0e-6) -> ContigousEdgeResult {
+        let result = OCCTShapeFindContigousEdges(handle, tolerance)
+        return ContigousEdgeResult(
+            contigousEdgeCount: Int(result.contigousEdgeCount),
+            degeneratedShapeCount: Int(result.degeneratedShapeCount)
+        )
+    }
+}
+
+extension Shape {
+
+    /// Create a deep copy of this shape using TNaming_Translator.
+    /// The copy has independent topology (different TShape pointers).
+    public func translatorCopy() -> Shape? {
+        guard let ref = OCCTShapeTranslatorCopy(handle) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Check if two shapes share the same underlying TShape.
+    public func isSame(as other: Shape) -> Bool {
+        OCCTShapeIsSame(handle, other.handle)
+    }
+}
+
+extension Shape {
+
+    /// Classification state for a point relative to a solid.
+    public enum PointState: Int32 {
+        case inside = 0
+        case outside = 1
+        case on = 2
+        case unknown = 3
+    }
+
+    /// Classify a 3D point relative to this solid shape.
+    /// - Parameters:
+    ///   - point: The 3D point to classify
+    ///   - tolerance: Classification tolerance
+    /// - Returns: The classification state
+    public func classifyPoint(_ point: SIMD3<Double>, tolerance: Double = 1e-6) -> PointState {
+        let raw = OCCTShapeClassifyPoint(handle, point.x, point.y, point.z, tolerance)
+        return PointState(rawValue: raw) ?? .unknown
+    }
+}
+
+extension Shape {
+
+    /// Classify a 2D point on a face (in UV parameter space).
+    /// - Parameters:
+    ///   - faceIndex: Face index (0-based)
+    ///   - u: U parameter
+    ///   - v: V parameter
+    ///   - tolerance: Classification tolerance
+    /// - Returns: Classification state
+    public func classifyPoint2D(faceIndex: Int, u: Double, v: Double, tolerance: Double = 1e-6) -> PointState {
+        let raw = OCCTShapeClassifyPoint2D(handle, Int32(faceIndex), u, v, tolerance)
+        return PointState(rawValue: raw) ?? .unknown
+    }
+}
+
+extension Shape {
+
+    /// Get the first (FORWARD) vertex position of an edge shape.
+    public func edgeFirstVertex() -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        guard OCCTEdgeFirstVertex(handle, &x, &y, &z) else { return nil }
+        return SIMD3(x, y, z)
+    }
+
+    /// Get the last (REVERSED) vertex position of an edge shape.
+    public func edgeLastVertex() -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        guard OCCTEdgeLastVertex(handle, &x, &y, &z) else { return nil }
+        return SIMD3(x, y, z)
+    }
+
+    /// Get both vertex positions of an edge shape.
+    public func edgeVertices() -> (first: SIMD3<Double>, last: SIMD3<Double>)? {
+        var x1 = 0.0, y1 = 0.0, z1 = 0.0, x2 = 0.0, y2 = 0.0, z2 = 0.0
+        guard OCCTEdgeVertices(handle, &x1, &y1, &z1, &x2, &y2, &z2) else { return nil }
+        return (SIMD3(x1, y1, z1), SIMD3(x2, y2, z2))
+    }
+
+    /// Get first and last vertex positions of a wire shape. For closed wires, both are the same.
+    public func wireVertices() -> (first: SIMD3<Double>, last: SIMD3<Double>)? {
+        var x1 = 0.0, y1 = 0.0, z1 = 0.0, x2 = 0.0, y2 = 0.0, z2 = 0.0
+        guard OCCTWireVertices(handle, &x1, &y1, &z1, &x2, &y2, &z2) else { return nil }
+        return (SIMD3(x1, y1, z1), SIMD3(x2, y2, z2))
+    }
+
+    /// Find common vertex between two edge shapes. Returns nil if no shared vertex.
+    public func commonVertex(with other: Shape) -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        guard OCCTEdgeCommonVertex(handle, other.handle, &x, &y, &z) else { return nil }
+        return SIMD3(x, y, z)
+    }
+
+    /// Build edge→face adjacency. Returns array where each element is the number of faces sharing that edge.
+    public func edgeFaceAdjacency() -> [Int] {
+        let count = Int(OCCTEdgeFaceAdjacency(handle, nil))
+        guard count > 0 else { return [] }
+        var counts = [Int32](repeating: 0, count: count)
+        _ = OCCTEdgeFaceAdjacency(handle, &counts)
+        return counts.map { Int($0) }
+    }
+
+    /// Build vertex→edge adjacency. Returns array where each element is the number of edges sharing that vertex.
+    public func vertexEdgeAdjacency() -> [Int] {
+        let count = Int(OCCTVertexEdgeAdjacency(handle, nil))
+        guard count > 0 else { return [] }
+        var counts = [Int32](repeating: 0, count: count)
+        _ = OCCTVertexEdgeAdjacency(handle, &counts)
+        return counts.map { Int($0) }
+    }
+
+    /// The 0-based indices of the faces adjacent to `edge` within this shape.
+    ///
+    /// The indices address the same enumeration ``Shape/face(at:)`` reads, so they can be handed
+    /// straight to it. They used to be 1-based, which named the face before the intended one and
+    /// could never name face 0 (#541).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let edge = box.subShapes(ofType: .edge).first!
+    /// for i in box.adjacentFaces(forEdge: edge) {
+    ///     print(box.face(at: i)!.area())   // the two faces meeting at that edge
+    /// }
+    /// ```
+    public func adjacentFaces(forEdge edge: Shape) -> [Int] {
+        var indices = [Int32](repeating: 0, count: 64)
+        let count = Int(OCCTEdgeAdjacentFaces(handle, edge.handle, &indices, 64))
+        return indices.prefix(count).map { Int($0) }
+    }
+
+    /// The 0-based indices of the edges meeting `vertex` within this shape.
+    ///
+    /// The indices address the same enumeration ``Shape/subShape(type:index:)`` reads for
+    /// `.edge`. They used to be 1-based (#541).
+    public func adjacentEdges(forVertex vertex: Shape) -> [Int] {
+        var indices = [Int32](repeating: 0, count: 64)
+        let count = Int(OCCTVertexAdjacentEdges(handle, vertex.handle, &indices, 64))
+        return indices.prefix(count).map { Int($0) }
+    }
+}
+
+extension Shape {
+
+    /// Edge orientation from wire explorer.
+    public enum EdgeOrientation: Int, Sendable {
+        case forward = 0
+        case reversed = 1
+        case `internal` = 2
+        case external = 3
+    }
+
+    /// Get edge orientations within a wire, optionally with face context.
+    public func wireEdgeOrientations(face: Shape? = nil) -> [EdgeOrientation] {
+        let count = Int(OCCTWireExplorerOrientations(handle, face?.handle, nil))
+        guard count > 0 else { return [] }
+        var orientations = [Int32](repeating: 0, count: count)
+        _ = OCCTWireExplorerOrientations(handle, face?.handle, &orientations)
+        return orientations.map { EdgeOrientation(rawValue: Int($0)) ?? .forward }
+    }
+
+    /// Get connecting vertex positions from wire explorer (vertex between consecutive edges).
+    public func wireExplorerVertices(face: Shape? = nil) -> [SIMD3<Double>] {
+        let count = Int(OCCTWireExplorerVertices(handle, face?.handle, nil, nil, nil))
+        guard count > 0 else { return [] }
+        var xs = [Double](repeating: 0, count: count)
+        var ys = [Double](repeating: 0, count: count)
+        var zs = [Double](repeating: 0, count: count)
+        _ = OCCTWireExplorerVertices(handle, face?.handle, &xs, &ys, &zs)
+        return (0..<count).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
+    }
+}
+
+extension Shape {
+    /// Substitute a subshape with a list of new shapes. Pass empty array to remove.
+    public func substitute(oldSubShape: Shape, newSubShapes: [Shape]) -> Shape? {
+        if newSubShapes.isEmpty {
+            return withUnsafePointer(to: Optional<OCCTShapeRef>.none) { _ in
+                guard let h = OCCTShapeSubstitute(handle, oldSubShape.handle, nil, 0) else { return nil }
+                return Shape(handle: h)
+            }
+        }
+        var handles = newSubShapes.map { $0.handle as OCCTShapeRef? }
+        return handles.withUnsafeMutableBufferPointer { buf in
+            guard let h = OCCTShapeSubstitute(handle, oldSubShape.handle, buf.baseAddress, Int32(newSubShapes.count)) else {
+                return nil
+            }
+            return Shape(handle: h)
+        }
+    }
+
+    /// Check if a subshape was copied during substitution.
+    public func substitutionIsCopied(subshape: Shape) -> Bool {
+        OCCTSubstitutionIsCopied(handle, subshape.handle)
+    }
+}
+
+extension Shape {
+    /// Create a vertex shape at the given point using BRepLib_MakeVertex.
+    public static func makeVertex(at point: SIMD3<Double>) -> Shape? {
+        guard let ref = OCCTMakeVertex(point.x, point.y, point.z) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+    /// Shape orientation values.
+    public enum Orientation: Int32, Sendable {
+        case forward = 0
+        case reversed = 1
+        case `internal` = 2
+        case external = 3
+    }
+
+    /// Get shape orientation.
+    public var orientation: Orientation {
+        Orientation(rawValue: OCCTShapeGetOrientation(handle)) ?? .forward
+    }
+
+    /// Set shape orientation.
+    public func setOrientation(_ orient: Orientation) {
+        OCCTShapeSetOrientation(handle, orient.rawValue)
+    }
+
+    /// Get a reversed copy of the shape.
+    public var reversed: Shape? {
+        guard let h = OCCTShapeReversed(handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Get a complemented copy of the shape (reversed orientation).
+    public var complemented: Shape? {
+        guard let h = OCCTShapeComplemented(handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Compose with another orientation.
+    public func composed(with orient: Orientation) -> Shape? {
+        guard let h = OCCTShapeComposed(handle, orient.rawValue) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Check if the shape's Free flag is set.
+    public var isFree: Bool {
+        OCCTShapeIsFree(handle)
+    }
+
+    /// Check if the shape's Modified flag is set.
+    public var isModified: Bool {
+        OCCTShapeIsModified(handle)
+    }
+
+    /// Check if the shape's Checked flag is set.
+    public var isChecked: Bool {
+        OCCTShapeIsChecked(handle)
+    }
+
+    /// Check if the shape's Orientable flag is set.
+    public var isOrientable: Bool {
+        OCCTShapeIsOrientable(handle)
+    }
+
+    /// Check if the shape's Infinite flag is set.
+    public var isInfinite: Bool {
+        OCCTShapeIsInfinite(handle)
+    }
+
+    /// Check if the shape's Convex flag is set.
+    public var isConvex: Bool {
+        OCCTShapeIsConvex(handle)
+    }
+
+    /// Check if the shape is empty (null underlying shape).
+    public var isEmptyShape: Bool {
+        OCCTShapeIsEmpty(handle)
+    }
+
+    /// Check if two shapes are partners (same TShape).
+    public func isPartner(with other: Shape) -> Bool {
+        OCCTShapeIsPartner(handle, other.handle)
+    }
+
+    /// Check if two shapes are equal (same TShape + same location + same orientation).
+    public func isEqual(to other: Shape) -> Bool {
+        OCCTShapeIsEqual(handle, other.handle)
+    }
+
+    /// Get the number of direct children sub-shapes.
+    public var nbChildren: Int {
+        Int(OCCTShapeNbChildren(handle))
+    }
+
+    /// Get the hash code of a shape.
+    public var hashCode: Int {
+        Int(OCCTShapeHashCode(handle))
+    }
+}
+
+extension Shape {
+
+    /// Clean all tessellation data from the shape.
+    public func clean() {
+        OCCTShapeClean(handle)
+    }
+
+    /// Clean geometry (PCurves etc.) from the shape.
+    public func cleanGeometry() {
+        OCCTShapeCleanGeometry(handle)
+    }
+
+    /// Remove unused PCurves from edges.
+    public func removeUnusedPCurves() {
+        OCCTShapeRemoveUnusedPCurves(handle)
+    }
+
+    /// Update BRep data structures.
+    public func updateShape() {
+        OCCTShapeUpdate(handle)
+    }
+
+    /// Check if an edge has same-range parametrisation.
+    public static func checkSameRange(edge: Shape) -> Bool {
+        OCCTBRepLibCheckSameRange(edge.handle)
+    }
+
+    /// Ensure edge has same-range parametrisation.
+    @discardableResult
+    public static func sameRange(edge: Shape, tolerance: Double = 1e-6) -> Bool {
+        OCCTBRepLibSameRange(edge.handle, tolerance)
+    }
+
+    /// Build 3D curve for an edge from PCurves.
+    @discardableResult
+    public static func buildCurve3d(edge: Shape, tolerance: Double = 1e-6) -> Bool {
+        OCCTBRepLibBuildCurve3d(edge.handle, tolerance)
+    }
+
+    /// Update tolerances of all sub-shapes.
+    public func updateTolerances() {
+        OCCTBRepLibUpdateTolerances(handle)
+    }
+
+    /// Update inner tolerances of all sub-shapes.
+    public func updateInnerTolerances() {
+        OCCTBRepLibUpdateInnerTolerances(handle)
+    }
+
+    /// Update tolerance of a specific edge.
+    @discardableResult
+    public static func updateEdgeTolerance(edge: Shape, tolerance: Double) -> Bool {
+        OCCTBRepLibUpdateEdgeTolerance(edge.handle, tolerance)
+    }
+}
+
+extension Shape {
+
+    /// Create a face from a sphere with UV bounds.
+    public static func faceFromSphere(center: SIMD3<Double> = .zero, radius: Double,
+                                       uMin: Double, uMax: Double, vMin: Double, vMax: Double) -> Shape? {
+        guard let ref = OCCTMakeFaceFromSphere(center.x, center.y, center.z, radius, uMin, uMax, vMin, vMax) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a face from a torus with UV bounds.
+    public static func faceFromTorus(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
+                                      majorRadius: Double, minorRadius: Double,
+                                      uMin: Double, uMax: Double, vMin: Double, vMax: Double) -> Shape? {
+        guard let ref = OCCTMakeFaceFromTorus(center.x, center.y, center.z, normal.x, normal.y, normal.z,
+                                               majorRadius, minorRadius, uMin, uMax, vMin, vMax) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a face from a cone with UV bounds.
+    public static func faceFromCone(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0, 0, 1),
+                                     semiAngle: Double, radius: Double,
+                                     uMin: Double, uMax: Double, vMin: Double, vMax: Double) -> Shape? {
+        guard let ref = OCCTMakeFaceFromCone(center.x, center.y, center.z, normal.x, normal.y, normal.z,
+                                              semiAngle, radius, uMin, uMax, vMin, vMax) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a face from a surface trimmed by a wire.
+    public static func faceFromSurface(_ surface: Surface, wire: Shape, inside: Bool = true) -> Shape? {
+        guard let ref = OCCTMakeFaceFromSurfaceWire(surface.handle, wire.handle, inside) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Add a hole (inner wire) to a face.
+    ///
+    /// The hole wire may be **polygonal or curved** (a `Wire.circle`, an arc, joined arcs) and may
+    /// wind either way: the wire is reoriented as needed so the hole always *removes* area, and the
+    /// holed face extrudes into a valid solid with a real through hole.
+    ///
+    /// ```swift
+    /// let plate = Shape.face(from: Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(20, 0, 0),
+    ///                                              SIMD3(20, 20, 0), SIMD3(0, 20, 0)],
+    ///                                             closed: true)!, planar: true)!
+    /// let bore = Shape.fromWire(Wire.circle(origin: SIMD3(10, 10, 0),
+    ///                                       normal: SIMD3(0, 0, 1), radius: 3)!)!
+    /// let holed = Shape.faceAddHole(face: plate, wire: bore)!
+    /// holed.surfaceArea          // 400 - pi*9
+    /// holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
+    /// ```
+    ///
+    /// - Returns: The face with the hole added, or nil if the wire cannot serve as a hole for this
+    ///   face — it encloses no area (see #234), or it does not lie inside the face's boundary, so
+    ///   neither winding yields a valid face. A degenerate or unusable hole is declined rather than
+    ///   returned as an invalid face, which is what breaks callers downstream.
+    public static func faceAddHole(face: Shape, wire: Shape) -> Shape? {
+        guard let ref = OCCTMakeFaceAddHole(face.handle, wire.handle) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Copy a face.
+    public static func faceCopy(_ face: Shape) -> Shape? {
+        guard let ref = OCCTMakeFaceCopy(face.handle) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Extract the 3D curve from an edge shape. Returns (curve, firstParam, lastParam) or nil.
+    public func extractEdgeCurve3D() -> (curve: Curve3D, first: Double, last: Double)? {
+        var first = 0.0, last = 0.0
+        guard let ref = OCCTEdgeExtractCurve3D(handle, &first, &last) else { return nil }
+        return (Curve3D(handle: ref), first, last)
+    }
+
+    /// Extract the PCurve of an edge on a face. Returns (curve, firstParam, lastParam) or nil.
+    public func extractEdgePCurve(onFace face: Shape) -> (curve: Curve2D, first: Double, last: Double)? {
+        var first = 0.0, last = 0.0
+        guard let ref = OCCTEdgeExtractPCurve(handle, face.handle, &first, &last) else { return nil }
+        return (Curve2D(handle: ref), first, last)
+    }
+
+    /// Get the tolerance of an edge shape.
+    public var edgeTolerance: Double { OCCTEdgeGetTolerance(handle) }
+
+    /// Check if an edge is degenerated.
+    public var isEdgeDegenerated: Bool { OCCTEdgeIsDegenerated(handle) }
+
+    /// Extract the surface from a face shape.
+    public func extractFaceSurface() -> Surface? {
+        guard let ref = OCCTFaceExtractSurface(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Get the tolerance of a face shape.
+    public var faceTolerance: Double { OCCTFaceGetTolerance(handle) }
+
+    /// Get the number of wires on a face shape.
+    public var faceWireCount: Int { Int(OCCTFaceWireCount(handle)) }
+
+    /// Get the tolerance of a vertex shape.
+    public var vertexTolerance: Double { OCCTVertexGetTolerance(handle) }
+
+    /// Get the point of a vertex shape.
+    public var vertexPoint: SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTVertexGetPoint(handle, &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+}
+
+extension Shape {
+
+    /// Get the shape type as a string ("compound", "solid", "face", etc.).
+    public var shapeTypeString: String {
+        guard let cstr = OCCTShapeTypeString(handle) else { return "unknown" }
+        let result = String(cString: cstr)
+        free(cstr)
+        return result
+    }
+}
+
+extension Shape {
+
+    /// Get child shape at 0-based index.
+    public func child(at index: Int) -> Shape? {
+        guard let ref = OCCTShapeChild(handle, Int32(index)) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Whether the shape is locked.
+    public var isLocked: Bool {
+        get { OCCTShapeIsLocked(handle) }
+    }
+
+    /// Set locked state on the shape.
+    public func setLocked(_ locked: Bool) {
+        OCCTShapeSetLocked(handle, locked)
+    }
+
+    /// Create a copy with an applied location transform (4x3 row-major matrix).
+    public func located(matrix: [Double]) -> Shape? {
+        guard matrix.count >= 12 else { return nil }
+        guard let ref = matrix.withUnsafeBufferPointer({ buf in
+            OCCTShapeLocated(handle, buf.baseAddress!)
+        }) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Get the current location as a 4x3 row-major matrix.
+    public var locationMatrix: [Double] {
+        var m = [Double](repeating: 0, count: 12)
+        OCCTShapeGetLocation(handle, &m)
+        return m
+    }
+
+    /// Set location transform in-place (4x3 row-major matrix).
+    public func setLocation(matrix: [Double]) {
+        guard matrix.count >= 12 else { return }
+        matrix.withUnsafeBufferPointer { buf in
+            OCCTShapeSetLocation(handle, buf.baseAddress!)
+        }
+    }
+
+    /// Create a shape with specific orientation (0=FWD, 1=REV, 2=INT, 3=EXT).
+    public func oriented(_ orientation: Int) -> Shape? {
+        guard let ref = OCCTShapeOriented(handle, Int32(orientation)) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an empty shape of given type (0=COMPOUND, 2=SOLID, 3=SHELL, 5=WIRE).
+    public static func empty(type: Int) -> Shape? {
+        guard let ref = OCCTShapeEmpty(Int32(type)) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Whether the shape is a compound.
+    public var isCompound: Bool { OCCTShapeIsCompound(handle) }
+
+    /// Whether the shape is a solid.
+    public var isSolid: Bool { OCCTShapeIsSolid(handle) }
+
+    /// Whether the shape is a shell.
+    public var isShell: Bool { OCCTShapeIsShell(handle) }
+
+    /// Whether the shape is a face.
+    public var isFace: Bool { OCCTShapeIsFace(handle) }
+
+    /// Whether the shape is an edge.
+    public var isEdge: Bool { OCCTShapeIsEdge(handle) }
+
+    /// Create a wire from an array of edge shapes.
+    public static func wireFromEdges(_ edges: [Shape]) -> Shape? {
+        let refs = edges.map { $0.handle as OCCTShapeRef }
+        guard let ref = refs.withUnsafeBufferPointer({ buf in
+            OCCTMakeWireFromEdges(buf.baseAddress!, Int32(edges.count))
+        }) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a shell from an array of face shapes.
+    public static func shellFromFaces(_ faces: [Shape]) -> Shape? {
+        let refs = faces.map { $0.handle as OCCTShapeRef }
+        guard let ref = refs.withUnsafeBufferPointer({ buf in
+            OCCTMakeShell(buf.baseAddress!, Int32(faces.count))
+        }) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    // --- BRepCheck extended (v0.112.0) ---
+
+    /// Check status of a face within this shape. Returns BRepCheck_Status (0=NoError).
+    public func checkFaceStatus(face: Shape) -> Int {
+        Int(OCCTCheckFaceStatus(handle, face.handle))
+    }
+
+    /// Check status of an edge within this shape.
+    public func checkEdgeStatus(edge: Shape) -> Int {
+        Int(OCCTCheckEdgeStatus(handle, edge.handle))
+    }
+
+    /// Check status of a vertex within this shape.
+    public func checkVertexStatus(vertex: Shape) -> Int {
+        Int(OCCTCheckVertexStatus(handle, vertex.handle))
+    }
+
+    /// Max tolerance of sub-shapes of given type (0=vertex, 1=edge, 2=face).
+    public func maxTolerance(type: Int) -> Double {
+        OCCTShapeMaxTolerance(handle, Int32(type))
+    }
+
+    /// Min tolerance of sub-shapes of given type.
+    public func minTolerance(type: Int) -> Double {
+        OCCTShapeMinTolerance(handle, Int32(type))
+    }
+
+    /// Average tolerance of sub-shapes of given type.
+    public func avgTolerance(type: Int) -> Double {
+        OCCTShapeAvgTolerance(handle, Int32(type))
+    }
+
+    /// Fix tolerance on the shape to specified value.
+    @discardableResult
+    public func fixTolerance(_ tolerance: Double) -> Bool {
+        OCCTShapeFixTolerance(handle, tolerance)
+    }
+
+    /// Limit max tolerance on the shape.
+    @discardableResult
+    public func limitMaxTolerance(_ maxTol: Double) -> Bool {
+        OCCTShapeLimitMaxTolerance(handle, maxTol)
+    }
+}
+
+extension Shape {
+
+    /// Create a full ellipse edge.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
+    /// - Returns: The edge, or `nil` if the radii do not describe an ellipse.
+    ///
+    /// `BRepBuilderAPI_MakeEdge` reports `IsDone()` for a degenerate conic, so without the radius
+    /// check this returned a live edge carrying a curve that is really a point (#554).
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromEllipse(majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
+    public static func edgeFromEllipse(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
+                                        majorRadius: Double, minorRadius: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromEllipse(center.x, center.y, center.z,
+                                                  normal.x, normal.y, normal.z,
+                                                  majorRadius, minorRadius) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an ellipse arc edge.
+    ///
+    /// Same radius contract as `edgeFromEllipse(center:normal:majorRadius:minorRadius:)`.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 5, u1: 0, u2: .pi)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromEllipseArc(majorRadius: 10, minorRadius: 0, u1: 0, u2: .pi) == nil)
+    /// ```
+    public static func edgeFromEllipseArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
+                                           majorRadius: Double, minorRadius: Double,
+                                           u1: Double, u2: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromEllipseArc(center.x, center.y, center.z,
+                                                      normal.x, normal.y, normal.z,
+                                                      majorRadius, minorRadius, u1, u2) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a hyperbola arc edge.
+    ///
+    /// Both radii must be `> 0`, with no ordering constraint between them.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 3, u1: 0, u2: 1)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromHyperbolaArc(majorRadius: 8, minorRadius: 0, u1: 0, u2: 1) == nil)
+    /// ```
+    public static func edgeFromHyperbolaArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
+                                             majorRadius: Double, minorRadius: Double,
+                                             u1: Double, u2: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromHyperbolaArc(center.x, center.y, center.z,
+                                                        normal.x, normal.y, normal.z,
+                                                        majorRadius, minorRadius, u1, u2) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a parabola arc edge.
+    ///
+    /// `focalLength` must be `> 0`; at zero the parabola is a straight line along its own axis.
+    ///
+    /// ```swift
+    /// let e = Shape.edgeFromParabolaArc(focalLength: 4, u1: 0, u2: 1)
+    /// #expect(e != nil)
+    /// #expect(Shape.edgeFromParabolaArc(focalLength: 0, u1: 0, u2: 1) == nil)
+    /// ```
+    public static func edgeFromParabolaArc(center: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
+                                            focalLength: Double, u1: Double, u2: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromParabolaArc(center.x, center.y, center.z,
+                                                       normal.x, normal.y, normal.z,
+                                                       focalLength, u1, u2) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an edge from a 3D curve (full domain).
+    public static func edgeFromCurve(_ curve: Curve3D) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromCurve(curve.handle) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an edge from a 3D curve with parameter bounds.
+    public static func edgeFromCurve(_ curve: Curve3D, u1: Double, u2: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromCurveParams(curve.handle, u1, u2) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an edge from a 3D curve with point bounds.
+    public static func edgeFromCurve(_ curve: Curve3D, from p1: SIMD3<Double>, to p2: SIMD3<Double>) -> Shape? {
+        guard let ref = OCCTMakeEdgeFromCurvePoints(curve.handle, p1.x, p1.y, p1.z,
+                                                       p2.x, p2.y, p2.z) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an edge from a 2D pcurve on a surface (full domain).
+    public static func edgeOnSurface(pcurve: Curve2D, surface: Surface) -> Shape? {
+        guard let ref = OCCTMakeEdgeOnSurface(pcurve.handle, surface.handle) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an edge from a 2D pcurve on a surface with parameter bounds.
+    public static func edgeOnSurface(pcurve: Curve2D, surface: Surface, u1: Double, u2: Double) -> Shape? {
+        guard let ref = OCCTMakeEdgeOnSurfaceParams(pcurve.handle, surface.handle, u1, u2) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Get the first vertex point of an edge.
+    public func edgeVertex1() -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTEdgeVertex1(handle, &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// Get the last vertex point of an edge.
+    public func edgeVertex2() -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTEdgeVertex2(handle, &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// Create a face from a surface with UV bounds and tolerance.
+    public static func face(from surface: Surface, uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>,
+                             tolerance: Double = 1e-6) -> Shape? {
+        guard let ref = OCCTMakeFaceFromSurfaceUV(surface.handle,
+                                                     uBounds.lowerBound, uBounds.upperBound,
+                                                     vBounds.lowerBound, vBounds.upperBound, tolerance) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a face from a gp_Plane with UV bounds.
+    public static func faceFromPlane(origin: SIMD3<Double> = .zero, normal: SIMD3<Double> = SIMD3(0,0,1),
+                                      uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>) -> Shape? {
+        guard let ref = OCCTMakeFaceFromGpPlane(origin.x, origin.y, origin.z,
+                                                   normal.x, normal.y, normal.z,
+                                                   uBounds.lowerBound, uBounds.upperBound,
+                                                   vBounds.lowerBound, vBounds.upperBound) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create a face from a gp_Cylinder with UV bounds.
+    public static func faceFromCylinder(origin: SIMD3<Double> = .zero, axis: SIMD3<Double> = SIMD3(0,0,1),
+                                         radius: Double,
+                                         uBounds: ClosedRange<Double>, vBounds: ClosedRange<Double>) -> Shape? {
+        guard let ref = OCCTMakeFaceFromGpCylinder(origin.x, origin.y, origin.z,
+                                                      axis.x, axis.y, axis.z, radius,
+                                                      uBounds.lowerBound, uBounds.upperBound,
+                                                      vBounds.lowerBound, vBounds.upperBound) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Create an empty wire via TopoDS_Builder.
+    public static func builderMakeWire() -> Shape? {
+        guard let ref = OCCTBuilderMakeWire() else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an empty shell via TopoDS_Builder.
+    public static func builderMakeShell() -> Shape? {
+        guard let ref = OCCTBuilderMakeShell() else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an empty solid via TopoDS_Builder.
+    public static func builderMakeSolid() -> Shape? {
+        guard let ref = OCCTBuilderMakeSolid() else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an empty compound via TopoDS_Builder.
+    public static func builderMakeCompound() -> Shape? {
+        guard let ref = OCCTBuilderMakeCompound() else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Create an empty comp-solid via TopoDS_Builder.
+    public static func builderMakeCompSolid() -> Shape? {
+        guard let ref = OCCTBuilderMakeCompSolid() else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Add child shape into this shape using TopoDS_Builder.
+    @discardableResult
+    public func builderAdd(_ child: Shape) -> Bool {
+        OCCTBuilderAdd(handle, child.handle)
+    }
+
+    /// Remove child shape from this shape using TopoDS_Builder.
+    @discardableResult
+    public func builderRemove(_ child: Shape) -> Bool {
+        OCCTBuilderRemove(handle, child.handle)
+    }
+}
+
+extension Shape {
+
+    /// Get extended shape contents analysis.
+    public func contentsExtended() -> ShapeContentsExtended {
+        let c = OCCTShapeGetContentsExtended(handle)
+        return ShapeContentsExtended(
+            nbSolids: Int(c.nbSolids), nbShells: Int(c.nbShells),
+            nbFaces: Int(c.nbFaces), nbWires: Int(c.nbWires),
+            nbEdges: Int(c.nbEdges), nbVertices: Int(c.nbVertices),
+            nbFreeEdges: Int(c.nbFreeEdges), nbFreeWires: Int(c.nbFreeWires),
+            nbFreeFaces: Int(c.nbFreeFaces), nbSolidsWithVoids: Int(c.nbSolidsWithVoids),
+            nbBigSplines: Int(c.nbBigSplines), nbC0Surfaces: Int(c.nbC0Surfaces),
+            nbC0Curves: Int(c.nbC0Curves), nbOffsetSurf: Int(c.nbOffsetSurf),
+            nbIndirectSurf: Int(c.nbIndirectSurf), nbOffsetCurves: Int(c.nbOffsetCurves),
+            nbTrimmedCurve2d: Int(c.nbTrimmedCurve2d), nbTrimmedCurve3d: Int(c.nbTrimmedCurve3d),
+            nbBSplineSurf: Int(c.nbBSplineSurf), nbBezierSurf: Int(c.nbBezierSurf),
+            nbTrimSurf: Int(c.nbTrimSurf), nbWireWithSeam: Int(c.nbWireWithSeam),
+            nbWireWithSevSeams: Int(c.nbWireWithSevSeams), nbFaceWithSevWires: Int(c.nbFaceWithSevWires),
+            nbNoPCurve: Int(c.nbNoPCurve), nbSharedSolids: Int(c.nbSharedSolids),
+            nbSharedShells: Int(c.nbSharedShells), nbSharedFaces: Int(c.nbSharedFaces),
+            nbSharedWires: Int(c.nbSharedWires), nbSharedEdges: Int(c.nbSharedEdges),
+            nbSharedVertices: Int(c.nbSharedVertices)
+        )
+    }
+}
+
+extension Shape {
+
+    /// Create a thick solid by removing faces and offsetting.
+    public func thickSolid(facesToRemove: [Shape], offset: Double,
+                           tolerance: Double = 1e-3,
+                           joinType: OffsetJoinType = .arc) -> Shape? {
+        var faceRefs: [OCCTShapeRef] = facesToRemove.map { $0.handle }
+        guard let ref = OCCTThickSolidWithOptions(handle, &faceRefs, Int32(faceRefs.count),
+                                                    offset, tolerance, joinType.rawValue) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Orient a closed solid so that face normals point outward.
+    @discardableResult
+    public func orientClosedSolid() -> Bool {
+        OCCTBRepLibOrientClosedSolid(handle)
+    }
+
+    /// Build a 3D curve for every edge of this shape that has only pcurves.
+    ///
+    /// Edges from a loft, a sweep, or a surface-based face can carry a 2D curve on their support
+    /// surface and no 3D curve at all. Anything that walks edge geometry — discretisation, length,
+    /// export — needs the 3D curve, so this fills them in. Edges that already have one are left
+    /// exactly as they are, so calling it twice costs nothing the second time.
+    ///
+    /// ```swift
+    /// // An edge built from a pcurve on a cylinder has no 3D curve until this runs.
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 10)!
+    /// let pcurve = Curve2D.line(through: SIMD2(0.2, -3), direction: SIMD2(0.6, 0.8))!
+    /// let edge = Shape.edgeOnSurface(pcurve: pcurve, surface: cylinder, u1: 0, u2: 2)!
+    ///
+    /// print(edge.extractEdgeCurve3D() == nil)   // true
+    /// print(edge.buildCurves3d())               // true
+    /// print(edge.extractEdgeCurve3D() != nil)   // true — a BSpline approximating the helix
+    /// print(edge.edgeTolerance)                 // 1e-05 — the tolerance lands on the edge
+    /// ```
+    ///
+    /// - Parameter tolerance: Approximation tolerance, and also the rebuilt edge's tolerance floor
+    ///   (OCCT sets the edge tolerance to this value, not to the deviation it actually achieved).
+    ///   The default is OCCT's own default for the operation. A tighter value buys a closer curve
+    ///   for a pole or two more — measured on a helix, `1e-5` deviates from the exact curve by
+    ///   2.6e-6 and `1e-7` by 9.0e-8 — but it also claims an edge tolerance the approximation may
+    ///   not be able to keep on hard geometry. Ignored when the pcurve lies on a plane: that case
+    ///   is analytic and exact.
+    /// - Returns: `false` if any single edge could not be given a 3D curve (a degenerate edge with
+    ///   no planar pcurve, or one stripped of every representation). The edges that did succeed are
+    ///   still modified, so `false` means "partially built", not "nothing happened".
+    @discardableResult
+    public func buildCurves3d(tolerance: Double = 1e-5) -> Bool {
+        OCCTBRepLibBuildCurves3dForShape(handle, tolerance)
+    }
+
+    /// Sort faces by decreasing area.
+    public func sortedFaces() -> Shape? {
+        guard let ref = OCCTBRepLibSortFaces(handle) else { return nil }
+        return Shape(handle: ref)
+    }
+
+    /// Sort faces by increasing area.
+    public func reverseSortedFaces() -> Shape? {
+        guard let ref = OCCTBRepLibReverseSortFaces(handle) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+
+    /// Get the 3D curve from an edge shape with parameter range.
+    public func edgeCurveWithParams() -> (curve: Curve3D, first: Double, last: Double)? {
+        var first = 0.0, last = 0.0
+        guard let ref = OCCTShapeEdgeCurve(handle, &first, &last) else { return nil }
+        return (Curve3D(handle: ref), first, last)
+    }
+
+    /// Get the surface from a face shape.
+    public func faceSurfaceGeom() -> Surface? {
+        guard let ref = OCCTShapeFaceSurface(handle) else { return nil }
+        return Surface(handle: ref)
+    }
+
+    /// Whether this shape is closed (wire or shell).
+    public var isClosedShape: Bool { OCCTShapeIsClosed(handle) }
+}
+
+extension Shape {
+
+    /// Number of unique edges in this shape. Same value as ``edgeCount``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.uniqueEdgeCount == box.edgeCount)   // true, 12 either way
+    /// ```
+    public var uniqueEdgeCount: Int { Int(OCCTShapeUniqueEdgeCount(handle)) }
+
+    /// Number of unique faces in this shape. Same value as ``faceCount``.
+    public var uniqueFaceCount: Int { Int(OCCTShapeUniqueFaceCount(handle)) }
+
+    /// Number of unique vertices in this shape. Same value as ``vertexCount``.
+    public var uniqueVertexCount: Int { Int(OCCTShapeUniqueVertexCount(handle)) }
+
+    /// Count unique sub-shapes of a specific type. Same value as ``subShapeCount(ofType:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.uniqueSubShapeCount(ofType: .wire))   // 6
+    /// ```
+    public func uniqueSubShapeCount(ofType type: ShapeType) -> Int {
+        Int(OCCTShapeUniqueSubShapeCount(handle, Int32(type.rawValue)))
+    }
+}
+
+extension Shape {
+
+    /// Create an empty copy of this shape (same TShape, no sub-shapes).
+    public func emptyCopied() -> Shape? {
+        guard let ref = OCCTShapeEmptyCopied(handle) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+    /// Find the common vertex between two edges.
+    public static func commonVertex(edge1: Shape, edge2: Shape) -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        if OCCTEdgesCommonVertex(edge1.handle, edge2.handle, &x, &y, &z) {
+            return SIMD3(x, y, z)
+        }
+        return nil
+    }
+}
+
+extension Shape {
+    /// Check if edge has SameParameter flag (3D curve matches pcurves parametrically).
+    public var edgeSameParameter: Bool {
+        OCCTEdgeSameParameter(handle)
+    }
+
+    /// Check if edge has SameRange flag (all representations share the same range).
+    public var edgeSameRange: Bool {
+        OCCTEdgeSameRange(handle)
+    }
+
+    /// Check if face has NaturalRestriction (bounded by its own parametric bounds).
+    public var faceNaturalRestriction: Bool {
+        OCCTFaceNaturalRestriction(handle)
+    }
+
+    /// Check if edge has geometric representation (3D curve or curve on surface).
+    public var edgeIsGeometric: Bool {
+        OCCTEdgeIsGeometric(handle)
+    }
+
+    /// Check if face has geometric representation (underlying surface).
+    public var faceIsGeometric: Bool {
+        OCCTFaceIsGeometric(handle)
+    }
+}
+
+extension Shape {
+    /// Serialize this shape to a BREP format string.
+    public func toBREPString() -> String? {
+        guard let cstr = OCCTShapeToBREPString(handle) else { return nil }
+        let result = String(cString: cstr)
+        free(cstr)
+        return result
+    }
+
+    /// Deserialize a shape from a BREP format string.
+    public static func fromBREPString(_ brep: String) -> Shape? {
+        guard let ref = OCCTShapeFromBREPString(brep) else { return nil }
+        return Shape(handle: ref)
+    }
+}
+
+extension Shape {
+    /// Remove triangulation from this shape (BRepTools::Clean).
+    public func cleanTriangulation() {
+        OCCTBRepToolsCleanTriangulation(handle)
+    }
+
+    /// Remove internal edges/vertices from this shape (BRepTools::RemoveInternals).
+    public func removeInternals() {
+        OCCTBRepToolsRemoveInternals(handle)
+    }
+
+    /// Detect if this face is closed in U and/or V.
+    /// Returns (isClosedU, isClosedV).
+    public func detectClosedness() -> (isClosedU: Bool, isClosedV: Bool) {
+        var u = false, v = false
+        OCCTBRepToolsDetectClosedness(handle, &u, &v)
+        return (u, v)
+    }
+
+    /// Evaluate and update tolerance of an edge on a face. Returns the new tolerance.
+    public static func evalAndUpdateTolerance(edge: Shape, face: Shape) -> Double {
+        OCCTBRepToolsEvalAndUpdateTol(edge.handle, face.handle)
+    }
+
+    /// Count 3D edges in this shape.
+    public var map3DEdgeCount: Int {
+        Int(OCCTBRepToolsMap3DEdgeCount(handle))
+    }
+
+    /// Update face UV points.
+    public func updateFaceUVPoints() {
+        OCCTBRepToolsUpdateFaceUVPoints(handle)
+    }
+
+    /// Compare two vertices for geometric equality.
+    public static func compareVertices(_ v1: Shape, _ v2: Shape) -> Bool {
+        OCCTBRepToolsCompareVertices(v1.handle, v2.handle)
+    }
+
+    /// Compare two edges for geometric equality.
+    public static func compareEdges(_ e1: Shape, _ e2: Shape) -> Bool {
+        OCCTBRepToolsCompareEdges(e1.handle, e2.handle)
+    }
+
+    /// Check if an edge is really closed on a face.
+    public static func isReallyClosed(edge: Shape, face: Shape) -> Bool {
+        OCCTBRepToolsIsReallyClosed(edge.handle, face.handle)
+    }
+
+    /// Update a shape topology (BRepTools::Update).
+    public func updateTopology() {
+        OCCTBRepToolsUpdate(handle)
+    }
+}
+
+extension Shape {
+    /// Ensure normal consistency of triangulated shape. Returns true if normals were fixed.
+    @discardableResult
+    public func ensureNormalConsistency(maxAngle: Double = 0.001) -> Bool {
+        OCCTBRepLibEnsureNormalConsistency(handle, maxAngle)
+    }
+
+    /// Update deflection information of this shape.
+    public func updateDeflection() {
+        OCCTBRepLibUpdateDeflection(handle)
+    }
+
+    /// The continuity of the surface across an edge between two faces.
+    ///
+    /// A sharp join reports ``ContinuityClass/c0``, a fillet's tangent join
+    /// ``ContinuityClass/g1``, and a seam edge on an elementary surface (a cylinder's or
+    /// sphere's) ``ContinuityClass/cN`` — `BRepLib::ContinuityOfFaces` short-circuits to CN for
+    /// those, and promotes any elementary pair that measures C2 to CN as well. ``ContinuityClass/c3``
+    /// is the one class it never returns.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.faces(), edges = box.edges()
+    /// Shape.continuityClassOfFaces(edge: edges[0], face1: faces[0], face2: faces[1])  // .c0
+    /// ```
+    ///
+    /// - Returns: The measured class, or nil if the arguments are not an edge and two faces that
+    ///   share it (OCCT throwing, or a null handle).
+    public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shape,
+                                              tolerance: Double = 1e-6) -> ContinuityClass? {
+        ContinuityClass(rawValue:
+            OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))
+    }
+
+    /// The continuity across an edge, as a raw `GeomAbs_Shape` ordinal (-1 on failure).
+    ///
+    /// This spelling's doc comment claimed `5=CN` for years. It is wrong twice over: CN is
+    /// ordinal 6, and 5 (C3) is a value `BRepLib::ContinuityOfFaces` cannot return at all. The
+    /// function itself was always right — it casts the enum straight through — so a caller who
+    /// matched `5` for "smooth" never matched anything, and one who received `6` had no
+    /// documented meaning for it. ``continuityClassOfFaces(edge:face1:face2:tolerance:)`` returns
+    /// the same measurement as a ``ContinuityClass``, where the ordinals cannot be misread. #495.
+    @available(*, deprecated, renamed: "continuityClassOfFaces(edge:face1:face2:tolerance:)")
+    public static func continuityOfFaces(edge: Shape, face1: Shape, face2: Shape,
+                                          tolerance: Double = 1e-6) -> Int {
+        Int(OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))
+    }
+
+    /// Build 3D curves for all edges in a shape.
+    ///
+    /// This was a second wrapper over a second C entry point whose body was byte-identical to the
+    /// one behind ``buildCurves3d(tolerance:)`` — the same `BRepLib::BuildCurves3d` overload with
+    /// the same two arguments, re-wrapped eight releases later under a new name. Because nothing
+    /// connected them, the two defaults drifted 100x apart: on a pcurve-only edge on a cylinder,
+    /// `buildCurves3d()` and `buildCurves3dAll()` produced curves 2.6e-6 apart and edges whose
+    /// tolerance differed by the same 100x. Both names now run the same call with the same default.
+    /// #498.
+    @available(*, deprecated, renamed: "buildCurves3d(tolerance:)")
+    @discardableResult
+    public func buildCurves3dAll(tolerance: Double = 1e-5) -> Bool {
+        buildCurves3d(tolerance: tolerance)
+    }
+
+    /// Same-parameter all edges in a shape.
+    public func sameParameterAll(tolerance: Double = 1e-5, forced: Bool = false) {
+        OCCTBRepLibSameParameterAll(handle, tolerance, forced)
+    }
+}
+
+extension Shape {
+    /// Get a nullified copy of the shape.
+    public var nullified: Shape? {
+        guard let h = OCCTShapeNullified(handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Get the shape type as a string name.
+    public var typeName: String? {
+        guard let cstr = OCCTShapeTypeName(handle) else { return nil }
+        return String(cString: cstr)
+    }
+
+    /// Check if this shape is NOT equal to another.
+    public func isNotEqual(to other: Shape) -> Bool {
+        OCCTShapeIsNotEqual(handle, other.handle)
+    }
+
+    /// Get an emptied copy of the shape (no sub-shapes).
+    public var emptied: Shape? {
+        guard let h = OCCTShapeEmptied(handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Move the shape by a translation vector. Returns a new shape.
+    public func moved(dx: Double, dy: Double, dz: Double) -> Shape? {
+        guard let h = OCCTShapeMoved(handle, dx, dy, dz) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Get the orientation value as integer (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
+    public var orientationValue: Int {
+        Int(OCCTShapeOrientationValue(handle))
+    }
+
+    /// Get the number of edges in this shape.
+    public var nbEdges: Int {
+        Int(OCCTShapeNbEdges(handle))
+    }
+
+    /// Get the number of faces in this shape.
+    public var nbFaces: Int {
+        Int(OCCTShapeNbFaces(handle))
+    }
+
+    /// Get the number of vertices in this shape.
+    public var nbVertices: Int {
+        Int(OCCTShapeNbVertices(handle))
+    }
+}
