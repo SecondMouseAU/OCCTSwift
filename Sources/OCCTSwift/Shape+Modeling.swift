@@ -554,6 +554,9 @@ extension Shape {
     }
     // MARK: - Variable Radius Fillet (v0.14.0)
 
+    // `SurfaceContinuity` (formerly declared in Shape.swift beside this code, alongside a second
+    // `PlateConstraintOrder` copy of the same vocabulary) now lives in Continuity.swift. See #398.
+
     /// Apply a variable radius fillet to a specific edge.
     ///
     /// The radius varies along the edge according to the given radius/parameter pairs.

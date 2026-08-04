@@ -101,6 +101,10 @@ extension Shape {
         return Shape(handle: result)
     }
 
+    // The enum formerly declared in Shape.swift as `GeometricContinuity` was a misnomer: it maps to
+    // GeomAbs_C0...C3, so it is parametric continuity. It is now `ParametricContinuity` in
+    // Continuity.swift, shared with the other APIs that take a continuity floor. See #398.
+
     /// Divide a shape at continuity discontinuities
     ///
     /// - Parameter continuity: Target continuity level
@@ -177,6 +181,9 @@ extension Shape {
         guard let handle = OCCTShapeRevolutionToElementary(self.handle) else { return nil }
         return Shape(handle: handle)
     }
+
+    // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
+    // `ApproxContinuity` copy Shape.swift used to declare is now a deprecated alias of it. See #398.
 
     /// Convert all surfaces to BSpline
     ///
