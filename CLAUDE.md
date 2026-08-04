@@ -6,12 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
-**Two OCCT versions are in play until v2.0.0 ships.** `Scripts/build-occt.sh` builds `V8_0_1`, but
-`Package.swift`'s `url:` still resolves the v1.15.18 release asset, which is `V8_0_0_p1` + patches
-0001-0016. The `url:`/`checksum:` bump belongs to the release commit (#512), so a clean checkout
-with no local `Libraries/` gets the **old** kernel. Build locally and use `OCCTSWIFT_LOCAL=1` to
-work against the new one, and read `kernel-integration.yml` rather than `ci.yml`'s macOS job for
-the real signal (#585). See [`docs/occt-upgrades.md`](docs/occt-upgrades.md#p1-to-801-unreleased).
+**One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
+the **`v2.0.0-kernel.1` pre-release**, which is that same `V8_0_1` plus the eleven carried patches
+`0010`-`0012` and `0014`-`0021`. A clean checkout with no local `Libraries/` now gets the right
+kernel, and `ci.yml`'s macOS job is a real signal again.
+
+Until 2026-08-04 this was not true: the pin was the v1.15.18 asset (`V8_0_0_p1` + patches
+`0001`-`0016`), so every test asserting a newer patch's fix failed in CI indistinguishably from a
+regression, and seven suites were red for that reason alone (#585). If you find advice to read
+`kernel-integration.yml` instead of `ci.yml`, or to rely on `OCCTSWIFT_LOCAL=1` for correct results
+rather than for speed, it predates that fix. The release commit re-points `url:`/`checksum:` at the
+final v2.0.0 asset (#512). See [`docs/occt-upgrades.md`](docs/occt-upgrades.md#p1-to-801-unreleased).
 
 ## Build & Test Commands
 
@@ -29,8 +34,7 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 Four pure-Python checks over the repo's own text. No OCCT, no build, ~3s for all four. **CI runs
 every one of them, plus each `--self-test`, in `ci.yml`'s `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
-its own status check when `build-and-test` is red for an unrelated reason (#585's pinned-kernel
-mismatch on `refactor/**` branches). Each exits 1 on a defect and 0 when clean; `check-bridge-index`
+its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a defect and 0 when clean; `check-bridge-index`
 and `check-null-handle-guards` exit **2** if run from anywhere but the repo root (#625).
 
 **`gate-scripts` is a required status check on `refactor/**`** (#649), via a repository ruleset — the
@@ -45,9 +49,11 @@ repo's only branch protection. Three consequences worth knowing before you touch
   required check that never reports blocks a PR permanently with "Expected, waiting for status to be
   reported", and there is no way to clear it. For a `pull_request` the workflow is read from the
   merge ref, so once the base has the job every PR gets it regardless of how stale the head is.
-- **`build-and-test` is deliberately not required on `refactor/**`** — it is 0-for-21 there under
-  #585. It *is* ~9/10 green on `main`, so the requirable set inverts per branch; #585 is confined to
-  this branch and its descendants, not repo-wide.
+- **`build-and-test` is not required on `refactor/**`, and that is now worth revisiting.** It was
+  0-for-21 there under #585, because the pinned asset was an older kernel than the branch's tests
+  were written against. Pinning `v2.0.0-kernel.1` fixed that and the job is green on the branch, so
+  the reason it was excluded no longer holds. Making it required is a separate decision that has not
+  been taken: measure a run of green results first rather than requiring it on one.
 
 ```bash
 python3 Scripts/check-bridge-index.py        # OCCTBridge.h's class → symbol index: stale / misfiled entries
@@ -142,11 +148,9 @@ uncatchable signal, not something `catch (...)` can absorb (#478, #556, #618). R
 `--self-test` proves both failure modes (an unguarded site reported, a guarded one not). **Both are
 run by CI** in `ci.yml`'s `gate-scripts` job, so an unguarded site turns the PR's check red — until
 #625 they were run by nothing at all, and this instruction described a gate that existed only as
-prose. Note the repo has **no branch protection and no rulesets**, so a red check is visible but
-does not itself block a merge; making `gate-scripts` a required check is tracked separately and is
-safe for this one specifically, because unlike `build-and-test` (red branch-wide while #585 stands)
-it is fast and green on every branch. See "Static Gate Scripts" above for the optional pre-commit
-hook.
+prose. `gate-scripts` is a **required** status check on `refactor/**` (#649, via the repo's one
+ruleset), so an unguarded site blocks the merge rather than merely showing red. See "Static Gate
+Scripts" above for the rules that come with that, and for the optional pre-commit hook.
 
 **The guard is required only where the OCCT call actually needs it.** Not every entry point
 dereferences: `GeomLib_Tool::Parameter` returns false, `GeomAdaptor_Surface` and

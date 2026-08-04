@@ -50,15 +50,24 @@ let occtTarget: Target = useLocalBinary
     // (BRepFeat_MakeCylindricalHole tool-part selection, #532), and 0021 (CPnts adaptive
     // arc-length integration, #603).
     //
-    // The url:/checksum: pair below moves in the RELEASE commit, not here (#512): until then, work
-    // against the rebuilt kernel with a local Libraries/OCCT.xcframework and OCCTSWIFT_LOCAL=1, and
-    // read kernel-integration.yml rather than ci.yml's macOS job for the real signal (#585).
-    // Bump BOTH url and checksum whenever the xcframework is rebuilt, or URL-resolving consumers
-    // silently keep the previous kernel while local sibling builds get the new one.
+    // Pinned to the v2.0.0-kernel.1 PRE-RELEASE: upstream V8_0_1 plus the eleven patches listed
+    // above. This is a kernel-only pre-release, not a library release, and it exists so ci.yml
+    // builds the same kernel this branch's tests are written against.
+    //
+    // Until it was published, ci.yml resolved v1.15.18 (V8_0_0_p1 + patches 0001-0016) while the
+    // branch built V8_0_1 + 0010-0021, so every test asserting a newer patch's fix failed in CI
+    // indistinguishably from a real regression: seven suites were red for that reason alone (#585),
+    // and each correctness fix added more. Reading kernel-integration.yml instead of ci.yml was the
+    // documented workaround; pinning a real asset removes the need for one.
+    //
+    // The RELEASE commit re-points this pair at the final v2.0.0 asset and the pre-release can then
+    // be deleted (#512). Bump BOTH url and checksum whenever the xcframework is rebuilt, or
+    // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
+    // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v1.15.18/OCCT.xcframework.zip",
-        checksum: "dc7902a558786c113e80c0a79051415af8a5bac976208c58c1ab0dc4db74726c"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0-kernel.1/OCCT.xcframework.zip",
+        checksum: "1f1e5cd95eb10b2098b2aa5d7bedcb973c44d8575477a9457e35f5a0d84cf217"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
