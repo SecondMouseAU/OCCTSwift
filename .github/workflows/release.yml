@@ -24,6 +24,14 @@ on:
 jobs:
   verify-binary-pins:
     name: Verify binary pins + tagged build
+    # Skipped for pre-releases. A vX.Y.Z-kernel.N kernel pre-release is published BEFORE the
+    # commit that pins it, by construction (you cannot compute the checksum of an asset that
+    # does not exist yet), so the tag it points at still carries the previous pin and this job
+    # would fail for a reason that has nothing to do with the artifact it is verifying. That
+    # is the same false-red this pattern exists to remove, one level up. workflow_dispatch is
+    # still allowed, so a kernel pre-release can be verified deliberately against a ref that
+    # does carry the new pin. See docs/guides/building-occt.md step 4.
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
     runs-on: macos-15
     timeout-minutes: 30
     steps:
