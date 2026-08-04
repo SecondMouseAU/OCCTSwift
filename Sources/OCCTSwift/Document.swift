@@ -177,13 +177,7 @@ public final class Document: @unchecked Sendable {
     }
 }
 
-// MARK: - AssemblyNode
-
-
 // MARK: - GD&T / Dimensions and Tolerances (v0.21.0)
-
-
-
 
 extension Document {
     /// Number of dimensions defined in this document
@@ -246,8 +240,6 @@ extension Document {
 }
 
 // MARK: - TNaming: Topological Naming (v0.25.0)
-
-
 
 extension Document {
 
@@ -382,11 +374,7 @@ extension Document {
     }
 }
 
-// MARK: - Errors
-
-
 // MARK: - Length Unit (v0.30.0)
-
 
 extension Document {
     /// Get the length unit of this document.
@@ -432,7 +420,6 @@ extension Document {
 
 // MARK: - Materials (v0.31.0)
 
-
 extension Document {
     /// Number of materials in this document.
     public var materialCount: Int {
@@ -464,12 +451,6 @@ extension Document {
         (0..<materialCount).compactMap { materialInfo(at: $0) }
     }
 }
-
-// MARK: - TDF Label Properties (v0.54.0)
-
-
-// MARK: - TDF Reference (v0.54.0)
-
 
 // MARK: - TDF CopyLabel (v0.54.0)
 
@@ -586,42 +567,6 @@ extension Document {
         OCCTDocumentIsLabelModified(handle, node.labelId)
     }
 }
-
-// MARK: - TDataStd Scalar Attributes (v0.55.0)
-
-
-// MARK: - TDataStd Integer Array (v0.55.0)
-
-
-// MARK: - TDataStd Real Array (v0.55.0)
-
-
-// MARK: - TDataStd TreeNode (v0.55.0)
-
-
-// MARK: - TDataStd NamedData (v0.55.0)
-
-
-// MARK: - TDataXtd Shape Attribute (v0.56.0)
-
-
-
-
-// MARK: - TFunction Logbook (v0.56.0)
-
-
-// MARK: - TFunction GraphNode (v0.56.0)
-
-
-// MARK: - TFunction Function Attribute (v0.56.0)
-
-
-// MARK: - TNaming CopyShape (v0.56.0)
-
-
-// MARK: - PCDM Status Enums (v0.57.0)
-
-
 
 // MARK: - OCAF Persistence (v0.57.0)
 
@@ -823,13 +768,6 @@ extension Document {
     }
 }
 
-// MARK: - STEP Model Type (v0.58.0)
-
-
-// MARK: - STEP Reader/Writer Modes (v0.58.0)
-
-
-
 // MARK: - OBJ/PLY Document I/O (v0.59.0)
 
 extension Document {
@@ -899,9 +837,6 @@ extension Document {
         OCCTDocumentWritePLY(handle, url.path, deflection, normals, colors, texCoords)
     }
 }
-
-// MARK: - Mesh Coordinate System (v0.59.0)
-
 
 // MARK: - XDE ShapeTool Expansion (v0.60.0)
 
@@ -1024,9 +959,6 @@ extension Document {
     }
 }
 
-// MARK: - XDE Label Queries (v0.60.0)
-
-
 // MARK: - XDE ColorTool by Shape (v0.60.0)
 
 extension Document {
@@ -1057,11 +989,7 @@ extension Document {
     }
 }
 
-// MARK: - XDE Area / Volume / Centroid (v0.60.0)
-
-
 // MARK: - XDE LayerTool Expansion (v0.60.0)
-
 
 extension Document {
     /// Find a layer label by name.
@@ -1105,21 +1033,6 @@ extension Document {
         OCCTDocumentEditorRescaleGeometry(handle, labelId, scaleFactor, forceIfNotRoot)
     }
 }
-
-// MARK: - XCAFDoc_Location (v0.83.0)
-
-
-// MARK: - XCAFDoc_GraphNode (v0.83.0)
-
-
-// MARK: - XCAFDoc_Color (v0.83.0)
-
-
-// MARK: - XCAFDoc_Material (v0.83.0)
-
-
-// MARK: - XCAFDoc_NoteComment / NoteBalloon / NoteBinData (v0.83.0)
-
 
 // MARK: - XCAFDoc_NotesTool (v0.83.0)
 
@@ -1216,37 +1129,7 @@ extension Document {
     }
 }
 
-// MARK: - XCAFDoc_ShapeMapTool (v0.83.0)
-
-
-// MARK: - XCAFDoc_AssemblyGraph (v0.83.0)
-
-
-// MARK: - XCAFDoc_AssemblyItemId (v0.83.0)
-
-
-// MARK: - XCAFView_Object (v0.83.0)
-
-
-// MARK: - XCAFNoteObjects_NoteObject (v0.83.0)
-
-
-// MARK: - XCAFPrs_Style (v0.83.0)
-
-
-// MARK: - XCAFDoc_VisMaterialCommon (v0.83.0)
-
-
-// MARK: - XCAFDoc_VisMaterialPBR (v0.83.0)
-
-
-// =============================================================================
-// MARK: - VrmlAPI, Directory, Variable, Expression, XLink, DimTol, DriverTable, TObj (v0.84.0)
-// =============================================================================
-
 // MARK: - VrmlAPI_Writer
-
-
 
 extension Document {
     /// Write XDE document to VRML file with scale.
@@ -1455,36 +1338,6 @@ extension Document {
         Int(OCCTDocumentDimTolToleranceCount(handle))
     }
 }
-
-// MARK: - TPrsStd_DriverTable
-
-
-// MARK: - TObj_Application
-
-
-// =============================================================================
-// MARK: - UnitsAPI, BinTools, Message, CoordSystem, IDFilter (v0.85.0)
-// =============================================================================
-
-// MARK: - UnitsAPI
-
-
-// MARK: - BinTools Shape I/O
-
-
-// MARK: - Message_Messenger
-
-
-// MARK: - Message_Report
-
-
-// MARK: - RWMesh_CoordinateSystemConverter
-
-
-
-
-// MARK: - TDF_IDFilter
-
 
 // MARK: - TDataStd_BooleanArray
 
@@ -1830,15 +1683,6 @@ public extension Document {
     }
 }
 
-// MARK: - ShapeFix_Solid
-
-
-// MARK: - ShapeFix_EdgeConnect
-
-
-// MARK: - BRepOffsetAPI_FindContigousEdges
-
-
 // MARK: - TDataStd_Tick
 
 public extension Document {
@@ -1877,21 +1721,6 @@ public extension Document {
         OCCTDocumentHasCurrentLabel(handle)
     }
 }
-
-// MARK: - ShapeAnalysis_Shell
-
-
-// MARK: - ShapeAnalysis_CanonicalRecognition (detailed)
-
-
-// MARK: - Geom_Transformation
-
-
-// MARK: - Geom_OffsetCurve
-
-
-// MARK: - Geom_RectangularTrimmedSurface
-
 
 // MARK: - TNaming Extensions (v0.88.0)
 
@@ -2100,7 +1929,6 @@ extension Document {
     }
 }
 
-
 // MARK: - TDF_ComparisonTool (v0.89.0)
 
 extension Document {
@@ -2278,12 +2106,6 @@ extension Document {
     }
 }
 
-// MARK: - TDocStd_PathParser (v0.90.0, folded into OSDPath in #499)
-
-
-// MARK: - TFunction_DriverTable (v0.90.0)
-
-
 // MARK: - TNaming_Scope (v0.90.0)
 
 extension Document {
@@ -2321,9 +2143,6 @@ extension Document {
         Int(OCCTDocumentNamingScopeValidCount(handle))
     }
 }
-
-// MARK: - TNaming_Translator (v0.90.0)
-
 
 // MARK: - TDataXtd_Placement (v0.90.0)
 
@@ -2484,30 +2303,6 @@ extension Document {
     }
 }
 
-// MARK: - IntTools_Tools (v0.90.0)
-
-
-// MARK: - ElCLib — Elementary Curve Library (v0.91.0)
-
-
-// MARK: - ElSLib — Elementary Surface Library (v0.91.0)
-
-
-// MARK: - gp_Quaternion (v0.91.0)
-
-
-// MARK: - OSD_Timer (v0.91.0)
-
-
-// MARK: - Bnd_OBB — Oriented Bounding Box (v0.92.0)
-
-
-// MARK: - Bnd_Range — 1D Range (v0.92.0)
-
-
-// MARK: - BRepClass3d — Point Classification (v0.92.0)
-
-
 // MARK: - TDataXtd_Constraint (v0.92.0)
 
 extension Document {
@@ -2573,18 +2368,6 @@ extension Document {
     }
 }
 
-// MARK: - OSD_MemInfo (v0.93.0)
-
-
-// MARK: - ShapeFix_EdgeProjAux (v0.93.0)
-
-
-// MARK: - Geom2dAPI_Interpolate (v0.93.0)
-
-
-// MARK: - Geom2dAPI_PointsToBSpline (v0.93.0)
-
-
 // MARK: - TDataXtd_PatternStd (v0.93.0)
 
 extension Document {
@@ -2627,48 +2410,6 @@ extension Document {
         Int(OCCTDocumentPatternNbTrsfs(handle, labelId))
     }
 }
-
-// MARK: - BRepAlgo_FaceRestrictor (v0.93.0)
-
-
-// MARK: - math_Matrix (v0.94.0)
-
-
-// MARK: - math_Gauss (v0.94.0)
-
-
-// MARK: - math_SVD (v0.94.0)
-
-
-// MARK: - math_DirectPolynomialRoots (v0.94.0)
-
-
-// MARK: - math_Jacobi (v0.94.0)
-
-
-// MARK: - Convert_CircleToBSplineCurve (v0.94.0)
-
-
-// MARK: - Convert_SphereToBSplineSurface (v0.94.0)
-
-
-// MARK: - OSD_Environment (v0.94.0)
-
-
-// MARK: - Convert Conic Curves to BSpline (v0.95.0)
-
-
-// MARK: - Convert Elementary Surfaces to BSpline (v0.95.0)
-
-
-// MARK: - math_Householder (v0.95.0)
-
-
-// MARK: - math_Crout (v0.95.0)
-
-
-// MARK: - ShapeFix_IntersectionTool (v0.95.0)
-
 
 // MARK: - XCAFDoc_AssemblyItemRef (v0.96.0)
 
@@ -2716,18 +2457,6 @@ extension Document {
     }
 }
 
-// MARK: - BRepAlgo_Image (v0.96.0)
-
-
-// MARK: - OSD_Path (v0.96.0)
-
-
-// MARK: - BRepClass_FClassifier (v0.96.0)
-
-
-// MARK: - Bnd_BoundSortBox (v0.97.0)
-
-
 // MARK: - TNaming_Naming (v0.97.0)
 
 extension Document {
@@ -2743,96 +2472,6 @@ extension Document {
         OCCTDocumentNamingIsDefined(handle, labelId)
     }
 }
-
-// MARK: - Precision Constants (v0.97.0)
-
-
-// MARK: - IntAna Analytic Intersections (v0.98.0)
-
-
-// MARK: - OSD_Chronometer (v0.98.0)
-
-
-// MARK: - OSD_Process (v0.98.0)
-
-
-// MARK: - Draft_Modification (v0.98.0)
-
-
-// MARK: - Convert_CompBezierCurvesToBSplineCurve (v0.99.0)
-
-
-
-
-// MARK: - Geom_OffsetSurface Extensions (v0.99.0)
-
-
-// MARK: - OSD_File (v0.99.0)
-
-
-// MARK: - ShapeFix_Wireframe Extensions (v0.99.0)
-
-
-// MARK: - RWStl, ShapeAnalysis_Curve statics, BRepExtrema_SelfIntersection pairs, (v0.100.0)
-//                    Geom_OffsetCurve basis, APIHeaderSection_MakeHeader, ShapeAnalysis_FreeBounds simplified
-
-// --- RWStl direct binary/ASCII STL I/O ---
-
-
-// --- ShapeAnalysis_Curve static methods ---
-
-
-// --- BRepExtrema_SelfIntersection face pair reporting ---
-
-
-// --- Geom_OffsetCurve basis curve ---
-
-
-// --- APIHeaderSection_MakeHeader ---
-
-
-// --- ShapeAnalysis_FreeBounds simplified API ---
-
-
-// MARK: - Geom_TrimmedCurve (v0.101.0)
-
-
-// MARK: - BRepLib_FindSurface (v0.101.0)
-
-
-// MARK: - ShapeAnalysis_Surface (v0.101.0)
-
-
-// MARK: - Resource_Manager (v0.101.0)
-
-
-// MARK: - TopExp Adjacency (v0.102.0)
-
-
-// MARK: - Poly_Connect Mesh Adjacency (v0.102.0)
-
-
-// MARK: - BRepOffset_Analyse Edge Classification (v0.102.0)
-
-
-// MARK: - BRepTools_WireExplorer Extensions (v0.102.0)
-
-
-// MARK: - BndLib Analytic Bounding (v0.104.0)
-
-
-
-// MARK: - OSD_Host (v0.104.0)
-
-
-// MARK: - OSD_PerfMeter (v0.104.0)
-
-
-// MARK: - GProp Cylinder/Cone (v0.104.0)
-
-
-// MARK: - IntAna_IntQuadQuad (v0.104.0)
-
 
 // MARK: - XCAFPrs_DocumentExplorer (v0.104.0)
 
@@ -2862,82 +2501,6 @@ extension Document {
     }
 }
 
-// MARK: - gce Transform Factories (v0.103.0)
-
-
-
-
-
-// MARK: - GProp Element Properties (v0.103.0)
-
-
-// MARK: - Plate Constraint Extensions (v0.103.0)
-
-
-// MARK: - Law_Interpolate (v0.103.0)
-
-
-// MARK: - Bnd_Sphere (v0.103.0)
-
-
-// MARK: - GC_MakeCircle (v0.105.0)
-
-
-// MARK: - GC_MakeEllipse (v0.105.0)
-
-
-// MARK: - GC_MakeHyperbola (v0.105.0)
-
-
-// MARK: - GC_MakeCircle2d (v0.105.0)
-
-
-// MARK: - GC_MakeEllipse2d (v0.105.0)
-
-
-// MARK: - GC_MakeHyperbola2d (v0.105.0)
-
-
-// MARK: - GC_MakeParabola2d (v0.105.0)
-
-
-// MARK: - GCPnts_UniformAbscissa (v0.105.0)
-
-
-// MARK: - GeomConvert_CompCurveToBSplineCurve (v0.105.0)
-
-
-// MARK: - Geom2dConvert_CompCurveToBSplineCurve (v0.105.0)
-
-
-
-
-
-// MARK: - BndLib extras (v0.105.0)
-
-
-// MARK: - GProp Torus (v0.105.0)
-
-
-// MARK: - BRepTools_ReShape (v0.105.0)
-
-
-// MARK: - BRepTools_Substitution (v0.105.0)
-
-
-// MARK: - BRepLib_MakeVertex (v0.105.0)
-
-
-// MARK: - BRepFill_PipeShell (v0.105.0)
-
-
-
-// MARK: - OSD_Directory (v0.105.0)
-
-
-// MARK: - IntAna Cone-Sphere extensions (v0.105.0)
-
-
 // MARK: - XCAFPrs_DocumentExplorer extensions (v0.105.0)
 
 extension Document {
@@ -2959,413 +2522,7 @@ extension Document {
     }
 }
 
-// MARK: - Resource_Unicode (v0.105.0)
-
-
-
-// MARK: - GProp weighted point sets (v0.105.0)
-
-
-// MARK: - Draft info types (v0.105.0)
-
-
-// MARK: - GeomLib_LogSample (v0.105.0)
-
-
-// MARK: - GC_MakeConicalSurface (v0.106.0)
-
-
-// MARK: - GC_MakeCylindricalSurface (v0.106.0)
-
-
-// MARK: - GC_MakeTrimmedCone (v0.106.0)
-
-
-// MARK: - GC_MakeTrimmedCylinder (v0.106.0)
-
-
-// MARK: - BRepLib_MakeEdge2d extensions (v0.106.0)
-
-
-// MARK: - ShapeAnalysis_Wire (v0.106.0)
-
-
-// MARK: - ShapeAnalysis_Edge (v0.106.0)
-
-
-// MARK: - OSD_DirectoryIterator (v0.106.0)
-
-
-// MARK: - OSD_FileIterator (v0.106.0)
-
-
-// MARK: - BRepFill_PipeShell extensions (v0.106.0)
-
-
-// MARK: - Shape topology extensions (v0.106.0)
-
-
-// MARK: - Curve3D continuity (v0.106.0)
-
-
-// MARK: - Curve2D continuity (v0.106.0)
-
-
-// MARK: - Surface continuity (v0.106.0)
-
-
-// MARK: - Geom_BSplineCurve Methods (v0.107.0)
-
-
-// MARK: - Geom_BSplineSurface Methods (v0.107.0)
-
-
-// MARK: - Geom2d_BSplineCurve Methods (v0.107.0)
-
-
-// MARK: - Bezier Curve Methods (v0.107.0)
-
-
-// MARK: - BRepTools/BRepLib Utilities (v0.107.0)
-
-
-// MARK: - MakeFace Extras (v0.107.0)
-
-
-// MARK: - Sewing (v0.107.0)
-
-
-// MARK: - Hatch_Hatcher (v0.107.0)
-
-
-// MARK: - Edge/Face Extraction (v0.107.0)
-
-
-// MARK: - Extrema Elementary Distances (v0.109.0)
-
-
-
-
-
-
-
-// MARK: - math_TrigonometricFunctionRoots (v0.109.0)
-
-
-// MARK: - IntAna2d_Conic (v0.109.0)
-
-
-// MARK: - BRepAlgo_NormalProjection (v0.109.0)
-
-
-// MARK: - OSD_Disk (v0.109.0)
-
-
-// MARK: - OSD_SharedLibrary (v0.109.0)
-
-
-// MARK: - Message_Msg (v0.109.0)
-
-
-// MARK: - Plate Constraint Extensions (v0.109.0)
-
-
-// MARK: - Shape Topology Extras (v0.109.0)
-
-
-// MARK: - Curve3D Extras (v0.109.0)
-
-
-// MARK: - Curve2D Extras (v0.109.0)
-
-
-// MARK: - Surface Extras (v0.109.0)
-
-
-// MARK: - Math Solvers (v0.110.0)
-
-
-// MARK: - PolynomialSolver Laguerre Extensions (v0.111.0)
-
-
-
-
-// MARK: - BRepLProp Face Extensions (v0.111.0)
-
-
-
-
-
-
-// MARK: - Curve3D Evaluation (v0.110.0)
-
-
-// MARK: - Curve2D Evaluation (v0.110.0)
-
-
-// MARK: - Surface Evaluation (v0.110.0)
-
-
-// MARK: - math_NewtonMinimum (v0.111.1)
-
-
-// MARK: - RWMesh iterators, Intf_Tool, BRepAlgo_AsDes, BiTgte, Shape extras, Extrema (v0.112.0)
-
-// --- RWMesh_FaceIterator ---
-
-
-// --- RWMesh_VertexIterator ---
-
-
-// --- Intf_Tool ---
-
-
-// --- BRepAlgo_AsDes ---
-
-
-// --- BiTgte_CurveOnEdge ---
-
-
-// --- Additional Shape operations (v0.112.0) ---
-
-
-// --- Curve3D extras (v0.112.0) ---
-
-
-// --- Curve2D extras (v0.112.0) ---
-
-
-// --- Surface extras (v0.112.0) ---
-
-
-// --- Extrema extras (v0.112.0) ---
-
-
-
-// MARK: - MakeEdge completions, ProjOnCurve/Surf, DistShapeShape, ShapeFix_Wire/Face, (v0.113.0)
-//                    MakeFace extras, IntCS, BSplineCurve/Surface mutations
-
-// --- BRepBuilderAPI_MakeEdge completions ---
-
-
-// --- ProjectionOnCurve class ---
-
-
-// --- ProjectionOnSurface class ---
-
-
-// --- ShapeDistance class ---
-
-
-
-// --- WireFixer class ---
-
-
-// --- FaceFixer class ---
-
-
-// --- IntCSResult class ---
-
-
-// --- BSplineCurve remaining mutations ---
-
-
-// --- BSplineSurface remaining mutations ---
-
-
-// MARK: - TopoDS_Builder, ShapeContents expanded, FreeBoundsProperties, WireBuilder, (v0.114.0)
-//                    Boolean tolerances, Offset wire/face, ThickSolid, BRepLib, Mass properties, isBounded
-
-// --- TopoDS_Builder ---
-
-
-// --- ShapeAnalysis_ShapeContents expanded ---
-
-
-
-// --- ShapeAnalysis_FreeBoundsProperties ---
-
-
-// --- BRepBuilderAPI_MakeWire (incremental) ---
-
-
-// --- Boolean operations with tolerance ---
-
-
-// --- BRepOffsetAPI_MakeOffset expansion ---
-
-
-// --- BRepOffsetAPI_MakeThickSolid expansion ---
-
-
-// --- BRepLib utilities ---
-
-
-// --- Shape mass properties expansion ---
-
-
-// --- Curve isBounded ---
-
-
-
-// --- Quantity_Color named color count ---
-
-
-// --- BRep_Tool queries on Shape ---
-
-
-// --- Unique sub-shape counts ---
-//
-// Older spellings of the counts on `subShapeCount(ofType:)`, kept because they are public. The
-// "unique" in the name is not a distinction: every sub-shape count in this API reads the one
-// deduplicated enumeration, so these agree with `edgeCount`, `faceCount`, `vertexCount` and
-// `subShapeCount(ofType:)` by construction rather than by coincidence. (#502)
-
-
-// --- Shape empty copy ---
-
-
-// --- Curve/Surface DN (arbitrary derivative) ---
-
-
-
-
-// MARK: - HelixGeom, gp_Ax3, gp_GTrsf2d, gp_Mat2d, Quaternion Interpolation, XY/XYZ, Math Solvers (v0.116.0)
-
-// MARK: - HelixGeom (v0.116.0)
-
-
-// MARK: - CoordinateSystem3D (gp_Ax3) (v0.116.0)
-
-
-// MARK: - GeneralTransform2D (gp_GTrsf2d) (v0.116.0)
-
-
-// MARK: - Matrix2D (gp_Mat2d) (v0.116.0)
-
-
-// MARK: - Quaternion Interpolation (v0.116.0)
-
-
-// MARK: - XY/XYZ Utilities (v0.116.0)
-
-
-
-// MARK: - MathSolver Extensions (v0.116.0)
-
-
-// MARK: - PolynomialSolver rc4 Extensions (v0.117.0)
-
-
-// MARK: - MathInteg rc4 Extensions (v0.117.0)
-
-
-// MARK: - UnitsConversion (v0.117.0)
-
-
-
-// MARK: - Curve3D LProp3d Extensions (v0.117.0)
-
-
-// MARK: - Surface LProp3d Extensions (v0.117.0)
-
-
-// MARK: - ProjLib (v0.117.0)
-
-
-// MARK: - BRepBndLib extensions (v0.118.0)
-
-
-// MARK: - ShapeAnalysis_ShapeTolerance extensions (v0.118.0)
-
-
-// MARK: - BRepAlgoAPI_Check extensions (v0.118.0)
-
-
-// MARK: - BRepAlgoAPI_Defeaturing extensions (v0.118.0)
-
-
-// MARK: - Convert_CompPolynomialToPoles (v0.118.0)
-
-
-// MARK: - gp_Trsf extras (v0.118.0)
-
-
-
-// MARK: - TopExp extras (v0.118.0)
-
-
-// MARK: - BRep_Tool extras (v0.118.0)
-
-
-// MARK: - Sewing extras (v0.118.0)
-
-
-// MARK: - BREP serialization, gp distance/contains, BezierSurface, Curve2D extras, BSplineSurface extras (v0.119.0)
-
-// --- BREP string serialization ---
-
-
-// --- gp_Pln distance/contains ---
-
-
-// --- gp_Lin distance/contains ---
-
-
-// --- Geom_BezierSurface ---
-
-
-// --- Curve2D Bezier ---
-
-
-// MARK: - Final cleanup — IsCN, ReversedParameter, ParametricTransformation, (v0.120.0)
-//                    gp extras, surface reversed copies, BSpline/Bezier MaxDegree/Resolution
-
-// --- Curve3D continuity and parameter extras ---
-
-
-// --- Curve2D continuity and parameter extras ---
-
-
-// --- Surface continuity, reversed copies, parameter extras ---
-
-
-// --- gp_Vec extras ---
-
-
-// =============================================================================
-// MARK: - BSpline completions, FilletBuilder, ChamferBuilder (v0.121.0)
-// =============================================================================
-
-// --- BSplineSurface completions ---
-
-
-// --- BSplineCurve 3D completions ---
-
-
-// --- BSplineCurve 2D completions ---
-
-
-// --- FilletBuilder ---
-
-
-// --- ChamferBuilder ---
-
-
-// MARK: - ChamferBuilder completions, FilletBuilder completions, WireAnalyzer (v0.124.0)
-
-// --- ChamferBuilder completions ---
-
-
-// --- FilletBuilder completions ---
-
-
-// --- WireAnalyzer (ShapeAnalysis_Wire) ---
-
-
 // MARK: - GLTF Import/Export (v0.121.0)
-
-
 
 extension Document {
     /// Load a GLTF/GLB file into an XDE document (preserves names, materials, colors).
@@ -3387,50 +2544,6 @@ extension Document {
         OCCTDocumentWriteGLTF(handle, url.path, binary)
     }
 }
-
-// MARK: - WireFixer extended, ShapeFix_Edge, BRepTools/BRepLib statics, History extended, Sewing extended (v0.122.0)
-
-// --- WireFixer extended ---
-
-
-// --- ShapeFix_Edge extended ---
-
-
-// --- BRepTools statics ---
-
-
-// --- BRepLib extended statics ---
-
-
-// --- History extended ---
-
-
-// --- Sewing extended ---
-
-
-// MARK: - Builder extensions, Section ops, Curve/Surface queries (v0.123.0)
-
-// --- ThruSections extensions ---
-
-
-// --- CellsBuilder extensions ---
-
-
-// --- PipeShell extensions ---
-
-
-
-// --- UnifySameDomain builder ---
-
-
-// --- BRepAlgoAPI_Section extended ---
-
-
-// --- Curve3D queries ---
-
-
-// --- Additional Shape queries ---
-
 
 // MARK: - XCAFDoc_ColorTool and ShapeTool completions (v0.126.0)
 
@@ -3561,22 +2674,3 @@ extension Document {
         return result
     }
 }
-
-// MARK: - FilletBuilder history queries (v0.127.0)
-
-
-// MARK: - ChamferBuilder history & extras (v0.128.0)
-
-
-// MARK: - SectionBuilder (BRepAlgoAPI_Section) (v0.128.0)
-
-
-// MARK: - GeomEval Standalone Evaluators (v0.130.0)
-
-
-// MARK: - Geom2dEval Standalone Evaluators (v0.130.0)
-
-
-// PointSetLib was added in OCCT 8.0.0 beta1 and removed before GA.
-// Wrapper deleted in OCCTSwift v1.0.0 to follow upstream.
-
