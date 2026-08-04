@@ -16,7 +16,8 @@ Until 2026-08-04 this was not true: the pin was the v1.15.18 asset (`V8_0_0_p1` 
 regression, and seven suites were red for that reason alone (#585). If you find advice to read
 `kernel-integration.yml` instead of `ci.yml`, or to rely on `OCCTSWIFT_LOCAL=1` for correct results
 rather than for speed, it predates that fix. The release commit re-points `url:`/`checksum:` at the
-final v2.0.0 asset (#512). See [`docs/occt-upgrades.md`](docs/occt-upgrades.md#p1-to-801-unreleased).
+final v2.0.0 asset (#512).
+See [`docs/occt-upgrades.md`](docs/occt-upgrades.md#p1-to-801-unreleased).
 
 ## Build & Test Commands
 
@@ -34,8 +35,9 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 Four pure-Python checks over the repo's own text. No OCCT, no build, ~3s for all four. **CI runs
 every one of them, plus each `--self-test`, in `ci.yml`'s `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
-its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a defect and 0 when clean; `check-bridge-index`
-and `check-null-handle-guards` exit **2** if run from anywhere but the repo root (#625).
+its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a
+defect and 0 when clean; `check-bridge-index` and `check-null-handle-guards` exit **2** if run
+from anywhere but the repo root (#625).
 
 **`gate-scripts` is a required status check on `refactor/**`** (#649), via a repository ruleset — the
 repo's only branch protection. Three consequences worth knowing before you touch it:

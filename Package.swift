@@ -33,10 +33,9 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // v1.15.18 rebuild: OCCT 8.0.0p1 + carried patches 0001-0016.
+    // OCCT V8_0_1 + the eleven carried patches listed below.
     //
-    // NOTE: this URL is one kernel behind the source tree. Scripts/build-occt.sh now builds OCCT
-    // V8_0_1, which absorbed ten of those patches (0001-0009 and 0013; their files are deleted,
+    // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
     // their writeups kept in Scripts/patches/README.md under "Retired patches"). The eleven that
     // survive are 0010 (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319),
     // 0011 (XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override, #341/#363), 0012
@@ -60,8 +59,11 @@ let occtTarget: Target = useLocalBinary
     // and each correctness fix added more. Reading kernel-integration.yml instead of ci.yml was the
     // documented workaround; pinning a real asset removes the need for one.
     //
-    // The RELEASE commit re-points this pair at the final v2.0.0 asset and the pre-release can then
-    // be deleted (#512). Bump BOTH url and checksum whenever the xcframework is rebuilt, or
+    // The RELEASE commit re-points this pair at the final v2.0.0 asset (#512). Do NOT delete the
+    // pre-release afterwards: every commit in the v2.0.0 window pins it, so deleting it takes its
+    // asset with it and makes those commits unbuildable from a clean checkout, which breaks
+    // git bisect and any historical re-measurement.
+    // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
     : .binaryTarget(

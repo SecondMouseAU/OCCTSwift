@@ -3,10 +3,12 @@ name: CI
 # Fast per-PR/per-push gate. Deliberately does NOT rebuild OCCT from source: a clean checkout has
 # no local Libraries/, so Package.swift's binaryTarget resolves OCCT.xcframework from its pinned
 # release URL and verifies the checksum, which only costs a download. A PR that touches
-# Scripts/patches/ (a carried kernel patch not yet in a release) gets kernel-integration.yml
-# instead, which does rebuild from source and runs swift test against that binary (#585) — this
-# workflow's own macOS check will fail such a PR's new regression tests against the stale pinned
-# kernel, and that's expected, not a defect; read kernel-integration.yml's result instead.
+# Scripts/patches/ (a carried kernel patch not yet in a release) also gets
+# kernel-integration.yml, which rebuilds from source and runs swift test against that binary.
+# This workflow's macOS check resolves whatever Package.swift pins, so a patch NEWER than the
+# pinned asset will fail that patch's own regression tests here (#585). The fix is to publish
+# the next vX.Y.Z-kernel.N pre-release and bump the pin (docs/guides/building-occt.md step 4),
+# not to treat this job as permanently unreliable: as of the v2.0.0-kernel.1 pin it is green.
 # OCCTBridge compiles from source by default (no OCCTSWIFT_BRIDGE_PREBUILT set), which is the
 # repo's own intended default, see the comment above `useBridgePrebuilt` in Package.swift, and
 # it's a couple of minutes, not tens of minutes.
@@ -31,10 +33,11 @@ jobs:
   #
   #   - separate job, not a step in build-and-test, so it reports in well under a minute instead of
   #     behind the ~6-minute build, and so it carries its own status check. That second half is the
-  #     load-bearing one: build-and-test is red branch-wide on refactor/** whenever the branch
-  #     carries a kernel patch newer than Package.swift's pinned xcframework (#585), and a gate
-  #     folded into that job would be red for a reason that has nothing to do with it, which is the
-  #     same as not having it.
+  #     load-bearing one: build-and-test goes red branch-wide whenever the branch carries a kernel
+  #     patch newer than Package.swift's pinned xcframework (#585), and a gate folded into that
+  #     job would be red for a reason that has nothing to do with it, which is the same as not
+  #     having it. That state is fixable by bumping the pin, and is fixed today, but the
+  #     separation is what makes the gate survive the next time it happens.
   #   - ubuntu-latest, because all four are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is

@@ -32,8 +32,10 @@ Against the new pin, with no local `Libraries/` and no `OCCTSWIFT_LOCAL`, the fu
 tests, 0 failures**. `OCCTSWIFT_LOCAL=1` remains useful for iterating on a locally rebuilt kernel; it
 is no longer required to get correct results.
 
-The pre-release is temporary and is not a library release. The v2.0.0 release commit re-points
-`url:`/`checksum:` at the final asset, after which it can be deleted (#512).
+The pre-release is not a library release, and is not installable as one. The v2.0.0 release commit
+re-points `url:`/`checksum:` at the final asset (#512), but the pre-release itself is **kept**: every
+commit in the v2.0.0 window pins it, so deleting it would take its asset with it and make those
+commits unbuildable from a clean checkout, breaking `git bisect` and historical re-measurement.
 
 Verified before publishing, per `docs/guides/building-occt.md`'s shipping checklist: `occt-src` at
 exactly `V8_0_1`, all eleven patches reverse-apply, and zero modified files that no carried patch
@@ -48,11 +50,12 @@ fast-forward (23 commits, 74 files, nothing reverted) and it carries **no API or
 the only public header in the whole diff is `ShapeAnalysis_FreeBounds.hxx`, changed by one comment
 line. Nothing to migrate for the OCCT API itself.
 
-**`Package.swift`'s `url:`/`checksum:` deliberately still point at the v1.15.18 asset**, which is
-p1 + patches 0001-0016. That bump belongs to the release commit (#512), so until v2.0.0 ships a
-clean checkout with no local `Libraries/` resolves the **old** kernel. Build locally and use
-`OCCTSWIFT_LOCAL=1` for the new one, and read `kernel-integration.yml` rather than `ci.yml`'s
-macOS job for the real signal (#585).
+**`Package.swift`'s `url:`/`checksum:` pointed at the v1.15.18 asset when this landed**, which is
+p1 + patches 0001-0016, on the #512 rule that the bump belongs to the release commit. That is no
+longer the case: see "CI builds the same kernel the branch is written against" above, which pins the
+`v2.0.0-kernel.1` pre-release. A clean checkout with no local `Libraries/` now resolves the right
+kernel, and `ci.yml`'s macOS job is a real signal. `OCCTSWIFT_LOCAL=1` remains useful for iterating
+on a locally rebuilt kernel; it is no longer needed for correct results.
 
 #### Ten carried kernel patches retired
 
