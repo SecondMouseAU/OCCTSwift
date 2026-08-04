@@ -50,3 +50,4 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - [Search before building](policies/search-before-building.md)
 - [Upstream OCCT PRs follow OCCT's house style](policies/upstream-occt-style.md)
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
+- [Code structure](policies/code-structure.md)
