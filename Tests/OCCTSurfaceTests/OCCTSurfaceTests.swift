@@ -5368,25 +5368,117 @@ struct GeomEvalHypParaboloidTests {
     }
 }
 
+// MARK: - #645: shared quarter-cylinder Gordon fixture
+//
+// `GeomFill_Gordon` was 5% wrong on OCCT 8.0.0p1 for RATIONAL networks specifically
+// (fixed upstream, OCCT#1335); a non-rational control matched to ~1e-15 on both p1 and
+// 8.0.1. `Curve3D.interpolate`-built networks are non-rational B-splines, so however
+// curved a fixture built from them is, it cannot exercise that path, and would have
+// been green on the broken kernel too. Feeding the builder a quarter-cylinder's own
+// isocurves gives a network with a known-exact answer AND a rational profile family: a
+// correct build reproduces the cylinder with ~0 deviation everywhere. The historical
+// bug moved the 45-degree sample from the true 5/sqrt(2) to 3.713203436, about 5%
+// off-axis.
+//
+// Argument order matters. Reproducing the historical bug (confirmed by rebuilding this
+// worktree against the pre-8.0.1 kernel directly) requires the rational arcs to be
+// passed as `profiles:`, not `guides:` -- the same curves the other way round give the
+// correct answer even on the broken kernel.
+
+private func makeQuarterCylinderGordonNetwork(radius: Double = 5, height: Double = 10)
+    -> (profiles: [Curve3D], guides: [Curve3D])? {
+    guard let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: radius),
+          let quarter = cylinder.trimmed(u1: 0, u2: .pi / 2, v1: 0, v2: height)
+    else { return nil }
+    // Profiles: 3 quarter-circle V-isos (rational), one per height.
+    let profiles = [0.0, height / 2, height].compactMap { quarter.vIso(at: $0) }
+    // Guides: 3 straight-line U-isos, one per angle.
+    let guides = [0.0, Double.pi / 4, Double.pi / 2].compactMap { quarter.uIso(at: $0) }
+    guard profiles.count == 3, guides.count == 3 else { return nil }
+    return (profiles, guides)
+}
+
+/// The exact point on the reference quarter-cylinder (radius 5, height 10) at a Gordon
+/// surface's own normalized parameter fraction (fu, fv) in [0,1]x[0,1]: angle = fu *
+/// pi/2, height = fv * 10.
+private func quarterCylinderReferencePoint(fu: Double, fv: Double, radius: Double = 5, height: Double = 10)
+    -> SIMD3<Double> {
+    let angle = fu * Double.pi / 2
+    return SIMD3(radius * cos(angle), radius * sin(angle), fv * height)
+}
+
+/// Asserts `surface` matches the reference quarter-cylinder (radius 5, height 10) at its
+/// own corner, mid, and far parameters. The historical p1 defect moved the mid-parameter
+/// point by ~0.177 units (5% of the radius); `tolerance` here is 5 orders tighter.
+private func assertMatchesQuarterCylinder(_ surface: Surface, tolerance: Double = 1e-6) {
+    let bounds = surface.parameterBounds
+    let fractions: [(fu: Double, fv: Double)] = [(0, 0), (0.5, 0.5), (1, 1)]
+    for (fu, fv) in fractions {
+        let u = bounds.uMin + (bounds.uMax - bounds.uMin) * fu
+        let v = bounds.vMin + (bounds.vMax - bounds.vMin) * fv
+        let got = surface.point(atU: u, v: v)
+        let want = quarterCylinderReferencePoint(fu: fu, fv: fv)
+        #expect(abs(got.x - want.x) < tolerance)
+        #expect(abs(got.y - want.y) < tolerance)
+        #expect(abs(got.z - want.z) < tolerance)
+    }
+}
+
 @Suite("GeomFill — Gordon Surface")
 struct GeomFillGordonTests {
 
     @Test func gordonFromLineNetwork() {
-        // Create a simple 2x2 grid network using interpolated BSplines
+        // Non-rational control: a flat interpolated grid. Kept to show the builder gets
+        // a simple network's corners right, but see
+        // gordonRationalQuarterCylinderNetworkMatchesReference below -- this fixture
+        // cannot distinguish the p1/8.0.1 kernel difference #645 is actually about,
+        // because none of its curves are rational.
         guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(5,0,0), SIMD3(10,0,0)]),
               let p2 = Curve3D.interpolate(points: [SIMD3(0,10,0), SIMD3(5,10,0), SIMD3(10,10,0)]),
               let g1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(0,5,0), SIMD3(0,10,0)]),
               let g2 = Curve3D.interpolate(points: [SIMD3(10,0,0), SIMD3(10,5,0), SIMD3(10,10,0)])
         else { return }
 
-        let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
-        #expect(surf != nil)
+        guard let surf = Surface.gordon(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3) else {
+            Issue.record("gordon surface nil"); return
+        }
+        let bounds = surf.parameterBounds
+        let corners = [
+            surf.point(atU: bounds.uMin, v: bounds.vMin),
+            surf.point(atU: bounds.uMax, v: bounds.vMin),
+            surf.point(atU: bounds.uMin, v: bounds.vMax),
+            surf.point(atU: bounds.uMax, v: bounds.vMax),
+        ]
+        let expectedCorners: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(0, 10, 0), SIMD3(10, 10, 0),
+        ]
+        for (got, want) in zip(corners, expectedCorners) {
+            #expect(abs(got.x - want.x) < 1e-6)
+            #expect(abs(got.y - want.y) < 1e-6)
+            #expect(abs(got.z - want.z) < 1e-6)
+        }
     }
 
     @Test func gordonTooFewCurves() {
         guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(10,0,0)]) else { return }
         let surf = Surface.gordon(profiles: [p1], guides: [p1])
         #expect(surf == nil) // need at least 2 each
+    }
+
+    @Test func gordonRationalQuarterCylinderNetworkMatchesReference() {
+        // The crux of #645: a rational network's Gordon build checked against a known
+        // exact answer, not just non-nil-ness. This is the fixture that would have
+        // failed on OCCT 8.0.0p1 (see the module-level comment above).
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        guard let surf = Surface.gordon(profiles: network.profiles, guides: network.guides, tolerance: 1e-6) else {
+            Issue.record("gordon surface nil for quarter-cylinder network"); return
+        }
+        let bsp = surf.bsplineSurface
+        #expect(bsp.isURational)
+        #expect(bsp.isVRational)
+        assertMatchesQuarterCylinder(surf)
     }
 }
 
@@ -5728,21 +5820,17 @@ struct DrawingSymbolsTests {
 @Suite("GeomFill — Gordon Report & Network Surface")
 struct GeomFillGordonReportTests {
 
-    private func makeNetwork() -> ([Curve3D], [Curve3D])? {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(5,0,0), SIMD3(10,0,0)]),
-              let p2 = Curve3D.interpolate(points: [SIMD3(0,10,0), SIMD3(5,10,0), SIMD3(10,10,0)]),
-              let g1 = Curve3D.interpolate(points: [SIMD3(0,0,0), SIMD3(0,5,0), SIMD3(0,10,0)]),
-              let g2 = Curve3D.interpolate(points: [SIMD3(10,0,0), SIMD3(10,5,0), SIMD3(10,10,0)])
-        else { return nil }
-        return ([p1, p2], [g1, g2])
-    }
-
     @Test func gordonReportDoneForGoodNetwork() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        let result = Surface.gordonReport(profiles: profiles, guides: guides, tolerance: 1e-3)
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
         #expect(result.status == .done)
-        #expect(result.surface != nil)
         #expect(result.isApproximate == false)
+        guard let surface = result.surface else {
+            Issue.record("gordonReport surface nil"); return
+        }
+        assertMatchesQuarterCylinder(surface)
     }
 
     @Test func gordonReportInvalidInput() {
@@ -5753,22 +5841,45 @@ struct GeomFillGordonReportTests {
     }
 
     @Test func gordonReportApproximateFallbackMode() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        // With fallback enabled a good network still builds; status must be a defined value.
-        let result = Surface.gordonReport(profiles: profiles, guides: guides,
-                                          tolerance: 1e-3, allowApproximateFallback: true)
+        // With fallback enabled a good network still builds exactly (the fallback never
+        // has to engage), and the geometry is unaffected by allowing it.
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
+        }
+        let result = Surface.gordonReport(profiles: network.profiles, guides: network.guides,
+                                          tolerance: 1e-6, allowApproximateFallback: true)
         #expect(result.status == .done)
+        #expect(result.isApproximate == false)
+        guard let surface = result.surface else {
+            Issue.record("gordonReport surface nil"); return
+        }
+        assertMatchesQuarterCylinder(surface)
     }
 
-    @Test func networkSurfaceBuildsOrReportsStatus() {
-        guard let (profiles, guides) = makeNetwork() else { return }
-        let (surface, status) = Surface.networkSurface(profiles: profiles, guides: guides, tolerance: 1e-3)
-        // The low-level builder either produces a surface (status .done) or reports a
-        // defined non-.notStarted failure status — never silently returns notStarted.
-        #expect(status != .notStarted)
-        if status == .done {
-            #expect(surface != nil)
+    @Test func networkSurfaceReportsKnotAlignmentFailedOnUnpreparedNetwork() {
+        // `GeomFill_NetworkSurface`'s own header documents it as a LOW-LEVEL builder for
+        // an ALREADY-prepared network: explicit non-periodic B-splines, pre-reparametrized
+        // so intersection knots line up, with the real (possibly non-unit) rational weight
+        // at each grid point supplied by the caller ("This class does not find curve
+        // intersections, sort the network, convert arbitrary curves, or reparametrize the
+        // input. These operations are handled by GeomFill_Gordon before calling this
+        // builder."). `OCCTGeomFillNetworkSurface` does none of that preparation: it
+        // converts curves to B-splines, assigns uniform 0...1 locator parameters, and
+        // hardcodes every intersection weight to 1.0 regardless of the curves' actual
+        // rationality. Measured directly: this makes it fail identically -- the same
+        // .knotAlignmentFailed -- on every network tried, including the simplest possible
+        // 2-straight-line-each-direction bilinear patch. That is very likely a real
+        // limitation of the bridge wrapper rather than of any particular fixture; filed as
+        // #689 and left unfixed here, since #645 is about coverage, not this wrapper. This
+        // test pins today's actual, specific, falsifiable behavior instead of accepting
+        // any non-.notStarted status.
+        guard let network = makeQuarterCylinderGordonNetwork() else {
+            Issue.record("quarter-cylinder network fixture failed to build"); return
         }
+        let (surface, status) = Surface.networkSurface(profiles: network.profiles, guides: network.guides,
+                                                        tolerance: 1e-6)
+        #expect(status == .knotAlignmentFailed)
+        #expect(surface == nil)
     }
 
     @Test func networkSurfaceTooFewCurves() {
