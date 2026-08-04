@@ -337,10 +337,14 @@ the patch's `Scripts/repro/<issue>/README.md` recorded. Then a full `swift test`
 
 Pushing a commit that touches `Scripts/patches/**` also triggers `.github/workflows/
 kernel-integration.yml` (#585), which rebuilds from source in CI and runs `swift test` against
-that binary. `ci.yml`'s own macOS check still runs too and will fail any new regression test that
-asserts the patch's fixed behaviour, since it always resolves the pinned *released* kernel; that
-failure is expected until a release ships this patch, not a sign the patch is broken — read
-`kernel-integration.yml`'s result for the real signal.
+that binary.
+
+`ci.yml`'s macOS check resolves whatever `Package.swift` pins, so a patch newer than the pinned
+asset makes that patch's own regression tests fail there. **Do not leave it in that state for a
+whole release.** Reading `kernel-integration.yml` instead works for one PR, but the red accumulates:
+during v2.0.0 seven suites were red at once for this reason, `build-and-test` was excluded from the
+required checks because of it, and every reviewer had to merge on parity with the base branch rather
+than on green. Publish a kernel pre-release and bump the pin instead.
 
 **4. Package and pin.** The zip is the release asset; its checksum is what SwiftPM verifies.
 
@@ -366,6 +370,41 @@ Then, in the release commit:
 Between the rebuild and the release the two consumer paths diverge on purpose: this checkout and
 every sibling repo path-depending on its `Libraries/OCCT.xcframework` get the new kernel
 immediately, while anything resolving the remote `url:` stays on the previously released one.
+
+### Mid-release: publish a `vX.Y.Z-kernel.N` pre-release
+
+The divergence above is fine for a day. It is **not** fine for a whole release, because CI resolves
+the remote `url:`, so every regression test asserting the new patch's fix fails there until the
+release ships. During v2.0.0 that reached seven simultaneously red suites, got `build-and-test`
+excluded from the required checks, and forced every reviewer to merge on parity with the base branch
+instead of on green (#585).
+
+So when a patch lands mid-release, do not wait for the release commit and do not tell people to read
+`kernel-integration.yml` instead. Publish the kernel on its own:
+
+```bash
+gh release create vX.Y.Z-kernel.N --target <branch-head-sha> --prerelease \
+    --title "vX.Y.Z-kernel.N: OCCT <tag> + N carried patches (kernel pre-release)" \
+    --notes-file <notes>
+gh release upload vX.Y.Z-kernel.N Libraries/OCCT.xcframework.zip
+```
+
+Then bump `url:`/`checksum:` on the branch, exactly as the release commit will later do again.
+
+Three things this needs:
+
+- **Verify provenance before publishing**, using steps 1 to 3 above. A local build directory is not
+  evidence on its own: `occt-src` must be at exactly the pinned tag, every carried patch must
+  reverse-apply, and `git -C Libraries/occt-src status --porcelain` must list *only* files a patch
+  touches, or an investigation probe ships inside a public binary.
+- **`release.yml` must not run on it.** It checks out the tag and builds, but a kernel pre-release is
+  published *before* the commit that pins it, by construction, so the tag still carries the old pin
+  and the run fails for a reason unrelated to the artifact. The workflow is gated on
+  `!github.event.release.prerelease` for this reason.
+- **Do not delete the pre-release afterwards.** Every commit in the release window pins it, so
+  deleting it takes its asset with it and makes those commits unbuildable from a clean checkout,
+  which breaks `git bisect` and any historical re-measurement. Release storage is cheap; the
+  bisectability is not.
 
 ## Alternative: Pre-built Binaries
 
