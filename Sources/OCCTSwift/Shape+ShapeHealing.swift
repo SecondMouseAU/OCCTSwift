@@ -182,9 +182,6 @@ extension Shape {
         return Shape(handle: handle)
     }
 
-    // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
-    // `ApproxContinuity` copy Shape.swift used to declare is now a deprecated alias of it. See #398.
-
     /// Convert all surfaces to BSpline
     ///
     /// - Returns: Shape with BSpline surfaces, or nil on failure
