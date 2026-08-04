@@ -2624,6 +2624,9 @@ extension Curve3D {
 }
 
 extension Curve3D {
+    // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
+    // `ApproxContinuity` copy Shape.swift used to declare is now a deprecated alias of it. See #398.
+
     /// Approximate this curve as a BSpline, reporting the fit's error and completion status.
     ///
     /// The same approximation ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``

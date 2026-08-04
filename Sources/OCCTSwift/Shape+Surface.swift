@@ -75,6 +75,10 @@ extension Shape {
 
     // MARK: - Surface Filling (v0.14.0)
 
+    // `SurfaceContinuity` (formerly declared in Shape.swift beside the blends and filling code,
+    // alongside a second `PlateConstraintOrder` copy of the same vocabulary) now lives in
+    // Continuity.swift. It is the vocabulary `fill` and `plateSurface` below take. See #398.
+
     /// Fill an N-sided boundary with a smooth surface.
     ///
     /// Creates a surface that passes through the given boundary wires

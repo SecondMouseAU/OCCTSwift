@@ -3590,6 +3590,9 @@ extension Surface {
 }
 
 extension Surface {
+    // Continuity level for approximation is `ParametricContinuity` (Continuity.swift); the
+    // `ApproxContinuity` copy Shape.swift used to declare is now a deprecated alias of it. See #398.
+
     /// Approximate this surface as a BSpline surface, reporting the fit's error and completion status.
     ///
     /// The same approximation ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
