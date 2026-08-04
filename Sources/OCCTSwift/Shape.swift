@@ -2221,7 +2221,7 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    /// Get closed wires from a section at Z level.
+    /// Get wires from a section at a Z level, chained where the section closes.
     ///
     /// This is useful for CAM operations where you need to work with closed contours
     /// that can be offset for tool compensation.
@@ -2230,11 +2230,21 @@ public final class Shape: @unchecked Sendable {
     ///   - z: The Z level to section at
     ///   - tolerance: Tolerance for connecting edges into wires. Use larger values
     ///                (e.g., 1e-4) for imprecise geometry. Default is 1e-6.
-    /// - Returns: Array of closed wires representing contours at that Z level.
+    /// - Returns: Array of wires representing contours at that Z level, closed where the section
+    ///            forms a loop and open otherwise (e.g. a section edge with nothing to close onto).
     ///            Returns empty array if no contours exist at that level.
     ///
     /// Unlike `sliceAtZ(_:)` which returns a shape with loose edges, this method
-    /// chains the edges into closed wires that can be used with `Wire.offset(by:)`.
+    /// chains the edges into wires (closed where possible) that can be used with `Wire.offset(by:)`.
+    ///
+    /// - Note: Edges whose orientation is `.internal` or `.external` (see
+    ///   `Shape.Orientation`/`Shape.setOrientation(_:)`) are silently excluded from the result
+    ///   wires (OCCT 8.0.1, upstream OCCT#1408). This only matters if the input `Shape` was
+    ///   assembled with such edges through `Shape.compound(_:)`/`Shape.setOrientation(_:)` and one
+    ///   of them happens to lie exactly in the cutting plane; in every case measured, an ordinary
+    ///   transverse section of a solid does not produce `.internal`/`.external` edges on its own,
+    ///   since Boolean sectioning only preserves an edge's own orientation when the cut is
+    ///   coincident with that edge, not when it computes a fresh intersection curve. See #655.
     ///
     /// ## Example: CAM Safety Boundary
     ///

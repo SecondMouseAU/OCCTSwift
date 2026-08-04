@@ -380,6 +380,11 @@ public func freeBounds(sewingTolerance: Double = 1e-6) -> FreeBoundsResult?
 
 Free boundaries indicate gaps in a shell. A watertight shell has no free boundaries.
 
+- **Note:** Unlike `Shape.sectionWiresAtZ(_:tolerance:)`, this method is unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408). This method's constructor does reach that same skip, in its own chainage step, so the reason is not that the call graph avoids it. What keeps the result unchanged is upstream: the edges this method feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case measured that sewing stage never produced an `.internal`/`.external` free edge for the skip to act on.
+
+  `freeBoundsClosedCount(tolerance:)`, `freeBoundsClosedWires(tolerance:)` and `freeBoundsOpenWires(tolerance:)` share this reasoning unconditionally: each always builds `ShapeAnalysis_FreeBounds` with the `(shape, tolerance, ...)` sewing constructor no matter what value is passed, so there is no other branch to consider for them.
+
+  `freeBoundsAnalysis(tolerance:)`, [`FreeBoundsProperties`](Document-Mesh-Fixing.md#freeboundsproperties) and the four accessors built on it (`closedFreeBoundInfo(tolerance:index:)`, `openFreeBoundInfo(tolerance:index:)`, `closedFreeBoundWire(tolerance:index:)`, `openFreeBoundWire(tolerance:index:)`) are different: `ShapeAnalysis_FreeBoundsProperties::DispatchBounds()` picks the sewing constructor only when its tolerance is greater than 0; at 0 or below it picks `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead, a constructor with no sewing stage at all, which takes its edges from `ShapeAnalysis_Shell::CheckOrientedShells`/`FreeEdges()` and reaches the same `ConnectEdgesToWires` skip by a different route. This is measured directly, not assumed from the sewing case above: the `.internal` exclusion holds on this branch too, and a FORWARD control on the same fixture confirms the two branches are not just trivially agreeing on everything. The sewing branch chains a FORWARD loop entirely inside one face into one closed wire together with that face's outer boundary (3 closed, 0 open); the shared-topology branch returns the same loop's four edges unchained (2 closed, 4 open). What is not measured, and not claimed, is *why* the INTERNAL loop is absent on the shared-topology branch: that constructor defaults `checkinternaledges` to `false`, so the internal edges may never reach `FreeEdges()` as candidates at all, rather than being collected and then dropped by the same skip the sewing branch's chainage step hits. Both would produce the same observable result, which is the only thing measured here. See `Issue655FreeBoundsInternalOrientationTests` (`OCCTShapeHealingTests`) for both fixtures. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `sewingTolerance` — Tolerance for grouping free edges into wires.
 - **Returns:** Free bounds result, or `nil` if no free boundaries are found.
 - **OCCT:** `ShapeAnalysis_FreeBounds`.
@@ -2405,6 +2410,7 @@ Each of the five `…FreeBound…` methods here runs its own analysis. To read s
 shape, build a `FreeBoundsProperties` instead: it analyses once and answers every query from that
 one result. Both have run on the same implementation since #504.
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance, including the `tolerance <= 0` input described below that routes to a different constructor with no sewing stage at all; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance`, the sewing tolerance used to chain free edges into contours. 0 or below
   selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
   instead of from a sewing pass.
@@ -2433,6 +2439,7 @@ Get properties of a closed free bound.
 public func closedFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the closed free bound.
@@ -2449,6 +2456,7 @@ Get properties of an open free bound.
 public func openFreeBoundInfo(tolerance: Double, index: Int) -> FreeBoundInfo?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the open free bound.
@@ -2465,6 +2473,7 @@ Get the wire shape of a closed free bound.
 public func closedFreeBoundWire(tolerance: Double, index: Int) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the closed free bound.
@@ -2481,6 +2490,7 @@ Get the wire shape of an open free bound.
 public func openFreeBoundWire(tolerance: Double, index: Int) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at any tolerance; see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why, on both branches. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:**
   - `tolerance` — Same tolerance used for `freeBoundsAnalysis(tolerance:)`.
   - `index` — 0-based index of the open free bound.
