@@ -222,6 +222,20 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
+
+        // #664 Cluster A census: measures every public sub-shape enumeration entry point against
+        // a duplicated-orientation fixture. Source lives in the repro directory itself (not under
+        // Sources/), matching the "runnable program committed under Scripts/repro/<cluster>"
+        // convention docs/v2.0.0-plan.md's census rule asks for. `swift run ClusterACensus`.
+        .executableTarget(
+            name: "ClusterACensus",
+            dependencies: ["OCCTSwift"],
+            path: "Scripts/repro/cluster-a-subshape-enumeration",
+            exclude: ["README.md", "classify_topexp_sites.py"],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
     ],
     cxxLanguageStandard: .cxx17
 )
