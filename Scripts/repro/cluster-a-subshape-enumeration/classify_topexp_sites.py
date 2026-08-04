@@ -320,6 +320,15 @@ SELF_TEST_CASES = [
         # that itself contains a `return`. A version of this script that only knew how to
         # brace-match found that catch block's `{ return 0; }` instead of the (nonexistent) loop
         # braces, and misclassified every one of these three real functions as OTHER.
+        #
+        # NOTE (PR #693 review): this case does NOT prove `_loop_body_span`'s braceless dispatch
+        # (`if code[i] == "{"`) is load-bearing. Forcing that check to always take the brace-match
+        # path still lands on OCCURRENCE here, for a different reason (the depth-scan finds no
+        # zero-crossing at all inside a braceless body with no braces of its own until the
+        # trailing `catch`, so it returns None, and None defaults to OCCURRENCE too). Both the
+        # correct code and the broken code agree by accident. Kept as a regression test for the
+        # original brace-matching bug it documents; the dispatch guard itself is proven by
+        # `other_braceless_find_first_with_later_catch_return` below.
         "occurrence_braceless_loop_with_later_catch_return",
         """
         int32_t OCCTFakeBracelessLoop(OCCTShapeRef shape) {
@@ -333,6 +342,149 @@ SELF_TEST_CASES = [
         """,
         "OCCURRENCE",
     ),
+    (
+        # Same braceless-loop-then-catch shape as above, but the loop's single statement is
+        # itself a find-first (`return true;`), so the correct and broken answers diverge: forcing
+        # `if code[i] == "{"` to always take the brace-match path makes the depth-scan cross zero
+        # on the CATCH block's closing brace with the wrong starting depth (it dips negative on
+        # the `try`'s own closing brace first), never finds a legitimate zero-crossing, and
+        # returns None -- which silently defaults to OCCURRENCE instead of the correct OTHER.
+        "other_braceless_find_first_with_later_catch_return",
+        """
+        bool OCCTFakeBracelessFindFirst(OCCTShapeRef shape) {
+            try {
+                for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next())
+                    if (isTheOneWeWant(ex.Current())) return true;
+                return false;
+            } catch (...) { return false; }
+        }
+        """,
+        "OTHER",
+    ),
+    (
+        # Models the real `static Handle(Poly_Triangulation) occtMergedTriangulation(...)`
+        # (OCCTBridge_Document.mm). `Handle(Type)` nests a nested paren pair inside the return
+        # type, which FUNC_START_RE's single-level `\\(...\\)` parameter match cannot cross.
+        # `_blank_handle_macro` exists to blank it out before matching. With that guard
+        # neutered, FUNC_START_RE cannot match this function's signature line at all --
+        # `split_functions` returns no functions, and the case fails as NO FUNCTION PARSED,
+        # not as a misclassification. No prior case in this list contains the literal text
+        # `Handle(`, so this parser path was previously untested end to end.
+        "occurrence_handle_return_type",
+        """
+        static Handle(Poly_Triangulation) OCCTFakeHandleReturnType(const TopoDS_Shape& shape) {
+            int32_t count = 0;
+            for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next()) {
+                count++;
+            }
+            if (count == 0) return Handle(Poly_Triangulation)();
+            return new Poly_Triangulation();
+        }
+        """,
+        "OCCURRENCE",
+    ),
+    (
+        # Models the real `OCCTShapeFixSolid` (OCCTBridge_Healing.mm), whose loop body carries a
+        # comment reading "...Shape() only ever returns the input solid, one fixed solid, or a
+        # compound." Unstripped, `\\breturn` matches inside "returns" (the word boundary check
+        # only anchors the START of the match) and `[^;]*` then swallows everything up to the
+        # next real semicolon, which lands well past the comment, in genuine code -- a false
+        # find-first match that flips the verdict from OCCURRENCE to OTHER. `strip_comments`'s
+        # line-comment removal is what keeps this from happening; disabling it moved the real
+        # census's OCCURRENCE/OTHER totals by one function in each direction (54/21 to 53/22),
+        # a real effect the PR's own self-test run never caught.
+        "occurrence_comment_contains_return_word",
+        """
+        int32_t OCCTFakeCommentMentionsReturn(OCCTShapeRef shape) {
+            int32_t count = 0;
+            for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
+                // Shape() only ever returns the input solid, one fixed solid, or a compound;
+                count++;
+            }
+            return count;
+        }
+        """,
+        "OCCURRENCE",
+    ),
+    (
+        # Same false-positive mechanism as the line-comment case above, for a `/* ... */` block
+        # comment instead. No real function in the current bridge hits this (the equivalent
+        # mutation leaves the real census unchanged), but the failure mode is identical and
+        # untested without this case: nothing currently proves `strip_comments`' block-comment
+        # removal is load-bearing, only that it happens not to matter yet.
+        "occurrence_block_comment_contains_return_word",
+        """
+        int32_t OCCTFakeBlockCommentMentionsReturn(OCCTShapeRef shape) {
+            int32_t count = 0;
+            for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
+                /* Shape() only ever returns the input solid, one fixed solid, or a compound; */
+                count++;
+            }
+            return count;
+        }
+        """,
+        "OCCURRENCE",
+    ),
+    (
+        # A TopExp_Explorer used purely as "give me the first item of this type", never looped:
+        # `.More()` is checked once and there is no `.Next()` anywhere in the function. Models
+        # the real `occtShellIsInsideSolid`/`OCCTShapeCreateHalfSpace`/`OCCTSolidFromShells`
+        # shape (OCCTBridge_Healing.mm / OCCTBridge_Modeling.mm), among others. `_loop_body_span`
+        # cannot find a loop body at all here (there is no `.Next()` to anchor the search on);
+        # the `if not next_match: return None` guard is what turns that into a graceful
+        # "no span found" (classify_body then falls through to its OCCURRENCE default) instead of
+        # an AttributeError crash calling `.end()` on `None`. Removing the guard does not change
+        # the verdict here (both paths land on OCCURRENCE, since a span-less call always takes the
+        # default) -- it crashes 10 real functions in the actual census outright, which is a
+        # stronger, not weaker, argument for testing it: a self-test that reports 6/6 while this
+        # guard has zero coverage is silent about a real crash-on-real-data risk. This case
+        # exists to keep that guard from being removed unnoticed even though it cannot, by
+        # construction, be proven via a verdict mismatch the way the other new cases are.
+        "occurrence_explorer_checked_once_no_next_call",
+        """
+        bool OCCTFakeNoNextCall(OCCTShapeRef shape) {
+            TopExp_Explorer exp(shape->shape, TopAbs_VERTEX);
+            if (!exp.More()) return false;
+            return true;
+        }
+        """,
+        "OCCURRENCE",
+    ),
+    (
+        # A TopExp_Explorer declared and never used again: no `.More()` call at all. Models the
+        # "unused/dead declaration" branch's own stated reason. This function is called directly
+        # by `self_test()`, bypassing `classify_file`'s own pre-filter (which only invokes
+        # `classify_body` when TopExp usage is already known to exist) -- so unlike in
+        # `run_report()`, a fixture reaching `classify_body` here is not guaranteed to have a
+        # live `.More()` call, and this is the only case that exercises that branch at all.
+        "other_dead_explorer_declaration",
+        """
+        int32_t OCCTFakeDeadExplorerDeclaration(OCCTShapeRef shape) {
+            TopExp_Explorer exp(shape->shape, TopAbs_FACE);
+            return 0;
+        }
+        """,
+        "OTHER",
+    ),
+    (
+        # No TopExp_Explorer or TopExp::MapShapes anywhere, but a DIFFERENT iterator's `.More()`
+        # call is present (`MORE_RE` matches any `.More()`, not just a TopExp_Explorer's). In
+        # `run_report()`, `classify_file`'s pre-filter means `classify_body` is never called on a
+        # function like this at all. `self_test()` calls `classify_body` directly, bypassing that
+        # filter -- so the `if not explorer_matches: return OTHER` guard is the only thing
+        # standing between this shape and `explorer_matches[0]` on an empty list, an IndexError.
+        "other_unrelated_iterator_no_topexp_usage",
+        """
+        int32_t OCCTFakeUnrelatedIterator(OCCTShapeRef shape) {
+            TDF_ChildIterator it(shape->label);
+            for (; it.More(); it.Next()) {
+                doSomething(it.Value());
+            }
+            return 0;
+        }
+        """,
+        "OTHER",
+    ),
 ]
 
 
@@ -342,10 +494,17 @@ def self_test(verbose=True):
     for case_name, snippet, expected in SELF_TEST_CASES:
         funcs = split_functions(snippet)
         if not funcs:
-            failed.append((case_name, expected, "NO FUNCTION PARSED"))
-            continue
-        _, body = funcs[0]
-        verdict, reason = classify_body(body)
+            verdict, reason = "NO FUNCTION PARSED", "split_functions() found no function in the fixture"
+        else:
+            _, body = funcs[0]
+            # A guard removed by mutation can turn a graceful "wrong verdict" into an
+            # uncaught exception (e.g. `_loop_body_span` dereferencing a None match). Catching
+            # it here keeps the report a clean per-case matrix instead of a bare traceback that
+            # stops evaluating every case after it -- the failure is exactly as real either way.
+            try:
+                verdict, reason = classify_body(body)
+            except Exception as exc:
+                verdict, reason = f"CRASH: {exc}", "unhandled exception in classify_body"
         ok = verdict == expected
         if ok:
             passed += 1

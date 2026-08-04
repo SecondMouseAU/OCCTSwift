@@ -144,8 +144,11 @@ these are unreachable from any consumer of this package, orphaned, not part of t
 ## Where the two methods disagreed
 
 The most useful output of this census, per the task that commissioned it. Two were real bugs in
-the classifier, found and fixed while building it. Both are now `--self-test` cases, proven to
-fail with the fix reverted (see "Self-test, proven" below):
+the classifier, found and fixed while building it. **An earlier version of this README claimed
+both were now `--self-test` cases "proven to fail with the fix reverted." That claim was wrong for
+both.** Disabling either guard as it actually reads in the source left the self-test at 6/6; see
+"Self-test guard-removal matrix" below for what was actually measured, case by case, and what was
+added to close the gap.
 
 1. **A nested-paren return type broke the function-name parser.** `static Handle(Poly_Triangulation)
    occtMergedTriangulation(...)` was mis-parsed with `Handle` as the function name, greedily
@@ -187,17 +190,64 @@ secondary check here, and every entry point actually measured in the table above
 inferred from source text. They are recorded because the disagreement itself, and how each was
 resolved, is what #664 asked this artifact to surface.
 
-## Self-test, proven
+## Self-test guard-removal matrix
 
-Per `okf/policies/prove-the-test-fails.md`: every self-test case was run once with the mechanism it
-exists to catch reverted.
+Per `okf/policies/prove-the-test-fails.md`: "if removing a guard leaves the count unchanged, that
+case is decorative and needs rewriting, not celebrating." A PR #693 review measured this directly
+and found the two guards above were exactly that: neither's removal changed the self-test result.
+The table below is the corrected, full audit: every conditional in the classifier that gates a
+verdict, removed one at a time, against both the self-test and the real 127-function report.
+`self-test` shows cases-correct out of the full suite; `FAILS` lists which case(s) actually caught
+it (empty means none did). `real report` shows whether the actual classification of the 127 real
+bridge functions changed.
 
-| guard removed | cases correct | which failed |
-|---|---|---|
-| (none, baseline) | 6/6 | n/a |
-| `TopExp::MapShapes` detection disabled | 5/6 | `dedup_literal_mapshapes` (expected DEDUP, got OTHER) |
-| braceless-loop handling reverted to brace-only | 5/6 | `occurrence_braceless_loop_with_later_catch_return` (expected OCCURRENCE, got OTHER) |
-| (restored) | 6/6 | n/a |
+| guard removed | self-test | FAILS | real report |
+|---|---|---|---|
+| (none, baseline) | 13/13 | | 127 total, 52/54/21 |
+| A: `_blank_handle_macro` neutered (`Handle(Type)` no longer blanked before parsing) | 12/13 | `occurrence_handle_return_type` | **CHANGED**: 126 total, 52/53/21 (`occtMergedTriangulation` drops out entirely) |
+| B: `control_words` skip forced off | 13/13 | none | unchanged |
+| C: comment-line skip in `split_functions` forced off | 13/13 | none | unchanged |
+| D: `_loop_body_span`'s `if not next_match: return None` removed | 12/13 | `occurrence_explorer_checked_once_no_next_call` | **CRASHES**: `AttributeError: 'NoneType' object has no attribute 'end'` (10 real functions hit this) |
+| E: `_loop_body_span`'s `if for_close == -1: return None` removed | 13/13 | none | unchanged |
+| F: `_loop_body_span`'s `if i >= len(code): return None` removed | 13/13 | none | unchanged |
+| G: `if code[i] == "{":` forced to `if True:` (the review's braceless finding) | 12/13 | `other_braceless_find_first_with_later_catch_return` | **CHANGED**: 127 total, 52/55/20 |
+| H: `_loop_body_span`'s `if semi == -1: return None` removed | 13/13 | none | unchanged |
+| I: `BREAK_OR_RETURN_RE` check in `classify_body` neutered | 11/13 | `other_find_first_break`, `other_braceless_find_first_with_later_catch_return` | **CHANGED**: 127 total, 52/75/0 |
+| J: `if not explorer_matches: return "OTHER"` removed | 12/13 | `other_unrelated_iterator_no_topexp_usage` | unchanged on real data (this guard protects `self_test()`'s own direct call to `classify_body`, which `classify_file`'s pre-filter in `run_report()` makes otherwise unreachable) |
+| K: `if not MORE_RE.search(code): return "OTHER"` removed | 12/13 | `other_dead_explorer_declaration` | unchanged (no real function declares a dead `TopExp_Explorer` today) |
+| L: line-comment stripping neutered | 12/13 | `occurrence_comment_contains_return_word` | **CHANGED**: 127 total, 52/53/22 (`OCCTShapeFixSolid` flips OCCURRENCE to OTHER: a comment containing "...only ever **returns** the input solid..." reads as code) |
+| M: block-comment stripping neutered | 12/13 | `occurrence_block_comment_contains_return_word` | unchanged on real data (no real function hits the `/* */` form of L's failure mode yet; added for symmetry, not because it fired) |
+| N: `MAPSHAPES_RE` check (DEDUP via `TopExp::MapShapes`) neutered | 12/13 | `dedup_literal_mapshapes` | **CHANGED**: 127 total, 2/54/71 |
+| O: hand-rolled-dedup `.Add()` check neutered | 12/13 | `dedup_hand_rolled_add` | **CHANGED**: 127 total, 50/56/21 |
+| (restored) | 13/13 | | 127 total, 52/54/21 |
+
+**Four guards (A, D, G, L) were load-bearing on the real 127-function corpus and had zero self-test
+coverage before this pass** (A and G are the review's two; D and L were found auditing the rest per
+the review's own instruction not to stop at two). D is the more serious of the pair found here: its
+absence does not misclassify, it **crashes** classification outright on 10 real functions that use
+a `TopExp_Explorer` to read the first match of a type with no enclosing loop at all
+(`occtShellIsInsideSolid`, `OCCTShapeCreateHalfSpace`, `OCCTSolidFromShells`, and seven more). New
+fixtures were added for all four, plus J and K (which only guard `self_test()`'s own bypass of
+`classify_file`'s pre-filter, so they can never show a real-report effect by construction) and M
+(added proactively, by the same failure mode as L, though nothing in the current tree exercises
+it yet).
+
+**Five guards (B, C, E, F, H) remain without self-test coverage and were left that way
+deliberately, not overlooked.** Each is provably unreachable given how the classifier is
+constructed, not merely untriggered by today's source tree:
+- **B** (`control_words`) and **C** (the comment-line skip in `split_functions`) can never fire on
+  compiling C++: `FUNC_START_RE`'s `^` anchor means its overall match always starts exactly at a
+  line's first character, so the text checked by C (`text[line_start:m.start()]`) is always the
+  empty string, and B's `name` is only ever populated from a token preceded by a return-type span,
+  which none of `if`/`for`/`while`/`switch`/`catch`/`return`/`sizeof` can be (they are C++ reserved
+  words; none can be a real identifier).
+- **E**, **F**, **H** are bounds checks inside `_loop_body_span` that only fail on syntactically
+  unbalanced input (an unterminated `for (...`, a truncated file, a statement with no closing `;`)
+  which cannot arise from a file that compiles.
+
+Writing a self-test fixture for code that cannot occur in valid input would test nothing; it would
+just be a seventh decorative case pretending to prove something. They are listed here, with the
+reasoning, instead.
 
 ## Findings
 
