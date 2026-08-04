@@ -232,22 +232,36 @@ fixtures were added for all four, plus J and K (which only guard `self_test()`'s
 (added proactively, by the same failure mode as L, though nothing in the current tree exercises
 it yet).
 
-**Five guards (B, C, E, F, H) remain without self-test coverage and were left that way
-deliberately, not overlooked.** Each is provably unreachable given how the classifier is
-constructed, not merely untriggered by today's source tree:
-- **B** (`control_words`) and **C** (the comment-line skip in `split_functions`) can never fire on
-  compiling C++: `FUNC_START_RE`'s `^` anchor means its overall match always starts exactly at a
-  line's first character, so the text checked by C (`text[line_start:m.start()]`) is always the
-  empty string, and B's `name` is only ever populated from a token preceded by a return-type span,
-  which none of `if`/`for`/`while`/`switch`/`catch`/`return`/`sizeof` can be (they are C++ reserved
-  words; none can be a real identifier).
+**Guard B was wrongly filed here as unreachable, and now has a case.** The original argument was
+that B's `name` can only come from a token preceded by a return-type span, which no C++ reserved
+word can be. That is wrong: `FUNC_START_RE`'s return-type span is `[A-Za-z_][\w:<>\*&\s,]*?`, which
+cannot tell a token is not a type, so a single-line `else if (cond) {` offers `else` as the return
+type and `if` as the name. Measured, with B removed:
+
+```
+WITH guard   : ['OCCTRealFunctionWithElseIf']
+WITHOUT guard: ['OCCTRealFunctionWithElseIf', 'if']
+```
+
+The phantom `if` carries whatever loop follows, so it would appear as an extra OCCURRENCE row. B
+belongs with **M**: reachable on ordinary C++, merely untriggered by today's tree, which happens to
+contain no single-line `else if (`. `guard_b_else_if_is_not_a_function` covers it, and catching it
+needed a harness change too, since a spurious *extra* function is appended after the real one, so
+classifying `funcs[0]` alone still gave the right answer.
+
+**Four guards (C, E, F, H) remain without self-test coverage, deliberately.** These are provably
+unreachable given how the classifier is constructed, not merely untriggered:
+- **C** (the comment-line skip in `split_functions`) can never fire on compiling C++:
+  `FUNC_START_RE`'s `^` anchor means its overall match always starts exactly at a line's first
+  character, so the text C checks (`text[line_start:m.start()]`) is always the empty string.
 - **E**, **F**, **H** are bounds checks inside `_loop_body_span` that only fail on syntactically
   unbalanced input (an unterminated `for (...`, a truncated file, a statement with no closing `;`)
   which cannot arise from a file that compiles.
 
 Writing a self-test fixture for code that cannot occur in valid input would test nothing; it would
-just be a seventh decorative case pretending to prove something. They are listed here, with the
-reasoning, instead.
+just be a decorative case pretending to prove something. They are listed here, with the reasoning,
+instead. B's misfiling is the argument for stating that reasoning explicitly rather than asserting
+the bucket: the claim was checkable, and it did not hold.
 
 ## Findings
 

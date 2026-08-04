@@ -437,9 +437,13 @@ SELF_TEST_CASES = [
         # the verdict here (both paths land on OCCURRENCE, since a span-less call always takes the
         # default) -- it crashes 10 real functions in the actual census outright, which is a
         # stronger, not weaker, argument for testing it: a self-test that reports 6/6 while this
-        # guard has zero coverage is silent about a real crash-on-real-data risk. This case
-        # exists to keep that guard from being removed unnoticed even though it cannot, by
-        # construction, be proven via a verdict mismatch the way the other new cases are.
+        # guard has zero coverage is silent about a real crash-on-real-data risk.
+        #
+        # This case IS proven, and the sentence here previously claiming otherwise was wrong.
+        # Removing the guard gives `CRASH: 'NoneType' object has no attribute 'end'` and drops
+        # the self-test by one, via the `except Exception` arm of `self_test()`, which exists so
+        # a mutation that crashes reports as a failed case rather than a bare traceback. A crash
+        # is a verdict mismatch like any other here.
         "occurrence_explorer_checked_once_no_next_call",
         """
         bool OCCTFakeNoNextCall(OCCTShapeRef shape) {
@@ -485,6 +489,27 @@ SELF_TEST_CASES = [
         """,
         "OTHER",
     ),
+    (
+        # Guard B (`control_words`). FUNC_START_RE's return-type span is
+        # `[A-Za-z_][\w:<>\*&\s,]*?`, which cannot tell that a token is not a type, so a
+        # single-line `else if (cond) {` offers `else` as the return type and `if` as the
+        # function name. Without guard B this fixture parses TWO functions, the real one and a
+        # phantom `if` carrying the explorer loop, which would appear as an extra OCCURRENCE
+        # row in the census. The README previously filed B as provably unreachable; it is not,
+        # it is merely untriggered by today's tree, which contains no single-line `else if (`.
+        "guard_b_else_if_is_not_a_function",
+        """
+        void OCCTRealFunctionWithElseIf(OCCTShapeRef shape) {
+            if (!shape) { return; }
+            else if (shape->needsWalk) {
+                for (TopExp_Explorer ex(shape->shape, TopAbs_FACE); ex.More(); ex.Next()) {
+                    total++;
+                }
+            }
+        }
+        """,
+        "OCCURRENCE",
+    ),
 ]
 
 
@@ -495,6 +520,14 @@ def self_test(verbose=True):
         funcs = split_functions(snippet)
         if not funcs:
             verdict, reason = "NO FUNCTION PARSED", "split_functions() found no function in the fixture"
+        elif len(funcs) != 1:
+            # Every fixture here is deliberately one function, so a second one is a parser
+            # defect, not a fixture property. Classifying funcs[0] alone would miss it: a
+            # spurious extra function is appended AFTER the real one, so funcs[0] stays right
+            # and the case passes while the census silently gains a phantom row. Guard B's
+            # removal produces exactly this shape and nothing detected it before.
+            verdict = f"MULTIPLE FUNCTIONS PARSED: {[f[0] for f in funcs]}"
+            reason = "split_functions() invented a function that is not one"
         else:
             _, body = funcs[0]
             # A guard removed by mutation can turn a graceful "wrong verdict" into an
