@@ -2402,6 +2402,13 @@ The shape needs to be a compound or shell of faces: the search runs over its dir
 lone face reports no free bounds. In practice the sewing pass closes essentially every contour it
 finds, so `openCount` is usually 0.
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at
+  any tolerance; see [`Shape.freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance)
+  for why, on both branches. This type's own `init?(shape:tolerance:)` is where the `tolerance <= 0`
+  branch (no sewing stage at all) is selected, so its guarantee rests directly on the two-branch
+  measurement that note describes, not only on the sewing-branch reasoning. See
+  [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
+
 ```swift
 // A box shell with one face removed: its free boundary is the square hole.
 let faces = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .face)

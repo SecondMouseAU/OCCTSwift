@@ -595,6 +595,60 @@ struct Issue655FreeBoundsInternalOrientationTests {
         #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 3,
                 "expected 3 closed wires (2 outer boundaries + the now-visible loop)")
     }
+
+    /// `freeBoundsAnalysis(tolerance:)` (and every sibling built on `FreeBoundsProperties`) takes a
+    /// `tolerance <= 0` as a documented request for a different OCCT constructor with no sewing
+    /// stage at all: `ShapeAnalysis_FreeBoundsProperties::DispatchBounds()` picks
+    /// `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead of the
+    /// `(shape, toler, splitClosed, splitOpen)` sewing overload the tests above exercise. Both
+    /// overloads end in the same `ConnectEdgesToWires` call the OCCT 8.0.1 INTERNAL/EXTERNAL skip
+    /// lives in, but this one reaches it via `ShapeAnalysis_Shell::CheckOrientedShells`/
+    /// `FreeEdges()`, never via `BRepBuilderAPI_Sewing`. Round 2's tests never exercised this
+    /// branch (both used `tolerance: 1e-6`), so the doc's "unaffected on either kernel" note was an
+    /// unmeasured extrapolation from the sewing branch's reasoning for this input. This measures it
+    /// directly instead.
+    ///
+    /// Two things this proves, together:
+    /// - The `.internal` loop is still absent at `tolerance <= 0`, matching the sewing branch, so
+    ///   the doc's guarantee now holds on this input because it was checked, not assumed.
+    /// - The `.forward` control disagrees sharply between branches: 3 closed wires under sewing
+    ///   (chained into one wire with the outer boundary) versus 2 closed + 4 open under
+    ///   shared-topology (the loop's four edges come back unchained). That divergence is the
+    ///   evidence that the two branches are doing genuinely different things, which is what makes
+    ///   the `.internal` agreement a real result rather than the two branches trivially agreeing on
+    ///   everything.
+    ///
+    /// `0.0` and a negative tolerance are both tested because the doc says "0 or below" selects
+    /// this branch; a test of only `0.0` would leave "below" unmeasured.
+    ///
+    /// This cannot distinguish, and does not claim to, *why* the `.internal` loop is absent here:
+    /// `ShapeAnalysis_FreeBounds`'s shared-topology constructor defaults `checkinternaledges` to
+    /// `false` (`ShapeAnalysis_FreeBounds.hxx:98`), so the internal edges may never reach
+    /// `FreeEdges()` as candidates at all, rather than being collected and then dropped by the same
+    /// skip the sewing branch's chainage step hits. Both produce the same observable result, which
+    /// is the only thing measured and the only thing the doc claims.
+    @Test(
+        "At tolerance <= 0 (no sewing stage), the .internal exclusion still holds, and .forward proves the branches genuinely differ",
+        arguments: [
+            (Shape.Orientation.internal, 0.0, 2, 0),
+            (Shape.Orientation.internal, -1.0, 2, 0),
+            (Shape.Orientation.forward, 0.0, 2, 4),
+            (Shape.Orientation.forward, -1.0, 2, 4),
+        ]
+    )
+    func sharedTopologyBranchMeasuredDirectly(
+        loopOrientation: Shape.Orientation, tolerance: Double, expectedClosed: Int, expectedOpen: Int
+    ) {
+        guard let shape = Self.fixture(loopOrientation: loopOrientation) else {
+            Issue.record("fixture build failed")
+            return
+        }
+        let analysis = shape.freeBoundsAnalysis(tolerance: tolerance)
+        #expect(analysis.closedCount == expectedClosed,
+                "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedClosed) closed wires, got \(analysis.closedCount)")
+        #expect(analysis.openCount == expectedOpen,
+                "orientation \(loopOrientation), tolerance \(tolerance): expected \(expectedOpen) open wires, got \(analysis.openCount)")
+    }
 }
 
 // MARK: - v0.41.0: Geometry Conversion

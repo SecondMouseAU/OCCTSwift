@@ -24,6 +24,12 @@ import OCCTBridge
 /// The shape needs to be a compound or shell of faces: the search runs over its direct children,
 /// so a lone face reports no free bounds. In practice the sewing pass closes essentially every
 /// contour it finds, so ``openCount`` is usually 0.
+///
+/// - Note: Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408), at
+///   any tolerance; see `Shape.freeBounds(sewingTolerance:)` for why, on both branches. This type's
+///   own `init?(shape:tolerance:)` is where the `tolerance <= 0` branch (no sewing stage at all) is
+///   selected, so its guarantee rests directly on the two-branch measurement that note describes,
+///   not only on the sewing-branch reasoning. See #655.
 public final class FreeBoundsProperties: @unchecked Sendable {
     private let ref: OCCTFreeBoundsPropsRef
 
