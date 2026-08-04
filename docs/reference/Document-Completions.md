@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — XCAF & API Completions
 
-This page covers every public member declared from line 15061 to the end of `Sources/OCCTSwift/Document.swift` — a collection of extension completions added across versions 0.122.0–0.130.0, spanning `WireFixer`, `ShapeFix_Edge`, `BRepTools`/`BRepLib` statics, shape history, sewing, builder extensions, section operations, curve/surface queries, XCAF color/shape-tool completions, fillet/chamfer history queries, a standalone `SectionBuilder`, and the `GeomEval`/`Geom2dEval` analytical evaluators. See the main [`Document`](Document.md) page for core load/save and assembly operations.
+This page covers the last group of public members declared in `Sources/OCCTSwift/Document.swift`: a collection of extension completions added across versions 0.122.0–0.130.0, spanning `WireFixer`, `ShapeFix_Edge`, `BRepTools`/`BRepLib` statics, shape history, sewing, builder extensions, section operations, curve/surface queries, XCAF color/shape-tool completions, fillet/chamfer history queries, a standalone `SectionBuilder`, and the `GeomEval`/`Geom2dEval` analytical evaluators. See the main [`Document`](Document.md) page for core load/save and assembly operations.
 
 ## Topics
 

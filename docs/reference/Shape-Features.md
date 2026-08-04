@@ -5,7 +5,7 @@ parent: API Reference
 
 # Shape — Features, Sweeps & Surface Building
 
-This page documents the Shape API from **Geometry Construction** through **Plate Surfaces** (source lines 1258–3344 of `Shape.swift`). It covers face and solid assembly, feature-based modeling (bosses, pockets, holes, patterns), shape inspection, slicing, measurement, advanced pipe sweeps, surface building, and healing. For the primitive factories, boolean operations, and transforms that precede this range, see the main **Shape** index page (not yet written; use `Surface.md` as an exemplar for style).
+This page documents the Shape API from **Geometry Construction** through **Plate Surfaces** in `Shape.swift`. It covers face and solid assembly, feature-based modeling (bosses, pockets, holes, patterns), shape inspection, slicing, measurement, advanced pipe sweeps, surface building, and healing. For the primitive factories, boolean operations, and transforms that precede this range, see the main **Shape** index page (not yet written; use `Surface.md` as an exemplar for style).
 
 ## Topics
 

@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — OCAF Attributes, Naming & Elementary Geometry
 
-This page covers the OCAF attribute types, shape-naming extensions, geometry helpers, and elementary curve/surface utilities declared in lines 3350–4958 of `Document.swift`. See the main `Document` page for lifecycle, I/O, label management, and the core XCAF operations.
+This page covers the OCAF attribute types, shape-naming extensions, geometry helpers, and elementary curve/surface utilities declared in `Document.swift`. See the main `Document` page for lifecycle, I/O, label management, and the core XCAF operations.
 
 ## Topics
 

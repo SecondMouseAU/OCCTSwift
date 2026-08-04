@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Geometry Constructors & Pipe Shells
 
-This page covers geometry construction and analysis utilities added across v0.105.0–v0.106.0 (lines 7634–8728 of `Document.swift`): 2D parabola constructors, uniform arc-length sampling, curve/surface concatenation and knot splitting, bounding-box extensions, geometric property helpers, shape reshaping, pipe-shell sweeping, directory/file access, quadric intersections, XCAF explorer queries, Unicode utilities, and shape-analysis diagnostics. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers geometry construction and analysis utilities added across v0.105.0–v0.106.0 in `Document.swift`: 2D parabola constructors, uniform arc-length sampling, curve/surface concatenation and knot splitting, bounding-box extensions, geometric property helpers, shape reshaping, pipe-shell sweeping, directory/file access, quadric intersections, XCAF explorer queries, Unicode utilities, and shape-analysis diagnostics. For the core document lifecycle, shape tools, and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 

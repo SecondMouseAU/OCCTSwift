@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — BSpline/Bezier Methods & Extrema
 
-This page covers lines 8729–9929 of `Sources/OCCTSwift/Document.swift` (v0.106–v0.109): topology-flag extensions on `Shape`, continuity properties on `Curve3D`/`Curve2D`/`Surface`, the BSpline and Bezier nested namespaces on those types, `BRepTools`/`BRepLib` utilities, `MakeFace` convenience factories, `SewingBuilder`, `HatchBuilder`, edge/face/vertex extraction, the full `Extrema` family (`ExtremaElC`, `ExtremaElCS`, `ExtremaElSS`, `ExtremaPointCurve`, `ExtremaPointSurface`), and the `TrigRoots` solver.
+This page covers `Sources/OCCTSwift/Document.swift`'s v0.106–v0.109 additions: topology-flag extensions on `Shape`, continuity properties on `Curve3D`/`Curve2D`/`Surface`, the BSpline and Bezier nested namespaces on those types, `BRepTools`/`BRepLib` utilities, `MakeFace` convenience factories, `SewingBuilder`, `HatchBuilder`, edge/face/vertex extraction, the full `Extrema` family (`ExtremaElC`, `ExtremaElCS`, `ExtremaElSS`, `ExtremaPointCurve`, `ExtremaPointSurface`), and the `TrigRoots` solver.
 
 See the [Document index page](Document.md) for the full split-chunk table of contents.
 

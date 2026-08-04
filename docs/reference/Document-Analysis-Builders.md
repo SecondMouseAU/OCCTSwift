@@ -5,7 +5,7 @@ parent: API Reference
 
 # Document — Shape Analysis, OSD & Geometry Builders
 
-This page covers the shape analysis, file I/O helpers, analytic bounding, geometry property computation, transformation factories, and conic curve builders introduced across v0.99–v0.105 (lines 6351–7633 of `Document.swift`). For the core document lifecycle and STEP/IGES I/O see the main [Document](Document.md) page.
+This page covers the shape analysis, file I/O helpers, analytic bounding, geometry property computation, transformation factories, and conic curve builders introduced across v0.99–v0.105 in `Document.swift`. For the core document lifecycle and STEP/IGES I/O see the main [Document](Document.md) page.
 
 ## Topics
 
