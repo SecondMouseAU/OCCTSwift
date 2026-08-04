@@ -94,10 +94,10 @@ Gordon tests assert only status ordinals. Those two were probed directly. Tracke
   a sequence of one INTERNAL edge plus a square returns 1 wire where it returned 2, and a sequence
   of nothing but INTERNAL/EXTERNAL edges returns 0 wires where it returned 1. That C++ function
   appears exactly once in this bridge, inside `OCCTShapeSectionWiresAtZ`, which backs
-  `Shape.sectionWiresAtZ(_:tolerance:)`, a CAM sectioning API: an ordinary transverse cut never
-  produces such an edge, but a cut plane coincident with an edge a caller already marked
-  `.internal`/`.external` via `Shape.setOrientation(_:)` does move, 2 wires to 1 on a measured
-  fixture. The `freeBounds*` family calls a different entry point, `ShapeAnalysis_FreeBounds`'s
+  `Shape.sectionWiresAtZ(_:tolerance:)`, a CAM sectioning API: in every case measured, an ordinary
+  transverse cut does not produce such an edge, but a cut plane coincident with an edge a caller
+  already marked `.internal`/`.external` via `Shape.setOrientation(_:)` does move, 2 wires to 1 on
+  a measured fixture. The `freeBounds*` family calls a different entry point, `ShapeAnalysis_FreeBounds`'s
   `(shape, tolerance)` constructor, and that constructor's own chainage step does reach the same
   skip, so the reason `freeBounds*` does **not** move is not that its call graph avoids the change.
   It is upstream: the edges that family feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in

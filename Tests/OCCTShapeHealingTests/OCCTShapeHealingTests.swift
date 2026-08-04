@@ -513,6 +513,17 @@ struct Issue655FreeBoundsInternalOrientationTests {
     /// The loop has to be embedded ON a face, not a sibling shape in the compound: a loose wire with
     /// no face ancestor is invisible to `ShapeAnalysis_FreeBounds` regardless of orientation, which
     /// would make this fixture prove nothing about the orientation skip at all.
+    ///
+    /// The loop's edges are built standalone via `Wire.line` and attached through the raw
+    /// `builderAdd` primitive, so they carry no pcurve on face1's plane. That works today --
+    /// `forwardLoopIsCounted` returning 3 proves sewing sees them regardless -- but if a future
+    /// kernel gets stricter about pcurve-less wires on a face, both tests here move together, and
+    /// the failure would read as a behaviour regression rather than a fixture problem.
+    ///
+    /// Every `builderAdd` call is guarded rather than discarded: a silent add failure would leave
+    /// the loop absent from `face1` entirely, which is indistinguishable from the loop being
+    /// correctly excluded by orientation -- exactly the gap `freeBoundsUnaffectedByInternalOrientation`
+    /// needs to not have.
     static func fixture(loopOrientation: Shape.Orientation) -> Shape? {
         guard let outerWire1 = Wire.polygon3D(
             [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
@@ -527,10 +538,10 @@ struct Issue655FreeBoundsInternalOrientationTests {
                   let edge = edgeWire.edges().first,
                   let edgeShape = Shape.fromEdge(edge) else { return nil }
             edgeShape.setOrientation(loopOrientation)
-            loopWireShape.builderAdd(edgeShape)
+            guard loopWireShape.builderAdd(edgeShape) else { return nil }
         }
         loopWireShape.setOrientation(loopOrientation)
-        face1.builderAdd(loopWireShape)
+        guard face1.builderAdd(loopWireShape) else { return nil }
 
         guard let outerWire2 = Wire.polygon3D(
             [SIMD3(50, 50, 0), SIMD3(60, 50, 0), SIMD3(60, 60, 0), SIMD3(50, 60, 0)], closed: true
@@ -545,6 +556,13 @@ struct Issue655FreeBoundsInternalOrientationTests {
             Issue.record("fixture build failed")
             return
         }
+        // Fixture sanity check: the assertions below alone cannot distinguish "the loop was
+        // excluded from free bounds" from "the loop was never attached to face1 at all" -- both
+        // look identical downstream. This confirms the input actually carries all 12 edges (the
+        // two faces' 8 outer edges plus the embedded loop's 4) before asserting anything about
+        // what comes back out.
+        #expect(shape.subShapeCount(ofType: .edge) == 12,
+                "fixture must carry the embedded loop's 4 edges")
         // Only the two faces' own 4-edge outer boundaries come back; the embedded INTERNAL loop
         // never becomes a free-bound candidate in the first place (see doc comment above).
         #expect(shape.freeBoundsClosedCount(tolerance: 1e-6) == 2,

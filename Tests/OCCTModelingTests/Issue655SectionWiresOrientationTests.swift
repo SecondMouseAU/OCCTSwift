@@ -42,9 +42,10 @@ import Foundation
 ///   fully attributable to the skip alone.
 /// - Through the `(shape, tolerance)` constructor (the `freeBounds*` path): a face's embedded,
 ///   fully-`.internal` closed wire (4 edges) never appears in either `GetClosedWires()` or
-///   `GetOpenWires()`'s output on EITHER kernel -- verified directly, not inferred. Free-bound
-///   candidacy excludes `.internal`/`.external` sub-wires upstream of `connectWiresToWiresImpl`,
-///   independent of the 8.0.1 change.
+///   `GetOpenWires()`'s output on EITHER kernel -- verified directly, not inferred. The reason is
+///   the same one above, not a separate call-graph boundary inside `ShapeAnalysis_FreeBounds`: the
+///   sewing stage that constructor runs first (`BRepBuilderAPI_Sewing::FreeEdge`) never hands this
+///   loop's edges over as free-bound candidates at all, on either kernel version.
 @Suite("sectionWiresAtZ drops a coincident INTERNAL/EXTERNAL edge (OCCT 8.0.1, #655)")
 struct Issue655SectionWiresOrientationTests {
 

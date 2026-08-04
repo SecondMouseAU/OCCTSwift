@@ -524,6 +524,7 @@ Count the number of closed free-boundary wires.
 public func freeBoundsClosedCount(tolerance: Double = 1e-6) -> Int
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Number of closed free-boundary wires.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosedCount`.
@@ -538,6 +539,7 @@ Get the compound of closed free-boundary wires.
 public func freeBoundsClosedWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of closed wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsClosed`.
@@ -552,6 +554,7 @@ Get the compound of open free-boundary wires.
 public func freeBoundsOpenWires(tolerance: Double = 1e-6) -> Shape?
 ```
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](Shape-Measurement.md#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance` — sewing tolerance for boundary detection (default `1e-6`).
 - **Returns:** Compound shape of open wires, or `nil` if none.
 - **OCCT:** `ShapeAnalysis_FreeBounds` via `OCCTShapeFreeBoundsOpen`.

@@ -380,6 +380,7 @@ public func freeBounds(sewingTolerance: Double = 1e-6) -> FreeBoundsResult?
 
 Free boundaries indicate gaps in a shell. A watertight shell has no free boundaries.
 
+- **Note:** Unlike `Shape.sectionWiresAtZ(_:tolerance:)`, this method (and the rest of the `freeBounds*` family: `freeBoundsAnalysis(tolerance:)`, `freeBoundsClosedCount(tolerance:)`, `freeBoundsClosedWires(tolerance:)`, `freeBoundsOpenWires(tolerance:)`) is unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408). The constructor this family uses does reach that same skip, in its own chainage step, so the reason is not that the call graph avoids it. What keeps the result unchanged is upstream: the edges this family feeds in come from `BRepBuilderAPI_Sewing::FreeEdge`, and in every case measured that sewing stage never produced an `.internal`/`.external` free edge for the skip to act on. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `sewingTolerance` — Tolerance for grouping free edges into wires.
 - **Returns:** Free bounds result, or `nil` if no free boundaries are found.
 - **OCCT:** `ShapeAnalysis_FreeBounds`.
@@ -2405,6 +2406,7 @@ Each of the five `…FreeBound…` methods here runs its own analysis. To read s
 shape, build a `FreeBoundsProperties` instead: it analyses once and answers every query from that
 one result. Both have run on the same implementation since #504.
 
+- **Note:** Unaffected by OCCT 8.0.1's `ConnectEdgesToWires` INTERNAL/EXTERNAL skip (OCCT#1408); see [`freeBounds(sewingTolerance:)`](#freeboundssewingtolerance) for why. See [#655](https://github.com/SecondMouseAU/OCCTSwift/issues/655).
 - **Parameters:** `tolerance`, the sewing tolerance used to chain free edges into contours. 0 or below
   selects a different OCCT algorithm, taking free edges from the shape's already-shared topology
   instead of from a sewing pass.
