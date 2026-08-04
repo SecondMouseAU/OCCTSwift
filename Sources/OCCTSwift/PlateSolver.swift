@@ -135,3 +135,50 @@ public final class PlateSolver: @unchecked Sendable {
         Int(OCCTPlateContinuity(handle))
     }
 }
+
+extension PlateSolver {
+    /// Load a plane constraint at UV point.
+    @discardableResult
+    public func loadPlaneConstraint(u: Double, v: Double, planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>) -> Bool {
+        OCCTPlateLoadPlaneConstraint(handle, u, v,
+                                      planePoint.x, planePoint.y, planePoint.z,
+                                      planeNormal.x, planeNormal.y, planeNormal.z)
+    }
+
+    /// Load a line constraint at UV point.
+    @discardableResult
+    public func loadLineConstraint(u: Double, v: Double, linePoint: SIMD3<Double>, lineDirection: SIMD3<Double>) -> Bool {
+        OCCTPlateLoadLineConstraint(handle, u, v,
+                                     linePoint.x, linePoint.y, linePoint.z,
+                                     lineDirection.x, lineDirection.y, lineDirection.z)
+    }
+
+    /// Load a free G1 continuity constraint at UV point.
+    @discardableResult
+    public func loadFreeG1Constraint(u: Double, v: Double, du: SIMD3<Double>, dv: SIMD3<Double>) -> Bool {
+        OCCTPlateLoadFreeG1Constraint(handle, u, v, du.x, du.y, du.z, dv.x, dv.y, dv.z)
+    }
+}
+
+extension PlateSolver {
+
+    /// Load a global translation constraint.
+    /// All sample points are constrained to translate by the same unknown displacement.
+    @discardableResult
+    public func loadGlobalTranslation(uvPoints: [SIMD2<Double>]) -> Bool {
+        let uvs = uvPoints.flatMap { [$0.x, $0.y] }
+        return OCCTPlateLoadGlobalTranslation(handle, uvs, Int32(uvPoints.count))
+    }
+
+    /// Load a linear XYZ constraint.
+    @discardableResult
+    public func loadLinearXYZ(
+        uvPoints: [SIMD2<Double>],
+        targets: [SIMD3<Double>],
+        coefficients: [Double]
+    ) -> Bool {
+        let uvs = uvPoints.flatMap { [$0.x, $0.y] }
+        let tgts = targets.flatMap { [$0.x, $0.y, $0.z] }
+        return OCCTPlateLoadLinearXYZ(handle, uvs, tgts, coefficients, Int32(uvPoints.count))
+    }
+}

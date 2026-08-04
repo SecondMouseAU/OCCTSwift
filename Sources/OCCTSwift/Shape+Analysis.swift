@@ -1578,3 +1578,466 @@ extension Shape {
         OCCTShapeTotalEdgeLength(handle)
     }
 }
+
+public extension Shape {
+    /// Canonical geometry type for detailed recognition.
+    enum CanonicalGeometryType: Int, Sendable {
+        case none = 0
+        case plane = 1
+        case cylinder = 2
+        case cone = 3
+        case sphere = 4
+        case line = 5
+        case circle = 6
+        case ellipse = 7
+    }
+
+    /// Detailed canonical recognition result with geometry parameters.
+    struct CanonicalRecognitionResult: Sendable {
+        public let type: CanonicalGeometryType
+        public let gap: Double
+        public let origin: (x: Double, y: Double, z: Double)
+        public let direction: (x: Double, y: Double, z: Double)
+        public let param1: Double
+        public let param2: Double
+    }
+
+    /// Recognize canonical surface geometry from a face with detailed parameters.
+    func recognizeCanonicalSurface(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
+        let r = OCCTShapeRecognizeCanonicalSurface(handle, tolerance)
+        return CanonicalRecognitionResult(
+            type: CanonicalGeometryType(rawValue: Int(r.type.rawValue)) ?? .none,
+            gap: r.gap,
+            origin: (r.originX, r.originY, r.originZ),
+            direction: (r.dirX, r.dirY, r.dirZ),
+            param1: r.param1,
+            param2: r.param2
+        )
+    }
+
+    /// Recognize canonical curve geometry from an edge with detailed parameters.
+    func recognizeCanonicalCurve(tolerance: Double = 0.01) -> CanonicalRecognitionResult {
+        let r = OCCTShapeRecognizeCanonicalCurve(handle, tolerance)
+        return CanonicalRecognitionResult(
+            type: CanonicalGeometryType(rawValue: Int(r.type.rawValue)) ?? .none,
+            gap: r.gap,
+            origin: (r.originX, r.originY, r.originZ),
+            direction: (r.dirX, r.dirY, r.dirZ),
+            param1: r.param1,
+            param2: r.param2
+        )
+    }
+}
+
+extension Shape {
+
+    /// Count boundary edges of a face using BRepGProp_Domain.
+    public func faceDomainEdgeCount(faceIndex: Int) -> Int {
+        Int(OCCTShapeFaceDomainEdgeCount(handle, Int32(faceIndex)))
+    }
+}
+
+extension Shape {
+
+    /// A pair of overlapping face indices detected by self-intersection analysis.
+    public struct OverlapPair: Sendable {
+        public let faceIndex1: Int
+        public let faceIndex2: Int
+    }
+
+    /// Detect self-intersecting face pairs in this shape.
+    /// The shape is meshed automatically.
+    /// - Parameters:
+    ///   - tolerance: Overlap tolerance (default: 0.0).
+    ///   - maxPairs: Output *capacity* (default: 100), clamped into `0...`
+    ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    ///   - deflection: Linear mesh deflection (mm) for the detection triangulation. Default `0.1`.
+    /// - Returns: Array of overlapping face index pairs, empty if none found.
+    public func selfIntersectionPairs(tolerance: Double = 0.0,
+                                       maxPairs: Int = 100,
+                                       deflection: Double = 0.1) -> [OverlapPair] {
+        let maxPairs = Sampling.capacity(maxPairs)
+        guard maxPairs > 0 else { return [] }
+        var idx1 = [Int32](repeating: 0, count: maxPairs)
+        var idx2 = [Int32](repeating: 0, count: maxPairs)
+        let count = OCCTShapeSelfIntersectionPairs(handle, tolerance, &idx1, &idx2, Int32(maxPairs), deflection)
+        guard count > 0 else { return [] }
+        return (0..<Int(count)).map {
+            OverlapPair(faceIndex1: Int(idx1[$0]), faceIndex2: Int(idx2[$0]))
+        }
+    }
+}
+
+// MARK: - BRepLProp Edge Extensions (v0.111.0)
+//
+// These read an edge through a `BRepAdaptor_Curve`, where `Curve3D.localCurvature` and friends read
+// the curve underneath directly. Since #529 both spellings decide whether a quantity exists at the
+// same resolution (`Precision::Confusion()`), so they agree about definedness at every parameter of
+// every edge; they still differ in the last bits of the values themselves, because the adaptor
+// evaluates a Bezier or BSpline through a cache the raw handle does not use.
+
+extension Shape {
+
+    /// Point on an edge at `param`, through the edge's own adaptor (`BRepLProp_CLProps`).
+    ///
+    /// Returns nil for a parameter the edge cannot be evaluated at. Before #529 it returned
+    /// `(0, 0, 0)` there, wrapped in a non-nil optional.
+    ///
+    /// ```swift
+    /// let edge = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .edge)[0]
+    /// if let p = edge.edgeLPropValue(at: 5.0) {
+    ///     print("point at t=5: \(p)")
+    /// }
+    /// ```
+    public func edgeLPropValue(at param: Double) -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        let ok = OCCTEdgeLPropValue(handle, param, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
+    }
+
+    /// Get tangent direction on an edge at parameter. Returns nil if tangent is undefined.
+    public func edgeTangent(at param: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTEdgeLPropTangent(handle, param, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
+
+    /// Curvature on an edge at `param`, through the edge's own adaptor.
+    ///
+    /// - Parameter param: Parameter on the edge's curve.
+    /// - Returns: The curvature, or `nil` where this `Shape` is not an edge, the parameter cannot
+    ///   be evaluated, or the tangent is undefined there. That last case used to be `0`, which is
+    ///   also a straight edge's real curvature (#595). It is not exotic: a sphere carries a
+    ///   **degenerate edge at each pole**, with no 3D curve at all, and edge traversal does not
+    ///   skip them.
+    ///
+    /// `Double.greatestFiniteMagnitude` (OCCT's `RealLast()`, meaning infinite curvature) is still
+    /// reported at a cusp — an answer, not an absence — matching ``Curve3D/curvature(at:)`` on the
+    /// curve underneath.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// let k = edge.edgeCurvatureLP(at: 0.5)   // 0.25, the reciprocal of the radius
+    /// ```
+    public func edgeCurvatureLP(at param: Double) -> Double? {
+        var k = 0.0
+        guard OCCTEdgeLPropCurvature(handle, param, &k) else { return nil }
+        return k
+    }
+
+    /// Normal direction on an edge at `param`.
+    ///
+    /// Returns nil where the curvature cannot be inverted into a direction: a straight stretch has
+    /// no normal, and neither does a cusp. Before #529 both cases returned `(0, 0, 0)`, which is
+    /// not a direction.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// if let n = edge.edgeNormalLP(at: 0) { print("points at the centre: \(n)") }
+    /// ```
+    public func edgeNormalLP(at param: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTEdgeLPropNormal(handle, param, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
+
+    /// Centre of curvature on an edge at `param` — the centre of the circle that osculates the edge
+    /// there.
+    ///
+    /// Returns nil wherever there is no such circle, on the same terms as ``edgeNormalLP(at:)``.
+    /// Before #529 a near-cusp returned `(nan, inf, nan)` as though it were a point.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 4)!
+    /// let edge = Shape.edgeFromCurve(arc)!
+    /// if let c = edge.edgeCentreOfCurvature(at: 0) { print(c) }   // ~ (1, 2, 0)
+    /// ```
+    public func edgeCentreOfCurvature(at param: Double) -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        let ok = OCCTEdgeLPropCentreOfCurvature(handle, param, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
+    }
+
+    /// First derivative on an edge at `param`. Returns nil for a parameter the edge cannot be
+    /// evaluated at.
+    public func edgeLPropD1(at param: Double) -> SIMD3<Double>? {
+        var d1x = 0.0, d1y = 0.0, d1z = 0.0
+        let ok = OCCTEdgeLPropD1(handle, param, &d1x, &d1y, &d1z)
+        return ok ? SIMD3(d1x, d1y, d1z) : nil
+    }
+}
+
+extension Shape {
+
+    /// Point on a face at (u, v), through the face's own adaptor (`BRepLProp_SLProps`).
+    ///
+    /// Returns nil if the receiver is not a single face, the same contract
+    /// ``faceLPropMeanCurvature(u:v:)`` and its siblings use, except that the point does not depend
+    /// on the curvature gate, so it is still reported at a cone apex or a sphere pole. Before #583
+    /// a non-face `Shape` came back as `(0, 0, 0)`, which is a real point of most surfaces.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!
+    /// if let p = cylinder.subShapes(ofType: .face)[0].faceLPropValue(u: 1.1, v: 6) {
+    ///     print(p)
+    /// }
+    /// ```
+    public func faceLPropValue(u: Double, v: Double) -> SIMD3<Double>? {
+        var x = 0.0, y = 0.0, z = 0.0
+        let ok = OCCTFaceLPropValue(handle, u, v, &x, &y, &z)
+        return ok ? SIMD3(x, y, z) : nil
+    }
+
+    /// Get normal on a face at (u, v). Returns nil if normal is undefined.
+    public func faceLPropNormal(u: Double, v: Double) -> SIMD3<Double>? {
+        var dx = 0.0, dy = 0.0, dz = 0.0
+        let ok = OCCTFaceLPropNormal(handle, u, v, &dx, &dy, &dz)
+        return ok ? SIMD3(dx, dy, dz) : nil
+    }
+
+    /// Maximum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil is a cone apex, a sphere pole, or a receiver that is not a face. `0` is a value in its
+    /// own right: it is the maximum curvature at every point of a cylinder or a cone. Before #583
+    /// the two were the same answer.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMax = cylinder.faceLPropMaxCurvature(u: 1.1, v: 6)   // 0, along the axis, not nil
+    /// ```
+    public func faceLPropMaxCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMaxCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
+    }
+
+    /// Minimum principal curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// Nil on the same terms as ``faceLPropMaxCurvature(u:v:)``.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// let kMin = cylinder.faceLPropMinCurvature(u: 1.1, v: 6)   // -1/3, the reciprocal radius
+    /// ```
+    public func faceLPropMinCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMinCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
+    }
+
+    /// Mean curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/meanCurvature(atU:v:)``, which has always been
+    /// optional; since #529 the two agree about where curvature exists, and since #583 both can
+    /// say so.
+    ///
+    /// ```swift
+    /// let sphere = Shape.sphere(radius: 5)!.subShapes(ofType: .face)[0]
+    /// if let h = sphere.faceLPropMeanCurvature(u: 0, v: 0) { print(h) }   // -0.2, i.e. -1/r
+    /// ```
+    public func faceLPropMeanCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropMeanCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
+    }
+
+    /// Gaussian curvature on a face at (u, v), or nil where curvature is undefined.
+    ///
+    /// The adaptor-backed counterpart of ``Face/gaussianCurvature(atU:v:)``. `0` is the answer at
+    /// every point of any developable surface (a cylinder, a cone, a plane), so this getter
+    /// returned the pre-#583 "undefined" sentinel for whole faces at a time.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropGaussianCurvature(u: 1.1, v: 6) == 0)   // defined, and zero
+    /// ```
+    public func faceLPropGaussianCurvature(u: Double, v: Double) -> Double? {
+        var curvature = 0.0
+        let ok = OCCTFaceLPropGaussianCurvature(handle, u, v, &curvature)
+        return ok ? curvature : nil
+    }
+
+    /// Whether a face is umbilic at (u, v), meaning both principal curvatures are equal, or nil
+    /// where there are no principal curvatures to compare.
+    ///
+    /// OCCT's test is one ULP wide rather than a geometric tolerance, so a plane qualifies
+    /// everywhere but an analytically-umbilic sphere qualifies only where the two computed values
+    /// round to the same `Double`. Before #583 a cone apex answered `false`, claiming the two
+    /// curvatures differ there.
+    ///
+    /// ```swift
+    /// let cylinder = Shape.cylinder(radius: 3, height: 12)!.subShapes(ofType: .face)[0]
+    /// #expect(cylinder.faceLPropIsUmbilic(u: 1.1, v: 6) == false)   // defined, and not umbilic
+    /// ```
+    public func faceLPropIsUmbilic(u: Double, v: Double) -> Bool? {
+        var isUmbilic = false
+        let ok = OCCTFaceLPropIsUmbilic(handle, u, v, &isUmbilic)
+        return ok ? isUmbilic : nil
+    }
+}
+
+extension Shape {
+
+    /// Linear properties result (length + center of mass).
+    public struct LinearProperties: Sendable {
+        public let length: Double
+        public let centerOfMass: SIMD3<Double>
+    }
+
+    /// Get linear properties (total length and center of mass) for edges/wires.
+    ///
+    /// Nil for a shape with no edges, such as a lone vertex. The centre of mass reported there was
+    /// the shape's location origin, not a recognisable zero (#609).
+    ///
+    /// - Warning: `length` here comes from `BRepGProp::LinearProperties`, which runs its own
+    ///   integrator — one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
+    ///   On an elliptical edge it reports 41.243158 against a true 40.639742 (+1.485%) and so
+    ///   **disagrees with ``Shape/edgeArcLength``**, which measures 40.639742. Before #603 both
+    ///   were wrong together. Use ``Shape/edgeArcLength`` or ``Wire/length`` when you want the
+    ///   length; this call remains the way to get the centre of mass.
+    ///
+    /// ```swift
+    /// let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 20)!)!
+    /// wire.linearProperties()?.length   // 60
+    ///
+    /// let vertex = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .vertex)[0]
+    /// vertex.linearProperties()         // nil, a vertex has no length and no centroid
+    /// ```
+    public func linearProperties() -> LinearProperties? {
+        var length = 0.0, cx = 0.0, cy = 0.0, cz = 0.0
+        guard OCCTShapeLinearProperties(handle, &length, &cx, &cy, &cz) else { return nil }
+        return LinearProperties(length: length, centerOfMass: SIMD3(cx, cy, cz))
+    }
+
+    /// Inertia tensor result.
+    public struct InertiaTensor: Sendable {
+        public let ixx: Double, iyy: Double, izz: Double
+        public let ixy: Double, ixz: Double, iyz: Double
+    }
+
+    /// Get the inertia tensor (moment of inertia matrix) for a volumetric shape.
+    ///
+    /// Nil for a shape with no closed volume, where the tensor is identically zero and
+    /// indistinguishable from a real answer for a shape that happens to have no moments (#609).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.momentOfInertia()?.ixx                          // 650000
+    /// Shape.fromFace(box.faces()[0])?.momentOfInertia()   // nil, a face has no volume
+    /// ```
+    public func momentOfInertia() -> InertiaTensor? {
+        var ixx = 0.0, iyy = 0.0, izz = 0.0
+        var ixy = 0.0, ixz = 0.0, iyz = 0.0
+        guard OCCTShapeMomentOfInertia(handle, &ixx, &iyy, &izz, &ixy, &ixz, &iyz) else { return nil }
+        return InertiaTensor(ixx: ixx, iyy: iyy, izz: izz, ixy: ixy, ixz: ixz, iyz: iyz)
+    }
+
+    /// Principal axes of inertia (3 direction vectors).
+    public struct PrincipalAxes: Sendable {
+        public let axis1: SIMD3<Double>
+        public let axis2: SIMD3<Double>
+        public let axis3: SIMD3<Double>
+    }
+
+    /// Get the principal axes of inertia.
+    ///
+    /// Nil for a shape with no closed volume. It used to return three orthonormal unit vectors
+    /// there, which look like a real answer but are just the identity basis that OCCT's Jacobi
+    /// eigensolver returns for the zero inertia matrix (#609).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 20, depth: 30)!
+    /// box.principalAxes()?.axis1                       // a real principal direction
+    /// Shape.fromFace(box.faces()[0])?.principalAxes()  // nil, was (0,0,1)/(1,0,0)/(0,1,0)
+    /// ```
+    public func principalAxes() -> PrincipalAxes? {
+        var axes = [Double](repeating: 0, count: 9)
+        guard OCCTShapePrincipalAxes(handle, &axes) else { return nil }
+        return PrincipalAxes(
+            axis1: SIMD3(axes[0], axes[1], axes[2]),
+            axis2: SIMD3(axes[3], axes[4], axes[5]),
+            axis3: SIMD3(axes[6], axes[7], axes[8])
+        )
+    }
+
+    /// Get the radius of gyration about an axis defined by a point and direction.
+    ///
+    /// Nil for a shape with no closed volume. OCCT computes this as `sqrt(momentOfInertia / mass)`
+    /// with no guard, so it used to return **NaN** there, which propagates silently through any
+    /// arithmetic that consumes it (#609).
+    ///
+    /// ```swift
+    /// let cyl = Shape.cylinder(radius: 3, height: 10)!
+    /// cyl.radiusOfGyration(axisOrigin: .zero, direction: SIMD3(0, 0, 1))   // 2.12
+    ///
+    /// let sheet = Shape.fromFace(cyl.faces()[0])!
+    /// sheet.radiusOfGyration(axisOrigin: .zero, direction: SIMD3(0, 0, 1)) // nil, was NaN
+    /// ```
+    public func radiusOfGyration(axisOrigin: SIMD3<Double>, direction: SIMD3<Double>) -> Double? {
+        var radius = 0.0
+        guard OCCTShapeRadiusOfGyration(handle,
+                                        axisOrigin.x, axisOrigin.y, axisOrigin.z,
+                                        direction.x, direction.y, direction.z,
+                                        &radius) else { return nil }
+        return radius
+    }
+}
+
+extension Shape {
+    /// Axis-aligned bounding box of the shape.
+    public var boundingBox: (min: SIMD3<Double>, max: SIMD3<Double>)? {
+        var xmin = 0.0, ymin = 0.0, zmin = 0.0, xmax = 0.0, ymax = 0.0, zmax = 0.0
+        OCCTShapeBoundingBox(handle, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
+        if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
+            return nil
+        }
+        return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
+    }
+
+    /// Optimal (tight) axis-aligned bounding box using precise geometry.
+    public func boundingBoxOptimal(useShapeTolerance: Bool = false) -> (min: SIMD3<Double>, max: SIMD3<Double>)? {
+        var xmin = 0.0, ymin = 0.0, zmin = 0.0, xmax = 0.0, ymax = 0.0, zmax = 0.0
+        OCCTShapeBoundingBoxOptimal(handle, useShapeTolerance, &xmin, &ymin, &zmin, &xmax, &ymax, &zmax)
+        if xmin == 0 && ymin == 0 && zmin == 0 && xmax == 0 && ymax == 0 && zmax == 0 {
+            return nil
+        }
+        return (min: SIMD3(xmin, ymin, zmin), max: SIMD3(xmax, ymax, zmax))
+    }
+
+    /// Oriented bounding box with axes and half-sizes.
+    public struct DetailedOBB: Sendable {
+        public let center: SIMD3<Double>
+        public let xDirection: SIMD3<Double>
+        public let yDirection: SIMD3<Double>
+        public let zDirection: SIMD3<Double>
+        public let xHalfSize: Double
+        public let yHalfSize: Double
+        public let zHalfSize: Double
+    }
+
+    /// Compute oriented bounding box with detailed axis information.
+    public func orientedBoundingBoxDetailed(optimal: Bool = false) -> DetailedOBB? {
+        var cx = 0.0, cy = 0.0, cz = 0.0
+        var xDx = 0.0, xDy = 0.0, xDz = 0.0
+        var yDx = 0.0, yDy = 0.0, yDz = 0.0
+        var zDx = 0.0, zDy = 0.0, zDz = 0.0
+        var xHS = 0.0, yHS = 0.0, zHS = 0.0
+        var isVoid = false
+        OCCTShapeOrientedBoundingBoxDetailed(handle, optimal,
+            &cx, &cy, &cz,
+            &xDx, &xDy, &xDz,
+            &yDx, &yDy, &yDz,
+            &zDx, &zDy, &zDz,
+            &xHS, &yHS, &zHS,
+            &isVoid)
+        if isVoid { return nil }
+        return DetailedOBB(
+            center: SIMD3(cx, cy, cz),
+            xDirection: SIMD3(xDx, xDy, xDz),
+            yDirection: SIMD3(yDx, yDy, yDz),
+            zDirection: SIMD3(zDx, zDy, zDz),
+            xHalfSize: xHS, yHalfSize: yHS, zHalfSize: zHS)
+    }
+}

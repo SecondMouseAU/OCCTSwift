@@ -668,3 +668,82 @@ extension Shape {
                                   modifiedEdge2: Shape(handle: me2), solutionCount: Int(result.solutionCount))
     }
 }
+
+extension Shape {
+    /// Create a 2D edge from a full circle.
+    ///
+    /// - Parameter radius: circle radius. Must be greater than zero.
+    /// - Returns: the edge, or `nil` if the circle is degenerate.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dFullCircle(center: .zero, direction: SIMD2(1, 0), radius: 5) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
+    public static func edge2dFullCircle(center: SIMD2<Double>, direction: SIMD2<Double>,
+                                         radius: Double) -> Shape? {
+        guard let h = OCCTMakeEdge2dFullCircle(center.x, center.y,
+                                                direction.x, direction.y,
+                                                radius) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Create a 2D edge from an ellipse.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the edge, or `nil` if the ellipse is degenerate. OCCT builds a zero-length edge
+    ///   from a zero-radius ellipse, and a doubled-back segment from a zero minor radius.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dEllipse(center: .zero, direction: SIMD2(1, 0),
+    ///                                majorRadius: 5, minorRadius: 3) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
+    public static func edge2dEllipse(center: SIMD2<Double>, direction: SIMD2<Double>,
+                                      majorRadius: Double, minorRadius: Double) -> Shape? {
+        guard let h = OCCTMakeEdge2dEllipse(center.x, center.y,
+                                             direction.x, direction.y,
+                                             majorRadius, minorRadius) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Create a 2D edge from an ellipse arc.
+    ///
+    /// - Parameters:
+    ///   - majorRadius: semi-major axis. Must be greater than zero.
+    ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
+    ///     `majorRadius`; equal radii are a circle and are valid.
+    /// - Returns: the edge, or `nil` if the ellipse is degenerate.
+    ///
+    /// ```swift
+    /// if let e = Shape.edge2dEllipseArc(center: .zero, direction: SIMD2(1, 0),
+    ///                                   majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) {
+    ///     print(e.edges().count)   // 1
+    /// }
+    /// ```
+    public static func edge2dEllipseArc(center: SIMD2<Double>, direction: SIMD2<Double>,
+                                         majorRadius: Double, minorRadius: Double,
+                                         u1: Double, u2: Double) -> Shape? {
+        guard let h = OCCTMakeEdge2dEllipseArc(center.x, center.y,
+                                                direction.x, direction.y,
+                                                majorRadius, minorRadius,
+                                                u1, u2) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Create a 2D edge from a Curve2D.
+    public static func edge2dFromCurve(_ curve: Curve2D) -> Shape? {
+        guard let h = OCCTMakeEdge2dCurve(curve.handle) else { return nil }
+        return Shape(handle: h)
+    }
+
+    /// Create a 2D edge from a Curve2D with parameter range.
+    public static func edge2dFromCurve(_ curve: Curve2D, u1: Double, u2: Double) -> Shape? {
+        guard let h = OCCTMakeEdge2dCurveRange(curve.handle, u1, u2) else { return nil }
+        return Shape(handle: h)
+    }
+}

@@ -2849,3 +2849,918 @@ extension Curve3D {
                                       distance: r.distance, angle: r.angle, isDone: r.isDone)
     }
 }
+
+public extension Curve3D {
+    /// Create an offset curve.
+    static func offset(basis: Curve3D, offset: Double,
+                       dirX: Double, dirY: Double, dirZ: Double) -> Curve3D? {
+        guard let ref = OCCTCurve3DCreateOffset(basis.handle, offset, dirX, dirY, dirZ) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Get the offset value (returns 0 if not an offset curve).
+    var offsetValue: Double {
+        OCCTCurve3DOffsetValue(handle)
+    }
+
+    /// Get the offset direction (returns nil if not an offset curve).
+    var offsetDirection: (x: Double, y: Double, z: Double)? {
+        var dx: Double = 0, dy: Double = 0, dz: Double = 0
+        if OCCTCurve3DOffsetDirection(handle, &dx, &dy, &dz) {
+            return (dx, dy, dz)
+        }
+        return nil
+    }
+}
+
+extension Curve3D {
+
+    /// Check if this curve is closed within the given precision.
+    /// Uses ShapeAnalysis_Curve::IsClosed (static method).
+    /// - Parameter precision: Tolerance for closure check.
+    /// - Returns: true if the curve endpoints coincide within precision.
+    public func isClosedWithPrecision(_ precision: Double) -> Bool {
+        OCCTCurve3DIsClosedWithPreci(handle, precision)
+    }
+
+    /// Check if this curve is periodic using ShapeAnalysis_Curve::IsPeriodic.
+    /// More robust than the basic isPeriodic property.
+    public var isPeriodicSA: Bool {
+        OCCTCurve3DIsPeriodicSA(handle)
+    }
+
+}
+
+extension Curve3D {
+
+    /// Get the basis curve of this offset curve.
+    /// - Returns: The basis curve, or nil if this is not an offset curve.
+    public var offsetBasisCurve: Curve3D? {
+        guard let ref = OCCTCurve3DOffsetBasis(handle) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+
+    /// Create a trimmed curve from this curve between parameters u1 and u2.
+    public func trimmed(u1: Double, u2: Double) -> Curve3D? {
+        guard let ref = OCCTCurve3DTrimmed(handle, u1, u2) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Get the basis curve of a trimmed curve (nil if not trimmed).
+    public var trimmedBasis: Curve3D? {
+        guard let ref = OCCTCurve3DTrimmedBasis(handle) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Change the trim parameters on a trimmed curve.
+    @discardableResult
+    public func setTrim(u1: Double, u2: Double) -> Bool {
+        OCCTCurve3DSetTrim(handle, u1, u2)
+    }
+}
+
+extension Curve3D {
+    /// Create a 3D circle from axis (center + normal) and radius.
+    public static func gcCircle(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeCircle(center.x, center.y, center.z,
+                                          normal.x, normal.y, normal.z, radius) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D circle through 3 points.
+    public static func gcCircle(p1: SIMD3<Double>, p2: SIMD3<Double>, p3: SIMD3<Double>) -> Curve3D? {
+        guard let ref = OCCTGCMakeCircle3Points(p1.x, p1.y, p1.z,
+                                                  p2.x, p2.y, p2.z,
+                                                  p3.x, p3.y, p3.z) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D circle from center, normal, and radius (alias).
+    public static func gcCircleCenterNormal(center: SIMD3<Double>, normal: SIMD3<Double>, radius: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeCircleCenterNormal(center.x, center.y, center.z,
+                                                       normal.x, normal.y, normal.z, radius) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D circle parallel to an existing circle at given distance.
+    public static func gcCircleParallel(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                         radius: Double, distance: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeCircleParallel(center.x, center.y, center.z,
+                                                   normal.x, normal.y, normal.z,
+                                                   radius, distance) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Create a 3D ellipse from axis and major/minor radii.
+    ///
+    /// - Parameters:
+    ///   - center: Ellipse centre.
+    ///   - normal: Normal of the plane the ellipse lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0` and no larger than `majorRadius`.
+    /// - Returns: The ellipse, or `nil` if the radii do not describe one.
+    ///
+    /// `GC_MakeEllipse` reports `!IsDone()` for negative and inverted radii on its own, but
+    /// accepts zero; the radii are checked here so every route to an ellipse enforces the same
+    /// contract as `Curve3D.ellipse(center:normal:majorRadius:minorRadius:)`.
+    ///
+    /// ```swift
+    /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// #expect(Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           majorRadius: 10, minorRadius: 0) == nil)
+    /// ```
+    public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeEllipse(center.x, center.y, center.z,
+                                            normal.x, normal.y, normal.z,
+                                            majorRadius, minorRadius) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D ellipse from 3 points (S1, S2, center).
+    public static func gcEllipse(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D? {
+        guard let ref = OCCTGCMakeEllipse3Points(s1.x, s1.y, s1.z,
+                                                    s2.x, s2.y, s2.z,
+                                                    center.x, center.y, center.z) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D ellipse from full Ax2 (center + normal + X direction) and radii.
+    ///
+    /// Same radius contract as `gcEllipse(center:normal:majorRadius:minorRadius:)`; this overload
+    /// only adds control over where the major axis points.
+    ///
+    /// ```swift
+    /// let e = Curve3D.gcEllipse(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                           xDirection: SIMD3(1, 0, 0),
+    ///                           majorRadius: 10, minorRadius: 5)
+    /// #expect(e != nil)
+    /// ```
+    public static func gcEllipse(center: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>,
+                                  majorRadius: Double, minorRadius: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeEllipseFromElips(center.x, center.y, center.z,
+                                                      normal.x, normal.y, normal.z,
+                                                      xDirection.x, xDirection.y, xDirection.z,
+                                                      majorRadius, minorRadius) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Create a 3D hyperbola from axis and major/minor radii.
+    ///
+    /// - Parameters:
+    ///   - center: Hyperbola centre.
+    ///   - normal: Normal of the plane the hyperbola lies in.
+    ///   - majorRadius: Major radius. Must be `> 0`.
+    ///   - minorRadius: Minor radius. Must be `> 0`. No ordering constraint against the major.
+    /// - Returns: The hyperbola, or `nil` if either radius is `<= 0`.
+    ///
+    /// ```swift
+    /// let h = Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                             majorRadius: 8, minorRadius: 3)
+    /// #expect(h != nil)
+    /// #expect(Curve3D.gcHyperbola(center: .zero, normal: SIMD3(0, 0, 1),
+    ///                             majorRadius: 0, minorRadius: 3) == nil)
+    /// ```
+    public static func gcHyperbola(center: SIMD3<Double>, normal: SIMD3<Double>,
+                                    majorRadius: Double, minorRadius: Double) -> Curve3D? {
+        guard let ref = OCCTGCMakeHyperbola(center.x, center.y, center.z,
+                                              normal.x, normal.y, normal.z,
+                                              majorRadius, minorRadius) else { return nil }
+        return Curve3D(handle: ref)
+    }
+
+    /// Create a 3D hyperbola from 3 points (S1, S2, center).
+    public static func gcHyperbola(s1: SIMD3<Double>, s2: SIMD3<Double>, center: SIMD3<Double>) -> Curve3D? {
+        guard let ref = OCCTGCMakeHyperbola3Points(s1.x, s1.y, s1.z,
+                                                      s2.x, s2.y, s2.z,
+                                                      center.x, center.y, center.z) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Concatenate multiple bounded 3D curves into a single BSpline.
+    public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) -> Curve3D? {
+        guard !curves.isEmpty else { return nil }
+        var handles = curves.map { $0.handle as OCCTCurve3DRef }
+        guard let ref = OCCTConcatenateCurves3D(&handles, Int32(curves.count), tolerance) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+    /// Measured global continuity of the 3D curve, as a raw `GeomAbs_Shape` ordinal.
+    ///
+    /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
+    /// 4=C2, 5=C3, 6=CN` — not a 0/1/2 order. Prefer ``continuityClass``, which names them.
+    ///
+    /// ```swift
+    /// // A cubic BSpline with a doubled interior knot is C1, which is ordinal 2 (not 1).
+    /// print(bspline.continuity)        // 2
+    /// print(bspline.continuityClass)   // .c1
+    /// ```
+    ///
+    /// - Warning: This is the migration target for the retired `continuityOrder`, but it is not a
+    ///   drop-in one: `continuityOrder` used to answer a different set of numbers
+    ///   (`C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3`). A threshold moved across unchanged
+    ///   reads as one class too low — `>= 2` accepts C1 here and accepted C2 there — and `== 99`
+    ///   is now unreachable. Prefer ``continuityClass`` and ``ContinuityClass/satisfies(_:)``,
+    ///   which cannot be compared against the wrong constant at all (#619).
+    public var continuity: Int {
+        Int(OCCTCurve3DGetContinuity(handle))
+    }
+
+    /// Measured global continuity of the 3D curve.
+    ///
+    /// ```swift
+    /// let line = Curve3D.line(origin: .zero, direction: SIMD3(1, 0, 0))
+    /// print(line?.continuityClass)                  // .cN
+    /// print(line?.continuityClass.satisfies(.c3))   // true
+    /// ```
+    public var continuityClass: ContinuityClass {
+        ContinuityClass(rawValue: OCCTCurve3DGetContinuity(handle)) ?? .c0
+    }
+}
+
+extension Curve3D {
+
+    /// BSpline-specific operations. Returns nil values if the curve is not a BSpline.
+    public struct BSpline {
+        let curve: Curve3D
+
+        /// Number of knots (0 if not a BSpline).
+        public var knotCount: Int { Int(OCCTCurve3DBSplineKnotCount(curve.handle)) }
+
+        /// Number of poles/control points (0 if not a BSpline).
+        public var poleCount: Int { Int(OCCTCurve3DBSplinePoleCount(curve.handle)) }
+
+        /// Degree (0 if not a BSpline).
+        public var degree: Int { Int(OCCTCurve3DBSplineDegree(curve.handle)) }
+
+        /// Whether the BSpline is rational.
+        public var isRational: Bool { OCCTCurve3DBSplineIsRational(curve.handle) }
+
+        /// Get all knot values.
+        public var knots: [Double] {
+            let n = knotCount
+            guard n > 0 else { return [] }
+            var arr = [Double](repeating: 0, count: n)
+            OCCTCurve3DBSplineGetKnots(curve.handle, &arr)
+            return arr
+        }
+
+        /// Get all knot multiplicities.
+        public var multiplicities: [Int] {
+            let n = knotCount
+            guard n > 0 else { return [] }
+            var arr = [Int32](repeating: 0, count: n)
+            OCCTCurve3DBSplineGetMults(curve.handle, &arr)
+            return arr.map { Int($0) }
+        }
+
+        /// Get a pole at 1-based index.
+        public func pole(at index: Int) -> SIMD3<Double> {
+            var x = 0.0, y = 0.0, z = 0.0
+            OCCTCurve3DBSplineGetPole(curve.handle, Int32(index), &x, &y, &z)
+            return SIMD3(x, y, z)
+        }
+
+        /// Set a pole at 1-based index.
+        @discardableResult
+        public func setPole(at index: Int, to point: SIMD3<Double>) -> Bool {
+            OCCTCurve3DBSplineSetPole(curve.handle, Int32(index), point.x, point.y, point.z)
+        }
+
+        /// Get the weight at 1-based index.
+        public func weight(at index: Int) -> Double {
+            OCCTCurve3DBSplineGetWeight(curve.handle, Int32(index))
+        }
+
+        /// Set the weight at 1-based index.
+        @discardableResult
+        public func setWeight(at index: Int, to weight: Double) -> Bool {
+            OCCTCurve3DBSplineSetWeight(curve.handle, Int32(index), weight)
+        }
+
+        /// Insert a knot at parameter u with given multiplicity.
+        @discardableResult
+        public func insertKnot(u: Double, multiplicity: Int = 1, tolerance: Double = 1e-6) -> Bool {
+            OCCTCurve3DBSplineInsertKnot(curve.handle, u, Int32(multiplicity), tolerance)
+        }
+
+        /// Remove a knot at 1-based index down to given multiplicity.
+        @discardableResult
+        public func removeKnot(at index: Int, multiplicity: Int, tolerance: Double) -> Bool {
+            OCCTCurve3DBSplineRemoveKnot(curve.handle, Int32(index), Int32(multiplicity), tolerance)
+        }
+
+        /// Segment the BSpline to [u1, u2].
+        @discardableResult
+        public func segment(u1: Double, u2: Double) -> Bool {
+            OCCTCurve3DBSplineSegment(curve.handle, u1, u2)
+        }
+
+        /// Increase the degree to the given value.
+        @discardableResult
+        public func increaseDegree(to degree: Int) -> Bool {
+            OCCTCurve3DBSplineIncreaseDegree(curve.handle, Int32(degree))
+        }
+
+        /// Compute parametric resolution for a given 3D tolerance.
+        public func resolution(tolerance3d: Double) -> Double {
+            OCCTCurve3DBSplineResolution(curve.handle, tolerance3d)
+        }
+
+        /// Set periodic or non-periodic.
+        @discardableResult
+        public func setPeriodic(_ periodic: Bool) -> Bool {
+            OCCTCurve3DBSplineSetPeriodic(curve.handle, periodic)
+        }
+    }
+
+    /// Access BSpline-specific operations. Works only if the underlying curve is a Geom_BSplineCurve.
+    public var bspline: BSpline { BSpline(curve: self) }
+}
+
+extension Curve3D {
+
+    /// Bezier-specific operations.
+    public struct Bezier {
+        let curve: Curve3D
+
+        /// Get a pole at 1-based index.
+        public func pole(at index: Int) -> SIMD3<Double> {
+            var x = 0.0, y = 0.0, z = 0.0
+            OCCTCurve3DBezierGetPole(curve.handle, Int32(index), &x, &y, &z)
+            return SIMD3(x, y, z)
+        }
+
+        /// Set a pole at 1-based index.
+        @discardableResult
+        public func setPole(at index: Int, to point: SIMD3<Double>) -> Bool {
+            OCCTCurve3DBezierSetPole(curve.handle, Int32(index), point.x, point.y, point.z)
+        }
+
+        /// Set the weight at 1-based index.
+        @discardableResult
+        public func setWeight(at index: Int, to weight: Double) -> Bool {
+            OCCTCurve3DBezierSetWeight(curve.handle, Int32(index), weight)
+        }
+
+        /// Insert a pole after given index.
+        @discardableResult
+        public func insertPoleAfter(index: Int, point: SIMD3<Double>) -> Bool {
+            OCCTCurve3DBezierInsertPoleAfter(curve.handle, Int32(index), point.x, point.y, point.z)
+        }
+
+        /// Remove a pole at given index.
+        @discardableResult
+        public func removePole(at index: Int) -> Bool {
+            OCCTCurve3DBezierRemovePole(curve.handle, Int32(index))
+        }
+
+        /// Segment to [u1, u2].
+        @discardableResult
+        public func segment(u1: Double, u2: Double) -> Bool {
+            OCCTCurve3DBezierSegment(curve.handle, u1, u2)
+        }
+
+        /// Increase degree.
+        @discardableResult
+        public func increaseDegree(to degree: Int) -> Bool {
+            OCCTCurve3DBezierIncreaseDegree(curve.handle, Int32(degree))
+        }
+
+        /// Whether the Bezier is rational.
+        public var isRational: Bool { OCCTCurve3DBezierIsRational(curve.handle) }
+
+        /// Degree.
+        public var degree: Int { Int(OCCTCurve3DBezierDegree(curve.handle)) }
+
+        /// Number of poles.
+        public var poleCount: Int { Int(OCCTCurve3DBezierPoleCount(curve.handle)) }
+    }
+
+    /// Access Bezier-specific operations. Works only if the underlying curve is a Geom_BezierCurve.
+    public var bezier: Bezier { Bezier(curve: self) }
+}
+
+extension Curve3D {
+
+    /// Reverse the curve in-place.
+    @discardableResult
+    public func reverse() -> Bool {
+        OCCTCurve3DReverse(handle)
+    }
+
+    /// Create a deep copy of this curve.
+    public func copy() -> Curve3D? {
+        guard let ref = OCCTCurve3DCopy(handle) else { return nil }
+        return Curve3D(handle: ref)
+    }
+}
+
+extension Curve3D {
+
+    /// Evaluate curve at multiple parameters (batch D0).
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
+    public func gridEvalD0(params: [Double]) -> [SIMD3<Double>] {
+        evaluateGrid(params)
+    }
+
+    /// Evaluate curve at multiple parameters (batch D1).
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
+    public func gridEvalD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
+    }
+}
+
+extension Curve3D {
+
+    /// Evaluate the curve point at parameter u.
+    public func evalD0(at u: Double) -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTCurve3DEvalD0(handle, u, &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// Evaluate the curve point and first derivative at parameter u.
+    public func evalD1(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var d1x = 0.0, d1y = 0.0, d1z = 0.0
+        OCCTCurve3DEvalD1(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z)
+        return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z))
+    }
+
+    /// Evaluate the curve point, first and second derivatives at parameter u.
+    public func evalD2(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var d1x = 0.0, d1y = 0.0, d1z = 0.0
+        var d2x = 0.0, d2y = 0.0, d2z = 0.0
+        OCCTCurve3DEvalD2(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z, &d2x, &d2y, &d2z)
+        return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z), SIMD3(d2x, d2y, d2z))
+    }
+
+    /// Evaluate the curve point, first, second, and third derivatives at parameter u.
+    public func evalD3(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var d1x = 0.0, d1y = 0.0, d1z = 0.0
+        var d2x = 0.0, d2y = 0.0, d2z = 0.0
+        var d3x = 0.0, d3y = 0.0, d3z = 0.0
+        OCCTCurve3DEvalD3(handle, u, &px, &py, &pz, &d1x, &d1y, &d1z, &d2x, &d2y, &d2z, &d3x, &d3y, &d3z)
+        return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z), SIMD3(d2x, d2y, d2z), SIMD3(d3x, d3y, d3z))
+    }
+
+    /// Evaluate curve points at multiple parameters (batch D0).
+    ///
+    /// - Note: #486. This used to call `Geom_Curve::EvalD0` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated, renamed: "evaluateGrid(_:)",
+               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
+    public func evalBatchD0(params: [Double]) -> [SIMD3<Double>] {
+        evaluateGrid(params)
+    }
+
+    /// Evaluate curve points and first derivatives at multiple parameters (batch D1).
+    ///
+    /// - Note: #486. This used to call `Geom_Curve::EvalD1` once per parameter, bypassing the
+    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
+    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
+    @available(*, deprecated,
+               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
+    public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
+        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
+    }
+}
+
+extension Curve3D {
+
+    /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OtherCurve).
+    public var curveType: Int {
+        Int(OCCTCurve3DCurveType(handle))
+    }
+
+    /// Find parameter on curve nearest to a 3D point.
+    @available(*, deprecated, message: """
+        No Double can signal failure here: every value is a legitimate parameter on some curve, \
+        and this used to return the curve's firstParameter, right or maximally wrong depending \
+        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
+        """)
+    public func parameterAtPoint(_ point: SIMD3<Double>) -> Double {
+        nearestParameter(to: point) ?? .nan
+    }
+}
+
+extension Curve3D {
+
+    /// Local point-on-curve search from an initial parameter guess. Returns `(parameter, distance)`.
+    ///
+    /// Searches a window of ±10% of the domain around `initParam` and reports the
+    /// **lowest-distance extremum inside that window**. `initParam` bounds the window; it does not
+    /// rank what is found in it, so the extremum you get back is not necessarily the one nearest
+    /// your guess — where a window holds several, the one closest to the *query point* wins.
+    ///
+    /// The window is what makes the answer local, and a windowed minimum can still be a global
+    /// *maximum*: on a half circle of radius 5 queried from `(0, -6, 0)` with a guess of `.pi / 2`,
+    /// the window holds the far side of the arc and this reports 11, where the nearest point on the
+    /// curve is 7.81 away. Use ``nearestParameter(to:)`` or ``projectPoint(_:precision:)`` when you
+    /// want the global answer.
+    ///
+    /// When the window holds no extremum at all, the search falls back to the whole curve — and,
+    /// since #615, to the whole curve's true nearest point, which is what those two report. Before
+    /// #615 the fallback reported an extremum instead, so a guess sitting *on* the nearest point
+    /// returned the point diametrically opposite it, and a bounded segment queried from past its own
+    /// end returned `nil` for every guess.
+    ///
+    /// ```swift
+    /// let arc = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    ///     .trimmed(from: 0, to: .pi)!
+    ///
+    /// // Guess 0: no extremum nearby, so the whole curve is searched, correctly.
+    /// #expect(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: 0)?.parameter == 0)
+    ///
+    /// // Guess .pi / 2: an extremum IS nearby, and it is the far side of the arc.
+    /// #expect(arc.locateNearestPoint(SIMD3(0, -6, 0), initParam: .pi / 2)?.distance == 11)
+    /// ```
+    ///
+    /// - Returns: `nil` only when the curve cannot be read.
+    public func locateNearestPoint(_ point: SIMD3<Double>, initParam: Double, tolerance: Double = 1e-6) -> (parameter: Double, distance: Double)? {
+        var param = 0.0, dist = 0.0
+        let ok = OCCTExtremaLocateOnCurve(handle, point.x, point.y, point.z,
+                                          initParam, tolerance, &param, &dist)
+        return ok ? (param, dist) : nil
+    }
+
+    /// Global point-to-curve projection returning all extrema. Returns array of (parameter, distance).
+    ///
+    /// - Parameter maxResults: Output *capacity* (default 10), clamped into `0...`
+    ///   ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
+    public func projectPointAll(_ point: SIMD3<Double>, maxResults: Int = 10) -> [(parameter: Double, distance: Double)] {
+        let maxResults = Sampling.capacity(maxResults)
+        guard maxResults > 0 else { return [] }
+        var params = [Double](repeating: 0, count: maxResults)
+        var distances = [Double](repeating: 0, count: maxResults)
+        let n = Int(OCCTExtremaPointCurve(handle, point.x, point.y, point.z,
+                                          &params, &distances, Int32(maxResults)))
+        return (0..<n).map { (params[$0], distances[$0]) }
+    }
+}
+
+extension Curve3D {
+
+    /// Set the knot value at a given index (1-based).
+    public func bsplineSetKnot(index: Int, value: Double) -> Bool {
+        OCCTCurve3DBSplineSetKnot(handle, Int32(index), value)
+    }
+
+    /// Get the full knot sequence (with multiplicities expanded).
+    public func bsplineKnotSequence() -> [Double] {
+        let maxSize = 1024
+        var seq = [Double](repeating: 0, count: maxSize)
+        var count: Int32 = 0
+        OCCTCurve3DBSplineGetKnotSequence(handle, &seq, &count)
+        return Array(seq.prefix(Int(count)))
+    }
+
+    /// Get all weights (one per pole).
+    public func bsplineWeights() -> [Double] {
+        let nPoles = Int(OCCTCurve3DBSplinePoleCount(handle))
+        guard nPoles > 0 else { return [] }
+        var weights = [Double](repeating: 0, count: nPoles)
+        OCCTCurve3DBSplineGetWeights(handle, &weights)
+        return weights
+    }
+
+    /// Insert multiple knots at once.
+    public func bsplineInsertKnots(_ knots: [Double], multiplicities: [Int], tolerance: Double = 1e-10) -> Bool {
+        let count = min(knots.count, multiplicities.count)
+        guard count > 0 else { return false }
+        let mults = multiplicities.map { Int32($0) }
+        return OCCTCurve3DBSplineInsertKnots(handle, knots, mults, Int32(count), tolerance)
+    }
+
+    /// Move a point on the BSpline curve to a new position.
+    public func bsplineMovePoint(u: Double, to point: SIMD3<Double>, poleRange: ClosedRange<Int>) -> Bool {
+        OCCTCurve3DBSplineMovePoint(handle, u, point.x, point.y, point.z,
+                                     Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    }
+
+    /// Evaluate the curve locally within a knot span.
+    public func bsplineLocalValue(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTCurve3DBSplineLocalValue(handle, u, Int32(fromKnot), Int32(toKnot), &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// Evaluate point on BSpline curve within knot span [fromKnot, toKnot].
+    public func bsplineLocalD0(u: Double, fromKnot: Int, toKnot: Int) -> SIMD3<Double> {
+        var px = 0.0, py = 0.0, pz = 0.0
+        OCCTCurve3DBSplineLocalD0(handle, u, Int32(fromKnot), Int32(toKnot), &px, &py, &pz)
+        return SIMD3(px, py, pz)
+    }
+
+    /// Evaluate point + 1st derivative on BSpline curve within knot span.
+    public func bsplineLocalD1(u: Double, fromKnot: Int, toKnot: Int)
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var vx = 0.0, vy = 0.0, vz = 0.0
+        OCCTCurve3DBSplineLocalD1(handle, u, Int32(fromKnot), Int32(toKnot),
+                                   &px, &py, &pz, &vx, &vy, &vz)
+        return (SIMD3(px, py, pz), SIMD3(vx, vy, vz))
+    }
+
+    /// Evaluate point + 1st + 2nd derivative on BSpline curve within knot span.
+    public func bsplineLocalD2(u: Double, fromKnot: Int, toKnot: Int)
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var v1x = 0.0, v1y = 0.0, v1z = 0.0
+        var v2x = 0.0, v2y = 0.0, v2z = 0.0
+        OCCTCurve3DBSplineLocalD2(handle, u, Int32(fromKnot), Int32(toKnot),
+                                   &px, &py, &pz, &v1x, &v1y, &v1z, &v2x, &v2y, &v2z)
+        return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z), SIMD3(v2x, v2y, v2z))
+    }
+
+    /// Evaluate point + 1st + 2nd + 3rd derivative on BSpline curve within knot span.
+    public func bsplineLocalD3(u: Double, fromKnot: Int, toKnot: Int)
+        -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2: SIMD3<Double>, d3: SIMD3<Double>) {
+        var px = 0.0, py = 0.0, pz = 0.0
+        var v1x = 0.0, v1y = 0.0, v1z = 0.0
+        var v2x = 0.0, v2y = 0.0, v2z = 0.0
+        var v3x = 0.0, v3y = 0.0, v3z = 0.0
+        OCCTCurve3DBSplineLocalD3(handle, u, Int32(fromKnot), Int32(toKnot),
+                                   &px, &py, &pz, &v1x, &v1y, &v1z,
+                                   &v2x, &v2y, &v2z, &v3x, &v3y, &v3z)
+        return (SIMD3(px, py, pz), SIMD3(v1x, v1y, v1z),
+                SIMD3(v2x, v2y, v2z), SIMD3(v3x, v3y, v3z))
+    }
+
+    /// Evaluate Nth derivative on BSpline curve within knot span.
+    public func bsplineLocalDN(u: Double, fromKnot: Int, toKnot: Int, n: Int) -> SIMD3<Double> {
+        var vx = 0.0, vy = 0.0, vz = 0.0
+        OCCTCurve3DBSplineLocalDN(handle, u, Int32(fromKnot), Int32(toKnot), Int32(n),
+                                   &vx, &vy, &vz)
+        return SIMD3(vx, vy, vz)
+    }
+
+    /// Maximum BSpline degree supported (static).
+    public static var bsplineMaxDegree: Int { Int(OCCTCurve3DBSplineMaxDegree()) }
+
+    /// Locate the knot span containing parameter u.
+    public func bsplineLocateU(_ u: Double, tolerance: Double = 1e-10) -> Int {
+        Int(OCCTCurve3DBSplineLocateU(handle, u, tolerance))
+    }
+}
+
+extension Curve3D {
+
+    /// Whether this curve is bounded (Geom_BoundedCurve subclass).
+    public var isBounded: Bool { OCCTCurve3DIsBounded(handle) }
+}
+
+extension Curve3D {
+
+    /// Evaluate the N-th derivative at parameter u.
+    public func dn(at u: Double, order n: Int) -> SIMD3<Double> {
+        var x = 0.0, y = 0.0, z = 0.0
+        OCCTCurve3DDN(handle, u, Int32(n), &x, &y, &z)
+        return SIMD3(x, y, z)
+    }
+
+    /// The type name of this curve (e.g. "Geom_Line", "Geom_Circle").
+    public var typeName: String? {
+        guard let ptr = OCCTCurve3DTypeName(handle) else { return nil }
+        return String(cString: ptr)
+    }
+}
+
+extension Curve3D {
+
+    /// The curvature of the curve at a parameter value.
+    ///
+    /// Not merely equivalent to ``Curve3D/curvature(at:)`` — since #494 gave the two the same
+    /// resolution it *is* the same call, and measured over the same curves the two never disagreed
+    /// on any row, degenerate ones included. So this spelling forwards rather than duplicating, and
+    /// the bridge function behind it is gone (#595).
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: Curvature (1/radius), `nil` where the curve has no defined tangent, and
+    ///   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let k = circle.curvature(at: 0)   // 0.2, i.e. 1/5
+    /// ```
+    @available(*, deprecated, renamed: "curvature(at:)")
+    public func localCurvature(at u: Double) -> Double? {
+        curvature(at: u)
+    }
+
+    /// The unit tangent direction at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/tangentDirection(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The unit tangent, or `nil` where every derivative up to order 3 is null.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// if let t = circle.localTangent(at: 0) { print(t) }   // (0, 1, 0)
+    /// ```
+    public func localTangent(at u: Double) -> SIMD3<Double>? {
+        var tx = 0.0, ty = 0.0, tz = 0.0
+        var isDefined = false
+        OCCTCurve3DLocalTangent(handle, u, &tx, &ty, &tz, &isDefined)
+        return isDefined ? SIMD3(tx, ty, tz) : nil
+    }
+
+    /// The principal normal direction at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/normal(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The normal, or `nil` where the curvature is zero (a straight stretch, or an
+    ///   inflection) or infinite (a cusp) — a normal needs a curvature to point away from.
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let n = circle.localNormal(at: 0)                    // points at the centre
+    /// let straight = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
+    /// #expect(straight.localNormal(at: 0) == nil)          // no curvature, no normal
+    /// ```
+    public func localNormal(at u: Double) -> SIMD3<Double>? {
+        var nx = 0.0, ny = 0.0, nz = 0.0
+        var isDefined = false
+        OCCTCurve3DLocalNormal(handle, u, &nx, &ny, &nz, &isDefined)
+        return isDefined ? SIMD3(nx, ny, nz) : nil
+    }
+
+    /// The centre of the osculating circle at a parameter value.
+    ///
+    /// Equivalent to ``Curve3D/centerOfCurvature(at:)``.
+    ///
+    /// - Parameter u: Curve parameter.
+    /// - Returns: The centre of curvature, or `nil` where the curvature cannot be inverted into a
+    ///   radius: zero (straight or inflecting) or infinite (a cusp). Both cases used to return a
+    ///   point built from `NaN` and infinity rather than `nil` (#494).
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: SIMD3(1, 2, 0), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let c = circle.localCentreOfCurvature(at: 0)   // (1, 2, 0), the circle's own centre
+    /// ```
+    public func localCentreOfCurvature(at u: Double) -> SIMD3<Double>? {
+        var cx = 0.0, cy = 0.0, cz = 0.0
+        var isDefined = false
+        OCCTCurve3DLocalCentreOfCurvature(handle, u, &cx, &cy, &cz, &isDefined)
+        return isDefined ? SIMD3(cx, cy, cz) : nil
+    }
+}
+
+extension Curve3D {
+
+    /// Unavailable: this `Int` reported a hand-invented encoding, and the numbers changed
+    /// underneath it. Use ``continuityClass`` (named cases) or ``continuity`` (raw ordinal).
+    ///
+    /// Until #485 this property answered `C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3` — a
+    /// scheme of OCCTSwift's own invention that matched neither `GeomAbs_Shape` nor its own doc
+    /// comment, and disagreed with ``continuity`` on the same curve for every class except C0.
+    /// #485 replaced it with the real `GeomAbs_Shape` ordinal (`C0=0, G1=1, C1=2, G2=3, C2=4,
+    /// C3=5, CN=6`).
+    ///
+    /// Every existing threshold check kept compiling across that change and quietly changed
+    /// meaning, which is why the spelling is retired rather than reinterpreted (#619):
+    ///
+    /// ```swift
+    /// // Before: `2` was C2. After: `2` is C1, so a merely tangent-continuous curve passed.
+    /// if curve.continuityOrder >= 2 { useAsC2Spline() }
+    ///
+    /// // The question that idiom meant to ask, asked so it cannot drift again:
+    /// if curve.continuityClass.satisfies(.c2) { useAsC2Spline() }
+    ///
+    /// // And the old `== 99` fast path for analytic geometry, which can never fire again:
+    /// if curve.continuityClass == .cN { useAnalyticFastPath() }
+    /// ```
+    ///
+    /// ``continuity`` is the same `Int` under an honest name if a raw ordinal is genuinely what
+    /// you want — but it is the *new* ordinal, so re-check any constant compared against it.
+    ///
+    /// - Important: The retired encoding had an eighth value the tables above do not show. It
+    ///   signalled failure out of band, returning `-1` from its `default:` branch and for a null
+    ///   or unreadable handle. ``continuity`` has no such sentinel: it returns `0` in the same
+    ///   situations, and `0` is an ordinary C0 measurement. A migrated
+    ///   `if continuityOrder < 0 { handleError() }` becomes a branch that can never be taken, and
+    ///   an unreadable curve now reads as a genuinely C0 one. There is no in-band way to tell the
+    ///   two apart; check the handle before asking.
+    @available(*, unavailable, message: """
+        continuityOrder reported a hand-invented encoding (C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, \
+        G2=-3) and #485 changed it to the real GeomAbs_Shape ordinal (C0=0, G1=1, C1=2, G2=3, \
+        C2=4, C3=5, CN=6), so every threshold check silently changed meaning. Use \
+        continuityClass.satisfies(_:) for a continuity floor, continuityClass == .cN for the \
+        analytic fast path, or continuity for the raw ordinal — after re-checking the constant \
+        you compare against. Note there is no longer an error sentinel: this returned -1 for a \
+        null or unreadable handle, whereas continuity returns 0, which is an ordinary C0, so a \
+        migrated `< 0` error check can never fire (#619).
+        """)
+    public var continuityOrder: Int { Int(OCCTCurve3DGetContinuity(handle)) }
+
+    /// Check if this curve has at least Cn continuity.
+    public func isCN(_ n: Int) -> Bool {
+        OCCTCurve3DIsCN(handle, Int32(n))
+    }
+
+    /// Get the parameter on the reversed curve corresponding to parameter u on this curve.
+    public func reversedParameter(_ u: Double) -> Double {
+        OCCTCurve3DReversedParameter(handle, u)
+    }
+
+    /// Get the parametric transformation scale factor under a geometric transform.
+    /// The transform is specified as a 3x3 rotation matrix (row-major) + 3 translation values.
+    public func parametricTransformation(rotation: [Double], translation: SIMD3<Double>) -> Double {
+        guard rotation.count == 9 else { return 1.0 }
+        let trsf12 = rotation + [translation.x, translation.y, translation.z]
+        return trsf12.withUnsafeBufferPointer { buf in
+            OCCTCurve3DParametricTransformation(handle, buf.baseAddress!)
+        }
+    }
+
+    /// Resolution for 3D Bezier curves.
+    public func bezierResolution(tolerance3d: Double) -> Double {
+        OCCTCurve3DBezierResolution(handle, tolerance3d)
+    }
+
+    /// Maximum degree for 3D Bezier curves (static).
+    public static var bezierMaxDegree: Int { Int(OCCTCurve3DBezierMaxDegree()) }
+
+}
+
+extension Curve3D {
+
+    /// Remove periodicity from BSpline curve.
+    @discardableResult
+    public func bsplineSetNotPeriodic() -> Bool {
+        OCCTCurve3DBSplineSetNotPeriodic(handle)
+    }
+
+    /// Set origin knot index (1-based) on periodic BSpline curve.
+    @discardableResult
+    public func bsplineSetOrigin(index: Int) -> Bool {
+        OCCTCurve3DBSplineSetOrigin(handle, Int32(index))
+    }
+
+    /// Increase multiplicity of knot at index to at least mult (1-based).
+    @discardableResult
+    public func bsplineIncreaseMultiplicity(index: Int, multiplicity: Int) -> Bool {
+        OCCTCurve3DBSplineIncreaseMultiplicity(handle, Int32(index), Int32(multiplicity))
+    }
+
+    /// Increment multiplicity of all knots from index1 to index2 by step (1-based).
+    @discardableResult
+    public func bsplineIncrementMultiplicity(from: Int, to: Int, step: Int = 1) -> Bool {
+        OCCTCurve3DBSplineIncrementMultiplicity(handle, Int32(from), Int32(to), Int32(step))
+    }
+
+    /// Set all knot values at once (count must match NbKnots).
+    @discardableResult
+    public func bsplineSetKnots(_ knots: [Double]) -> Bool {
+        OCCTCurve3DBSplineSetKnots(handle, knots, Int32(knots.count))
+    }
+
+    /// Reverse parameterization of BSpline curve.
+    @discardableResult
+    public func bsplineReverse() -> Bool {
+        OCCTCurve3DBSplineReverse(handle)
+    }
+
+    /// Move point and tangent at parameter u on BSpline curve.
+    @discardableResult
+    public func bsplineMovePointAndTangent(u: Double, point: SIMD3<Double>, tangent: SIMD3<Double>,
+                                           tolerance: Double, poleRange: ClosedRange<Int>) -> Bool {
+        OCCTCurve3DBSplineMovePointAndTangent(handle, u, point.x, point.y, point.z,
+                                               tangent.x, tangent.y, tangent.z,
+                                               tolerance,
+                                               Int32(poleRange.lowerBound), Int32(poleRange.upperBound))
+    }
+}
+
+extension Curve3D {
+    /// Get the first parameter of the curve.
+    public var firstParameter: Double {
+        OCCTCurve3DFirstParameter(handle)
+    }
+
+    /// Get the last parameter of the curve.
+    public var lastParameter: Double {
+        OCCTCurve3DLastParameter(handle)
+    }
+}

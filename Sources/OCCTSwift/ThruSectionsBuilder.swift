@@ -60,3 +60,27 @@ public final class ThruSectionsBuilder: @unchecked Sendable {
         return Shape(handle: h)
     }
 }
+
+extension ThruSectionsBuilder {
+    /// Enable/disable wire compatibility checking (reorders wires to avoid twists).
+    public func checkCompatibility(_ check: Bool = true) {
+        OCCTThruSectionsCheckCompatibility(ref, check)
+    }
+
+    /// Set parameterization type.
+    /// - Parameter type: 0=ChordLength, 1=Centripetal, 2=IsoParametric
+    public func setParType(_ type: Int) {
+        OCCTThruSectionsSetParType(ref, Int32(type))
+    }
+
+    /// Set criterium weights for the approximation algorithm.
+    public func setCriteriumWeight(w1: Double, w2: Double, w3: Double) {
+        OCCTThruSectionsSetCriteriumWeight(ref, w1, w2, w3)
+    }
+
+    /// Get the face generated from an edge after building.
+    public func generatedFace(from edge: Shape) -> Shape? {
+        guard let h = OCCTThruSectionsGeneratedFace(ref, edge.handle) else { return nil }
+        return Shape(handle: h)
+    }
+}
