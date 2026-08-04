@@ -2236,6 +2236,15 @@ public final class Shape: @unchecked Sendable {
     /// Unlike `sliceAtZ(_:)` which returns a shape with loose edges, this method
     /// chains the edges into closed wires that can be used with `Wire.offset(by:)`.
     ///
+    /// - Note: Edges whose orientation is `.internal` or `.external` (see
+    ///   `Shape.Orientation`/`Shape.setOrientation(_:)`) are silently excluded from the result
+    ///   wires (OCCT 8.0.1, upstream OCCT#1408). This only matters if the input `Shape` was
+    ///   assembled with such edges through `Shape.compound(_:)`/`Shape.setOrientation(_:)` and one
+    ///   of them happens to lie exactly in the cutting plane; an ordinary transverse section of a
+    ///   solid never produces `.internal`/`.external` edges on its own, since Boolean sectioning
+    ///   only preserves an edge's own orientation when the cut is coincident with that edge, not
+    ///   when it computes a fresh intersection curve. See #655.
+    ///
     /// ## Example: CAM Safety Boundary
     ///
     /// ```swift

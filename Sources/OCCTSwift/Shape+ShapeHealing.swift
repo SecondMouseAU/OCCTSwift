@@ -330,6 +330,13 @@ extension Shape {
     /// Analyze free boundary wires (open edges not shared by two faces).
     ///
     /// Free boundaries indicate gaps in a shell. A watertight shell has no free boundaries.
+    ///
+    /// - Note: Unlike `Shape.sectionWiresAtZ(_:tolerance:)`, this method (and the rest of the
+    ///   `freeBounds*` family) is unaffected by OCCT 8.0.1's `ConnectEdgesToWires`
+    ///   INTERNAL/EXTERNAL skip (OCCT#1408): edges or wires carrying `.internal`/`.external`
+    ///   orientation are never picked up as free-bound candidates in the first place, on either
+    ///   kernel version, since this family goes through `ShapeAnalysis_FreeBounds`'s constructor
+    ///   rather than its `ConnectEdgesToWires` entry point. See #655.
     /// - Parameter sewingTolerance: Tolerance for grouping free edges into wires
     /// - Returns: Free bounds result, or nil if no free boundaries found
     public func freeBounds(sewingTolerance: Double = 1e-6) -> FreeBoundsResult? {
