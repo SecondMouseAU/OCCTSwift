@@ -134,6 +134,64 @@ otherwise, naming the tree so a diagnostic probe left by an investigation is not
 
 ### Pass 1b of the #377 duplication audit
 
+#### `AAG` rode the lossy `faces()`, so `detectPocketsAAG()` answered 2 or 1 for the same geometry depending on compound member order (#642)
+
+`AAG.buildGraph()` built its node set from `Shape.faces()`, the `IsSame`-keyed enumeration #614
+documented as orientation-insensitive by design: a face occurring both FORWARD and REVERSED
+collapses to one entry, keeping whichever orientation was reached first. `AAGNode.isHorizontal`/
+`isUpward`/`isDownward`/`isVertical`/`zLevel` are all derived from that entry's normal, and
+`AAG.detectPockets()` selects floors on exactly those fields, so which orientation survived the
+collapse silently decided the answer. #614 already fixed `horizontalFaces()`, `upwardFaces()` and
+`facesByZLevel()` by routing them onto `orientedFaces()`; `AAG` was a fourth consumer that PR did
+not reach, because it was never enumerated as one.
+
+Measured on an origin-centred 10mm box cut through z=4 and recompounded in both member orders, the
+exact fixture Cluster A's census (#664) confirmed reproduces this: `detectPocketsAAG().count` was
+**2** in one order and **1** in the other, and the AAG upward+horizontal node set was `[2, 8]`
+against `[2]`, for identical geometry. **#614's own committed fixture, a vertical rather than
+horizontal cut, does not exercise this at all** (its shared wall's normal is horizontal-axis, never
+reaching `isHorizontal()`): a regression test built from that fixture would have found no
+order-dependence and wrongly concluded the defect did not exist. That correction came from the
+census, not this issue's own text.
+
+**Fixed** by moving `AAG.buildGraph()` onto `Shape.orientedFaces()`: a face shared between two
+solids in a compound is now two nodes, one per owning solid, each carrying that solid's own normal,
+rather than one node carrying whichever normal the dedup happened to keep. `AAGNode` gains
+`distinctFaceIndex`, the node's position in the old `faces()` enumeration, so a caller can still
+tell the two sides of a shared face apart or recover the previous one-node-per-face view.
+`buildGraph()` also gained a guard skipping any pair of nodes that share a `distinctFaceIndex`:
+without it, `OCCTFacesAreAdjacent` (which compares edge sets by `IsSame`, ignoring orientation)
+reports every one of a shared face's own boundary edges as adjacent to itself, since both
+occurrences bound the identical edge set.
+
+Two other approaches were considered and rejected, per the precedent #614 set of naming rejected
+alternatives: carrying both normals on one node per distinct face (preserves the old index model,
+but pushes the "which side" ambiguity onto every caller of `isUpward`/`isHorizontal`/etc. instead of
+resolving it once), and restricting `AAG` to single-solid input (never established as the only
+valid use, and would not fix anything for the multi-solid case it was already used for).
+
+**A second, different, pre-existing defect surfaced while verifying the fix, and is deliberately
+not fixed here.** On the vertical-cut fixture, `detectPocketsAAG().count` moved from agreeing (1/1)
+to disagreeing (1/2) across member order, confirmed by reverting `buildGraph()` alone to show the
+identical asymmetry already existed before this fix and only cancelled out by coincidence in the
+total count. The mechanism: `OCCTFacesAreAdjacent`/`OCCTEdgeGetConvexity` have no concept of solid
+membership, so a face occurrence's adjacency and convexity are checked against every topologically
+coincident neighbor, including one that belongs to a different solid than the occurrence's own
+orientation. Doubling the shared wall's node count made this pre-existing ambiguity fire more
+often. Recorded in `Scripts/repro/cluster-a-subshape-enumeration/README.md` rather than fixed, since
+it is a different mechanism than #642's own (a graph lacking solid-membership tracking, not a
+normal losing information across a dedup collapse) and out of this issue's scope.
+
+This is a behaviour change on two public APIs (`Shape.buildAAG()`, `Shape.detectPocketsAAG()`) with
+no compile error, recorded in [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642).
+On every shape that shares no face, `orientedFaces()` equals `faces()` exactly, so nothing about a
+single-solid shape's AAG changes. Tests:
+`Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift`, each proven to catch its own mechanism
+by reverting it alone: reverting `orientedFaces()` back to `faces()` fails 5 of 7 tests (the two
+no-regression tests, on a plain box and on #614's own vertical-cut fixture, correctly still pass);
+separately reverting only the `distinctFaceIndex` adjacency guard fails exactly the one test that
+exists to catch it.
+
 #### Every workflow action pin moves to a Node 24 major (#648)
 
 #625 bumped only the job it introduced, so `ci.yml` was left mixed-version: `actions/checkout@v7` in

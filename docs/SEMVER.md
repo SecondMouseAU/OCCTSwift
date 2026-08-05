@@ -23,7 +23,7 @@ The load-bearing guarantee is the SemVer guarantee: **no breaking change without
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other six change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other seven change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -31,6 +31,7 @@ The other six change behaviour **without breaking the build**, which is the set 
 - [#613](#recorded-exception-unreleased-the-last-seven-entry-points-join-the-one-sub-shape-enumeration-613) moves the last seven entry points off the per-occurrence walk onto that same enumeration.
 - [#498](#recorded-exception-unreleased-buildcurves3ds-default-tolerance-loosens-498) loosens `buildCurves3d`'s default tolerance 100×.
 - [#502](#recorded-exception-unreleased-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) collapses the `wires`/`shells`/`solids` enumerations onto the deduplicated sub-shape map.
+- [#642](#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642) moves `AAG`'s node set from distinct faces to face occurrences, so `detectPocketsAAG()` and `buildAAG().nodes` can return more entries on a shape with a shared face.
 
 A tenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
@@ -236,6 +237,42 @@ The exception was taken because:
 - **The old default over-claimed.** OCCT writes this tolerance onto the edge as a floor rather than the deviation actually achieved, so `1e-7` had every rebuilt edge asserting a tightness the approximation may not hold on hard geometry. Measured on a helix, `1e-5` deviates 2.6e-6 and `1e-7` deviates 9.0e-8 — the tighter fit is real, but it costs a pole or two and it is a claim the caller should make deliberately.
 - **Removing the default is disproportionate here.** Unlike the index rebases of #541/#568, the two values do not mean *different things* — both are tolerances, in the same units, ordered the obvious way. A caller reading `1e-5` is not misled about what it is; a caller reading a 0-based index as 1-based is. The break is a precision change, not a semantic one, so a recorded decision plus the doc note is the proportionate response.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, AAG builds nodes from face occurrences (#642)
+
+**One silent behaviour change, not a compile error.** Shares its root mechanism with #614 and the
+Cluster A census (#664): a value derived from a face's normal loses information across `faces()`'s
+dedup collapse, here `AAG`'s node set rather than `horizontalFaces()`/`upwardFaces()`. Recorded here
+before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.buildAAG().nodes` and `Shape.detectPocketsAAG()` can return more entries on a shape with a face shared between two solids in a compound | Nothing on a shape that shares no face, which includes every single-solid shape. On one that does, `nodes.count` matches `orientedFaces().count` rather than `faces().count`, and `detectPocketsAAG()` can report an additional pocket for the shared face's other side. A caller indexing `AAGNode.faceIndex` against `Shape.faces()` should index `Shape.orientedFaces()` instead, or read the new `AAGNode.distinctFaceIndex` field to recover the old, distinct-face identity |
+
+Before this fix, `AAG.buildGraph()` read `Shape.faces()`, the deduplicated enumeration that keeps
+only the first orientation a shared face is reached in. `AAGNode.isHorizontal`/`isUpward`/
+`isDownward`/`isVertical`/`zLevel` are all derived from that node's normal, so which orientation
+survived the collapse silently decided the answer: the same compound, compounded in the opposite
+member order, produced a different node set and a different `detectPocketsAAG()` result for
+identical geometry. Measured on an origin-centred 10mm box cut through z=4 and recompounded in both
+member orders: `detectPocketsAAG().count` was 2 in one order and 1 in the other, for the same shape.
+
+The exception was taken because:
+
+- **The disagreement is the bug, and it produced a different answer for identical geometry
+  depending only on argument order to `Shape.compound(_:)`.** That is a correctness defect, not a
+  second convention to document alongside the first.
+- **There is no spelling in which both survive.** As with #502 and #613, `AAG`'s node identity is a
+  design choice about what a node *means*, not a value that can be deprecated in place: a node
+  built from `faces()` and one built from `orientedFaces()` disagree about how many nodes a shared
+  face contributes at all, which no overload or default parameter can paper over.
+- **On every shape that shares no face, nothing moves.** Every single-solid shape, and every
+  compound whose members share nothing, produces the identical node set before and after, since
+  `orientedFaces()` is documented to equal `faces()` exactly whenever nothing is shared.
+- **`AAGNode.distinctFaceIndex` is new, additive API** that gives a caller who needs the old,
+  one-node-per-distinct-face view a way back to it, without reintroducing the order-dependence.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
+  notes.
 
 ### MINOR — `x.y.0`
 
