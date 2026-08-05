@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **eleven** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **twelve** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other eight change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other nine change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -33,8 +33,9 @@ The other eight change behaviour **without breaking the build**, which is the se
 - [#502](#recorded-exception-unreleased-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) collapses the `wires`/`shells`/`solids` enumerations onto the deduplicated sub-shape map.
 - [#642](#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642) moves `AAG`'s node set from distinct faces to face occurrences, so `detectPocketsAAG()` and `buildAAG().nodes` can return more entries on a shape with a shared face.
 - [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
+- [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
 
-A twelfth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A thirteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -316,6 +317,49 @@ The exception was taken because:
   `orientedFaces()` is documented to equal `faces()` exactly whenever nothing is shared.
 - **`AAGNode.distinctFaceIndex` is new, additive API** that gives a caller who needs the old,
   one-node-per-distinct-face view a way back to it, without reintroducing the order-dependence.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
+  notes.
+
+#### Recorded exception: Unreleased, AAG adjacency and convexity are scoped to one solid (#699)
+
+**One further silent behaviour change on the same public APIs #642 already named, not a compile
+error.** Found measuring #642's own fix: `AAG.buildGraph()`'s pairwise adjacency check had no
+concept of solid membership, so two face occurrences from *different* solids in a compound that
+happened to share a B-Rep edge were reported adjacent, and the convexity of that shared edge was
+computed with no reference to which solid was asking. Recorded here before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.buildAAG().edges`, `AAG.neighbors(of:)`, `AAG.concaveNeighbors(of:)` and `AAG.convexNeighbors(of:)` no longer report a cross-solid pair as adjacent | Nothing on a shape with zero or one solid, which includes every single-solid shape. On a multi-solid compound, a caller relying on a cross-solid adjacency edge (there is no documented use for one: every consumer wants same-solid adjacency) sees fewer edges and fewer neighbors |
+| `Shape.detectPocketsAAG()` can return a different count on a multi-solid compound, in **both** directions from before this fix: a spurious cross-solid pocket disappears, or two orders that used to disagree now agree at a value neither order reported before | Nothing on a single-solid shape. On a multi-solid compound, re-measure rather than assume the pre-#699 count: #642's own horizontal-cut fixture moved from `2` (agreeing across order) to `1` (agreeing across order, at a lower count), because one of the two pockets `2` counted was itself built from the cross-solid mechanism #699 removes |
+
+Before this fix, `AAG.buildGraph()`'s pairwise loop tested every pair of face occurrences with
+`OCCTFacesAreAdjacent`/`OCCTEdgeGetConvexity`, neither of which has any notion of solid membership:
+both compare two `TopoDS_Face` values purely on their own edge geometry. On a vertical two-solid
+split, the shared wall borders two half-faces of the box's original top face that also border each
+other along the cut line, so one edge is common to three face occurrences; the pairwise loop
+compared all three regardless of which solid each belonged to. Measured on a plain 10mm box split
+by an X-normal plane through x=4: `detectPocketsAAG().count` was `1` in one compound member order
+and `2` in the other, for identical geometry: the same class of order-dependence #642 fixed, from
+a different mechanism, on a fixture #642's own does not exercise (its shared wall's normal is
+horizontal-axis, never reaching `isHorizontal()`/`isUpward()`).
+
+The exception was taken because:
+
+- **The disagreement is the bug, and it produced a different answer for identical geometry
+  depending only on argument order to `Shape.compound(_:)`**, the same standard #642's own
+  exception was taken under, for a different mechanism.
+- **There is no spelling in which both survive.** A graph edge either represents same-solid
+  adjacency or it doesn't; there is no default parameter or overload that lets a caller opt into
+  the old, solid-blind comparison, and no consumer of this library was found wanting one (an audit
+  of `OCCTFacesAreAdjacent`/`OCCTEdgeGetConvexity` found exactly one Swift call site each, both
+  inside `AAG.buildGraph()`, so no other caller could be relying on the unscoped behavior).
+- **On every shape with zero or one solid, nothing moves.** `AAG.buildGraph()` falls back to the
+  pre-#699 unrestricted comparison whenever there is no cross-solid pair to restrict, so a single
+  solid's own graph, and every test built on one, is byte-for-byte unaffected.
+- **This is a correction to #642's own recorded exception, not a new consumer-visible surface.**
+  `Shape.detectPocketsAAG()` and `Shape.buildAAG()` are the identical two APIs #642 already listed;
+  #699 changes what they return further rather than opening a second name for the same contract.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 

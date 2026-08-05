@@ -43,7 +43,14 @@ struct Issue642AAGNodeIdentityTests {
 
     // MARK: - The headline
 
-    /// The defect itself, reverted: before the fix this was 2 vs 1 for identical geometry.
+    /// The defect itself, reverted: before this fix it was 2 vs 1 for identical geometry.
+    ///
+    /// - Note: The pinned count moved from `2` to `1` under #699, which restricted `AAG`'s
+    ///   adjacency/convexity checks to same-solid face pairs. That is a DIFFERENT, later fix
+    ///   (`Issue699AAGSolidScopedAdjacencyTests`). The count it corrected was itself partly built
+    ///   from a cross-solid false adjacency, which #642 alone had no way to see. What this test
+    ///   still guards, unchanged since #642, is the AGREEMENT across compound member order; see
+    ///   `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix".
     @Test("detectPocketsAAG() agrees across compound member order")
     func detectPocketsAgreesAcrossOrder() {
         guard let orderA = Self.horizontalSplitBoxCompound(order: .asSplit),
@@ -58,8 +65,8 @@ struct Issue642AAGNodeIdentityTests {
         #expect(pocketsA.count == pocketsB.count)
         // Pinned to the measured value so a future change that breaks this loudly disagrees with
         // a concrete number rather than only with itself.
-        #expect(pocketsA.count == 2)
-        #expect(pocketsB.count == 2)
+        #expect(pocketsA.count == 1)
+        #expect(pocketsB.count == 1)
     }
 
     /// The AAG-level symptom the issue named directly: the upward+horizontal node set's SIZE must

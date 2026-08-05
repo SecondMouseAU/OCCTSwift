@@ -229,6 +229,77 @@ no-regression tests, on a plain box and on #614's own vertical-cut fixture, corr
 separately reverting only the `distinctFaceIndex` adjacency guard fails exactly the one test that
 exists to catch it.
 
+#### `AAG` linked faces across a solid boundary, so #642's own fix moved a second, independent order-dependence into view (#699)
+
+Found while measuring #642's own fix. Cluster A's census (`Scripts/repro/cluster-a-subshape-enumeration/`)
+re-ran after #642 landed and caught a NEW disagreement on a fixture #642 does not touch: a plain
+10mm box split by an X-normal plane through x=4, recompounded in both member orders,
+`detectPocketsAAG().count` was **1** in one order and **2** in the other, for identical geometry.
+Confirmed with `git stash` that reverting #642 alone reproduces the identical asymmetry, so this is
+not something #642 introduced: #642's fix (doubling a shared face's node count) exercised it twice
+as often, which is why a previously-accidental cancellation stopped holding.
+
+**The mechanism is different from #642's, and needs a different fixture to show.** #642 was about
+node identity: which faces become graph nodes. #699 is about edges: which nodes get linked and with
+what attribute. `OCCTFacesAreAdjacent` and `OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`) have
+no concept of solid membership: both compare two `TopoDS_Face` values purely on their own edge
+geometry, ignoring the `shape` argument they are handed beyond a null check. On a vertical two-solid
+split, the shared wall borders two half-faces of the box's original top face that also border
+**each other** along the cut line, so one edge is common to three face occurrences (both top-face
+halves and both sides of the wall). `AAG.buildGraph()`'s pairwise loop compared all three against
+each other regardless of which solid each belonged to, linking a face in one solid to a face in
+another and attributing a convexity meaningless for either. #642's own fixture (a horizontal cut)
+never exercises this: its shared wall's normal is horizontal-axis, so `isHorizontal()`/`isUpward()`
+never reach the duplicated face at all, and conversely #642's own defect needs a horizontal cut, so
+neither fixture reproduces the other's mechanism.
+
+**The contract:** two faces sharing a B-Rep edge but belonging to different solids in a compound are
+adjacent *in the compound* and not adjacent in *either* solid, and `AAG`'s consumers
+(`detectPockets()`, `concaveNeighbors(of:)`, `convexNeighbors(of:)`) want the solid-scoped answer.
+
+**Fixed** by restricting `AAG.buildGraph()`'s pairwise adjacency/convexity check to occurrence pairs
+it can establish share a solid, rather than by adding solid-scoping to the bridge functions
+themselves: an audit found `OCCTFacesAreAdjacent`/`OCCTEdgeGetConvexity` have exactly one Swift
+call site each, both inside `buildGraph()`, so there was no other consumer a bridge-side change
+could have broken, and the Swift-side fix is the smaller change either way. Solid membership per
+occurrence is derived rather than looked up through a new bridge entry point: `orientedFaces()`'s
+underlying `TopExp_Explorer` walk visits every occurrence under one top-level solid contiguously
+before moving to the next, in the same first-encountered order `Shape.solids` itself enumerates
+solids in (both are one DFS over the same shape), so the flat occurrence list partitions into
+contiguous runs sized by each solid's own face-occurrence count. Confirmed against both split
+fixtures (dumping every occurrence's bounds alongside each solid's own `orientedFaces()` count)
+before relying on it. `AAG.buildGraph()` falls back to the pre-#699 unrestricted comparison on a
+shape with zero or one solid, or if the per-solid counts don't sum to the total occurrence count.
+Silently mis-partitioning would be worse than not partitioning at all, and neither case arises on
+any fixture this change measures.
+
+`OCCTEdgeGetConvexity` did not need its own solid-membership fix on top of this: once adjacency is
+restricted to same-solid pairs, convexity is only ever computed for a legitimate same-solid
+neighbor. (A separate, unrelated defect was found while explaining a side effect below:
+`OCCTEdgeGetConvexity`'s reported concavity for a given physical edge depends on argument order,
+which reproduces on a single, uncut box and has nothing to do with solid membership. Recorded in
+`Scripts/repro/cluster-a-subshape-enumeration/README.md` rather than fixed here, since it was found
+explaining a side effect rather than measured as this issue's own claim.)
+
+**A further correction to #642's own headline measurement.** Restricting to same-solid pairs also
+moves the HORIZONTAL fixture's `detectPocketsAAG().count` from `2` (in both orders, #642's own fix)
+to `1` (in both orders). This is not a regression: #642 was about order-AGREEMENT, which survives
+intact (`1` in both orders, was `2` in both orders, still equal either way). What moved is that one
+of the two "pockets" reported before #699 was itself built from a cross-solid comparison between
+the shared wall and the wrong side of a split face, exactly the mechanism this issue fixes.
+`Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift`'s own pinned count moves from `2` to
+`1` accordingly, with a note explaining why; the AGREEMENT assertion it exists to guard is
+unchanged and still passes.
+
+This is a further behaviour change on `Shape.detectPocketsAAG()`, recorded alongside #642's own
+entry in [`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699)
+rather than a new one, since it is the same public API. On every shape with zero or one solid,
+nothing changes. Tests: `Tests/OCCTModelingTests/Issue699AAGSolidScopedAdjacencyTests.swift`, each
+proven to catch its own mechanism by reverting the fix alone (7 assertions across 3 tests fail,
+reproducing the exact 1-vs-2 and 2-vs-1 disagreements measured above; the single-solid and
+node-count tests correctly still pass, since #699's fix touches edges, not nodes, and never applies
+to a single-solid shape).
+
 #### Every workflow action pin moves to a Node 24 major (#648)
 
 #625 bumped only the job it introduced, so `ci.yml` was left mixed-version: `actions/checkout@v7` in
