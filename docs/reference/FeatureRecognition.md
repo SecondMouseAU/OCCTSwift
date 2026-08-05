@@ -35,11 +35,12 @@ Maps to `OCCTEdgeConvexity` from the bridge. The classification is computed by `
 
 ## AAGNode
 
-A node in the Attributed Adjacency Graph, representing a single B-Rep face with precomputed analysis results.
+A node in the Attributed Adjacency Graph, representing a single B-Rep face **occurrence** (#642).
 
 ```swift
 public struct AAGNode: Sendable {
     public let faceIndex: Int
+    public let distinctFaceIndex: Int
     public let normal: SIMD3<Double>?
     public let isPlanar: Bool
     public let isHorizontal: Bool
@@ -52,6 +53,11 @@ public struct AAGNode: Sendable {
 ```
 
 All fields are populated once during `AAG.buildGraph()` by querying the corresponding `Face` properties. `normal` is `nil` for degenerate faces; `zLevel` is `nil` for non-planar or non-horizontal faces.
+
+- `faceIndex`: this node's position in the graph, the index every `AAG` method (`neighbors(of:)`, `edge(between:and:)`, `concaveNeighbors(of:)`, `convexNeighbors(of:)`) takes and returns. An occurrence index into `Shape.orientedFaces()`, not a distinct face index.
+- `distinctFaceIndex`: this occurrence's underlying face, its position in `Shape.faces()`, the deduplicated enumeration. Two nodes with the same `distinctFaceIndex` are the two sides of one face shared between two solids in a compound, same geometry, opposite orientation, opposed normals. On a shape whose faces are not shared, every node has `distinctFaceIndex == faceIndex`.
+
+Before #642, `AAG.buildGraph()` read `Shape.faces()`, the deduplicated enumeration, so a face shared by two solids collapsed to one node carrying whichever orientation the dedup happened to keep, and `isHorizontal`/`isUpward`/`isDownward`/`isVertical`/`zLevel` (all derived from that node's normal) silently depended on compound member order. Reading `Shape.orientedFaces()` instead gives each side its own node, so the node set no longer depends on that order.
 
 ---
 
@@ -74,17 +80,19 @@ public struct AAGEdge: Sendable {
 
 ## AAG
 
-Attributed Adjacency Graph for feature recognition. Nodes are faces; graph edges connect pairs of adjacent faces and carry convexity attributes.
+Attributed Adjacency Graph for feature recognition. Nodes are face occurrences (`Shape.orientedFaces()`, #642); graph edges connect pairs of adjacent occurrences and carry convexity attributes.
+
+A face shared by two solids in a compound is two nodes, one per owning solid, each carrying that solid's own normal and derived predicates. `AAG` does not build a graph edge between the two occurrences of one shared face: they are the same face, not neighbors of it. On a shape whose faces are not shared this is exactly the node set the old `Shape.faces()`-based graph produced, in the same order.
 
 ### `AAG.init(shape:)`
 
-Constructs the AAG by traversing all face pairs in the shape.
+Constructs the AAG by traversing all face-occurrence pairs in the shape.
 
 ```swift
 public init(shape: Shape)
 ```
 
-Calls `buildGraph()` which iterates all `(i, j)` face pairs, tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface`).
+Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface`).
 
 - **Parameters:** `shape` — the solid to analyse. Works best on closed solids.
 - **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface` (convexity).
@@ -110,7 +118,7 @@ public let shape: Shape
 
 ### `nodes`
 
-All nodes (one per face) in the graph, in face traversal order.
+All nodes (one per face occurrence) in the graph, in `Shape.orientedFaces()` order. A face shared between two solids contributes two nodes here (#642).
 
 ```swift
 public private(set) var nodes: [AAGNode]
@@ -232,6 +240,20 @@ public struct PocketFeature: Sendable {
 public let floorFaceIndex: Int
 ```
 
+- **Note:** An **occurrence** index, resolving against `Shape.orientedFaces()` and **not**
+  `Shape.faces()` (#642). Before #642 it indexed `faces()`; the two differ on a compound whose
+  solids share a face, where indexing `faces()` with it gives the wrong face or an out-of-range
+  index, silently. Read `aag.nodes[pocket.floorFaceIndex].distinctFaceIndex` for the old identity.
+
+```swift
+let aag = shape.buildAAG()
+for pocket in shape.detectPocketsAAG() {
+    let floor = shape.orientedFaces()[pocket.floorFaceIndex]   // correct
+    let distinct = aag?.nodes[pocket.floorFaceIndex].distinctFaceIndex
+    print(floor.area, distinct as Any)
+}
+```
+
 ---
 
 ### `wallFaceIndices`
@@ -241,6 +263,9 @@ public let floorFaceIndex: Int
 ```swift
 public let wallFaceIndices: [Int]
 ```
+
+- **Note:** **Occurrence** indices into `Shape.orientedFaces()`, on the same footing as
+  `floorFaceIndex` (#642).
 
 ---
 
@@ -328,7 +353,10 @@ public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)]
 Identifies faces where every adjacent face is connected via a concave edge and the face's XY bounding box has an aspect ratio under 1.2 (roughly circular) while being non-planar. `radius` and `depth` are estimated from the bounding box.
 
 - **Returns:** Array of `(faceIndex, radius, depth)` tuples; `radius` is `(width + height) / 4`, `depth` is `bounds.max.z - bounds.min.z`.
-- **Note:** This is a heuristic approximation — it does not inspect the surface type. For precise cylindrical detection, check `Face.surfaceType == .cylinder`.
+- **Note:** This is a heuristic approximation, it does not inspect the surface type. For precise cylindrical detection, check `Face.surfaceType == .cylinder`.
+- **Note:** `faceIndex` is an **occurrence** index into `Shape.orientedFaces()`, not `Shape.faces()`
+  (#642), matching `AAGNode.faceIndex`. A hole's face is rarely shared between two solids, so the
+  two usually coincide, but only the occurrence index is correct here.
 - **Example:**
   ```swift
   let holes = aag.detectHoles()
@@ -349,12 +377,14 @@ Constructs an Attributed Adjacency Graph for this shape.
 public func buildAAG() -> AAG
 ```
 
-Convenience wrapper around `AAG(shape: self)`.
+Convenience wrapper around `AAG(shape: self)`. The graph's nodes are face occurrences (`Shape.orientedFaces()`), not distinct faces (`Shape.faces()`): a face shared by two solids in a compound is two nodes, one per owning solid, each with that solid's own normal (#642).
 
 - **Returns:** A fully built `AAG` for the receiver.
 - **Example:**
   ```swift
-  let aag = Shape.box(width: 10, height: 10, depth: 5)!.buildAAG()
+  let box = Shape.box(width: 10, height: 10, depth: 5)!
+  let aag = box.buildAAG()
+  print(aag.nodes.count)   // 6, one per face, nothing shared
   ```
 
 ---
@@ -367,7 +397,7 @@ Detects pockets using AAG-based feature recognition.
 public func detectPocketsAAG() -> [PocketFeature]
 ```
 
-Equivalent to `buildAAG().detectPockets()`.
+Equivalent to `buildAAG().detectPockets()`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before the fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry.
 
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**
