@@ -68,7 +68,7 @@ python3 Scripts/repro/cluster-b-fillet-edge-contract/classify_fillet_sites.py --
 | chamfer (with history) | `chamferedWithFullHistory(distance:edges:)` | N/A: uniform distance (dup 995.000000 == single-edge 995.000000) | REJECT (nil) | SKIP (non-nil, area 476.191927 vs unfilleted 500.000000) | REJECT (nil) |
 | offset-per-face | `offsetPerFace(defaultOffset:faceOffsets:)` | N/A: `faceOffsets` is a `Dictionary`, a duplicate key cannot be constructed | REJECT (nil), fixed by **#541** (see "Corrections" below) | N/A: `BRepOffset_MakeOffset` has no per-face decline analogous to `Add()` on a free-boundary edge | ACCEPTS (non-nil): applies `defaultOffset` uniformly, a legitimate no-override request |
 | 2D fillet (face) | `fillet2D(vertexIndices:radii:)` | REJECT (nil) on a duplicated vertex index | REJECT (nil), fixed by #568 | UNMEASURED: no open/degenerate planar-face fixture built here | REJECT (nil), Swift-side guard |
-| 2D chamfer (face) | `chamfer2D(edgePairs:distances:)` | **CRASH (SIGSEGV, uncatchable)** on a duplicated edge pair -- see "New findings" below | REJECT (nil), fixed by #568 | UNMEASURED, same reason as `fillet2D` | REJECT (nil), Swift-side guard |
+| 2D chamfer (face) | `chamfer2D(edgePairs:distances:)` | REJECT (nil), order-independent, fixed by #705 (was **CRASH (SIGSEGV, uncatchable)**, see "New findings" below) | REJECT (nil), fixed by #568 | UNMEASURED, same reason as `fillet2D` | REJECT (nil), Swift-side guard |
 | fillet (class API) | `FilletBuilder.addEdge(_:radius:)` | **OVERWRITE: last radius wins**, same mechanism as #633, unaudited by #489/#520/#568 | N/A: takes an `Edge`, not an index | foreign edge (a different `Shape` entirely): `addEdge` returns `true`, `build()` REJECT (nil) | `build()` with zero `addEdge` calls: REJECT (nil) |
 | chamfer (class API) | `ChamferBuilder.addEdge(_:distance:)` | **FIRST WINS**, matches `chamferedTwoDistances` -- `addEdge` itself prefers the first call, not just the bridge's hand-rolled loop | N/A: takes an `Edge`, not an index | foreign edge: `addEdge` returns `true`, `build()` REJECT (nil) | `build()` with zero `addEdge` calls: REJECT (nil) |
 
@@ -102,16 +102,23 @@ family, not just deciding to reject/dedupe/document.
 
 ## New findings (not in #520/#568/#612/#633/#639)
 
-1. **`chamfer2D(edgePairs:distances:)` SIGSEGVs (uncatchable) on a duplicated edge pair.**
-   `rectFace.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0])` crashes the process on
+1. **`chamfer2D(edgePairs:distances:)` SIGSEGVs (uncatchable) on a duplicated edge pair --
+   fixed by #705, this census's own row now measures it live.** At the time this census landed,
+   `rectFace.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0])` crashed the process on
    the pair's *second* occurrence. Confirmed in isolation before writing the census's own note
    (not run live in the shipped artifact -- an OS signal is uncatchable, per this repo's own
    `CLAUDE.md` precedent for this exact family). `fillet2D`'s equivalent duplicate-*vertex* call
-   does **not** crash (it rejects, cleanly), so this is specific to `BRepFilletAPI_MakeFillet2d
-   ::AddChamfer`, not the shared `TopTools_IndexedMapOfShape` lookup both functions use. Likely
-   mechanism, not chased further since diagnosing it is a fix and this is a census: `AddChamfer`
-   rebuilds the face incrementally, so the edge handles resolved from the *original* `edgeMap`
-   before the loop starts are stale by a second call naming the same pair.
+   does **not** crash (it rejects, cleanly), so this was specific to `BRepFilletAPI_MakeFillet2d
+   ::AddChamfer`, not the shared `TopTools_IndexedMapOfShape` lookup both functions use. The
+   mechanism this census guessed at without chasing further -- diagnosing it was a fix, not a
+   census -- was confirmed exactly by #705: `AddChamfer` rebuilds the face incrementally, so the
+   edge handles resolved from the *original* `edgeMap` before the loop starts were stale by a
+   second call naming the same pair, order-independent (`(0, 1)` then `(1, 0)` crashed identically
+   to `(0, 1)` twice). #705 fixed it by rejecting the whole call on a repeated pair, in either
+   order, before `AddChamfer` sees the second one -- reusing one edge across two *different* pairs
+   (e.g. chamfering adjacent corners of a polygon with `(0, 1)` then `(1, 2)`) is unaffected and
+   still measures non-nil. `ClusterB.swift`'s own `chamfer2D` block now calls the duplicate case
+   live rather than noting it as unsafe.
 2. **The `FilletBuilder`/`ChamferBuilder` class API has zero index resolution or value validation
    of any kind.** No `occtUseSubShapesByIndex`, no `occtValidFilletRadius`. A foreign edge (one
    belonging to an entirely different `Shape`) is silently accepted by `addEdge` (returns `true`)

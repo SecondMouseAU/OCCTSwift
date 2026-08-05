@@ -4280,6 +4280,31 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef shape,
             TopoDS_Shape e1 = occtMappedSubShapeAt(edgeMap, edge1Indices[i]);
             TopoDS_Shape e2 = occtMappedSubShapeAt(edgeMap, edge2Indices[i]);
             if (e1.IsNull() || e2.IsNull()) return nullptr;
+
+            // #705: the exact same edge pair named twice SIGSEGVs, uncatchably, inside the repeat
+            // call's own BRepFilletAPI_MakeFillet2d::AddChamfer. Measured order-independent: (0,1)
+            // then (1,0) crashes the same way as (0,1) twice. Root cause is an upstream OCCT
+            // defect, not this bridge's: AddChamfer(edge1, edge2, ...) calls
+            // ChFi2d::FindConnectedEdges to look up the pair's shared vertex and dereferences the
+            // two edges it returns without checking the returned status first; that lookup leaves
+            // both edges null on every failure path, and the pair's second call fails it, because
+            // the shared vertex was already consumed chamfering the pair the first time. The
+            // sibling overload (AddChamfer(edge, vertex, distance, angle)) checks the identical
+            // status correctly. A kernel patch is carried separately (Scripts/patches/0022-*); this
+            // guard is what protects callers until it ships. Reusing ONE edge across two DIFFERENT
+            // pairs is ordinary and measured safe, e.g. chamfering adjacent corners of a rectangle
+            // with (0,1) then (1,2); only the identical pair repeated crashes, so this checks the
+            // pair, not the individual indices. Rejected rather than skipped, matching fillet2D's
+            // own contract for a duplicated vertex (#568): this site already rejects the whole
+            // batch on one bad index instead of dropping just that entry, and a repeated pair has
+            // the same "which distance wins" ambiguity a bad index does, so the whole call fails
+            // instead of guessing.
+            for (int32_t j = 0; j < i; j++) {
+                bool sameOrder = edge1Indices[i] == edge1Indices[j] && edge2Indices[i] == edge2Indices[j];
+                bool swappedOrder = edge1Indices[i] == edge2Indices[j] && edge2Indices[i] == edge1Indices[j];
+                if (sameOrder || swappedOrder) return nullptr;
+            }
+
             chamfer.AddChamfer(TopoDS::Edge(e1), TopoDS::Edge(e2), distances[i], distances[i]);
         }
 
