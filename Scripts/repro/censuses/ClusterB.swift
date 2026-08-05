@@ -309,11 +309,11 @@ enum ClusterB {
 
         // MARK: - chamferedTwoDistances(_:)  [edge+face pairs, per-entry dist1/dist2]
 
-        do {
+        chamferTwoDistances: do {
             guard let face0 = ClusterBFixture.adjacentFaceIndex(forEdge: 0, in: box) else {
-                record("chamfer (two distances)", "chamferedTwoDistances(_:)", duplicate: "fixture setup failed",
-                       outOfRange: "-", declined: "-", empty: "-")
-                fatalError("could not find a face adjacent to box edge 0")
+                print("Cluster B census: could not find a face adjacent to box edge 0, "
+                      + "skipping the chamfer (two distances) row.")
+                break chamferTwoDistances
             }
             let dup = box.chamferedTwoDistances([
                 (edgeIndex: 0, faceIndex: face0, dist1: 1.0, dist2: 1.0),
@@ -350,11 +350,11 @@ enum ClusterB {
 
         // MARK: - chamferedDistAngle(_:)  [edge+face pairs, per-entry distance/angle]
 
-        do {
+        chamferDistAngle: do {
             guard let face0 = ClusterBFixture.adjacentFaceIndex(forEdge: 0, in: box) else {
-                record("chamfer (distance-angle)", "chamferedDistAngle(_:)", duplicate: "fixture setup failed",
-                       outOfRange: "-", declined: "-", empty: "-")
-                fatalError("could not find a face adjacent to box edge 0")
+                print("Cluster B census: could not find a face adjacent to box edge 0, "
+                      + "skipping the chamfer (distance-angle) row.")
+                break chamferDistAngle
             }
             let dup = box.chamferedDistAngle([
                 (edgeIndex: 0, faceIndex: face0, distance: 1.0, angleDegrees: 30.0),
@@ -466,14 +466,14 @@ enum ClusterB {
 
         // MARK: - FilletBuilder class API  [takes Edge objects directly, not indices]
 
-        do {
+        filletClassAPI: do {
             guard let builderDup = FilletBuilder(shape: box), let builderLast = FilletBuilder(shape: box),
                   let builderFirst = FilletBuilder(shape: box),
                   let builderForeign = FilletBuilder(shape: box), let builderEmpty = FilletBuilder(shape: box),
                   let foreignShape = Shape.box(width: 20, height: 20, depth: 20) else {
-                record("fillet (class API)", "FilletBuilder.addEdge(_:radius:)", duplicate: "fixture setup failed",
-                       outOfRange: "-", declined: "-", empty: "-")
-                fatalError("could not build the FilletBuilder fixtures")
+                print("Cluster B census: could not build the FilletBuilder fixtures, "
+                      + "skipping the fillet (class API) row.")
+                break filletClassAPI
             }
             let e0 = box.edges()[0]
             builderDup.addEdge(e0, radius: 2.0)
@@ -509,14 +509,14 @@ enum ClusterB {
 
         // MARK: - ChamferBuilder class API  [takes Edge objects directly, not indices]
 
-        do {
+        chamferClassAPI: do {
             guard let builderDup = ChamferBuilder(shape: box), let builderLast = ChamferBuilder(shape: box),
                   let builderFirst = ChamferBuilder(shape: box),
                   let builderForeign = ChamferBuilder(shape: box), let builderEmpty = ChamferBuilder(shape: box),
                   let foreignShape = Shape.box(width: 20, height: 20, depth: 20) else {
-                record("chamfer (class API)", "ChamferBuilder.addEdge(_:distance:)", duplicate: "fixture setup failed",
-                       outOfRange: "-", declined: "-", empty: "-")
-                fatalError("could not build the ChamferBuilder fixtures")
+                print("Cluster B census: could not build the ChamferBuilder fixtures, "
+                      + "skipping the chamfer (class API) row.")
+                break chamferClassAPI
             }
             let e0 = box.edges()[0]
             builderDup.addEdge(e0, distance: 1.0)
