@@ -72,6 +72,31 @@ enum Fixture {
     }
 }
 
+// #651 deprecated `nbEdges`/`nbFaces`/`nbVertices`, which now forward to
+// `edgeCount`/`faceCount`/`vertexCount`. The census still measures them deliberately: its job is to
+// record what the public API does, and a deprecated spelling is public API until it is removed.
+//
+// They are grouped into one deprecated function because a deprecated context does not warn about
+// the deprecated things it calls. Read inline instead, they put 38 deprecation warnings into every
+// `swift build` in the repo, since this target is wired into the root manifest and builds on every
+// push (#694). Grouped, the cost is one warning at the single call site below, which is the honest
+// residue: the census really does use a deprecated API on purpose.
+//
+// When the deprecation cycle removes the three properties this stops compiling, which is the right
+// prompt to drop these rows rather than silently losing them.
+@available(*, deprecated, message: "Measures #651's deprecated counters deliberately.")
+func recordDeprecatedCounterRows() {
+    record("vertex", "nbVertices (#651: fixed, now forwards to vertexCount)",
+           plainBox: box.nbVertices, orderA: compoundA.nbVertices, orderB: compoundB.nbVertices,
+           note: "deprecated, renamed: \"vertexCount\"; was occurrence (48/96/96) before #651")
+    record("edge", "nbEdges (#651: fixed, now forwards to edgeCount)",
+           plainBox: box.nbEdges, orderA: compoundA.nbEdges, orderB: compoundB.nbEdges,
+           note: "deprecated, renamed: \"edgeCount\"; was occurrence (24/48/48) before #651")
+    record("face", "nbFaces (#651: fixed, now forwards to faceCount)",
+           plainBox: box.nbFaces, orderA: compoundA.nbFaces, orderB: compoundB.nbFaces,
+           note: "deprecated, renamed: \"faceCount\"; was occurrence (6/12/12) before #651, agreeing with faceCount on a plain box only because no face is shared there")
+}
+
 // MARK: - Report plumbing
 
 struct Row {
@@ -109,9 +134,6 @@ record("vertex", "uniqueVertexCount (alias of vertexCount)",
 record("vertex", "subShapeCount(ofType: .vertex) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .vertex), orderA: compoundA.subShapeCount(ofType: .vertex),
        orderB: compoundB.subShapeCount(ofType: .vertex))
-record("vertex", "nbVertices (#651: fixed, now forwards to vertexCount)",
-       plainBox: box.nbVertices, orderA: compoundA.nbVertices, orderB: compoundB.nbVertices,
-       note: "deprecated, renamed: \"vertexCount\"; was occurrence (48/96/96) before #651")
 record("vertex", "contents.vertices (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.vertices, orderA: compoundA.contents.vertices, orderB: compoundB.contents.vertices)
 record("vertex", "contentsExtended().nbVertices (occurrence)",
@@ -129,9 +151,6 @@ record("edge", "uniqueEdgeCount (alias of edgeCount)",
 record("edge", "subShapeCount(ofType: .edge) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .edge), orderA: compoundA.subShapeCount(ofType: .edge),
        orderB: compoundB.subShapeCount(ofType: .edge))
-record("edge", "nbEdges (#651: fixed, now forwards to edgeCount)",
-       plainBox: box.nbEdges, orderA: compoundA.nbEdges, orderB: compoundB.nbEdges,
-       note: "deprecated, renamed: \"edgeCount\"; was occurrence (24/48/48) before #651")
 record("edge", "contents.edges (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.edges, orderA: compoundA.contents.edges, orderB: compoundB.contents.edges)
 record("edge", "contentsExtended().nbEdges (occurrence)",
@@ -159,9 +178,7 @@ record("face", "uniqueFaceCount (alias of faceCount)",
 record("face", "subShapeCount(ofType: .face) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .face), orderA: compoundA.subShapeCount(ofType: .face),
        orderB: compoundB.subShapeCount(ofType: .face))
-record("face", "nbFaces (#651: fixed, now forwards to faceCount)",
-       plainBox: box.nbFaces, orderA: compoundA.nbFaces, orderB: compoundB.nbFaces,
-       note: "deprecated, renamed: \"faceCount\"; was occurrence (6/12/12) before #651, agreeing with faceCount on a plain box only because no face is shared there")
+recordDeprecatedCounterRows()
 record("face", "contents.faces (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.faces, orderA: compoundA.contents.faces, orderB: compoundB.contents.faces)
 record("face", "contentsExtended().nbFaces (occurrence)",
