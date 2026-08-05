@@ -2048,14 +2048,24 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
     if (!shape) return result;
 
     try {
+        // #613: EDGE and VERTEX indices are positions in the deduplicated TopExp::MapShapes
+        // enumeration, which is what Shape.edges()/edge(at:) and Shape.vertices() hand out; a bare
+        // explorer walk names a different sub-shape from the first repeated occurrence onwards.
+        // WIRE and SHELL stay on the explorer deliberately: OCCTShapeGetWires/GetShells and their
+        // counts are explorer walks too, so these paths already agree with their own consumers,
+        // and converging them belongs with converting those accessors.
         TopoDS_Shape subShape;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, type); exp.More(); exp.Next()) {
-            if (idx == index) {
-                subShape = exp.Current();
-                break;
+        if (type == TopAbs_EDGE || type == TopAbs_VERTEX) {
+            subShape = occtSubShapeAtIndex(shape->shape, type, index);
+        } else {
+            int idx = 0;
+            for (TopExp_Explorer exp(shape->shape, type); exp.More(); exp.Next()) {
+                if (idx == index) {
+                    subShape = exp.Current();
+                    break;
+                }
+                idx++;
             }
-            idx++;
         }
         if (subShape.IsNull()) return result;
 

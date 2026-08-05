@@ -7320,9 +7320,12 @@ extension Shape {
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
-                // Convert shape to edge
+                // Convert shape to edge. #613: stamp the index this edge has in THIS shape's
+                // edges() enumeration, not its position in the result buffer -- the buffer
+                // position addresses an unrelated edge once fed back into filleted(edges:).
                 if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                    edges.append(Edge(handle: edgeRef,
+                                      index: Int(OCCTShapeIndexOfEdge(handle, ref))))
                 }
                 OCCTShapeRelease(ref)
             }
@@ -7345,8 +7348,10 @@ extension Shape {
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
+                // #613: the index this edge has in edges(), not its buffer position.
                 if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                    edges.append(Edge(handle: edgeRef,
+                                      index: Int(OCCTShapeIndexOfEdge(handle, ref))))
                 }
                 OCCTShapeRelease(ref)
             }
