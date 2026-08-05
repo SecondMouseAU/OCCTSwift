@@ -223,15 +223,21 @@ let package = Package(
             ]
         ),
 
-        // #664 Cluster A census: measures every public sub-shape enumeration entry point against
-        // a duplicated-orientation fixture. Source lives in the repro directory itself (not under
-        // Sources/), matching the "runnable program committed under Scripts/repro/<cluster>"
-        // convention docs/v2.0.0-plan.md's census rule asks for. `swift run ClusterACensus`.
+        // #694: one shared executable target for every cluster census docs/v2.0.0-plan.md's
+        // census-once rule asks for, replacing the one-target-per-cluster `ClusterACensus`
+        // (#664 was the first). `swift run Censuses <cluster>` (or `all`, or no argument to list).
+        // Source lives under Scripts/repro/censuses/, not Scripts/repro/<cluster-dir>/: a cluster's
+        // own repro directory keeps its README and any static cross-check script (neither is Swift
+        // source SwiftPM needs to see), so renaming that directory no longer touches the manifest
+        // at all -- the whole point, since #694 was raised because renaming
+        // Scripts/repro/cluster-a-subshape-enumeration/ broke `swift build`/`swift test`
+        // repo-wide with "error: invalid custom path". No `exclude:` is needed here because every
+        // file this target's own directory holds is Swift source; a second `exclude:` list to
+        // maintain was #694's other objection to one target per cluster.
         .executableTarget(
-            name: "ClusterACensus",
+            name: "Censuses",
             dependencies: ["OCCTSwift"],
-            path: "Scripts/repro/cluster-a-subshape-enumeration",
-            exclude: ["README.md", "classify_topexp_sites.py"],
+            path: "Scripts/repro/censuses",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

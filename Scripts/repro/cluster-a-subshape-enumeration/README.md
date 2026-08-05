@@ -15,11 +15,16 @@ re-scopes the three members against what was actually measured, and corrects two
 Two independent halves, per #664's own instruction that a grep is not sufficient evidence on its
 own here:
 
-1. **Dynamic (primary).** `main.swift`, built as the `ClusterACensus` executable target
-   (`swift run ClusterACensus`), builds real fixtures with the public `Shape`/`Face`/`Wire` API and
-   calls every identified public entry point on each one, printing the measured table below. This
-   is the evidence: an entry point is DEDUP or OCCURRENCE because it was *measured* to return the
-   deduplicated or the per-occurrence count/array, not because a doc comment says so.
+1. **Dynamic (primary).** `Scripts/repro/censuses/ClusterA.swift`, built as the `cluster-a`
+   subcommand of the shared `Censuses` executable target (`swift run Censuses cluster-a`), builds
+   real fixtures with the public `Shape`/`Face`/`Wire` API and calls every identified public entry
+   point on each one, printing the measured table below. This is the evidence: an entry point is
+   DEDUP or OCCURRENCE because it was *measured* to return the deduplicated or the per-occurrence
+   count/array, not because a doc comment says so. The source used to live in this directory as its
+   own `ClusterACensus` target; #694 moved it into `Scripts/repro/censuses/` alongside Cluster B's
+   census (#665), sharing one SwiftPM target and one set of fixtures instead of one target per
+   cluster. Nothing it measures changed: same fixtures, same entry points, same 45 rows, byte
+   identical, only the invocation and the file's location did.
 2. **Static (secondary cross-check).** `classify_topexp_sites.py` scans every `.mm` file under
    `Sources/OCCTBridge/src/` for `TopExp_Explorer`/`TopExp::MapShapes` call sites and classifies
    each enclosing C function as DEDUP / OCCURRENCE / OTHER from the source text alone. #664 warned
@@ -28,8 +33,8 @@ own here:
    census's own construction (see "Where the two methods disagreed" below, which is the most
    useful part of this artifact per the task that commissioned it).
 
-Both are runnable and both are committed, per the census-once rule: `swift run ClusterACensus` and
-`python3 Scripts/repro/cluster-a-subshape-enumeration/classify_topexp_sites.py` regenerate the
+Both are runnable and both are committed, per the census-once rule: `swift run Censuses cluster-a`
+and `python3 Scripts/repro/cluster-a-subshape-enumeration/classify_topexp_sites.py` regenerate the
 tables from the pinned kernel and the current tree, respectively.
 
 ## Fixtures
@@ -62,14 +67,17 @@ that stopped at "reuse #614's own committed fixture" would have silently failed 
 ## Build and run
 
 ```bash
-swift run ClusterACensus
+swift run Censuses cluster-a
 python3 Scripts/repro/cluster-a-subshape-enumeration/classify_topexp_sites.py
 python3 Scripts/repro/cluster-a-subshape-enumeration/classify_topexp_sites.py --self-test
 ```
 
-`ClusterACensus` is a package executable target (see `Package.swift`) whose source lives in this
-directory rather than under `Sources/`, matching the "runnable program committed under
-`Scripts/repro/<cluster>`" shape the other census artifacts in this tree use.
+`Censuses` is a package executable target (see `Package.swift`) shared with every other cluster
+census (#694); its `cluster-a` subcommand's source lives at `Scripts/repro/censuses/ClusterA.swift`
+and `Scripts/repro/censuses/SharedFixtures.swift`, not under `Sources/` and not in this directory.
+This directory keeps only what SwiftPM does not need to see: this README and the static cross-check
+script below, which is also why renaming this directory no longer breaks `swift build`/`swift test`
+the way it did before #694 (`Package.swift`'s `path:` pointed directly at it).
 
 ## Full dynamic result table
 
@@ -124,8 +132,8 @@ name says `[horizontal-cut fixture]`).
 | solid | solids.count (dedup) | 1 | 2 | 2 | |
 | solid | subShapeCount(ofType: .solid) (dedup canonical) | 1 | 2 | 2 | |
 
-(exact output reproduced by `swift run ClusterACensus`; the printed table additionally right-pads
-columns for terminal alignment, omitted here for Markdown)
+(exact output reproduced by `swift run Censuses cluster-a`; the printed table additionally
+right-pads columns for terminal alignment, omitted here for Markdown)
 
 ## Static classification summary
 
