@@ -57,6 +57,43 @@ longer the case: see "CI builds the same kernel the branch is written against" a
 kernel, and `ci.yml`'s macOS job is a real signal. `OCCTSWIFT_LOCAL=1` remains useful for iterating
 on a locally rebuilt kernel; it is no longer needed for correct results.
 
+#### `edges()` keeps its orientation collapse: audited, no consumer needs it (#638)
+
+Documentation only, no code change.
+
+`Shape.edges()` has the identical `TopExp::MapShapes`/`IsSame` collapse #614 fixed for `faces()`:
+an edge reachable from two owners collapses to one entry carrying whichever orientation was reached
+first. Measured on a plain box, `edges().count`/`edgeCount` report 12 distinct edges while
+`Shape.contents.edges` (an independent, already-documented occurrence count) reports 24: one per
+(face, edge) visit.
+
+#614 was a defect because `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored
+orientation changed the answer a caller got. This issue's own text refused the analogy and asked
+whether the same is true for edges before assuming it. It is not: `Edge` exposes no `.orientation`
+accessor at all, and every geometric query on it (`tangent(at:)`, `point(at:)`, `parameterBounds`,
+`curvature(at:)`) reads the edge's underlying `Geom_Curve` through `BRep_Tool::Curve`, which is
+defined independently of `TopAbs_Orientation`. A bridge-wide grep for `.Orientation() ==` across
+`Sources/OCCTBridge/src/*.mm` finds 14 branching sites: 13 are face-normal logic #614 already
+covers, and the fourteenth (`occtSampleWirePoints`, `OCCTBridge_Modeling.mm`) reads orientation
+fresh off a `BRepTools_WireExplorer` walk of the wire it samples, never from an edge `Shape.edges()`
+produced.
+
+Verified beyond the source read: constructing the identical edge with both `TopAbs_Orientation`s
+(`Shape.subShape(type:index:).reversed`) and comparing every accessor `Edge` exposes shows them
+bit-for-bit identical, on both a straight and a circular edge.
+
+**Decision: document the contract, add no `orientedEdges()`, change no behaviour.** This is the
+outcome this issue's own text names as correct when no orientation-dependent consumer exists.
+`Shape.edges()`/`edgeCount`'s doc comments and `docs/reference/Edge.md` now state the collapse
+explicitly, matching how `Shape.faces()` documents its own. Regression tests in
+`Tests/OCCTTopologyTests/Issue638EdgeOrientationContractTests.swift` pin both halves: the dedup
+mechanism itself (12 distinct / 24 occurrences on a box, 20 distinct on the #614 split fixture), and
+the orientation-independence of `Edge`'s per-instance accessors, verified by injecting a
+hypothetical orientation-aware tangent and watching it fail before restoring it.
+
+See [`Scripts/repro/cluster-a-subshape-enumeration/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/cluster-a-subshape-enumeration)
+(#664) for the full census this decision rests on.
+
 #### Ten carried kernel patches retired
 
 8.0.1 ships our own upstream contributions, so `Scripts/patches/` goes from 21 files to 11.
