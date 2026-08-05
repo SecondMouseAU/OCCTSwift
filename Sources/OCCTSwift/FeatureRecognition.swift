@@ -105,7 +105,7 @@ public struct AAGEdge: Sendable {
 /// touch the same edge locus. Neither `OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` has any
 /// notion of solid membership on their own, so `buildGraph()` restricts which occurrence pairs it
 /// hands to them, using `Shape.solids` and `orientedFaces()`'s own traversal order rather than a
-/// new bridge entry point (see `AAG.solidGroups(of:in:)`'s doc comment for the derivation). On a
+/// new bridge entry point (see `AAG.solidGroups(occurrenceCount:in:)`'s doc comment for the derivation). On a
 /// shape with zero or one solid, including every single-solid shape, this changes nothing: there
 /// is no cross-solid pair to restrict.
 ///
@@ -196,7 +196,7 @@ public final class AAG: @unchecked Sendable {
         // vertical cut, the two top-face halves (which border each other along the cut line) and
         // each half's own side of the shared wall were being compared cross-solid as well as
         // within their own solid, on top of the correct same-solid adjacencies.
-        let group = Self.solidGroups(of: faces, in: shape)
+        let groups = Self.solidGroups(occurrenceCount: faces.count, in: shape)
 
         // Build edges by checking all face pairs for adjacency
         for i in 0..<faceCount {
@@ -215,7 +215,7 @@ public final class AAG: @unchecked Sendable {
                 // the latter. `group` is nil when solid membership could not be established (a
                 // single-solid shape, or a shape whose occurrence count didn't partition cleanly by
                 // solid), in which case every pair is compared exactly as before #699.
-                if let group, group[i] != group[j] { continue }
+                if let groups, groups[i] != groups[j] { continue }
 
                 // Check if adjacent
                 if OCCTFacesAreAdjacent(shape.handle, face1.handle, face2.handle) {
@@ -283,16 +283,24 @@ public final class AAG: @unchecked Sendable {
     /// cross-solid pair can exist, so nothing needs restricting), and a shape whose per-solid
     /// occurrence counts don't sum to the total occurrence count (a compound mixing solids with
     /// free shells/faces, or a future shape this partitioning assumption doesn't hold for). Either
-    /// way, `buildGraph()` falls back to comparing every pair, exactly as it did before #699 --
-    /// silently mis-partitioning would be worse than not partitioning at all.
-    private static func solidGroups(of occurrences: [Face], in shape: Shape) -> [Int]? {
+    /// way, `buildGraph()` falls back to comparing every pair, exactly as it did before #699.
+    ///
+    /// Note what that sum check does and does not buy. It is necessary, not sufficient: it confirms
+    /// the totals line up, not that each solid's occurrences are actually contiguous or that
+    /// `Shape.solids` enumerates solids in the same order the face walk meets them. Those hold
+    /// because both are `TopExp_Explorer` walks over one shape tree, which is a structural property
+    /// of the traversal rather than something checked at runtime. A future topology that broke it
+    /// while still summing correctly would mis-partition silently. That is an unenforced cross-API
+    /// invariant, validated empirically on the fixtures in `Issue699AAGSolidScopedAdjacencyTests`,
+    /// and it is the thing to re-measure first if this ever produces a surprising adjacency.
+    private static func solidGroups(occurrenceCount: Int, in shape: Shape) -> [Int]? {
         let bodies = shape.solids
         guard bodies.count > 1 else { return nil }
 
         let counts = bodies.map { Int(OCCTShapeGetFaceOccurrenceCount($0.handle)) }
-        guard counts.reduce(0, +) == occurrences.count else { return nil }
+        guard counts.reduce(0, +) == occurrenceCount else { return nil }
 
-        var groups = [Int](repeating: -1, count: occurrences.count)
+        var groups = [Int](repeating: -1, count: occurrenceCount)
         var cursor = 0
         for (bodyIndex, count) in counts.enumerated() {
             for k in 0..<count { groups[cursor + k] = bodyIndex }

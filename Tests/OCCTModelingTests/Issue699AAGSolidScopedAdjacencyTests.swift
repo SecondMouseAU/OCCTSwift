@@ -195,4 +195,76 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         #expect(pocketsA.count == 1)
         #expect(pocketsB.count == 1)
     }
+
+    // MARK: - The two fallback branches (review follow-up)
+
+    /// `solidGroups` returns `nil` when the per-solid occurrence counts do not sum to the total, and
+    /// `buildGraph()` then compares every pair as it did before #699. A compound of two solids plus
+    /// a free face is that case: 6 + 6 occurrences against 13 in the shape.
+    ///
+    /// **This case is not proven by removing the guard, and saying so is the point.** I expected it
+    /// to be: `groups` looked like it would be sized 12 and indexed to 12. It is not. It is sized
+    /// from `occurrenceCount` (13) and the fill loop covers only 0...11, leaving the free face at
+    /// the sentinel `-1`, which compares unequal to every real group and so is simply never adjacent
+    /// to anything. Measured: with the guard removed this test still passes. I also tried making the
+    /// free face coincident with the box's top face to give it an adjacency worth losing, and it
+    /// still has zero neighbours, because a separately built face carries its own `TopoDS` edges
+    /// rather than the solid's.
+    ///
+    /// So the guard is **defensive**, not load-bearing on any fixture reachable through the public
+    /// API today. It stays because the sentinel being harmless is a property of this partitioning,
+    /// not a guarantee. What this test does pin is that the branch is reached and yields a complete
+    /// graph over every occurrence, which is worth having even though a removal check cannot
+    /// distinguish it. Per `okf/policies/prove-the-test-fails.md`, a case that survives its guard's
+    /// removal is labelled, not counted as coverage.
+    ///
+    /// Note the shape the review suggested for this, `Shape.compound([box, freeFace])`, does not
+    /// reach here: one solid exits at the earlier `bodies.count <= 1` guard. Two solids are needed
+    /// before the sum can disagree.
+    @Test("A compound mixing solids with a free face falls back instead of mis-partitioning")
+    func countMismatchFallsBackToUnrestrictedComparison() {
+        guard let a = Shape.box(width: 10, height: 10, depth: 10),
+              let b = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10),
+              let wire = Wire.polygon3D(
+                  [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true),
+              let freeFace = Shape.face(from: wire),
+              let mixed = Shape.compound([a, b, freeFace])
+        else {
+            Issue.record("could not build the solids-plus-free-face fixture")
+            return
+        }
+
+        // The fixture must actually reach the branch, or this proves nothing.
+        let total = mixed.orientedFaces().count
+        let perSolid = mixed.solids.map { $0.orientedFaces().count }
+        #expect(mixed.solids.count > 1, "need more than one solid to get past the first guard")
+        #expect(perSolid.reduce(0, +) != total,
+                "fixture must make the counts disagree: perSolid \(perSolid), total \(total)")
+
+        // Falling back is a complete, non-crashing graph over every occurrence.
+        let aag = mixed.buildAAG()
+        #expect(aag.nodes.count == total)
+        #expect(mixed.detectPocketsAAG().count == 2)
+    }
+
+    /// Both other fixtures are exactly two solids, so the partition loop is only ever exercised
+    /// pairwise. Three disjoint boxes walk it past that, and permuting them must not move anything.
+    @Test("The partition generalises past two solids")
+    func threeSolidCompoundPartitions() {
+        func compound(_ order: [Int]) -> Shape? {
+            let boxes = (0..<3).compactMap {
+                Shape.box(origin: SIMD3(Double($0) * 20, 0, 0), width: 10, height: 10, depth: 10)
+            }
+            guard boxes.count == 3 else { return nil }
+            return Shape.compound(order.map { boxes[$0] })
+        }
+        guard let straight = compound([0, 1, 2]), let permuted = compound([2, 0, 1]) else {
+            Issue.record("could not build the three-solid fixture")
+            return
+        }
+        #expect(straight.solids.count == 3)
+        #expect(straight.buildAAG().nodes.count == 18)
+        #expect(straight.buildAAG().nodes.count == permuted.buildAAG().nodes.count)
+        #expect(straight.detectPocketsAAG().count == permuted.detectPocketsAAG().count)
+    }
 }
