@@ -109,9 +109,9 @@ record("vertex", "uniqueVertexCount (alias of vertexCount)",
 record("vertex", "subShapeCount(ofType: .vertex) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .vertex), orderA: compoundA.subShapeCount(ofType: .vertex),
        orderB: compoundB.subShapeCount(ofType: .vertex))
-record("vertex", "nbVertices (#651: docs say dedup)",
+record("vertex", "nbVertices (#651: fixed, now forwards to vertexCount)",
        plainBox: box.nbVertices, orderA: compoundA.nbVertices, orderB: compoundB.nbVertices,
-       note: "occurrence; docs/reference/Document-Completions.md:1438 states box.nbVertices == 8")
+       note: "deprecated, renamed: \"vertexCount\"; was occurrence (48/96/96) before #651")
 record("vertex", "contents.vertices (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.vertices, orderA: compoundA.contents.vertices, orderB: compoundB.contents.vertices)
 record("vertex", "contentsExtended().nbVertices (occurrence)",
@@ -129,9 +129,9 @@ record("edge", "uniqueEdgeCount (alias of edgeCount)",
 record("edge", "subShapeCount(ofType: .edge) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .edge), orderA: compoundA.subShapeCount(ofType: .edge),
        orderB: compoundB.subShapeCount(ofType: .edge))
-record("edge", "nbEdges (#651: docs say dedup)",
+record("edge", "nbEdges (#651: fixed, now forwards to edgeCount)",
        plainBox: box.nbEdges, orderA: compoundA.nbEdges, orderB: compoundB.nbEdges,
-       note: "occurrence; docs/reference/Document-Completions.md:1406 states box.nbEdges == 12")
+       note: "deprecated, renamed: \"edgeCount\"; was occurrence (24/48/48) before #651")
 record("edge", "contents.edges (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.edges, orderA: compoundA.contents.edges, orderB: compoundB.contents.edges)
 record("edge", "contentsExtended().nbEdges (occurrence)",
@@ -159,9 +159,9 @@ record("face", "uniqueFaceCount (alias of faceCount)",
 record("face", "subShapeCount(ofType: .face) (dedup canonical)",
        plainBox: box.subShapeCount(ofType: .face), orderA: compoundA.subShapeCount(ofType: .face),
        orderB: compoundB.subShapeCount(ofType: .face))
-record("face", "nbFaces (#651: docs say dedup)",
+record("face", "nbFaces (#651: fixed, now forwards to faceCount)",
        plainBox: box.nbFaces, orderA: compoundA.nbFaces, orderB: compoundB.nbFaces,
-       note: "occurrence; docs/reference/Document-Completions.md:1422 states box.nbFaces == 6 (no divergence on a plain box, since no face is shared)")
+       note: "deprecated, renamed: \"faceCount\"; was occurrence (6/12/12) before #651, agreeing with faceCount on a plain box only because no face is shared there")
 record("face", "contents.faces (ShapeAnalysis_ShapeContents, occurrence)",
        plainBox: box.contents.faces, orderA: compoundA.contents.faces, orderB: compoundB.contents.faces)
 record("face", "contentsExtended().nbFaces (occurrence)",

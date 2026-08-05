@@ -509,6 +509,9 @@ public var edgeCount: Int { get }
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   print(box.edgeCount)  // 12
   ```
+- **Deprecated alias:** [`Shape.nbEdges`](Document-Completions.md#shapenbedges-deprecated-651) was a
+  second spelling of this question, backed by a bare `TopExp_Explorer` occurrence count (24 on this
+  same box) instead of this deduplicated one. It now forwards here (#651).
 
 ---
 

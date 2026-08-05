@@ -3691,32 +3691,13 @@ int32_t OCCTShapeOrientationValue(OCCTShapeRef shape) {
     return (int32_t)shape->shape.Orientation();
 }
 
-int32_t OCCTShapeNbEdges(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeNbFaces(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_FACE); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
-
-int32_t OCCTShapeNbVertices(OCCTShapeRef shape) {
-    if (!shape) return 0;
-    int32_t count = 0;
-    for (TopExp_Explorer exp(shape->shape, TopAbs_VERTEX); exp.More(); exp.Next()) {
-        count++;
-    }
-    return count;
-}
+// OCCTShapeNbEdges / OCCTShapeNbFaces / OCCTShapeNbVertices are gone: each was a
+// TopExp_Explorer occurrence count (24 edges / 6 faces / 48 vertices on a 12-edge, 6-face,
+// 8-vertex box -- nbFaces only diverges from faceCount on a shape with a shared face), while
+// this project's own reference docs always documented the distinct count. Shape.nbEdges /
+// .nbFaces / .nbVertices are deprecated and forward to edgeCount / faceCount / vertexCount,
+// which already called OCCTShapeGetTotalEdgeCount / OCCTShapeGetFaceCount /
+// OCCTShapeGetVertexCount. #651
 
 // end of v0.123.0 implementations
 

@@ -4513,13 +4513,18 @@ struct ShapeQueriesV123Tests {
         }
     }
 
+    // Deprecated spellings of edgeCount/faceCount/vertexCount (#651); the annotation below is the
+    // project's own convention for a test that exercises a deprecated API on purpose. Coverage of
+    // the actual occurrence-vs-distinct contract these forward to lives in
+    // Issue651DeprecatedCounterTests.
+    @available(*, deprecated, message: "exercises the deprecated spelling on purpose")
     @Test("Shape nbEdges, nbFaces, nbVertices")
     func shapeSubShapeCounts() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
-            #expect(b.nbEdges > 0)
+            #expect(b.nbEdges == b.edgeCount)
             #expect(b.nbFaces == 6)
-            #expect(b.nbVertices > 0)
+            #expect(b.nbVertices == b.vertexCount)
         }
     }
 }

@@ -242,7 +242,11 @@ public final class Edge: @unchecked Sendable {
 // MARK: - Shape Extension for Edge Access
 
 extension Shape {
-    /// Get total number of edges in the shape
+    /// Get total number of edges in the shape.
+    ///
+    /// ``nbEdges`` was a second spelling of this same question, backed by a bare
+    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// favour of this one (#651).
     public var edgeCount: Int {
         Int(OCCTShapeGetTotalEdgeCount(handle))
     }

@@ -407,6 +407,9 @@ This is the same enumeration `Shape.faces()` walks and `Shape.face(at:)` indexes
 
 - **Returns:** Count of distinct `TopoDS_Face` sub-shapes; 0 on error or if the shape has none.
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_FACE, faceMap)` → `faceMap.Extent()`.
+- **Deprecated alias:** [`Shape.nbFaces`](Document-Completions.md#shapenbfaces-deprecated-651) was a
+  second spelling of this question, backed by a bare `TopExp_Explorer` occurrence count instead of
+  this deduplicated one. It now forwards here (#651).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
