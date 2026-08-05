@@ -960,7 +960,7 @@ public func allParts() -> Shape?
 - **OCCT:** `BOPAlgo_CellsBuilder::GetAllParts`.
 - **Example:**
   ```swift
-  if let parts = cells.allParts() { print(parts.nbFaces) }
+  if let parts = cells.allParts() { print(parts.faceCount) }
   ```
 
 ---
@@ -1202,7 +1202,7 @@ public static func sectionWithOptions(_ shape1: Shape, _ shape2: Shape,
 - **Example:**
   ```swift
   if let section = Shape.sectionWithOptions(box, cylinder, approximation: true) {
-      print(section.nbEdges)
+      print(section.edgeCount)
   }
   ```
 
@@ -2144,7 +2144,7 @@ public init?(shape1: Shape, shape2: Shape)
 - **Example:**
   ```swift
   if let sb = SectionBuilder(shape1: box, shape2: sphere) {
-      if let result = sb.build() { print(result.nbEdges) }
+      if let result = sb.build() { print(result.edgeCount) }
   }
   ```
 
@@ -2308,7 +2308,7 @@ public func build() -> Shape?
 - **Example:**
   ```swift
   if let result = sb.build() {
-      print(result.nbEdges)
+      print(result.edgeCount)
   }
   ```
 

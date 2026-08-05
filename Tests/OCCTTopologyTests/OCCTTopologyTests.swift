@@ -4523,7 +4523,7 @@ struct ShapeQueriesV123Tests {
         let box = Shape.box(width: 10, height: 10, depth: 10)
         if let b = box {
             #expect(b.nbEdges == b.edgeCount)
-            #expect(b.nbFaces == 6)
+            #expect(b.nbFaces == b.faceCount)
             #expect(b.nbVertices == b.vertexCount)
         }
     }
