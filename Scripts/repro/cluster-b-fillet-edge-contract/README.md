@@ -55,12 +55,12 @@ python3 Scripts/repro/cluster-b-fillet-edge-contract/classify_fillet_sites.py --
 
 | family | entry point | duplicate index | out-of-range index | OCCT-declined index | empty list |
 |---|---|---|---|---|---|
-| fillet-edges | `filleted(edges:radius:)` | N/A: uniform radius (dup 991.415927 == single 991.415927) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) | REJECT (nil) |
-| fillet-linear | `filleted(edges:startRadius:endRadius:)` | N/A: uniform law (dup 990.523733 == single 990.523733) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) | REJECT (nil) |
+| fillet-edges | `filleted(edges:radius:)` | N/A: uniform radius (dup 991.415927 == single 991.415927) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) -- **#639 fixed**: `filletedWithReport(edges:radius:)` sibling reports `declinedEdgeIndices` | REJECT (nil) |
+| fillet-linear | `filleted(edges:startRadius:endRadius:)` | N/A: uniform law (dup 990.523733 == single 990.523733) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) -- **#639 fixed**: `filletedWithReport(edges:startRadius:endRadius:)` sibling reports `declinedEdgeIndices` | REJECT (nil) |
 | fillet-edges (per-edge radius) | `blendedEdges(_:)` | **OVERWRITE: last radius wins** (dup 946.349541 == last-only 946.349541, != first-only 991.415927) -- #633 | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) | REJECT (nil) |
 | fillet-variable | `filletedVariable(edgeIndex:radiusProfile:)` | N/A: scalar edgeIndex, no list | REJECT (nil) | REJECT (nil): single edge, no partial fillet possible | N/A: no list; `radiusProfile` needs >=2 points, stricter than `filletEvolving`'s >=1 |
-| fillet-evolving | `filletEvolving(_:)` | **OVERWRITE: last law wins** (dup 946.349541 == last-only 946.349541), documented on `EvolvingFilletEdge`, same mechanism as #633 | REJECT (nil) | SKIP (non-nil, area 465.097336) -- **the #639 gap**: no count of how many were skipped | REJECT (nil) |
-| fillet-edges (with history) | `filletedWithFullHistory(radius:edges:)` | N/A: uniform radius (dup 997.853982 == single-edge 997.853982) | REJECT (nil) | SKIP (non-nil, area 465.097336) | REJECT (nil) |
+| fillet-evolving | `filletEvolving(_:)` | **OVERWRITE: last law wins** (dup 946.349541 == last-only 946.349541), documented on `EvolvingFilletEdge`, same mechanism as #633 | REJECT (nil) | SKIP (non-nil, area 465.097336) -- **#639 fixed**: `filletEvolvingWithReport(_:)` now reports `declinedEdgeIndices` | REJECT (nil) |
+| fillet-edges (with history) | `filletedWithFullHistory(radius:edges:)` | N/A: uniform radius (dup 997.853982 == single-edge 997.853982) | REJECT (nil) | SKIP (non-nil, area 465.097336) -- **#639**: needed no new API; `history.record(of:)`'s `!isDeleted && generated.isEmpty` already names the declined set | REJECT (nil) |
 | fillet-variable (with history) | `filletedWithFullHistory(edge:startRadius:endRadius:)` | N/A: scalar edge index, no list | REJECT (nil) | REJECT (nil): single edge | N/A: no list |
 | blend (BiTgte_Blend) | `biTgteBlend(edgeIndices:radius:)` | N/A: uniform radius over a set; `BiTgte_Blend` keys edges into an `IndexedMap` (dup 1000.000000 == single 1000.000000) | REJECT (nil), fixed by #613 | **NO-OP** on a convex edge (non-nil, volume unchanged): structurally different from a skip-from-a-batch, see note below | REJECT (nil) |
 | chamfer (two distances) | `chamferedTwoDistances(_:)` | **FIRST WINS** (dup 995.000000 == first-only 995.000000, != last-only 980.000000) -- the OPPOSITE of #633's last-wins | REJECT (nil) | REJECT (nil): single-edge batch, whole call fails | REJECT (nil) |
@@ -69,7 +69,7 @@ python3 Scripts/repro/cluster-b-fillet-edge-contract/classify_fillet_sites.py --
 | offset-per-face | `offsetPerFace(defaultOffset:faceOffsets:)` | N/A: `faceOffsets` is a `Dictionary`, a duplicate key cannot be constructed | REJECT (nil), fixed by **#541** (see "Corrections" below) | N/A: `BRepOffset_MakeOffset` has no per-face decline analogous to `Add()` on a free-boundary edge | ACCEPTS (non-nil): applies `defaultOffset` uniformly, a legitimate no-override request |
 | 2D fillet (face) | `fillet2D(vertexIndices:radii:)` | REJECT (nil) on a duplicated vertex index | REJECT (nil), fixed by #568 | UNMEASURED: no open/degenerate planar-face fixture built here | REJECT (nil), Swift-side guard |
 | 2D chamfer (face) | `chamfer2D(edgePairs:distances:)` | **CRASH (SIGSEGV, uncatchable)** on a duplicated edge pair -- see "New findings" below | REJECT (nil), fixed by #568 | UNMEASURED, same reason as `fillet2D` | REJECT (nil), Swift-side guard |
-| fillet (class API) | `FilletBuilder.addEdge(_:radius:)` | **OVERWRITE: last radius wins**, same mechanism as #633, unaudited by #489/#520/#568 | N/A: takes an `Edge`, not an index | foreign edge (a different `Shape` entirely): `addEdge` returns `true`, `build()` REJECT (nil) | `build()` with zero `addEdge` calls: REJECT (nil) |
+| fillet (class API) | `FilletBuilder.addEdge(_:radius:)` | **OVERWRITE: last radius wins**, same mechanism as #633, unaudited by #489/#520/#568 | N/A: takes an `Edge`, not an index | foreign edge (a different `Shape` entirely): `addEdge` returns `true`, `contour(for:) == 0`, `build()` REJECT (nil) -- **#639 correction**: `contour(for:)` already reports the decline per edge | `build()` with zero `addEdge` calls: REJECT (nil) |
 | chamfer (class API) | `ChamferBuilder.addEdge(_:distance:)` | **FIRST WINS**, matches `chamferedTwoDistances` -- `addEdge` itself prefers the first call, not just the bridge's hand-rolled loop | N/A: takes an `Edge`, not an index | foreign edge: `addEdge` returns `true`, `build()` REJECT (nil) | `build()` with zero `addEdge` calls: REJECT (nil) |
 
 Full command output (with the `note` column this table drops for width) is reproduced exactly by
@@ -116,10 +116,15 @@ family, not just deciding to reject/dedupe/document.
    of any kind.** No `occtUseSubShapesByIndex`, no `occtValidFilletRadius`. A foreign edge (one
    belonging to an entirely different `Shape`) is silently accepted by `addEdge` (returns `true`)
    and produces no built result (`build()` returns `nil`) with no signal as to why. This is a
-   second, independent access path into the same OCCT builder classes the free functions wrap, and
-   it inherits the #639 declined-edge-reporting gap on its own terms: there is no per-edge report
-   at all, only `addEdge`'s own `Bool` return, which per the above is `true` even for a foreign
-   edge that changes nothing.
+   second, independent access path into the same OCCT builder classes the free functions wrap.
+   **Correction (#639): the claim that "there is no per-edge report at all" was wrong, and #639
+   found it by trying the query this census never tried.** `FilletBuilder.contour(for:)` --
+   present since before this census, unrelated to #639 -- already answers exactly this: `Contour(E)
+   == 0` for the foreign edge above (measured directly: `addEdge` returns `true`,
+   `contour(for: foreignEdge)` returns `0`, `build()` returns `nil`), the identical signal it
+   reports for a same-shape edge OCCT declines on geometric grounds. Neither this census nor #639's
+   own issue text noticed the query already existed; #639 documents the recipe rather than adding
+   new bridge code for this class.
 3. **`offsetPerFace`'s reject-not-skip fix is attributed to #541 in the bridge's own comment, not
    #568.** See "Corrections" below.
 

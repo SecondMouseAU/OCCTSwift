@@ -2096,6 +2096,12 @@ public func filletedWithFullHistory(radius: Double, edges: [Int])
 - **Returns:** Result shape and history, or nil on failure, an empty edge list, or a non-positive
   radius (#489).
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeHistoryFromFilletEdges`).
+- **Finding a declined edge (#639):** an edge OCCT declines to fillet is skipped, not rejected. To
+  find which requested edges those were, check `!history.record(of: edge).isDeleted &&
+  history.record(of: edge).generated.isEmpty` for each one. An edge that WAS filleted is always
+  deleted with the new fillet-boundary edges in `generated`. Do not test `modified.isEmpty` alone:
+  a declined edge can still show a non-empty `modified` when an *accepted* neighbour's fillet trims
+  its shared endpoint.
 - **Example:**
   ```swift
   if let (result, history) = box.filletedWithFullHistory(radius: 2, edges: [0, 1, 2]) { }

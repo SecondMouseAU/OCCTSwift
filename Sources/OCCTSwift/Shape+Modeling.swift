@@ -38,6 +38,38 @@ extension Shape {
     }
     // MARK: - Selective Fillet
 
+    /// Result of a fillet call that also reports which requested edges OCCT declined (#639).
+    ///
+    /// `BRepFilletAPI_MakeFillet::Add` silently does nothing for an edge it cannot fillet, most
+    /// commonly a free-boundary edge of an open shell, which has only one adjacent face where a
+    /// fillet needs two. So the plain fillet methods (``filleted(edges:radius:)``,
+    /// ``filleted(edges:startRadius:endRadius:)``, ``filletEvolving(_:)``) build successfully and
+    /// silently skip it. `FilletResult` is how a caller who used the `WithReport` sibling of one of
+    /// those methods finds out which ones and how many.
+    ///
+    /// There is no *reason* to go with the list: `Add` returns nothing, and
+    /// `BRepFilletAPI_MakeFillet::NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a
+    /// contour that failed during `Build()`, which an edge OCCT never added to any contour never
+    /// reaches. `Contour(edge) == 0`, populated by `Add()` and not `Build()`, is the only signal
+    /// OCCT itself exposes, so this reports *which* edges were declined, not *why*.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.faces().dropFirst().compactMap { Shape.fromFace($0) }   // drop one face
+    /// let shell = Shape.sew(shapes: Array(faces))!                            // -> an open shell
+    /// if let report = shell.filletedWithReport(edges: shell.edges(), radius: 1.0) {
+    ///     print(report.declinedEdgeIndices)   // e.g. [6, 9, 10, 11]: skipped, not an error
+    /// }
+    /// ```
+    public struct FilletResult: Sendable {
+        /// The filleted shape. Identical to what the non-reporting sibling returns for the same
+        /// input: this reports skipped edges, it does not reject the call over them.
+        public let shape: Shape
+        /// 0-based indices, matching ``Edge/index``, of the requested edges OCCT declined to
+        /// fillet. Empty when every requested edge was accepted.
+        public let declinedEdgeIndices: [Int]
+    }
+
     /// Fillet specific edges with uniform radius
     ///
     /// Every edge must belong to this shape: only ``Edge/index`` is carried across, so an edge
@@ -64,10 +96,50 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeFilletEdges(handle, buffer.baseAddress, Int32(indices.count), radius) else {
+            guard let result = OCCTShapeFilletEdges(handle, buffer.baseAddress, Int32(indices.count), radius, nil, nil) else {
                 return nil
             }
             return Shape(handle: result)
+        }
+    }
+
+    /// ``filleted(edges:radius:)``, also reporting which requested edges OCCT declined (#639).
+    ///
+    /// An edge OCCT cannot fillet is still skipped, not rejected: this changes only what a caller
+    /// can learn about it, not the shape returned. See ``FilletResult`` for why the report is a
+    /// list of indices rather than a count or a reason.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let report = box.filletedWithReport(edges: box.edges(), radius: 1.0) {
+    ///     precondition(report.declinedEdgeIndices.isEmpty)   // every edge of a closed solid fillets
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - edges: Edges to fillet (must have valid indices from this shape)
+    ///   - radius: Fillet radius; must be > 0
+    /// - Returns: A ``FilletResult``, or nil on failure, including an edge that is not this shape's
+    public func filletedWithReport(edges: [Edge], radius: Double) -> FilletResult? {
+        guard !edges.isEmpty, radius > 0 else { return nil }
+
+        var indices = [Int32]()
+        indices.reserveCapacity(edges.count)
+        for edge in edges {
+            guard edge.index >= 0 else { return nil }
+            indices.append(Int32(edge.index))
+        }
+
+        return indices.withUnsafeBufferPointer { buffer -> FilletResult? in
+            var declined = [Int32](repeating: 0, count: indices.count)
+            var declinedCount: Int32 = 0
+            let result: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
+                OCCTShapeFilletEdges(handle, buffer.baseAddress, Int32(indices.count), radius,
+                                     declinedBuffer.baseAddress, &declinedCount)
+            }
+            guard let result else { return nil }
+            let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
+            return FilletResult(shape: Shape(handle: result), declinedEdgeIndices: declinedIndices)
         }
     }
 
@@ -97,10 +169,42 @@ extension Shape {
         }
 
         return indices.withUnsafeBufferPointer { buffer in
-            guard let result = OCCTShapeFilletEdgesLinear(handle, buffer.baseAddress, Int32(indices.count), startRadius, endRadius) else {
+            guard let result = OCCTShapeFilletEdgesLinear(handle, buffer.baseAddress, Int32(indices.count), startRadius, endRadius, nil, nil) else {
                 return nil
             }
             return Shape(handle: result)
+        }
+    }
+
+    /// ``filleted(edges:startRadius:endRadius:)``, also reporting which requested edges OCCT
+    /// declined (#639). See ``filletedWithReport(edges:radius:)`` for the reporting contract.
+    ///
+    /// - Parameters:
+    ///   - edges: Edges to fillet (must have valid indices from this shape)
+    ///   - startRadius: Radius at start of each edge; must be > 0
+    ///   - endRadius: Radius at end of each edge; must be > 0
+    /// - Returns: A ``FilletResult``, or nil on failure, including an edge that is not this shape's
+    public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double) -> FilletResult? {
+        guard !edges.isEmpty, startRadius > 0, endRadius > 0 else { return nil }
+
+        var indices = [Int32]()
+        indices.reserveCapacity(edges.count)
+        for edge in edges {
+            guard edge.index >= 0 else { return nil }
+            indices.append(Int32(edge.index))
+        }
+
+        return indices.withUnsafeBufferPointer { buffer -> FilletResult? in
+            var declined = [Int32](repeating: 0, count: indices.count)
+            var declinedCount: Int32 = 0
+            let result: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
+                OCCTShapeFilletEdgesLinear(handle, buffer.baseAddress, Int32(indices.count),
+                                           startRadius, endRadius,
+                                           declinedBuffer.baseAddress, &declinedCount)
+            }
+            guard let result else { return nil }
+            let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
+            return FilletResult(shape: Shape(handle: result), declinedEdgeIndices: declinedIndices)
         }
     }
 
@@ -1013,6 +1117,10 @@ extension Shape {
     /// `IsDeleted` per input sub-shape (e.g. a filleted edge → multiple
     /// generated fillet faces).
     ///
+    /// An edge OCCT declines to fillet is skipped, exactly as ``filleted(edges:radius:)`` skips
+    /// it; see ``ShapeHistoryRecord``'s own doc for how to recover which requested edges those
+    /// were from the returned history (#639).
+    ///
     /// `radius` must be positive, matching ``filleted(edges:radius:)``.
     public func filletedWithFullHistory(radius: Double, edges: [Int])
         -> (result: Shape, history: ShapeHistoryRef)?
@@ -1413,8 +1521,51 @@ extension Shape {
         }
 
         guard let h = OCCTShapeFilletEvolving(handle, edgeIndices, Int32(edges.count),
-                                               radiusPoints, pointCounts) else { return nil }
+                                               radiusPoints, pointCounts, nil, nil) else { return nil }
         return Shape(handle: h)
+    }
+
+    /// ``filletEvolving(_:)``, also reporting which requested edges OCCT declined (#639): the
+    /// entry point the census named directly. Filleting an open shell's whole edge list SKIPs the
+    /// edges OCCT declines, with nothing that says which or how many. See
+    /// ``filletedWithReport(edges:radius:)`` for the reporting contract; the meaning is identical
+    /// here, keyed by ``EvolvingFilletEdge/edgeIndex``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.faces().dropFirst().compactMap { Shape.fromFace($0) }
+    /// let shell = Shape.sew(shapes: Array(faces))!
+    /// let laws = shell.edges().map { EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)]) }
+    /// if let report = shell.filletEvolvingWithReport(laws) {
+    ///     print(report.declinedEdgeIndices.count, "of", laws.count, "edges declined")
+    /// }
+    /// ```
+    ///
+    /// - Parameter edges: Array of edge specifications with radius evolution. Naming the same edge
+    ///   twice writes its law twice, and the later one wins.
+    /// - Returns: A ``FilletResult``, or nil on failure.
+    public func filletEvolvingWithReport(_ edges: [EvolvingFilletEdge]) -> FilletResult? {
+        guard !edges.isEmpty else { return nil }
+
+        let edgeIndices = edges.map { Int32($0.edgeIndex) }
+        let pointCounts = edges.map { Int32($0.radiusPoints.count) }
+        var radiusPoints = [OCCTFilletRadiusPoint]()
+        for edge in edges {
+            for rp in edge.radiusPoints {
+                radiusPoints.append(OCCTFilletRadiusPoint(parameter: rp.parameter, radius: rp.radius))
+            }
+        }
+
+        var declined = [Int32](repeating: 0, count: edges.count)
+        var declinedCount: Int32 = 0
+        let h: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
+            OCCTShapeFilletEvolving(handle, edgeIndices, Int32(edges.count),
+                                    radiusPoints, pointCounts,
+                                    declinedBuffer.baseAddress, &declinedCount)
+        }
+        guard let h else { return nil }
+        let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
+        return FilletResult(shape: Shape(handle: h), declinedEdgeIndices: declinedIndices)
     }
     /// Offset a shape with different distances per face.
     ///

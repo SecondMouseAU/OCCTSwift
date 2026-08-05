@@ -3,6 +3,26 @@ import simd
 import OCCTBridge
 
 /// Builder for creating fillets on edges of a shape, wrapping BRepFilletAPI_MakeFillet.
+///
+/// ## Finding a declined edge (#639)
+///
+/// `addEdge` returns `true` even for an edge OCCT goes on to silently decline: a free-boundary
+/// edge of an open shell, most commonly, which has only one adjacent face where a fillet needs
+/// two. Unlike the free functions (``Shape/filleted(edges:radius:)`` and siblings), this class
+/// already has the query for it: ``contour(for:)`` returns `0` for an edge that never entered any
+/// contour, populated by `Add()` itself so it is readable right after `addEdge`, with no need to
+/// call ``build()`` first.
+///
+/// ```swift
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
+/// let faces = box.faces().dropFirst().compactMap { Shape.fromFace($0) }
+/// let shell = Shape.sew(shapes: Array(faces))!       // an open shell: some edges are unfilletable
+/// let builder = FilletBuilder(shape: shell)!
+/// let edges = shell.edges()
+/// for edge in edges { builder.addEdge(edge, radius: 1.0) }
+/// let declined = edges.filter { builder.contour(for: $0) == 0 }
+/// print(declined.map(\.index))   // e.g. [6, 9, 10, 11]
+/// ```
 public final class FilletBuilder: @unchecked Sendable {
     private let handle: OCCTFilletBuilderRef
 
@@ -102,6 +122,11 @@ extension FilletBuilder {
     }
 
     /// Get contour index for an edge (0 if not found).
+    ///
+    /// `0` covers two different things a caller may need to tell apart: an edge never passed to
+    /// ``addEdge(_:radius:)``/``addEdge(_:radius1:radius2:)`` at all, and one that was but that
+    /// OCCT declined (#639, see the type's own doc). This only distinguishes them for edges the
+    /// caller itself tracked as added.
     public func contour(for edge: Edge) -> Int {
         Int(OCCTFilletBuilderContour(handle, edge.handle))
     }

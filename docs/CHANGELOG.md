@@ -171,6 +171,81 @@ otherwise, naming the tree so a diagnostic probe left by an investigation is not
 
 ### Pass 1b of the #377 duplication audit
 
+#### The fillet family could not report a declined edge, only skip it silently (#639)
+
+`BRepFilletAPI_MakeFillet::Add` does nothing, with no exception and no false return, for an edge it
+cannot fillet, most commonly a free-boundary edge of an open shell, which has only one adjacent
+face where a fillet needs two. `filleted(edges:radius:)`, `filleted(edges:startRadius:endRadius:)`
+and `filletEvolving(_:)` have always skipped such an edge rather than rejecting the whole call
+(#612), correctly, but had no way to tell a caller which edges those were, or how many. The Cluster
+B census (`Scripts/repro/cluster-b-fillet-edge-contract/`) measured the gap concretely: filleting
+all 12 edges of an open shell (a box with one face dropped, sewn) accepts 8 and silently declines 4
+(`[6, 9, 10, 11]`), and every one of these three entry points reports plain success.
+
+**The decision this issue asked for, made explicitly:** report, do not reject. Converging every
+declining entry point onto rejecting a batch with any declined edge would change
+`filleted(edges:radius:)`, `filleted(edges:startRadius:endRadius:)` and `blendedEdges(_:)` on every
+open shell: a behaviour change wider than this issue, and the same mistake an earlier draft of
+#633 made and withdrew. Skip stays the answer; the fix is observability, following #482's
+`FillingSurface.refusedConstraintCount` precedent named in the issue.
+
+**What OCCT can actually say, measured before designing around it:** `Add` returns nothing, and
+`BRepFilletAPI_MakeFillet::NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a *contour*
+that failed during `Build()`, which an edge OCCT never added to any contour never reaches. The one
+signal OCCT does expose is `Contour(edge) == 0`, populated by `Add()` itself rather than by
+`Build()`. So this reports **which** edges were declined (a list of indices, not just a count: the
+issue's own "count is cheap, naming which is more useful" argument, taken as far as it goes), and
+**not why**: no reason is reachable from this API.
+
+**Fixed for the three entry points that genuinely had no side channel**: `filleted(edges:radius:)`
+and `filleted(edges:startRadius:endRadius:)` (`OCCTShapeFilletEdges`/`OCCTShapeFilletEdgesLinear`,
+sharing `occtShapeFilletEdgeList`) and `filletEvolving(_:)` (`OCCTShapeFilletEvolving`) each gained
+a `WithReport` sibling, `filletedWithReport(edges:radius:)`,
+`filletedWithReport(edges:startRadius:endRadius:)`, `filletEvolvingWithReport(_:)`, returning a
+new `Shape.FilletResult { shape, declinedEdgeIndices }`. The bridge computes the report with a new
+shared helper (`occtFilletDeclinedIndices`/`occtFilletWriteDeclined`, `OCCTBridge_Internal.h`) that
+re-checks `Contour(edge)` for each requested index after every `Add()` and before `Build()`; the
+three underlying bridge functions gained two nullable trailing out-parameters the existing
+non-reporting call sites pass `nil` for, so nothing about their cost or behaviour changes.
+
+**Two of the issue's own named members already carried the mechanism, measured rather than assumed
+missing:** `filletedWithFullHistory(radius:edges:)`'s `ShapeHistoryRef` distinguishes a declined
+edge from an accepted one via `!record.isDeleted && record.generated.isEmpty`. An edge OCCT
+actually filleted is always deleted with the new fillet-boundary edges in `generated` (12/12 on the
+fixture). **The first hypothesis for this recipe was wrong and caught by measuring it**: a declined
+edge is not necessarily `modified.isEmpty` too. On this fixture every declined edge shows exactly
+one `modified` entry, a *different* edge instance with a shorter length (10.0 to 8.0), because an
+*accepted* neighbour's fillet trims the declined edge's shared endpoint. `modified` alone is not the
+signal; `generated`/`isDeleted` are. Separately, `FilletBuilder.contour(for:)`, already present and
+unrelated to this issue, answers the identical `Contour(edge) == 0` question directly, readable
+right after `addEdge` with no `build()` required, matching the census's measured set exactly before
+and after `build()`. Both are documented (`ShapeHistoryRecord`, `FilletBuilder`) with a runnable
+recipe rather than given new bridge code, since there was nothing to add.
+
+**`blendedEdges(_:)`, #633's own site, does not adopt this mechanism here.** It is the same SKIP
+behaviour on the same declined-edge axis, so the same `WithReport` shape would apply, but #633 is
+about a *different* axis of this contract (a duplicated edge index silently discards a radius) and
+is scheduled after this PR specifically because the reporting decision made here might change what
+#633 should do. Recommendation for that issue: adopt the same `FilletResult`-shaped report,
+extended to also carry which duplicate indices were overwritten, since the same
+"list what happened, do not change what SKIP or OVERWRITE means" principle applies to it too.
+
+New tests: `Tests/OCCTModelingTests/Issue639FilletDeclinedEdgeReportTests.swift`, seven cases
+covering all five members named in the issue (the three `WithReport` siblings, the `FilletBuilder`
+recipe, the history recipe) plus two "empty on a closed solid" negative controls. Each of the five
+declined-set assertions was proven to catch its own mechanism, not just some regression elsewhere:
+reverting `occtFilletWriteDeclined` to report nothing fails exactly the three `WithReport` tests (the
+two negative controls correctly stay green, since they expect empty anyway); separately reverting
+`OCCTFilletBuilderContour` fails exactly the `FilletBuilder` test; separately reverting
+`OCCTBooleanHistoryIsDeleted` fails exactly the history test.
+
+This is additive, non-breaking Swift API (three new methods, one new struct, no existing signature
+changed), recorded in [`SEMVER.md`](SEMVER.md#639-additive-fillet-decline-reporting-not-an-exception)
+per #664's discipline of writing this down now rather than at tag time, even though nothing here
+moves the file's own "twelve recorded exceptions" count. `Scripts/repro/cluster-b-fillet-edge-contract/`
+is unchanged: the census measures the contract, this issue only adds a way to observe one axis of
+it, and the measured grid itself (SKIP/REJECT per cell) does not move.
+
 #### `AAG` rode the lossy `faces()`, so `detectPocketsAAG()` answered 2 or 1 for the same geometry depending on compound member order (#642)
 
 `AAG.buildGraph()` built its node set from `Shape.faces()`, the `IsSame`-keyed enumeration #614

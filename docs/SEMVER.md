@@ -363,6 +363,32 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
+#### #639: additive fillet decline reporting, not an exception
+
+**Recorded here per #664's own rule of writing a public-API change down in this file before the
+tag, not because this one is a recorded exception.** `filleted(edges:radius:)`,
+`filleted(edges:startRadius:endRadius:)` and `filletEvolving(_:)` each gained a `WithReport`
+sibling (`filletedWithReport(edges:radius:)`, `filletedWithReport(edges:startRadius:endRadius:)`,
+`filletEvolvingWithReport(_:)`) returning a new `Shape.FilletResult`: the edges OCCT declined to
+fillet, alongside the shape, for a caller who wants to know (#639).
+
+This does **not** move the "twelve recorded exceptions" count above, checked and confirmed
+unchanged by this entry: no existing method's signature or behaviour changed. `filleted(edges:
+radius:)` and its two siblings still return exactly what they always did, for exactly the same
+inputs; a caller who never calls the three new methods sees no difference at all. This is the
+**MINOR**, additive Swift API, case the quick reference table already names, not the MAJOR-avoided,
+compile-error-or-silent-behaviour-change case every entry above it is. It is recorded here anyway,
+rather than left to the release's own `CHANGELOG.md` entry, because #664 asks for every public-API
+change in this cluster of work to be written down at the same time it lands, and distinguishing
+"additive, no exception" from "exception" is itself information a reviewer of this file benefits
+from having next to the twelve that are.
+
+Two of the issue's own named members (`filletedWithFullHistory(radius:edges:)`,
+`FilletBuilder.contour(for:)`) needed no new API at all: both already carry a way to answer the
+same question, documented in this PR with a runnable recipe rather than given new bridge code. See
+[`CHANGELOG.md`](CHANGELOG.md#the-fillet-family-could-not-report-a-declined-edge-only-skip-it-silently-639)
+for the full measurement and the reasoning against converging fillet's SKIP behaviour onto reject.
+
 ### MINOR — `x.y.0`
 
 A minor bump is for additive change. Two routes:

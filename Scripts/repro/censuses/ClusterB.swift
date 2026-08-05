@@ -157,7 +157,7 @@ enum ClusterB {
             record("fillet-edges", "filleted(edges:radius:)",
                    duplicate: volumesAgree(dup, single) ? "N/A: uniform radius (dup vol \(fmt(dup)) == single \(fmt(single)))" : "differs (dup \(fmt(dup)) vs single \(fmt(single)))",
                    outOfRange: outOfRange == nil ? "REJECT (nil)" : "measured non-nil",
-                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea)))" : "REJECT (nil)",
+                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- #639 fixed: filletedWithReport(edges:radius:) sibling reports declinedEdgeIndices" : "REJECT (nil)",
                    empty: box.filleted(edges: [], radius: 2.0) == nil ? "REJECT (nil)" : "non-nil",
                    note: "out-of-range probe: compound.edges()[15] (.index 15) passed to box (12 edges) -- Cluster A's shared fixture reused, #694")
         }
@@ -174,7 +174,7 @@ enum ClusterB {
             record("fillet-linear", "filleted(edges:startRadius:endRadius:)",
                    duplicate: volumesAgree(dup, single) ? "N/A: uniform law (dup vol \(fmt(dup)) == single \(fmt(single)))" : "differs (dup \(fmt(dup)) vs single \(fmt(single)))",
                    outOfRange: outOfRange == nil ? "REJECT (nil)" : "measured non-nil",
-                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea)))" : "REJECT (nil)",
+                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- #639 fixed: filletedWithReport(edges:startRadius:endRadius:) sibling reports declinedEdgeIndices" : "REJECT (nil)",
                    empty: box.filleted(edges: [], startRadius: 1.0, endRadius: 3.0) == nil ? "REJECT (nil)" : "non-nil")
         }
 
@@ -251,7 +251,7 @@ enum ClusterB {
             record("fillet-evolving", "filletEvolving(_:)",
                    duplicate: dupVerdict,
                    outOfRange: outOfRange == nil ? "REJECT (nil)" : "measured non-nil",
-                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- the #639 gap: no count of how many were skipped" : "REJECT (nil)",
+                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- #639 fixed: filletEvolvingWithReport(_:) now reports declinedEdgeIndices" : "REJECT (nil)",
                    empty: box.filletEvolving([]) == nil ? "REJECT (nil)" : "non-nil")
         }
 
@@ -266,7 +266,7 @@ enum ClusterB {
             record("fillet-edges (with history)", "filletedWithFullHistory(radius:edges:)",
                    duplicate: volumesAgree(dup, one) ? "N/A: uniform radius (dup \(fmt(dup)) == single-edge \(fmt(one)), both bigger than two-distinct-edges \(fmt(both)) -- fewer edges removed means less material gone)" : "differs (dup \(fmt(dup)) vs single \(fmt(one)))",
                    outOfRange: outOfRange == nil ? "REJECT (nil)" : "measured non-nil",
-                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea)))" : "REJECT (nil)",
+                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- #639: needed no new API, history.record(of:)'s !isDeleted && generated.isEmpty already names the declined set" : "REJECT (nil)",
                    empty: box.filletedWithFullHistory(radius: 1.0, edges: []) == nil ? "REJECT (nil)" : "non-nil")
         }
 
@@ -494,6 +494,12 @@ enum ClusterB {
 
             let foreignEdge = foreignShape.edges()[0]
             let foreignAdded = builderForeign.addEdge(foreignEdge, radius: 2.0)
+            // #639 correction: contour(for:) -- present in this class before #639, unrelated to
+            // it -- already answers "did this added edge make it into a contour" for exactly this
+            // foreign-edge case, the same Contour(E) == 0 signal it gives a same-shape edge OCCT
+            // declines on geometric grounds. The original census note here ("no per-edge signal
+            // beyond addEdge's own Bool return") never tried this query and was wrong.
+            let foreignContour = builderForeign.contour(for: foreignEdge)
             let foreignBuiltVolume = builderForeign.build()?.volume
             let foreignNoOp = foreignBuiltVolume.map { abs($0 - (box.volume ?? -1)) < 1e-6 } ?? false
 
@@ -502,9 +508,9 @@ enum ClusterB {
             record("fillet (class API)", "FilletBuilder.addEdge(_:radius:)",
                    duplicate: dupVerdict,
                    outOfRange: "N/A: takes an Edge object, not an index -- no out-of-range index to name",
-                   declined: "foreign edge (belongs to a different Shape entirely): addEdge returned \(foreignAdded), build() \(foreignBuiltVolume == nil ? "REJECT (nil)" : (foreignNoOp ? "NO-OP (non-nil, volume unchanged)" : "non-nil, volume changed"))",
+                   declined: "foreign edge (belongs to a different Shape entirely): addEdge returned \(foreignAdded), contour(for:) == \(foreignContour), build() \(foreignBuiltVolume == nil ? "REJECT (nil)" : (foreignNoOp ? "NO-OP (non-nil, volume unchanged)" : "non-nil, volume changed"))",
                    empty: "build() with zero addEdge calls: \(emptyResult == nil ? "REJECT (nil)" : "non-nil")",
-                   note: "no index resolution at all in this path: no occtUseSubShapesByIndex, no occtValidFilletRadius -- #639's declined-edge gap applies here too, and there is no per-edge signal beyond addEdge's own Bool return")
+                   note: "no index resolution at all in this path: no occtUseSubShapesByIndex, no occtValidFilletRadius -- but contour(for:) == 0 already reports the decline per edge (#639 correction), readable right after addEdge with no build() required")
         }
 
         // MARK: - ChamferBuilder class API  [takes Edge objects directly, not indices]

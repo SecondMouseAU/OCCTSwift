@@ -324,8 +324,15 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType) 
 // The three edge-list fillet entry points share occtShapeFilletEdgeList (OCCTBridge_Internal.h)
 // and supply only their own radius law; OCCTShapeBlendEdges, the per-edge one, lives in
 // OCCTBridge_Healing.mm. See that helper for why the radius precondition is the bridge's. #489
+//
+// #639: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined
+// (occtFilletWriteDeclined). Both are nullable and the existing skip behaviour is unchanged when
+// they are null; `filleted(edges:radius:)` passes null for both, `filletedWithReport(edges:radius:)`
+// does not. `declinedEdgeIndices`, when non-null, must have capacity >= edgeCount.
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                   int32_t edgeCount, double radius) {
+                                   int32_t edgeCount, double radius,
+                                   int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!occtValidFilletRadius(radius)) return nullptr;
 
     return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
@@ -333,11 +340,14 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
                                             const TopoDS_Edge& edge, int32_t) {
         fillet.Add(radius, edge);
         return true;
-    });
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
+// #639: same reporting contract as OCCTShapeFilletEdges above.
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                         int32_t edgeCount, double startRadius, double endRadius) {
+                                         int32_t edgeCount, double startRadius, double endRadius,
+                                         int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!occtValidFilletRadius(startRadius) || !occtValidFilletRadius(endRadius)) return nullptr;
 
     return occtShapeFilletEdgeList(shape, edgeIndices, edgeCount,
@@ -358,7 +368,7 @@ OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeI
         // skip the sibling entry points get from Add(Radius, E).
         fillet.Add(startRadius, endRadius, edge);
         return true;
-    });
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
 OCCTShapeRef OCCTShapeDraft(OCCTShapeRef shape, const int32_t* faceIndices, int32_t faceCount,
@@ -2385,10 +2395,17 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
 // 1-based edge index in the family. And a per-edge point count below 1 is now rejected: it used to
 // take neither branch, leaving a contour with no radius at all, which SIGSEGVs in Build() rather
 // than failing IsDone(). Reachable from Swift as EvolvingFilletEdge(edge:radiusPoints: []).
+//
+// #639: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined, same
+// contract as OCCTShapeFilletEdges. This is the entry point the census named directly: filleting an
+// open shell's whole edge list SKIPs the edges OCCT declines with no way to learn which or how
+// many. `filletEvolving(_:)` passes null for both; `filletEvolvingWithReport(_:)` does not.
 OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
                                       const int32_t* edgeIndices, int32_t edgeCount,
                                       const OCCTFilletRadiusPoint* radiusPoints,
-                                      const int32_t* pointCounts) {
+                                      const int32_t* pointCounts,
+                                      int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!shape || !edgeIndices || edgeCount <= 0 || !radiusPoints || !pointCounts) return nullptr;
     try {
         BRepFilletAPI_MakeFillet fillet(shape->shape);
@@ -2413,6 +2430,9 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
             return profileOk;
         });
         if (!ok) return nullptr;
+
+        occtFilletWriteDeclined(fillet, shape->shape, edgeIndices, edgeCount,
+                                declinedEdgeIndices, outDeclinedCount);
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;
