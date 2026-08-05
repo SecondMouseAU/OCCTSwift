@@ -1052,18 +1052,10 @@ int32_t OCCTShapeAnalyzeEdgeConcavity(OCCTShapeRef shape, double angle,
         BRepOffset_Analyse analyser(shape->shape, angle);
         if (!analyser.IsDone()) return -1;
 
-        // #695: this walked a bare TopExp_Explorer, one entry per OCCURRENCE, while Swift zips the
-        // result against edges() -- the deduplicated TopExp::MapShapes enumeration. A 20mm box has
-        // 24 edge occurrences over 12 edges, so the two desynchronise from the first repeat and
-        // every classification after it lands on the wrong edge. Measured on the issue's L-prism:
-        // the one genuinely concave edge (map index 7, the reentrant corner) was reported convex
-        // while map indices 9 and 12, two convex edges in the top cap, were reported concave.
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
         int32_t count = 0;
-        for (int32_t i = 1; i <= edgeMap.Extent() && count < maxEntries; i++) {
-            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i)));  // maps are 1-based
+        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More() && count < maxEntries; exp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
+            const auto& intervals = analyser.Type(edge);
             // Use the first interval's type for the overall edge classification
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 OCCTConcavityType type;
@@ -1092,14 +1084,10 @@ int32_t OCCTShapeCountEdgeConcavity(OCCTShapeRef shape, double angle, int32_t ty
         else if (type == 1) targetType = ChFiDS_Concave;
         else targetType = ChFiDS_Tangential;
 
-        // #695: counted occurrences, so a 12-edge box reported 24 convex edges. Distinct edges now,
-        // which is the number edgeCount reports and the number of entries the classifier above fills.
-        TopTools_IndexedMapOfShape edgeMap;
-        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
-
         int32_t count = 0;
-        for (int32_t i = 1; i <= edgeMap.Extent(); i++) {
-            const auto& intervals = analyser.Type(TopoDS::Edge(edgeMap(i)));
+        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
+            const auto& intervals = analyser.Type(edge);
             for (auto it = intervals.begin(); it != intervals.end(); ++it) {
                 if (it->Type() == targetType) {
                     count++;
@@ -1119,12 +1107,18 @@ OCCTEdgeEdgeExtremaResult OCCTBRepExtremaExtCC(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeEdgeExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // Find edges. #613: an edge index crossing this bridge is a position in the deduplicated
-        // TopExp::MapShapes enumeration -- the one edges()/edgeCount/edge(at:) share -- not in a
-        // bare explorer walk, which yields one entry per occurrence and so names a different edge
-        // from the first repeat onwards.
-        TopoDS_Edge e1 = occtEdgeAtIndex(shape1->shape, edgeIndex1);
-        TopoDS_Edge e2 = occtEdgeAtIndex(shape2->shape, edgeIndex2);
+        // Find edges
+        TopoDS_Edge e1, e2;
+        int idx = 0;
+        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+            if (idx == edgeIndex1) { e1 = TopoDS::Edge(exp.Current()); break; }
+            idx++;
+        }
+        idx = 0;
+        for (TopExp_Explorer exp(shape2->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+            if (idx == edgeIndex2) { e2 = TopoDS::Edge(exp.Current()); break; }
+            idx++;
+        }
         if (e1.IsNull() || e2.IsNull()) return result;
 
         BRepExtrema_ExtCC extCC(e1, e2);
@@ -1273,8 +1267,12 @@ OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
     OCCTPointEdgeExtremaResult result = {};
     if (!shape) return result;
     try {
-        // #613: the deduplicated enumeration, matching its ExtCC/ExtCF siblings in this file.
-        TopoDS_Edge edge = occtEdgeAtIndex(shape->shape, edgeIndex);
+        TopoDS_Edge edge;
+        int idx = 0;
+        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
+            idx++;
+        }
         if (edge.IsNull()) return result;
 
         TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
@@ -1309,14 +1307,16 @@ OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        // #613: the edge index reads the deduplicated enumeration. The face index deliberately does
-        // not -- faces are the exception (explorer and map agree on ordinary solids, diverging only
-        // when one face has two parents), and reconciling faces() with faceCount/face(at:) is #541.
-        TopoDS_Edge edge = occtEdgeAtIndex(shape1->shape, edgeIndex);
+        TopoDS_Edge edge;
+        int idx = 0;
+        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
+            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
+            idx++;
+        }
         if (edge.IsNull()) return result;
 
         TopoDS_Face face;
-        int idx = 0;
+        idx = 0;
         for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
             if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
             idx++;
@@ -4276,17 +4276,6 @@ OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index) {
         return new OCCTEdge(edge);
     } catch (...) {
         return nullptr;
-    }
-}
-
-int32_t OCCTShapeIndexOfEdge(OCCTShapeRef shape, OCCTShapeRef edgeShape) {
-    if (!shape || !edgeShape) return -1;
-
-    try {
-        if (edgeShape->shape.IsNull() || edgeShape->shape.ShapeType() != TopAbs_EDGE) return -1;
-        return occtIndexOfSubShape(shape->shape, TopAbs_EDGE, edgeShape->shape);
-    } catch (...) {
-        return -1;
     }
 }
 

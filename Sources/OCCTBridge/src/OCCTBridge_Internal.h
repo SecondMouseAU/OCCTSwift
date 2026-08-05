@@ -53,60 +53,6 @@
 #include <TDF_Label.hxx>
 #include <TNaming_Scope.hxx>
 #include <BRepOffsetAPI_MakeFilling.hxx>
-#include <TopExp.hxx>
-#include <TopoDS.hxx>
-#include <TopTools_IndexedMapOfShape.hxx>
-
-// === #613: one meaning for an edge or vertex index ===
-//
-// An edge or vertex index crossing this bridge is a 0-based position in the DEDUPLICATED
-// TopExp::MapShapes enumeration -- the one Shape.edges()/edgeCount/edge(at:) and
-// Shape.vertices()/vertexCount already read. It is NOT a position in a bare TopExp_Explorer walk,
-// which yields one entry per topology OCCURRENCE.
-//
-// The two disagree on every ordinary solid, because an edge is shared by the two faces it bounds.
-// Measured on this branch's kernel: a 20mm box has 12 distinct edges and 24 edge occurrences; the
-// issue's L-prism has 18 and 36. From the first repeat onwards, index n names a different edge in
-// each enumeration. (Faces are the exception -- explorer and map agree on ordinary solids and
-// diverge only when one face has two parents, e.g. the same solid added twice to a compound --
-// which is why face indexing is left alone here and belongs to #541.)
-//
-// Reading the map rather than the traversal is safe for these consumers: the map's equality is
-// TopoDS_Shape::IsSame (TopTools_ShapeMapHasher), so orientation cannot select a different entry,
-// and none of the call sites converted here depend on an occurrence's orientation.
-
-/// The edge at 0-based `index` in `shape`'s deduplicated edge enumeration, or a null TopoDS_Edge
-/// when the index is negative or past the end.
-inline TopoDS_Edge occtEdgeAtIndex(const TopoDS_Shape& shape, int32_t index) {
-    if (index < 0) return TopoDS_Edge();
-    TopTools_IndexedMapOfShape map;
-    TopExp::MapShapes(shape, TopAbs_EDGE, map);
-    if (index >= map.Extent()) return TopoDS_Edge();
-    return TopoDS::Edge(map(index + 1));  // OCCT's indexed maps are 1-based
-}
-
-/// The sub-shape at 0-based `index` in `shape`'s deduplicated enumeration of `type`, or a null
-/// TopoDS_Shape when the index is out of range.
-inline TopoDS_Shape occtSubShapeAtIndex(const TopoDS_Shape& shape, TopAbs_ShapeEnum type,
-                                        int32_t index) {
-    if (index < 0) return TopoDS_Shape();
-    TopTools_IndexedMapOfShape map;
-    TopExp::MapShapes(shape, type, map);
-    if (index >= map.Extent()) return TopoDS_Shape();
-    return map(index + 1);
-}
-
-/// The 0-based position of `sub` in `shape`'s deduplicated enumeration of `type`, or -1 when `sub`
-/// is not a sub-shape of that type. The inverse of occtSubShapeAtIndex, used to stamp an index a
-/// caller can feed straight back into edges()/edge(at:).
-inline int32_t occtIndexOfSubShape(const TopoDS_Shape& shape, TopAbs_ShapeEnum type,
-                                   const TopoDS_Shape& sub) {
-    if (sub.IsNull()) return -1;
-    TopTools_IndexedMapOfShape map;
-    TopExp::MapShapes(shape, type, map);
-    const int32_t found = map.FindIndex(sub);
-    return found > 0 ? found - 1 : -1;  // FindIndex is 1-based, 0 means absent
-}
 
 // === Foundation struct definitions ===
 

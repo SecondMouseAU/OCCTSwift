@@ -1232,19 +1232,6 @@ int32_t OCCTShapeGetTotalEdgeCount(OCCTShapeRef shape);
 /// @return Edge reference, or NULL if index out of bounds. Caller must release.
 OCCTEdgeRef OCCTShapeGetEdgeAtIndex(OCCTShapeRef shape, int32_t index);
 
-/// The 0-based index of `edgeShape` within `shape`'s edge enumeration — the inverse of
-/// OCCTShapeGetEdgeAtIndex, and the same enumeration OCCTShapeGetTotalEdgeCount counts.
-///
-/// Use it to stamp an index onto an edge produced by an operation that returns loose edges
-/// (LocOpe_FindEdges, LocOpe_FindEdgesInFace), so the caller can feed it straight back into
-/// edge-index consumers such as filleting. Orientation-insensitive: a REVERSED occurrence resolves
-/// to the index its FORWARD twin is stored under.
-///
-/// @param shape The parent shape whose enumeration defines the index
-/// @param edgeShape A shape wrapping the TopoDS_Edge to locate
-/// @return 0-based index, or -1 if `edgeShape` is not an edge of `shape`
-int32_t OCCTShapeIndexOfEdge(OCCTShapeRef shape, OCCTShapeRef edgeShape);
-
 /// Release an edge reference
 void OCCTEdgeRelease(OCCTEdgeRef edge);
 

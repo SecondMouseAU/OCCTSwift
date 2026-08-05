@@ -1081,15 +1081,6 @@ public func edgeConcavityCount(_ type: EdgeConcavity, angle: Double = 0.01) -> I
 - **Returns:** Count of matching edges, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeCountEdgeConcavity`).
 
-Counts **distinct edges**, so the three type counts sum to at most `edgeCount`. Before #613 this
-counted topology occurrences and a 12-edge box reported 24 convex edges.
-
-```swift
-let box = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20)!
-box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
-box.edgeConcavityCount(.concave)  // 0
-```
-
 ---
 
 ## Geometric Edge Selection (v1.2.1)
@@ -1616,11 +1607,9 @@ public func splitEdge(at edgeIndex: Int, parameter: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based index of the edge to split, addressing the same edge as
-    `edges()[edgeIndex]`. An index at or above `edgeCount` returns `nil` (#613).
+  - `edgeIndex` — 0-based index of the edge to split.
   - `parameter` — Parameter along the edge (0.0–1.0) where the split occurs.
-- **Returns:** The split edge parts as a compound, or `nil` on failure. Splitting at 0.5 yields two
-  pieces, each half the length of `edges()[edgeIndex]`.
+- **Returns:** The split edge parts as a compound, or `nil` on failure.
 - **OCCT:** `LocOpe_SplitShape` (via `OCCTLocOpeSplitShapeByVertex`).
 
 ---
@@ -1662,16 +1651,6 @@ public func commonEdges(with other: Shape) -> [Edge]
 - **Returns:** Array of common edges (up to 100).
 - **OCCT:** `LocOpe_FindEdges` (via `OCCTLocOpeFindEdges`).
 
-Each returned edge carries the index it has in **this** shape's `edges()`, so it feeds straight into
-edge-index consumers. Before #613 the stamped index was the position in the result buffer, which
-addressed an unrelated edge.
-
-```swift
-let shared = bracket.commonEdges(with: plate)
-bracket.edges()[shared[0].index].length == shared[0].length   // true
-let rounded = bracket.filleted(edges: shared, radius: 1)
-```
-
 ---
 
 ### `edgesInFace(at:)`
@@ -1685,8 +1664,6 @@ public func edgesInFace(at faceIndex: Int) -> [Edge]
 - **Parameters:** `faceIndex` — 0-based index of the face to check.
 - **Returns:** Array of edges found in the face (up to 100).
 - **OCCT:** `LocOpe_FindEdgesInFace` (via `OCCTLocOpeFindEdgesInFace`).
-
-As with `commonEdges(with:)`, each returned edge carries its index in this shape's `edges()` (#613).
 
 ---
 
@@ -1758,10 +1735,7 @@ public func isSubShapeValid(type: TopAbs_ShapeEnum, at index: Int) -> Bool
 
 - **Parameters:**
   - `type` — Type of sub-shape to check.
-  - `index` — 0-based index of the sub-shape. For `.edge` and `.vertex` this addresses the same
-    sub-shape as `edges()[index]` / `vertices()[index]`, so this agrees with `checkEdge(at:)` and
-    `checkVertex(at:)` at every index, and an index at or above `edgeCount` / `vertexCount` reports
-    `false` rather than resolving to a repeated occurrence (#613).
+  - `index` — 0-based index of the sub-shape.
 - **Returns:** `true` if the sub-shape is valid.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckSubShapeValid`).
 
@@ -1775,9 +1749,8 @@ Check validity of an edge by index.
 public func checkEdge(at index: Int) -> CheckResult
 ```
 
-- **Parameters:** `index` — 0-based edge index, addressing the same edge as `edges()[index]`.
-- **Returns:** Check result for the specified edge. An index at or above `edgeCount` reports
-  invalid rather than resolving to a repeated topology occurrence (#613).
+- **Parameters:** `index` — 0-based edge index.
+- **Returns:** Check result for the specified edge.
 - **OCCT:** `BRepCheck_Edge` (via `OCCTCheckEdge`).
 
 ---
@@ -1814,9 +1787,6 @@ Check validity of a vertex by index.
 public func checkVertex(at index: Int) -> CheckResult
 ```
 
-- **Parameters:** `index` — 0-based vertex index, addressing the same vertex as `vertices()[index]`.
-- **Returns:** Check result. An index at or above `vertexCount` reports invalid rather than
-  resolving to a repeated topology occurrence (#613).
 - **OCCT:** `BRepCheck_Vertex` (via `OCCTCheckVertex`).
 
 ---
@@ -1949,10 +1919,9 @@ public func edgeEdgeExtrema(edgeIndex1: Int, other: Shape, edgeIndex2: Int) -> E
 ```
 
 - **Parameters:**
-  - `edgeIndex1` — 0-based index of the first edge in this shape, addressing the same edge as
-    `edges()[edgeIndex1]`. An index at or above `edgeCount` yields `nil` (#613).
+  - `edgeIndex1` — 0-based index of the first edge in this shape.
   - `other` — Shape containing the second edge.
-  - `edgeIndex2` — 0-based index of the second edge in `other`, read the same way.
+  - `edgeIndex2` — 0-based index of the second edge in `other`.
 - **Returns:** Extrema result, or `nil` if no solutions or if edges are parallel.
 - **OCCT:** `BRepExtrema_ExtCC` (via `OCCTBRepExtremaExtCC`).
 - **Note:** Returns `nil` when edges are parallel (`isParallel == true`). Check `solutionCount > 0` guards this in the bridge.
@@ -2101,12 +2070,9 @@ public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeE
 
 - **Parameters:**
   - `point` — 3D point.
-  - `edgeIndex` — 0-based edge index, addressing the same edge as `edges()[edgeIndex]`. An index at
-    or above `edgeCount` yields `nil` (#613).
+  - `edgeIndex` — 0-based edge index.
 - **Returns:** Extrema result, or `nil` on failure.
 - **OCCT:** `BRepExtrema_ExtPC` (via `OCCTBRepExtremaExtPC`).
-- **Note:** `BRepExtrema_ExtPC` reports interior extrema only, so an edge whose nearest point is one
-  of its endpoints legitimately yields `nil`. Use `Edge.distance(to:)` for an unconditional minimum.
 
 ---
 
@@ -2137,10 +2103,9 @@ public func edgeFaceExtrema(edgeIndex: Int, other: Shape, faceIndex: Int) -> Edg
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based edge index in this shape, addressing the same edge as
-    `edges()[edgeIndex]`. An index at or above `edgeCount` yields `nil` (#613).
+  - `edgeIndex` — 0-based edge index in this shape.
   - `other` — Shape containing the face.
-  - `faceIndex` — 0-based face index in `other`. Face indexing is unchanged by #613; see #541.
+  - `faceIndex` — 0-based face index in `other`.
 - **Returns:** Extrema result, or `nil` if parallel or computation fails.
 - **OCCT:** `BRepExtrema_ExtCF` (via `OCCTBRepExtremaExtCF`).
 - **Note:** When `isParallel` is `true`, the returned struct has zero distance and `solutionCount == 0`.
