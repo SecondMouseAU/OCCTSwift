@@ -308,6 +308,52 @@ See [`Scripts/repro/603-single-span-quadrature/`](https://github.com/SecondMouse
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0022-ChFi2d_Builder-AddChamfer-connexion-error-check-705.patch
+
+**Fixes the upstream OCCT defect behind [#705](https://github.com/SecondMouseAU/OCCTSwift/issues/705)**,
+which OCCTSwift already guards bridge-side (`OCCTFace2DChamfer`, `OCCTBridge_Modeling.mm`):
+`Shape.chamfer2D(edgePairs:distances:)` SIGSEGVs, uncatchably, when the same edge pair is named
+twice, found by Cluster B's fillet/chamfer edge-set census (#665).
+
+`ChFi2d_Builder::AddChamfer(E1, E2, D1, D2)` calls `ChFi2d::FindConnectedEdges` to look up the
+pair's shared vertex, then dereferences the two edges it returns without checking the returned
+status first. `FindConnectedEdges` leaves both edges null on every failure path, and a second call
+naming the same pair hits exactly that: the pair's shared vertex is removed from the face's wire by
+the first call's own `BuildNewWire`, so the second call's lookup fails and the two null edges it
+returns reach `ComputeChamfer` unchecked. Confirmed with a debug (`-O0`) single-TU override-link
+(this file compiled standalone and linked before the OCCT static archive, so the linker resolves
+this TU's symbols from the override): the crash is inside `ComputeChamfer`, with `EE1`/`EE2` both
+null, exit 139 on stock.
+
+`ChFi2d_Builder::AddChamfer(E, V, D, Ang)`, the sibling overload calling the identical
+`FindConnectedEdges`, already checks the returned status correctly and returns a null edge on
+`ChFi2d_ConnexionError`. Reachable from OCCT's own DRAW `chfi2d` command too
+(`BRepTest_Fillet2DCommands.cxx`), which loops over edge-name pairs from the command line and calls
+this same overload once per pair, so a `chfi2d` invocation naming the same two edges twice reaches
+the identical crash.
+
+**Fix:** adds the same status check immediately after `FindConnectedEdges`, returning `chamfer`,
+the default-constructed null edge this function already returns on its other refusal paths (lines
+83, 89, 95), rather than a new value.
+
+**Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique): a
+rectangular planar face, `BRepFilletAPI_MakeFillet2d::AddChamfer` called twice with the identical
+edge pair. Before the patch, the second call SIGSEGVs (exit 139) every time; after, it returns a
+null edge with `Status() == ChFi2d_ConnexionError` (numeric 7), matching the sibling overload's own
+answer for an unconnected vertex. The first call is unaffected in both cases:
+`Status() == ChFi2d_IsDone` (numeric 5), a valid non-null edge. `clang-format --dry-run --Werror`
+reports only pre-existing, unrelated violations elsewhere in the file, unchanged in count and
+content; the four added lines are clean.
+
+**Bridge guard stays regardless.** This is the established pattern here (#298, #341, #344, #349):
+the bridge-side duplicate-pair check in `OCCTFace2DChamfer` shipped first and is not removed by this
+patch, since a caller on the currently-pinned kernel (which does not carry this patch until a
+rebuild ships it) still needs it. See [`Scripts/repro/705-chamfer2d-duplicate-pair/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/705-chamfer2d-duplicate-pair)
+for the reproducers. Filed upstream as [Open-Cascade-SAS/OCCT#1431](https://github.com/Open-Cascade-SAS/OCCT/issues/1431)
+(repro) / [OCCT#1432](https://github.com/Open-Cascade-SAS/OCCT/pull/1432) (fix).
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
