@@ -248,6 +248,7 @@ before the tag is cut:
 | Break | What a caller does |
 |---|---|
 | `Shape.buildAAG().nodes` and `Shape.detectPocketsAAG()` can return more entries on a shape with a face shared between two solids in a compound | Nothing on a shape that shares no face, which includes every single-solid shape. On one that does, `nodes.count` matches `orientedFaces().count` rather than `faces().count`, and `detectPocketsAAG()` can report an additional pocket for the shared face's other side. A caller indexing `AAGNode.faceIndex` against `Shape.faces()` should index `Shape.orientedFaces()` instead, or read the new `AAGNode.distinctFaceIndex` field to recover the old, distinct-face identity |
+| `PocketFeature.floorFaceIndex`, `PocketFeature.wallFaceIndices` and `AAG.detectHoles()`'s `faceIndex` now index `orientedFaces()` too | These are built from node array positions, so they inherited the change without their own code edit, which is why they are called out separately. `detectPocketsAAG()` returns `PocketFeature`, so this is the output type of the API the headline break is about: a caller doing `shape.faces()[pocket.floorFaceIndex]` on a shared-face compound gets the wrong face or an out-of-range index, silently. Use `shape.orientedFaces()[...]`, or `aag.nodes[pocket.floorFaceIndex].distinctFaceIndex` for the old identity |
 
 Before this fix, `AAG.buildGraph()` read `Shape.faces()`, the deduplicated enumeration that keeps
 only the first orientation a shared face is reached in. `AAGNode.isHorizontal`/`isUpward`/

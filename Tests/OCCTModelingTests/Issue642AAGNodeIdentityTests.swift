@@ -199,4 +199,41 @@ struct Issue642AAGNodeIdentityTests {
         let upwardHorizontalB = aagB.nodes.filter { $0.isUpward && $0.isHorizontal }.count
         #expect(upwardHorizontalA == upwardHorizontalB)
     }
+
+    // MARK: - PocketFeature's own indices (review follow-up)
+
+    /// `PocketFeature.floorFaceIndex` and `wallFaceIndices` are built from node array positions, so
+    /// they inherited #642's occurrence semantics without their own code change. That makes them the
+    /// easiest thing to get wrong: `detectPocketsAAG()` is the API this issue is about, and
+    /// `PocketFeature` is what it returns, so a caller indexing `faces()` with them on a shared-face
+    /// compound reads the wrong face silently.
+    ///
+    /// This asserts they resolve against `orientedFaces()`, and that on this fixture at least one
+    /// of them is out of range for `faces()`, which is what makes the distinction load-bearing
+    /// rather than academic.
+    @Test("PocketFeature's indices resolve against orientedFaces(), not faces()")
+    func pocketIndicesResolveAgainstOrientedFaces() {
+        guard let compound = Self.horizontalSplitBoxCompound(order: .asSplit) else {
+            Issue.record("fixture build failed")
+            return
+        }
+        let oriented = compound.orientedFaces()
+        let distinct = compound.faces()
+        #expect(oriented.count > distinct.count,
+                "fixture must share a face, or this test proves nothing: oriented \(oriented.count), distinct \(distinct.count)")
+
+        let pockets = compound.detectPocketsAAG()
+        #expect(!pockets.isEmpty, "fixture must produce at least one pocket")
+
+        var sawIndexBeyondDistinct = false
+        for pocket in pockets {
+            for index in [pocket.floorFaceIndex] + pocket.wallFaceIndices {
+                #expect(index >= 0 && index < oriented.count,
+                        "index \(index) out of range for orientedFaces() (\(oriented.count))")
+                if index >= distinct.count { sawIndexBeyondDistinct = true }
+            }
+        }
+        #expect(sawIndexBeyondDistinct,
+                "no pocket index exceeded faces().count, so this fixture cannot tell the two enumerations apart")
+    }
 }

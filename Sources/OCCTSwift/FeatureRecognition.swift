@@ -266,10 +266,28 @@ public final class AAG: @unchecked Sendable {
 
 /// A recognized pocket feature in a solid
 public struct PocketFeature: Sendable {
-    /// Index of the floor face
+    /// Index of the floor face.
+    ///
+    /// An **occurrence** index, the same one ``AAGNode/faceIndex`` uses, so it resolves against
+    /// ``Shape/orientedFaces()`` and **not** ``Shape/faces()`` (#642). Before #642 it indexed
+    /// `faces()`; on a compound whose solids share a face the two differ, and indexing `faces()`
+    /// with it now gives the wrong face or runs off the end. To recover the distinct-face index,
+    /// read `aag.nodes[pocket.floorFaceIndex].distinctFaceIndex`.
+    ///
+    /// ```swift
+    /// let aag = shape.buildAAG()
+    /// for pocket in shape.detectPocketsAAG() {
+    ///     let floor = shape.orientedFaces()[pocket.floorFaceIndex]   // correct
+    ///     let distinct = aag?.nodes[pocket.floorFaceIndex].distinctFaceIndex
+    ///     print(floor.area, distinct as Any)
+    /// }
+    /// ```
     public let floorFaceIndex: Int
 
-    /// Indices of the wall faces
+    /// Indices of the wall faces.
+    ///
+    /// **Occurrence** indices into ``Shape/orientedFaces()``, on the same footing as
+    /// ``floorFaceIndex`` (#642).
     public let wallFaceIndices: [Int]
 
     /// Z level of the pocket floor
@@ -363,6 +381,11 @@ extension AAG {
     /// A hole is identified by:
     /// 1. A cylindrical or conical face
     /// 2. With concave edges connecting to other faces
+    ///
+    /// - Note: `faceIndex` is an **occurrence** index into ``Shape/orientedFaces()``, not
+    ///   ``Shape/faces()`` (#642), matching ``AAGNode/faceIndex``. A hole's face is rarely one
+    ///   shared between two solids, so the two indices usually coincide, but they are not the
+    ///   same thing and only the occurrence one is correct here.
     public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)] {
         var holes: [(faceIndex: Int, radius: Double, depth: Double)] = []
 

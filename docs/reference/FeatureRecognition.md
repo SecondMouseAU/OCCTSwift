@@ -240,6 +240,20 @@ public struct PocketFeature: Sendable {
 public let floorFaceIndex: Int
 ```
 
+- **Note:** An **occurrence** index, resolving against `Shape.orientedFaces()` and **not**
+  `Shape.faces()` (#642). Before #642 it indexed `faces()`; the two differ on a compound whose
+  solids share a face, where indexing `faces()` with it gives the wrong face or an out-of-range
+  index, silently. Read `aag.nodes[pocket.floorFaceIndex].distinctFaceIndex` for the old identity.
+
+```swift
+let aag = shape.buildAAG()
+for pocket in shape.detectPocketsAAG() {
+    let floor = shape.orientedFaces()[pocket.floorFaceIndex]   // correct
+    let distinct = aag?.nodes[pocket.floorFaceIndex].distinctFaceIndex
+    print(floor.area, distinct as Any)
+}
+```
+
 ---
 
 ### `wallFaceIndices`
@@ -249,6 +263,9 @@ public let floorFaceIndex: Int
 ```swift
 public let wallFaceIndices: [Int]
 ```
+
+- **Note:** **Occurrence** indices into `Shape.orientedFaces()`, on the same footing as
+  `floorFaceIndex` (#642).
 
 ---
 
@@ -336,7 +353,10 @@ public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)]
 Identifies faces where every adjacent face is connected via a concave edge and the face's XY bounding box has an aspect ratio under 1.2 (roughly circular) while being non-planar. `radius` and `depth` are estimated from the bounding box.
 
 - **Returns:** Array of `(faceIndex, radius, depth)` tuples; `radius` is `(width + height) / 4`, `depth` is `bounds.max.z - bounds.min.z`.
-- **Note:** This is a heuristic approximation — it does not inspect the surface type. For precise cylindrical detection, check `Face.surfaceType == .cylinder`.
+- **Note:** This is a heuristic approximation, it does not inspect the surface type. For precise cylindrical detection, check `Face.surfaceType == .cylinder`.
+- **Note:** `faceIndex` is an **occurrence** index into `Shape.orientedFaces()`, not `Shape.faces()`
+  (#642), matching `AAGNode.faceIndex`. A hole's face is rarely shared between two solids, so the
+  two usually coincide, but only the occurrence index is correct here.
 - **Example:**
   ```swift
   let holes = aag.detectHoles()
