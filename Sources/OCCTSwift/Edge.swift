@@ -249,6 +249,10 @@ extension Shape {
     /// box has 12 edges by this count even though every one of them borders two faces. See
     /// ``edges()`` for the identity rule this follows and why it does not need an
     /// orientation-preserving counterpart the way ``Shape/faces()`` does.
+    ///
+    /// ``nbEdges`` was a second spelling of this same question, backed by a bare
+    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// favour of this one (#651).
     public var edgeCount: Int {
         Int(OCCTShapeGetTotalEdgeCount(handle))
     }

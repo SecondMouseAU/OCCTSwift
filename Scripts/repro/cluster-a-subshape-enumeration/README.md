@@ -82,14 +82,14 @@ name says `[horizontal-cut fixture]`).
 | vertex | vertices().count (dedup) | 8 | 12 | 12 | |
 | vertex | uniqueVertexCount (alias of vertexCount) | 8 | 12 | 12 | |
 | vertex | subShapeCount(ofType: .vertex) (dedup canonical) | 8 | 12 | 12 | |
-| vertex | **nbVertices** (#651: docs say dedup) | 48 | 96 | 96 | occurrence; `docs/reference/Document-Completions.md:1438` states `box.nbVertices == 8` |
+| vertex | nbVertices (#651: fixed, now forwards to vertexCount) | 8 | 12 | 12 | deprecated, `renamed: "vertexCount"`; was occurrence (48/96/96) before #651 |
 | vertex | contents.vertices (ShapeAnalysis_ShapeContents, occurrence) | 48 | 96 | 96 | |
 | vertex | contentsExtended().nbVertices (occurrence) | 48 | 96 | 96 | |
 | edge | edgeCount (dedup canonical) | 12 | 20 | 20 | |
 | edge | edges().count (dedup) | 12 | 20 | 20 | |
 | edge | uniqueEdgeCount (alias of edgeCount) | 12 | 20 | 20 | |
 | edge | subShapeCount(ofType: .edge) (dedup canonical) | 12 | 20 | 20 | |
-| edge | **nbEdges** (#651: docs say dedup) | 24 | 48 | 48 | occurrence; `docs/reference/Document-Completions.md:1406` states `box.nbEdges == 12` |
+| edge | nbEdges (#651: fixed, now forwards to edgeCount) | 12 | 20 | 20 | deprecated, `renamed: "edgeCount"`; was occurrence (24/48/48) before #651 |
 | edge | contents.edges (ShapeAnalysis_ShapeContents, occurrence) | 24 | 48 | 48 | |
 | edge | contentsExtended().nbEdges (occurrence) | 24 | 48 | 48 | |
 | edge | Shape(wire).edgeCount (dedup; a wire's own edges) | 4 | n/a | n/a | a wire's own edges aren't shared cross-parent in these fixtures |
@@ -98,7 +98,7 @@ name says `[horizontal-cut fixture]`).
 | face | orientedFaces().count (occurrence, deliberate #614) | 6 | 12 | 12 | documented, paired counterpart of faces(), not a defect |
 | face | uniqueFaceCount (alias of faceCount) | 6 | 11 | 11 | |
 | face | subShapeCount(ofType: .face) (dedup canonical) | 6 | 11 | 11 | |
-| face | nbFaces (#651: docs say dedup) | 6 | 12 | 12 | occurrence; no divergence on a *plain box* since no face is shared there, see correction below |
+| face | nbFaces (#651: fixed, now forwards to faceCount) | 6 | 11 | 11 | deprecated, `renamed: "faceCount"`; was occurrence (6/12/12) before #651, agreeing with `faceCount` on a plain box only because no face is shared there |
 | face | contents.faces (occurrence) | 6 | 12 | 12 | |
 | face | contentsExtended().nbFaces (occurrence) | 6 | 12 | 12 | |
 | face | contentsExtended().nbSharedFaces (a THIRD rule: location-discarding dedup) | 6 | 11 | 11 | |
@@ -129,17 +129,23 @@ columns for terminal alignment, omitted here for Markdown)
 
 ## Static classification summary
 
-`classify_topexp_sites.py` found **127 C functions** in `Sources/OCCTBridge/src/*.mm` containing a
-`TopExp_Explorer` or `TopExp::MapShapes` call: **52 DEDUP, 54 OCCURRENCE, 21 OTHER** (find-first /
-existence-check / dead declaration). Re-run the script for the full 127-row table; the entry points
-that matter for cluster A specifically are cross-referenced against the dynamic table above.
+**Updated after #651.** `classify_topexp_sites.py` found **124 C functions** in
+`Sources/OCCTBridge/src/*.mm` containing a `TopExp_Explorer` or `TopExp::MapShapes` call: **52
+DEDUP, 51 OCCURRENCE, 21 OTHER** (find-first / existence-check / dead declaration). At the time this
+census was first built the totals were 127/52/54/21; #651 deleted `OCCTShapeNbEdges`,
+`OCCTShapeNbFaces` and `OCCTShapeNbVertices` (all three OCCURRENCE) once `Shape.nbEdges`/`nbFaces`/
+`nbVertices` were deprecated and repointed at `edgeCount`/`faceCount`/`vertexCount`, so those three
+rows are simply gone rather than reclassified. Re-run the script for the full 124-row table; the
+entry points that matter for cluster A specifically are cross-referenced against the dynamic table
+above.
 
 Two functions are declared and implemented but **called from nowhere in `Sources/OCCTSwift/`**:
 `OCCTShapeCountFaces` and `OCCTShapeCountEdges` (`OCCTBridge_Topology.mm`), both OCCURRENCE. Since
 `OCCTBridge` is not a package product (only `OCCTSwift` is, per `Package.swift`'s `products:`),
 these are unreachable from any consumer of this package, orphaned, not part of the public surface
-`#664` asks about, despite matching the OCCURRENCE shape of the ones that are (`OCCTShapeNbFaces`/
-`OCCTShapeNbEdges`, which back the *reachable* `nbFaces`/`nbEdges`).
+`#664` asks about. They used to match the OCCURRENCE shape of `OCCTShapeNbFaces`/`OCCTShapeNbEdges`,
+the reachable pair that backed `nbFaces`/`nbEdges` before #651 deleted them; that comparison is now
+historical, since the reachable pair no longer exists to compare against.
 
 ## Where the two methods disagreed
 
@@ -271,18 +277,22 @@ the bucket: the claim was checkable, and it did not hold.
 split fixtures in this census, rows above). Any Cluster A fix has to leave every one of these
 numbers unchanged.
 
-**#651 is confirmed, and its own table was already careful about the one thing worth checking.**
-`nbEdges`/`nbFaces`/`nbVertices` are bare `TopExp_Explorer` counts (`OCCTShapeNbEdges`/`NbFaces`/
-`NbVertices`, `OCCTBridge_Topology.mm:3694-3719`) while `docs/reference/Document-Completions.md`
-documents all three with the *deduplicated* value (`box.nbEdges // 12`, `box.nbVertices // 8`,
-confirmed by direct read of lines 1406/1438). #651's own table already shows `nbFaces`/`faceCount`
-agreeing on a box (6/6, correctly: no face is shared within one solid) and diverging only on the
-two-solid compound (12/11). This census's own table reproduces that distinction exactly (`nbFaces`
-row: 6/12/12 across plain box/order A/order B, matching `contentsExtended().nbFaces` and
-`contents.faces` bit for bit) rather than contradicting it. The measured dynamic table also confirms
-#651's own "watch for" note: `nbEdges`/`nbFaces`/`nbVertices` are pure OCCURRENCE duplicates of
-`edgeCount`/`faceCount`/`vertexCount` in every fixture measured. The #490/#491/#492 precedent
-(retire the duplicate spelling, not just repoint its implementation) applies directly.
+**#651 was confirmed by this census, and is now fixed.** At the time this census was first built,
+`nbEdges`/`nbFaces`/`nbVertices` were bare `TopExp_Explorer` counts (`OCCTShapeNbEdges`/`NbFaces`/
+`NbVertices`, formerly `OCCTBridge_Topology.mm:3694-3719`, now deleted) while
+`docs/reference/Document-Completions.md` documented all three with the *deduplicated* value
+(`box.nbEdges // 12`, `box.nbVertices // 8`, confirmed by direct read of lines 1406/1438). #651's own
+table already showed `nbFaces`/`faceCount` agreeing on a box (6/6, correctly: no face is shared
+within one solid) and diverging only on the two-solid compound (12/11). This census's own table
+reproduced that distinction exactly (`nbFaces` row: 6/12/12 across plain box/order A/order B,
+matching `contentsExtended().nbFaces` and `contents.faces` bit for bit) rather than contradicting
+it. The measured dynamic table also confirmed #651's own "watch for" note: `nbEdges`/`nbFaces`/
+`nbVertices` were pure OCCURRENCE duplicates of `edgeCount`/`faceCount`/`vertexCount` in every
+fixture measured, with no index or orientation dimension of their own. The #536 precedent (retire
+the duplicate spelling, deprecate-and-forward, rather than #613's repoint-in-place) applied, and is
+what #651 did: all three are now `@available(*, deprecated, renamed:)` and forward to
+`edgeCount`/`faceCount`/`vertexCount`, so the dynamic table rows above now read the same value as
+their canonical siblings across every fixture.
 
 **`ShapeAnalysis_ShapeContents` (`Shape.contents`) and `contentsExtended()` are occurrence-based
 too, and undocumented as such beyond `Shape.contents`'s own doc comment.** Both track the raw
@@ -310,6 +320,13 @@ stored orientation was found.** This is evidence toward #638's own option 2 ("th
 correct behaviour... a documented contract plus a test, not a code change") but #638's own text is
 right that this needs stating in that issue's PR, not settled here. A future `Edge.orientation`
 accessor, or an edge-level consumer added later, would need to re-run this same search.
+
+**Settled in PR #696: no code change.** That PR re-ran this audit rather than trusting it, then went
+past source-reading and built the same edge in both orientations, diffing every accessor on a line
+and a circle. It also sharpened one claim: the audit's "no consumer" holds for `Edge`, but
+`subShapes(ofType: .edge)` returns `[Shape]`, where `Shape.orientation` **is** readable. No
+production code takes that path, so the conclusion stands, but the narrower statement is the
+accurate one. Regression tests now fail if any `Edge` accessor becomes orientation-dependent.
 
 **#642 reproduces exactly, but only on a fixture #642's own issue text doesn't fully specify,
 which is the correction worth posting.** `detectPocketsAAG()` 2 vs 1 and the AAG upward+horizontal
@@ -382,11 +399,13 @@ census's job here is to show that clearly rather than let a fourth issue re-deri
   redesign (per #642's own three suggested approaches), which is a consumer-side migration, not a
   root-cause fix. #642 could start immediately, and did; it was never gated on #638 or #651. See
   "Update following #642's fix" above for what landed and what it surfaced.
-- **#651** (`nbEdges`/`nbFaces`/`nbVertices` vs their own docs) is **orthogonal to orientation
-  entirely**. It is a "two implementations of one count, the docs describe the wrong one" bug, with
-  no face/edge-orientation dimension at all. It does not share a mechanism with #638 or #642 beyond
-  both families living under `TopExp_Explorer`/`TopExp::MapShapes`. Confirmed retirable in favour of
-  `edgeCount`/`faceCount`/`vertexCount` per the measured duplication above.
+- **#651** (`nbEdges`/`nbFaces`/`nbVertices` vs their own docs) was **orthogonal to orientation
+  entirely**. It was a "two implementations of one count, the docs describe the wrong one" bug, with
+  no face/edge-orientation dimension at all, and did not share a mechanism with #638 or #642 beyond
+  both families living under `TopExp_Explorer`/`TopExp::MapShapes`. **Fixed**: retired in favour of
+  `edgeCount`/`faceCount`/`vertexCount` per the measured duplication above, by deprecating and
+  forwarding rather than repointing in place, since nothing else distinguished the two spellings
+  once the value agreed.
 
 **Practical consequence:** there is no single "fix the root" commit left to land for Cluster A that
 would move all three members. The root for the *face* side (#614) already shipped; #638 is a

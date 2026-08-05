@@ -5,7 +5,11 @@ import OCCTBridge
 extension Shape {
 
 
-    /// Number of vertices (corners) in the shape
+    /// Number of vertices (corners) in the shape.
+    ///
+    /// ``nbVertices`` was a second spelling of this same question, backed by a bare
+    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// favour of this one (#651).
     public var vertexCount: Int {
         Int(OCCTShapeGetVertexCount(handle))
     }
@@ -2880,18 +2884,58 @@ extension Shape {
         Int(OCCTShapeOrientationValue(handle))
     }
 
-    /// Get the number of edges in this shape.
+    /// Deprecated: this is ``edgeCount`` under a second name, and used to return a different,
+    /// wrong number.
+    ///
+    /// `nbEdges` counted bare `TopExp_Explorer` occurrences: 24 on a 12-edge box, since every
+    /// edge is walked once per adjacent face. This project's own reference docs always documented
+    /// the *distinct* count instead (`box.nbEdges // 12`), so the contract and the implementation
+    /// disagreed from the day this property shipped. Forwards to ``edgeCount`` now, which already
+    /// carried the value these docs described (#651).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.nbEdges == box.edgeCount   // true, 12 either way
+    /// ```
+    @available(*, deprecated, renamed: "edgeCount",
+               message: "nbEdges counted TopExp_Explorer occurrences (24 on a 12-edge box) while the reference docs always documented the distinct count (12). Forwards to edgeCount, which returns the documented value.")
     public var nbEdges: Int {
-        Int(OCCTShapeNbEdges(handle))
+        edgeCount
     }
 
-    /// Get the number of faces in this shape.
+    /// Deprecated: this is ``faceCount`` under a second name, and used to return a different,
+    /// wrong number on any shape that shares a face.
+    ///
+    /// `nbFaces` counted bare `TopExp_Explorer` occurrences. A plain box has no shared face, so
+    /// `nbFaces` and `faceCount` agreed there (6 either way) and the divergence stayed hidden;
+    /// on a shape with a shared face (a two-solid split compound) they read 12 against 11.
+    /// Forwards to ``faceCount`` now, matching this project's reference docs (#651).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.nbFaces == box.faceCount   // true, 6 either way
+    /// ```
+    @available(*, deprecated, renamed: "faceCount",
+               message: "nbFaces counted TopExp_Explorer occurrences, which agrees with faceCount on a plain box (6) but not on a shape that shares a face (12 against 11 on a two-solid split compound). Forwards to faceCount.")
     public var nbFaces: Int {
-        Int(OCCTShapeNbFaces(handle))
+        faceCount
     }
 
-    /// Get the number of vertices in this shape.
+    /// Deprecated: this is ``vertexCount`` under a second name, and used to return a different,
+    /// wrong number.
+    ///
+    /// `nbVertices` counted bare `TopExp_Explorer` occurrences: 48 on an 8-vertex box, since every
+    /// vertex is walked once per incident edge. This project's own reference docs always
+    /// documented the *distinct* count instead (`box.nbVertices // 8`). Forwards to
+    /// ``vertexCount`` now, which already carried the value these docs described (#651).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.nbVertices == box.vertexCount   // true, 8 either way
+    /// ```
+    @available(*, deprecated, renamed: "vertexCount",
+               message: "nbVertices counted TopExp_Explorer occurrences (48 on an 8-vertex box) while the reference docs always documented the distinct count (8). Forwards to vertexCount, which returns the documented value.")
     public var nbVertices: Int {
-        Int(OCCTShapeNbVertices(handle))
+        vertexCount
     }
 }

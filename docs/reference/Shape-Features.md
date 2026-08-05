@@ -1016,6 +1016,9 @@ public var vertexCount: Int { get }
 ```
 
 - **OCCT:** `TopExp::MapShapes(TopAbs_VERTEX)` (via `OCCTShapeGetVertexCount`).
+- **Deprecated alias:** [`Shape.nbVertices`](Document-Completions.md#shapenbvertices-deprecated-651)
+  was a second spelling of this question, backed by a bare `TopExp_Explorer` occurrence count (48 on
+  an 8-vertex box) instead of this deduplicated one. It now forwards here (#651).
 
 ---
 

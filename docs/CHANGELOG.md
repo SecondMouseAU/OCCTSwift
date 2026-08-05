@@ -433,13 +433,15 @@ geometry included. Their index *domain* does move, which is the point of the con
 recorded in [`SEMVER.md`](SEMVER.md): on `compound{solid, solid.Reversed()}` the WIRE enumeration
 goes 12 occurrences → 6 distinct.
 
-**This is not a complete sweep of the per-occurrence idiom.** `Shape.nbEdges` / `nbVertices` /
-`nbFaces` return per-occurrence counts (a box answers **24** and **48** against `edgeCount` 12 and
-`vertexCount` 8; a split compound's `nbFaces` is **12** against `faceCount` 11) while their own
-published docs assert the deduplicated answers — filed separately as **#651**.
-`OCCTShapeFixEdgeSameParameter` and `OCCTShapeFixEdgeVertexTolerance` also document "number of edges
-fixed" while counting explorer occurrences; that one is source-visible but **unmeasured** (a box
-returns 0 either way), so it is recorded here as a candidate rather than converted on a pattern
+**This was not a complete sweep of the per-occurrence idiom at the time.** `Shape.nbEdges` /
+`nbVertices` / `nbFaces` returned per-occurrence counts (a box answered **24** and **48** against
+`edgeCount` 12 and `vertexCount` 8; a split compound's `nbFaces` was **12** against `faceCount` 11)
+while their own published docs asserted the deduplicated answers, filed separately as **#651** and
+resolved below, by deprecation rather than by repointing in place, since all three are pure
+duplicates of `edgeCount`/`faceCount`/`vertexCount` with no index or orientation dimension of their
+own. `OCCTShapeFixEdgeSameParameter` and `OCCTShapeFixEdgeVertexTolerance` also document "number of
+edges fixed" while counting explorer occurrences; that one is source-visible but **unmeasured** (a
+box returns 0 either way), so it is recorded here as a candidate rather than converted on a pattern
 match.
 
 Bridge-only plus two Swift wrappers; no kernel patch and no `OCCT.xcframework` rebuild.
@@ -448,6 +450,54 @@ Index-value changes are recorded in [`SEMVER.md`](SEMVER.md). Tests:
 `Tests/OCCTTopologyTests/Issue613IndexContractTests.swift` and
 `Tests/OCCTMeshTests/Issue613MeshIndexContractTests.swift`, 25 tests, each proven to catch its own
 site by reverting that site alone.
+
+#### `nbEdges`/`nbFaces`/`nbVertices` are deprecated in favour of the counters they duplicated (#651)
+
+`Shape.nbEdges`, `Shape.nbFaces` and `Shape.nbVertices` counted bare `TopExp_Explorer` occurrences
+(`OCCTShapeNbEdges`/`NbFaces`/`NbVertices`, `OCCTBridge_Topology.mm`), the same gap #613 closed for
+its seven entry points, while this project's own reference docs always documented the deduplicated
+answer: `docs/reference/Document-Completions.md` asserted `box.nbEdges // 12` and
+`box.nbVertices // 8`, not the 24 and 48 the implementation actually returned. Measured on a plain
+10 mm box:
+
+| | `nbEdges` | `edgeCount` | `nbVertices` | `vertexCount` | `nbFaces` | `faceCount` |
+|---|---|---|---|---|---|---|
+| box | **24** | 12 | **48** | 8 | 6 | 6 |
+
+`nbFaces` agreed with `faceCount` on the box (no face is shared within one solid), and diverged only
+on a shape with a shared face: 12 against 11 on a two-solid split compound, reproducing #613's own
+`faceIndex` measurement.
+
+**Confirmed by the Cluster A census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`),** run
+specifically to settle this question before any of #638/#642/#651 started: all three are pure
+occurrence duplicates of `edgeCount`/`faceCount`/`vertexCount` in every fixture measured, with no
+index, no orientation dimension, and no consumer that reads one and not the other. That is a
+different shape from #613's seven sites, which addressed an *index* fed into another entry point and
+had no existing correctly-valued sibling to fall back on.
+
+**Decision: retire the duplicate spelling, not repoint it in place.** Following the precedent #536
+set for `removeFeatures(faces:)`/`defeature(faces:)` (two public names driving one operation, the
+newer forwarded and deprecated) rather than #541/#568/#613's own precedent (repoint the raw value,
+because those sites had no existing sibling to rename to). Repointing `nbEdges`/`nbFaces`/`nbVertices`
+in place and keeping both names was considered and rejected: once the value agrees there is nothing
+left to distinguish the two spellings, which recreates the exact duplication #490/#491/#492 and #536
+diagnosed elsewhere in this codebase.
+
+All three are now `@available(*, deprecated, renamed:)`, forwarding to `edgeCount`/`faceCount`/
+`vertexCount` respectively, so the value is correct on the way out even though the spelling is
+retired. The now-orphaned bridge functions `OCCTShapeNbEdges`/`OCCTShapeNbFaces`/`OCCTShapeNbVertices`
+are deleted, following #506's precedent for an orphan with no remaining Swift call site (`OCCTBridge`
+is a target, not a product, so nothing depends on the C symbol surviving). Recorded as a SemVer
+exception in [`SEMVER.md`](SEMVER.md), since the returned value changes even though the build does
+not break.
+
+Tests: `Tests/OCCTTopologyTests/Issue651DeprecatedCounterTests.swift`, pinning the corrected value
+against `edgeCount`/`faceCount`/`vertexCount` on a box and on a shape with a shared face, each proven
+to catch its own regression by reverting that one counter back to an occurrence walk.
+
+`docs/reference/Document-Completions.md`, `Edge.md`, `Selection.md` and `Shape-Features.md` updated
+to match; `docs/reference/Document-Completions.md` was the page whose own asserted contract this
+issue was filed against.
 
 #### The null-handle gate was blind to four of the five ways this bridge reaches a handle (#618)
 

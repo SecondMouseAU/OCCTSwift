@@ -1682,14 +1682,13 @@ OCCTShapeRef _Nullable OCCTShapeMoved(OCCTShapeRef _Nonnull shape, double dx, do
 /// Get the shape orientation as integer (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL).
 int32_t OCCTShapeOrientationValue(OCCTShapeRef _Nonnull shape);
 
-/// Get the number of edges in a shape.
-int32_t OCCTShapeNbEdges(OCCTShapeRef _Nonnull shape);
-
-/// Get the number of faces in a shape.
-int32_t OCCTShapeNbFaces(OCCTShapeRef _Nonnull shape);
-
-/// Get the number of vertices in a shape.
-int32_t OCCTShapeNbVertices(OCCTShapeRef _Nonnull shape);
+// OCCTShapeNbEdges / OCCTShapeNbFaces / OCCTShapeNbVertices are gone: each was a
+// TopExp_Explorer occurrence count (24 edges / 6 faces / 48 vertices on a 12-edge, 6-face,
+// 8-vertex box -- nbFaces only diverges from faceCount on a shape with a shared face), while
+// this project's own reference docs always documented the distinct count. Shape.nbEdges /
+// .nbFaces / .nbVertices are deprecated and forward to edgeCount / faceCount / vertexCount,
+// which already called OCCTShapeGetTotalEdgeCount / OCCTShapeGetFaceCount /
+// OCCTShapeGetVertexCount. #651
 
 // MARK: - v0.126.0: Final completeness release
 

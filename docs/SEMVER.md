@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **nine** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **eleven** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other seven change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other eight change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -32,8 +32,9 @@ The other seven change behaviour **without breaking the build**, which is the se
 - [#498](#recorded-exception-unreleased-buildcurves3ds-default-tolerance-loosens-498) loosens `buildCurves3d`'s default tolerance 100×.
 - [#502](#recorded-exception-unreleased-the-wiresshellssolids-enumerations-join-the-deduplicated-map-502) collapses the `wires`/`shells`/`solids` enumerations onto the deduplicated sub-shape map.
 - [#642](#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642) moves `AAG`'s node set from distinct faces to face occurrences, so `detectPocketsAAG()` and `buildAAG().nodes` can return more entries on a shape with a shared face.
+- [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
 
-A tenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A twelfth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -183,7 +184,50 @@ The exception was taken because:
 - **There is no spelling in which both survive**, for the same reason as #541 and #568: these are index *values*, so Swift cannot overload on them and a deprecation attribute has nothing to attach to.
 - **On every shape that shares no sub-shape, nothing moves** for the face-indexed and mesh entry points. The edge- and vertex-indexed ones do move on ordinary solids, because every edge of every solid is shared between two faces — that is exactly the gap #613 closes, and it is why these are recorded rather than treated as internal.
 - **One site was deliberately NOT converted.** `OCCTPolyMergeNodes` walks face occurrences to set per-face triangle winding; deduplicating it would drop a shared wall's second side. It is unchanged, documented as such, and pinned by a test that fails if a later sweep converts it.
-- **This does not finish the idiom.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still return per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and are filed as **#651**; they are unchanged here, so no caller of them is affected by this entry.
+- **This did not finish the idiom on its own.** `Shape.nbEdges` / `nbVertices` / `nbFaces` still returned per-occurrence counts (**24** and **48** on a box against `edgeCount` 12 and `vertexCount` 8) and were filed as **#651**. That gap is closed below.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
+
+#### Recorded exception: Unreleased, `nbEdges`/`nbFaces`/`nbVertices` are deprecated and forward to the deduplicated count (#651)
+
+**One silent behaviour change, not a compile error, layered on a deprecation.** `Shape.nbEdges`,
+`Shape.nbFaces` and `Shape.nbVertices` counted bare `TopExp_Explorer` occurrences, exactly the gap
+#613 closed for its seven entry points, but these three name no index and drive no consumer: each is
+a pure duplicate of `edgeCount`/`faceCount`/`vertexCount`, confirmed by the Cluster A census
+(`Scripts/repro/cluster-a-subshape-enumeration/`) across every fixture it measured. This project's
+own reference docs already documented the deduplicated answer for all three (`box.nbEdges // 12`,
+`box.nbVertices // 8`), so the contract and the implementation disagreed from the day these shipped:
+
+| Break | What a caller does |
+|---|---|
+| `Shape.nbEdges` returns `edgeCount`'s value, not a `TopExp_Explorer` occurrence count | A box now reports 12, not 24. Deprecated, `renamed: "edgeCount"` |
+| `Shape.nbFaces` returns `faceCount`'s value | Nothing on a shape that shares no face (a plain box agreed already, 6 either way). On a shape with a shared face, 11 instead of 12. Deprecated, `renamed: "faceCount"` |
+| `Shape.nbVertices` returns `vertexCount`'s value | A box now reports 8, not 48. Deprecated, `renamed: "vertexCount"` |
+
+The decision was to retire the duplicate spelling rather than repoint its implementation and leave
+both names standing, following the precedent #536 set for `removeFeatures(faces:)`/`defeature(faces:)`
+(two public names driving one operation, the newer one deprecated with a forwarding body) rather than
+#541/#568/#613's own precedent (repoint the value in place, because those sites address an index with
+no existing correctly-named sibling to forward to). The alternative considered and rejected:
+
+- **Repointing `nbEdges`/`nbFaces`/`nbVertices` in place, keeping both names.** This was rejected
+  because, unlike #613's seven sites, there is nothing left to distinguish the two names once the
+  value agrees: no index, no orientation, no consumer that reads one and not the other. Two API
+  entry points answering the identical question forever is the exact duplication #490/#491/#492 and
+  #536 diagnosed and fixed elsewhere in this codebase; leaving it here after having just fixed the
+  value would recreate the pattern this SemVer document's own #536 entry retired.
+- **The exception was taken (over `unavailable`, #619's approach) because the risk is lower.**
+  #619 forced a compile error because a silently reinterpreted ordinal fed a comparison
+  (`continuityOrder >= 2`) that would silently take the wrong geometric branch. A raw count has no
+  such branch to mislead: a caller comparing it to `edgeCount` was already failing before this
+  change (the two never agreed), and a caller using it as a scale factor gets a smaller, still
+  plausible number, the same shape of change #613 already recorded above as a warning rather than a
+  break.
+- **There is a name to forward to**, unlike #613's index values, so `@available(*, deprecated,
+  renamed:)` has somewhere to point: matching #499's `PathParser` precedent (deprecated, and the
+  value changes on the way) rather than #541/#568/#613's (no spelling survives).
+- The now-orphaned bridge functions `OCCTShapeNbEdges`/`OCCTShapeNbFaces`/`OCCTShapeNbVertices` are
+  deleted rather than kept, following #506's precedent for an orphan with no remaining Swift call
+  site (`OCCTBridge` is a target, not a product, so there is no external ABI to hold stable).
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurements, and to be named in the release notes.
 
 #### Recorded exception: Unreleased, `continuityOrder` is retired rather than reinterpreted (#619)

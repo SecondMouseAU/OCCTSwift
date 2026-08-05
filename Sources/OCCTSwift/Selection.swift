@@ -130,6 +130,10 @@ extension Shape {
     /// print(box.faces().count)                 // 6, the same enumeration
     /// print(box.subShapeCount(ofType: .face))  // 6, the generic spelling
     /// ```
+    ///
+    /// ``nbFaces`` was a second spelling of this same question, backed by a bare
+    /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
+    /// favour of this one (#651).
     public var faceCount: Int {
         Int(OCCTShapeGetFaceCount(handle))
     }
