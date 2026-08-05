@@ -108,10 +108,10 @@ name says `[horizontal-cut fixture]`).
 | face (already fixed) | upwardFaces().count **[horizontal-cut fixture]** | 1 | 2 | 2 | corroborates #642's own table: #614's fix IS order-independent on the SAME fixture AAG is not |
 | face (AAG, #642, fixed) | buildAAG().nodes.count [vertical-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() (the shared wall is 2 nodes) |
 | face (AAG, #642, fixed) | AAG upward+horizontal count [vertical-cut fixture] | n/a | 2 | 2 | unchanged: shared wall's normal is horizontal-axis here, order-independent before and after |
-| face (AAG, #642, NEW FINDING) | detectPocketsAAG().count [vertical-cut fixture] | 1 | 1 | **2** | post-fix: was 1/1 (see "Update following #642's fix" below, a different, pre-existing defect this fix unmasked rather than caused) |
+| face (AAG, #642/#699) | detectPocketsAAG().count [vertical-cut fixture] | 1 | 1 | 1 | #642-fixed: was 1/1/1 pre-#699 with a NEW order-dependence (1/1/2) exposed by #642's own fix; #699 fixed the cross-solid adjacency this exposed, restoring 1/1/1 (see "Update following #699's fix" below) |
 | face (AAG, #642, fixed) | buildAAG().nodes.count [horizontal-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() |
 | face (AAG, #642, fixed) | **AAG upward+horizontal NODE INDICES [horizontal-cut fixture]** | n/a | **[2, 8]** | **[2, 8]** | post-fix: was `[2, 8]` vs `[2]`, now agrees. The shared wall is its own node per side, so neither side's index depends on which one `faces()` used to keep |
-| face (AAG, #642, fixed) | **detectPocketsAAG().count [horizontal-cut fixture]** | 1 | **2** | **2** | post-fix: was `2` vs `1` (THE #642 HEADLINE MEASUREMENT), now agrees |
+| face (AAG, #642/#699) | **detectPocketsAAG().count [horizontal-cut fixture]** | 1 | 1 | 1 | #642-fixed: agreed at 2/2 (THE #642 HEADLINE MEASUREMENT); #699 found that agreement itself rode a cross-solid false adjacency and corrected it to 1/1 (see "Update following #699's fix" below) |
 | wire | wireCount (dedup) | 6 | 11 | 11 | |
 | wire | wires.count (dedup) | 6 | 11 | 11 | |
 | wire | subShapeCount(ofType: .wire) (dedup canonical) | 6 | 11 | 11 | |
@@ -381,6 +381,54 @@ of solid membership for a multi-solid compound. Recorded here rather than fixed 
 does not have to re-derive it: the fix would need `AAG` to know which solid a face occurrence
 belongs to, so it can restrict adjacency/convexity checks to same-solid pairs, which the census's
 own consumer audit was not asked to design.
+
+## Update following #699's fix
+
+#699 is fixed: `AAG.buildGraph()` now restricts its pairwise adjacency/convexity check (the
+`OCCTFacesAreAdjacent`/`OCCTEdgeGetConvexity` calls) to occurrence pairs that share a solid.
+Solid membership per occurrence is derived, not looked up through a new bridge function: the same
+`TopExp_Explorer` descent `OCCTShapeGetOrientedFaces` already drives visits every occurrence under
+one top-level solid contiguously before moving to the next, in the same first-encountered order
+`Shape.solids` itself walks, so the flat occurrence list partitions into contiguous runs sized by
+each solid's own face-occurrence count. Confirmed against both split fixtures (dumping every
+occurrence's bounds alongside each solid's own `orientedFaces()` count) before relying on it,
+not assumed from the traversal's documented behavior alone. `AAG.buildGraph()` falls back to the
+pre-#699 unrestricted comparison whenever a shape has zero or one solid, or whenever the per-solid
+counts don't sum to the total occurrence count -- silently mis-partitioning would be worse than not
+partitioning at all, and neither case can arise on the fixtures this census measures.
+
+**The vertical-cut fixture's new order-dependence is gone**, restoring the 1/1/1 the previous
+section recorded as the pre-#642-fix baseline: `detectPocketsAAG().count` is `1` in plain box,
+order A and order B alike.
+
+**The horizontal-cut fixture's count moved too, from `2` to `1` in both orders.** This is not a
+regression: #642's own headline measurement was ORDER-AGREEMENT (`2` in both orders, instead of `2`
+vs `1`), and that agreement survives #699 intact (`1` in both orders, still equal). What changed is
+that one of the two "pockets" `detectPockets()` reported before #699 was built from a cross-solid
+comparison between the horizontal cut's own shared wall and the wrong side of a split face, exactly
+the mechanism #699 fixes -- restricting to same-solid pairs removes it, and the fixture has one
+genuine same-solid floor candidate left. Measured directly: with `AAG.buildGraph()`'s solid
+restriction temporarily reverted, the horizontal fixture's floor at the *small* slab's top face
+shows two same-index-range neighbors classified concave that a same-solid-only walk of that solid
+in isolation also shows concave (`OCCTEdgeGetConvexity`'s own sign convention is a separate, far
+older defect, present on a single plain box too -- see below), while the floor on the *large*
+slab's top face shows zero concave same-solid neighbors either way. The `2`-vs-`1` swing was two
+independent cross-solid comparisons landing on the large slab's floor before #699 and nowhere after.
+
+**A third, unrelated defect was found while explaining this, and is also deliberately not fixed
+here.** `OCCTEdgeGetConvexity`'s reported concavity for a given physical edge depends on which face
+is passed as `face1` and which as `face2` -- the underlying `(tangent × n1) · n2` triple product
+negates under that swap, and `AAG.buildGraph()`'s pairwise loop picks `face1`/`face2` by array
+index order (`faces[i]`, `faces[j]`, `i < j`), not by any geometric convention. This reproduces on a
+**single, uncut plain box** (`detectPocketsAAG().count` is `1` for the plain-box fixture throughout
+this whole census, in every row that measures it, both before and after #642 and #699): two of the
+box's four side-wall-to-top-face dihedrals are genuinely convex but get reported concave, purely
+because of index order, which is what feeds the plain box's own false-positive pocket. This is
+orthogonal to solid membership (it needs no compound, no shared face, no second solid) and orthogonal
+to #699's fix (restricting to same-solid pairs does not touch which face lands at the lower index
+within a solid). Not filed as its own issue here since it was found explaining a side effect rather
+than measured as a primary claim; a future pass on `detectPockets()`'s accuracy should start from
+this note rather than re-derive it.
 
 ## Re-scoping the three members
 

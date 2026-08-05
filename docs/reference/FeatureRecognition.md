@@ -27,6 +27,8 @@ public enum EdgeConvexity: Int32, Sendable {
 
 Maps to `OCCTEdgeConvexity` from the bridge. The classification is computed by `OCCTEdgeGetConvexity` using `BRepAdaptor_Surface` surface normals and edge tangents — specifically the sign of `(tangent × n1) · n2` at the edge midpoint.
 
+`OCCTEdgeGetConvexity` (like `OCCTFacesAreAdjacent`) has no notion of which solid `face1`/`face2` belong to; it is `AAG.buildGraph()` that restricts which pairs reach it to occurrences sharing a solid (#699). Called directly on two faces from different solids the result is not meaningful for either, see `AAG`, below.
+
 - `concave` — the two face normals "open inward"; typical of pocket walls meeting a floor.
 - `smooth` — faces are tangent (within ~0.5°); typical of filleted edges.
 - `convex` — the two face normals "open outward"; typical of external edges.
@@ -80,9 +82,27 @@ public struct AAGEdge: Sendable {
 
 ## AAG
 
-Attributed Adjacency Graph for feature recognition. Nodes are face occurrences (`Shape.orientedFaces()`, #642); graph edges connect pairs of adjacent occurrences and carry convexity attributes.
+Attributed Adjacency Graph for feature recognition. Nodes are face occurrences (`Shape.orientedFaces()`, #642); graph edges connect pairs of adjacent occurrences **within the same solid** (#699) and carry convexity attributes.
 
 A face shared by two solids in a compound is two nodes, one per owning solid, each carrying that solid's own normal and derived predicates. `AAG` does not build a graph edge between the two occurrences of one shared face: they are the same face, not neighbors of it. On a shape whose faces are not shared this is exactly the node set the old `Shape.faces()`-based graph produced, in the same order.
+
+### Adjacency is scoped to one solid (#699)
+
+Two occurrences that share a B-Rep edge but belong to different solids in a compound are adjacent *in the compound* and not adjacent in *either* solid: a floor face's candidate walls are the faces bounding the same body, not any face anywhere in the compound that happens to touch the same edge locus. Neither `OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` has any notion of solid membership on their own (both compare two `TopoDS_Face` values purely on their own edge geometry), so `AAG.buildGraph()` restricts which pairs it hands to them: only occurrences it can establish share a solid are compared at all.
+
+Solid membership per occurrence is derived from the shape's own traversal order rather than a new bridge entry point: `orientedFaces()`'s underlying `TopExp_Explorer` walk visits every occurrence under one top-level solid contiguously before moving to the next, in the same first-encountered order `Shape.solids` itself enumerates solids in, so the flat occurrence list partitions into contiguous runs sized by each solid's own face-occurrence count. On a shape with zero or one solid, including every single-solid shape, there is no cross-solid pair to restrict, so nothing changes: this is a compound-only concern.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let halves = box.split(atPlane: SIMD3(4, 0, 0), normal: SIMD3(1, 0, 0))!
+
+// Same geometry, opposite compound member order.
+let orderA = Shape.compound(halves)!
+let orderB = Shape.compound(halves.reversed())!
+
+// Order-independent: cross-solid pairs never reach OCCTFacesAreAdjacent at all.
+print(orderA.detectPocketsAAG().count == orderB.detectPocketsAAG().count)   // true
+```
 
 ### `AAG.init(shape:)`
 
@@ -92,7 +112,7 @@ Constructs the AAG by traversing all face-occurrence pairs in the shape.
 public init(shape: Shape)
 ```
 
-Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface`).
+Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface`).
 
 - **Parameters:** `shape` — the solid to analyse. Works best on closed solids.
 - **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface` (convexity).
@@ -397,7 +417,7 @@ Detects pockets using AAG-based feature recognition.
 public func detectPocketsAAG() -> [PocketFeature]
 ```
 
-Equivalent to `buildAAG().detectPockets()`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before the fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry.
+Equivalent to `buildAAG().detectPockets()`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before that fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry. #699 closed a second, independent source of the same symptom: `concaveNeighbors(of:)` (which `detectPockets()` reads to find candidate walls) used to include neighbors from a *different* solid than the floor's own, which could make the result order-dependent on a fixture #642 alone did not fix (a vertical, rather than horizontal, two-solid split) and could inflate the count with a wall that was never really adjacent to that floor in either solid.
 
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**

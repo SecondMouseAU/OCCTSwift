@@ -1,0 +1,198 @@
+import Testing
+import Foundation
+@testable import OCCTSwift
+
+// #699: `AAG.buildGraph()` compared every pair of face occurrences for adjacency and convexity,
+// with no notion of which solid each occurrence belongs to. `OCCTFacesAreAdjacent` and
+// `OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`) test two `TopoDS_Face` values purely on their
+// own edge geometry, ignoring the `shape` argument they are handed beyond a null check, so two
+// faces from DIFFERENT solids in one compound that happen to share a B-Rep edge were reported
+// adjacent, and the convexity of that shared edge was computed with no reference to which solid
+// was asking.
+//
+// Found while measuring #642's own fix (Cluster A's census,
+// `Scripts/repro/cluster-a-subshape-enumeration/README.md`, "Update following #642's fix"): on a
+// VERTICAL two-solid split, `detectPocketsAAG().count` disagreed across compound member order
+// (1 vs 2), even though #642's fix (`orientedFaces()`-based nodes) is correct and complete for
+// what it claims. The two defects are independent and need different fixtures to show: #642's own
+// headline needs a HORIZONTAL cut (the shared wall's normal has to be vertical to reach
+// `isHorizontal()`/`isUpward()` at all); this one needs a VERTICAL cut (the shared wall borders two
+// half-faces of the box's original top face, which also border EACH OTHER along the cut line, so
+// one edge is common to three face occurrences: both top-face halves and both sides of the wall).
+//
+// ## The contract
+//
+// Two faces sharing a B-Rep edge but belonging to different solids in a compound are adjacent IN
+// THE COMPOUND and not adjacent in EITHER solid. `AAG` and its consumers (`detectPockets()`,
+// `concaveNeighbors(of:)`, `convexNeighbors(of:)`) want the solid-scoped answer: a floor face's
+// candidate walls are the faces that bound the SAME body, not any face anywhere in the compound
+// that happens to touch the same edge locus. `AAG.buildGraph()` now restricts its pairwise
+// adjacency/convexity check to occurrence pairs sharing a solid, derived from `Shape.solids` and
+// `orientedFaces()`'s own traversal order rather than a new bridge function (see
+// `AAG.solidGroups(of:in:)`'s doc comment for why the existing bridge surface is enough).
+//
+// ## A further correction to #642's own headline measurement
+//
+// Restricting to same-solid pairs also changes the HORIZONTAL fixture's `detectPocketsAAG().count`
+// from `2` (in both orders, #642's own fix) to `1` (in both orders). This is not a regression: #642
+// was about order-AGREEMENT, and the horizontal fixture still agrees after #699 (`1` in both
+// orders, was `2` in both orders). What moved is that one of the two "pockets" `detectPockets()`
+// reported before #699 was itself built from a cross-solid comparison between the shared wall and
+// the wrong side of a split face -- exactly the mechanism #699 fixes. See
+// `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix" for the
+// full measurement.
+@Suite("AAG restricts adjacency and convexity to one solid (#699)")
+struct Issue699AAGSolidScopedAdjacencyTests {
+
+    // MARK: - Fixture
+
+    /// The issue's own construction: a plain, origin-centred 10mm box split by an X-normal plane
+    /// through x=4, recompounded in both member orders. A one-line change to
+    /// `Issue642AAGNodeIdentityTests.horizontalSplitBoxCompound(order:)`'s normal and point, per
+    /// #699's own instructions -- the two fixtures are otherwise identical in shape.
+    enum Order { case asSplit, reversed }
+
+    static func verticalSplitBoxCompound(order: Order) -> Shape? {
+        guard let block = Shape.box(width: 10, height: 10, depth: 10),
+              let pieces = block.split(atPlane: SIMD3(4, 0, 0), normal: SIMD3(1, 0, 0)),
+              pieces.count == 2
+        else { return nil }
+        let ordered = order == .asSplit ? pieces : pieces.reversed()
+        return Shape.compound(Array(ordered))
+    }
+
+    // MARK: - The headline
+
+    /// The defect itself, reverted: before the fix this was 1 vs 2 for identical geometry
+    /// (measured directly against the tree at HEAD before this fix landed).
+    @Test("detectPocketsAAG() agrees across compound member order on a vertical cut")
+    func detectPocketsAgreesAcrossOrder() {
+        guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
+              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            Issue.record("could not build the vertical split-box fixture")
+            return
+        }
+
+        let pocketsA = orderA.detectPocketsAAG()
+        let pocketsB = orderB.detectPocketsAAG()
+
+        #expect(pocketsA.count == pocketsB.count)
+        // Pinned to the measured value so a future change that breaks this loudly disagrees with
+        // a concrete number rather than only with itself.
+        #expect(pocketsA.count == 1)
+        #expect(pocketsB.count == 1)
+    }
+
+    /// `buildAAG().nodes.count` is unaffected: #699 restricts EDGES, not the node set #642 already
+    /// fixed. Both orders keep 12 occurrence nodes (6 per solid) for this fixture.
+    @Test("buildAAG().nodes.count is unaffected by the adjacency fix")
+    func nodeCountUnaffected() {
+        guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
+              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            Issue.record("could not build the vertical split-box fixture")
+            return
+        }
+
+        #expect(orderA.buildAAG().nodes.count == 12)
+        #expect(orderB.buildAAG().nodes.count == 12)
+    }
+
+    /// Each solid, in isolation, is a plain 6-face box (12 face-adjacency edges: every face touches
+    /// 4 others, 6*4/2 = 12). With adjacency correctly scoped to one solid, the compound's graph is
+    /// exactly two such box graphs and nothing more: 24 edges, none of them crossing the solid
+    /// boundary. Before #699 this was higher, and order-dependent, because cross-solid pairs were
+    /// included too.
+    @Test("the graph is exactly two independent 12-edge box graphs, no cross-solid edges")
+    func edgeCountIsTwoIndependentBoxGraphs() {
+        guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
+              let orderB = Self.verticalSplitBoxCompound(order: .reversed) else {
+            Issue.record("could not build the vertical split-box fixture")
+            return
+        }
+
+        #expect(orderA.buildAAG().edges.count == 24)
+        #expect(orderB.buildAAG().edges.count == 24)
+    }
+
+    /// The shared wall's two occurrences (same `distinctFaceIndex`, opposite orientation) are each
+    /// adjacent only to faces on their OWN solid's side. Neither wall occurrence is adjacent to the
+    /// other (that guard predates #699, see `Issue642AAGNodeIdentityTests`), and -- the #699 part --
+    /// neither is adjacent to the OTHER solid's half of the split top face either, even though that
+    /// half shares the wall's own top boundary edge.
+    @Test("the shared wall's two occurrences are not adjacent to the other solid's split top-face half")
+    func wallOccurrencesDoNotCrossSolidBoundary() {
+        guard let compound = Self.verticalSplitBoxCompound(order: .asSplit) else {
+            Issue.record("could not build the vertical split-box fixture")
+            return
+        }
+
+        let aag = compound.buildAAG()
+        let grouped = Dictionary(grouping: aag.nodes.enumerated().map { ($0.offset, $0.element) },
+                                  by: \.1.distinctFaceIndex)
+        guard let wallSides = grouped.first(where: { $0.value.count > 1 })?.value, wallSides.count == 2 else {
+            Issue.record("expected exactly one face shared by two nodes (the cut wall)")
+            return
+        }
+
+        // Every neighbor of each wall occurrence must be a face that is ALSO a neighbor of, or
+        // equal to, one of the two wall occurrences' own solid-mates -- concretely: no neighbor of
+        // wallSides[0] should be adjacent to wallSides[1] and vice versa, which is what "different
+        // solids never touch" implies for a shape where each solid is a single connected box.
+        let (indexA, _) = wallSides[0]
+        let (indexB, _) = wallSides[1]
+        let neighborsA = Set(aag.neighbors(of: indexA))
+        let neighborsB = Set(aag.neighbors(of: indexB))
+
+        // If solid-scoping were absent, the two wall sides (which are geometrically coincident)
+        // would share every neighbor, since anything adjacent to one side's edge loop is adjacent
+        // to the other's too. Scoped to one solid each, their neighbor sets are disjoint.
+        #expect(neighborsA.isDisjoint(with: neighborsB))
+        #expect(!neighborsA.contains(indexB))
+        #expect(!neighborsB.contains(indexA))
+    }
+
+    // MARK: - No regression on the unshared case
+
+    /// A single solid has no cross-solid pair to restrict: `AAG.solidGroups(of:in:)` returns `nil`
+    /// for `Shape.solids.count <= 1`, so `buildGraph()` falls back to comparing every pair exactly
+    /// as it did before #699. A plain box's graph is unchanged.
+    @Test("a plain box's AAG is unaffected")
+    func plainBoxUnaffected() {
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("could not build the box")
+            return
+        }
+
+        let aag = box.buildAAG()
+        #expect(aag.nodes.count == 6)
+        #expect(aag.edges.count == 12)
+    }
+
+    // MARK: - No regression on #642's own fixture (order-agreement survives, though the count moved)
+
+    /// #642's own horizontal-cut fixture must still agree across compound member order after #699.
+    /// The exact count moved from `2` to `1` (see the suite's own doc comment and
+    /// `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix");
+    /// what must never regress is the AGREEMENT itself, which is what #642 was about and what this
+    /// fixture is uniquely positioned to catch since the vertical fixture above never reaches
+    /// `isHorizontal()`/`isUpward()` at all.
+    @Test("#642's horizontal-cut fixture still agrees across order, at the corrected count")
+    func horizontalFixtureStillAgreesAtCorrectedCount() {
+        guard let block = Shape.box(width: 10, height: 10, depth: 10),
+              let pieces = block.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1)),
+              pieces.count == 2,
+              let orderA = Shape.compound(pieces),
+              let orderB = Shape.compound(pieces.reversed())
+        else {
+            Issue.record("could not build the horizontal split-box fixture")
+            return
+        }
+
+        let pocketsA = orderA.detectPocketsAAG()
+        let pocketsB = orderB.detectPocketsAAG()
+
+        #expect(pocketsA.count == pocketsB.count)
+        #expect(pocketsA.count == 1)
+        #expect(pocketsB.count == 1)
+    }
+}

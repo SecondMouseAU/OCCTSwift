@@ -93,9 +93,21 @@ public struct AAGEdge: Sendable {
 /// - Nodes are face **occurrences** (``Shape/orientedFaces()``, #642). A face shared between two
 ///   solids in a compound is two nodes, one per owning solid, each with that solid's own normal
 ///   and derived predicates
-/// - Edges connect adjacent occurrences (those sharing a B-Rep edge), except the two occurrences
-///   of one shared face, which are never linked to each other
+/// - Edges connect adjacent occurrences (those sharing a B-Rep edge) **within the same solid**
+///   (#699), except the two occurrences of one shared face, which are never linked to each other
 /// - Each graph edge is attributed with convexity information
+///
+/// ## Adjacency is scoped to one solid (#699)
+///
+/// Two occurrences sharing a B-Rep edge but belonging to different solids in a compound are
+/// adjacent *in the compound* and not adjacent in *either* solid: a floor face's candidate walls
+/// are the faces bounding the same body, not any face anywhere in the compound that happens to
+/// touch the same edge locus. Neither `OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` has any
+/// notion of solid membership on their own, so `buildGraph()` restricts which occurrence pairs it
+/// hands to them, using `Shape.solids` and `orientedFaces()`'s own traversal order rather than a
+/// new bridge entry point (see `AAG.solidGroups(of:in:)`'s doc comment for the derivation). On a
+/// shape with zero or one solid, including every single-solid shape, this changes nothing: there
+/// is no cross-solid pair to restrict.
 ///
 /// ## Node identity (#642)
 ///
@@ -177,6 +189,15 @@ public final class AAG: @unchecked Sendable {
             nodes.append(node)
         }
 
+        // #699: which solid each occurrence belongs to, so the pairwise loop below never asks
+        // OCCTFacesAreAdjacent/OCCTEdgeGetConvexity about two faces from different solids. Neither
+        // bridge function has any notion of solid membership -- both compare face1/face2 purely on
+        // their own edge geometry, ignoring the `shape` argument beyond a null check -- so on a
+        // vertical cut, the two top-face halves (which border each other along the cut line) and
+        // each half's own side of the shared wall were being compared cross-solid as well as
+        // within their own solid, on top of the correct same-solid adjacencies.
+        let group = Self.solidGroups(of: faces, in: shape)
+
         // Build edges by checking all face pairs for adjacency
         for i in 0..<faceCount {
             for j in (i+1)..<faceCount {
@@ -188,6 +209,13 @@ public final class AAG: @unchecked Sendable {
                 // itself. Without this guard OCCTFacesAreAdjacent (which compares edge sets by
                 // IsSame, ignoring orientation) reports a self-loop for every shared face.
                 guard face1.index != face2.index else { continue }
+
+                // #699: two occurrences in different solids are adjacent in the compound and not
+                // in either solid; AAG's consumers (detectPockets(), concaveNeighbors(), etc.) want
+                // the latter. `group` is nil when solid membership could not be established (a
+                // single-solid shape, or a shape whose occurrence count didn't partition cleanly by
+                // solid), in which case every pair is compared exactly as before #699.
+                if let group, group[i] != group[j] { continue }
 
                 // Check if adjacent
                 if OCCTFacesAreAdjacent(shape.handle, face1.handle, face2.handle) {
@@ -230,6 +258,47 @@ public final class AAG: @unchecked Sendable {
                 }
             }
         }
+    }
+
+    /// Which solid each entry of `occurrences` (``Shape/orientedFaces()``, in order) belongs to,
+    /// or `nil` if solid membership can't be established for this shape (#699).
+    ///
+    /// Returns one group id per occurrence, two occurrences sharing a group id if and only if they
+    /// belong to the same solid. The ids are arbitrary integers, not ``Shape/solids``'s own
+    /// indices, and callers should compare them for equality only.
+    ///
+    /// There is no bridge entry point that answers "which solid owns this face occurrence"
+    /// directly, and this deliberately does not add one: `OCCTShapeGetOrientedFaces`, the walk
+    /// `orientedFaces()` already runs, visits every occurrence under one top-level solid
+    /// contiguously before moving to the next, because it is driven by the same single
+    /// `TopExp_Explorer` descent that ``Shape/solids`` itself uses to enumerate solids in
+    /// first-encountered order (both are one DFS over the same shape, filtered to a different
+    /// target type). So the flat occurrence list partitions into contiguous runs whose lengths are
+    /// each solid's own face-occurrence count, with no need to match individual faces back to a
+    /// solid by identity. Confirmed against both the vertical- and horizontal-cut two-solid
+    /// fixtures in `Scripts/repro/cluster-a-subshape-enumeration` before relying on it here, not
+    /// assumed from the traversal's documented behavior alone.
+    ///
+    /// `nil` covers two cases deliberately treated the same: a shape with zero or one solid (no
+    /// cross-solid pair can exist, so nothing needs restricting), and a shape whose per-solid
+    /// occurrence counts don't sum to the total occurrence count (a compound mixing solids with
+    /// free shells/faces, or a future shape this partitioning assumption doesn't hold for). Either
+    /// way, `buildGraph()` falls back to comparing every pair, exactly as it did before #699 --
+    /// silently mis-partitioning would be worse than not partitioning at all.
+    private static func solidGroups(of occurrences: [Face], in shape: Shape) -> [Int]? {
+        let bodies = shape.solids
+        guard bodies.count > 1 else { return nil }
+
+        let counts = bodies.map { Int(OCCTShapeGetFaceOccurrenceCount($0.handle)) }
+        guard counts.reduce(0, +) == occurrences.count else { return nil }
+
+        var groups = [Int](repeating: -1, count: occurrences.count)
+        var cursor = 0
+        for (bodyIndex, count) in counts.enumerated() {
+            for k in 0..<count { groups[cursor + k] = bodyIndex }
+            cursor += count
+        }
+        return groups
     }
 
     /// Get neighbors of a face
