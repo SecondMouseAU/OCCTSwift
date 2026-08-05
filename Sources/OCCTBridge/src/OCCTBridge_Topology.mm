@@ -1273,12 +1273,8 @@ OCCTPointEdgeExtremaResult OCCTBRepExtremaExtPC(double px, double py, double pz,
     OCCTPointEdgeExtremaResult result = {};
     if (!shape) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #613: the deduplicated enumeration, matching its ExtCC/ExtCF siblings in this file.
+        TopoDS_Edge edge = occtEdgeAtIndex(shape->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
         TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(gp_Pnt(px, py, pz));
@@ -1313,16 +1309,14 @@ OCCTEdgeFaceExtremaResult OCCTBRepExtremaExtCF(OCCTShapeRef shape1, int32_t edge
     OCCTEdgeFaceExtremaResult result = {};
     if (!shape1 || !shape2) return result;
     try {
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape1->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) { edge = TopoDS::Edge(exp.Current()); break; }
-            idx++;
-        }
+        // #613: the edge index reads the deduplicated enumeration. The face index deliberately does
+        // not -- faces are the exception (explorer and map agree on ordinary solids, diverging only
+        // when one face has two parents), and reconciling faces() with faceCount/face(at:) is #541.
+        TopoDS_Edge edge = occtEdgeAtIndex(shape1->shape, edgeIndex);
         if (edge.IsNull()) return result;
 
         TopoDS_Face face;
-        idx = 0;
+        int idx = 0;
         for (TopExp_Explorer exp(shape2->shape, TopAbs_FACE); exp.More(); exp.Next()) {
             if (idx == faceIndex) { face = TopoDS::Face(exp.Current()); break; }
             idx++;

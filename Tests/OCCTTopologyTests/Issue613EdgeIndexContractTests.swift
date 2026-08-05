@@ -110,6 +110,82 @@ struct Issue613EdgeIndexContractTests {
         #expect(box.splitEdge(at: box.edgeCount, parameter: 0.5) == nil)
     }
 
+    // MARK: - BRepCheck_Analyzer (isSubShapeValid), the other half of the check surface
+
+    /// `isSubShapeValid(type:at:)` and `checkEdge(at:)` answer the same question about the same
+    /// index, so they must read the same enumeration. Converting one and not the other leaves them
+    /// disagreeing about which edge index 12 is on a 12-edge box.
+    @Test("isSubShapeValid reads the same enumeration as checkEdge and checkVertex")
+    func subShapeValidMatchesTheCheckEntryPoints() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0),
+                                         width: 20, height: 20, depth: 20))
+
+        for i in 0..<box.edgeCount {
+            #expect(box.isSubShapeValid(type: .edge, at: i) == box.checkEdge(at: i).isValid,
+                    "the two check entry points disagree about edge \(i)")
+        }
+        for i in 0..<box.vertexCount {
+            #expect(box.isSubShapeValid(type: .vertex, at: i) == box.checkVertex(at: i).isValid,
+                    "the two check entry points disagree about vertex \(i)")
+        }
+
+        // The surplus: these kept answering all the way to index 23 (edges) and 47 (vertices).
+        for i in box.edgeCount..<(box.edgeCount * 2) {
+            #expect(!box.isSubShapeValid(type: .edge, at: i),
+                    "edge index \(i) is past edgeCount \(box.edgeCount)")
+        }
+        for i in box.vertexCount..<(box.vertexCount * 2) {
+            #expect(!box.isSubShapeValid(type: .vertex, at: i),
+                    "vertex index \(i) is past vertexCount \(box.vertexCount)")
+        }
+    }
+
+    // MARK: - BRepExtrema_ExtPC / ExtCF, the ExtCC siblings
+
+    /// The returned nearest point must lie *on* the edge the index names — which pins the call to
+    /// one specific edge, since the old occurrence walk resolved a different one from index 6
+    /// onwards on this box. Not every index resolves: `BRepExtrema_ExtPC` reports only interior
+    /// extrema, so an edge whose nearest point is an endpoint legitimately yields no solution.
+    @Test("pointEdgeExtrema measures against the edge edges() names")
+    func pointEdgeExtremaUsesTheSameEnumeration() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0),
+                                         width: 10, height: 20, depth: 30))
+        let probe = SIMD3<Double>(100, 5, 7)
+
+        var checked = 0
+        for i in 0..<box.edgeCount {
+            guard let extrema = box.pointEdgeExtrema(point: probe, edgeIndex: i) else { continue }
+            let offEdge = try #require(box.edges()[i].distance(to: extrema.pointOnEdge))
+            #expect(offEdge < 1e-6,
+                    "the point extrema returned for index \(i) is \(offEdge) away from edges()[\(i)]")
+            checked += 1
+        }
+        #expect(checked > 0, "no in-range edge produced an interior extremum to check")
+
+        for i in box.edgeCount..<(box.edgeCount * 2) {
+            #expect(box.pointEdgeExtrema(point: probe, edgeIndex: i) == nil,
+                    "index \(i) is past edgeCount \(box.edgeCount) and must not resolve")
+        }
+    }
+
+    @Test("edgeFaceExtrema resolves its edge index through the same enumeration")
+    func edgeFaceExtremaUsesTheSameEnumeration() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0),
+                                         width: 20, height: 20, depth: 20))
+        let other = try #require(Shape.box(origin: SIMD3(0, 0, 60),
+                                           width: 20, height: 20, depth: 20))
+
+        let resolved = (0..<box.edgeCount).filter {
+            box.edgeFaceExtrema(edgeIndex: $0, other: other, faceIndex: 0) != nil
+        }
+        #expect(!resolved.isEmpty, "no in-range edge resolved against the face at all")
+
+        for i in box.edgeCount..<(box.edgeCount * 2) {
+            #expect(box.edgeFaceExtrema(edgeIndex: i, other: other, faceIndex: 0) == nil,
+                    "index \(i) is past edgeCount \(box.edgeCount) and must not resolve")
+        }
+    }
+
     // MARK: - Edge.index stamped on loose edges (LocOpe_FindEdges / FindEdgesInFace)
 
     @Test("commonEdges stamps an index that round-trips through edges()")

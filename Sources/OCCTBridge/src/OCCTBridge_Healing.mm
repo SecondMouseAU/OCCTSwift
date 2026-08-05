@@ -2027,7 +2027,18 @@ bool OCCTBRepCheckSubShapeValid(OCCTShapeRef parentShape, int32_t subShapeType, 
     try {
         BRepCheck_Analyzer analyzer(parentShape->shape, true);
 
+        // #613: the other half of the same "is this sub-shape valid" surface as checkSubShape
+        // below, and it must read the index the same way -- otherwise isSubShapeValid(type: .edge,
+        // at: 12) and checkEdge(at: 12) disagree about which edge index 12 is, on a 12-edge box.
+        // EDGE and VERTEX read the deduplicated map; WIRE/SHELL/FACE keep the traversal for the
+        // reasons given at checkSubShape.
         TopAbs_ShapeEnum type = (TopAbs_ShapeEnum)subShapeType;
+        if (type == TopAbs_EDGE || type == TopAbs_VERTEX) {
+            const TopoDS_Shape sub = occtSubShapeAtIndex(parentShape->shape, type, subShapeIndex);
+            if (sub.IsNull()) return false;
+            return analyzer.IsValid(sub);
+        }
+
         int idx = 0;
         for (TopExp_Explorer exp(parentShape->shape, type); exp.More(); exp.Next()) {
             if (idx == subShapeIndex) {

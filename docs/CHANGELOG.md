@@ -42,22 +42,29 @@ prism.filleted(edges: prism.concaveEdges(), radius: 8)   // was nil above the 5 
 The kernel was right throughout: read in the deduplicated order, `BRepOffset_Analyse` reports one
 concave edge and names the reentrant corner, identically on OCCT 8.0.0p1 and 8.0.1.
 
-Also converted: `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)`, `checkEdge(at:)`,
-`checkVertex(at:)`, `splitEdge(at:parameter:)`, `biTgteBlend(edgeIndices:radius:)`, and the
-`Edge.index` that `commonEdges(with:)` / `edgesInFace(at:)` stamp — that last was the position in
-the result buffer, so a returned edge addressed an unrelated edge when fed back into
-`filleted(edges:)`.
+Also converted: `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)`,
+`pointEdgeExtrema(point:edgeIndex:)`, `edgeFaceExtrema(edgeIndex:other:faceIndex:)` (its edge
+argument), `checkEdge(at:)`, `checkVertex(at:)`, `isSubShapeValid(type:at:)` for `.edge`/`.vertex`,
+`splitEdge(at:parameter:)`, `biTgteBlend(edgeIndices:radius:)`, and the `Edge.index` that
+`commonEdges(with:)` / `edgesInFace(at:)` stamp — that last was the position in the result buffer,
+so a returned edge addressed an unrelated edge when fed back into `filleted(edges:)`.
 
 **Behaviour changes to expect.** `edgeConcavityCount` now answers per distinct edge, so the three
 type counts sum to at most `edgeCount` (a 12-edge box: 12, not 24). Every converted entry point now
 refuses an index at or above `edgeCount` / `vertexCount`; such indices previously resolved to an
 occurrence and returned a plausible answer for the wrong sub-shape.
 
-**Not changed, deliberately.** `checkWire(at:)` / `checkShell(at:)` keep the traversal, because
-`wireCount` / `shellCount` and their accessors use it too — these already agree with their own
-consumers. Face indices are untouched: unlike edges, the two enumerations agree on ordinary solids
-and diverge only when one face has two parents (measured: a compound holding the same solid twice).
-Reconciling `faces()` with `faceCount` / `face(at:)` is a separate, breaking change tracked as #541.
+**Not changed, deliberately.** `checkWire(at:)` / `checkShell(at:)` and `isSubShapeValid` for those
+types keep the traversal, because `wireCount` / `shellCount` and their accessors use it too — these
+already agree with their own consumers. Face indices are untouched, including `edgeFaceExtrema`'s
+`faceIndex`: unlike edges, the two enumerations agree on ordinary solids and diverge only when one
+face has two parents (measured: a compound holding the same solid twice). Reconciling `faces()`
+with `faceCount` / `face(at:)` is a separate, breaking change tracked as #541.
+
+The site list is generated, not transcribed:
+[`Scripts/repro/613-edge-index-census/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/613-edge-index-census)
+enumerates every explorer-indexed bridge site by sub-shape type, and should report zero
+`TopAbs_EDGE` / `TopAbs_VERTEX` entries.
 
 ### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
 

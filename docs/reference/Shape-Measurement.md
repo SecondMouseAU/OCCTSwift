@@ -1758,7 +1758,10 @@ public func isSubShapeValid(type: TopAbs_ShapeEnum, at index: Int) -> Bool
 
 - **Parameters:**
   - `type` — Type of sub-shape to check.
-  - `index` — 0-based index of the sub-shape.
+  - `index` — 0-based index of the sub-shape. For `.edge` and `.vertex` this addresses the same
+    sub-shape as `edges()[index]` / `vertices()[index]`, so this agrees with `checkEdge(at:)` and
+    `checkVertex(at:)` at every index, and an index at or above `edgeCount` / `vertexCount` reports
+    `false` rather than resolving to a repeated occurrence (#613).
 - **Returns:** `true` if the sub-shape is valid.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTBRepCheckSubShapeValid`).
 
@@ -2098,9 +2101,12 @@ public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeE
 
 - **Parameters:**
   - `point` — 3D point.
-  - `edgeIndex` — 0-based edge index.
+  - `edgeIndex` — 0-based edge index, addressing the same edge as `edges()[edgeIndex]`. An index at
+    or above `edgeCount` yields `nil` (#613).
 - **Returns:** Extrema result, or `nil` on failure.
 - **OCCT:** `BRepExtrema_ExtPC` (via `OCCTBRepExtremaExtPC`).
+- **Note:** `BRepExtrema_ExtPC` reports interior extrema only, so an edge whose nearest point is one
+  of its endpoints legitimately yields `nil`. Use `Edge.distance(to:)` for an unconditional minimum.
 
 ---
 
@@ -2131,9 +2137,10 @@ public func edgeFaceExtrema(edgeIndex: Int, other: Shape, faceIndex: Int) -> Edg
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based edge index in this shape.
+  - `edgeIndex` — 0-based edge index in this shape, addressing the same edge as
+    `edges()[edgeIndex]`. An index at or above `edgeCount` yields `nil` (#613).
   - `other` — Shape containing the face.
-  - `faceIndex` — 0-based face index in `other`.
+  - `faceIndex` — 0-based face index in `other`. Face indexing is unchanged by #613; see #541.
 - **Returns:** Extrema result, or `nil` if parallel or computation fails.
 - **OCCT:** `BRepExtrema_ExtCF` (via `OCCTBRepExtremaExtCF`).
 - **Note:** When `isParallel` is `true`, the returned struct has zero distance and `solutionCount == 0`.
