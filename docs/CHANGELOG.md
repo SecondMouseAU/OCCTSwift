@@ -15,6 +15,57 @@ All notable changes to OCCTSwift.
 
 ## Release History
 
+### Unreleased: fix, edge and vertex indices addressed occurrences, not the edges `edges()` names (#613, #695)
+
+> Version and date deliberately unset; whoever tags stamps them.
+
+An edge index crossing the bridge means a position in the deduplicated enumeration that
+`edges()` / `edgeCount` / `edge(at:)` share. Seven entry points instead walked a raw topology
+traversal, which yields one entry per **occurrence**. A 20 mm box has 12 distinct edges but 24 edge
+occurrences, so the two disagree from the first repeat onwards on every ordinary solid.
+
+The visible failure is `concaveEdges()`. On an extruded L the one genuinely reentrant edge was
+reported convex, while two convex edges in the top cap were reported concave:
+
+```swift
+let l = Wire.polygon([SIMD2(0,0), SIMD2(50,0), SIMD2(50,5),
+                      SIMD2(5,5), SIMD2(5,50), SIMD2(0,50)])!
+let prism = Shape.extrude(profile: l, direction: SIMD3(0,0,1), length: 40)!
+
+prism.concaveEdges().count        // was 2 (both 45 mm top-cap edges), now 1 (the corner)
+prism.edgeConcavityCount(.convex) // a 12-edge box answered 24, now 12
+
+// The composition the docs recommend now rounds the corner it names, at any radius:
+prism.filleted(edges: prism.concaveEdges(), radius: 8)   // was nil above the 5 mm leg thickness
+```
+
+The kernel was right throughout: read in the deduplicated order, `BRepOffset_Analyse` reports one
+concave edge and names the reentrant corner, identically on OCCT 8.0.0p1 and 8.0.1.
+
+Also converted: `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)`,
+`pointEdgeExtrema(point:edgeIndex:)`, `edgeFaceExtrema(edgeIndex:other:faceIndex:)` (its edge
+argument), `checkEdge(at:)`, `checkVertex(at:)`, `isSubShapeValid(type:at:)` for `.edge`/`.vertex`,
+`splitEdge(at:parameter:)`, `biTgteBlend(edgeIndices:radius:)`, and the `Edge.index` that
+`commonEdges(with:)` / `edgesInFace(at:)` stamp — that last was the position in the result buffer,
+so a returned edge addressed an unrelated edge when fed back into `filleted(edges:)`.
+
+**Behaviour changes to expect.** `edgeConcavityCount` now answers per distinct edge, so the three
+type counts sum to at most `edgeCount` (a 12-edge box: 12, not 24). Every converted entry point now
+refuses an index at or above `edgeCount` / `vertexCount`; such indices previously resolved to an
+occurrence and returned a plausible answer for the wrong sub-shape.
+
+**Not changed, deliberately.** `checkWire(at:)` / `checkShell(at:)` and `isSubShapeValid` for those
+types keep the traversal, because `wireCount` / `shellCount` and their accessors use it too — these
+already agree with their own consumers. Face indices are untouched, including `edgeFaceExtrema`'s
+`faceIndex`: unlike edges, the two enumerations agree on ordinary solids and diverge only when one
+face has two parents (measured: a compound holding the same solid twice). Reconciling `faces()`
+with `faceCount` / `face(at:)` is a separate, breaking change tracked as #541.
+
+The site list is generated, not transcribed:
+[`Scripts/repro/613-edge-index-census/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/613-edge-index-census)
+enumerates every explorer-indexed bridge site by sub-shape type, and should report zero
+`TopAbs_EDGE` / `TopAbs_VERTEX` entries.
+
 ### Unreleased: fix, a cancelled import could report `.importFailed` instead of `.cancelled` (#525)
 
 > Version and date deliberately unset; whoever tags stamps them.

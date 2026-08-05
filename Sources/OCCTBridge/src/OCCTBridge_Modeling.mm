@@ -4798,16 +4798,8 @@ OCCTShapeRef OCCTLocOpeSplitShapeByVertex(OCCTShapeRef shape, int32_t edgeIndex,
     try {
         LocOpe_SplitShape splitter(shape->shape);
 
-        // Find the target edge
-        TopoDS_Edge edge;
-        int idx = 0;
-        for (TopExp_Explorer exp(shape->shape, TopAbs_EDGE); exp.More(); exp.Next()) {
-            if (idx == edgeIndex) {
-                edge = TopoDS::Edge(exp.Current());
-                break;
-            }
-            idx++;
-        }
+        // #613: the deduplicated enumeration edges()/edge(at:) hand out, not an occurrence walk.
+        TopoDS_Edge edge = occtEdgeAtIndex(shape->shape, edgeIndex);
         if (edge.IsNull()) return nullptr;
 
         // Get edge parameter range
@@ -7189,18 +7181,15 @@ OCCTShapeRef _Nullable OCCTBiTgteBlend(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, nubs);
 
-        // Collect edges by index
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
+        // Collect edges by index. #613: the deduplicated TopExp::MapShapes enumeration, which is
+        // where the caller's Edge.index came from, not an occurrence walk.
+        TopTools_IndexedMapOfShape edgeMap;
+        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
         for (int32_t i = 0; i < edgeCount; i++) {
             int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
+            if (idx >= 0 && idx < edgeMap.Extent()) {
+                blend.SetEdge(TopoDS::Edge(edgeMap(idx + 1)));  // maps are 1-based
             }
         }
 
@@ -7227,17 +7216,15 @@ OCCTBiTgteBlendInfo OCCTBiTgteBlendInfo_(OCCTShapeRef _Nonnull shape,
     try {
         BiTgte_Blend blend(shape->shape, radius, tolerance, false);
 
-        TopExp_Explorer edgeExp(shape->shape, TopAbs_EDGE);
-        std::vector<TopoDS_Edge> allEdges;
-        while (edgeExp.More()) {
-            allEdges.push_back(TopoDS::Edge(edgeExp.Current()));
-            edgeExp.Next();
-        }
+        // #613: same deduplicated enumeration as OCCTBiTgteBlend above, so the info a caller reads
+        // back describes the same edge set the build would use.
+        TopTools_IndexedMapOfShape edgeMap;
+        TopExp::MapShapes(shape->shape, TopAbs_EDGE, edgeMap);
 
         for (int32_t i = 0; i < edgeCount; i++) {
             int32_t idx = edgeIndices[i];
-            if (idx >= 0 && idx < (int32_t)allEdges.size()) {
-                blend.SetEdge(allEdges[idx]);
+            if (idx >= 0 && idx < edgeMap.Extent()) {
+                blend.SetEdge(TopoDS::Edge(edgeMap(idx + 1)));
             }
         }
 

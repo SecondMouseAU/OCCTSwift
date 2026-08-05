@@ -6623,6 +6623,15 @@ extension Shape {
     /// Analyzes the angles between adjacent faces at each edge to determine
     /// whether each edge is convex, concave, or tangent.
     ///
+    /// One entry per distinct edge, in ``edges()`` order — so the classification at position `n`
+    /// describes `edges()[n]`, and `result[n].0.index == n`.
+    ///
+    /// ```swift
+    /// for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
+    ///     print("inside corner at edge \(edge.index), length \(edge.length)")
+    /// }
+    /// ```
+    ///
     /// - Parameter angle: Threshold angle for tangent classification (radians, default 0.01)
     /// - Returns: Array of (edge, concavity) pairs, or nil on error
     public func edgeConcavities(angle: Double = 0.01) -> [(Edge, EdgeConcavity)]? {
@@ -6652,6 +6661,15 @@ extension Shape {
     }
 
     /// Count edges of a specific concavity type.
+    ///
+    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount`` — before #613
+    /// this counted topology *occurrences* and a 12-edge box reported 24 convex edges.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20)!
+    /// box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
+    /// box.edgeConcavityCount(.concave)  // 0
+    /// ```
     ///
     /// - Parameters:
     ///   - type: Concavity type to count
@@ -7311,8 +7329,18 @@ extension Shape {
     ///
     /// Uses LocOpe_FindEdges to identify shared edges.
     ///
+    /// Each returned edge carries the index it has in *this* shape's ``edges()``, so it feeds
+    /// straight into edge-index consumers such as ``filleted(edges:radius:)``. Before #613 the
+    /// stamped index was the position in the result buffer, which addressed an unrelated edge.
+    ///
+    /// ```swift
+    /// let shared = bracket.commonEdges(with: plate)
+    /// bracket.edges()[shared[0].index].length == shared[0].length   // true
+    /// let rounded = bracket.filleted(edges: shared, radius: 1)
+    /// ```
+    ///
     /// - Parameter other: Shape to compare with
-    /// - Returns: Array of common edges
+    /// - Returns: Array of common edges, each carrying its index in this shape's ``edges()``
     public func commonEdges(with other: Shape) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
         let count = OCCTLocOpeFindEdges(handle, other.handle, &buffer, 100)
@@ -7320,9 +7348,18 @@ extension Shape {
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
-                // Convert shape to edge
-                if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                // Convert shape to edge. #613: stamp the index this edge has in THIS shape's
+                // edges() enumeration, not its position in the result buffer -- the buffer
+                // position addresses an unrelated edge once fed back into filleted(edges:).
+                //
+                // An unresolvable edge is dropped rather than stamped -1: every Edge these APIs
+                // hand back promises to be addressable in edges(), and a -1 would fail later and
+                // elsewhere (a trap in edges()[index], or a bad index into filleted(edges:)).
+                // LocOpe_FindEdges returns sub-shapes of this very shape and the lookup is
+                // IsSame-based, so this is a guard against a broken promise, not an expected path.
+                let parentIndex = Int(OCCTShapeIndexOfEdge(handle, ref))
+                if parentIndex >= 0, let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
+                    edges.append(Edge(handle: edgeRef, index: parentIndex))
                 }
                 OCCTShapeRelease(ref)
             }
@@ -7336,8 +7373,16 @@ extension Shape {
     ///
     /// Uses LocOpe_FindEdgesInFace.
     ///
+    /// As with ``commonEdges(with:)``, each returned edge carries its index in this shape's
+    /// ``edges()`` (#613), so the result feeds straight into edge-index consumers.
+    ///
+    /// ```swift
+    /// let onTop = part.edgesInFace(at: 0)
+    /// let rounded = part.filleted(edges: onTop, radius: 1)
+    /// ```
+    ///
     /// - Parameter faceIndex: Index of the face to check (0-based)
-    /// - Returns: Array of edges found in the face
+    /// - Returns: Array of edges found in the face, each carrying its index in ``edges()``
     public func edgesInFace(at faceIndex: Int) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
         let count = OCCTLocOpeFindEdgesInFace(handle, Int32(faceIndex), &buffer, 100)
@@ -7345,8 +7390,11 @@ extension Shape {
         edges.reserveCapacity(Int(count))
         for i in 0..<Int(count) {
             if let ref = buffer[i] {
-                if let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
-                    edges.append(Edge(handle: edgeRef, index: i))
+                // #613: the index this edge has in edges(), not its buffer position. Unresolvable
+                // edges are dropped rather than stamped -1, as in commonEdges(with:) above.
+                let parentIndex = Int(OCCTShapeIndexOfEdge(handle, ref))
+                if parentIndex >= 0, let edgeRef = OCCTShapeGetEdgeAtIndex(ref, 0) {
+                    edges.append(Edge(handle: edgeRef, index: parentIndex))
                 }
                 OCCTShapeRelease(ref)
             }
@@ -7407,6 +7455,15 @@ extension Shape {
     }
 
     /// Check if a specific sub-shape is valid within this shape's context.
+    ///
+    /// For `.edge` and `.vertex` the index addresses the same sub-shape as ``edges()``/`vertices()`,
+    /// so this agrees with ``checkEdge(at:)``/``checkVertex(at:)`` at every index (#613).
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20)!
+    /// box.isSubShapeValid(type: .edge, at: 3)   // true, same edge as box.edges()[3]
+    /// box.isSubShapeValid(type: .edge, at: 12)  // false — past edgeCount
+    /// ```
     ///
     /// - Parameters:
     ///   - type: Type of sub-shape to check
@@ -7716,10 +7773,20 @@ extension Shape {
     ///
     /// Uses BRepExtrema_ExtPC to find the closest point on the specified edge.
     ///
+    /// `edgeIndex` addresses the same edge as `edges()[edgeIndex]` (#613). Note that
+    /// `BRepExtrema_ExtPC` reports *interior* extrema only, so an edge whose nearest point is one of
+    /// its endpoints yields nil — use ``Edge/distance(to:)`` for an unconditional minimum.
+    ///
+    /// ```swift
+    /// if let hit = part.pointEdgeExtrema(point: probe, edgeIndex: 2) {
+    ///     print("nearest point on edges()[2] is \(hit.pointOnEdge) at \(hit.distance)")
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - point: 3D point
-    ///   - edgeIndex: 0-based edge index
-    /// - Returns: Extrema result, or nil if computation fails
+    ///   - edgeIndex: 0-based edge index, as handed out by ``edges()``
+    /// - Returns: Extrema result, or nil if computation fails or the index is out of range
     public func pointEdgeExtrema(point: SIMD3<Double>, edgeIndex: Int) -> PointEdgeExtrema? {
         let result = OCCTBRepExtremaExtPC(point.x, point.y, point.z, handle, Int32(edgeIndex))
         guard result.solutionCount > 0 else { return nil }
@@ -7756,8 +7823,15 @@ extension Shape {
     /// Uses BRepExtrema_ExtCF to find the closest points between
     /// the specified edge of this shape and a face of another shape.
     ///
+    /// `edgeIndex` addresses the same edge as `edges()[edgeIndex]` (#613); an index at or above
+    /// ``edgeCount`` yields nil. Face indexing is unchanged and still follows `faces()`.
+    ///
+    /// ```swift
+    /// let gap = bracket.edgeFaceExtrema(edgeIndex: 4, other: plate, faceIndex: 0)?.distance
+    /// ```
+    ///
     /// - Parameters:
-    ///   - edgeIndex: 0-based edge index in this shape
+    ///   - edgeIndex: 0-based edge index in this shape, as handed out by ``edges()``
     ///   - other: Shape containing the face
     ///   - faceIndex: 0-based face index in the other shape
     /// - Returns: Extrema result, or nil if parallel or computation fails
