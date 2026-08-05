@@ -497,11 +497,13 @@ These members are declared on `Shape` in `Edge.swift` and provide indexed access
 
 ### `edgeCount`
 
-The total number of edges in the shape.
+The number of **distinct** edges in the shape: the same `TopExp::MapShapes` enumeration `edges()`/`edge(at:)` walk.
 
 ```swift
 public var edgeCount: Int { get }
 ```
+
+An edge reachable from two adjacent faces is counted once, not once per face. See `edges()` below for the identity rule and why it needs no orientation-preserving counterpart.
 
 - **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE, map)` → `map.Extent()` via `TopTools_IndexedMapOfShape`.
 - **Example:**
@@ -544,10 +546,20 @@ Returns all edges from the shape as typed `Edge` objects.
 public func edges() -> [Edge]
 ```
 
-Iterates `edge(at:)` from 0 to `edgeCount - 1`. The order matches `edgeCount` / `edge(at:)` — i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+Iterates `edge(at:)` from 0 to `edgeCount - 1`. The order matches `edgeCount` / `edge(at:)`, i.e., `TopTools_IndexedMapOfShape` traversal order, which can vary between runs.
+
+**Identity, not orientation.** Edges are distinguished the way OCCT distinguishes them for an index: by `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and ignores orientation. An edge reachable from two owners, the ordinary case of any two adjacent faces on one solid, collapses to a single entry here, carrying whichever orientation was reached first:
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.edges().count)    // 12: the distinct, addressable edges
+print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_ShapeContents
+```
+
+Unlike `Shape.faces()`, this collapse is **not** a defect (#638). #614 made `faces()`'s equivalent collapse a bug because `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes the answer it returns. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and every geometric query on it (`tangent(at:)`, `point(at:)`, `parameterBounds`, `curvature(at:)`) reads the edge's underlying `Geom_Curve` through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A bridge-wide audit (`grep -rn "\.Orientation() =="` across `Sources/OCCTBridge/src/*.mm`) found 14 branching sites: 13 are face-normal logic `faces()`/`orientedFaces()` already cover, and the fourteenth (`occtSampleWirePoints`, `OCCTBridge_Modeling.mm`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the wire it samples, not from an edge this method returns. So there is currently no `orientedEdges()` counterpart to `edges()`: nothing needs one. See `Scripts/repro/cluster-a-subshape-enumeration/` for the full census this rests on.
 
 - **Returns:** Array of all `Edge` objects; empty if the shape has no edges.
-- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)` — collects all edges via indexed map.
+- **OCCT:** `TopExp::MapShapes(shape, TopAbs_EDGE)`, collects all edges via indexed map.
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!

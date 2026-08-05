@@ -106,12 +106,12 @@ name says `[horizontal-cut fixture]`).
 | face (already fixed) | upwardFaces().count (#614, reads orientedFaces()) | 1 | 2 | 2 | |
 | face (already fixed) | facesByZLevel() total (#614, reads horizontalFaces()) | 2 | 4 | 4 | |
 | face (already fixed) | upwardFaces().count **[horizontal-cut fixture]** | 1 | 2 | 2 | corroborates #642's own table: #614's fix IS order-independent on the SAME fixture AAG is not |
-| face (AAG, #642) | buildAAG().nodes.count [vertical-cut fixture] | 6 | 11 | 11 | |
-| face (AAG, #642) | AAG upward+horizontal count [vertical-cut fixture] | n/a | 2 | 2 | shared wall's normal is horizontal-axis here, order-independent by construction, not by a fix |
-| face (AAG, #642) | detectPocketsAAG().count [vertical-cut fixture] | 1 | 1 | 1 | no pocket geometry here regardless of order, this fixture does not exercise #642 |
-| face (AAG, #642) | buildAAG().nodes.count [horizontal-cut fixture] | 6 | 11 | 11 | |
-| face (AAG, #642) | **AAG upward+horizontal NODE INDICES [horizontal-cut fixture]** | n/a | **[2, 8]** | **[2]** | the shared wall's node keeps whichever half's orientation `faces()` reached first, the #642 mechanism |
-| face (AAG, #642) | **detectPocketsAAG().count [horizontal-cut fixture]** | 1 | **2** | **1** | THE #642 HEADLINE MEASUREMENT, reproduced exactly |
+| face (AAG, #642, fixed) | buildAAG().nodes.count [vertical-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() (the shared wall is 2 nodes) |
+| face (AAG, #642, fixed) | AAG upward+horizontal count [vertical-cut fixture] | n/a | 2 | 2 | unchanged: shared wall's normal is horizontal-axis here, order-independent before and after |
+| face (AAG, #642, NEW FINDING) | detectPocketsAAG().count [vertical-cut fixture] | 1 | 1 | **2** | post-fix: was 1/1 (see "Update following #642's fix" below, a different, pre-existing defect this fix unmasked rather than caused) |
+| face (AAG, #642, fixed) | buildAAG().nodes.count [horizontal-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() |
+| face (AAG, #642, fixed) | **AAG upward+horizontal NODE INDICES [horizontal-cut fixture]** | n/a | **[2, 8]** | **[2, 8]** | post-fix: was `[2, 8]` vs `[2]`, now agrees. The shared wall is its own node per side, so neither side's index depends on which one `faces()` used to keep |
+| face (AAG, #642, fixed) | **detectPocketsAAG().count [horizontal-cut fixture]** | 1 | **2** | **2** | post-fix: was `2` vs `1` (THE #642 HEADLINE MEASUREMENT), now agrees |
 | wire | wireCount (dedup) | 6 | 11 | 11 | |
 | wire | wires.count (dedup) | 6 | 11 | 11 | |
 | wire | subShapeCount(ofType: .wire) (dedup canonical) | 6 | 11 | 11 | |
@@ -321,6 +321,13 @@ correct behaviour... a documented contract plus a test, not a code change") but 
 right that this needs stating in that issue's PR, not settled here. A future `Edge.orientation`
 accessor, or an edge-level consumer added later, would need to re-run this same search.
 
+**Settled in PR #696: no code change.** That PR re-ran this audit rather than trusting it, then went
+past source-reading and built the same edge in both orientations, diffing every accessor on a line
+and a circle. It also sharpened one claim: the audit's "no consumer" holds for `Edge`, but
+`subShapes(ofType: .edge)` returns `[Shape]`, where `Shape.orientation` **is** readable. No
+production code takes that path, so the conclusion stands, but the narrower statement is the
+accurate one. Regression tests now fail if any `Edge` accessor becomes orientation-dependent.
+
 **#642 reproduces exactly, but only on a fixture #642's own issue text doesn't fully specify,
 which is the correction worth posting.** `detectPocketsAAG()` 2 vs 1 and the AAG upward+horizontal
 node set `[2, 8]` vs `[2]` are reproduced bit-for-bit on the horizontal-cut fixture. They do **not**
@@ -332,6 +339,48 @@ consumer set" table (three executable consumers of `faces()`: `FeatureRecognitio
 `ConstructionEntity.swift:261`, `ShapeMeasurements.swift:66`) was independently re-verified here by
 grepping every `.faces()` occurrence in `Sources/OCCTSwift/*.swift` and excluding doc-comment
 matches. It is exactly right: three sites, no more.
+
+## Update following #642's fix
+
+#642 is fixed: `AAG.buildGraph()` now builds its node set from `orientedFaces()`, not `faces()`, so
+a face shared by two solids is two nodes, one per owning solid, each carrying that solid's own
+normal. The census was re-run against the fixed tree and the six affected rows above were updated
+in place rather than left to describe a superseded state, per this artifact's own rule that a
+census disagreeing with the tree is worse than none.
+
+**The headline measurement now agrees.** On the horizontal-cut fixture, `detectPocketsAAG().count`
+is `2` in both orders (was `2` vs `1`) and the upward+horizontal node indices are `[2, 8]` in both
+orders (was `[2, 8]` vs `[2]`).
+
+**A second, different, pre-existing defect surfaced while verifying the fix, and is deliberately
+not fixed here.** On the vertical-cut fixture, `detectPocketsAAG().count` moved from `1`/`1` to
+`1`/`2`, i.e., a NEW order-dependence appeared where there was none before. Measured directly (by
+temporarily reverting `AAG.buildGraph()` to its pre-fix, `faces()`-based form and instrumenting
+both the node list and the detected pockets for both compound orders) that this is not something
+the fix introduced: the pre-fix code shows the identical asymmetry, one of the fixture's two
+genuine floor candidates finds a concave vertical wall neighbor and the other does not, and which
+one wins flips with compound order there too. It happened to leave the pre-fix *total count*
+unchanged (whichever candidate lost, the count stayed at 1), so nothing about it was visible in the
+table before this pass.
+
+The mechanism is different from #642's: the vertical-cut fixture's shared wall borders two
+half-faces (the box's top face, split by the cut) that also border **each other** along the same
+edge the wall's top boundary runs along, so that one edge is common to three faces. Neither
+`OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`) has any concept of
+solid membership: each tests two `TopoDS_Face` values on their own geometry, so the wall's
+orientation-A occurrence gets compared against both half-faces, not only the one that is actually
+part of the same solid as that orientation. One of those two comparisons is a genuine same-solid
+dihedral; the other combines two orientations that never co-occur on a single real solid boundary,
+and whichever concavity that mismatched comparison happens to produce is not a meaningful answer.
+Since #642's own fix now gives the wall two nodes instead of one, this pre-existing ambiguity is
+exercised twice as often, which is why the previously-accidental cancellation stopped holding.
+
+This is out of scope for #642, which is specifically about a normal-derived predicate losing
+information across `faces()`'s dedup collapse, not about `AAG`'s adjacency graph lacking any notion
+of solid membership for a multi-solid compound. Recorded here rather than fixed so a future issue
+does not have to re-derive it: the fix would need `AAG` to know which solid a face occurrence
+belongs to, so it can restrict adjacency/convexity checks to same-solid pairs, which the census's
+own consumer audit was not asked to design.
 
 ## Re-scoping the three members
 
@@ -348,7 +397,8 @@ census's job here is to show that clearly rather than let a fourth issue re-deri
   but **#614 already shipped the general-purpose fix** (`orientedFaces()`). #642 is not blocked on
   any further root-level change to `faces()`/`edges()`. The fix it needs is AAG's own node-identity
   redesign (per #642's own three suggested approaches), which is a consumer-side migration, not a
-  root-cause fix. #642 can start immediately; it was never gated on #638 or #651.
+  root-cause fix. #642 could start immediately, and did; it was never gated on #638 or #651. See
+  "Update following #642's fix" above for what landed and what it surfaced.
 - **#651** (`nbEdges`/`nbFaces`/`nbVertices` vs their own docs) was **orthogonal to orientation
   entirely**. It was a "two implementations of one count, the docs describe the wrong one" bug, with
   no face/edge-orientation dimension at all, and did not share a mechanism with #638 or #642 beyond

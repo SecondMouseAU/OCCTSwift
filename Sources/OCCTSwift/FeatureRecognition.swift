@@ -22,10 +22,30 @@ public enum EdgeConvexity: Int32, Sendable {
 
 // MARK: - Attributed Adjacency Graph
 
-/// A node in the Attributed Adjacency Graph representing a B-Rep face
+/// A node in the Attributed Adjacency Graph representing one B-Rep face **occurrence**.
+///
+/// `AAG` builds its node set from ``Shape/orientedFaces()``, not ``Shape/faces()`` (#642): a face
+/// shared by two solids in a compound, the ordinary result of a split, appears as **two**
+/// nodes, one per owning solid, each carrying the normal and derived predicates (`isHorizontal`,
+/// `isUpward`, `isDownward`, `isVertical`, `zLevel`) that solid's own orientation produces. On any
+/// shape whose faces are not shared this is exactly the node set `faces()` would have produced, in
+/// the same order.
 public struct AAGNode: Sendable {
-    /// Index of the face in the shape
+    /// This node's position in the graph, the index every `AAG` method (``AAG/neighbors(of:)``,
+    /// ``AAG/edge(between:and:)``, ``AAG/concaveNeighbors(of:)``, ``AAG/convexNeighbors(of:)``)
+    /// takes and returns. An **occurrence** index into ``Shape/orientedFaces()``, not a distinct
+    /// face index: two nodes can share the same underlying face (see ``distinctFaceIndex``).
     public let faceIndex: Int
+
+    /// This occurrence's underlying face, its position in ``Shape/faces()``, the deduplicated
+    /// enumeration.
+    ///
+    /// Two nodes with the same `distinctFaceIndex` are the two sides of one shared face (a wall
+    /// between two solids in a compound): same geometry, opposite orientation, opposed normals.
+    /// `AAG` does not build a graph edge between such a pair: sharing every boundary edge with
+    /// itself is not adjacency, it is identity. On a shape whose faces are not shared, every node
+    /// has a distinct `distinctFaceIndex`, equal to its `faceIndex`.
+    public let distinctFaceIndex: Int
 
     /// Face normal at center (if computable)
     public let normal: SIMD3<Double>?
@@ -69,10 +89,44 @@ public struct AAGEdge: Sendable {
 
 /// Attributed Adjacency Graph for feature recognition
 ///
-/// The AAG represents the topology of a solid as a graph where:
-/// - Nodes are faces
-/// - Edges connect adjacent faces (those sharing a B-Rep edge)
+/// The AAG represents the topology of a shape as a graph where:
+/// - Nodes are face **occurrences** (``Shape/orientedFaces()``, #642). A face shared between two
+///   solids in a compound is two nodes, one per owning solid, each with that solid's own normal
+///   and derived predicates
+/// - Edges connect adjacent occurrences (those sharing a B-Rep edge), except the two occurrences
+///   of one shared face, which are never linked to each other
 /// - Each graph edge is attributed with convexity information
+///
+/// ## Node identity (#642)
+///
+/// An earlier version built nodes from ``Shape/faces()``, the deduplicated enumeration that keeps
+/// only the first orientation a shared face is reached in. `AAGNode.isUpward`/`isHorizontal`/etc.
+/// are derived from the node's normal, so which orientation survived the dedup silently decided
+/// the answer: the same compound, compounded in the opposite member order, produced a different
+/// node set and therefore a different ``detectPockets()`` result for identical geometry. Building
+/// from ``Shape/orientedFaces()`` instead keeps both sides of a shared face as their own node, so
+/// the graph, and everything that reads it, no longer depends on compound member order.
+///
+/// Two other approaches were considered and rejected:
+/// - **One node per distinct face, carrying both normals.** Preserves the old index model, but
+///   every normal-derived predicate becomes two-valued and every caller of `isUpward`/
+///   `isHorizontal`/etc. has to say which side it means. That pushes the ambiguity onto every
+///   consumer instead of resolving it once, in the graph.
+/// - **Restrict `AAG` to single-solid input and document the limitation.** Legitimate only if AAG
+///   is never meaningful across solids, which was not established, and it would not fix anything
+///   for the multi-solid case: it would just make the wrong answer a documented one.
+///
+/// ```swift
+/// let box = Shape.box(width: 10, height: 10, depth: 10)!
+/// let halves = box.split(atPlane: SIMD3(0, 0, 4), normal: SIMD3(0, 0, 1))!
+///
+/// // Same geometry, opposite compound member order.
+/// let orderA = Shape.compound(halves)!
+/// let orderB = Shape.compound(halves.reversed())!
+///
+/// // Order-independent: both sides of the shared wall are their own node either way.
+/// print(orderA.detectPocketsAAG().count == orderB.detectPocketsAAG().count)   // true
+/// ```
 public final class AAG: @unchecked Sendable {
     /// The shape this graph represents
     public let shape: Shape
@@ -93,7 +147,14 @@ public final class AAG: @unchecked Sendable {
     }
 
     private func buildGraph() {
-        let faces = shape.faces()
+        // #642: orientedFaces(), not faces(). faces() keeps only the first orientation a shared
+        // face was reached in, so a wall shared by two solids in a compound derived its normal
+        // (and therefore isHorizontal/isUpward/isDownward/isVertical/zLevel) from whichever side
+        // the dedup happened to keep, which depends on compound member order. orientedFaces()
+        // keeps both sides as separate occurrences, each with the normal its own owning solid
+        // sees, so the node set, and everything built on it, stops depending on that order. On a
+        // shape whose faces are not shared this is exactly the faces() node set, in the same order.
+        let faces = shape.orientedFaces()
         let faceCount = faces.count
 
         // Initialize adjacency list
@@ -103,6 +164,7 @@ public final class AAG: @unchecked Sendable {
         for (index, face) in faces.enumerated() {
             let node = AAGNode(
                 faceIndex: index,
+                distinctFaceIndex: face.index,
                 normal: face.normal,
                 isPlanar: face.isPlanar,
                 isHorizontal: face.isHorizontal(),
@@ -120,6 +182,12 @@ public final class AAG: @unchecked Sendable {
             for j in (i+1)..<faceCount {
                 let face1 = faces[i]
                 let face2 = faces[j]
+
+                // The two occurrences of one shared face are not neighbors of each other: they
+                // are the same face, so every one of their boundary edges is "shared" with
+                // itself. Without this guard OCCTFacesAreAdjacent (which compares edge sets by
+                // IsSame, ignoring orientation) reports a self-loop for every shared face.
+                guard face1.index != face2.index else { continue }
 
                 // Check if adjacent
                 if OCCTFacesAreAdjacent(shape.handle, face1.handle, face2.handle) {
@@ -198,10 +266,28 @@ public final class AAG: @unchecked Sendable {
 
 /// A recognized pocket feature in a solid
 public struct PocketFeature: Sendable {
-    /// Index of the floor face
+    /// Index of the floor face.
+    ///
+    /// An **occurrence** index, the same one ``AAGNode/faceIndex`` uses, so it resolves against
+    /// ``Shape/orientedFaces()`` and **not** ``Shape/faces()`` (#642). Before #642 it indexed
+    /// `faces()`; on a compound whose solids share a face the two differ, and indexing `faces()`
+    /// with it now gives the wrong face or runs off the end. To recover the distinct-face index,
+    /// read `aag.nodes[pocket.floorFaceIndex].distinctFaceIndex`.
+    ///
+    /// ```swift
+    /// let aag = shape.buildAAG()
+    /// for pocket in shape.detectPocketsAAG() {
+    ///     let floor = shape.orientedFaces()[pocket.floorFaceIndex]   // correct
+    ///     let distinct = aag?.nodes[pocket.floorFaceIndex].distinctFaceIndex
+    ///     print(floor.area, distinct as Any)
+    /// }
+    /// ```
     public let floorFaceIndex: Int
 
-    /// Indices of the wall faces
+    /// Indices of the wall faces.
+    ///
+    /// **Occurrence** indices into ``Shape/orientedFaces()``, on the same footing as
+    /// ``floorFaceIndex`` (#642).
     public let wallFaceIndices: [Int]
 
     /// Z level of the pocket floor
@@ -295,6 +381,11 @@ extension AAG {
     /// A hole is identified by:
     /// 1. A cylindrical or conical face
     /// 2. With concave edges connecting to other faces
+    ///
+    /// - Note: `faceIndex` is an **occurrence** index into ``Shape/orientedFaces()``, not
+    ///   ``Shape/faces()`` (#642), matching ``AAGNode/faceIndex``. A hole's face is rarely one
+    ///   shared between two solids, so the two indices usually coincide, but they are not the
+    ///   same thing and only the occurrence one is correct here.
     public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)] {
         var holes: [(faceIndex: Int, radius: Double, depth: Double)] = []
 
@@ -329,12 +420,33 @@ extension AAG {
 // MARK: - Shape Extension
 
 extension Shape {
-    /// Build an Attributed Adjacency Graph for this shape
+    /// Build an Attributed Adjacency Graph for this shape.
+    ///
+    /// The graph's nodes are face occurrences (``Shape/orientedFaces()``), not distinct faces
+    /// (``Shape/faces()``): a face shared by two solids in a compound is two nodes, one per owning
+    /// solid, each with that solid's own normal. See ``AAG`` for why (#642).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let aag = box.buildAAG()
+    /// print(aag.nodes.count)   // 6, one per face, nothing shared
+    /// ```
     public func buildAAG() -> AAG {
         return AAG(shape: self)
     }
 
-    /// Detect pockets using AAG-based feature recognition
+    /// Detect pockets using AAG-based feature recognition.
+    ///
+    /// Selects on each node's ``AAGNode/isUpward``, ``AAGNode/isHorizontal`` and
+    /// ``AAGNode/isPlanar``, which ``buildAAG()`` derives per face occurrence, so the result no
+    /// longer depends on a compound's member order (#642).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let pocket = Shape.box(origin: SIMD3(5, 5, 10), width: 10, height: 10, depth: 15)!
+    /// let result = box.subtracting(pocket)!
+    /// print(result.detectPocketsAAG().count)   // 1
+    /// ```
     public func detectPocketsAAG() -> [PocketFeature] {
         let aag = buildAAG()
         return aag.detectPockets()

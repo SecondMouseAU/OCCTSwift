@@ -183,7 +183,7 @@ public final class Edge: @unchecked Sendable {
 
     /// The 3D curve underlying this edge as a standalone `Curve3D`.
     ///
-    /// Returns nil for edges with no 3D curve representation (rare — typically
+    /// Returns nil for edges with no 3D curve representation (rare, typically
     /// pcurve-only edges from lofted / swept shapes before `BuildCurves3d`).
     /// Internally the returned curve is a `Geom_TrimmedCurve` over the edge's
     /// parameter range, so consumers get a finite handle even when the
@@ -242,7 +242,13 @@ public final class Edge: @unchecked Sendable {
 // MARK: - Shape Extension for Edge Access
 
 extension Shape {
-    /// Get total number of edges in the shape.
+    /// The number of **distinct** edges in this shape, the same `TopExp::MapShapes` enumeration
+    /// ``edges()``/``edge(at:)`` walk.
+    ///
+    /// An edge reachable from two adjacent faces is counted once here, not once per face: a plain
+    /// box has 12 edges by this count even though every one of them borders two faces. See
+    /// ``edges()`` for the identity rule this follows and why it does not need an
+    /// orientation-preserving counterpart the way ``Shape/faces()`` does.
     ///
     /// ``nbEdges`` was a second spelling of this same question, backed by a bare
     /// `TopExp_Explorer` occurrence walk instead of this deduplicated count, and is deprecated in
@@ -250,7 +256,7 @@ extension Shape {
     public var edgeCount: Int {
         Int(OCCTShapeGetTotalEdgeCount(handle))
     }
-    
+
     /// Get edge by index (0-based)
     /// - Parameter index: The edge index
     /// - Returns: Edge at the given index, or nil if index is out of bounds
@@ -260,19 +266,48 @@ extension Shape {
         }
         return Edge(handle: edgeHandle, index: index)
     }
-    
-    /// Get all edges from the shape
+
+    /// Every **distinct** edge of this shape, in enumeration order: the same `TopExp::MapShapes`
+    /// enumeration ``edgeCount`` counts.
+    ///
+    /// ## Identity, not orientation
+    ///
+    /// Edges are distinguished the way OCCT distinguishes them for an index: by
+    /// `TopoDS_Shape::IsSame`, which compares the underlying curve and placement and **ignores
+    /// orientation**. An edge reachable from two owners, the ordinary case of any two adjacent
+    /// faces on one solid, collapses to a single entry here, carrying whichever orientation was
+    /// reached first.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.edges().count)    // 12: the distinct, addressable edges
+    /// print(box.contents.edges)   // 24: one per (face, edge) visit, ShapeAnalysis_ShapeContents
+    /// ```
+    ///
+    /// Unlike ``Shape/faces()``, this collapse is **not** a defect (#638, following #614's own
+    /// method rather than assuming the analogy holds). #614 was a defect because
+    /// `Face.normal(atU:v:)` reverses on `TopAbs_REVERSED`, so a face's stored orientation changes
+    /// the answer. `Edge` has no such consumer: it exposes no `.orientation` accessor at all, and
+    /// every geometric query on it, ``Edge/tangent(at:)``, ``Edge/point(at:)``,
+    /// ``Edge/parameterBounds``, ``Edge/curvature(at:)``, reads the edge's underlying `Geom_Curve`
+    /// through `BRep_Tool::Curve`, which is defined independently of `TopAbs_Orientation`. A
+    /// bridge-wide audit found no site that derives an orientation-dependent answer from an edge
+    /// obtained here; the one edge-orientation branch in the bridge
+    /// (`occtSampleWirePoints`) reads orientation fresh off a `BRepTools_WireExplorer` walk of the
+    /// wire it samples, not from an edge this method returns. If a future `Edge.orientation`
+    /// accessor or an orientation-sensitive consumer is added, re-run that audit before assuming
+    /// the collapse is still safe. See `Scripts/repro/cluster-a-subshape-enumeration/`.
     public func edges() -> [Edge] {
         let count = edgeCount
         var edges = [Edge]()
         edges.reserveCapacity(count)
-        
+
         for i in 0..<count {
             if let edge = edge(at: i) {
                 edges.append(edge)
             }
         }
-        
+
         return edges
     }
 }
