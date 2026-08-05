@@ -1081,6 +1081,15 @@ public func edgeConcavityCount(_ type: EdgeConcavity, angle: Double = 0.01) -> I
 - **Returns:** Count of matching edges, or `nil` on error.
 - **OCCT:** `BRepOffset_Analyse` (via `OCCTShapeCountEdgeConcavity`).
 
+Counts **distinct edges**, so the three type counts sum to at most `edgeCount`. Before #613 this
+counted topology occurrences and a 12-edge box reported 24 convex edges.
+
+```swift
+let box = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20)!
+box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
+box.edgeConcavityCount(.concave)  // 0
+```
+
 ---
 
 ## Geometric Edge Selection (v1.2.1)
@@ -1607,9 +1616,11 @@ public func splitEdge(at edgeIndex: Int, parameter: Double) -> Shape?
 ```
 
 - **Parameters:**
-  - `edgeIndex` — 0-based index of the edge to split.
+  - `edgeIndex` — 0-based index of the edge to split, addressing the same edge as
+    `edges()[edgeIndex]`. An index at or above `edgeCount` returns `nil` (#613).
   - `parameter` — Parameter along the edge (0.0–1.0) where the split occurs.
-- **Returns:** The split edge parts as a compound, or `nil` on failure.
+- **Returns:** The split edge parts as a compound, or `nil` on failure. Splitting at 0.5 yields two
+  pieces, each half the length of `edges()[edgeIndex]`.
 - **OCCT:** `LocOpe_SplitShape` (via `OCCTLocOpeSplitShapeByVertex`).
 
 ---
@@ -1651,6 +1662,16 @@ public func commonEdges(with other: Shape) -> [Edge]
 - **Returns:** Array of common edges (up to 100).
 - **OCCT:** `LocOpe_FindEdges` (via `OCCTLocOpeFindEdges`).
 
+Each returned edge carries the index it has in **this** shape's `edges()`, so it feeds straight into
+edge-index consumers. Before #613 the stamped index was the position in the result buffer, which
+addressed an unrelated edge.
+
+```swift
+let shared = bracket.commonEdges(with: plate)
+bracket.edges()[shared[0].index].length == shared[0].length   // true
+let rounded = bracket.filleted(edges: shared, radius: 1)
+```
+
 ---
 
 ### `edgesInFace(at:)`
@@ -1664,6 +1685,8 @@ public func edgesInFace(at faceIndex: Int) -> [Edge]
 - **Parameters:** `faceIndex` — 0-based index of the face to check.
 - **Returns:** Array of edges found in the face (up to 100).
 - **OCCT:** `LocOpe_FindEdgesInFace` (via `OCCTLocOpeFindEdgesInFace`).
+
+As with `commonEdges(with:)`, each returned edge carries its index in this shape's `edges()` (#613).
 
 ---
 
@@ -1749,8 +1772,9 @@ Check validity of an edge by index.
 public func checkEdge(at index: Int) -> CheckResult
 ```
 
-- **Parameters:** `index` — 0-based edge index.
-- **Returns:** Check result for the specified edge.
+- **Parameters:** `index` — 0-based edge index, addressing the same edge as `edges()[index]`.
+- **Returns:** Check result for the specified edge. An index at or above `edgeCount` reports
+  invalid rather than resolving to a repeated topology occurrence (#613).
 - **OCCT:** `BRepCheck_Edge` (via `OCCTCheckEdge`).
 
 ---
@@ -1787,6 +1811,9 @@ Check validity of a vertex by index.
 public func checkVertex(at index: Int) -> CheckResult
 ```
 
+- **Parameters:** `index` — 0-based vertex index, addressing the same vertex as `vertices()[index]`.
+- **Returns:** Check result. An index at or above `vertexCount` reports invalid rather than
+  resolving to a repeated topology occurrence (#613).
 - **OCCT:** `BRepCheck_Vertex` (via `OCCTCheckVertex`).
 
 ---
@@ -1919,9 +1946,10 @@ public func edgeEdgeExtrema(edgeIndex1: Int, other: Shape, edgeIndex2: Int) -> E
 ```
 
 - **Parameters:**
-  - `edgeIndex1` — 0-based index of the first edge in this shape.
+  - `edgeIndex1` — 0-based index of the first edge in this shape, addressing the same edge as
+    `edges()[edgeIndex1]`. An index at or above `edgeCount` yields `nil` (#613).
   - `other` — Shape containing the second edge.
-  - `edgeIndex2` — 0-based index of the second edge in `other`.
+  - `edgeIndex2` — 0-based index of the second edge in `other`, read the same way.
 - **Returns:** Extrema result, or `nil` if no solutions or if edges are parallel.
 - **OCCT:** `BRepExtrema_ExtCC` (via `OCCTBRepExtremaExtCC`).
 - **Note:** Returns `nil` when edges are parallel (`isParallel == true`). Check `solutionCount > 0` guards this in the bridge.

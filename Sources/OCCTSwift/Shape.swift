@@ -6623,6 +6623,15 @@ extension Shape {
     /// Analyzes the angles between adjacent faces at each edge to determine
     /// whether each edge is convex, concave, or tangent.
     ///
+    /// One entry per distinct edge, in ``edges()`` order — so the classification at position `n`
+    /// describes `edges()[n]`, and `result[n].0.index == n`.
+    ///
+    /// ```swift
+    /// for (edge, kind) in bracket.edgeConcavities() ?? [] where kind == .concave {
+    ///     print("inside corner at edge \(edge.index), length \(edge.length)")
+    /// }
+    /// ```
+    ///
     /// - Parameter angle: Threshold angle for tangent classification (radians, default 0.01)
     /// - Returns: Array of (edge, concavity) pairs, or nil on error
     public func edgeConcavities(angle: Double = 0.01) -> [(Edge, EdgeConcavity)]? {
@@ -6652,6 +6661,15 @@ extension Shape {
     }
 
     /// Count edges of a specific concavity type.
+    ///
+    /// Counts distinct edges, so the three type counts sum to at most ``edgeCount`` — before #613
+    /// this counted topology *occurrences* and a 12-edge box reported 24 convex edges.
+    ///
+    /// ```swift
+    /// let box = Shape.box(origin: SIMD3(0, 0, 0), width: 20, height: 20, depth: 20)!
+    /// box.edgeConcavityCount(.convex)   // 12, matching box.edgeCount
+    /// box.edgeConcavityCount(.concave)  // 0
+    /// ```
     ///
     /// - Parameters:
     ///   - type: Concavity type to count
@@ -7311,8 +7329,18 @@ extension Shape {
     ///
     /// Uses LocOpe_FindEdges to identify shared edges.
     ///
+    /// Each returned edge carries the index it has in *this* shape's ``edges()``, so it feeds
+    /// straight into edge-index consumers such as ``filleted(edges:radius:)``. Before #613 the
+    /// stamped index was the position in the result buffer, which addressed an unrelated edge.
+    ///
+    /// ```swift
+    /// let shared = bracket.commonEdges(with: plate)
+    /// bracket.edges()[shared[0].index].length == shared[0].length   // true
+    /// let rounded = bracket.filleted(edges: shared, radius: 1)
+    /// ```
+    ///
     /// - Parameter other: Shape to compare with
-    /// - Returns: Array of common edges
+    /// - Returns: Array of common edges, each carrying its index in this shape's ``edges()``
     public func commonEdges(with other: Shape) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
         let count = OCCTLocOpeFindEdges(handle, other.handle, &buffer, 100)
@@ -7339,8 +7367,16 @@ extension Shape {
     ///
     /// Uses LocOpe_FindEdgesInFace.
     ///
+    /// As with ``commonEdges(with:)``, each returned edge carries its index in this shape's
+    /// ``edges()`` (#613), so the result feeds straight into edge-index consumers.
+    ///
+    /// ```swift
+    /// let onTop = part.edgesInFace(at: 0)
+    /// let rounded = part.filleted(edges: onTop, radius: 1)
+    /// ```
+    ///
     /// - Parameter faceIndex: Index of the face to check (0-based)
-    /// - Returns: Array of edges found in the face
+    /// - Returns: Array of edges found in the face, each carrying its index in ``edges()``
     public func edgesInFace(at faceIndex: Int) -> [Edge] {
         var buffer = [OCCTShapeRef?](repeating: nil, count: 100)
         let count = OCCTLocOpeFindEdgesInFace(handle, Int32(faceIndex), &buffer, 100)
