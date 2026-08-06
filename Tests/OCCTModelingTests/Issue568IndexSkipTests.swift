@@ -201,4 +201,34 @@ struct Issue568IndexSkipTests {
         // 4 edges, two corners cut off: each chamfer adds one edge.
         #expect(result?.edgeCount == 6)
     }
+
+    // MARK: - 2D chamfer duplicate pair (#705)
+
+    /// #705: the same edge pair named twice used to SIGSEGV the process, uncatchably, inside the
+    /// second `BRepFilletAPI_MakeFillet2d::AddChamfer` call. Confirmed in a separate process
+    /// before this fix landed (raw exit code 139); this test only exercises the fixed, in-process
+    /// behaviour, matching the "ordinary, safe" half of that instruction. The pair is order
+    /// independent: `(0, 1)` and `(1, 0)` name the same two edges and both are refused.
+    @Test("A 2D chamfer is refused when the same edge pair is named twice")
+    func chamfer2DRejectsDuplicatePair() {
+        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+        #expect(face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0]) == nil)
+        #expect(face.chamfer2D(edgePairs: [(0, 1), (1, 0)], distances: [1.0, 2.0]) == nil)
+        #expect(face.chamfer2D(edgePairs: [(0, 1), (0, 1), (0, 1)], distances: [1.0, 1.0, 1.0]) == nil)
+    }
+
+    /// The duplicate-pair guard has to key on the PAIR, not on either index alone: chamfering
+    /// every corner of a rectangle legitimately reuses each edge across two DIFFERENT pairs
+    /// (edge 1 closes both the (0,1) and the (1,2) corner). Measured safe before this fix and
+    /// must stay safe after it.
+    @Test("A 2D chamfer still cuts every corner when adjacent pairs share an edge")
+    func chamfer2DAcceptsSharedEdgeAcrossDifferentPairs() {
+        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+        let result = face.chamfer2D(
+            edgePairs: [(0, 1), (1, 2), (2, 3), (3, 0)],
+            distances: [1.0, 1.0, 1.0, 1.0])
+        #expect(result != nil)
+        // 4 edges, all four corners cut off: each chamfer adds one edge.
+        #expect(result?.edgeCount == 8)
+    }
 }
