@@ -124,13 +124,41 @@ cross-reference `isValidSolid` as the reliable check. This is a bug fix to the v
 value repaired, per `SEMVER.md`'s own quick-reference table), not a recorded exception: nothing
 could have correctly relied on a hardcoded 0.
 
-New tests: `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`, 10 cases on the tiny
+New tests: `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`, 11 cases on the tiny
 open-shell fixture above (a box missing one face is the "smallest shape that demotes" the issue
 asked for). Proven to catch the fix: reverting `OCCTShapeAnalyze` back to `LoadShells()` fails
 exactly the three tests exercising `freeEdgeCount`/`freeFaceCount` (open shell, demoted shell, a
 two-shell compound) and leaves the other seven (`isValidSolid`, demotion-to-shell, closed-box
 negative control) green, confirming the new tests target this bug specifically rather than the
 already-correct demotion behaviour.
+
+**Follow-up from code review, before this landed:**
+
+- **`OCCTShapeAnalyze`'s new `CheckOrientedShells` call omitted `checkinternaledges`**, the third
+  argument, unlike the sibling `OCCTShapeAnalyzeShell`, which already passed `true`.
+  `ShapeAnalysis_Shell.cxx`: with `checkinternaledges` false, a FORWARD/REVERSED edge with no
+  opposite-orientation partner is unconditionally free; with it true, an edge that also occurs with
+  `TopAbs_INTERNAL` orientation elsewhere in the same shell (matched by `IsSame`: same TShape and
+  Location, ignoring orientation) is read as connected through that occurrence instead. The two
+  entry points could silently disagree on any shell carrying an INTERNAL-oriented edge, directly
+  contradicting this fix's own "`analyze()` must agree with `analyzeShell()`" test invariant. The
+  original fixture (the box missing one face) has no INTERNAL-oriented edges, so it could not catch
+  the divergence; a new fixture does (a single face wrapped as a shell, with an `.internal`-oriented
+  duplicate of one of its own boundary edges embedded back into the face before the face joins the
+  shell). Both call sites now share one helper (`occtAnalyzeShellOrientation`), so the argument
+  cannot drift between them again the way it just did.
+- **`totalProblems` double-counted an open shell's defect**: once via `freeEdgeCount` (one count
+  per free edge) and again as a flat `+1` via `freeFaceCount` (one shell found not fully closed),
+  now that this fix makes both fields live for the same shape at once for the first time.
+  `freeFaceCount` is a derived summary of the same scan, not an independent defect category, so
+  `totalProblems` no longer includes it; `freeFaceCount` stays a public field for callers who want
+  the shell-level breakdown.
+- **The per-shell scan gained a per-iteration `try`/`catch`.** `CheckOrientedShells` is a real OCCT
+  computation, unlike the `LoadShells()` it replaced, so it can raise `Standard_Failure` on a
+  malformed shell; without a scoped catch, one bad shell in a multi-shell shape would abort to this
+  function's outer `catch` and discard every other shell's free-edge count along with the
+  small-edge/small-face/gap counts computed afterward, rather than just skipping that one shell's
+  contribution.
 
 ### CI builds the same kernel the branch is written against
 

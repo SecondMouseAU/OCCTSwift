@@ -147,6 +147,42 @@
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
+// #717 review (findings 1 and 5, filed against #702): OCCTShapeAnalyze and OCCTShapeAnalyzeShell
+// both ran ShapeAnalysis_Shell::CheckOrientedShells and then read HasFreeEdges()/FreeEdges() off
+// it, hand-duplicated in each function. That duplication is how finding 1 happened: this file's
+// two copies drifted apart on the third argument, checkinternaledges, so the two entry points
+// could silently disagree on a shell with a TopAbs_INTERNAL-oriented edge, contradicting the
+// #702 test's own "analyze() must agree with analyzeShell()" invariant. Per
+// ShapeAnalysis_Shell.cxx: an edge with no FORWARD/REVERSED partner is unconditionally free when
+// checkinternaledges is false, but is instead read as connected (through that occurrence) when
+// checkinternaledges is true and the same shape (by IsSame: same TShape and Location, ignoring
+// Orientation) also occurs with TopAbs_INTERNAL orientation elsewhere in the shell.
+// OCCTShapeAnalyzeShell already passed true; this scan now always does, for both callers, by
+// construction rather than by keeping two copies in sync by hand.
+struct OCCTShellOrientationScan {
+    bool checkResult = false;      // ShapeAnalysis_Shell::CheckOrientedShells' own return value
+    bool hasFreeEdges = false;
+    bool hasBadEdges = false;
+    bool hasConnectedEdges = false;
+    int freeEdgeCount = 0;
+};
+
+static OCCTShellOrientationScan occtAnalyzeShellOrientation(const TopoDS_Shape& shape) {
+    OCCTShellOrientationScan scan;
+    ShapeAnalysis_Shell analyzer;
+    scan.checkResult = analyzer.CheckOrientedShells(shape, /*alsofree*/ true, /*checkinternaledges*/ true);
+    scan.hasFreeEdges = analyzer.HasFreeEdges();
+    scan.hasBadEdges = analyzer.HasBadEdges();
+    scan.hasConnectedEdges = analyzer.HasConnectedEdges();
+    if (scan.hasFreeEdges) {
+        TopoDS_Compound freeEdgesCompound = analyzer.FreeEdges();
+        for (TopExp_Explorer edgeExp(freeEdgesCompound, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
+            scan.freeEdgeCount++;
+        }
+    }
+    return scan;
+}
+
 OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
     OCCTShapeAnalysisResult result = {0, 0, 0, 0, 0, 0, false, false};
     if (!shape) return result;
@@ -166,29 +202,30 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         int smallFaces = 0;
         int gaps = 0;
 
-        // Analyze shells for free faces and closure.
+        // Analyze shells for free faces and closure, via the shared occtAnalyzeShellOrientation
+        // (see its comment above for the #702/#717 history: this used to call LoadShells(shell)
+        // and read HasFreeEdges()/FreeEdges(), which are populated only by CheckOrientedShells(),
+        // never by LoadShells(); that hardcoded freeEdges/freeFaces to 0 for every shape, however
+        // open, regardless of tolerance).
         //
-        // #702: this used to call LoadShells(shell) and then read HasFreeEdges()/FreeEdges().
-        // LoadShells() only registers the shell for NbLoaded()/Loaded() bookkeeping -- it runs
-        // no edge analysis at all. HasFreeEdges()/FreeEdges() read the myFree map, which only
-        // CheckOrientedShells() ever populates (see its header: "alsofree: free edges can be
-        // queried"). OCCTShapeAnalyzeShell below already calls CheckOrientedShells correctly;
-        // this was the one call site that did not. The result was that freeEdges/freeFaces were
-        // hardcoded to 0 for every shape passed to OCCTShapeAnalyze, however open -- silently
-        // hiding exactly the defect this scan exists to report.
+        // #717 review finding 4: CheckOrientedShells is a real OCCT computation now, not the
+        // near-no-op LoadShells() was, so it can raise Standard_Failure on a malformed shell. The
+        // try/catch is scoped to one shell's iteration: a shell that throws contributes nothing to
+        // freeEdges/freeFaces and the loop continues, rather than one bad shell discarding the
+        // free-edge counts already accumulated for prior shells and the smallEdge/smallFace/gap
+        // counts computed further below (an exception here used to escape to this function's
+        // outer catch, which resets the whole result to all-zero/invalid).
         for (TopExp_Explorer shellExp(shape->shape, TopAbs_SHELL); shellExp.More(); shellExp.Next()) {
             TopoDS_Shell shell = TopoDS::Shell(shellExp.Current());
-            ShapeAnalysis_Shell shellAnalysis;
-            shellAnalysis.CheckOrientedShells(shell, /*alsofree*/ true);
-
-            // Check for free faces
-            if (shellAnalysis.HasFreeEdges()) {
-                // Count free edges in shell
-                TopoDS_Compound freeEdgesCompound = shellAnalysis.FreeEdges();
-                for (TopExp_Explorer edgeExp(freeEdgesCompound, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
-                    freeEdges++;
+            try {
+                OCCTShellOrientationScan scan = occtAnalyzeShellOrientation(shell);
+                if (scan.hasFreeEdges) {
+                    freeEdges += scan.freeEdgeCount;
+                    freeFaces++;   // this shell is not fully closed (freeFaceCount's own contract)
                 }
-                freeFaces++;   // this shell is not fully closed (freeFaceCount's own contract)
+            } catch (...) {
+                // Skip just this shell's contribution; other shells and the categories below
+                // still get computed.
             }
         }
 
@@ -3420,20 +3457,15 @@ OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape) {
 
 OCCTShellAnalysisResult OCCTShapeAnalyzeShell(OCCTShapeRef shape) {
     OCCTShellAnalysisResult result = {false, false, false, false, 0};
+    if (!shape) return result;
     try {
-        ShapeAnalysis_Shell analyzer;
-        // CheckOrientedShells returns true if BAD orientation found
-        result.hasOrientationProblems = analyzer.CheckOrientedShells(shape->shape, true, true);
-        result.hasFreeEdges = analyzer.HasFreeEdges();
-        result.hasBadEdges = analyzer.HasBadEdges();
-        result.hasConnectedEdges = analyzer.HasConnectedEdges();
-        if (result.hasFreeEdges) {
-            TopoDS_Compound freeEdges = analyzer.FreeEdges();
-            TopExp_Explorer edgeExp(freeEdges, TopAbs_EDGE);
-            int count = 0;
-            while (edgeExp.More()) { count++; edgeExp.Next(); }
-            result.freeEdgeCount = count;
-        }
+        // Shared with OCCTShapeAnalyze's per-shell loop above; see its comment for why (#717).
+        OCCTShellOrientationScan scan = occtAnalyzeShellOrientation(shape->shape);
+        result.hasOrientationProblems = scan.checkResult;  // true if BAD orientation found
+        result.hasFreeEdges = scan.hasFreeEdges;
+        result.hasBadEdges = scan.hasBadEdges;
+        result.hasConnectedEdges = scan.hasConnectedEdges;
+        result.freeEdgeCount = scan.freeEdgeCount;
     } catch (...) {}
     return result;
 }

@@ -23,16 +23,16 @@ typedef struct {
     int32_t smallEdgeCount;        // Number of edges smaller than tolerance
     int32_t smallFaceCount;        // Number of faces smaller than tolerance
     int32_t gapCount;              // Number of gaps between edges/faces
-    int32_t selfIntersectionCount; // Always 0 -- never computed ("would require more expensive
+    int32_t selfIntersectionCount; // Always 0, never computed ("would require more expensive
                                     // computation", the implementation's own comment). Not a
                                     // measured value; use OCCTShapeSelfIntersects /
                                     // OCCTShapeSelfIntersectsBounded instead (#702).
     int32_t freeEdgeCount;         // Number of free (unconnected) edges, summed across every
                                     // shell of `shape`, via ShapeAnalysis_Shell::CheckOrientedShells
-                                    // (#702: this was hardcoded 0 before -- LoadShells() alone
+                                    // (#702: this was hardcoded 0 before, since LoadShells() alone
                                     // runs no edge analysis)
     int32_t freeFaceCount;         // Number of shells found to have at least one free edge above
-                                    // (i.e. not fully closed) -- same #702 fix
+                                    // (i.e. not fully closed); same #702 fix
     bool hasInvalidTopology;       // Whether topology is invalid
     bool isValid;                  // Whether analysis succeeded
 } OCCTShapeAnalysisResult;

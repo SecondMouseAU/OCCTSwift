@@ -80,15 +80,18 @@ let upgraded = shape.upgraded(tolerance: 1e-3)         // sew + make-solid + hea
   same as `Shape.fixSolid()`); the demoted shell is genuinely `isValid`, since a shell has no
   closure requirement of its own, so check `isValidSolid` (or `shapeType`) rather than `isValid`
   if the caller depends on getting a solid back (#702).
-- **`fixed(tolerance:…)`** — `ShapeFix_Shape` with per-component flags; raise `tolerance` to match the
-  precision of imported data (e.g. `1e-3`, not the default `1e-6`).
-- **`unified()`** — `ShapeUpgrade_UnifySameDomain`; the standard **post-boolean** cleanup that merges
+- **`fixed(tolerance:…)`**: `ShapeFix_Shape` with per-component flags; raise `tolerance` to match the
+  precision of imported data (e.g. `1e-3`, not the default `1e-6`). It runs the same `ShapeFix_Shape`
+  mechanism as `healed()`, so solid input can come back demoted to a shell the same way and for the
+  same reason; the same `isValidSolid`/`shapeType` check applies (#702).
+- **`unified()`**: `ShapeUpgrade_UnifySameDomain`; the standard **post-boolean** cleanup that merges
   the redundant faces/edges a boolean leaves behind.
 - **`upgraded(tolerance:)`** sews, then builds one solid per body, then heals. A **multi-body** part
   stays multi-body and comes back as a compound of solids. Two things sewing costs you here: a hollow
   body's **cavity is filled** (sewing dissolves the solid that declared it), and content that would
   not attach to a shell is dropped. Use `fixed(tolerance:)` instead when either matters; it does not
-  sew.
+  sew. Its own final step is the same `ShapeFix_Shape` healing pass, so it too can hand back a shell
+  instead of the solid it just built, for the same reason and the same check (#702).
 
 ```swift
 let part = twoBodyImport.upgraded(tolerance: 1e-3)!

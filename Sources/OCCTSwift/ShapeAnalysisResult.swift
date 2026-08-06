@@ -30,14 +30,26 @@ public struct ShapeAnalysisResult {
     /// Number of shells, among every shell of the analyzed shape, found to have at least one
     /// free edge (i.e. not fully closed). Same #702 fix as ``freeEdgeCount``, since both come
     /// from the same per-shell scan.
+    ///
+    /// Not counted in ``totalProblems``: this is a derived summary of the same scan, not an
+    /// independent defect. It is never nonzero unless ``freeEdgeCount`` is also nonzero (a shell
+    /// only contributes here because it has at least one free edge, which ``freeEdgeCount``
+    /// already counted), so adding both would count one open shell's boundary gap twice, once per
+    /// edge and once more as a flat "+1 shell" (#717 review).
     public let freeFaceCount: Int
 
     /// Whether the topology is invalid
     public let hasInvalidTopology: Bool
 
-    /// Total number of problems found
+    /// Total number of problems found.
+    ///
+    /// Sums each independent defect category once: small edges, small faces, gaps,
+    /// self-intersections (never actually measured, see ``selfIntersectionCount``), free edges,
+    /// and invalid topology (a flat +1, not a count). ``freeFaceCount`` is deliberately excluded:
+    /// see its doc comment for why including it would double-count the same open-shell defect
+    /// ``freeEdgeCount`` already reports.
     public var totalProblems: Int {
-        smallEdgeCount + smallFaceCount + gapCount + selfIntersectionCount + freeEdgeCount + freeFaceCount + (hasInvalidTopology ? 1 : 0)
+        smallEdgeCount + smallFaceCount + gapCount + selfIntersectionCount + freeEdgeCount + (hasInvalidTopology ? 1 : 0)
     }
 
     /// Whether the shape appears to be healthy (no problems found)

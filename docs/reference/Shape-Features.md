@@ -1563,10 +1563,19 @@ public struct ShapeAnalysisResult {
   called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
   instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
   fixed: `freeEdgeCount` is the true count across every shell, and `freeFaceCount` is how many of
-  those shells are not fully closed.
+  those shells are not fully closed. The bridge asks `CheckOrientedShells` to also exclude an edge
+  that has a matching `TopAbs_INTERNAL`-oriented occurrence elsewhere in the same shell from
+  `freeEdgeCount` (it is genuinely connected through that occurrence, not a boundary gap): the
+  same rule `analyzeShell()` already used, so the two agree on any shape either can see.
+- **`totalProblems` counts `freeEdgeCount`, not `freeFaceCount`.** `freeFaceCount` is a derived
+  summary over the same scan (this shell has at least one free edge), not an independent defect:
+  it is never nonzero without `freeEdgeCount` also being nonzero, and adding both would count one
+  open shell's boundary gap twice (once per edge, once more as a flat "+1 shell"). `freeFaceCount`
+  stays a public field for callers who want the shell-level breakdown; it is just not folded into
+  the total again.
 - **A "clean" (`isHealthy == true`) result never means "this is a solid."** A well-formed open
   shell, or a shell `healed()`/`fixSolid()` demoted from a solid it could not close, has no
-  closure requirement of its own and can report zero free edges honestly while still not being a
+  closure requirement of its own and can report zero free edges accurately while still not being a
   solid. Check `shapeType` or `isValidSolid` for that.
 
 ---

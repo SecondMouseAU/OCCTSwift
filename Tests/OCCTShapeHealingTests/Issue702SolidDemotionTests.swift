@@ -34,7 +34,7 @@ import simd
 /// checks `shapeType == .solid` before running `BRepCheck_Analyzer`, so it reads `false` on any
 /// demoted shell. It had no test at all for that specific branch: every existing use only
 /// asserted the positive (already-a-valid-solid) case.
-@Suite("Issue 702: solid demotion is honestly reported")
+@Suite("Issue 702: solid demotion is reported accurately")
 struct Issue702SolidDemotion {
 
     /// A box with one face dropped, sewn into an open shell: the smallest input that reaches
@@ -108,7 +108,7 @@ struct Issue702SolidDemotion {
             Issue.record("could not build fixtures")
             return
         }
-        // Both read true. isValid alone genuinely cannot tell them apart -- that is the bug.
+        // Both read true. isValid alone genuinely cannot tell them apart; that is the bug.
         #expect(fixed.isValid)
         #expect(box.isValid)
         #expect(fixed.shapeType != box.shapeType, "but they are not the same kind of shape")
@@ -163,6 +163,16 @@ struct Issue702SolidDemotion {
         #expect(analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
                 "analyze() must agree with the already-correct analyzeShell()")
         #expect(analysis.freeFaceCount == 1, "one shell, and it is not fully closed")
+        // #717 review finding 2: totalProblems must count this shell's free edges once, not once
+        // via freeEdgeCount and again as +1 via freeFaceCount for the same open shell. The expected
+        // sum is recomputed from the other fields, not hardcoded: this fixture also measures a
+        // nonzero gapCount (a pre-existing, unrelated characteristic of a box-minus-one-face sewn
+        // at 1e-6), so an assumed magic total would have been wrong for a reason having nothing to
+        // do with the bug this test exists to catch.
+        let expected = Self.totalProblemsExcludingFreeFace(analysis)
+        #expect(analysis.totalProblems == expected)
+        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
+                "adding freeFaceCount again would double-count this shell's one open boundary")
     }
 
     @Test("analyze reports the demoted fixSolid shell's free edges too")
@@ -177,10 +187,15 @@ struct Issue702SolidDemotion {
         }
         // This is the issue's own reported evidence, corrected: before #702's fix this read 0
         // regardless of input. The demoted shell genuinely has the same 4 free edges as the
-        // open shell it was built from -- ShapeFix_Solid does not add or remove faces.
+        // open shell it was built from; ShapeFix_Solid does not add or remove faces.
         #expect(analysis.freeEdgeCount == 4)
         #expect(analysis.freeFaceCount == 1)
         #expect(!analysis.isHealthy, "a shape with real free edges must not report healthy")
+        // #717 review finding 2, same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
+        let expected = Self.totalProblemsExcludingFreeFace(analysis)
+        #expect(analysis.totalProblems == expected)
+        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
+                "adding freeFaceCount again would double-count this shell's one open boundary")
     }
 
     @Test("analyze reports zero free edges/faces on a genuinely closed solid")
@@ -211,5 +226,87 @@ struct Issue702SolidDemotion {
         }
         #expect(analysis.freeEdgeCount == 8, "4 free edges per shell, two shells")
         #expect(analysis.freeFaceCount == 2, "both shells are open")
+        // #717 review finding 2, same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
+        let expected = Self.totalProblemsExcludingFreeFace(analysis)
+        #expect(analysis.totalProblems == expected)
+        #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
+                "adding freeFaceCount again would double-count both shells' open boundaries")
+    }
+
+    /// `totalProblems`'s own contract (see ``ShapeAnalysisResult/totalProblems``): every field
+    /// summed once, except `freeFaceCount`, which is a derived summary of the same free-edge scan
+    /// rather than an independent defect. Recomputed here instead of assumed, so the tests above
+    /// measure the real fields (including this fixture's own nonzero `gapCount`) rather than a
+    /// guessed total.
+    private static func totalProblemsExcludingFreeFace(_ analysis: ShapeAnalysisResult) -> Int {
+        analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount +
+            analysis.selfIntersectionCount + analysis.freeEdgeCount +
+            (analysis.hasInvalidTopology ? 1 : 0)
+    }
+
+    // MARK: - checkinternaledges must match between analyze() and analyzeShell() (#717 review finding 1)
+
+    /// A single square face wrapped directly as a shell (`TopoDS_Builder::MakeShell` + `Add`, no
+    /// sewing at all), with an `.internal`-oriented duplicate of one of its own 4 boundary edges
+    /// embedded back into the face before the face joins the shell.
+    ///
+    /// `ShapeAnalysis_Shell::CheckOrientedShells` takes a `checkinternaledges` argument
+    /// (`ShapeAnalysis_Shell.cxx`): a FORWARD/REVERSED edge with no opposite-orientation partner is
+    /// unconditionally free when `checkinternaledges` is false, but is instead read as connected
+    /// (`myConex`, not `myFree`) when `checkinternaledges` is true and the same underlying shape
+    /// (`TopTools_ShapeMapHasher` compares via `IsSame`: same TShape and Location, ignoring
+    /// Orientation) also occurs with `TopAbs_INTERNAL` orientation elsewhere in the shell.
+    /// `OCCTShapeAnalyzeShell` already passed `true`; `OCCTShapeAnalyze`'s per-shell scan left it at
+    /// the default `false` until this fix. `openShellMissingOneFace()` above has no INTERNAL-oriented
+    /// edges at all, so `checkinternaledges` never changes its answer, which is exactly why it could
+    /// not catch the divergence: this fixture exists to make it change.
+    ///
+    /// A lone face's boundary edges are free by construction (nothing else in a one-face shell
+    /// shares them), the same shape `openShellMissingOneFace()` gives its 4 hole-boundary edges,
+    /// without depending on what sewing decides to rebuild.
+    ///
+    /// The embedding has to happen while the face is still free (`TopoDS_Builder::Add` raises
+    /// `TopoDS_FrozenShape` on a shape that already belongs to a parent): a plain box face, already
+    /// owned by the box solid it came from, refuses a second `builderAdd` the same way, which is
+    /// why this fixture builds its own face from scratch rather than reusing one of the box's.
+    /// `WIRE` (not a bare `EDGE`) is what a `FACE` accepts as a child (`TopoDS_Builder.hxx`'s own
+    /// "Only WIRE and VERTEX can be added in a FACE" contract), so the duplicate edge is wrapped in
+    /// a fresh one-edge wire, itself set `.internal`; since `TopAbs::Compose`'s INTERNAL row is
+    /// constant regardless of what composes with it (`TopAbs.hxx`), the child edge reads `.internal`
+    /// however it was oriented on its own.
+    private func openShellWithInternalDuplicateFreeEdge() -> Shape? {
+        guard let outerWire = Wire.polygon3D(
+            [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true
+        ), let face = Shape.face(from: outerWire) else { return nil }
+
+        guard let candidate = face.subShapes(ofType: .edge).first,
+              let wire = Shape.builderMakeWire()
+        else { return nil }
+        candidate.setOrientation(.internal)
+        guard wire.builderAdd(candidate) else { return nil }
+        wire.setOrientation(.internal)
+        guard face.builderAdd(wire) else { return nil }
+
+        guard let shell = Shape.builderMakeShell(), shell.builderAdd(face) else { return nil }
+        return shell
+    }
+
+    @Test("analyze() agrees with analyzeShell() even with an INTERNAL-oriented duplicate free edge")
+    func analyzeAgreesWithAnalyzeShellOnInternalDuplicate() {
+        guard let shell = openShellWithInternalDuplicateFreeEdge() else {
+            Issue.record("could not build the INTERNAL-duplicate fixture; see its doc comment")
+            return
+        }
+        let shellAnalysis = shell.analyzeShell()
+        // Fixture sanity check: 3, not the plain fixture's 4, proves the duplicate actually
+        // suppressed one edge via checkinternaledges rather than the fixture doing nothing.
+        #expect(shellAnalysis.freeEdgeCount == 3,
+                "the INTERNAL duplicate's own edge must drop out of the free count")
+        guard let analysis = shell.analyze(tolerance: 1e-6) else {
+            Issue.record("analyze returned nil")
+            return
+        }
+        #expect(analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
+                "analyze() must agree with analyzeShell() even with an INTERNAL duplicate present")
     }
 }
