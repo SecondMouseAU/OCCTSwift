@@ -42,13 +42,89 @@ on a real defect, so add the shape here too rather than assuming it is covered:
     the first `IsNull()` before the use as a guard and does not check for a control transfer.
     Verified once, by hand, that every clearing guard in this tree does return or throw.
   * a negated guard, `if (!x->curve.IsNull()) { } else { use(x->curve); }`.
-  * `extern "C"` on the definition line: the `"` is outside FUNC's return-type character class, so
-    the whole function is invisible to the parser, guarded or not. Zero occurrences today.
   * a helper that guards on some paths only. `guarding_helpers()` asks whether the FIRST mention of
     the parameter is an `IsNull()` test, not whether every path through the body is protected.
 
+`extern "C"` on the definition line is now handled (#666): FUNC used to require its return-type
+span to be free of `"`, so the whole function was invisible to the parser, guarded or not. Zero
+real occurrences motivated this - it was still worth one line, since the failure mode (a whole
+function silently unparsed) is worse than the false positive a wrong fix would risk.
+
 And one false-positive direction: `Handle(Geom_Curve) w(wrapper->curve);` constructor-init syntax
 is not recognised as an alias binding, so it would be reported as an unguarded use. Also absent.
+
+#666 (CLUSTER C): A SECOND, INDEPENDENT ORIGIN FOR A RISKY HANDLE, PROVEN BY #656. Every shape
+above is about a handle that starts life as a bridge function's OWN `OCCTCurve3DRef`/
+`OCCTCurve2DRef`/`OCCTSurfaceRef` argument. #656 (`OCCTBRepToolsEvalAndUpdateTol`) was a null
+`Handle(Geom2d_Curve)` that never came from any argument: it was fetched locally, mid-body, from
+`BRep_Tool::CurveOnSurface(edge, face, ...)`, and handed straight to `BRepTools::EvalAndUpdateTol`,
+which dereferences it unconditionally. Every check above reported clean, because none of them looks
+past a wrapper argument to a handle the function went and obtained for itself.
+
+`local_handle_sites()` closes this specific instance: a local
+
+    Handle(Geom_Curve)/Handle(Geom2d_Curve)/Handle(Geom_Surface) name = BRep_Tool::Whatever(...);
+
+(`Handle(Type)` or `occ::handle<Type>` spelling, either) is tracked exactly like a wrapper-derived
+handle alias once declared - the same `classify()`, the same DownCast exclusion, the same
+guarding-helper exclusion - so a use before an `IsNull()` guard is reported the same way. Two things
+this needed that the wrapper-argument walk did not:
+
+  * A PRODUCER ALLOWLIST, NOT "ANY CALL". The RHS has to start with `BRep_Tool::` - the accessor
+    family OCCT documents as legitimately returning a null handle for ordinary topology (no 3D
+    curve; no pcurve on a given face). "Any local Handle initialised from any call" was tried first
+    and matched 672 declarations tree-wide - mostly `new T(...)` (never null), a same-family
+    `DownCast` (null-safe by construction, and this bridge's own established cloning idiom: `Handle
+    (Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());`), or a builder's
+    post-success result accessor. None of those is #656's shape, and auditing 672 by hand would not
+    have been a defence - it would have been a bigger, less careful repeat of #618's own "blind to
+    indirection" mistake with a different indirection. `BRep_Tool::` narrowed it to 63 real
+    declarations.
+  * A SCOPE FENCE. This bridge reuses generic local names (`surf`, `curve`, `pcurve`) across sibling
+    blocks in one function - most visibly a `switch` with one `Handle(Geom_Surface) surf =
+    BRep_Tool::Surface(...)` per `case`. A flat "every later mention of this name is this variable"
+    walk conflates them: an early version of this detector mistook `OCCTFaceGetPrimaryAxis`'s SECOND
+    `case`'s properly-guarded `surf` for a continuation of the FIRST `case`'s `surf` (consumed only
+    by `DownCast`, itself null-safe) and reported the first as unguarded - a false positive that
+    would not have survived review. Fixed by treating a later `Handle(...) name = ...`
+    redeclaration of the identical name, anywhere later in the same function body, as the end of the
+    earlier declaration's own tracking window. The guard-removal fixtures below prove both
+    directions: G1 is this false positive, minimised; G2 is the mirror-image risk the window's
+    LOWER bound guards against - an unrelated, earlier, same-named guard (e.g. on a same-named
+    parameter, later shadowed by a local) wrongly "protecting" a genuinely unguarded local declared
+    after it.
+
+Measured against the tree as it stands: 63 `BRep_Tool::`-sourced locals of these three types, 62
+already guarded, 1 reaching `GeomAdaptor_Curve`'s constructor unguarded
+(`OCCTGeomFillCoonsAlgPatchEval`, `OCCTBridge_Surface.mm`) - measured, not assumed, against the
+pinned kernel (`Scripts/repro/cluster-c-null-handle-shapes/probe_cluster_c.mm`) to raise a
+catchable `Standard_Failure` on both the 1-arg and the 3-arg (trimmed) constructor, the same
+verdict #618 already recorded for `OCCTExtremaExtCC`'s wrapper-argument call to the same
+constructor, now confirmed for a curve arriving by this second route too. Added to ALLOWED below.
+Full method, the guard-removal matrix and the triage are in
+`Scripts/repro/cluster-c-null-handle-shapes/README.md`.
+
+STILL NOT TAUGHT, DELIBERATELY, AND STILL BLIND: every item in the list above (non-dominating
+guard, negated guard, partial-path helper, `(*cast).field`, reference-to-wrapper alias) applies
+just as much to a `BRep_Tool::`-sourced local, and none has a known instance in this tree today.
+Also still blind: a `BRep_Tool::` handle carried through one more level of copy (`Handle(Geom_Curve)
+tmp = c3d;`) rather than used directly, and any locally-obtained handle whose producer is not
+spelled `BRep_Tool::` - a different OCCT accessor with the same null-for-valid-topology contract
+would not be caught by this walk. Enumerating that wider set was explicitly out of scope for this
+pass; the census README's method section says why `BRep_Tool::` specifically, not "every OCCT
+call", was the line drawn.
+
+A FIFTH ALIAS FORM, FOUND BUT NOT TAUGHT: `OCCTBridge_Surface.mm` has nine sites shaped
+`const Handle(Geom_Curve)& x = *(const Handle(Geom_Curve)*)wrapperParam;` (and its `occ::handle<>`
+spelling, used safely 12 more times elsewhere, always guarded) - a raw pointer reinterpretation
+that exploits the wrapper struct's one-field layout, syntactically unrelated to `IDENT->field` and
+invisible to `aliases()`. Three of the nine reach an unguarded, measured, uncatchable SIGSEGV:
+`OCCTGeomFillProfilerAddCurve`, `OCCTGeomFillAppSurf` (the #644 function itself - its own curve
+array, a DIFFERENT defect from #644's filed arity bug) and `OCCTGeomFillSectionPlacement`'s
+`sectionCurve`. Measured in `Scripts/repro/cluster-c-null-handle-shapes/probe_cluster_c.mm`, not
+taught here and not fixed here: teaching the shape without fixing the three real sites it would
+find would leave this gate red, which is out of bounds for a census-only pass. See the census
+README's section on this fifth form, and #710, filed for it.
 
 Two exclusions, both load-bearing:
 
@@ -155,9 +231,21 @@ ALLOWED = {
         'measured #618: GeomAdaptor_Surface raises a catchable Standard_Failure',
     ('OCCTBridge_Surface.mm', 'OCCTExtremaExtSSPoint'):
         'measured #618: GeomAdaptor_Surface raises a catchable Standard_Failure',
+
+    # --- #666: a local handle fetched from BRep_Tool::, not a wrapper argument ---
+    ('OCCTBridge_Surface.mm', 'OCCTGeomFillCoonsAlgPatchEval'):
+        'measured #666 (Scripts/repro/cluster-c-null-handle-shapes/probe_cluster_c.mm): '
+        'GeomAdaptor_Curve raises a catchable Standard_Failure on a null Handle(Geom_Curve), on '
+        'both the 1-arg and the 3-arg (trimmed) constructor - same verdict #618 already recorded '
+        'for OCCTExtremaExtCC, now confirmed for a curve obtained from BRep_Tool::Curve rather '
+        'than a wrapper argument',
 }
 
-FUNC = re.compile(r'^(?:static\s+)?[A-Za-z_][\w:<>,\s\*&]*?\b(\w+)\s*\(([^;{]*?)\)\s*\{', re.M | re.S)
+# extern "C" is tolerated ahead of the return type (#666): without it, a function defined that way
+# is invisible to this regex, guarded or not, because `"` sits outside the return-type character
+# class. Zero real occurrences in this tree motivated it - still worth one line.
+FUNC = re.compile(r'^(?:extern\s*"C"\s*)?(?:static\s+)?[A-Za-z_][\w:<>,\s\*&]*?\b(\w+)\s*'
+                  r'\(([^;{]*?)\)\s*\{', re.M | re.S)
 NOT_A_FUNCTION = {'if', 'for', 'while', 'switch', 'catch', 'return'}
 
 # A C++ named cast and its opening paren; the matching close paren is found by scanning.
@@ -167,6 +255,15 @@ CAST_OPEN = re.compile(r'\b(?:reinterpret_cast|static_cast|const_cast|dynamic_ca
 C_CAST = re.compile(r'\(\s*OCCT\w+\s*\*?\s*\)')
 ASSIGN = re.compile(r'\b(\w+)\s*(=)\s*([^;]*);')
 HANDLE_PARAM = re.compile(r'(?:occ::handle\s*<|\bHandle\s*\()')
+
+# #666: a local Handle of one of the three tracked types, freshly obtained from a BRep_Tool
+# accessor rather than a wrapper argument - the #656 shape. `BRep_Tool::` is a deliberate
+# allowlist, not "any call": see the module docstring for why (672 candidates unrestricted, 63
+# once narrowed to the accessor family OCCT documents as legitimately null-returning).
+LOCAL_HANDLE_DECL = re.compile(
+    r'\b(?:Handle\s*\(\s*(Geom_Curve|Geom2d_Curve|Geom_Surface)\s*\)|'
+    r'occ::handle\s*<\s*(Geom_Curve|Geom2d_Curve|Geom_Surface)\s*>)'
+    r'\s+(\w+)\s*=\s*(BRep_Tool::\w+)\s*\(')
 
 
 def strip_comments(text):
@@ -402,8 +499,63 @@ def unguarded_sites(sources, helpers):
                     continue
                 line = text.count('\n', 0, bs + first) + 1
                 found.append((os.path.basename(path), line, name, param, field,
-                              lines[line - 1].strip() if line <= len(lines) else '', is_array))
+                              lines[line - 1].strip() if line <= len(lines) else '', is_array,
+                              'wrapper'))
     return found
+
+
+def local_handle_sites(sources, helpers):
+    """#666: every local Handle(Geom_Curve)/Handle(Geom2d_Curve)/Handle(Geom_Surface), obtained
+    from a BRep_Tool:: call rather than a wrapper argument, that reaches a use before an IsNull
+    test - the #656 shape. Same (file, line, function, name) shape as unguarded_sites(), tagged
+    'local' in the last field so main()'s report can tell the two origins apart.
+
+    Two things a wrapper argument never needed:
+
+    * A SCOPE FENCE. A later `Handle(...) name = ...` redeclaration of the identical name, later
+      in the same function body, ends the earlier declaration's own tracking window. Without it,
+      two sibling `switch` cases that each declare their own `Handle(Geom_Surface) surf = ...`
+      get conflated into one variable, and a later case's guard is misread as covering an earlier
+      case's unguarded use (see the module docstring's G1) - or the reverse, an earlier unrelated
+      guard on the same name wrongly "protects" a later, genuinely unguarded redeclaration (G2),
+      which is why the use-window also starts at THIS declaration's own end, never before it.
+    """
+    found = []
+    for path, raw in sources:
+        text = strip_comments(raw)
+        ctext = strip_casts(text)
+        lines = raw.splitlines()
+        for name, params, bs, be in functions(text):
+            if (os.path.basename(path), name) in ALLOWED:
+                continue
+            body = ctext[bs:be + 1]
+            decls = list(LOCAL_HANDLE_DECL.finditer(body))
+            for i, m in enumerate(decls):
+                var, callee = m.group(3), m.group(4)
+                start_bound = m.end()                    # never before this declaration (G2)
+                end_bound = next((later.start() for later in decls[i + 1:]
+                                   if later.group(3) == var), len(body))   # scope fence (G1)
+                pat = re.compile(r'(?<![\w>.])' + re.escape(var) + r'\b')
+                ev = []
+                for u in pat.finditer(body, start_bound, end_bound):
+                    kind = classify(body, u.start(), u.end(), helpers)
+                    if kind:
+                        ev.append((u.start(), kind))
+                ev.sort()
+                first = next((p for p, k in ev if k == 'use'), None)
+                if first is None or any(k == 'guard' and p < first for p, k in ev):
+                    continue
+                line = text.count('\n', 0, bs + first) + 1
+                found.append((os.path.basename(path), line, name, var, callee,
+                              lines[line - 1].strip() if line <= len(lines) else '', False,
+                              'local'))
+    return found
+
+
+def all_sites(sources):
+    """The full report: both handle origins, one combined list."""
+    helpers = guarding_helpers(sources)
+    return unguarded_sites(sources, helpers) + local_handle_sites(sources, helpers)
 
 
 def bridge_sources():
@@ -453,6 +605,34 @@ int OCCTFixtureE(const OCCTCurve3DRef* refs, int n) {
 int OCCTFixtureF(OCCTCurve3DRef curve) {
     try { Splitter sp; sp.Init(curve->curve); return 1; }
     catch (...) { return 0; }
+}'''),
+    # #666: the #656 shape itself - a local handle from BRep_Tool::, not a wrapper argument.
+    ('local handle from BRep_Tool::, passed onward unguarded (the #656 shape)', '''
+double OCCTFixtureM(OCCTShapeRef edgeRef, OCCTShapeRef faceRef) {
+    try {
+        double first, last;
+        Handle(Geom2d_Curve) c2d = BRep_Tool::CurveOnSurface(edgeRef->shape, faceRef->shape, first, last);
+        return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
+    } catch (...) { return 0.0; }
+}'''),
+    # #666: FUNC must see through `extern "C"` on the definition line, or this whole function -
+    # an otherwise-plain, otherwise-caught unguarded site - is invisible to every check below.
+    ('extern "C" on the definition line must not hide the function', '''
+extern "C" int OCCTFixtureN(OCCTCurve3DRef curve) {
+    try { Splitter sp; sp.Init(curve->curve); return 1; }
+    catch (...) { return 0; }
+}'''),
+    # #666 (G2): the scope fence's LOWER bound. An unrelated, earlier guard on the same bare name
+    # (here, a same-named parameter) must not be read as covering a later local that shadows it.
+    ('an earlier guard on an unrelated same-named parameter must not shadow a later local', '''
+bool OCCTFixtureO(OCCTSurfaceRef surf, OCCTShapeRef faceRef) {
+    try {
+        if (!surf || surf->surface.IsNull()) return false;
+        {
+            Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
+            return surf->IsUPeriodic();
+        }
+    } catch (...) { return false; }
 }'''),
 ]
 
@@ -512,21 +692,78 @@ int OCCTFixtureL(OCCTCurve3DRef curveRef) {
     if (!curveRef) return 0;
     return occtFixtureToAnalytical(reinterpret_cast<OCCTCurve3D*>(curveRef)->curve, 1e-7) ? 1 : 0;
 }'''),
+    # #666: local handle from BRep_Tool::, guarded before use - the actual #656 fix, reduced.
+    ('local handle from BRep_Tool::, guarded before use', '''
+double OCCTFixtureP(OCCTShapeRef edgeRef, OCCTShapeRef faceRef) {
+    try {
+        double first, last;
+        Handle(Geom2d_Curve) c2d = BRep_Tool::CurveOnSurface(edgeRef->shape, faceRef->shape, first, last);
+        if (c2d.IsNull()) return 0.0;
+        return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
+    } catch (...) { return 0.0; }
+}'''),
+    # #666: a local handle from BRep_Tool:: consumed only by DownCast is the same null-safe
+    # exclusion as a wrapper-derived one - this is the bridge's real Copy()+DownCast clone idiom.
+    ('local handle from BRep_Tool:: consumed only by DownCast', '''
+bool OCCTFixtureQ(OCCTShapeRef faceRef) {
+    try {
+        Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
+        Handle(Geom_Plane) plane = Handle(Geom_Plane)::DownCast(surf);
+        if (plane.IsNull()) return false;
+        return true;
+    } catch (...) { return false; }
+}'''),
+    # #666: local handle from BRep_Tool::, guarded one call frame away by the bridge helper.
+    ('local handle from BRep_Tool::, guarded by the bridge helper it is passed to', '''
+inline bool occtFixtureCurveGuard(const occ::handle<Geom_Curve>& curve, double tol) {
+    if (curve.IsNull()) return false;
+    return true;
+}
+bool OCCTFixtureR(OCCTShapeRef edgeRef) {
+    double first, last;
+    Handle(Geom_Curve) curve = BRep_Tool::Curve(edgeRef->shape, first, last);
+    return occtFixtureCurveGuard(curve, 1e-7);
+}'''),
+    # #666 (G1): two sibling scopes reuse the same local name, each independently guarded via
+    # DownCast. Reduced from the real false positive an early version of this detector reported
+    # on OCCTFaceGetPrimaryAxis, where the SECOND case's properly-guarded `surf` was misread as
+    # covering the FIRST case's (also-guarded, but via DownCast) `surf`.
+    ('two sibling scopes reuse the same local name, each independently guarded via DownCast', '''
+bool OCCTFixtureS(OCCTShapeRef faceRef, int mode) {
+    try {
+        if (mode == 0) {
+            Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
+            Handle(Geom_Plane) p = Handle(Geom_Plane)::DownCast(surf);
+            if (p.IsNull()) return false;
+            return true;
+        }
+        Handle(Geom_Surface) surf = BRep_Tool::Surface(faceRef->shape);
+        Handle(Geom_CylindricalSurface) c = Handle(Geom_CylindricalSurface)::DownCast(surf);
+        if (c.IsNull()) return false;
+        return true;
+    } catch (...) { return false; }
+}'''),
 ]
 
 
 def self_test():
-    """Prove both failure modes: an unguarded site is reported, a guarded one is not."""
+    """Prove both failure modes: an unguarded site is reported, a guarded one is not.
+
+    Runs every fixture through all_sites() - both the wrapper-argument walk and #666's
+    local-handle walk - since a fixture that only exercises one origin still has to survive the
+    other running over it unharmed (e.g. a local-handle fixture must not trip the wrapper-argument
+    walk, and vice versa).
+    """
     failed = 0
     for name, src in MISSED:
         sources = [('fixture.mm', src)]
-        hit = unguarded_sites(sources, guarding_helpers(sources))
+        hit = all_sites(sources)
         failed += not hit
         print(f'  {"ok  " if hit else "MISS"} unguarded, {name}: '
               f'{hit[0][2] + "(" + hit[0][3] + ")" if hit else "NOT REPORTED"}')
     for name, src in CLEAN:
         sources = [('fixture.mm', src)]
-        hit = unguarded_sites(sources, guarding_helpers(sources))
+        hit = all_sites(sources)
         failed += bool(hit)
         print(f'  {"ok  " if not hit else "FALSE"} guarded, {name}: '
               f'{hit[0][2] + " wrongly reported" if hit else "not reported"}')
@@ -543,18 +780,23 @@ def main():
         print(f'{SRC_DIR} not found - run from the repo root', file=sys.stderr)
         return 2
     sources = bridge_sources()
-    sites = unguarded_sites(sources, guarding_helpers(sources))
+    sites = all_sites(sources)
     if not sites:
         if not quiet:
             print('All bridge functions guard the geometry handle as well as the wrapper pointer.')
             print(f'({len(ALLOWED)} site(s) exempt by name in ALLOWED, each with its reason.)')
         return 0
     if not quiet:
-        print(f'{len(sites)} (function, argument) pair(s) reach OCCT with an unchecked handle:\n')
-        for f, line, func, param, field, src, is_array in sites:
+        print(f'{len(sites)} site(s) reach OCCT with an unchecked handle:\n')
+        for f, line, func, param, field, src, is_array, kind in sites:
             print(f'  {f}:{line}  {func}({param})')
             print(f'      {src}')
-            if is_array:
+            if kind == 'local':
+                # `param` is a local, not a wrapper argument: there is no pointer to null-check
+                # alongside it, just the handle itself, obtained from `field` (the BRep_Tool::
+                # call that produced it).
+                print(f'      obtained from {field}(); want: if ({param}.IsNull()) return <fallback>;')
+            elif is_array:
                 # `param` is a pointer to wrappers, so `param->field` would not compile. The
                 # guard belongs on the element, inside the loop that reads it.
                 print(f'      want, per element of {param}:  '
