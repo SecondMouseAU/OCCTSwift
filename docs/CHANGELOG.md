@@ -1590,6 +1590,183 @@ reached first. Worth recording, because it means the allocation size is the wron
 about when judging which of these entry points is dangerous — the `int32_t` cast is what fires, and
 it fires identically whether the element is 8 bytes or 88.
 
+#### The math dimension family traps on a consistent-but-negative dimension, and one site reads out of bounds (#640)
+
+`#622`'s own writeup deliberately left the math solver/optimizer family unfixed: its numbers are
+problem *dimensions* that must agree with the caller's own arrays, not sampling capacities, so
+`Sampling.requested`/`capacity` is the wrong tool and clamping one would hand back a
+garbage-dimension solve. That premise is correct. The remedy it suggested, a consistency check
+against the caller's arrays, is not, measured:
+
+```swift
+MathJacobi.eigenvalues(matrix: [1.0], n: -1)
+// matrix.count == n * n holds exactly: 1 == (-1) * (-1)
+// still aborts: Fatal error: Can't construct Array with count < 0
+```
+
+A consistency check alone cannot exclude this shape: whenever one factor of a product is zero, the
+other is unconstrained, so `rows: 0, cols: -1` (or the symmetric `n: -1` case above, where
+`matrix.count` is 1 either way) satisfies `matrix.count == rows * cols` for *any* value of the
+other factor. `MathSVD.solve` and `MathHouseholder.solve` have the identical gap. A positivity
+bound closes it, alongside the consistency check, not instead of it.
+
+**`MathSolver.leastSquares` is worse: it had no consistency check at all**, so a `rows`/`cols` pair
+that is positive but does not match `matrix`/`rhs`'s real length sails straight through and reaches
+the bridge's `matA[i*nCols+j]`/`b[i]` loops, which read unconditionally. That is an out-of-bounds
+read, not a trap: confirmed in a standalone process, `rows: 1000, cols: 1000` against a 1-element
+`matrix` crashes with `Bus error: 10`; smaller mismatches silently returned `nil` from a
+garbage-fed `IsDone()` instead, never a reliable failure either way.
+
+**Re-deriving the census by reading each candidate bridge function, rather than trusting the
+trap-shaped count either side had produced, found 20 affected entry points, not 13.** #634's own
+writeup had already grown the count from 10 to 13 under review (`MathSVD.solve`, `MathJacobi.
+eigenvalues`, `MathHouseholder.solve` were unnamed anywhere until then); measuring by allocation
+shape and by trapping `Int32(_:)` conversion, as suggested, reproduces that 13. A third lens, does
+a bridge function index a raw pointer up to a caller-supplied count with no check that the backing
+Swift array is actually that long, found five more, invisible to both prior lenses because none of
+them constructs a `[Double]` sized by the vulnerable dimension:
+
+- `MathGauss.determinant` / `MathCrout.determinant` return a scalar `Double`; the unconditional
+  `matrixData[i*n+j]` loop is exactly `leastSquares`'s shape, just with nothing to trap on. Both
+  crash with `Bus error: 10` at `n: 1000` against a 1-element `matrix`, confirmed in a standalone
+  process.
+- `MathSolver.eigenvalues(diagonal:subdiagonal:)` / `.eigenvaluesAndVectors` derive their dimension
+  from `diagonal.count` (never negative), but read `subdiagonal[i]` for `i in 0..<diagonal.count`
+  with no check that `subdiagonal` is that long: the `///` comment already said "must be same
+  length"; it was never enforced. Measured: a 50-element `diagonal` against a 1-element
+  `subdiagonal` returns eigenvalues up to `1.17e+131`, silently.
+- `MathSolver.gaussMultipleIntegration` derives `nVars` from `lower.count` and reads
+  `upper[i]`/`order[i]` up to it the same unguarded way. `.gaussSetIntegration` has both this gap
+  *and* the trapping one (`nEquations` sizes its result array).
+
+All 20 now require the dimension argument to be positive and every array it indexes into to match
+it exactly, closing the trap and the read together:
+
+| site | fix |
+|---|---|
+| `MathGauss.determinant`, `MathCrout.determinant` | `n > 0`, `matrix.count == n * n` |
+| `MathSVD.solve`, `MathHouseholder.solve` | `rows > 0`, `cols > 0` added to the existing consistency check |
+| `MathJacobi.eigenvalues` | `n > 0` added to the existing consistency check |
+| `MathSolver.solveSystem`, `.solveSystemNewton` | `variables > 0`, `equations > 0`, `startPoint.count == variables` |
+| `MathSolver.minimize`, `.minimizePowell`, `.minimizeNewton` | `variables > 0`, `startPoint.count == variables` |
+| `MathSolver.particleSwarm` | `variables > 0`, `lower`/`upper`/`steps`.count == variables` |
+| `MathSolver.globalMinimize` | `variables > 0`, `lower`/`upper`.count == variables` |
+| `MathSolver.leastSquares` | `rows > 0`, `cols > 0`, `matrix.count == rows * cols`, `rhs.count == rows` (new: had nothing) |
+| `MathSolver.uzawa` | `nConstraints > 0`, `nVars > 0`, and all three arrays checked against them (new: had nothing) |
+| `MathSolver.eigenvalues`, `.eigenvaluesAndVectors` | `subdiagonal.count == diagonal.count` (new) |
+| `MathSolver.gaussMultipleIntegration` | `upper.count == lower.count`, `order.count == lower.count` (new) |
+| `MathSolver.gaussSetIntegration` | `nEquations > 0` plus the same array checks as `gaussMultipleIntegration` |
+
+**Also in scope, reached by a different lens: `findAllRoots(samples:)` (both overloads) is a
+sampler by name and by role, not a problem dimension**, despite superficially trapping the same
+`Int32(_:)` way. It is routed through `Sampling.requested` instead, matching #558's own family,
+and rejects with `[]` rather than trapping past `Int32.max`. Checked alongside it and confirmed
+correctly excluded: `kronrodIntegrate`/`kronrodIntegrateAdaptive`/`integGauss`/`integKronrod`/
+`integKronrodAdaptive`'s `points`/`gaussPoints` parameters trap the identical way at
+`Int(Int32.max) + 1`, but select a quadrature rule order inside OCCT: no bridge function indexes
+an array by them, and a negative value is rejected cleanly via `IsDone() == false`, measured, not
+assumed. #634's "kernel-side, not a Swift buffer" reasoning holds for these; it did not hold for
+`findAllRoots`.
+
+Regression suite: `Tests/OCCTMathTests/Issue640MathDimensionBoundsTests.swift`, 17 tests covering
+all 20 entry points plus a positive control per function. Proved by injection at four
+representative guards spanning both failure shapes: removing `MathJacobi.eigenvalues`'s positivity
+bound crashes the whole `swift test` process (`exited with unexpected signal code 5`, matching
+`raycast`'s own #622 precedent) rather than failing one test; removing `solveSystem`'s
+`startPoint.count == variables` check and `eigenvalues`'s `subdiagonal.count == diagonal.count`
+check both instead produce ordinary, reportable test failures with the exact garbage values quoted
+above; removing `findAllRoots`'s `Sampling.requested` call reproduces the same whole-process crash
+as the positivity case. All four restored and re-verified green. A fifth injection, removing only
+`MathGauss.determinant`'s consistency check and leaving positivity, did **not** reproduce the crash
+inside `swift test`'s process (unlike the standalone probe, which crashed reliably at the same
+input): the read is undefined behaviour, not a guaranteed crash, and its outcome depends on the
+process's own memory layout. This is the same point the out-of-bounds-read finding makes at the
+API level, one level down in the tooling used to demonstrate it.
+
+#### PR #716 review follow-up: three new closure-return-length traps, a mis-measured integral, and a shared validator (#640)
+
+An automated review of #716 (the PR above) found ten distinct defects, the most severe of which
+was the PR reintroducing its own bug class in three new places: guarding a caller's **argument**
+arrays against a dimension mismatch, then indexing a **closure's return value** against that same
+dimension with no check at all. A closure returning a short array trapped the process exactly the
+way #640 exists to prevent, just relocated from the caller's arguments to the caller's closure.
+Fixed at every site that shape occurs: `solveSystem`/`solveSystemNewton`'s `values`/`jacobian`
+callbacks, `minimize`/`minimizeNewton`'s `gradient`/`hessian`, and `gaussSetIntegration`'s
+`values`. `minimizeFRPR` shares the identical `OCCTMathMultiVarGradCallback` shape but was not
+itself named by the review; fixed and tested alongside the others for the same reason. Every
+guard was proved in a standalone process (the #705 technique, temporarily pointing
+`Sources/OCCTTest/main.swift` at a case-selecting probe): removing any one of them reproduces
+`Fatal error: Index out of range`, a process trap, not a test failure; restoring it returns `nil`.
+
+**The review's own finding 2 uncovered a real defect, not a wrong literal.** It read a new
+regression test, `gaussIntegrationLengthBounds()`, as asserting the double integral of `x + y`
+over the unit square is `0.5`, and pointed out the true value is `1.0` by symmetry. Both
+observations were correct, and neither was the actual story: measured directly against the pinned
+kernel, `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+integrating `x + y` genuinely returns `0.5` -- but not because it computes any correct 2-variable
+integral. `math_GaussSetIntegration`'s own header documents "the case M>1 is not implemented": a
+probe built directly against the class confirms its constructor only ever varies the *first*
+integration variable (`Lower.Value(Lower.Lower())`), leaving every other component of its working
+vector pinned at its initial value, `0`. So `0.5` is `∫x dx` over `[0, 1]` with `y` silently held
+at `0` the entire time, never `∫∫(x + y) dx dy`. OCCT's own runtime check for this
+(`Standard_NotImplemented_Raise_if(NbVar != 1, ...)`) does not survive this project's
+`No_Exception` production kernel build (the same class of gap #487/#555/#603 measured elsewhere),
+so instead of failing loudly it silently computed the wrong thing. Changing the test's literal
+from `0.5` to `1.0` would have enshrined a *different* wrong answer -- `gaussSetIntegration` can
+never legitimately produce `1.0` for that call, because it never touches the second variable at
+all. The actual fix is a new guard: `gaussSetIntegration` now requires `lower.count == 1`,
+returning `nil` for any call with more than one variable, matching what the class actually
+supports (one variable, any number of equations -- a true "set of functions", each integrated
+over the same one-dimensional domain). `gaussMultipleIntegration` is unaffected: its own class,
+`math_GaussMultipleIntegration`, integrates recursively over every dimension and was confirmed
+correct at 2 variables independently. The pre-existing `Tests/OCCTIntegrationTests/
+OCCTIntegrationTests.swift`'s `GaussSetIntegrationTests.integrateSet()` predated #640 and carried
+the identical two-variable call and the identical `0.5` assertion; fixed to a valid one-variable,
+two-equation case (`[x, x^2]` over `[0, 2]`, giving `[2.0, 8/3]`) plus an explicit assertion that
+the old two-variable shape now returns `nil`.
+
+The remaining seven findings were all confirmed and fixed:
+
+- **Finding 1**: both `findAllRoots` overloads called `Sampling.requested(samples)` without
+  `atLeast: 1`, so the default floor of `2` applied even though this file's own doc comments and
+  the reference docs already documented the valid range as `1...10,000,000`. `samples: 1` was
+  silently rejected -- the closure was never called -- before returning `[]`. Fixed by passing
+  `atLeast: 1` at both call sites.
+- **Finding 7**: `MathGauss.determinant`/`MathCrout.determinant` returned a bare `Double`, so the
+  `0.0` sentinel for an invalid dimension was indistinguishable from `0.0`, the correct
+  determinant of a genuinely singular matrix. Both now return `Double?`; `nil` means invalid
+  input, `.some(0.0)` means a real, correctly-computed zero.
+- **Finding 8**: every positivity guard in this family computed `n * n` or `rows * cols` with the
+  plain `*` operator, which traps on overflow for a sufficiently large positive dimension (e.g.
+  `n: .max`) -- the exact process-trap #640 exists to eliminate, reintroduced by the guard meant
+  to prevent it. Fixed by routing every such guard through the new `MathDimension` type below,
+  which uses `multipliedReportingOverflow(by:)` (the same idiom `Sampling.gridTotal` already
+  carries) and rejects rather than traps.
+- **Finding 9**: the "dimension positive, and every array it sizes matches exactly" check (or,
+  for `rows`/`cols`, "the flat array is exactly their product") was hand-duplicated at 18 call
+  sites with no shared validator, unlike the `Sampling` family this same PR already reuses for
+  `findAllRoots`. `Sources/OCCTSwift/MathDimension.swift` factors it into four functions --
+  `valid`, `consistent`, `validSquare`, `validRectangle` -- and all 18 sites now share it,
+  fixing finding 8's overflow gap everywhere at once rather than site by site.
+- **Finding 10**: the 18 changed doc comments carried no fenced `swift` snippet, which CLAUDE.md
+  makes mandatory for public API changes since context7 only harvests fenced snippets. All 18
+  gained one, modeled on `Sampling.maximumSampleCount`'s doc.
+- Also removed: `docs/SEMVER.md`'s recorded-exception entry for this issue. The maintainer ruled
+  that mechanism is for breaks shipping *within* a major line; this work ships in v2.0.0, a
+  major, where breaking changes are permitted outright, so no exception entry is needed --
+  this note is the migration record instead. The counters at the top of `docs/SEMVER.md` are
+  restored to their pre-#640 values (thirteen recorded exceptions), and the pre-existing counter
+  drift #640's own PR fixed (a stale hardcoded number in #639's entry, once out of sync with the
+  count at the top of the file) is kept: that entry now reads the count in prose rather than
+  restating it as a number that can drift again.
+
+Full `swift test`: 5384 tests (5373 baseline + 11 new -- 7 in
+`Issue640MathDimensionBoundsTests.swift`, 4 in a new `MathDimensionTests` suite exercising
+`MathDimension` directly, the same way `Issue558SamplingCountBoundsTests.swift` exercises
+`Sampling.requested`/`capacity`/`gridTotal` directly). `swift run Censuses cluster-a`: 45 rows.
+`cluster-b`: 16 rows. All four gate scripts and their three `--self-tests` pass from the repo
+root.
+
 #### A fillet radius law goes to the edge's own slot, in the edge's own contour (#612)
 
 `filletEvolving`, `filleted(edges:startRadius:endRadius:)` and `filletedVariable` all wrote their

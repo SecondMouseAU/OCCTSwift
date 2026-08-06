@@ -36,7 +36,7 @@ The other ten change behaviour **without breaking the build**, which is the set 
 - [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
 - [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
 
-A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead. `#640`'s math-dimension-family fix is not recorded here either, for a different reason: it ships in v2.0.0, a major, where breaking changes are permitted outright, so the recorded-exception mechanism (for breaks shipping *within* a major line) does not apply. See [`CHANGELOG.md`](CHANGELOG.md#the-math-dimension-family-traps-on-a-consistent-but-negative-dimension-and-one-site-reads-out-of-bounds-640) for the migration.
 
 ## Rules
 
@@ -410,16 +410,17 @@ sibling (`filletedWithReport(edges:radius:)`, `filletedWithReport(edges:startRad
 `filletEvolvingWithReport(_:)`) returning a new `Shape.FilletResult`: the edges OCCT declined to
 fillet, alongside the shape, for a caller who wants to know (#639).
 
-This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
-unchanged by this entry: no existing method's signature or behaviour changed. `filleted(edges:
-radius:)` and its two siblings still return exactly what they always did, for exactly the same
-inputs; a caller who never calls the three new methods sees no difference at all. This is the
-**MINOR**, additive Swift API, case the quick reference table already names, not the MAJOR-avoided,
+This does **not** move the recorded-exceptions count above (checked against the current count of
+thirteen at the time of this edit, re-verified rather than assumed, since it has drifted before):
+no existing method's signature or behaviour changed. `filleted(edges:radius:)` and its two
+siblings still return exactly what they always did, for exactly the same inputs; a caller who
+never calls the three new methods sees no difference at all. This is the **MINOR**, additive Swift
+API, case the quick reference table already names, not the MAJOR-avoided,
 compile-error-or-silent-behaviour-change case every entry above it is. It is recorded here anyway,
 rather than left to the release's own `CHANGELOG.md` entry, because #664 asks for every public-API
 change in this cluster of work to be written down at the same time it lands, and distinguishing
 "additive, no exception" from "exception" is itself information a reviewer of this file benefits
-from having next to the twelve that are.
+from having next to the ones that are.
 
 Two of the issue's own named members (`filletedWithFullHistory(radius:edges:)`,
 `FilletBuilder.contour(for:)`) needed no new API at all: both already carry a way to answer the
