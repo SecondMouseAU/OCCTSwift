@@ -552,6 +552,9 @@ public static func findAllRoots(
 
 - **Parameters:** `range` — search interval; `samples` — number of sample points; `function` — value + derivative.
 - **Returns:** Array of root locations (may be empty).
+- **Bounds:** `samples` is bounded through `Sampling.requested` like the sibling
+  `findAllRoots(in:samples:function:)` overload: outside `1...10,000,000` this returns `[]`
+  instead of trapping `Int32(samples)` past `Int32.max` (#640).
 - **OCCT:** `OCCTMathFunctionAllRoots` → `math_FunctionAllRoots`.
 
 ---
@@ -569,6 +572,11 @@ public static func leastSquares(
 
 - **Parameters:** `matrix` — row-major matrix of size `rows × cols`; `rhs` — right-hand side vector.
 - **Returns:** Solution vector of length `cols`, or `nil` on failure.
+- **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
+  `rhs.count == rows` must hold, or this returns `nil` (#640). Before this bound there was no
+  consistency check at all: a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
+  length reached the bridge's unconditional read loop and read out of bounds, rather than
+  failing.
 - **OCCT:** `OCCTMathGaussLeastSquare` → `math_GaussLeastSquare`.
 
 ---
@@ -609,6 +617,10 @@ public static func uzawa(
 
 - **Parameters:** `constraintMatrix` — row-major `nConstraints × nVars` matrix; `constraintRHS` — RHS vector; `startPoint` — initial guess.
 - **Returns:** `(solution, iterations)` or `nil` on failure.
+- **Bounds:** `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/
+  `constraintRHS`/`startPoint` must each match them exactly, or this returns `nil` (#640). None
+  of this was checked before, so the bridge's unconditional read loops read out of bounds on any
+  mismatch.
 - **OCCT:** `OCCTMathUzawa` → `math_Uzawa`.
 
 ---
@@ -625,6 +637,10 @@ public static func eigenvalues(
 
 - **Parameters:** `diagonal` — n diagonal entries; `subdiagonal` — n entries (last unused).
 - **Returns:** Array of eigenvalues, or `nil` on failure.
+- **Bounds:** `subdiagonal.count` must equal `diagonal.count` exactly, or this returns `nil`
+  (#640). This "must be same length" was documentation only until #640: the bridge reads
+  `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter `subdiagonal`
+  used to read out of bounds rather than fail.
 - **OCCT:** `OCCTMathEigenValues` → `math_EigenVectors`.
 
 ---
@@ -640,6 +656,8 @@ public static func eigenvaluesAndVectors(
 ```
 
 - **Returns:** `(eigenvalues, eigenvectors)` where each eigenvector is a `[Double]` of length n, or `nil` on failure.
+- **Bounds:** Same as `eigenvalues(diagonal:subdiagonal:)`: `subdiagonal.count` must equal
+  `diagonal.count` exactly (#640).
 - **OCCT:** `OCCTMathEigenValuesAndVectors` → `math_EigenVectors`.
 
 ---
@@ -694,6 +712,10 @@ public static func gaussMultipleIntegration(
 
 - **Parameters:** `lower`/`upper` — integration bounds per dimension; `order` — Gauss point counts per dimension; `function` — n-variate integrand.
 - **Returns:** Integral value or `nil` on failure.
+- **Bounds:** `upper` and `order` must have the same length as `lower`, or this returns `nil`
+  (#640). The bridge derives the dimension count from `lower.count` alone and then reads
+  `upper[i]`/`order[i]` up to it unconditionally, so a shorter `upper` or `order` used to read
+  out of bounds.
 - **OCCT:** `OCCTMathGaussMultipleIntegration` → `math_GaussMultipleIntegration`.
 
 ---
@@ -712,6 +734,10 @@ public static func gaussSetIntegration(
 
 - **Parameters:** `nEquations` — number of integrals; `function` — closure mapping input vector to `nEquations`-length output.
 - **Returns:** Array of integral values (length `nEquations`), or `nil` on failure.
+- **Bounds:** `nEquations` must be positive, and `upper`/`order` must have the same length as
+  `lower`, or this returns `nil` (#640): the first was an `Array(repeating:count:)` trap on a
+  negative `nEquations`, and the second is the same unguarded read as
+  `gaussMultipleIntegration`.
 - **OCCT:** `OCCTMathGaussSetIntegration` → `math_GaussSetIntegration`.
 
 ---

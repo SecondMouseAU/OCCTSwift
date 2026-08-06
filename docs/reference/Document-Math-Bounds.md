@@ -1251,6 +1251,9 @@ public static func determinant(matrix: [Double], n: Int) -> Double
 ```
 
 - **Parameters:** `matrix` — row-major N×N matrix; `n` — dimension.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `0.0` (#640). Before this bound, a mismatched positive `n` read past the end of `matrix` inside
+  the bridge.
 - **OCCT:** `math_Gauss::Determinant` (via `OCCTMathGaussDeterminant`).
 
 ---
@@ -1269,6 +1272,10 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M; `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure.
+- **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
+  `rhs.count == rows` must hold, or this returns `nil` (#640). A consistency check alone is not
+  enough: `rows: 0, cols: -1` satisfies `matrix.count == rows * cols` for any `matrix`, so the
+  positivity bound is required too.
 - **OCCT:** `math_SVD::Solve` (via `OCCTMathSVDSolve`).
 - **Example:**
   ```swift
@@ -1321,6 +1328,9 @@ public static func eigenvalues(matrix: [Double], n: Int) -> [Double]?
 
 - **Parameters:** `matrix` — row-major N×N symmetric matrix; `n` — dimension.
 - **Returns:** Eigenvalue array of length N, or `nil` on failure.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640). `eigenvalues(matrix: [1.0], n: -1)` satisfies the consistency check alone
+  (`1 == (-1) * (-1)`), which is why positivity is checked separately rather than folded into it.
 - **OCCT:** `math_Jacobi::Values` (via `OCCTMathJacobiEigenvalues`).
 - **Example:**
   ```swift
@@ -1525,6 +1535,9 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M (must be ≥ `cols`); `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure or under-determined input.
+- **Bounds:** `rows` and `cols` must both be positive, in addition to `rows >= cols` and the
+  existing `matrix`/`rhs` length checks, or this returns `nil` (#640): `rows >= cols` alone does
+  not exclude `rows: 0, cols: -1`.
 - **OCCT:** `math_Householder::Solve` (via `OCCTMathHouseholderSolve`).
 - **Example:**
   ```swift
@@ -1571,6 +1584,8 @@ Compute the determinant of a symmetric matrix via Crout factorisation.
 public static func determinant(matrix: [Double], n: Int) -> Double
 ```
 
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `0.0` (#640), the same fix and for the same reason as `MathGauss.determinant`.
 - **OCCT:** `math_Crout::Determinant` (via `OCCTMathCroutDeterminant`).
 
 ---

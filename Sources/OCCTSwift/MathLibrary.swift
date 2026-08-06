@@ -66,8 +66,15 @@ public enum MathGauss {
     }
 
     /// Compute determinant using Gauss elimination.
+    ///
+    /// `n` must be positive and match `matrix`'s length exactly (`matrix.count == n * n`).
+    /// Neither was checked before #640: the bridge loops `matrixData[i*n+j]` for
+    /// `i, j in 0..<n` unconditionally, so a positive `n` larger than `matrix` reads out of
+    /// bounds rather than failing, and a negative `n` was a `Standard_Failure` the bridge's
+    /// own `catch (...)` already absorbed into the same `0.0` this guard now returns.
     public static func determinant(matrix: [Double], n: Int) -> Double {
-        matrix.withUnsafeBufferPointer { buf in
+        guard n > 0, matrix.count == n * n else { return 0.0 }
+        return matrix.withUnsafeBufferPointer { buf in
             OCCTMathGaussDeterminant(buf.baseAddress!, Int32(n))
         }
     }
@@ -83,8 +90,13 @@ public enum MathSVD {
     ///   - cols: N
     ///   - rhs: Right-hand side (length M)
     /// - Returns: Solution vector (length N), or nil on failure
+    ///
+    /// `rows` and `cols` must both be positive. A consistency check alone is not enough
+    /// (#640): `rows: 0, cols: -1` satisfies `matrix.count == rows * cols` exactly (`0 == 0`)
+    /// and `rhs.count == rows` exactly (`0 == 0`), so without a positivity bound this still
+    /// reaches `Array(repeating:count:)` with a negative count and traps.
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
-        guard matrix.count == rows * cols, rhs.count == rows else { return nil }
+        guard rows > 0, cols > 0, matrix.count == rows * cols, rhs.count == rows else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
@@ -124,8 +136,12 @@ public enum MathJacobi {
     ///   - matrix: Row-major NxN symmetric matrix
     ///   - n: Dimension
     /// - Returns: Eigenvalues, or nil on failure
+    ///
+    /// `n` must be positive. `eigenvalues(matrix: [1.0], n: -1)` satisfies
+    /// `matrix.count == n * n` exactly (`1 == (-1) * (-1)`) and would otherwise reach
+    /// `Array(repeating:count:)` with a negative count and trap (#640).
     public static func eigenvalues(matrix: [Double], n: Int) -> [Double]? {
-        guard matrix.count == n * n else { return nil }
+        guard n > 0, matrix.count == n * n else { return nil }
         var eigenvalues = [Double](repeating: 0, count: n)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             eigenvalues.withUnsafeMutableBufferPointer { eBuf in
@@ -140,8 +156,12 @@ public enum MathJacobi {
 public enum MathHouseholder {
 
     /// Solve overdetermined Ax=b using Householder QR (M >= N).
+    ///
+    /// `rows` and `cols` must both be positive, the same positivity gap as `MathSVD.solve`
+    /// (#640): `rows >= cols` alone does not exclude `rows: 0, cols: -1`.
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
-        guard matrix.count == rows * cols, rhs.count == rows, rows >= cols else { return nil }
+        guard rows > 0, cols > 0, matrix.count == rows * cols, rhs.count == rows, rows >= cols
+        else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
@@ -174,8 +194,13 @@ public enum MathCrout {
     }
 
     /// Determinant of symmetric matrix via Crout.
+    ///
+    /// Same fix as `MathGauss.determinant` (#640): `n` must be positive and match `matrix`'s
+    /// length exactly, or the bridge's unconditional `matrixData[i*n+j]` loop reads out of
+    /// bounds.
     public static func determinant(matrix: [Double], n: Int) -> Double {
-        matrix.withUnsafeBufferPointer { buf in
+        guard n > 0, matrix.count == n * n else { return 0.0 }
+        return matrix.withUnsafeBufferPointer { buf in
             OCCTMathCroutDeterminant(buf.baseAddress!, Int32(n))
         }
     }

@@ -743,6 +743,11 @@ public static func solveSystem(
   - `values` — closure returning equation values `F(x)`, length `equations`.
   - `jacobian` — closure returning the row-major Jacobian `J(x)`, length `equations × variables`.
 - **Returns:** Solution point array of length `variables`, or `nil` if not converged.
+- **Bounds:** `variables` and `equations` must both be positive, and `startPoint.count` must
+  equal `variables`, or this returns `nil` (#640). None of this was checked before: a negative
+  `variables` reached `Array(repeating:count:)` and trapped, and a positive `variables` that did
+  not match `startPoint`'s real length reached the bridge's unconditional `startPoint[i]` loop
+  and read out of bounds.
 - **OCCT:** `math_FunctionSetRoot` via `OCCTMathFunctionSetRoot`.
 - **Example:**
   ```swift
@@ -774,6 +779,9 @@ public static func minimize(
 
 - **Parameters:** `function` — closure returning `(f(x), ∇f(x))`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** `variables` must be positive and equal `startPoint.count`, or this returns `nil`
+  (#640): a mismatched positive `variables` used to reach the bridge's unconditional
+  `startPoint[i]` loop and read out of bounds.
 - **OCCT:** `math_BFGS` via `OCCTMathBFGS`.
 - **Example:**
   ```swift
@@ -807,6 +815,8 @@ public static func minimizePowell(
 
 - **Parameters:** `function` — closure returning a scalar value `f(x)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** Same as `minimize`: `variables` must be positive and equal `startPoint.count`
+  (#640).
 - **OCCT:** `math_Powell` via `OCCTMathPowell`.
 - **Note:** Preferred when derivatives are unavailable or expensive; generally slower than BFGS for smooth functions.
 
@@ -862,6 +872,9 @@ public static func particleSwarm(
 
 - **Parameters:** `lower` / `upper` — per-variable bounds; `steps` — initial step sizes; `particles` — swarm size; `iterations` — number of swarm iterations.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` on failure.
+- **Bounds:** `variables` must be positive, and `lower`/`upper`/`steps` must each have
+  `variables` elements, or this returns `nil` (#640): none of this was checked before, so the
+  bridge's unconditional `lower[i]`/`upper[i]`/`steps[i]` loop read out of bounds on a mismatch.
 - **OCCT:** `math_PSO` via `OCCTMathPSO`.
 - **Note:** Good for highly multimodal or discontinuous objectives; does not require derivatives. Use `globalMinimize` for a deterministic alternative.
 
@@ -884,6 +897,8 @@ public static func globalMinimize(
 
 - **Parameters:** `lower` / `upper` — search domain bounds per variable; `function` — objective.
 - **Returns:** `(global minimizer, f(minimizer))`, or `nil` on failure.
+- **Bounds:** `variables` must be positive, and `lower`/`upper` must each have `variables`
+  elements, or this returns `nil` (#640), for the same reason as `particleSwarm`.
 - **OCCT:** `math_GlobOptMin` via `OCCTMathGlobOptMin`.
 - **Example:**
   ```swift
@@ -912,6 +927,10 @@ public static func findAllRoots(
 
 - **Parameters:** `samples` — number of sub-intervals for sign-change detection (more samples finds more roots but is slower).
 - **Returns:** Array of root values (may be empty). Up to 100 roots are returned.
+- **Bounds:** `samples` is a sampler by name and by role, not a problem dimension, so it is
+  bounded through `Sampling.requested` like every other subdivision count in this library:
+  outside `1...10,000,000` this returns `[]` instead of trapping `Int32(samples)` past
+  `Int32.max` (#640).
 - **OCCT:** `math_FunctionRoots` via `OCCTMathFunctionRoots`.
 - **Example:**
   ```swift
@@ -969,6 +988,8 @@ public static func solveSystemNewton(
 
 - **Parameters:** Same interface as `solveSystem`; internally uses `math_NewtonFunctionSetRoot`.
 - **Returns:** Solution array of length `variables`, or `nil`.
+- **Bounds:** Same as `solveSystem`: `variables` and `equations` must both be positive, and
+  `startPoint.count` must equal `variables`, or this returns `nil` (#640).
 - **OCCT:** `math_NewtonFunctionSetRoot` via `OCCTMathNewtonFuncSetRoot`.
 - **Note:** More aggressive damping than `solveSystem`; prefer when starting close to the solution.
 
@@ -1542,6 +1563,8 @@ public static func minimizeNewton(
   - `startPoint` — initial guess, length `n`.
   - `function` — closure returning `(f(x), ∇f(x)[n], H(x)[n×n] row-major)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
+- **Bounds:** `n` must be positive and equal `startPoint.count`, or this returns `nil` (#640),
+  for the same reason as `minimize`.
 - **OCCT:** `math_NewtonMinimum` via `OCCTMathNewtonMinimum`.
 - **Note:** Quadratic convergence near the minimum; requires a positive-definite Hessian. Falls back gracefully but may not converge if the Hessian is indefinite away from the minimum — in that case, prefer `minimize` (BFGS).
 - **Example:**

@@ -115,6 +115,13 @@ public enum MathSolver {
     ///   - values: Closure taking [Double] of length `variables`, returning [Double] of length `equations`
     ///   - jacobian: Closure taking [Double] of length `variables`, returning row-major Jacobian [Double] of length `equations * variables`
     /// - Returns: Solution point, or nil if the solver did not converge
+    ///
+    /// `variables` and `equations` must both be positive, and `startPoint.count` must equal
+    /// `variables` (#640). Neither was checked before: a negative `variables` reached
+    /// `Array(repeating:count:)` and trapped, and a positive `variables` that did not match
+    /// `startPoint`'s real length reached the bridge's unconditional `startPoint[i]` loop and
+    /// read out of bounds -- silently, since the loop has no way to fail other than reading
+    /// whatever memory happens to follow `startPoint`.
     public static func solveSystem(
         variables: Int,
         equations: Int,
@@ -124,6 +131,7 @@ public enum MathSolver {
         values: @escaping ([Double]) -> [Double],
         jacobian: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
+        guard variables > 0, equations > 0, startPoint.count == variables else { return nil }
         typealias ValuesClosure = ([Double]) -> [Double]
         typealias JacobianClosure = ([Double]) -> [Double]
         let valBox = ClosureBox(values)
@@ -175,6 +183,10 @@ public enum MathSolver {
     ///   - maxIterations: Maximum iterations (default 200)
     ///   - function: Closure taking [Double], returning (value, gradient)
     /// - Returns: (point, minimum) tuple, or nil if the solver did not converge
+    ///
+    /// `variables` must be positive and equal `startPoint.count` (#640): neither was checked
+    /// before, so a mismatched positive `variables` reached the bridge's unconditional
+    /// `startPoint[i]` loop and read out of bounds.
     public static func minimize(
         variables: Int,
         startPoint: [Double],
@@ -182,6 +194,7 @@ public enum MathSolver {
         maxIterations: Int = 200,
         function: @escaping ([Double]) -> (value: Double, gradient: [Double])
     ) -> (point: [Double], minimum: Double)? {
+        guard variables > 0, startPoint.count == variables else { return nil }
         typealias Fn = ([Double]) -> (value: Double, gradient: [Double])
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -217,6 +230,9 @@ public enum MathSolver {
     ///   - maxIterations: Maximum iterations (default 200)
     ///   - function: Closure taking [Double], returning scalar value
     /// - Returns: (point, minimum) tuple, or nil if the solver did not converge
+    ///
+    /// Same guard as `minimize`, and for the same reason (#640): `variables` must be positive
+    /// and equal `startPoint.count`.
     public static func minimizePowell(
         variables: Int,
         startPoint: [Double],
@@ -224,6 +240,7 @@ public enum MathSolver {
         maxIterations: Int = 200,
         function: @escaping ([Double]) -> Double
     ) -> (point: [Double], minimum: Double)? {
+        guard variables > 0, startPoint.count == variables else { return nil }
         typealias Fn = ([Double]) -> Double
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -296,6 +313,10 @@ public enum MathSolver {
     ///   - iterations: Number of iterations (default 100)
     ///   - function: Closure taking [Double], returning scalar value
     /// - Returns: (point, minimum) tuple, or nil on failure
+    ///
+    /// `variables` must be positive and `lower`/`upper`/`steps` must each have `variables`
+    /// elements (#640): none of this was checked before, so the bridge's unconditional
+    /// `lower[i]`/`upper[i]`/`steps[i]` loop read out of bounds on a mismatch.
     public static func particleSwarm(
         variables: Int,
         lower: [Double],
@@ -305,6 +326,8 @@ public enum MathSolver {
         iterations: Int = 100,
         function: @escaping ([Double]) -> Double
     ) -> (point: [Double], minimum: Double)? {
+        guard variables > 0, lower.count == variables, upper.count == variables,
+              steps.count == variables else { return nil }
         typealias Fn = ([Double]) -> Double
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -338,12 +361,16 @@ public enum MathSolver {
     ///   - upper: Upper bounds for each variable
     ///   - function: Closure taking [Double], returning scalar value
     /// - Returns: (point, minimum) tuple, or nil on failure
+    ///
+    /// `variables` must be positive and `lower`/`upper` must each have `variables` elements
+    /// (#640), for the same reason as `particleSwarm`.
     public static func globalMinimize(
         variables: Int,
         lower: [Double],
         upper: [Double],
         function: @escaping ([Double]) -> Double
     ) -> (point: [Double], minimum: Double)? {
+        guard variables > 0, lower.count == variables, upper.count == variables else { return nil }
         typealias Fn = ([Double]) -> Double
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -374,11 +401,16 @@ public enum MathSolver {
     ///   - samples: Number of sample subdivisions (default 20)
     ///   - function: Closure returning (value, derivative) at x
     /// - Returns: Array of root values found
+    ///
+    /// `samples` is a sampler by name and by role, not a problem dimension (#640): it belongs
+    /// to #558's `Sampling` contract like every other subdivision count in this library, and
+    /// is bounded the same way rather than left to trap `Int32(samples)` past `Int32.max`.
     public static func findAllRoots(
         in range: ClosedRange<Double>,
         samples: Int = 20,
         function: @escaping (Double) -> (value: Double, derivative: Double)
     ) -> [Double] {
+        guard let samples = Sampling.requested(samples) else { return [] }
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
         defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
@@ -442,6 +474,8 @@ public enum MathSolver {
     ///   - values: Closure returning equation values
     ///   - jacobian: Closure returning row-major Jacobian
     /// - Returns: Solution point, or nil if not converged
+    ///
+    /// Same guard as `solveSystem`, and for the same reason (#640).
     public static func solveSystemNewton(
         variables: Int,
         equations: Int,
@@ -451,6 +485,7 @@ public enum MathSolver {
         values: @escaping ([Double]) -> [Double],
         jacobian: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
+        guard variables > 0, equations > 0, startPoint.count == variables else { return nil }
         typealias ValuesClosure = ([Double]) -> [Double]
         typealias JacobianClosure = ([Double]) -> [Double]
         let valBox = ClosureBox(values)
@@ -496,6 +531,9 @@ extension MathSolver {
     /// Minimize using Newton's method with Hessian (second derivatives).
     /// The closure takes x[n] and returns (value, gradient[n], hessian[n*n] row-major).
     /// This is the most precise minimizer when the Hessian is available.
+    ///
+    /// `n` must be positive and equal `startPoint.count` (#640), for the same reason as
+    /// `minimize`.
     public static func minimizeNewton(
         variables n: Int,
         startPoint: [Double],
@@ -503,6 +541,7 @@ extension MathSolver {
         maxIterations: Int = 40,
         function: @escaping ([Double]) -> (value: Double, gradient: [Double], hessian: [Double])
     ) -> (point: [Double], minimum: Double)? {
+        guard n > 0, startPoint.count == n else { return nil }
         typealias Closure = ([Double]) -> (value: Double, gradient: [Double], hessian: [Double])
         class Box { let fn: Closure; init(_ f: @escaping Closure) { fn = f } }
         let box = Box(function)
@@ -653,6 +692,9 @@ extension MathSolver {
     }
 
     /// Find all roots of f(x)=0 in a range using sampling + refinement.
+    ///
+    /// `samples` is bounded the same way as the other `findAllRoots` overload's, and for the
+    /// same reason (#640).
     public static func findAllRoots(
         in range: ClosedRange<Double>,
         samples: Int = 100,
@@ -661,6 +703,7 @@ extension MathSolver {
         epsNul: Double = 1e-8,
         function: @escaping (Double) -> (value: Double, derivative: Double)
     ) -> [Double] {
+        guard let samples = Sampling.requested(samples) else { return [] }
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
         defer { Unmanaged<ClosureBox<(Double) -> (value: Double, derivative: Double)>>.fromOpaque(ptr).release() }
@@ -681,10 +724,19 @@ extension MathSolver {
     }
 
     /// Solve overdetermined linear system Ax=b in least-squares sense.
+    ///
+    /// `rows` and `cols` must both be positive and match `matrix`/`rhs`'s real lengths
+    /// exactly (#640). Before this guard there was no consistency check at all -- unlike
+    /// `MathSVD.solve`/`MathHouseholder.solve`, which already checked `matrix.count ==
+    /// rows * cols` -- so a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
+    /// length reached the bridge's unconditional `matA[i*nCols+j]`/`b[i]` loops and read out
+    /// of bounds: not a trap, a silent wrong answer built from whatever memory happened to
+    /// follow the two arrays.
     public static func leastSquares(
         matrix: [Double], rows: Int, cols: Int,
         rhs: [Double]
     ) -> [Double]? {
+        guard rows > 0, cols > 0, matrix.count == rows * cols, rhs.count == rows else { return nil }
         var x = [Double](repeating: 0, count: cols)
         guard OCCTMathGaussLeastSquare(matrix, Int32(rows), Int32(cols), rhs, &x) else { return nil }
         return x
@@ -721,6 +773,11 @@ extension MathSolver {
 
     /// Solve constrained optimization via Uzawa method.
     /// Minimize ||x||^2 subject to constraintMatrix * x = constraintRHS.
+    ///
+    /// `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/
+    /// `constraintRHS`/`startPoint` must each match them exactly (#640): none of this was
+    /// checked before, so the bridge's unconditional `contData[i*nVars+j]`/`secont[i]`/
+    /// `startPoint[i]` loops read out of bounds on any mismatch.
     public static func uzawa(
         constraintMatrix: [Double], nConstraints: Int, nVars: Int,
         constraintRHS: [Double],
@@ -728,6 +785,11 @@ extension MathSolver {
         epsLix: Double = 1e-6, epsLic: Double = 1e-6,
         maxIterations: Int = 500
     ) -> (result: [Double], iterations: Int)? {
+        guard nConstraints > 0, nVars > 0,
+              constraintMatrix.count == nConstraints * nVars,
+              constraintRHS.count == nConstraints,
+              startPoint.count == nVars
+        else { return nil }
         var result = [Double](repeating: 0, count: nVars)
         var nbIter: Int32 = 0
         guard OCCTMathUzawa(constraintMatrix, Int32(nConstraints), Int32(nVars),
@@ -738,9 +800,14 @@ extension MathSolver {
 
     /// Find eigenvalues of a symmetric tridiagonal matrix.
     /// diagonal and subdiagonal must be same length (last subdiagonal element unused).
+    ///
+    /// That "must" was only ever documentation until #640: the bridge loops
+    /// `subdiagonal[i]` for `i in 0..<diagonal.count` unconditionally, so a shorter
+    /// `subdiagonal` read out of bounds rather than failing.
     public static func eigenvalues(
         diagonal: [Double], subdiagonal: [Double]
     ) -> [Double]? {
+        guard subdiagonal.count == diagonal.count else { return nil }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
         let count = OCCTMathEigenValues(diagonal, subdiagonal, Int32(n), &eigenvalues)
@@ -748,9 +815,12 @@ extension MathSolver {
     }
 
     /// Find eigenvalues and eigenvectors of a symmetric tridiagonal matrix.
+    ///
+    /// Same guard as `eigenvalues`, and for the same reason (#640).
     public static func eigenvaluesAndVectors(
         diagonal: [Double], subdiagonal: [Double]
     ) -> (eigenvalues: [Double], eigenvectors: [[Double]])? {
+        guard subdiagonal.count == diagonal.count else { return nil }
         let n = diagonal.count
         var eigenvalues = [Double](repeating: 0, count: n)
         var eigenvectors = [Double](repeating: 0, count: n * n)
@@ -813,10 +883,15 @@ extension MathSolver {
     }
 
     /// Multi-dimensional Gauss-Legendre integration.
+    ///
+    /// `upper` and `order` must have the same length as `lower` (#640): the bridge derives
+    /// `nVars` from `lower.count` alone and then loops `upper[i]`/`order[i]` for
+    /// `i in 0..<nVars` unconditionally, so a shorter `upper` or `order` read out of bounds.
     public static func gaussMultipleIntegration(
         lower: [Double], upper: [Double], order: [Int],
         function: @escaping ([Double]) -> Double
     ) -> Double? {
+        guard upper.count == lower.count, order.count == lower.count else { return nil }
         let nVars = lower.count
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
@@ -837,11 +912,18 @@ extension MathSolver {
     }
 
     /// Gauss-Legendre integration for function sets.
+    ///
+    /// `nEquations` must be positive, and `upper`/`order` must have the same length as
+    /// `lower` (#640): the first was an `Array(repeating:count:)` trap on a negative
+    /// `nEquations`, and the second is the same unguarded `upper[i]`/`order[i]` read as
+    /// `gaussMultipleIntegration`.
     public static func gaussSetIntegration(
         nEquations: Int,
         lower: [Double], upper: [Double], order: [Int],
         function: @escaping ([Double]) -> [Double]
     ) -> [Double]? {
+        guard nEquations > 0, upper.count == lower.count, order.count == lower.count
+        else { return nil }
         let nVars = lower.count
         let box = ClosureBox(function)
         let ptr = Unmanaged.passRetained(box).toOpaque()
