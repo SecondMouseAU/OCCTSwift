@@ -95,21 +95,31 @@ struct Issue703EdgeConvexityOrderTests {
         #expect(result.detectPocketsAAG().count == 1)
     }
 
-    /// #720's automated review of this PR (findings 1 and 6) is right that every fixture above is
-    /// planar and axis-aligned, and that the replacement formula (each face's own area centroid,
-    /// a GLOBAL property, standing in for a LOCAL one) is not exact everywhere: #723 tracks a
-    /// measured case (a through-hole rim) where the answer drifts with plate thickness, and that
-    /// residual is deliberately NOT fixed here. But "not exact everywhere" is not "untested on
-    /// curved/holed geometry": a plain round through-hole has an unambiguous ground truth, namely
-    /// exactly two concave edges, where the cylindrical wall meets the top and bottom faces, and
-    /// nothing else, independent of plate thickness, since the wall is one full-period
-    /// cylindrical face with no vertical seam. This fixture (50mm square plate, 10mm-radius hole)
-    /// does not trip #723's drift at any of the four thicknesses tried, including the two
-    /// (20, 40) that bracket where #723's own fixture drifted, so it is a real regression lock
-    /// against the base branch's formula, not a restatement of the known residual.
-    @Test("a round through-hole has exactly two concave edges, at several plate thicknesses",
+    /// CHARACTERISATION TEST. It pins what this formula currently answers, which is NOT the
+    /// correct answer. Do not read the pinned `2` as ground truth, and do not treat a future
+    /// change of it to `0` as a regression: that change is #723 landing.
+    ///
+    /// The correct answer for a round through-hole is **zero** concave edges. A hole rim is
+    /// convex: at the rim the solid occupies the quarter-space below the top face and outside the
+    /// cylinder, so the material angle is 90 degrees, not the 270 that makes an edge concave. The
+    /// concave edge of a hole is the one where a wall meets a FLOOR, and a through-hole has no
+    /// floor. Measured on this exact fixture with OCCT's own classifier,
+    /// `ChFi3d::DefineConnectType`, which the fillet and chamfer builders use: 15 edges, 15
+    /// convex, 0 concave, at every one of the four thicknesses below.
+    ///
+    /// The two vocabularies do agree elsewhere, which is what makes this a defect rather than a
+    /// definitional difference: on a plain box both say 12 convex and 0 concave, on the L-shape
+    /// both say 19 convex and 1 concave, and the square-pocket test below pins 8 concave, which is
+    /// exactly what `ChFi3d` reports for it. They diverge only here, where the centroid formula is
+    /// wrong, because the direction from the rim to the cylindrical wall's area centroid is a
+    /// GLOBAL property that says nothing about the LOCAL dihedral at the rim.
+    ///
+    /// Kept rather than deleted because it still locks out the base branch's order-dependent
+    /// formula, which answered 6 here, and because pinning the current answer makes #723's effect
+    /// visible in the diff instead of silent.
+    @Test("a round through-hole: current formula answers two concave edges, correct answer is zero (#723)",
           arguments: [20.0, 40.0, 60.0, 120.0])
-    func throughHoleHasExactlyTwoConcaveEdges(thickness: Double) throws {
+    func throughHoleConcaveCountIsPinnedPendingIssue723(thickness: Double) throws {
         let plate = try #require(Shape.box(width: 50, height: 50, depth: thickness))
         let drill = try #require(Shape.cylinder(
             at: SIMD3(0, 0, -5), direction: SIMD3(0, 0, 1), radius: 10, height: thickness + 10))
@@ -118,6 +128,7 @@ struct Issue703EdgeConvexityOrderTests {
         let aag = drilled.buildAAG()
         let label: Comment = "thickness=\(thickness)"
         #expect(aag.edges.count == 14, label)
+        // 2 is this formula's answer. ChFi3d::DefineConnectType says 0, and it is right. #723.
         #expect(aag.edges.filter { $0.convexity == .concave }.count == 2, label)
     }
 
