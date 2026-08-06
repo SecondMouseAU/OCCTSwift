@@ -15,6 +15,106 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `Surface.appSurf(curves:)` rejects fewer than 2 curves instead of crashing; two sibling `GeomFill_*` null-handle guards (#644, #710)
+
+Two independent, uncatchable SIGSEGVs in `OCCTGeomFillAppSurf` (`OCCTBridge_Surface.mm`) and its
+two sibling bridge functions, both migration notes since neither can be a `docs/SEMVER.md` recorded
+exception -- that mechanism is for breaks within a major line, and both land in the still-unreleased
+v2.0.0.
+
+**#644**: `Surface.appSurf(curves:)` SIGSEGVed on 0 or 1 curves; 2+ already returned `isDone: true`
+cleanly. Not the unguarded `(double)i / (double)(count - 1)` divisor the issue's own investigation
+had already disproved -- substituting a guarded `0.0` there still crashed. The real mechanism:
+`GeomFill_AppSurf`'s approximation solver (`AppDef_Compute`, reached through
+`AppBlend_AppSurf::InternalPerform`) is never driven with fewer than 2 sections anywhere in the
+kernel; at 1 section the first and last constraint point are the same section evaluated twice, and
+the solver's degree-of-freedom bookkeeping -- built assuming at least one free interior span --
+segfaults. Measured via a forked ground-truth probe against the pinned kernel and, separately, a
+temporarily-repointed `Sources/OCCTTest/main.swift` run as a standalone process (an in-process
+`@Test` cannot assert a SIGSEGV without killing the whole suite): counts of 0 and 1 both SIGSEGV
+(exit 139), 2 and 3 both return cleanly (exit 0), before and after.
+
+`Surface.appSurf(curves:)` was the one function in this family missing the guard, not a new gap:
+`Surface.nSections(curves:params:)` and `Surface.generatedFromSections(curves:tolerance:)` already
+carry a `curves.count >= 2` guard at the same Swift boundary. `appSurf` now matches them exactly:
+`guard curves.count >= 2 else { return nil }`.
+
+**#710**: found building #666's Cluster C census, `OCCTBridge_Surface.mm` has nine sites reaching a
+`Handle(Geom_Curve)` through `*(const Handle(Geom_Curve)*)curveRef` -- a fifth alias form
+`Scripts/check-null-handle-guards.py` cannot see even after #711 taught it the #656 shape. Six wrap
+the result immediately in `GeomAdaptor_Curve`, which raises a catchable `Standard_Failure` on a
+null Handle, already absorbed by each function's own `catch (...)`. Three do not, and each SIGSEGVs
+uncatchably on a null `Handle(Geom_Curve)`:
+
+- `OCCTGeomFillProfilerAddCurve` (`GeomFill_Profiler::AddCurve` -- `CurveProfiler.addCurve(_:)`)
+- `OCCTGeomFillAppSurf`'s own `curveRefs` loop (the same non-virtual `GeomFill_Profiler::AddCurve`,
+  inherited by `GeomFill_SectionGenerator`)
+- `OCCTGeomFillSectionPlacement`'s `sectionCurve` argument (`GeomFill_SectionPlacement` ctor --
+  its `pathCurve` argument is already safe, wrapped in `GeomAdaptor_Curve` first)
+
+Each gets `if (<curve>.IsNull()) return <fallback>;` immediately after binding the alias. The three
+guarded aliases (`curveRef`'s `curve` in `OCCTGeomFillProfilerAddCurve`, `curveRefs[i]`'s `curve` in
+`OCCTGeomFillAppSurf`'s loop, `sectionCurveRef`'s `sectionCurve` in `OCCTGeomFillSectionPlacement`)
+are bound through `->curve` field access rather than the file's `*(const Handle(Geom_Curve)*)ref`
+cast form, so `check-null-handle-guards.py`'s already-recognised "handle alias" pattern sees them:
+removing any one of the three guards is now a CI failure, confirmed by injection: remove, checker
+reports the site, restore, checker is clean again (for all three). `pathCurve` in
+`OCCTGeomFillSectionPlacement` and the six pre-existing `GeomAdaptor_Curve`-wrapped sites keep the
+cast form, unchanged: `pathCurve` needs no guard (`GeomAdaptor_Curve` copes), and `ALLOWED` has no
+per-argument granularity, so exempting `OCCTGeomFillSectionPlacement` by name to cover `pathCurve`
+would also blind the checker to the `sectionCurve` guard this fix depends on. Teaching the checker
+the cast form itself as a general fifth alias shape remains the separate, deferred follow-up work
+described below and in the repro README; this is a narrower, in-place idiom swap at exactly the
+three sites this fix already touches, not that census.
+
+**Reachability, measured rather than assumed.** #710's own filing said `CurveProfiler` "has ...
+no public factory anywhere," concluding its guard was latent. That premise was wrong:
+`CurveProfiler.create()` is public and has been since the type was first wrapped (already exercised
+by `GeomFillProfilerTests`) -- the "inaccessible" compiler error the filing hit was from calling the
+*internal* `init(handle:)` directly, the same internal/public-factory split every geometry wrapper
+in this codebase uses. All three sites are equally reachable in that respect.
+
+The harder question -- can any public factory produce a `Curve3D` wrapping a null
+`Handle(Geom_Curve)` to drive the crashing input through -- was answered by reading every
+`OCCTCurve3D`-constructing site across all five bridge files that produce one (~100 sites): every
+one checks `IsNull()`/`IsDone()` first, constructs from a fresh concrete `Geom_*` object that
+cannot be null, or copies an already-checked input. No public factory produces one, reconfirming
+#478's sweep of the (then) 228 handle-binding sites. All three fixes are therefore defensive
+hardening against a hazard the current tree cannot trigger through the public Swift API today, not
+a live crash reachable right now -- worth doing anyway, since the guard is a one-line match to
+established idiom and the invariant is a fact about today's sites, not a guarantee about the next
+one. See `Scripts/repro/644-710-geomfill-appsurf-null-arity/README.md` for the full measurement,
+including why teaching the checker this alias form is real but separate follow-up work, not part
+of this fix.
+
+**Automated review pass on PR #722.** Three of four findings held up and are folded into the fix
+above (the checker-visibility idiom swap is described there); the fourth was verified and rejected
+with evidence rather than implemented:
+
+- `CurveProfiler.addCurve(_:)`'s null-handle drop had no doc comment, unlike `sectionPlacement`'s
+  sibling entry updated in the same original commit. Added to both the `///` comment
+  (`CurveProfiler.swift`) and `docs/reference/Shape-Completions.md`, describing the only indirect
+  signal available: a dropped curve shifts every later `curveIndex` passed to `poles(curveIndex:)`
+  by one.
+- `Tests/OCCTSurfaceTests/OCCTSurfaceTests.swift`'s pre-existing `approximateSurface` (in
+  `GeomFillAppSurfTests`) asserted inside a nested `if let`, silently skipping on `nil`: the same
+  blind pattern the new regression tests in this fix deliberately avoid two tests below it.
+  Converted to the same `guard ... else { Issue.record(...); return }` idiom. Proven by injection:
+  temporarily made `appSurf(curves:)` always return `nil`, confirmed `approximateSurface` now fails
+  (it previously would have passed silently), restored, confirmed green again.
+- **Rejected**: that `appSurf`'s `curves.count >= 2` guard exists only in Swift and the bridge
+  function itself SIGSEGVs if reached directly with `count < 2`. True, but not a gap this PR
+  introduced: `OCCTGeomFillNSections` and `OCCTGeomFillGenerator`, the two sibling bridge
+  functions backing `Surface.nSections(curves:params:)` and `Surface.generatedFromSections`, have
+  the identical gap and predate this PR untouched. Adding a bridge-side arity guard to only
+  `OCCTGeomFillAppSurf` would make it inconsistent with both siblings, not more correct; the
+  Swift-boundary guard is this family's established, deliberate convention (`OCCTBridge` is an
+  internal target, not a public product; see #486). The review's separate observation that no
+  automated gate covers arity the way `check-null-handle-guards.py` covers null handles is accurate
+  and is left as a genuine, but separate, future census.
+
+||||||| abc0f32
+||||||| d0884ad
 ### `OCCTEdgeGetConvexity` replaces its hand-rolled formula with OCCT's own classifier (#723)
 
 #703 (below) fixed the face1/face2 argument-order dependence by replacing a scalar triple product
