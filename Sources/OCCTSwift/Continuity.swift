@@ -48,9 +48,10 @@
 /// ```
 ///
 /// - Note: Not every API accepts every order. A bare point cannot carry curvature, so
-///   ``Shape/plateSurface(through:orders:degree:pointsOnCurves:iterations:tolerance:)``
-///   fails outright if any point is given ``g2`` (`GeomPlate_PointConstraint` throws above
-///   order 1).
+///   ``Shape/plateSurface(through:orders:degree:pointsOnCurves:iterations:tolerance:)`` and the
+///   point half of ``Shape/plateSurface(pointConstraints:curveConstraints:degree:tolerance:)``
+///   reject ``g2`` up front, before building any constraint (`GeomPlate_PointConstraint` throws
+///   above order 1; see ``SurfaceContinuity/isUnsupportedForPointConstraint``, #437).
 public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     /// Positional continuity (G0). The surface passes through the constraint.
     case g0 = 0
@@ -58,6 +59,33 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     case g1 = 1
     /// Curvature continuity (G2). The surface matches curvature along the constraint.
     case g2 = 2
+}
+
+extension SurfaceContinuity {
+    /// Whether this order can never be honoured by a bare *point* constraint (#437).
+    ///
+    /// `GeomPlate_PointConstraint`'s point constructor throws above order 1
+    /// (`GeomPlate_PointConstraint.cxx`, pinned `V8_0_1`):
+    ///
+    /// ```cpp
+    /// if ((myOrder > 1) || (myOrder < -1)) {
+    ///   throw Standard_Failure("GeomPlate_PointConstraint : the constraint must 0 or -1 with a point");
+    /// }
+    /// ```
+    ///
+    /// A bare point carries no curvature to match, so ``g2`` is genuinely out of domain for a
+    /// point constraint: this is not an OCCT defect. `GeomPlate_CurveConstraint` has no such
+    /// restriction (it accepts order up to 2 directly), so this only ever applies to a *point*.
+    ///
+    /// `Shape.plateSurface(through:orders:...)` and the point half of
+    /// `Shape.plateSurface(pointConstraints:curveConstraints:...)` check this before building any
+    /// `GeomPlate_PointConstraint`, so a `.g2` point order fails immediately with the reason on
+    /// record here rather than reaching `GeomPlate_BuildPlateSurface`, throwing, and being
+    /// swallowed by the bridge's `catch (...)`, which produced the same `nil`, but for a reason
+    /// nothing on the Swift side asserted, and only because OCCT happens to throw there today.
+    var isUnsupportedForPointConstraint: Bool {
+        self == .g2
+    }
 }
 
 extension SurfaceContinuity {
