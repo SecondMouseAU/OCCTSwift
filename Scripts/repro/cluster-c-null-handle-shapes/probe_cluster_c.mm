@@ -44,6 +44,16 @@
 static void probe(const char* what, const std::function<void()>& body) {
     fflush(stdout);
     pid_t pid = fork();
+    if (pid < 0) {
+        // #666 round-2 review (item 3): unchecked fork() failure used to fall straight through to
+        // waitpid(pid, &st, 0) with pid == -1 and no outstanding child - which waits for ANY child
+        // instead of erroring, returns immediately via ECHILD, and leaves `st` at its initialised 0.
+        // The verdict switch below reads that as "returned normally": the opposite of what happened,
+        // and exactly the false-safety-verdict risk the review named (feeding a wrong ALLOWED
+        // justification under fork pressure). Report it as its own verdict instead of guessing.
+        printf("  %-68s %s\n", what, "fork() failed - no verdict");
+        return;
+    }
     if (pid == 0) {
         try { body(); }
         catch (Standard_Failure const& e) { printf("      caught: %s\n", e.GetMessageString()); fflush(stdout); _exit(3); }

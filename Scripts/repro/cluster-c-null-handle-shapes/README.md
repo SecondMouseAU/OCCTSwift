@@ -19,45 +19,33 @@ free - which is worth more than fixing the three known members by hand.
 ## Method
 
 One artifact, not two independent halves like Cluster A/B: there is no dynamic Swift-level
-behaviour to census here (see "Does this belong in the shared `Censuses` target?" below). The
-method is:
+behaviour to census here (see "Does this belong in the shared `Censuses` target?" below).
 
 1. **Baseline.** Run the checker and its `--self-test` as they stand, before any change.
 2. **Design the new shape from the one proven instance (#656), then measure its true scope.**
    "Any local `Handle` initialised from any call" was tried first and matched 672 declarations
    tree-wide - almost all `new T(...)` (never null), a same-family `DownCast` (null-safe by
-   construction, and this bridge's own established `Copy()`+`DownCast` cloning idiom), or a
-   builder's post-success result accessor. None of those is #656's shape, and auditing 672 by hand
-   would have been a bigger, less careful repeat of #618's own "blind to indirection" mistake with
-   a different indirection. Narrowing the producer to `BRep_Tool::` cut it to 63 real declarations
-   of the three tracked types (`Handle(Geom_Curve)`/`Handle(Geom2d_Curve)`/`Handle(Geom_Surface)`,
-   `occ::handle<>` spelling included). At least two members of that family document the null
-   themselves - `BRep_Tool.hxx`'s `Curve` ("May be a Null handle") and `CurveOnSurface` ("Returns
-   a NULL handle if this curve does not exist") - but not all: `Surface(const TopoDS_Face&)`'s own
-   doc comment says only "Returns the geometric surface of the face," no null mentioned anywhere.
-   Tracking `Geom_Surface` through this walk anyway is the right conservative over-approximation -
-   #656's own defect involved `Surface` too, alongside `Curve` and `CurveOnSurface` - but the
-   claim should say what was verified, not what would be tidy: `BRep_Tool::` is tracked as a
-   family because that is the natural boundary this bridge's own accessor usage falls into, not
-   because every member of it documents a null return.
+   construction), or a builder's post-success result accessor. None of those is #656's shape, and
+   auditing 672 by hand would have repeated #618's own "blind to indirection" mistake with a
+   different indirection. Narrowing the producer to `BRep_Tool::` cut it to 63 real declarations of
+   the three tracked types (`Handle(Geom_Curve)`/`Handle(Geom2d_Curve)`/`Handle(Geom_Surface)`,
+   `occ::handle<>` included). At least two members of that family document the null themselves -
+   `BRep_Tool.hxx`'s `Curve` ("May be a Null handle") and `CurveOnSurface` ("Returns a NULL handle
+   if this curve does not exist") - but `Surface(const TopoDS_Face&)` documents no such thing.
+   Tracking it anyway is a conservative over-approximation, not a documented-null claim.
 3. **Reuse, don't reinvent, the existing classification.** Once a local is tracked, it goes through
    the exact same `classify()` - the same DownCast exclusion, the same guarding-helper exclusion -
    that the wrapper-argument walk already uses and this repo's prior censuses (#618, #624/#630)
-   already hardened. The only new machinery is finding the declarations and fencing their scope
-   (see "Two things a wrapper argument never needed" below).
+   already hardened. The only new machinery is finding the declarations and resolving their scope.
 4. **Prove the design against the one instance we know is real**, not just synthetic fixtures:
    reverting `OCCTBRepToolsEvalAndUpdateTol` to its pre-#656 state (guarding `c3d`/`surf` but not
-   `c2d`) and confirming the upgraded detector reports `c2d` unguarded - the actual historical bug,
-   not a stand-in for it.
-5. **Run the upgraded checker over the real tree and triage every new finding**, per #666's own
-   instruction that a new finding is not automatically a defect: an OCCT call that copes (returns
-   normally, or raises a catchable `Standard_Failure` the surrounding `catch (...)` already
-   handles) is noise, not a bug, and gets an `ALLOWED` entry with a measured reason, matching
-   #556/#618's own standard.
-6. **Guard-removal matrix.** Every new conditional the upgrade introduces - not just the MISSED/CLEAN
-   fixture pass rate - is individually neutered and the self-test and real report are re-measured,
-   per this repo's `okf/policies/prove-the-test-fails.md` and Cluster A's own finding that a
-   `--self-test` can pass 6/6 while several of its guards have zero real coverage.
+   `c2d`) and confirming the upgraded detector reports `c2d` unguarded.
+5. **Run the upgraded checker over the real tree and triage every new finding.** A new finding is
+   not automatically a defect: an OCCT call that copes (returns normally, or raises a catchable
+   `Standard_Failure` the surrounding `catch (...)` already handles) is noise, and gets an `ALLOWED`
+   entry with a measured reason, matching #556/#618's own standard.
+6. **Guard-removal matrix.** Every new conditional the upgrade introduces is individually neutered
+   and the self-test and real report are re-measured, per `okf/policies/prove-the-test-fails.md`.
 
 ```bash
 python3 Scripts/check-null-handle-guards.py
@@ -245,16 +233,13 @@ one at a time, against both the self-test suite and the real report over
 | `classify()`'s guarding-helper exclusion removed (shared) | 17/19 | 2 CLEAN cases, one old, one new | **CHANGED**: 2 unguarded - same confirmation, for the other shared exclusion |
 
 **Every guard this upgrade adds is load-bearing on both axes** (a self-test case catches its
-removal, and the real report changes): G1 and G2 are new, and both reproduce a real failure mode
-found while building the detector rather than invented for the fixture afterward. The `extern "C"`
-row is the one exception - it stays at "unchanged" on the real report because there are zero real
-occurrences to change, which is the expected result for hardening against a theoretical case, not
-evidence the guard is decorative (its self-test row still fails without it).
-
-The last two rows are not new logic; they re-run existing guards through the new code path to
-confirm the new path actually depends on them rather than merely being adjacent to them - the same
-distinction Cluster A's own audit drew between guards J/K (real, but only ever exercised by
-`self_test()`'s own bypass) and guards A/D/G/L (real and load-bearing on the actual corpus).
+removal, and the real report changes): G1 and G2 both reproduce a real failure mode found while
+building the detector, not one invented for the fixture afterward. The `extern "C"` row is the one
+exception - it stays "unchanged" on the real report because there are zero real occurrences to
+change, the expected result for hardening against a theoretical case, not evidence of decoration
+(its self-test row still fails without it). The last two rows re-run existing, already-hardened
+`classify()` exclusions through the new code path, confirming the new path actually depends on the
+shared logic rather than a parallel copy of it.
 
 ### Extended: the Shape 3 follow-up (constructor-init connector, `occ::handle<>` local fixture)
 
@@ -271,22 +256,13 @@ Both rows are single-case failures with no real-report change, exactly as the ma
 zero-site measurement predicted before either fixture was written - neither shape was a live
 finding, both were pure fixture-coverage gaps.
 
-**A near-miss while building the removal test for the second row, worth recording since it is
-exactly the failure mode this whole exercise exists to catch.** `LOCAL_HANDLE_DECL` has two
-alternative type-spelling groups (`Handle(Type)` is group 1, `occ::handle<Type>` is group 2), so
-removing the `occ::handle<>` alternative shifts every later group index down by one everywhere the
-match is read. The first removal attempt patched `local_handle_sites()`'s own `m.group(3)`/
-`m.group(4)` reads but missed the scope fence's `later.group(3)` comparison a few lines below -
-which silently degraded into comparing a variable name against a producer name, never matching, so
-the scope fence stopped firing for every redeclaration case. That produced a false "1 unguarded,
-CHANGED" result and an unrelated CLEAN-case failure, which would have been read as "removing
-`occ::handle<>` support somehow also breaks the scope fence" - a plausible-sounding but wrong
-conclusion. Fixing the second reference (`later.group(2)`) reproduced the two-guard-removal
-harness correctly, giving the clean, single-case-failure result the table reports. Not a defect in
-the shipped checker - `local_handle_sites()` itself only ever reads `m.group(3)`/`m.group(4)`
-against the REAL, unmodified `LOCAL_HANDLE_DECL`, where the group numbering is fixed and correct -
-only in the throwaway ad hoc removal script built to test it, which is precisely why the *fixed*
-version of the removal test, not the first draft, is what belongs in this table.
+A near-miss while building the removal test for the second row: the first attempt at a throwaway
+"remove `occ::handle<>` support" script patched `local_handle_sites()`'s own group reads but missed
+a downstream group-index reference in the fence, silently breaking the fence for every case and
+producing a false "1 unguarded" result that would have read as "removing `occ::handle<>` somehow
+also breaks the scope fence." Not a defect in the shipped checker - only in the ad hoc removal
+script - but exactly the class of mistake `okf/policies/prove-the-test-fails.md` warns a removal
+check itself needs checking, so it is recorded here rather than silently fixed and forgotten.
 
 ## Which of #636 / #643 / #644 the upgraded checker catches
 
@@ -320,81 +296,82 @@ actually a null-handle-guard defect in the bridge.
   defect - see "Found, deliberately not taught" above and #710. The upgraded checker does not
   catch #644 as filed, and does not catch #710 either, by the design choice recorded there.
 
-## Corrections and things worth a sentence
+## Round-2 review (same PR): nine findings, addressed
 
-- **#666's own framing held up on measurement**: "teach the checker that shape first... it then
-  enumerates the rest of the family for free" is exactly what happened - one shape, taught once,
-  found the one real remaining instance (already fixed) and one genuinely new one (measured-safe),
-  with no per-function hand-auditing needed beyond triaging what the walk reported.
-- **CLAUDE.md's constructor-init false-positive claim was checked, not just repeated.** `Handle
-  (Geom_Curve) w(wrapper->curve);` uses no `=`, so `aliases()`'s `ASSIGN`-based binding recognition
-  never sees it as a copy - but the wrapper's own `wrapper->curve` occurrence, sitting right there
-  as a constructor argument, textually matches the existing direct-use pattern and gets classified
-  through `enclosing_call` returning `('w', 0)`, which is not a recognised helper, so it falls
-  through to `'use'`. Confirmed by direct trace-through of `classify()`/`enclosing_call()`, not
-  reasoned about in the abstract: the claim is accurate, and remains unaddressed, per this census's
-  scope (CLAUDE.md's list was correct here; nothing to correct, worth recording that verification
-  happened rather than assuming the docstring's word for it).
-- **`ALLOWED`'s `(file, function)` keying is now coarser than before, not just still-coarse.**
-  Before this census, a function name in `ALLOWED` exempted every wrapper-argument finding
-  `unguarded_sites()` could report for it. After this census, the identical entry ALSO exempts
-  anything `local_handle_sites()` finds for that same function name - a function cleared for one
-  reason now silently covers a second, unrelated reason too, with no way to tell from the table
-  which remit an entry was actually measured against. Not changed here: splitting the key (e.g.
-  `(file, function, origin)`) would double the bookkeeping for a table whose real safeguard has
-  always been "lives in a tracked file, survives review," and the same review discipline already
-  required for every entry extends naturally to asking "does this also cover a local handle" when
-  touching one. Worth revisiting if a function ever collects both an `ALLOWED` wrapper-argument
-  entry and a genuinely different local-handle finding that shouldn't share its reasoning - not
-  observed in this tree today.
-- **A new, previously unreported defect (#710) was worth more than confirming the three known
-  ones.** Consistent with every prior cluster census on this workstream: the checker upgrade's own
-  investigation - reading every real call site the new shape's design touched, not just running the
-  fixtures - found something none of #666, #644, or CLAUDE.md's blind-spot list mentioned. The three
-  named members turned out to need no checker change to explain (#636, #644) or were already
-  bridge-side mitigated (#643); the fifth alias form and its three live SIGSEGVs were not on
-  anyone's list going in.
-- **The Shape 3 follow-up's own zero-site measurement held, but the verification harness built to
-  prove it needed its own fix first.** The maintainer's pre-review measurement (0 occurrences of
-  both the constructor-init and `occ::handle<>`-local forms) was independently reproduced before
-  either fixture was written, and both post-fixture guard-removal rows confirm it: single-case
-  self-test failures, zero real-report change. The one wrinkle was in the removal *test* itself, not
-  the shipped detector - see the extended guard-removal matrix's note on the `occ::handle<>` group-
-  index near-miss. Recorded because it is a small, concrete instance of exactly the risk
-  `okf/policies/prove-the-test-fails.md` warns about: a removal check that looks right on first
-  read can still be measuring the wrong thing.
+A second, independent automated review round found nine more issues, none blocking the census
+conclusion above and all now fixed rather than deferred, since each was small and each landed
+before the gate was ever red for it:
+
+- **Headline, verified before fixing anything: the constructor-init connector `Handle(Geom_Curve)
+  curve(wrapper->curve);` really was reachable through `local_handle_sites()` too**, the identical
+  syntax variant CLAUDE.md already names as defeating the WRAPPER-argument walk's alias binding.
+  Confirmed live against the real detector (`Scripts/check-null-handle-guards.py`'s own docstring
+  covers the found-and-fixed distinction between the two mechanisms in detail); fixed in
+  `LOCAL_HANDLE_DECL`'s connector, fixture `T`.
+- **The scope fence was textual, not scope-aware, in two confirmed ways**: a sibling redeclaration
+  from any producer other than `BRep_Tool::` never fenced anything, and a redeclaration inside a
+  nested block ended the OUTER variable's tracking window right there, dropping a real use of the
+  outer variable resuming after the block closes - reproduced as a genuine miss (fixture `W`), not
+  a theoretical one. `var_declarations()`/`binds_to()` replace it with real C++ block-scope binding.
+  See the checker's own docstring (`local_handle_sites()`) for the full mechanism.
+- **A mid-window reassignment of a tracked local was misclassified as an unguarded use** - the
+  local-handle walk's missing counterpart to `unguarded_sites()`'s own `spans` exclusion. Fixed;
+  fixture `X` reproduces the false positive against the pre-fix code.
+- `probe_cluster_c.mm`'s `fork()` return was unchecked; a failure fell through to a misread verdict
+  of "returned normally." Fixed: reported as its own verdict.
+- The docstring wrongly claimed the `extern "C" { ... }` block form was still blind. It never was -
+  a function nested in such a block has no `extern "C"` text on its own signature line, so `FUNC`
+  parses it exactly like any other function. Corrected; fixture `V` locks it in.
+- `self_test()` proved only that the COMBINED `all_sites()` result was right per fixture, which
+  cannot distinguish "the mechanism this fixture is for still works" from "some other mechanism
+  compensated." Fixtures are now tagged by mechanism and checked against it directly too.
+- The `ALLOWED` table's `(file, function)` keying now also exempts `local_handle_sites()` findings,
+  not just `unguarded_sites()`'s - re-audited by measurement (clearing every exemption from the
+  local-handle walk surfaces exactly the one already-known finding, nothing hidden behind the other
+  23 entries today); the keying itself stays as the maintainer's own prior review round already
+  decided, for the reasons recorded in the checker's docstring.
+- The split declare-then-assign shape (`Handle(Geom_Curve) c; ... c = BRep_Tool::Curve(...);`) was
+  named as a blind spot without ever being measured. Measured now: zero occurrences tree-wide.
+- Cleanup-only, no behaviour change: `all_sites()` re-parsed every source file three times
+  (`parse_sources()` now shares one parse across all three walks); the report tuple's dual-purpose
+  `field`/`callee` slot is a named `Site.detail` now; this README was trimmed - it had grown past
+  this project's `docs/` norms and its own cited `556-null-handle-guard-sweep` precedent by
+  carrying its own review log, which is exactly the ephemeral content CLAUDE.md says not to commit.
+
+Guard-removal proof for the two new load-bearing guards (scope binding, reassignment exclusion):
+
+| guard removed | self-test | FAILS | real report |
+|---|---|---|---|
+| (none, baseline, post round-2) | 24/24 | | 0 unguarded (same 24 `ALLOWED` entries) |
+| scope fence reverted to the old textual "next same-name `BRep_Tool::` redeclaration" mechanism (reassignment exclusion kept) | 23/24 | `outer local resumes after a nested same-named redeclaration closes; the outer use is real` | unchanged (0 real occurrences either way) |
+| reassignment exclusion removed (scope binding kept) | 23/24 | `a plain reassignment of the tracked name is a rebind, not a read, even mid-window` | unchanged (0 real occurrences either way) |
+| both removed together (full revert to the pre-round-2 mechanism) | 22/24 | both of the above | unchanged |
+
+Both guards are new hardening against shapes with zero occurrences in this tree today, same as the
+Shape 3 follow-up's own two rows above - the real report does not move, only the self-test does,
+which is the expected signature for a fixture proving a fix rather than a live finding.
 
 ## Does this belong in the shared `Censuses` target too?
 
-**No - the gate script is the whole artifact, and here is why**, since Cluster A/B's own censuses
-both did add a `Censuses` entry and #666 explicitly asks the question.
-
-Cluster A and B's censuses are fundamentally **dynamic**: their subject is what a real call to a
-real public API returns on a real fixture (`box.edgeCount`, `filleted(edges:radius:)`'s duplicate-
-index behaviour), which only exists as a runtime measurement - a static read of the source could
-describe the code's *intent* but not what the built kernel actually does, so a Swift executable
-that builds fixtures and calls the API was the correct primary evidence, with a source-text
-classifier as secondary cross-check.
+**No.** Cluster A/B's censuses are fundamentally **dynamic**: their subject is what a real call to
+a real public API returns on a real fixture, which only exists as a runtime measurement, so a
+Swift executable calling the API was the right primary evidence there.
 
 This census's subject is the opposite: **a source-level shape in `Sources/OCCTBridge/src/*.mm`
 text** - does a local `Handle` declaration reach a use before an `IsNull()` check. That is exactly
-what `Scripts/check-null-handle-guards.py` already exists to answer, and it is not a question a
-Swift program calling the public API could answer at all: the public API never exposes "is this
-specific internal C++ line guarded," only whatever behaviour results once it is or isn't. Where
-this census DID need runtime evidence - is a specific unguarded call actually safe, or does it
-crash - the answer came from a direct, forked, OCCT-linked C++ probe
-(`probe_cluster_c.mm`), the same shape `Scripts/repro/556-null-handle-guard-sweep/repro_556.mm`
-already established as this family's own dynamic-evidence idiom, not from the Swift `Censuses`
-target: there is no Swift-level API to route a null `Handle(Geom_Curve)` into
-`BRepTools::EvalAndUpdateTol` or `GeomFill_SectionGenerator::AddCurve` and observe the crash from
-the Swift side, since the whole point is that the bridge is supposed to refuse it before OCCT ever
-sees it.
+what `Scripts/check-null-handle-guards.py` already exists to answer, and it is not a question the
+public Swift API could answer at all - it never exposes "is this internal C++ line guarded," only
+whatever behaviour results once it is or isn't. Where this census DID need runtime evidence - is a
+specific unguarded call actually safe, or does it crash - the answer came from a direct, forked,
+OCCT-linked C++ probe (`probe_cluster_c.mm`), the same idiom
+`Scripts/repro/556-null-handle-guard-sweep/repro_556.mm` already established for this family: there
+is no Swift-level way to route a null `Handle(Geom_Curve)` into `BRepTools::EvalAndUpdateTol` or
+`GeomFill_SectionGenerator::AddCurve` and observe the crash, since the bridge is supposed to refuse
+it before OCCT ever sees it.
 
-So: `python3 Scripts/check-null-handle-guards.py` (the enumeration, "for free" once the shape is
-taught) plus `probe_cluster_c.mm` (the crash-or-catch measurement for each finding) are the
-complete artifact. Nothing here would gain evidentiary value from a `ClusterC.swift` in the shared
-target, and adding one would just be a second, weaker copy of what the gate script already does
-authoritatively.
+So the checker (the enumeration, "for free" once the shape is taught) plus `probe_cluster_c.mm`
+(the crash-or-catch measurement per finding) are the complete artifact; a `ClusterC.swift` in the
+shared target would just be a second, weaker copy of what the gate script already does.
 
 ## Verify
 
