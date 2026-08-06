@@ -38,15 +38,12 @@ import simd
 struct Issue702SolidDemotion {
 
     /// A box with one face dropped, sewn into an open shell: the smallest input that reaches
-    /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face.
+    /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face. Delegates to
+    /// `sewnBoxMissingOneFace(_:tolerance:)` (`ShapeHealingTestFixtures.swift`), shared with
+    /// `Issue442FixSolidMultiBodyTests` (#717 review finding 5).
     private func openShellMissingOneFace() -> Shape? {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
-        let faces = box.subShapes(ofType: .face)
-        guard faces.count == 6,
-              let compound = Shape.compound(Array(faces.dropFirst())),
-              let openShell = compound.sewn(tolerance: 1e-6)
-        else { return nil }
-        return openShell
+        return sewnBoxMissingOneFace(box)
     }
 
     /// Wraps an open shell as a `TopoDS_Solid` with no fixing at all: `Shape.solidFromShells`

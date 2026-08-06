@@ -160,6 +160,29 @@ already-correct demotion behaviour.
   small-edge/small-face/gap counts computed afterward, rather than just skipping that one shell's
   contribution.
 
+**A second, corrected review pass** retracted five of the first pass's seven points (a docs gap on
+`fixed`/`upgraded`, the per-shell try/catch above, duplicated scan logic, and two writing-style
+nits) as not part of its own verified output, keeping only two (`checkinternaledges` and the
+`totalProblems` double-count, both already listed above) and replacing the rest with two genuinely
+different findings:
+
+- **`isValidSolid`, `isValid` and `healed()`'s doc comments carried no fenced `swift` code block.**
+  `isValid` and `healed()` gained new demotion-hazard prose in this same fix and neither picked up
+  an example; `isValidSolid` had none even before this fix touched its doc, so the review's claim
+  held on all three. All three now carry a runnable snippet that builds the box-missing-one-face
+  fixture and shows `isValid == true` / `isValidSolid == false` on the demoted shell: the exact
+  hazard each paragraph describes, not a decorative unrelated example. Each snippet's literal code
+  was run once as a throwaway test before being written into the doc comment.
+- **`Issue702SolidDemotionTests.openShellMissingOneFace()` duplicated a fixture
+  `Issue442FixSolidMultiBodyTests.swift` already built inline**, in the same test target: both drop
+  one face from a box, compound the remaining five and sew them, the smallest input that reaches
+  `ShapeFix_Solid`'s cannot-close branch. Extracted to
+  `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift`
+  (`sewnBoxMissingOneFace(_:tolerance:)`, parameterized on the box so the two suites keep their own
+  box size/origin), following the precedent `Tests/OCCTStressTests/StressTestFixtures.swift` already
+  set for sharing fixtures within one test target. Both suites re-verified unchanged after the
+  refactor.
+
 ### CI builds the same kernel the branch is written against
 
 `Package.swift` now pins the [`v2.0.0-kernel.1`](https://github.com/SecondMouseAU/OCCTSwift/releases/tag/v2.0.0-kernel.1)
