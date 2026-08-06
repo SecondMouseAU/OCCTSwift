@@ -160,6 +160,16 @@ clamp the raw `SurfaceContinuity` value directly into `GeomPlate_PointConstraint
 `occtGeomAbsFrom*` call anywhere in any of the three, confirmed by the static classifier
 independently.
 
+**Fixed** (the follow-up PR this census named as a prerequisite for): the point half of
+`plateSurface(through:orders:)` and `plateSurface(pointConstraints:curveConstraints:)` now reject
+`.g2` in Swift (`SurfaceContinuity.isUnsupportedForPointConstraint`), before building any
+`GeomPlate_PointConstraint`, instead of relying on OCCT's own throw being caught by the bridge's
+`catch (...)`. The measured table above is unchanged by that fix -- a point `.g2` was already
+`nil` and stays `nil` -- because the fix moves *where* the rejection happens, not *whether* it
+does; re-running `swift run Censuses cluster-d` after the fix reproduces this section byte for
+byte. The clamp-into-`[0,2]` source read above still describes the curve path and the raw-order
+mechanism generally; only the point path gained a guard ahead of it.
+
 ## AnalysisOrder: saturates at C2, confirmed through the TYPED entry point alone
 
 `ContinuityClass` is `CaseIterable` over all seven `GeomAbs_Shape` ordinals (through `.cN`), and
@@ -345,8 +355,9 @@ that:
 - Its "four incompatible encodings" framing predates #490's consolidation to three canonical
   decoders; measured today, the honest count is "three decoders plus two structurally different
   literal pass-throughs," which is a different (and better) shape than #513's own text describes.
-- Its two named instances (#437, #438) remain open on their own, correctly -- this census does not
-  fix either, per #667's own instruction.
+- Its two named instances were left open on their own, correctly, per #667's own instruction that
+  this census does not fix either. **#437 has since been fixed** (see the update in "#437,
+  reproduced directly against the current tree" above); #438 remains open.
 - The one open decision #513 raised and this census did not resolve -- the null/failure sentinel
   policy on the result side (0 is both "genuine C0" and "failed/null," on every raw-cast result
   function measured above) -- is a design decision, not a census finding, and is better tracked
