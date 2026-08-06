@@ -38,6 +38,22 @@
 // note stands regardless - OCC_CATCH_SIGNALS is inert in this build, so a SIGSEGV here is still a
 // real, uncatchable-in-process OS signal either way. Each probe forks, so a crash in the child is
 // reported to the parent rather than ending the run.
+//
+// The fork()-per-probe harness below is the same shape as
+// Scripts/repro/556-null-handle-guard-sweep/repro_556.mm's `probe()` (and the 522/549 probes);
+// this file's copy has since diverged (SIGSEGV is broken out from other signals here, and the
+// bodies below print their own result lines, which 556/522/549's never do). A future fix to one
+// harness will not automatically reach the others - check all call sites of this pattern under
+// Scripts/repro/ before assuming a fix here is complete.
+//
+// Forking a process that has `-framework Foundation -framework AppKit` linked in (required only
+// because the real OCCTBridge_IO.mm this file override-links pulls them in) carries the usual
+// fork-safety caveat: if some Foundation/AppKit-owned background thread held a lock (e.g. the
+// malloc zone lock) at the instant of fork(), the child inherits it permanently held and can hang
+// on its first allocation. Not observed in practice here or in 556's identical setup - this probe
+// never calls an Objective-C API that is documented to spin up a background thread - but it is a
+// real, inherent limitation of override-linking a real bridge file and forking to isolate a crash,
+// not something this one file can fix without abandoning the technique.
 
 #include <GeomTools_Curve2dSet.hxx>
 #include <GeomTools_CurveSet.hxx>
@@ -53,6 +69,7 @@
 #include "OCCTBridge.h"
 #include "OCCTBridge_Internal.h"
 
+#include <cerrno>
 #include <cstdio>
 #include <functional>
 #include <sstream>
@@ -73,13 +90,24 @@ static void probe(const char* what, const std::function<void()>& body) {
     pid_t pid = fork();
     if (pid == 0) {
         try { body(); }
-        catch (Standard_Failure const&) { _exit(3); }
+        catch (Standard_Failure const&) { fflush(stdout); _exit(3); }
         catch (...) { fflush(stdout); _exit(4); }
         fflush(stdout);
         _exit(0);
     }
+    if (pid < 0) {
+        // fork() itself failed (e.g. EAGAIN/ENOMEM under a ulimit) - there is no child to wait
+        // for. Report that plainly rather than falling through to waitpid(-1, ...), which waits
+        // for ANY of this process's children and would leave `st` at its zero-initialized value,
+        // printing a false "returned normally" for a case that was never actually run.
+        printf("  %-58s fork() failed (errno %d) - not measured\n", what, errno);
+        return;
+    }
     int st = 0;
-    waitpid(pid, &st, 0);
+    if (waitpid(pid, &st, 0) < 0) {
+        printf("  %-58s waitpid() failed (errno %d) - not measured\n", what, errno);
+        return;
+    }
     const char* verdict;
     if (WIFSIGNALED(st)) {
         verdict = (WTERMSIG(st) == SIGSEGV) ? "SIGSEGV (uncatchable)" : "SIGNAL (uncatchable)";
