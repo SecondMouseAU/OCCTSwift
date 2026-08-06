@@ -1247,10 +1247,17 @@ public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 Compute the determinant of an N×N matrix using Gaussian elimination.
 
 ```swift
-public static func determinant(matrix: [Double], n: Int) -> Double
+public static func determinant(matrix: [Double], n: Int) -> Double?
 ```
 
 - **Parameters:** `matrix` — row-major N×N matrix; `n` — dimension.
+- **Returns:** The determinant, or `nil` if `n`/`matrix` are invalid.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640, revised by #716's review finding 7). Before this bound, a mismatched positive `n`
+  read past the end of `matrix` inside the bridge. `nil`, not `0.0`: `0.0` is also the determinant
+  of a genuinely singular matrix, so a bare `Double` sentinel could not distinguish an invalid
+  dimension from a real, correctly-computed zero. `n * n` is itself checked for overflow, so
+  `n: .max` is rejected rather than trapping the multiplication.
 - **OCCT:** `math_Gauss::Determinant` (via `OCCTMathGaussDeterminant`).
 
 ---
@@ -1269,6 +1276,12 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M; `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure.
+- **Bounds:** `rows` and `cols` must both be positive, and `matrix.count == rows * cols` /
+  `rhs.count == rows` must hold, or this returns `nil` (#640). A consistency check alone is not
+  enough: `rows: 0, cols: -1` satisfies `matrix.count == rows * cols` for any `matrix`, so the
+  positivity bound is required too. `rows * cols` is itself checked for overflow, so a huge
+  positive `rows`/`cols` is rejected rather than trapping the multiplication (#716's review
+  finding 8).
 - **OCCT:** `math_SVD::Solve` (via `OCCTMathSVDSolve`).
 - **Example:**
   ```swift
@@ -1321,6 +1334,11 @@ public static func eigenvalues(matrix: [Double], n: Int) -> [Double]?
 
 - **Parameters:** `matrix` — row-major N×N symmetric matrix; `n` — dimension.
 - **Returns:** Eigenvalue array of length N, or `nil` on failure.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640). `eigenvalues(matrix: [1.0], n: -1)` satisfies the consistency check alone
+  (`1 == (-1) * (-1)`), which is why positivity is checked separately rather than folded into it.
+  `n * n` is itself checked for overflow, so `n: .max` is rejected rather than trapping the
+  multiplication (#716's review finding 8).
 - **OCCT:** `math_Jacobi::Values` (via `OCCTMathJacobiEigenvalues`).
 - **Example:**
   ```swift
@@ -1525,6 +1543,10 @@ public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) 
 
 - **Parameters:** `matrix` — row-major M×N matrix; `rows` — M (must be ≥ `cols`); `cols` — N; `rhs` — right-hand side (length M).
 - **Returns:** Solution vector of length N, or `nil` on failure or under-determined input.
+- **Bounds:** `rows` and `cols` must both be positive, in addition to `rows >= cols` and the
+  existing `matrix`/`rhs` length checks, or this returns `nil` (#640): `rows >= cols` alone does
+  not exclude `rows: 0, cols: -1`. `rows * cols` is itself checked for overflow (#716's review
+  finding 8).
 - **OCCT:** `math_Householder::Solve` (via `OCCTMathHouseholderSolve`).
 - **Example:**
   ```swift
@@ -1568,9 +1590,14 @@ public static func solve(matrix: [Double], rhs: [Double]) -> [Double]?
 Compute the determinant of a symmetric matrix via Crout factorisation.
 
 ```swift
-public static func determinant(matrix: [Double], n: Int) -> Double
+public static func determinant(matrix: [Double], n: Int) -> Double?
 ```
 
+- **Returns:** The determinant, or `nil` if `n`/`matrix` are invalid.
+- **Bounds:** `n` must be positive and `matrix.count` must equal `n * n` exactly, or this returns
+  `nil` (#640, revised by #716's review finding 7), the same fix and for the same reason as
+  `MathGauss.determinant`: `nil`, not `0.0`, so an invalid dimension cannot be confused with a
+  genuinely singular matrix. `n * n` is itself checked for overflow (#716's review finding 8).
 - **OCCT:** `math_Crout::Determinant` (via `OCCTMathCroutDeterminant`).
 
 ---

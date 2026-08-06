@@ -357,6 +357,82 @@ for the reproducers. Filed upstream as [Open-Cascade-SAS/OCCT#1431](https://gith
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0023-GeomTools_Curve2dSet-SurfaceSet-null-handle-643.patch
+
+**Fixes the upstream OCCT defect behind [#643](https://github.com/SecondMouseAU/OCCTSwift/issues/643)**,
+found while fixing #618 (PR #641) and confirmed as part of Cluster C's null-handle census (#666,
+PR #711): `GeomTools_Curve2dSet::Add`/`GeomTools_SurfaceSet::Add` accept a null handle silently and
+defer the crash to `Write()`, where `GeomTools_CurveSet::Add` (the third copy of the same writer)
+already drops it.
+
+`GeomTools_CurveSet::Add` (`GeomTools_CurveSet.cxx:70`) reads `return (C.IsNull()) ? 0 :
+myMap.Add(C);`. `GeomTools_Curve2dSet::Add` and `GeomTools_SurfaceSet::Add` read `return
+myMap.Add(S);`, with no guard. A null handle is accepted and bound at index 1, so the caller gets no
+signal at `Add()` time at all; the crash only surfaces later, inside `Write()`
+(`Curve2dSet::Write` → `PrintCurve2d` → `C->DynamicType()`, `SurfaceSet::Write` → `PrintSurface` →
+`S->DynamicType()`). The same asymmetry repeats one function down in `Index()`: `CurveSet::Index`
+guards, the two siblings do not; this one does not crash (`NCollection_IndexedMap::FindIndex`
+never dereferences its argument), but it silently returns a bogus non-zero index for a handle that
+was never validly bound, where `CurveSet::Index` correctly answers 0.
+
+**Measured directly against the pinned kernel** (`v2.0.0-kernel.1`, OCCT `V8_0_1` + the ten carried
+patches), fork-per-probe so a crash is reported rather than ending the run:
+
+```
+  -- Add() alone --
+  GeomTools_CurveSet::Add(null)                  Add returned 0    returned normally
+  GeomTools_Curve2dSet::Add(null)                Add returned 1    returned normally
+  GeomTools_SurfaceSet::Add(null)                Add returned 1    returned normally
+
+  -- Add() then Write(), which is what the bridge does --
+  GeomTools_CurveSet::Add(null) + Write          returned normally
+  GeomTools_Curve2dSet::Add(null) + Write        SIGSEGV (uncatchable)
+  GeomTools_SurfaceSet::Add(null) + Write        SIGSEGV (uncatchable)
+```
+
+Byte-identical between our `V8_0_1` pin and upstream `master`, so this is not fixed further up
+either.
+
+**Not reachable through OCCTSwift today.** `OCCTGeomToolsCurve2dSetWrite`/
+`OCCTGeomToolsSurfaceSetWrite` (`Sources/OCCTBridge/src/OCCTBridge_IO.mm`) already guard every array
+element before calling `Add()` (`if (!c || c->curve.IsNull()) return nullptr;`, the #618
+"array element through a cast" shape), and these two bridge functions are the only call sites of
+`GeomTools_Curve2dSet`/`GeomTools_SurfaceSet` in the whole tree. Confirmed by override-linking the
+real `OCCTBridge_IO.mm` against a genuinely null-handle-wrapping `OCCTCurve2D`/`OCCTSurface`: both
+functions return `nullptr` rather than crashing, for a null-only array and for a mixed valid+null
+array. Removing the bridge guard (injected, then restored) reproduces the SIGSEGV through the real
+bridge function, confirming the guard is load-bearing, not incidental. This is a kernel-only fix;
+no bridge change is needed or made.
+
+**Fix:** the same one-line guard `GeomTools_CurveSet::Add`/`Index` already have, applied to both
+methods on both sibling classes:
+
+```cpp
+int GeomTools_Curve2dSet::Add(const occ::handle<Geom2d_Curve>& S)
+{
+  return (S.IsNull()) ? 0 : myMap.Add(S);
+}
+int GeomTools_Curve2dSet::Index(const occ::handle<Geom2d_Curve>& S) const
+{
+  return (S.IsNull()) ? 0 : myMap.FindIndex(S);
+}
+// and the same pair on GeomTools_SurfaceSet
+```
+
+**Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique):
+compiled the two patched `.cxx` files standalone and linked them ahead of the OCCT static archive.
+Before the patch, `Curve2dSet`/`SurfaceSet::Add(null)` both return 1 and `Write()` SIGSEGVs; after,
+all three classes' `Add()` return 0 and `Write()` completes normally. `Index()` before the patch
+returns the same bogus 1 for the two siblings after adding a null handle; after, all three classes'
+`Index()` return 0, matching `CurveSet::Index`. A populated, all-valid-handle set is unaffected in
+either direction.
+
+See [`Scripts/repro/643-geomtools-null-write/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/643-geomtools-null-write)
+for the reproducer. Filed upstream as [Open-Cascade-SAS/OCCT#1434](https://github.com/Open-Cascade-SAS/OCCT/issues/1434)
+(repro) / [OCCT#1435](https://github.com/Open-Cascade-SAS/OCCT/pull/1435) (fix).
+
+**Retire** once the bundled OCCT includes this fix.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so

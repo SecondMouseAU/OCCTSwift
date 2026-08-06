@@ -79,8 +79,12 @@ struct Issue398ContinuityTests {
 
     // MARK: - Orders OCCT will not accept
 
-    // NOTE: both tests below pin a BUG, not desired behaviour. Flip the `== nil` expectations
-    // when #437 lands and .g2 either clamps or is rejected up front.
+    // #437 (fixed): `.g2` on a point constraint is now rejected deliberately, in Swift, before
+    // any `GeomPlate_PointConstraint` is built -- see `SurfaceContinuity.isUnsupportedForPointConstraint`
+    // and `Issue437PlatePointG2Tests`. The `== nil` answer below does NOT change: it was already
+    // `nil` (OCCT throws, the bridge's `catch (...)` swallows it), and stays `nil` now that the
+    // rejection is explicit. What changed is *why* -- these two tests alone cannot show that; see
+    // `Issue437PlatePointG2Tests`'s own class comment for the guard-removal matrix that does.
     @Test("Plate point constraints reject curvature order")
     func plateThroughPointsRejectsCurvatureOrder() {
         // GeomPlate_PointConstraint throws above order 1: a bare point carries no curvature

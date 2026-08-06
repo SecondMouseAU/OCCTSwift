@@ -42,14 +42,28 @@ struct GaussMultipleIntegrationTests {
 @Suite("GaussSetIntegration")
 struct GaussSetIntegrationTests {
     @Test func integrateSet() {
+        // gaussSetIntegration supports exactly one integration variable
+        // (math_GaussSetIntegration's own header: "the case M>1 is not implemented") but any
+        // number of equations -- a "set" of functions of that one variable, each integrated
+        // separately. This case used to pass `lower: [0, 0], upper: [1, 1]` (two variables)
+        // and assert 0.5, which was never the integral of x + y over the unit square (that is
+        // 1.0): the class silently varies only the first component and pins the rest at 0,
+        // so the old assertion was pinning that silent defect (#640 review finding 2), not a
+        // correct answer. Fixed to the contract the class actually supports.
         let result = MathSolver.gaussSetIntegration(
-            nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
-        ) { x in [x[0] + x[1]] }
+            nEquations: 2, lower: [0], upper: [2], order: [10]
+        ) { x in [x[0], x[0] * x[0]] }
         #expect(result != nil)
         if let r = result {
-            #expect(r.count == 1)
-            #expect(abs(r[0] - 0.5) < 1e-6)
+            #expect(r.count == 2)
+            #expect(abs(r[0] - 2.0) < 1e-9)
+            #expect(abs(r[1] - 8.0 / 3.0) < 1e-9)
         }
+
+        // The old, invalid two-variable shape is now rejected rather than silently wrong.
+        #expect(MathSolver.gaussSetIntegration(
+            nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
+        ) { x in [x[0] + x[1]] } == nil)
     }
 }
 
