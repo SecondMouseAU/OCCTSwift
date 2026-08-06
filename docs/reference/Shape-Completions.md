@@ -855,10 +855,12 @@ public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
 ```
 
 - **Parameters:**
-  - `curves` — ordered section curves to interpolate/approximate.
+  - `curves`: ordered section curves to interpolate/approximate. **Requires at least 2** (#644);
+    fewer returns `nil` instead of crashing the underlying `GeomFill_AppSurf` solver, which is
+    never driven with fewer than 2 sections anywhere in the kernel.
   - `degMin`, `degMax` — minimum and maximum allowed BSpline degree.
   - `tol3d`, `tol2d` — 3D and 2D fitting tolerances.
-- **Returns:** An `AppSurfResult` on success, or `nil` if the algorithm fails.
+- **Returns:** An `AppSurfResult` on success, or `nil` if the algorithm fails or fewer than 2 curves are given.
 - **OCCT:** `GeomFill_AppSurf`.
 - **Example:**
   ```swift

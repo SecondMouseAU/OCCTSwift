@@ -2973,6 +2973,9 @@ void OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref, OCCTCurv
     try {
         auto* opaque = (GeomFillProfilerOpaque*)ref;
         const Handle(Geom_Curve)& curve = *(const Handle(Geom_Curve)*)curveRef;
+        // #710: GeomFill_Profiler::AddCurve dereferences Curve unconditionally
+        // (Curve->IsInstance(...) before any null check), an uncatchable SIGSEGV on a null Handle.
+        if (curve.IsNull()) return;
         opaque->profiler.AddCurve(curve);
     } catch (...) {}
 }
@@ -3252,6 +3255,11 @@ OCCTSectionPlacementResult OCCTGeomFillSectionPlacement(OCCTCurve3DRef _Nonnull 
     try {
         const Handle(Geom_Curve)& pathCurve = *(const Handle(Geom_Curve)*)pathCurveRef;
         const Handle(Geom_Curve)& sectionCurve = *(const Handle(Geom_Curve)*)sectionCurveRef;
+        // #710: pathCurve is safe -- GeomAdaptor_Curve below raises a catchable Standard_Failure
+        // on a null Handle. sectionCurve is not: the GeomFill_SectionPlacement ctor dereferences
+        // Section unconditionally (Section->IsInstance(...) before any null check), an uncatchable
+        // SIGSEGV on a null Handle.
+        if (sectionCurve.IsNull()) return result;
 
         Handle(GeomFill_LocationDraft) loc = new GeomFill_LocationDraft(gp_Dir(dirX, dirY, dirZ), draftAngle);
         Handle(GeomAdaptor_Curve) pathAdaptor = new GeomAdaptor_Curve(pathCurve);
@@ -3277,9 +3285,21 @@ OCCTAppSurfResult OCCTGeomFillAppSurf(const OCCTCurve3DRef _Nonnull * _Nonnull c
                                        int degMin, int degMax, double tol3d, double tol2d) {
     OCCTAppSurfResult result = {};
     try {
+        // #644: GeomFill_AppSurf's approximation solver is never driven with fewer than 2
+        // sections anywhere in the kernel; a single section SIGSEGVs setting up the solver's
+        // degree-of-freedom bookkeeping. Surface.appSurf(curves:) guards this at the Swift
+        // boundary (matching nSections/generatedFromSections' own `count >= 2` guard for the same
+        // GeomFill_* family), so `count` is never < 2 through the public API -- this bridge
+        // function itself carries no separate count guard, matching those two siblings' own
+        // bridge-side C functions.
         GeomFill_SectionGenerator secGen;
         for (int i = 0; i < count; i++) {
             const Handle(Geom_Curve)& curve = *(const Handle(Geom_Curve)*)curveRefs[i];
+            // #710: GeomFill_SectionGenerator::AddCurve is the inherited, non-virtual
+            // GeomFill_Profiler::AddCurve, which dereferences curve unconditionally -- an
+            // uncatchable SIGSEGV on a null Handle, same mechanism as
+            // OCCTGeomFillProfilerAddCurve above.
+            if (curve.IsNull()) return result;
             secGen.AddCurve(curve);
         }
         secGen.Perform(1e-6);
