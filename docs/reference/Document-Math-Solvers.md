@@ -747,7 +747,10 @@ public static func solveSystem(
   equal `variables`, or this returns `nil` (#640). None of this was checked before: a negative
   `variables` reached `Array(repeating:count:)` and trapped, and a positive `variables` that did
   not match `startPoint`'s real length reached the bridge's unconditional `startPoint[i]` loop
-  and read out of bounds.
+  and read out of bounds. `values`/`jacobian`'s own returned arrays are checked the same way
+  (#716's review findings 3/4): a `values` closure returning fewer than `equations` elements, or
+  a `jacobian` closure returning fewer than `equations * variables`, now fails the call (`nil`)
+  instead of indexing the short array and trapping.
 - **OCCT:** `math_FunctionSetRoot` via `OCCTMathFunctionSetRoot`.
 - **Example:**
   ```swift
@@ -781,7 +784,9 @@ public static func minimize(
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
 - **Bounds:** `variables` must be positive and equal `startPoint.count`, or this returns `nil`
   (#640): a mismatched positive `variables` used to reach the bridge's unconditional
-  `startPoint[i]` loop and read out of bounds.
+  `startPoint[i]` loop and read out of bounds. `function`'s own returned `gradient` is checked
+  the same way (#716's review finding 5): a closure returning fewer than `variables` gradient
+  components now fails the call (`nil`) instead of trapping.
 - **OCCT:** `math_BFGS` via `OCCTMathBFGS`.
 - **Example:**
   ```swift
@@ -989,7 +994,8 @@ public static func solveSystemNewton(
 - **Parameters:** Same interface as `solveSystem`; internally uses `math_NewtonFunctionSetRoot`.
 - **Returns:** Solution array of length `variables`, or `nil`.
 - **Bounds:** Same as `solveSystem`: `variables` and `equations` must both be positive, and
-  `startPoint.count` must equal `variables`, or this returns `nil` (#640).
+  `startPoint.count` must equal `variables`, or this returns `nil` (#640), including the
+  `values`/`jacobian` closure-length check (#716's review finding 3/4).
 - **OCCT:** `math_NewtonFunctionSetRoot` via `OCCTMathNewtonFuncSetRoot`.
 - **Note:** More aggressive damping than `solveSystem`; prefer when starting close to the solution.
 
@@ -1564,7 +1570,10 @@ public static func minimizeNewton(
   - `function` — closure returning `(f(x), ∇f(x)[n], H(x)[n×n] row-major)`.
 - **Returns:** `(minimizer, f(minimizer))`, or `nil` if not converged.
 - **Bounds:** `n` must be positive and equal `startPoint.count`, or this returns `nil` (#640),
-  for the same reason as `minimize`.
+  for the same reason as `minimize`. `function`'s own returned `gradient` and `hessian` are
+  checked the same way (#716's review finding 5): a closure returning fewer than `n` gradient
+  components, or fewer than `n * n` Hessian components, now fails the call (`nil`) instead of
+  trapping.
 - **OCCT:** `math_NewtonMinimum` via `OCCTMathNewtonMinimum`.
 - **Note:** Quadratic convergence near the minimum; requires a positive-definite Hessian. Falls back gracefully but may not converge if the Hessian is indefinite away from the minimum — in that case, prefer `minimize` (BFGS).
 - **Example:**

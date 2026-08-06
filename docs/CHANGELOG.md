@@ -1472,6 +1472,90 @@ input): the read is undefined behaviour, not a guaranteed crash, and its outcome
 process's own memory layout. This is the same point the out-of-bounds-read finding makes at the
 API level, one level down in the tooling used to demonstrate it.
 
+#### PR #716 review follow-up: three new closure-return-length traps, a mis-measured integral, and a shared validator (#640)
+
+An automated review of #716 (the PR above) found ten distinct defects, the most severe of which
+was the PR reintroducing its own bug class in three new places: guarding a caller's **argument**
+arrays against a dimension mismatch, then indexing a **closure's return value** against that same
+dimension with no check at all. A closure returning a short array trapped the process exactly the
+way #640 exists to prevent, just relocated from the caller's arguments to the caller's closure.
+Fixed at every site that shape occurs: `solveSystem`/`solveSystemNewton`'s `values`/`jacobian`
+callbacks, `minimize`/`minimizeNewton`'s `gradient`/`hessian`, and `gaussSetIntegration`'s
+`values`. `minimizeFRPR` shares the identical `OCCTMathMultiVarGradCallback` shape but was not
+itself named by the review; fixed and tested alongside the others for the same reason. Every
+guard was proved in a standalone process (the #705 technique, temporarily pointing
+`Sources/OCCTTest/main.swift` at a case-selecting probe): removing any one of them reproduces
+`Fatal error: Index out of range`, a process trap, not a test failure; restoring it returns `nil`.
+
+**The review's own finding 2 uncovered a real defect, not a wrong literal.** It read a new
+regression test, `gaussIntegrationLengthBounds()`, as asserting the double integral of `x + y`
+over the unit square is `0.5`, and pointed out the true value is `1.0` by symmetry. Both
+observations were correct, and neither was the actual story: measured directly against the pinned
+kernel, `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+integrating `x + y` genuinely returns `0.5` -- but not because it computes any correct 2-variable
+integral. `math_GaussSetIntegration`'s own header documents "the case M>1 is not implemented": a
+probe built directly against the class confirms its constructor only ever varies the *first*
+integration variable (`Lower.Value(Lower.Lower())`), leaving every other component of its working
+vector pinned at its initial value, `0`. So `0.5` is `∫x dx` over `[0, 1]` with `y` silently held
+at `0` the entire time, never `∫∫(x + y) dx dy`. OCCT's own runtime check for this
+(`Standard_NotImplemented_Raise_if(NbVar != 1, ...)`) does not survive this project's
+`No_Exception` production kernel build (the same class of gap #487/#555/#603 measured elsewhere),
+so instead of failing loudly it silently computed the wrong thing. Changing the test's literal
+from `0.5` to `1.0` would have enshrined a *different* wrong answer -- `gaussSetIntegration` can
+never legitimately produce `1.0` for that call, because it never touches the second variable at
+all. The actual fix is a new guard: `gaussSetIntegration` now requires `lower.count == 1`,
+returning `nil` for any call with more than one variable, matching what the class actually
+supports (one variable, any number of equations -- a true "set of functions", each integrated
+over the same one-dimensional domain). `gaussMultipleIntegration` is unaffected: its own class,
+`math_GaussMultipleIntegration`, integrates recursively over every dimension and was confirmed
+correct at 2 variables independently. The pre-existing `Tests/OCCTIntegrationTests/
+OCCTIntegrationTests.swift`'s `GaussSetIntegrationTests.integrateSet()` predated #640 and carried
+the identical two-variable call and the identical `0.5` assertion; fixed to a valid one-variable,
+two-equation case (`[x, x^2]` over `[0, 2]`, giving `[2.0, 8/3]`) plus an explicit assertion that
+the old two-variable shape now returns `nil`.
+
+The remaining seven findings were all confirmed and fixed:
+
+- **Finding 1**: both `findAllRoots` overloads called `Sampling.requested(samples)` without
+  `atLeast: 1`, so the default floor of `2` applied even though this file's own doc comments and
+  the reference docs already documented the valid range as `1...10,000,000`. `samples: 1` was
+  silently rejected -- the closure was never called -- before returning `[]`. Fixed by passing
+  `atLeast: 1` at both call sites.
+- **Finding 7**: `MathGauss.determinant`/`MathCrout.determinant` returned a bare `Double`, so the
+  `0.0` sentinel for an invalid dimension was indistinguishable from `0.0`, the correct
+  determinant of a genuinely singular matrix. Both now return `Double?`; `nil` means invalid
+  input, `.some(0.0)` means a real, correctly-computed zero.
+- **Finding 8**: every positivity guard in this family computed `n * n` or `rows * cols` with the
+  plain `*` operator, which traps on overflow for a sufficiently large positive dimension (e.g.
+  `n: .max`) -- the exact process-trap #640 exists to eliminate, reintroduced by the guard meant
+  to prevent it. Fixed by routing every such guard through the new `MathDimension` type below,
+  which uses `multipliedReportingOverflow(by:)` (the same idiom `Sampling.gridTotal` already
+  carries) and rejects rather than traps.
+- **Finding 9**: the "dimension positive, and every array it sizes matches exactly" check (or,
+  for `rows`/`cols`, "the flat array is exactly their product") was hand-duplicated at 18 call
+  sites with no shared validator, unlike the `Sampling` family this same PR already reuses for
+  `findAllRoots`. `Sources/OCCTSwift/MathDimension.swift` factors it into four functions --
+  `valid`, `consistent`, `validSquare`, `validRectangle` -- and all 18 sites now share it,
+  fixing finding 8's overflow gap everywhere at once rather than site by site.
+- **Finding 10**: the 18 changed doc comments carried no fenced `swift` snippet, which CLAUDE.md
+  makes mandatory for public API changes since context7 only harvests fenced snippets. All 18
+  gained one, modeled on `Sampling.maximumSampleCount`'s doc.
+- Also removed: `docs/SEMVER.md`'s recorded-exception entry for this issue. The maintainer ruled
+  that mechanism is for breaks shipping *within* a major line; this work ships in v2.0.0, a
+  major, where breaking changes are permitted outright, so no exception entry is needed --
+  this note is the migration record instead. The counters at the top of `docs/SEMVER.md` are
+  restored to their pre-#640 values (thirteen recorded exceptions), and the pre-existing counter
+  drift #640's own PR fixed (a stale hardcoded number in #639's entry, once out of sync with the
+  count at the top of the file) is kept: that entry now reads the count in prose rather than
+  restating it as a number that can drift again.
+
+Full `swift test`: 5384 tests (5373 baseline + 11 new -- 7 in
+`Issue640MathDimensionBoundsTests.swift`, 4 in a new `MathDimensionTests` suite exercising
+`MathDimension` directly, the same way `Issue558SamplingCountBoundsTests.swift` exercises
+`Sampling.requested`/`capacity`/`gridTotal` directly). `swift run Censuses cluster-a`: 45 rows.
+`cluster-b`: 16 rows. All four gate scripts and their three `--self-tests` pass from the repo
+root.
+
 #### A fillet radius law goes to the edge's own slot, in the edge's own contour (#612)
 
 `filletEvolving`, `filleted(edges:startRadius:endRadius:)` and `filletedVariable` all wrote their

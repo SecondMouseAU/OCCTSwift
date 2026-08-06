@@ -576,7 +576,8 @@ public static func leastSquares(
   `rhs.count == rows` must hold, or this returns `nil` (#640). Before this bound there was no
   consistency check at all: a positive `rows`/`cols` that did not match `matrix`/`rhs`'s real
   length reached the bridge's unconditional read loop and read out of bounds, rather than
-  failing.
+  failing. `rows * cols` is itself checked for overflow, so a huge positive `rows`/`cols` is
+  rejected rather than trapping the multiplication (#716's review finding 8).
 - **OCCT:** `OCCTMathGaussLeastSquare` → `math_GaussLeastSquare`.
 
 ---
@@ -620,7 +621,7 @@ public static func uzawa(
 - **Bounds:** `nConstraints` and `nVars` must both be positive, and `constraintMatrix`/
   `constraintRHS`/`startPoint` must each match them exactly, or this returns `nil` (#640). None
   of this was checked before, so the bridge's unconditional read loops read out of bounds on any
-  mismatch.
+  mismatch. `nConstraints * nVars` is itself checked for overflow (#716's review finding 8).
 - **OCCT:** `OCCTMathUzawa` → `math_Uzawa`.
 
 ---
@@ -701,7 +702,8 @@ public static func kronrodIntegrateAdaptive(
 
 ### `MathSolver.gaussMultipleIntegration(lower:upper:order:function:)`
 
-Multi-dimensional Gauss-Legendre integration.
+Multi-dimensional Gauss-Legendre integration. Genuinely supports any number of variables:
+`math_GaussMultipleIntegration` integrates recursively over every dimension.
 
 ```swift
 public static func gaussMultipleIntegration(
@@ -717,12 +719,20 @@ public static func gaussMultipleIntegration(
   `upper[i]`/`order[i]` up to it unconditionally, so a shorter `upper` or `order` used to read
   out of bounds.
 - **OCCT:** `OCCTMathGaussMultipleIntegration` → `math_GaussMultipleIntegration`.
+- **Example:**
+  ```swift
+  let integral = MathSolver.gaussMultipleIntegration(
+      lower: [0, 0], upper: [1, 1], order: [10, 10]
+  ) { x in x[0] * x[0] + x[1] * x[1] }   // 2/3
+  ```
 
 ---
 
 ### `MathSolver.gaussSetIntegration(nEquations:lower:upper:order:function:)`
 
-Gauss-Legendre integration for a system of functions.
+Gauss-Legendre integration for a **set of functions of one variable**, each integrated
+separately. Unlike `gaussMultipleIntegration`, this does **not** support more than one
+integration variable: `lower` must have exactly one element.
 
 ```swift
 public static func gaussSetIntegration(
@@ -737,8 +747,28 @@ public static func gaussSetIntegration(
 - **Bounds:** `nEquations` must be positive, and `upper`/`order` must have the same length as
   `lower`, or this returns `nil` (#640): the first was an `Array(repeating:count:)` trap on a
   negative `nEquations`, and the second is the same unguarded read as
+  `gaussMultipleIntegration`. `function`'s own returned array is checked the same way as
+  `solveSystem`'s (#716's review finding 6): a closure returning fewer than `nEquations`
+  elements now fails the call (`nil`) instead of trapping.
+- **`lower` must also have exactly one element (#716's review finding 2).**
+  `math_GaussSetIntegration`'s own header documents "the case M>1 is not implemented": its
+  constructor only ever varies the *first* integration variable, leaving every other component
+  of its working vector unset. OCCT's own runtime check for this does not survive this
+  project's `No_Exception` production kernel build, so a call with more than one variable used
+  to silently succeed at the wrong answer instead of failing: measured directly,
+  `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+  integrating `x + y` returned `0.5` (`∫x dx` over `[0, 1]` with `y` silently pinned at `0`), not
+  the `1.0` a genuine double integral of `x + y` over the unit square would be. This now returns
+  `nil` for `lower.count != 1` instead. For genuinely multi-variable integration, use
   `gaussMultipleIntegration`.
 - **OCCT:** `OCCTMathGaussSetIntegration` → `math_GaussSetIntegration`.
+- **Example:**
+  ```swift
+  // A "set" of two functions of the SAME one variable: integral of x and of x^2 over [0, 2].
+  let integrals = MathSolver.gaussSetIntegration(
+      nEquations: 2, lower: [0], upper: [2], order: [10]
+  ) { x in [x[0], x[0] * x[0]] }   // [2.0, 8.0/3.0]
+  ```
 
 ---
 

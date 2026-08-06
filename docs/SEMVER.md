@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **fourteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **thirteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other eleven change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other ten change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -35,9 +35,8 @@ The other eleven change behaviour **without breaking the build**, which is the s
 - [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
 - [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
 - [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
-- [#640](#recorded-exception-unreleased-the-math-dimension-family-rejects-invalid-input-instead-of-trapping-or-reading-out-of-bounds-640) makes twenty math-solver entry points return `nil`/`0.0`/`[]` on a non-positive or mismatched dimension; they used to trap the process or read out of bounds.
 
-A fifteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead. `#640`'s math-dimension-family fix is not recorded here either, for a different reason: it ships in v2.0.0, a major, where breaking changes are permitted outright, so the recorded-exception mechanism (for breaks shipping *within* a major line) does not apply. See [`CHANGELOG.md`](CHANGELOG.md#the-math-dimension-family-traps-on-a-consistent-but-negative-dimension-and-one-site-reads-out-of-bounds-640) for the migration.
 
 ## Rules
 
@@ -402,52 +401,6 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
-#### Recorded exception: Unreleased, the math dimension family rejects invalid input instead of trapping or reading out of bounds (#640)
-
-**Twenty behaviour changes across two files, none a compile error, and mostly not really breaks at
-all: the old answer for the inputs below was either an uncatchable process trap or an
-out-of-bounds memory read, never a defined contract.** #634 (issue #622) named this family,
-problem-dimension arguments (`n`, `rows`, `cols`, `variables`, `nConstraints`, `nVars`,
-`nEquations`) alongside the flat `[Double]`/`[Int]` arrays they size or index into, and
-deliberately left it unfixed, since the right bound is a consistency check against the caller's
-own arrays, not a `Sampling` ceiling. #640 supplies that check, plus the positivity bound #634
-itself found missing (a consistency check alone is satisfied by, for example, `rows: 0, cols:
--1`), plus five sites #634's own census could not see (`MathGauss.determinant`,
-`MathCrout.determinant`, `.eigenvalues(diagonal:subdiagonal:)`, `.eigenvaluesAndVectors`,
-`.gaussMultipleIntegration`) because none of them constructs a `[Double]` sized by the vulnerable
-dimension.
-
-| Break | What a caller does |
-|---|---|
-| `MathGauss.determinant`, `MathSVD.solve`, `MathJacobi.eigenvalues`, `MathHouseholder.solve`, `MathCrout.determinant` return `nil`/`0.0` for a non-positive dimension, or a dimension inconsistent with the supplied array's length | Nothing on a correctly-dimensioned call. A caller passing, for example, `rows: 0, cols: -1` (satisfies the pre-existing consistency check exactly) used to trap the process; it now returns `nil` |
-| `MathSolver.solveSystem`, `.minimize`, `.minimizePowell`, `.particleSwarm`, `.globalMinimize`, `.solveSystemNewton`, `.minimizeNewton`, `.leastSquares`, `.uzawa` return `nil` for a non-positive dimension or an array whose length does not match it | Nothing on a correctly-dimensioned call. A positive-but-mismatched dimension used to either trap (negative) or silently succeed with a plausible-looking result built from adjacent heap memory (positive but wrong): measured directly, `solveSystem(variables: 50, startPoint: [1.0])` returned a fully-populated 50-element "solution". Pass an array whose length matches the dimension argument |
-| `MathSolver.eigenvalues(diagonal:subdiagonal:)` / `.eigenvaluesAndVectors` return `nil` when `subdiagonal.count != diagonal.count` | The `///` doc already said "must be same length"; it is now enforced. A mismatched call used to succeed with heap garbage (measured: eigenvalues up to `1.17e+131` from a `[1.0]` subdiagonal against a 50-element diagonal) |
-| `MathSolver.gaussMultipleIntegration` / `.gaussSetIntegration` return `nil` when `upper`/`order` do not match `lower`'s length | Same as above: pass matching lengths |
-| `MathSolver.findAllRoots(in:samples:function:)` (both overloads) return `[]` for `samples` outside `1...10,000,000` (via `Sampling.requested`), rather than trapping on `Int32(samples)` past `Int32.max` | Nothing at the existing defaults (20, 100). A caller passing an absurd `samples` gets `[]` instead of crashing the process |
-
-The exception was taken because:
-
-- **The old answer was either a crash or undefined behaviour, never a defined contract**, the same
-  standard #705 was taken under. A trap takes the whole process down, so there was no prior answer
-  to disagree with, and an out-of-bounds read is memory-unsafe regardless of whether a given
-  execution happens to return something plausible-looking: two different processes given the
-  identical inputs demonstrated both a `Bus error` crash and a silent, wrong success, which is what
-  "undefined" means in practice, not a value any correct caller could have relied on.
-- **A correctly-dimensioned call is unaffected**, pinned by a positive control in
-  `Tests/OCCTMathTests/Issue640MathDimensionBoundsTests.swift` for every one of the twenty entry
-  points.
-- **There is no spelling in which both survive.** As with #541/#568/#613, these are *value*
-  contracts (a dimension argument agreeing with an array's length), not types or names, so Swift
-  cannot overload on them.
-- **`findAllRoots(samples:)` moved to `Sampling.requested` rather than a positivity/consistency
-  guard**, because `samples` is a subdivision count (#558's family), not a problem dimension: the
-  distinction #634 itself drew, and #640 confirms by measurement rather than assumption for the
-  two lookalikes it also checked (`kronrodIntegrateAdaptive`, `integGauss`'s
-  `points`/`gaussPoints`, confirmed to select a quadrature rule order inside OCCT with no array
-  indexed by them, correctly excluded).
-- Named in [`CHANGELOG.md`](CHANGELOG.md#the-math-dimension-family-traps-on-a-consistent-but-negative-dimension-and-one-site-reads-out-of-bounds-640)
-  with the measurement, and to be named in the release notes.
-
 #### #639: additive fillet decline reporting, not an exception
 
 **Recorded here per #664's own rule of writing a public-API change down in this file before the
@@ -458,7 +411,7 @@ sibling (`filletedWithReport(edges:radius:)`, `filletedWithReport(edges:startRad
 fillet, alongside the shape, for a caller who wants to know (#639).
 
 This does **not** move the recorded-exceptions count above (checked against the current count of
-fourteen at the time of this edit, re-verified rather than assumed, since it has drifted before):
+thirteen at the time of this edit, re-verified rather than assumed, since it has drifted before):
 no existing method's signature or behaviour changed. `filleted(edges:radius:)` and its two
 siblings still return exactly what they always did, for exactly the same inputs; a caller who
 never calls the three new methods sees no difference at all. This is the **MINOR**, additive Swift

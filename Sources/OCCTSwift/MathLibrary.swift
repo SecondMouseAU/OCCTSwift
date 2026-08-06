@@ -67,13 +67,25 @@ public enum MathGauss {
 
     /// Compute determinant using Gauss elimination.
     ///
-    /// `n` must be positive and match `matrix`'s length exactly (`matrix.count == n * n`).
-    /// Neither was checked before #640: the bridge loops `matrixData[i*n+j]` for
-    /// `i, j in 0..<n` unconditionally, so a positive `n` larger than `matrix` reads out of
-    /// bounds rather than failing, and a negative `n` was a `Standard_Failure` the bridge's
-    /// own `catch (...)` already absorbed into the same `0.0` this guard now returns.
-    public static func determinant(matrix: [Double], n: Int) -> Double {
-        guard n > 0, matrix.count == n * n else { return 0.0 }
+    /// Returns `nil`, not `0.0`, when `n` is not positive or does not match `matrix`'s
+    /// length exactly (`matrix.count == n * n`) -- review finding 7 on #640: `0.0` is also
+    /// the determinant of a genuinely singular matrix, so a bare `Double` sentinel could not
+    /// tell "you gave me an invalid dimension" apart from "your matrix is singular", and it
+    /// silently covered the positive-but-mismatched `n` case that used to crash loudly
+    /// instead of returning anything at all. Before #640 the bridge looped
+    /// `matrixData[i*n+j]` for `i, j in 0..<n` unconditionally, so a positive `n` larger than
+    /// `matrix` read out of bounds rather than failing, and a negative `n` was a
+    /// `Standard_Failure` the bridge's own `catch (...)` already absorbed into a crash-free
+    /// (but, until now, indistinguishable) `0.0`. `n * n` itself is checked for overflow
+    /// (review finding 8), so a large positive `n` is rejected rather than trapping the
+    /// multiplication before this guard can run.
+    ///
+    /// ```swift
+    /// MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2)   // 5.0
+    /// MathGauss.determinant(matrix: [1.0], n: -1)                 // nil, not 0.0
+    /// ```
+    public static func determinant(matrix: [Double], n: Int) -> Double? {
+        guard MathDimension.validSquare(n, count: matrix.count) else { return nil }
         return matrix.withUnsafeBufferPointer { buf in
             OCCTMathGaussDeterminant(buf.baseAddress!, Int32(n))
         }
@@ -94,9 +106,17 @@ public enum MathSVD {
     /// `rows` and `cols` must both be positive. A consistency check alone is not enough
     /// (#640): `rows: 0, cols: -1` satisfies `matrix.count == rows * cols` exactly (`0 == 0`)
     /// and `rhs.count == rows` exactly (`0 == 0`), so without a positivity bound this still
-    /// reaches `Array(repeating:count:)` with a negative count and traps.
+    /// reaches `Array(repeating:count:)` with a negative count and traps. `rows * cols` is
+    /// itself checked for overflow (review finding 8), so a huge positive `rows`/`cols` is
+    /// rejected rather than trapping the multiplication before this guard can run.
+    ///
+    /// ```swift
+    /// MathSVD.solve(matrix: [1, 0, 0, 1, 1, 1], rows: 3, cols: 2, rhs: [1, 2, 3])   // != nil
+    /// MathSVD.solve(matrix: [], rows: 0, cols: -1, rhs: [])                        // nil
+    /// ```
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
-        guard rows > 0, cols > 0, matrix.count == rows * cols, rhs.count == rows else { return nil }
+        guard MathDimension.validRectangle(rows: rows, cols: cols, count: matrix.count),
+              rhs.count == rows else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             rhs.withUnsafeBufferPointer { bBuf in
@@ -139,9 +159,16 @@ public enum MathJacobi {
     ///
     /// `n` must be positive. `eigenvalues(matrix: [1.0], n: -1)` satisfies
     /// `matrix.count == n * n` exactly (`1 == (-1) * (-1)`) and would otherwise reach
-    /// `Array(repeating:count:)` with a negative count and trap (#640).
+    /// `Array(repeating:count:)` with a negative count and trap (#640). `n * n` is itself
+    /// checked for overflow (review finding 8), so `n: .max` is rejected rather than
+    /// trapping the multiplication before this guard can run.
+    ///
+    /// ```swift
+    /// MathJacobi.eigenvalues(matrix: [4.0, 1.0, 1.0, 4.0], n: 2)   // != nil
+    /// MathJacobi.eigenvalues(matrix: [1.0], n: -1)                 // nil, not a trap
+    /// ```
     public static func eigenvalues(matrix: [Double], n: Int) -> [Double]? {
-        guard n > 0, matrix.count == n * n else { return nil }
+        guard MathDimension.validSquare(n, count: matrix.count) else { return nil }
         var eigenvalues = [Double](repeating: 0, count: n)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
             eigenvalues.withUnsafeMutableBufferPointer { eBuf in
@@ -158,9 +185,16 @@ public enum MathHouseholder {
     /// Solve overdetermined Ax=b using Householder QR (M >= N).
     ///
     /// `rows` and `cols` must both be positive, the same positivity gap as `MathSVD.solve`
-    /// (#640): `rows >= cols` alone does not exclude `rows: 0, cols: -1`.
+    /// (#640): `rows >= cols` alone does not exclude `rows: 0, cols: -1`. `rows * cols` is
+    /// itself checked for overflow (review finding 8).
+    ///
+    /// ```swift
+    /// MathHouseholder.solve(matrix: [1, 0, 0, 1, 1, 1], rows: 3, cols: 2, rhs: [1, 2, 3])   // != nil
+    /// MathHouseholder.solve(matrix: [], rows: 0, cols: -1, rhs: [])                        // nil
+    /// ```
     public static func solve(matrix: [Double], rows: Int, cols: Int, rhs: [Double]) -> [Double]? {
-        guard rows > 0, cols > 0, matrix.count == rows * cols, rhs.count == rows, rows >= cols
+        guard MathDimension.validRectangle(rows: rows, cols: cols, count: matrix.count),
+              rhs.count == rows, rows >= cols
         else { return nil }
         var solution = [Double](repeating: 0, count: cols)
         let ok = matrix.withUnsafeBufferPointer { mBuf in
@@ -195,11 +229,18 @@ public enum MathCrout {
 
     /// Determinant of symmetric matrix via Crout.
     ///
-    /// Same fix as `MathGauss.determinant` (#640): `n` must be positive and match `matrix`'s
-    /// length exactly, or the bridge's unconditional `matrixData[i*n+j]` loop reads out of
-    /// bounds.
-    public static func determinant(matrix: [Double], n: Int) -> Double {
-        guard n > 0, matrix.count == n * n else { return 0.0 }
+    /// Same fix as `MathGauss.determinant` (#640, review finding 7): returns `nil`, not
+    /// `0.0`, when `n` is not positive or does not match `matrix`'s length exactly, since a
+    /// bare `Double` sentinel cannot tell an invalid dimension apart from a genuinely
+    /// singular matrix. Before #640 the bridge's unconditional `matrixData[i*n+j]` loop read
+    /// out of bounds on a mismatch. `n * n` is checked for overflow (review finding 8).
+    ///
+    /// ```swift
+    /// MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2)   // 8.0
+    /// MathCrout.determinant(matrix: [1.0], n: -1)                 // nil, not 0.0
+    /// ```
+    public static func determinant(matrix: [Double], n: Int) -> Double? {
+        guard MathDimension.validSquare(n, count: matrix.count) else { return nil }
         return matrix.withUnsafeBufferPointer { buf in
             OCCTMathCroutDeterminant(buf.baseAddress!, Int32(n))
         }

@@ -91,22 +91,51 @@ struct Issue640MathDimensionBounds {
 
     @Test("MathGauss.determinant rejects a non-positive n and a matrix shorter than n*n")
     func gaussDeterminantBounds() {
-        #expect(MathGauss.determinant(matrix: [1.0], n: -1) == 0.0)
-        #expect(MathGauss.determinant(matrix: [1.0], n: 0) == 0.0)
+        #expect(MathGauss.determinant(matrix: [1.0], n: -1) == nil)
+        #expect(MathGauss.determinant(matrix: [1.0], n: 0) == nil)
         // n positive but matrix far shorter: this used to SIGBUS (bridge reads
         // matrixData[i*n+j] for i,j in 0..<n unconditionally).
-        #expect(MathGauss.determinant(matrix: [1.0], n: 1000) == 0.0)
+        #expect(MathGauss.determinant(matrix: [1.0], n: 1000) == nil)
+        // n positive: this used to overflow n*n before the guard could reject it (review
+        // finding 8). Rejected, not trapped.
+        #expect(MathGauss.determinant(matrix: [1.0], n: .max) == nil)
         // Control: a real 2x2 still computes correctly.
-        let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2)
-        #expect(abs(det - 5.0) < 1e-9)
+        if let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2) {
+            #expect(abs(det - 5.0) < 1e-9)
+        } else {
+            Issue.record("expected a determinant")
+        }
+    }
+
+    @Test("MathGauss.determinant distinguishes an invalid dimension from a genuinely singular matrix")
+    func gaussDeterminantSentinelDistinguishability() {
+        // Review finding 7: before #640's fix, both an invalid dimension and a genuinely
+        // singular matrix returned the same bare `0.0` -- indistinguishable. Returning
+        // `Double?` makes them two different answers: `nil` (invalid input) and `.some(0.0)`
+        // (a real, correctly-computed zero).
+        #expect(MathGauss.determinant(matrix: [1.0], n: -1) == nil)
+        // [[1, 2], [2, 4]]: row 2 is 2x row 1, singular, determinant genuinely 0.
+        #expect(MathGauss.determinant(matrix: [1.0, 2.0, 2.0, 4.0], n: 2) == .some(0.0))
     }
 
     @Test("MathCrout.determinant rejects a non-positive n and a matrix shorter than n*n")
     func croutDeterminantBounds() {
-        #expect(MathCrout.determinant(matrix: [1.0], n: -1) == 0.0)
-        #expect(MathCrout.determinant(matrix: [1.0], n: 1000) == 0.0)
-        let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2)
-        #expect(abs(det - 8.0) < 1e-9)
+        #expect(MathCrout.determinant(matrix: [1.0], n: -1) == nil)
+        #expect(MathCrout.determinant(matrix: [1.0], n: 1000) == nil)
+        #expect(MathCrout.determinant(matrix: [1.0], n: .max) == nil)
+        if let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2) {
+            #expect(abs(det - 8.0) < 1e-9)
+        } else {
+            Issue.record("expected a determinant")
+        }
+    }
+
+    @Test("MathCrout.determinant distinguishes an invalid dimension from a genuinely singular matrix")
+    func croutDeterminantSentinelDistinguishability() {
+        #expect(MathCrout.determinant(matrix: [1.0], n: -1) == nil)
+        // [[1, 2], [2, 4]]: singular, determinant genuinely 0. Crout targets symmetric
+        // systems; this one is both symmetric and singular.
+        #expect(MathCrout.determinant(matrix: [1.0, 2.0, 2.0, 4.0], n: 2) == .some(0.0))
     }
 
     @Test("MathSVD.solve rejects a consistent-but-non-positive dimension")
@@ -115,6 +144,9 @@ struct Issue640MathDimensionBounds {
         // enough (#640's headline case, restated for this sibling).
         #expect(MathSVD.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil)
         #expect(MathSVD.solve(matrix: [], rows: -1, cols: 0, rhs: []) == nil)
+        // rows positive: this used to overflow rows*cols before the guard could reject it
+        // (review finding 8). Rejected, not trapped.
+        #expect(MathSVD.solve(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
         let A: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
         #expect(MathSVD.solve(matrix: A, rows: 3, cols: 2, rhs: b) != nil)
@@ -125,6 +157,8 @@ struct Issue640MathDimensionBounds {
         // The issue's own example: matrix.count == n*n holds exactly (1 == (-1)*(-1)).
         #expect(MathJacobi.eigenvalues(matrix: [1.0], n: -1) == nil)
         #expect(MathJacobi.eigenvalues(matrix: [1.0], n: 0) == nil)
+        // n positive: overflow guard (review finding 8), same as the determinants.
+        #expect(MathJacobi.eigenvalues(matrix: [1.0], n: .max) == nil)
         let matrix = [4.0, 1.0, 1.0, 4.0]
         #expect(MathJacobi.eigenvalues(matrix: matrix, n: 2) != nil)
     }
@@ -132,6 +166,7 @@ struct Issue640MathDimensionBounds {
     @Test("MathHouseholder.solve rejects a consistent-but-non-positive dimension")
     func householderSolveBounds() {
         #expect(MathHouseholder.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil)
+        #expect(MathHouseholder.solve(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
         let A: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
         #expect(MathHouseholder.solve(matrix: A, rows: 3, cols: 2, rhs: b) != nil)
@@ -151,6 +186,31 @@ struct Issue640MathDimensionBounds {
             values: { x in [x.reduce(0, +)] },
             jacobian: { x in [Double](repeating: 1, count: x.count) }
         ) == nil)
+        // Control: a real, correctly-dimensioned system still solves.
+        #expect(MathSolver.solveSystem(variables: 1, equations: 1, startPoint: [2.0],
+                                        values: { x in [x[0] - 3] },
+                                        jacobian: { _ in [1] }) != nil)
+    }
+
+    @Test("MathSolver.solveSystem/.solveSystemNewton reject a values/jacobian closure that returns the wrong length")
+    func solveSystemClosureLengthBounds() {
+        // Review findings 3/4: `startPoint`'s own length is checked above, but before this
+        // fix nothing checked the CLOSURE's returned array -- a `values` closure returning
+        // fewer than `equations` elements, or a `jacobian` closure returning fewer than
+        // `equations * variables`, indexed the short array and trapped the whole process.
+        // The guard turns that into `nil`.
+        #expect(MathSolver.solveSystem(variables: 1, equations: 1, startPoint: [2.0],
+                                        values: { _ in [] },
+                                        jacobian: { _ in [1] }) == nil)
+        #expect(MathSolver.solveSystem(variables: 1, equations: 1, startPoint: [2.0],
+                                        values: { x in [x[0] - 3] },
+                                        jacobian: { _ in [] }) == nil)
+        #expect(MathSolver.solveSystemNewton(variables: 1, equations: 1, startPoint: [2.0],
+                                              values: { _ in [] },
+                                              jacobian: { _ in [1] }) == nil)
+        #expect(MathSolver.solveSystemNewton(variables: 1, equations: 1, startPoint: [2.0],
+                                              values: { x in [x[0] - 3] },
+                                              jacobian: { _ in [] }) == nil)
     }
 
     @Test("MathSolver.minimize rejects a non-positive variables and a mismatched startPoint")
@@ -158,6 +218,32 @@ struct Issue640MathDimensionBounds {
         #expect(MathSolver.minimize(variables: -1, startPoint: [], function: { _ in (0, []) }) == nil)
         #expect(MathSolver.minimize(variables: 50, startPoint: [1.0],
                                      function: { x in (x.reduce(0, +), x) }) == nil)
+        // Control: a real, correctly-dimensioned minimization still runs.
+        #expect(MathSolver.minimize(variables: 1, startPoint: [1.0],
+                                     function: { x in (x[0] * x[0], [2 * x[0]]) }) != nil)
+    }
+
+    @Test("MathSolver.minimize/.minimizeNewton/.minimizeFRPR reject a function closure whose gradient/hessian is the wrong length")
+    func minimizeClosureLengthBounds() {
+        // Review finding 5: `function`'s own returned `gradient` (and, for `minimizeNewton`,
+        // `hessian`) is indexed up to `variables`/`variables * variables` with no length
+        // check before this fix -- the same trap-on-a-closure-return-value shape as
+        // findings 3/4, in the minimization family. `minimizeFRPR` shares the identical
+        // `OCCTMathMultiVarGradCallback` shape but was not itself named by the review; fixed
+        // and tested here for the same reason.
+        #expect(MathSolver.minimize(variables: 1, startPoint: [1.0],
+                                     function: { x in (x[0] * x[0], []) }) == nil)
+        #expect(MathSolver.minimizeNewton(variables: 1, startPoint: [1.0],
+                                           function: { x in (x[0] * x[0], [], [2.0]) }) == nil)
+        #expect(MathSolver.minimizeNewton(variables: 1, startPoint: [1.0],
+                                           function: { x in (x[0] * x[0], [2 * x[0]], []) }) == nil)
+        #expect(MathSolver.minimizeFRPR(startPoint: [1.0],
+                                         function: { x in (x[0] * x[0], []) }) == nil)
+        // Controls: correctly-shaped closures still run.
+        #expect(MathSolver.minimizeNewton(variables: 1, startPoint: [1.0],
+                                           function: { x in (x[0] * x[0], [2 * x[0]], [2.0]) }) != nil)
+        #expect(MathSolver.minimizeFRPR(startPoint: [1.0],
+                                         function: { x in (x[0] * x[0], [2 * x[0]]) }) != nil)
     }
 
     @Test("MathSolver.minimizePowell rejects a non-positive variables and a mismatched startPoint")
@@ -209,6 +295,8 @@ struct Issue640MathDimensionBounds {
         // relying on the bridge to notice.
         #expect(MathSolver.leastSquares(matrix: [1.0], rows: 1000, cols: 1000, rhs: [1.0]) == nil)
         #expect(MathSolver.leastSquares(matrix: [1.0], rows: 3, cols: 3, rhs: [1.0]) == nil)
+        // rows positive: overflow guard (review finding 8).
+        #expect(MathSolver.leastSquares(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
         // Control: a real 3x2 overdetermined system still solves.
         let A: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
@@ -223,6 +311,9 @@ struct Issue640MathDimensionBounds {
         // with heap garbage.
         #expect(MathSolver.uzawa(constraintMatrix: [1.0], nConstraints: 20, nVars: 20,
                                   constraintRHS: [1.0], startPoint: [1.0]) == nil)
+        // nConstraints positive: overflow guard (review finding 8).
+        #expect(MathSolver.uzawa(constraintMatrix: [1.0], nConstraints: .max, nVars: 2,
+                                  constraintRHS: [1.0], startPoint: [1.0, 1.0]) == nil)
         let cont: [Double] = [1, 1]
         let sec: [Double] = [1]
         #expect(MathSolver.uzawa(constraintMatrix: cont, nConstraints: 1, nVars: 2,
@@ -258,15 +349,54 @@ struct Issue640MathDimensionBounds {
                                                 order: [10, 10, 10, 10, 10],
                                                 function: { x in [x.reduce(0, +)] }) == nil)
 
+        // gaussMultipleIntegration genuinely supports more than one variable
+        // (math_GaussMultipleIntegration integrates recursively): the double integral of
+        // x^2 + y^2 over the unit square is 1/3 + 1/3 = 2/3.
         let result = MathSolver.gaussMultipleIntegration(
             lower: [0, 0], upper: [1, 1], order: [10, 10]
         ) { x in x[0] * x[0] + x[1] * x[1] }
         if let r = result { #expect(abs(r - 2.0 / 3.0) < 1e-6) } else { Issue.record("expected a result") }
+    }
 
-        let setResult = MathSolver.gaussSetIntegration(
+    @Test("MathSolver.gaussSetIntegration rejects more than one variable instead of silently integrating only the first")
+    func gaussSetIntegrationRejectsMultipleVariables() {
+        // Review finding 2. `math_GaussSetIntegration`'s own header says "the case M>1 is
+        // not implemented", and the pinned kernel's `No_Exception` build compiles out
+        // OCCT's own runtime check for it (Standard_NotImplemented_Raise_if), so a call with
+        // more than one variable used to silently succeed at the WRONG answer instead of
+        // failing: measured directly against the unguarded implementation,
+        // `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+        // integrating `x + y` returned 0.5 -- `INT x dx` over `[0, 1]` with `y` silently
+        // pinned at 0 the whole time, not `INT INT (x + y) dx dy` over the unit square, which
+        // is 1.0. Neither 0.5 nor 1.0 is an acceptable answer from this entry point for a
+        // 2-variable call: it must refuse, which is what this test pins.
+        #expect(MathSolver.gaussSetIntegration(
             nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10]
-        ) { x in [x[0] + x[1]] }
-        if let r = setResult { #expect(abs(r[0] - 0.5) < 1e-6) } else { Issue.record("expected a result") }
+        ) { x in [x[0] + x[1]] } == nil)
+
+        // The one-variable, multiple-EQUATION case (what "Set" actually names) is exactly
+        // what the class supports, and still works: integrate [x, x^2] over [0, 2] as two
+        // separate scalar integrals sharing one evaluation point.
+        let setResult = MathSolver.gaussSetIntegration(
+            nEquations: 2, lower: [0], upper: [2], order: [10]
+        ) { x in [x[0], x[0] * x[0]] }
+        if let r = setResult {
+            #expect(r.count == 2)
+            #expect(abs(r[0] - 2.0) < 1e-9)
+            #expect(abs(r[1] - 8.0 / 3.0) < 1e-9)
+        } else {
+            Issue.record("expected a result")
+        }
+    }
+
+    @Test("MathSolver.gaussSetIntegration rejects a function closure that returns the wrong length")
+    func gaussSetIntegrationClosureLengthBounds() {
+        // Review finding 6: the same closure-return-length gap as findings 3-6, in the
+        // Gauss integration family. A closure returning fewer than `nEquations` elements
+        // used to index the short array and trap.
+        #expect(MathSolver.gaussSetIntegration(
+            nEquations: 2, lower: [0], upper: [2], order: [10]
+        ) { x in [x[0]] } == nil)
     }
 
     // MARK: - findAllRoots(samples:): a sampler, not a problem dimension (#558's family)
@@ -288,5 +418,83 @@ struct Issue640MathDimensionBounds {
         #expect(roots1.contains { abs($0) < 1e-6 })
         let roots2 = MathSolver.findAllRoots(in: -5.0...5.0) { x in (x, 1) }
         #expect(roots2.contains { abs($0) < 1e-6 })
+    }
+
+    @Test("findAllRoots(samples:) accepts the documented minimum of 1, not Sampling's own default floor of 2")
+    func findAllRootsAcceptsMinimumOfOne() {
+        // Review finding 1: both overloads called `Sampling.requested(samples)` with no
+        // `atLeast:`, so the default floor of 2 applied even though this file's own doc
+        // comments and the reference docs document the valid range as 1...10,000,000.
+        // `samples: 1` was silently rejected before `function` was ever called -- proved
+        // here by counting calls rather than asserting a root is found, since whether one
+        // sample happens to bracket a root is the search algorithm's business, not the
+        // guard's.
+        var calls1 = 0
+        _ = MathSolver.findAllRoots(in: -1.0...1.0, samples: 1) { x in
+            calls1 += 1
+            return (x, 1)
+        }
+        #expect(calls1 > 0)
+
+        var calls2 = 0
+        _ = MathSolver.findAllRoots(in: -1.0...1.0, samples: 1, epsX: 1e-8, epsF: 1e-8, epsNul: 1e-8) { x in
+            calls2 += 1
+            return (x, 1)
+        }
+        #expect(calls2 > 0)
+
+        // samples: 0 is still outside the documented range and still rejected.
+        var calls3 = 0
+        _ = MathSolver.findAllRoots(in: -1.0...1.0, samples: 0) { x in
+            calls3 += 1
+            return (x, 1)
+        }
+        #expect(calls3 == 0)
+    }
+}
+
+// Review finding 9 on #640: the "n is positive and every array n sizes matches it exactly"
+// (or, for rows/cols, "the flat array is exactly their product") check was hand-duplicated
+// at 18 call sites with no shared validator, unlike `Sampling`'s own family. `MathDimension`
+// (Sources/OCCTSwift/MathDimension.swift) factors it out; these tests exercise it directly,
+// the same way Issue558SamplingCountBoundsTests.swift exercises `Sampling.requested`/
+// `capacity`/`gridTotal` directly, rather than only indirectly through the 18 call sites
+// that now share it.
+@Suite("Issue #640 review finding 9: MathDimension is the one shared validator")
+struct MathDimensionTests {
+
+    @Test("valid requires positivity and every given length to match exactly")
+    func validRequiresPositiveAndMatching() {
+        #expect(MathDimension.valid(3, matches: 3, 3))
+        #expect(!MathDimension.valid(3, matches: 3, 1))    // one mismatch among several
+        #expect(!MathDimension.valid(0, matches: 0))       // zero is not positive
+        #expect(!MathDimension.valid(-1, matches: 0))      // matches by coincidence, still rejected
+        #expect(MathDimension.valid(1, matches: 1))        // a single matching length is fine
+    }
+
+    @Test("consistent checks length agreement only, no positivity")
+    func consistentSkipsPositivity() {
+        #expect(MathDimension.consistent(0, matches: 0))    // two empty arrays agree
+        #expect(!MathDimension.consistent(0, matches: 1))
+        #expect(MathDimension.consistent(50, matches: 50))
+        #expect(!MathDimension.consistent(50, matches: 1))
+    }
+
+    @Test("validSquare checks n > 0, n * n == count, and does not overflow")
+    func validSquareChecksPositivityConsistencyAndOverflow() {
+        #expect(MathDimension.validSquare(2, count: 4))
+        #expect(!MathDimension.validSquare(2, count: 3))     // consistency fails
+        #expect(!MathDimension.validSquare(0, count: 0))     // 0 * 0 == 0 holds, but 0 is not positive
+        #expect(!MathDimension.validSquare(-1, count: 1))    // (-1)*(-1) == 1 holds, but -1 is not positive
+        #expect(!MathDimension.validSquare(.max, count: 1))  // would overflow n * n: rejected, not trapped
+    }
+
+    @Test("validRectangle checks rows > 0, cols > 0, rows * cols == count, and does not overflow")
+    func validRectangleChecksPositivityConsistencyAndOverflow() {
+        #expect(MathDimension.validRectangle(rows: 3, cols: 2, count: 6))
+        #expect(!MathDimension.validRectangle(rows: 3, cols: 2, count: 5))
+        #expect(!MathDimension.validRectangle(rows: 0, cols: -1, count: 0))   // 0 * -1 == 0 holds
+        #expect(!MathDimension.validRectangle(rows: .max, cols: 2, count: 1)) // overflow: rejected
+        #expect(!MathDimension.validRectangle(rows: 2, cols: .max, count: 1)) // overflow the other factor
     }
 }
