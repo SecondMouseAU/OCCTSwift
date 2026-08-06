@@ -220,6 +220,12 @@ extension Shape {
 
     /// Analyze a shape for problems such as small edges, gaps, and invalid topology.
     ///
+    /// - Note: `selfIntersectionCount` is always 0, and has never been computed, see
+    ///   ``ShapeAnalysisResult/selfIntersectionCount``; use ``isSelfIntersecting(timeout:)`` for a
+    ///   real check. `freeEdgeCount`/`freeFaceCount` were also hardcoded to 0 for every shape
+    ///   before #702; a demoted or otherwise open shell now reports its actual gap correctly.
+    ///   A "clean" result here has never meant "this is a solid": check `shapeType` or
+    ///   ``isValidSolid`` for that.
     /// - Parameter tolerance: Size threshold for detecting small features
     /// - Returns: Analysis result with problem counts, or nil on failure
     ///
