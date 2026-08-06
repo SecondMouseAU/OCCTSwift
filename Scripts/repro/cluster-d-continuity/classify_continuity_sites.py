@@ -21,9 +21,10 @@ workstream (#558, #571, #583, #595) has repeatedly warned against):
     ParametricContinuity   -- body calls occtGeomAbsFromParametricContinuity(
     AnalysisOrder          -- body calls occtGeomAbsFromAnalysisOrder(
     + special-case(...)    -- appended when the body ALSO has a hand-rolled ternary against a
-                              literal GeomAbs_G1/G2 (the shape OCCTShapeUpgradeDivideContinuity
-                              uses to reach the two classes occtGeomAbsFromParametricContinuity's
-                              own ladder cannot express)
+                              literal GeomAbs_G1/G2 (the shape OCCTShapeDivide uses to reach the
+                              two classes occtGeomAbsFromParametricContinuity's own ladder cannot
+                              express -- #438 moved this here from the now-removed
+                              OCCTShapeUpgradeDivideContinuity, its former second bridge function)
     RAW (no decoder call)  -- none of the three found. Not necessarily a defect: #480 ruled the
                               knot-splitting family's argument is a literal derivative order and
                               must NEVER be decoded, and the GeomPlate_PointConstraint/
@@ -85,8 +86,9 @@ REQUEST_FUNCTIONS = [
     ("OCCTPointsToSurfaceBSpline", SURFACE),
     ("OCCTShapeCustomBSplineRestriction", HEALING),
     ("OCCTShapeBSplineRestrictionAdvanced", HEALING),
+    # #438 removed OCCTShapeUpgradeDivideContinuity (folded into OCCTShapeDivide below, which
+    # picked up its tolerance parameter and special-case ternary): one entry point instead of two.
     ("OCCTShapeDivide", HEALING),
-    ("OCCTShapeUpgradeDivideContinuity", HEALING),
     ("OCCTThruSectionsSetContinuity", MODELING),
     ("OCCTFilletBuilderSetContinuity", MODELING),
     ("OCCTFillingAddEdge", MODELING),

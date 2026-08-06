@@ -1194,16 +1194,36 @@ OCCTShapeRef OCCTShapeRemoveLocations(OCCTShapeRef shape) {
 #include <ShapeCustom.hxx>
 #include <ShapeCustom_RestrictionParameters.hxx>
 
-OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity) {
+// #438: the sole entry point behind Shape.divided(at:tolerance:) now, folding in what used to be
+// a second, narrower bridge function (OCCTShapeUpgradeDivideContinuity) behind the now-deprecated
+// Shape.dividedByContinuity(criterion:tolerance:). That second function set ONLY
+// SetBoundaryCriterion, leaving SetPCurveCriterion/SetSurfaceCriterion pinned at the class's own
+// GeomAbs_C1 constructor default regardless of the requested continuity — measured
+// (Scripts/repro/cluster-d-continuity) as a flat result across every criterion 0..6 on a fixture
+// where this function's own three-criteria version varies (nil/4/4/25 faces at C0/C1/C2/C3). Per
+// the OCCT shape-healing guide's own worked example, all three criteria are meant to be set
+// together to the same target continuity.
+OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tolerance) {
     if (!shape) return nullptr;
 
     try {
-        const GeomAbs_Shape cont = occtGeomAbsFromParametricContinuity(continuity);
+        // Shape.ContinuityLevel is ParametricContinuity's ladder (0=C0 .. 3=C3, 4=CN, which is
+        // where occtGeomAbsFromParametricContinuity saturates anyway) with the two geometric
+        // classes tacked on at 5 and 6. Those two are the only values here that are not the
+        // shared parametric decoding — and they are also the two ShapeUpgrade_Split*Continuity::
+        // SetCriterion does not recognise at all, so OCCT quietly substitutes its own C1 default
+        // for them. Kept because the public enum has always advertised them. #490, moved here
+        // from the now-removed OCCTShapeUpgradeDivideContinuity by #438.
+        const GeomAbs_Shape cont =
+            continuity == 5 ? GeomAbs_G1 :
+            continuity == 6 ? GeomAbs_G2 :
+            occtGeomAbsFromParametricContinuity(continuity);
 
         ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
         divider.SetBoundaryCriterion(cont);
         divider.SetPCurveCriterion(cont);
         divider.SetSurfaceCriterion(cont);
+        divider.SetTolerance(tolerance);
         divider.SetSurfaceSegmentMode(Standard_True);
         if (!divider.Perform()) return nullptr;
 
@@ -2323,33 +2343,12 @@ OCCTShapeRef OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoi
     }
 }
 
-OCCTShapeRef OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int32_t boundaryCriterion, double tolerance) {
-    if (!shape) return nullptr;
-    try {
-        ShapeUpgrade_ShapeDivideContinuity divider(shape->shape);
-
-        // Shape.ContinuityLevel is ParametricContinuity's ladder (0=C0 .. 3=C3, 4=CN, which is
-        // where occtGeomAbsFromParametricContinuity saturates anyway) with the two geometric
-        // classes tacked on at 5 and 6. Those two are the only values here that are not the
-        // shared parametric decoding — and they are also the two ShapeUpgrade_Split*Continuity::
-        // SetCriterion does not recognise at all, so OCCT quietly substitutes its own C1 default
-        // for them. Kept because the public enum has always advertised them. #490.
-        const GeomAbs_Shape criterion =
-            boundaryCriterion == 5 ? GeomAbs_G1 :
-            boundaryCriterion == 6 ? GeomAbs_G2 :
-            occtGeomAbsFromParametricContinuity(boundaryCriterion);
-
-        divider.SetBoundaryCriterion(criterion);
-        divider.SetTolerance(tolerance);
-        bool ok = divider.Perform();
-        if (!ok) return nullptr;
-        TopoDS_Shape result = divider.Result();
-        if (result.IsNull()) return nullptr;
-        return new OCCTShape(result);
-    } catch (...) {
-        return nullptr;
-    }
-}
+// OCCTShapeUpgradeDivideContinuity, the boundary-only entry point behind the now-deprecated
+// Shape.dividedByContinuity(criterion:tolerance:), was removed here (#438): it wrapped the same
+// ShapeUpgrade_ShapeDivideContinuity as OCCTShapeDivide above with a narrower, measurably
+// different call (SetBoundaryCriterion only, no SetPCurveCriterion/SetSurfaceCriterion). The
+// deprecated Swift entry point now forwards to Shape.divided(at:tolerance:), so this bridge
+// function has no remaining caller.
 
 // MARK: - ShapeFix Small Solids (v0.49)
 // --- ShapeFix_FixSmallSolid ---

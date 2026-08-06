@@ -111,6 +111,33 @@ fileprivate func clusterDRecordBSplineRestrictionConvergence() {
                [12, 20, 20, 26], rows)
 }
 
+/// #438 deprecated `Shape.dividedByContinuity(criterion:tolerance:)` in favour of
+/// `Shape.divided(at:tolerance:)`, which it now forwards to. The census still measures it
+/// deliberately: pinning that the forward actually passes `criterion`/`tolerance` through
+/// unchanged, which a future edit to either method could still break even though both now share
+/// one implementation.
+///
+/// Grouped into its own function for the same reason as `clusterARecordDeprecatedCounterRows`
+/// (`ClusterA.swift`): a deprecated context does not warn about the deprecated things it calls, so
+/// the cost becomes one warning at this single definition instead of one per call site.
+@available(*, deprecated, message: "Measures dividedByContinuity's forwarding contract deliberately (#438).")
+fileprivate func clusterDRecordDivideForwarding(fixture: () -> Shape?) {
+    var rows: [[String]] = []
+    for level in Shape.ContinuityLevel.allCases {
+        let viaDivided = fixture()?.divided(at: level, tolerance: 1e-4)
+        let viaDeprecated = fixture()?.dividedByContinuity(criterion: level, tolerance: 1e-4)
+        rows.append([
+            "\(level)",
+            viaDivided.map { "\($0.faceCount) faces" } ?? "nil",
+            viaDeprecated.map { "\($0.faceCount) faces" } ?? "nil",
+            (viaDivided?.faceCount == viaDeprecated?.faceCount) ? "forwards correctly" : "DIVERGED",
+        ])
+    }
+    printTable("2g. dividedByContinuity(criterion:tolerance:) (deprecated) forwards to divided(at:tolerance:)",
+               ["level", "divided(at:)", "dividedByContinuity (deprecated)", "verdict"],
+               [8, 22, 34, 20], rows)
+}
+
 /// `occtGeomAbsFromAnalysisOrder` saturates at `GeomAbs_C2` (raw 4): `.c3` and `.cN`, both real
 /// `ContinuityClass` cases, decode to the same effective order as `.c2`. Measured via the typed
 /// `continuityWith(order:)` overload across every `ContinuityClass` case, not just the five the
@@ -319,18 +346,26 @@ enum ClusterD {
             clusterDRecordBSplineRestrictionConvergence()
             totalMeasured += 2
 
-            // 2f. #438 itself, generalized: divided(at:) vs dividedByContinuity(criterion:) on the
-            // SAME shape. Not fixed here -- #667 says do the census, then the instances fall out --
-            // but measured so the README states what "two public APIs, one OCCT class" actually
-            // produces today rather than repeating #438's prose description of the two setter calls.
-            // Neither a plain box nor a cylinder works as a fixture here: both this tree's own tests
-            // (`ShapeUpgradeDivideContinuityTests.divideBoxContinuity`, `AdvancedHealingTests.
+            // 2f. #438: FIXED. divided(at:) and dividedByContinuity(criterion:) used to be two
+            // public entry points over the same ShapeUpgrade_ShapeDivideContinuity, setting
+            // DIFFERENT criteria (divided(at:) set boundary+pcurve+surface together;
+            // dividedByContinuity set only boundary, leaving pcurve/surface pinned at the class's
+            // own C1 constructor default regardless of the requested continuity). Fixed by
+            // widening divided(at:) to take ContinuityLevel plus a tolerance parameter and making
+            // dividedByContinuity(criterion:tolerance:) a deprecated forward to it, so there is
+            // now exactly one implementation. This section used to compare the two independently;
+            // now that one forwards to the other, a comparison between them proves only that the
+            // forward passes its arguments through, so it measures divided(at:) alone across its
+            // full domain and separately pins the deprecated spelling's forwarding contract.
+            //
+            // Neither a plain box nor a cylinder works as a fixture here: both this tree's own
+            // tests (`ShapeUpgradeDivideContinuityTests.divideBoxContinuity`, `AdvancedHealingTests.
             // divideCylinder`) tolerate nil ("may return nil/the same shape if no divisions
-            // needed"), and measured here, BOTH APIs return nil on both at every continuity -- a
-            // planar box has no interior surface knots to divide at, and a cylinder's single
+            // needed"), and measured here, divided(at:) returns nil on both at every continuity --
+            // a planar box has no interior surface knots to divide at, and a cylinder's single
             // lateral face is one smooth periodic surface with none either. A face built directly
             // from a kinked BSpline surface (mult-3 knot, genuinely C0 at one interior knot) gives
-            // both APIs something real to divide.
+            // it something real to divide.
             let (dKnots, dMults, dPoles) = knotVector(degree: 3, interiorKnots: 4, bumpAt: 2, bumpMult: 3)
             func kinkedSurfaceShape() -> Shape? {
                 guard let surface = Surface.bspline(
@@ -341,34 +376,19 @@ enum ClusterD {
                 return Shape.face(from: surface, uRange: bounds.uMin...bounds.uMax, vRange: bounds.vMin...bounds.vMax)
             }
             var divideRows: [[String]] = []
-            for continuity in ParametricContinuity.allCases {
-                let viaDivided = kinkedSurfaceShape()?.divided(at: continuity)
-                let level = Shape.ContinuityLevel(rawValue: continuity.rawValue) ?? .c1
-                let viaDividedBy = kinkedSurfaceShape()?.dividedByContinuity(criterion: level, tolerance: 1e-4)
-                divideRows.append([
-                    "\(continuity)",
-                    viaDivided.map { "\($0.faceCount) faces" } ?? "nil",
-                    viaDividedBy.map { "\($0.faceCount) faces" } ?? "nil",
-                    (viaDivided?.faceCount == viaDividedBy?.faceCount) ? "SAME face count" : "DIFFERENT",
-                ])
-            }
-            printTable("2f. #438: divided(at:) vs dividedByContinuity(criterion:) -- same kinked-surface face, matching continuity",
-                       ["continuity", "divided(at:)", "dividedByContinuity(criterion:)", "verdict"],
-                       [12, 22, 34, 20], divideRows)
-            totalMeasured += 2
-
-            // 2g. Shape.ContinuityLevel's own g1/g2 extension (raw 5, 6) -- documented in
-            // OCCTBridge_Internal.h as a special case bolted onto occtGeomAbsFromParametricContinuity
-            // rather than reachable through it, because ShapeUpgrade_ShapeDivideContinuity's own
-            // SetCriterion does not recognise G1/G2 and would otherwise substitute its own C1
-            // default. Measured directly rather than re-read from the comment.
-            var levelRows: [[String]] = []
             for level in Shape.ContinuityLevel.allCases {
-                let result = kinkedSurfaceShape()?.dividedByContinuity(criterion: level, tolerance: 1e-4)
-                levelRows.append(["\(level)", result.map { "\($0.faceCount) faces" } ?? "nil"])
+                let result = kinkedSurfaceShape()?.divided(at: level, tolerance: 1e-4)
+                divideRows.append(["\(level)", result.map { "\($0.faceCount) faces" } ?? "nil"])
             }
-            printTable("2g. Shape.ContinuityLevel's full domain (0..6, includes g1/g2 special-cased in the bridge)",
-                       ["level", "dividedByContinuity result"], [8, 30], levelRows)
+            printTable("2f. #438 fixed: divided(at:tolerance:) across its full domain (was two disagreeing entry points)",
+                       ["level", "divided(at:) result"], [8, 30], divideRows)
+            totalMeasured += 1
+
+            // 2g. dividedByContinuity(criterion:tolerance:) (deprecated by #438) forwards to
+            // divided(at:tolerance:) -- pins that the forward actually passes criterion/tolerance
+            // through unchanged, which a future edit to either method could still break even
+            // though both now share one implementation.
+            clusterDRecordDivideForwarding(fixture: kinkedSurfaceShape)
             totalMeasured += 1
         }
 

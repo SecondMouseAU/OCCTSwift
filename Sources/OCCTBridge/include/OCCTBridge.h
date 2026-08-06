@@ -617,7 +617,8 @@
 //                                       OCCTShapeUpgradeConvertCurves3dToBezier,
 //                                       OCCTShapeUpgradeConvertSurfaceToBezier
 // ShapeUpgrade_ShapeDivideClosed      → OCCTShapeUpgradeDivideClosed
-// ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide, OCCTShapeUpgradeDivideContinuity
+// ShapeUpgrade_ShapeDivideContinuity  → OCCTShapeDivide (#438 folded a second, narrower entry
+//                                       point into this one; see OCCTBridge_Healing.mm)
 // ShapeUpgrade_UnifySameDomain        → OCCTShapeUnifySameDomain, OCCTShapeSimplify, OCCTUnifySameDomainCreate
 //
 // --- STEP/IGES/OBJ/PLY/STL ---

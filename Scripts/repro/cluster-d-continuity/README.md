@@ -52,6 +52,13 @@ python3 Scripts/repro/cluster-d-continuity/classify_continuity_sites.py --self-t
   which also consolidated 19 decoders into the 3 named above. Measuring the CURRENT tree rather
   than trusting #513's text is the entire point of this census, and it is why the table below
   looks different from #513's own.
+- **These counts are as measured when this census was written (#713), before #438's fix.** #438
+  removed `OCCTShapeUpgradeDivideContinuity` (folded into `OCCTShapeDivide`), so the current tree's
+  statically-classified count is **41** (33 request-side + 8 result-side), one fewer than the 42
+  above; the alias-inclusive total is 44, not 45. Left as originally measured rather than edited in
+  place, since the point of the count was #513's own audit coverage at the time, not a live gauge
+  this file re-derives on every subsequent fix — `python3 classify_continuity_sites.py` always
+  reports the current tree's true count.
 
 ## The four encodings, as measured (today: five families, one is not really a fourth "encoding")
 
@@ -342,6 +349,39 @@ bugs") is right for one and wrong for the other.**
   encoding mismatch. Fixing #437 (give the plate family a genuine decode step, or document the
   domain restriction) would not touch #438 at all, and vice versa.
 
+**#438 fixed**: `Shape.divided(at:)` widened to `divided(at:tolerance:)`, taking `ContinuityLevel`
+(the strict superset `dividedByContinuity` alone used to reach) and a `tolerance` parameter, and
+now sets boundary, pcurve AND surface criteria together plus `SetSurfaceSegmentMode(true)` --
+`dividedByContinuity`'s three-criteria omission, not `divided(at:)`'s completeness, was the
+narrower/incomplete usage relative to OCCT's own shape-healing guide, which always sets all three
+together. `dividedByContinuity(criterion:tolerance:)` is now `@available(*, deprecated,
+renamed: "divided(at:tolerance:)")` and forwards there; the two former bridge functions
+(`OCCTShapeDivide`, `OCCTShapeUpgradeDivideContinuity`) are now one (`OCCTShapeDivide`, widened
+with a `tolerance` parameter). Re-measured on the same kinked-BSpline-surface fixture, full
+`ContinuityLevel` domain, `tolerance: 1e-4`:
+
+| level | `divided(at:)` result |
+|---|---|
+| c0 | nil |
+| c1 | 4 faces |
+| c2 | 4 faces |
+| c3 | 25 faces |
+| cn | 25 faces |
+| g1 | 4 faces |
+| g2 | 4 faces |
+
+`g1`/`g2` matching `c1` is not a residual bug: `ShapeUpgrade_Split{Curve3d,Surface}Continuity::
+SetCriterion` has no case for `GeomAbs_G1`/`G2` and falls through to its own C1 default (read
+directly from `Libraries/occt-src`), the same substitution the pre-fix `dividedByContinuity`
+comment already documented. `c0` returning `nil` rather than the pre-fix `dividedByContinuity`'s
+"4 faces" is the one visible behaviour change for an existing `dividedByContinuity` caller who
+passed `.c0`: it now also sets the pcurve/surface criteria, which `Perform()` reads as "nothing
+met even the lowest bar to redo," matching `divided(at:)`'s own pre-fix `.c0` answer. Every other
+level is unchanged from `divided(at:)`'s own pre-fix behaviour. `dividedByContinuity`'s forward is
+also pinned directly (`swift run Censuses cluster-d`'s own "2g" table): identical result to
+`divided(at:)` at every one of the 7 levels above, confirming the deprecated spelling is a real
+forward and not a second, silently-diverging implementation.
+
 ## Should #513 close?
 
 **Yes**, once this PR merges. #513's own ask was to turn its prose census into an executable
@@ -356,8 +396,8 @@ that:
   decoders; measured today, the honest count is "three decoders plus two structurally different
   literal pass-throughs," which is a different (and better) shape than #513's own text describes.
 - Its two named instances were left open on their own, correctly, per #667's own instruction that
-  this census does not fix either. **#437 has since been fixed** (see the update in "#437,
-  reproduced directly against the current tree" above); #438 remains open.
+  this census does not fix either. **Both have since been fixed**: #437 (see the update in "#437,
+  reproduced directly against the current tree" above) and #438 (see "Fixed" above).
 - The one open decision #513 raised and this census did not resolve -- the null/failure sentinel
   policy on the result side (0 is both "genuine C0" and "failed/null," on every raw-cast result
   function measured above) -- is a design decision, not a census finding, and is better tracked

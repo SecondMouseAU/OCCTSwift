@@ -18,13 +18,17 @@ This page covers geometry repair, shape upgrade, point classification, proximity
 ### `ParametricContinuity`
 
 Minimum parametric continuity to require of a piece of geometry. Shared by every operation
-that splits, approximates or simplifies against a continuity floor: `Shape.divided(at:)`,
+that splits, approximates or simplifies against a continuity floor:
 `Shape.bsplineRestriction(...)`, `Curve3D.approxWithDetails(...)`,
 `Surface.approxWithDetails(tolerance:uContinuity:vContinuity:...)` and the whole BSpline
 knot-splitting family: `Curve3D.continuityBreaks(minContinuity:)`,
 `Curve2D.splitIndicesAtDiscontinuities(continuity:)`,
 `Surface.knotSplitting(uContinuity:vContinuity:)`, `LawFunction.knotSplitting(continuityOrder:)`
 and `LawFunction.knotSplitParameters(continuityOrder:)`.
+
+`Shape.divided(at:)` used to be one of these too, but #438 widened it to the strict superset
+[`Shape.ContinuityLevel`](Shape-Measurement.md#continuitylevel) — see
+[`divided(at:tolerance:)`](#dividedattolerance) below.
 
 What the value becomes depends on the consumer. Most decode it to a `GeomAbs_Shape` (`GeomAbs_C0`
 through `GeomAbs_C3`); the knot-splitting family instead passes it to OCCT as a literal derivative
@@ -40,32 +44,41 @@ public enum ParametricContinuity: Int32, Sendable, CaseIterable {
 }
 ```
 
-Pass to `divided(at:)` to split a shape wherever it drops below the specified continuity.
-
 > **Renamed in #398.** This type used to be called `GeometricContinuity`, which was a misnomer:
 > the value maps to `GeomAbs_C0...C3`, so it is *parametric* continuity (equal derivative
 > vectors), not the geometric G0/G1/G2 constraint order of
 > [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (parallel tangent directions).
 > `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity` and
 > `Curve3D.ContinuityOrder` are now deprecated typealiases of it. No raw value moved.
->
-> `Shape.ContinuityLevel` is deliberately **not** folded in: it is a strict superset used by
-> `dividedByContinuity(criterion:tolerance:)`, adding `cn`, `g1` and `g2` cases that the other
-> call sites cannot accept.
 
 ---
 
-### `divided(at:)`
+### `divided(at:tolerance:)`
 
-Divide a shape at continuity discontinuities.
+Divide a shape wherever its geometry drops below the required continuity.
 
 ```swift
-public func divided(at continuity: ParametricContinuity) -> Shape?
+public func divided(at continuity: Shape.ContinuityLevel, tolerance: Double = 1e-7) -> Shape?
 ```
 
-Splits the shape wherever its underlying geometry drops below the requested continuity class.
+Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together to
+`continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing guide
+demonstrates. Until #438 this was one of two public entry points over that same OCCT class:
+[`dividedByContinuity(criterion:tolerance:)`](Shape-Measurement.md#dividedbycontinuitycriteriontolerance)
+(now deprecated, forwarding here) set only the boundary criterion, leaving pcurve/surface pinned
+at the class's own C1 constructor default regardless of the requested continuity — measured
+(`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a fixture where
+this method's own three-criteria behaviour varies (nil/4/4/25 faces at C0/C1/C2/C3).
 
-- **Parameters:** `continuity` — target minimum continuity; the shape is split at any face/edge boundary that does not meet this standard.
+- **Parameters:**
+  - `continuity` — target minimum continuity; the shape is split at any face/edge boundary that
+    does not meet this standard. `.cn`, `.g1` and `.g2` are accepted in addition to `.c0`...`.c3`
+    (#438 widened this from `ParametricContinuity`); OCCT's own criterion setters have no case for
+    G1/G2 and would otherwise silently substitute their own C1 default, so those two are decoded
+    ahead of the call instead.
+  - `tolerance` — tolerance for the continuity check. Defaults to `1e-7`
+    (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438 added
+    the parameter.
 - **Returns:** Divided shape, or nil on failure.
 - **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeDivide`).
 - **Example:**

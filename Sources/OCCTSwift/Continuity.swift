@@ -118,7 +118,7 @@ public typealias PlateConstraintOrder = SurfaceContinuity
 /// Minimum parametric continuity to require of a piece of geometry.
 ///
 /// Used wherever an operation splits, approximates or simplifies geometry against a continuity
-/// floor: ``Shape/divided(at:)``, ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``,
+/// floor: ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``,
 /// ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``,
 /// ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxSegments:maxDegree:)``, and
 /// the whole BSpline knot-splitting family: ``Curve3D/continuityBreaks(minContinuity:)``,
@@ -127,10 +127,11 @@ public typealias PlateConstraintOrder = SurfaceContinuity
 /// ``LawFunction/knotSplitting(continuityOrder:)`` and
 /// ``LawFunction/knotSplitParameters(continuityOrder:)``.
 ///
-/// ```swift
-/// // Split a shape wherever it drops below C2
-/// let pieces = shape.divided(at: .c2)
+/// `Shape/divided(at:tolerance:)` used to be one of these, but #438 widened it to the strict
+/// superset ``Shape/ContinuityLevel``, which also folded in the narrower, now-deprecated
+/// `Shape/dividedByContinuity(criterion:tolerance:)`.
 ///
+/// ```swift
 /// // Knots where a BSpline fails to be C3. A cubic interpolated curve is C2 at its
 /// // interior knots, so .c3 is the order that actually reports them.
 /// let breaks = bspline.continuityBreaks(minContinuity: .c3)

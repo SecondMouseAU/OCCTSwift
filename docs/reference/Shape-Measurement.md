@@ -2194,27 +2194,38 @@ public enum ContinuityLevel: Int32, Sendable, CaseIterable {
 
 > **Deliberately kept separate from
 > [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity)** (#398). This is a strict
-> superset: `cn`, `g1` and `g2` are accepted only by `dividedByContinuity(criterion:tolerance:)`.
-> Every other continuity-floor call site silently defaults an unrecognised value, so widening
-> them to this type would trade a compile error for a wrong answer.
+> superset: `cn`, `g1` and `g2` are accepted only by
+> [`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance). Every other continuity-floor
+> call site silently defaults an unrecognised value, so widening them to this type would trade a
+> compile error for a wrong answer.
+>
+> Used by `divided(at:tolerance:)` alone since #438 folded the narrower
+> `dividedByContinuity(criterion:tolerance:)` (now deprecated) into it.
 
 ---
 
-### `dividedByContinuity(criterion:tolerance:)`
+### `dividedByContinuity(criterion:tolerance:)` *(deprecated)*
 
-Divide this shape at continuity breaks.
+Deprecated in favour of
+[`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance), which it now forwards to.
 
 ```swift
+@available(*, deprecated, renamed: "divided(at:tolerance:)")
 public func dividedByContinuity(criterion: ContinuityLevel = .c1, tolerance: Double = 1e-4) -> Shape?
 ```
 
-Splits faces and edges at points where the geometry drops below the required continuity level.
+This duplicated `divided(at:tolerance:)` over the same `ShapeUpgrade_ShapeDivideContinuity`,
+setting only the boundary criterion where `divided(at:tolerance:)` sets boundary, pcurve AND
+surface criteria together — the usage OCCT's own shape-healing guide demonstrates (#438). Both
+names now run the identical call; the two former bridge functions (`OCCTShapeDivide`,
+`OCCTShapeUpgradeDivideContinuity`) are now one (`OCCTShapeDivide`, which picked up a `tolerance`
+parameter).
 
-- **Parameters:**
-  - `criterion` — Minimum required continuity level.
-  - `tolerance` — Tolerance for continuity check.
-- **Returns:** Divided shape, or `nil` if no divisions needed or on failure.
-- **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeUpgradeDivideContinuity`).
+- **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeDivide`).
+- **Example:**
+  ```swift
+  shape.divided(at: .c1, tolerance: 1e-4)   // was: shape.dividedByContinuity(criterion: .c1, tolerance: 1e-4)
+  ```
 
 ---
 
