@@ -128,6 +128,15 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/count-operations.py
 
+      # #726's census is the one entry here that is NOT a gate, and only its --self-test runs.
+      # A gate answers "is the tree clean" and exits 1 when it is not; this answers "which sites
+      # need a human to adjudicate" and exits 0 either way, so running it bare would add a step
+      # that can never fail and therefore never signal. Its detector can still rot, which is the
+      # failure the other four exist to prevent, so the self-test is what CI holds it to.
+      - name: census-unmeasured-values.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/census-unmeasured-values.py --self-test
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
