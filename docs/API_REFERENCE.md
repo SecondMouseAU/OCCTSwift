@@ -36,7 +36,7 @@ a map of the major areas, and the `Total` as the count.
 | **Primitives** | 13 | box, cylinder, cylinder(at:), sphere, cone, torus, surface, wedge, halfSpace, vertex, shell(from surface), shell(from Surface), nonUniformScale |
 | **Sweeps** | 24 | pipe sweep, pipeShell, pipeShellMultiSection, pipeShellWithTransition (deprecated, #503), pipeShellWithLaw, extrude, revolve, loft, loft(ruled+vertex), ruled, revolutionFromCurve, ruledShell, advancedEvolved, pipeSweep, compatibleWires, thruSectionsCreate, thruSectionsAddWire, thruSectionsAddVertex, thruSectionsSetSmoothing, thruSectionsSetMaxDegree, thruSectionsSetContinuity, thruSectionsBuild, thruSectionsShape, thruSectionsRelease |
 | **Booleans** | 12 | union (+), subtract (-), intersect (&), section, booleanCheck, fuseAll, commonAll, fusedAndBlended, cutAndBlended, sectionWithTolerance, splitMulti, cutWithHistory |
-| **Modifications** | 33 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
+| **Modifications** | 36 | fillet, selective fillet, variable fillet, multi-edge blend, chamfer, chamferTwoDistances, chamferDistAngle, shell, offset, offsetByJoin, draft, defeature, convertToNURBS, makeDraft, hollowed, filletEvolving, filletedWithReport, filletedWithReport(startRadius:endRadius:), filletEvolvingWithReport, offsetPerFace, fillet2DFace, chamfer2DFace, anaFillet, anaFillet(edge/wire), filletAlgo, filletAlgo(edge/wire), offsetWire, draftFromWire, addFillet2d, addChamfer2d, addChamfer2dAngle, modifyFillet2d, removeFillet2d, removeChamfer2d |
 | **Transforms** | 10 | translate, rotate, scale, mirror, mirrorAboutPoint, mirrorAboutAxis, scaleAboutPoint, translated(from:to:), transformed(matrix:), gTransformed(matrix:) |
 | **Wires** | 31 | rectangle, circle, polygon, polygon3D, line, arc, bspline, nurbs, path, join, offset, offset3D, interpolate, fillet2D, filletAll2D, chamfer2D, chamferAll2D, helix, helixTapered, orderedEdgeCount, orderedEdgePoints, orderedEdgePointCount, analyze, wireFromEdges, edges, allEdgePolylines, allEdgePolylinesIndexed, edgePolyline, bounds |
 | **Curve Analysis** | 6 | length, curveInfo, point(at:), tangent(at:), curvature(at:), curvePoint(at:) |
@@ -503,7 +503,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Curves** | 4 | tBezier (3D), tBezierRational (3D), ahtBezier (3D), ahtBezierRational (3D) |
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
-| **Total** | **4,301** | |
+| **Total** | **4,304** | |
 
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
@@ -985,6 +985,18 @@ addressable. (#614)
 | Swift API | OCCT Class |
 |-----------|------------|
 | `shape.filletEvolving(_:)` | `BRepFilletAPI_MakeFillet.SetRadius(UandR)` |
+
+#### Fillet Decline Reporting (#639)
+| Swift API | OCCT Class |
+|-----------|------------|
+| `shape.filletedWithReport(edges:radius:)` | `BRepFilletAPI_MakeFillet` + `Contour(edge)` per requested edge |
+| `shape.filletedWithReport(edges:startRadius:endRadius:)` | `BRepFilletAPI_MakeFillet.Add(R1, R2, E)` + `Contour(edge)` |
+| `shape.filletEvolvingWithReport(_:)` | `BRepFilletAPI_MakeFillet.SetRadius(UandR)` + `Contour(edge)` |
+
+Each shares its non-reporting sibling's build, and additionally reports which requested edges
+`Contour(edge) == 0` after `Add()`: the ones OCCT declined to fillet (a free-boundary edge of an
+open shell, most commonly), which the non-reporting siblings silently skip. See
+`Shape.FilletResult`.
 
 #### Per-Face Variable Offset (v0.38.0)
 | Swift API | OCCT Class |

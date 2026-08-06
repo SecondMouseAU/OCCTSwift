@@ -1113,6 +1113,53 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 
 ---
 
+### `Shape.FilletResult`
+
+Result of a fillet call that also reports which requested edges OCCT declined (#639).
+
+```swift
+public struct FilletResult: Sendable {
+    public let shape: Shape
+    public let declinedEdgeIndices: [Int]
+}
+```
+
+- **Fields:** `shape`: the filleted shape, identical to what the non-reporting sibling returns for
+  the same input. `declinedEdgeIndices`: 0-based indices, matching `Edge.index`, of the requested
+  edges OCCT declined to fillet. Empty when every requested edge was accepted.
+- **Notes:** there is no *reason* alongside the list. `BRepFilletAPI_MakeFillet::Add` returns
+  nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
+  during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
+  0`, populated by `Add()` and not `Build()`, is the only signal OCCT itself exposes, so this reports
+  *which* edges were declined, not *why*.
+
+---
+
+### `filletedWithReport(edges:radius:)`
+
+`filleted(edges:radius:)`, also reporting which requested edges OCCT declined (#639).
+
+```swift
+public func filletedWithReport(edges: [Edge], radius: Double) -> FilletResult?
+```
+
+- **Parameters:** same as `filleted(edges:radius:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `filleted(edges:radius:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`), reading `Contour(edge)` for
+  each requested edge after `Add()` and before `Build()`.
+- **Notes:** an edge OCCT cannot fillet is still skipped, not rejected: this changes only what a
+  caller can learn about it, not the shape returned. See `Shape.FilletResult` above.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  if let report = box.filletedWithReport(edges: box.edges(), radius: 1.0) {
+      precondition(report.declinedEdgeIndices.isEmpty)   // every edge of a closed solid fillets
+  }
+  ```
+
+---
+
 ### `filleted(edges:startRadius:endRadius:)`
 
 Fillets specific edges with a linear radius interpolation.
@@ -1138,6 +1185,23 @@ arc 10297.711861 (#612).
   (#520). An edge OCCT declines to fillet outright — a free-boundary edge of an open shell — is
   skipped by all five edge-list fillet entry points alike; a batch in which every edge is declined
   returns `nil` (#612).
+
+---
+
+### `filletedWithReport(edges:startRadius:endRadius:)`
+
+`filleted(edges:startRadius:endRadius:)`, also reporting which requested edges OCCT declined
+(#639). See [`Shape.FilletResult`](#shapefilletresult) and
+[`filletedWithReport(edges:radius:)`](#filletedwithreportedgesradius) for the reporting contract.
+
+```swift
+public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double) -> FilletResult?
+```
+
+- **Parameters:** same as `filleted(edges:startRadius:endRadius:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `filleted(edges:startRadius:endRadius:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet::Add(R1, R2, E)` (via `OCCTShapeFilletEdgesLinear`).
 
 ---
 

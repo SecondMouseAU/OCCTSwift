@@ -1673,13 +1673,71 @@ bool occtFilletSetRadiusProfile(BRepFilletAPI_MakeFillet& fillet, const TopoDS_E
     return true;
 }
 
+// === #639: which requested edges did OCCT decline ===
+//
+// Add(edge) and its radius-carrying overloads add a fillet contour, or do nothing at all when the
+// edge cannot support one (a free-boundary edge of an open shell, one adjacent face short of the
+// two a blend needs) -- silently, with no exception and no false return, which is why
+// filleted(edges:radius:) and its siblings could only ever SKIP a declined edge, never report it.
+// Contour(E) is the one signal OCCT exposes for this: 0 when E landed in no contour, populated by
+// Add() itself rather than by Build() (the same fact #612's occtFilletEdgeSlot above already
+// relies on for per-edge radius-law placement). There is no second signal for *why* -- Add()
+// returns void, and BRepFilletAPI_MakeFillet's own NbFaultyContours()/BadShape()/StripeStatus()
+// describe a contour that failed during Build(), which a never-added edge never reaches -- so this
+// reports WHICH edges were declined, not why, matching what OCCT itself can answer.
+//
+// Called after every Add() in `edgeIndices` has run and before Build(), so a later edge's Add()
+// extending an earlier edge's tangent contour is already reflected. Re-resolves `edgeIndices`
+// against `shape`'s own edge map rather than threading resolved TopoDS_Edge values out of
+// occtFilletAddEdges's visitor, trading one extra read-only walk for keeping that helper's
+// signature untouched. An index the map cannot resolve is skipped rather than asserted: the caller
+// (occtFilletAddEdges) already rejected the whole request in that case, so every index reaching
+// here resolved the first time too.
+inline std::vector<int32_t> occtFilletDeclinedIndices(const BRepFilletAPI_MakeFillet& fillet,
+                                                       const TopoDS_Shape& shape,
+                                                       const int32_t* edgeIndices, int32_t count) {
+    std::vector<int32_t> declined;
+    TopTools_IndexedMapOfShape map;
+    occtMapSubShapes(shape, TopAbs_EDGE, map);
+    for (int32_t i = 0; i < count; i++) {
+        TopoDS_Shape sub = occtMappedSubShapeAt(map, edgeIndices[i]);
+        if (sub.IsNull()) continue;
+        if (fillet.Contour(TopoDS::Edge(sub)) == 0) declined.push_back(edgeIndices[i]);
+    }
+    return declined;
+}
+
+// Writes occtFilletDeclinedIndices's result into the two optional caller-owned out-params every
+// #639-reporting entry point takes: `outDeclinedCount` gets the true count, and (when non-null)
+// `declinedEdgeIndices` gets that many indices, in `edgeIndices`' own order. The caller is
+// responsible for sizing `declinedEdgeIndices` to at least `edgeCount` -- the mathematical upper
+// bound on how many of `edgeCount` requested edges can be declined -- so there is no separate
+// capacity parameter to get wrong.
+inline void occtFilletWriteDeclined(const BRepFilletAPI_MakeFillet& fillet, const TopoDS_Shape& shape,
+                                    const int32_t* edgeIndices, int32_t edgeCount,
+                                    int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (!declinedEdgeIndices && !outDeclinedCount) return;
+    std::vector<int32_t> declined = occtFilletDeclinedIndices(fillet, shape, edgeIndices, edgeCount);
+    if (outDeclinedCount) *outDeclinedCount = static_cast<int32_t>(declined.size());
+    if (declinedEdgeIndices) {
+        for (size_t i = 0; i < declined.size(); i++) declinedEdgeIndices[i] = declined[i];
+    }
+}
+
 // occtFilletAddEdges plus the build-and-wrap half: the guard, the perform/check/result triad, and
 // the catch(...) that turns any OCCT failure into nullptr. This is the whole body of the three
 // edge-list fillet entry points bar their radius law.
+//
+// `declinedEdgeIndices`/`outDeclinedCount` default to null for the two callers that do not report
+// (#639): occtFilletWriteDeclined is then a no-op and nothing about the existing skip behaviour or
+// its cost changes.
 template <class AddEdge>
 OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
                                      const int32_t* edgeIndices, int32_t edgeCount,
-                                     AddEdge addEdge) {
+                                     AddEdge addEdge,
+                                     int32_t* declinedEdgeIndices = nullptr,
+                                     int32_t* outDeclinedCount = nullptr) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!shape || !edgeIndices || edgeCount < 1) return nullptr;
 
     try {
@@ -1687,6 +1745,9 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef shape,
         if (!occtFilletAddEdges(fillet, shape->shape, edgeIndices, edgeCount, addEdge)) {
             return nullptr;
         }
+
+        occtFilletWriteDeclined(fillet, shape->shape, edgeIndices, edgeCount,
+                                declinedEdgeIndices, outDeclinedCount);
 
         fillet.Build();
         if (!fillet.IsDone()) return nullptr;

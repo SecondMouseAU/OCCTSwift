@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **twelve** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **thirteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other nine change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other ten change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -36,7 +36,7 @@ The other nine change behaviour **without breaking the build**, which is the set
 - [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
 - [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
 
-A thirteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -400,6 +400,32 @@ The exception was taken because:
   by two pairs) that must keep succeeding.
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
+
+#### #639: additive fillet decline reporting, not an exception
+
+**Recorded here per #664's own rule of writing a public-API change down in this file before the
+tag, not because this one is a recorded exception.** `filleted(edges:radius:)`,
+`filleted(edges:startRadius:endRadius:)` and `filletEvolving(_:)` each gained a `WithReport`
+sibling (`filletedWithReport(edges:radius:)`, `filletedWithReport(edges:startRadius:endRadius:)`,
+`filletEvolvingWithReport(_:)`) returning a new `Shape.FilletResult`: the edges OCCT declined to
+fillet, alongside the shape, for a caller who wants to know (#639).
+
+This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
+unchanged by this entry: no existing method's signature or behaviour changed. `filleted(edges:
+radius:)` and its two siblings still return exactly what they always did, for exactly the same
+inputs; a caller who never calls the three new methods sees no difference at all. This is the
+**MINOR**, additive Swift API, case the quick reference table already names, not the MAJOR-avoided,
+compile-error-or-silent-behaviour-change case every entry above it is. It is recorded here anyway,
+rather than left to the release's own `CHANGELOG.md` entry, because #664 asks for every public-API
+change in this cluster of work to be written down at the same time it lands, and distinguishing
+"additive, no exception" from "exception" is itself information a reviewer of this file benefits
+from having next to the twelve that are.
+
+Two of the issue's own named members (`filletedWithFullHistory(radius:edges:)`,
+`FilletBuilder.contour(for:)`) needed no new API at all: both already carry a way to answer the
+same question, documented in this PR with a runnable recipe rather than given new bridge code. See
+[`CHANGELOG.md`](CHANGELOG.md#the-fillet-family-could-not-report-a-declined-edge-only-skip-it-silently-639)
+for the full measurement and the reasoning against converging fillet's SKIP behaviour onto reject.
 
 ### MINOR — `x.y.0`
 

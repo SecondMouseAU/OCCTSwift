@@ -266,9 +266,18 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 ///   the whole call, #520)
 /// @param edgeCount Number of edges to fillet
 /// @param radius Fillet radius; must be > 0, or the call fails without touching OCCT
+/// @param declinedEdgeIndices Optional (may be NULL): filled with the 0-based indices, from
+///   `edgeIndices`, that OCCT declined to fillet (#639) -- a free-boundary edge, e.g. Must have
+///   capacity >= edgeCount when non-NULL.
+/// @param outDeclinedCount Optional (may be NULL): set to the number of entries written to
+///   `declinedEdgeIndices`. **Read it only when the returned shape is non-NULL.** It is zeroed on
+///   entry, so an early failure leaves 0, but a Build() failure returns NULL with the count already
+///   written, and that count describes a shape the caller never receives.
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                   int32_t edgeCount, double radius);
+                                   int32_t edgeCount, double radius,
+                                   int32_t* _Nullable declinedEdgeIndices,
+                                   int32_t* _Nullable outDeclinedCount);
 
 /// Fillet specific edges with linear radius interpolation
 ///
@@ -285,9 +294,14 @@ OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices
 /// @param edgeCount Number of edges to fillet
 /// @param startRadius Radius at the start of each named edge's law; must be > 0
 /// @param endRadius Radius at the end of each named edge's law; must be > 0
+/// @param declinedEdgeIndices Optional (may be NULL): same #639 reporting contract as
+///   OCCTShapeFilletEdges.
+/// @param outDeclinedCount Optional (may be NULL): same contract as OCCTShapeFilletEdges.
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdgesLinear(OCCTShapeRef shape, const int32_t* edgeIndices,
-                                         int32_t edgeCount, double startRadius, double endRadius);
+                                         int32_t edgeCount, double startRadius, double endRadius,
+                                         int32_t* _Nullable declinedEdgeIndices,
+                                         int32_t* _Nullable outDeclinedCount);
 
 /// Add draft angle to faces for mold release
 /// @param shape The shape to draft
@@ -1354,11 +1368,16 @@ typedef struct {
 ///   every radius must be > 0, and each edge's parameters must lie in [0, 1] and strictly increase
 /// @param pointCounts Array of how many radius points per edge; fewer than 1 for any edge rejects
 ///   the call, since a contour with no radius SIGSEGVs in Build()
+/// @param declinedEdgeIndices Optional (may be NULL): same #639 reporting contract as
+///   OCCTShapeFilletEdges.
+/// @param outDeclinedCount Optional (may be NULL): same contract as OCCTShapeFilletEdges.
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef shape,
                                       const int32_t* edgeIndices, int32_t edgeCount,
                                       const OCCTFilletRadiusPoint* radiusPoints,
-                                      const int32_t* pointCounts);
+                                      const int32_t* pointCounts,
+                                      int32_t* _Nullable declinedEdgeIndices,
+                                      int32_t* _Nullable outDeclinedCount);
 
 // MARK: - Per-Face Variable Offset (v0.38.0)
 

@@ -316,6 +316,35 @@ public func filletEvolving(_ edges: [EvolvingFilletEdge]) -> Shape?
 
 ---
 
+### `filletEvolvingWithReport(_:)`
+
+`filletEvolving(_:)`, also reporting which requested edges OCCT declined (#639): the entry point
+the Cluster B census named directly. Filleting an open shell's whole edge list skips the edges OCCT
+declines, with nothing that says which or how many.
+
+```swift
+public func filletEvolvingWithReport(_ edges: [EvolvingFilletEdge]) -> FilletResult?
+```
+
+- **Parameters:** same as `filletEvolving(_:)`.
+- **Returns:** a [`Shape.FilletResult`](Shape-Features#shapefilletresult), or `nil` on failure under
+  the same conditions as `filletEvolving(_:)`. `declinedEdgeIndices` is keyed by
+  `EvolvingFilletEdge.edgeIndex`.
+- **OCCT:** `BRepFilletAPI_MakeFillet` with evolving law (via `OCCTShapeFilletEvolving`), reading
+  `Contour(edge)` for each requested edge after `Add()` and before `Build()`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  let faces = box.faces().dropFirst().compactMap { Shape.fromFace($0) }
+  let shell = Shape.sew(shapes: Array(faces))!
+  let laws = shell.edges().map { EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)]) }
+  if let report = shell.filletEvolvingWithReport(laws) {
+      print(report.declinedEdgeIndices.count, "of", laws.count, "edges declined")
+  }
+  ```
+
+---
+
 ## Per-Face Variable Offset (v0.38.0)
 
 ### `offsetPerFace(defaultOffset:faceOffsets:tolerance:joinType:)`
