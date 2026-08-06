@@ -15,6 +15,72 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `OCCTEdgeGetConvexity` no longer depends on which face is passed first (#703)
+
+Found via Cluster A's census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`) while
+confirming #699's own fix, then confirmed directly on the simplest possible input:
+`detectPocketsAAG()` reported a pocket on a plain, uncut, convex 10mm box.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.detectPocketsAAG().count)   // was 1, now 0
+```
+
+A convex solid has no concave edges and therefore no pockets. `OCCTEdgeGetConvexity`'s formula, the
+sign of `(tangent × n1) · n2`, is a scalar triple product of the edge tangent and the two face
+normals: swapping which normal is `n1` and which is `n2` swaps two of its three terms, which negates
+a triple product. `AAG.buildGraph()`'s pairwise loop picks `face1`/`face2` by array position
+(`faces[i]`, `faces[j]`, `i < j`), not by any geometric convention, so the same physical edge
+reported opposite convexity depending on face enumeration order rather than on geometry. Two of a
+plain box's four side-wall-to-top-face dihedrals were misclassified concave this way, feeding a
+false pocket. The same mechanism, once per box, explains the `1`/`2` counts
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests` used to pin on their
+split-box fixtures.
+
+**Fixed**: convexity is a property of an edge with respect to the solid it bounds, not of which face
+a caller happens to pass first, so the new formula is built to be symmetric under the face1/face2
+swap rather than merely observed to be on the fixtures it was checked against.
+`OCCTEdgeGetConvexity` now takes each face's own area centroid (`BRepGProp::SurfaceProperties`), a
+point well inside the face and away from the edge, and checks which side of the OTHER face's
+tangent plane (at the edge midpoint) that centroid falls on, using that face's own outward normal:
+a negative dot product means the two faces wrap around the solid's material at this edge (convex), a
+positive one means the material recedes (concave). Doing this both ways, face1's centroid against
+face2's normal and face2's centroid against face1's normal, then averaging, makes swapping which
+face is `face1` relabel the same two terms of the sum rather than change it.
+
+**Migration note**: `detectPocketsAAG()`, `AAG.concaveNeighbors(of:)`/`convexNeighbors(of:)`, and any
+`AAGEdge.convexity` a caller reads directly can all report a different, now-correct, answer for a
+shape that previously hit this defect. Measured moves: a plain box's `detectPocketsAAG().count`
+goes from `1` to `0`; the split-box fixtures in `Issue642AAGNodeIdentityTests` and
+`Issue699AAGSolidScopedAdjacencyTests` move from `1`/`1` to `0`/`0` in both compound member orders
+(both fixtures are two plain boxes glued face to face, which have no concave edges to begin with);
+a compound of two disjoint boxes plus a free face moves from `2` to `0`. A genuine pocket (real
+overlap between a box and its cutting tool) is unaffected in kind: `detectPocketsAAG()` still finds
+it and still reports concave edges at the floor/wall junction: the fix corrects the sign
+convention, it does not flatten every edge to convex. This ships in v2.0.0, a major version, so it
+is not recorded as a [`SEMVER.md`](SEMVER.md) exception, since that mechanism is for breaks shipping
+within a major line.
+
+`AAG` (`Sources/OCCTSwift/FeatureRecognition.swift`) is the only Swift caller of
+`OCCTEdgeGetConvexity`, re-audited for this fix rather than trusted from #701's own earlier audit,
+so the blast radius is exactly the AAG-derived API surface above and nothing else.
+
+Two long-standing fixtures needed correcting alongside the bridge fix, not because of it: the
+`detectPocketsAAG()` doc example in `FeatureRecognition.swift` and the `detectPocket()` test in
+`Tests/OCCTModelingTests/OCCTModelingTests.swift` both placed their pocket-cutting tool at
+`origin: SIMD3(5, 5, 10)` against a box centred at the origin
+(`Shape.box(width:height:depth:)` spans -10...10 on a 20mm axis), so the tool's z range (10...25)
+only ever touched the box's top face at z=10 with zero volume in common (measured:
+`result.volume == box.volume`, unchanged). The single "pocket" both used to report was entirely
+this same order-dependence, not a real feature of either shape. Both now place the tool at
+`origin: SIMD3(-5, -5, 0)`, which actually overlaps the box and cuts a real 10mm-deep pocket.
+
+Tests: `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift` (new), plus updated pins in
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests`. `swift run Censuses
+cluster-a`'s two `detectPocketsAAG().count` rows move from `1/1/1` to `0/0/0`; the census and its
+README (`Scripts/repro/cluster-a-subshape-enumeration/README.md`) are updated to match. This is
+Cluster A's last open member (#664).
+
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 
 `--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
