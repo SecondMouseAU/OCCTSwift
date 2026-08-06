@@ -31,9 +31,12 @@ start, with its normal along the helix tangent there:
 let r = 10.0, pitch = 4.0, turns = 5.0, wireRadius = 1.5
 guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else { return }
 
-// helix tangent at the start point (r, 0, 0): d/dt(r·cos t, r·sin t, pitch·t/2π) at t = 0
-let tangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
-guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: tangent, radius: wireRadius),
+// Measure the spine's own start point and tangent — don't compute them analytically.
+// `Wire.helix`'s default clockwise: false reverses the build axis, so the wire's actual start
+// is (-r, ~0, 0), descending, not (r, 0, 0) ascending as a naive right-handed formula would give.
+guard let firstEdge = spine.edges().first, let curve = firstEdge.curve3D else { return }
+let (origin, tangent) = curve.d1(at: curve.domain.lowerBound)
+guard let profile = Wire.circle(origin: origin, normal: simd_normalize(tangent), radius: wireRadius),
       let spring  = Shape.pipeShell(spine: spine, profile: profile,
                                     mode: .frenet, solid: true) else { return }
 // spring.isValid == true; spring.volume ≈ π·wireRadius²·(coil length)
@@ -49,14 +52,18 @@ guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: tangent, radius:
 
 <sub>🖱️ Drag to orbit · scroll to zoom · auto-rotating. The static render shows until the 3D model loads. (Model exported straight from the snippet above via `Exporter.writeGLTF`.)</sub>
 
-Use `mode: .frenet`: for this coil it keeps the section true to the textbook tube volume
-(`π·wireRadius²` times the coil length, matched to within numerical tolerance and cross-checked
-against an independent `PipeShellBuilder` oracle). `.correctedFrenet` also builds a valid solid on
-this spine, but measured, not assumed, it does not preserve that volume here (about 12% larger on
-the parameters above). `.correctedFrenet`'s own purpose is avoiding twist at a genuine curvature
-*inflection* (see its doc comment); a helix has constant, never-zero curvature, so that case never
-arises here, and this recipe does not need it. See [`CHANGELOG.md`](../../CHANGELOG.md)'s #598 entry
-for the measurement and why this recipe changed which mode it names.
+`mode: .frenet` and `mode: .correctedFrenet` both keep the section true to the textbook tube volume
+here (`π·wireRadius²` times the coil length, matched to within numerical tolerance and cross-checked
+against an independent `PipeShellBuilder` oracle) — a circle is rotationally symmetric, so the two
+trihedron laws, which differ only by a rotation about the tangent, must sweep the identical solid.
+An earlier version of this page claimed `.correctedFrenet` did *not* preserve that volume (~12%
+larger); that was a bug in the recipe's own profile placement, not in `.correctedFrenet` — the
+snippet above computed the tangent from a formula rather than measuring it from the wire, and got
+both the origin and the sign wrong (see the code comment). `.frenet`'s output happened to be
+insensitive to that particular mistake; `.correctedFrenet`'s was not. See OCCTSwift
+[#721](https://github.com/SecondMouseAU/OCCTSwift/issues/721) for the full investigation, including
+a dense sweep across pitch and turn count confirming the two modes agree everywhere once the
+profile is placed correctly.
 
 ## Conical, tapered, and variable-pitch coils
 
