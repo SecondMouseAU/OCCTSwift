@@ -116,10 +116,10 @@ name says `[horizontal-cut fixture]`).
 | face (already fixed) | upwardFaces().count **[horizontal-cut fixture]** | 1 | 2 | 2 | corroborates #642's own table: #614's fix IS order-independent on the SAME fixture AAG is not |
 | face (AAG, #642, fixed) | buildAAG().nodes.count [vertical-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() (the shared wall is 2 nodes) |
 | face (AAG, #642, fixed) | AAG upward+horizontal count [vertical-cut fixture] | n/a | 2 | 2 | unchanged: shared wall's normal is horizontal-axis here, order-independent before and after |
-| face (AAG, #642/#699) | detectPocketsAAG().count [vertical-cut fixture] | 1 | 1 | 1 | #642-fixed: was 1/1/1 pre-#699 with a NEW order-dependence (1/1/2) exposed by #642's own fix; #699 fixed the cross-solid adjacency this exposed, restoring 1/1/1 (see "Update following #699's fix" below) |
+| face (AAG, #642/#699/#703) | detectPocketsAAG().count [vertical-cut fixture] | 0 | 0 | 0 | #642-fixed: was 1/1/1 pre-#699 with a NEW order-dependence (1/1/2) exposed by #642's own fix; #699 fixed the cross-solid adjacency this exposed, restoring 1/1/1; #703 then fixed `OCCTEdgeGetConvexity`'s own face1/face2 order-dependence, correcting the agreed answer to 0/0/0 -- two boxes glued face to face have no concave edges anywhere (see "Update following #703's fix" below) |
 | face (AAG, #642, fixed) | buildAAG().nodes.count [horizontal-cut fixture] | 6 | 12 | 12 | post-fix: was 11/11, now matches orientedFaces() |
 | face (AAG, #642, fixed) | **AAG upward+horizontal NODE INDICES [horizontal-cut fixture]** | n/a | **[2, 8]** | **[2, 8]** | post-fix: was `[2, 8]` vs `[2]`, now agrees. The shared wall is its own node per side, so neither side's index depends on which one `faces()` used to keep |
-| face (AAG, #642/#699) | **detectPocketsAAG().count [horizontal-cut fixture]** | 1 | 1 | 1 | #642-fixed: agreed at 2/2 (THE #642 HEADLINE MEASUREMENT); #699 found that agreement itself rode a cross-solid false adjacency and corrected it to 1/1 (see "Update following #699's fix" below) |
+| face (AAG, #642/#699/#703) | **detectPocketsAAG().count [horizontal-cut fixture]** | 0 | 0 | 0 | #642-fixed: agreed at 2/2 (THE #642 HEADLINE MEASUREMENT); #699 found that agreement itself rode a cross-solid false adjacency and corrected it to 1/1; #703 then fixed `OCCTEdgeGetConvexity`'s own face1/face2 order-dependence -- the SAME false positive a plain, uncut box showed on its own -- correcting the agreed answer to 0/0/0 (see "Update following #703's fix" below) |
 | wire | wireCount (dedup) | 6 | 11 | 11 | |
 | wire | wires.count (dedup) | 6 | 11 | 11 | |
 | wire | subShapeCount(ofType: .wire) (dedup canonical) | 6 | 11 | 11 | |
@@ -423,20 +423,48 @@ older defect, present on a single plain box too -- see below), while the floor o
 slab's top face shows zero concave same-solid neighbors either way. The `2`-vs-`1` swing was two
 independent cross-solid comparisons landing on the large slab's floor before #699 and nowhere after.
 
-**A third, unrelated defect was found while explaining this, and is also deliberately not fixed
-here.** `OCCTEdgeGetConvexity`'s reported concavity for a given physical edge depends on which face
-is passed as `face1` and which as `face2` -- the underlying `(tangent × n1) · n2` triple product
-negates under that swap, and `AAG.buildGraph()`'s pairwise loop picks `face1`/`face2` by array
-index order (`faces[i]`, `faces[j]`, `i < j`), not by any geometric convention. This reproduces on a
-**single, uncut plain box** (`detectPocketsAAG().count` is `1` for the plain-box fixture throughout
-this whole census, in every row that measures it, both before and after #642 and #699): two of the
-box's four side-wall-to-top-face dihedrals are genuinely convex but get reported concave, purely
-because of index order, which is what feeds the plain box's own false-positive pocket. This is
-orthogonal to solid membership (it needs no compound, no shared face, no second solid) and orthogonal
-to #699's fix (restricting to same-solid pairs does not touch which face lands at the lower index
-within a solid). Not filed as its own issue here since it was found explaining a side effect rather
-than measured as a primary claim; a future pass on `detectPockets()`'s accuracy should start from
-this note rather than re-derive it.
+**A third, unrelated defect was found while explaining this.** `OCCTEdgeGetConvexity`'s reported
+concavity for a given physical edge depended on which face was passed as `face1` and which as
+`face2` -- the underlying `(tangent × n1) · n2` triple product negates under that swap, and
+`AAG.buildGraph()`'s pairwise loop picked `face1`/`face2` by array index order (`faces[i]`,
+`faces[j]`, `i < j`), not by any geometric convention. This reproduced on a **single, uncut plain
+box** (`detectPocketsAAG().count` was `1` for the plain-box fixture throughout this whole census, in
+every row that measures it, both before and after #642 and #699): two of the box's four
+side-wall-to-top-face dihedrals were genuinely convex but got reported concave, purely because of
+index order, which is what fed the plain box's own false-positive pocket. This was orthogonal to
+solid membership (it needed no compound, no shared face, no second solid) and orthogonal to #699's
+fix (restricting to same-solid pairs does not touch which face lands at the lower index within a
+solid). Filed as #703 and fixed -- see "Update following #703's fix" below.
+
+## Update following #703's fix
+
+#703 is fixed: `OCCTEdgeGetConvexity` no longer classifies an edge from the face1/face2 triple
+product's sign. It now takes each face's own area centroid (`BRepGProp::SurfaceProperties`), well
+inside the face and away from the edge, and checks which side of the OTHER face's tangent plane
+that centroid falls on, using that face's own outward normal -- done both ways (face1's centroid
+against face2's normal, and face2's centroid against face1's normal) and averaged, so swapping which
+face is called `face1` and which `face2` relabels the same two terms of the sum rather than changing
+it. See `OCCTBridge_BRepGraph.mm`'s `OCCTEdgeGetConvexity` for the full derivation.
+
+**The plain-box false positive is gone.** `detectPocketsAAG().count` on the plain-box fixture is
+`0` now, in every row that measures it, matching the geometric fact that a convex solid has no
+concave edges. This is the row this census's own "Update following #699's fix" section flagged as a
+"far older defect, present on a single plain box too" -- unmasked, not introduced, by #699's fix
+narrowing what fed each fixture's count.
+
+**Both split fixtures move to `0/0/0`, not back to `1/1/1`.** The `1/1/1` #699 restored was never
+the geometrically right answer for either fixture: both are two plain boxes glued face to face, one
+cut horizontally and one vertically, and a plain box has no concave edges to begin with, so neither
+piece can contribute a pocket regardless of which side of the shared wall a solid-scoped walk visits
+first. `0/0/0` is what a same-solid-only walk of two ordinary boxes should always have reported --
+#703 was the last thing standing between the fix and that answer.
+
+**No further defect surfaced closing this one out.** Every `detectPocketsAAG()` row this census
+measures across all three fixtures (plain box, and both split compounds in both member orders) now
+reads `0`, and a fixture built specifically to have a real pocket (a genuine cavity cut into a box,
+see `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift`) reads `1` with real concave
+edges at the floor/wall junction, not `0` -- the fix corrects the sign convention, it does not
+flatten every edge to convex.
 
 ## Re-scoping the three members
 

@@ -177,10 +177,10 @@ enum ClusterA {
         record("face (AAG, #642)", "AAG upward+horizontal count [vertical-cut fixture]",
                plainBox: "n/a", orderA: upwardHorizontalA, orderB: upwardHorizontalB,
                note: "shared wall's normal is horizontal-axis here, so it never reaches isHorizontal() -- order-independent by construction, not by a fix")
-        record("face (AAG, #642/#699)", "detectPocketsAAG().count [vertical-cut fixture]",
+        record("face (AAG, #642/#699/#703)", "detectPocketsAAG().count [vertical-cut fixture]",
                plainBox: box.detectPocketsAAG().count, orderA: compoundA.detectPocketsAAG().count,
                orderB: compoundB.detectPocketsAAG().count,
-               note: "this fixture does not exercise #642 (shared wall's normal is horizontal-axis); it DOES exercise #699 -- was 1/1/2 before #699 scoped adjacency/convexity to one solid, now 1/1/1")
+               note: "this fixture does not exercise #642 (shared wall's normal is horizontal-axis); it DOES exercise #699 -- was 1/1/2 before #699 scoped adjacency/convexity to one solid, then 1/1/1; #703 then fixed OCCTEdgeGetConvexity's own face1/face2 order-dependence, correcting the agreed answer to 0/0/0 (two boxes glued face to face have no concave edges anywhere)")
 
         let hAagA = hCompoundA.buildAAG()
         let hAagB = hCompoundB.buildAAG()
@@ -191,10 +191,10 @@ enum ClusterA {
         record("face (AAG, #642)", "AAG upward+horizontal NODE INDICES [horizontal-cut fixture]",
                plainBox: "n/a", orderA: "\(hUpwardHorizontalIdxA)", orderB: "\(hUpwardHorizontalIdxB)",
                note: "the shared wall's node keeps whichever half's orientation faces() reached first -- this is the #642 mechanism")
-        record("face (AAG, #642/#699)", "detectPocketsAAG().count [horizontal-cut fixture]",
+        record("face (AAG, #642/#699/#703)", "detectPocketsAAG().count [horizontal-cut fixture]",
                plainBox: box.detectPocketsAAG().count, orderA: hCompoundA.detectPocketsAAG().count,
                orderB: hCompoundB.detectPocketsAAG().count,
-               note: "THE #642 HEADLINE MEASUREMENT agrees across order (was 2/2); #699 found the agreement itself was partly a cross-solid false adjacency and corrected it to 1/1")
+               note: "THE #642 HEADLINE MEASUREMENT agrees across order (was 2/2); #699 found the agreement itself was partly a cross-solid false adjacency and corrected it to 1/1; #703 then fixed OCCTEdgeGetConvexity's own face1/face2 order-dependence -- the SAME false positive a plain, uncut box showed on its own -- correcting the agreed answer to 0/0/0")
 
         // MARK: - WIRE family
 

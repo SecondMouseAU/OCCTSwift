@@ -51,6 +51,201 @@ exists to stop wasting, had not completed by the time the PR was opened. See the
 exactly what ran and what remained outstanding.
 
 ||||||| d2ae082
+||||||| 133f8b1
+### `OCCTEdgeGetConvexity` replaces its hand-rolled formula with OCCT's own classifier (#723)
+
+#703 (below) fixed the face1/face2 argument-order dependence by replacing a scalar triple product
+with a formula built from each face's own area centroid, a GLOBAL property of the face, standing in
+for a LOCAL one (which side of an edge is material). That residual was filed as #723: the two
+averaged centroid terms are each a different global measure, so their sum drifts with face
+proportions. Measured: a round through-hole's rim classified 2 concave edges at plate thickness 20
+but 0 (correctly, by accident) at 40/60/120, because the cylindrical wall's own centroid moves as
+the wall gets taller while the rim geometry itself never changes, the same failure class #703
+fixed (a geometric answer depending on something that is not the local geometry), re-parameterised.
+
+**Fixed** by replacing the formula entirely with `ChFi3d::DefineConnectType`, the classifier the
+3D fillet and chamfer builders use themselves to decide which edges they can round or bevel, called
+with `CorrectPoint=true`, matching `ChFi3d_Builder_1.cxx`'s own call. It samples the LOCAL dihedral
+at the edge midpoint (each face's normal there, from its pcurve's `D1`, against the edge tangent),
+needs no per-face integration, and reports the identical classification for `(face1, face2)` and
+`(face2, face1)` by construction, so #703's order-independence requirement holds with no centroid
+argument needed. `ChFiDS_Concave`/`ChFiDS_Convex` map onto the existing `OCCTEdgeConvexity` enum
+directly; `ChFiDS_Tangential` (and the residual `ChFiDS_Other`/`ChFiDS_Mixed`/`ChFiDS_FreeBound`
+cases this classifier can decline to resolve) map to `Smooth`, the same "can't classify this edge"
+fallback the function has always used. `SinTol` reuses the previous formula's `smoothThreshold`
+(0.01, ~0.5°) rather than introducing a new tolerance.
+
+```swift
+let plate = Shape.box(width: 50, height: 50, depth: 20)!
+let drill = Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 10, height: 30)!
+let drilled = plate.subtracting(drill)!
+print(drilled.buildAAG().edges.filter { $0.convexity == .concave }.count)   // was 2, now 0
+```
+
+**Migration note**: a hole rim (the edge where a cylindrical/conical wall meets the face it
+penetrates) now consistently reports `.convex`, never `.concave`, independent of wall
+height/thickness: a hole rim is convex by construction, since the solid occupies the quarter-space below
+the pierced face and outside the wall, a 90° material angle, not the 270° that makes an edge
+concave. `detectPocketsAAG()` no longer reports a through-hole as a 1-wall pocket at any thickness.
+This ships in v2.0.0, a major version, so it is not recorded as a [`SEMVER.md`](SEMVER.md)
+exception, since that mechanism is for breaks shipping within a major line.
+
+**Dead plumbing removed.** #720's review of #703 added `OCCTFaceGetAreaCentroid` (a cached
+`BRepGProp::SurfaceProperties` centroid, adaptive integration) plus a widened `OCCTEdgeGetConvexity`
+signature taking each face's precomputed centroid, so `AAG.buildGraph()` could avoid repeating a
+whole-face integration per adjacent pair. `ChFi3d::DefineConnectType` needs no centroid at all, so
+all of that becomes dead: `OCCTEdgeGetConvexity` drops back to its original four-argument signature
+(`shape, edge, face1, face2`), `OCCTFaceGetAreaCentroid` is removed outright (confirmed to have no
+other caller before deleting it), and `buildGraph()`'s centroid-precompute loop is gone.
+
+**Performance improves further, it does not regress.** #720 measured a 7-12x slowdown from
+`OCCTEdgeGetConvexity` recomputing `BRepGProp::SurfaceProperties` per face-pair, then recovered
+2.06x by caching each face's centroid once per occurrence instead. `ChFi3d::DefineConnectType` needs
+no integration at all, just a handful of `D1` derivative evaluations per edge, the same order of cost as
+the pre-#703 tangent-plane formula. Re-measured with the same method (`Shape.buildAAG()` on a
+many-faced drilled-plate fixture, three runs per configuration): every post-#723 run was faster than
+every pre-#723 (cached-centroid) run, by more than 3x at the extremes (min 110ms vs min 354ms on a
+262-face/524-pair fixture). See `Scripts/repro/703-edge-convexity-order/README.md`'s "Update
+following #723's fix" for the full numbers and a caveat about a stale-incremental-build artifact hit
+while measuring.
+
+**Fixture bug found and fixed alongside the classifier swap.** The through-hole regression test
+added under #703 pinned its drill's base at a fixed Z (`-5`) rather than scaling it with plate
+thickness, so for every thickness the test actually exercised (20/40/60/120mm) the drill never
+reached the plate's own bottom face (`Shape.box(width:height:depth:)` centers the box, so the
+plate's bottom is at `-thickness/2`, below `-5` once `thickness > 10`), so the fixture was silently a
+BLIND pocket with a floor fixed at Z=-5 for every tested thickness, not a through-hole at all,
+independently confirmed via `ChFi3d` (1 concave edge, matching a blind round pocket exactly, not the
+0 a through-hole reports). Fixed by anchoring the drill's base `thickness/2 + 5` below center, so it
+clears the plate by 5mm on both faces regardless of thickness, matching the fixture's evident intent.
+
+`AAG` (`Sources/OCCTSwift/FeatureRecognition.swift`) is the only Swift caller of
+`OCCTEdgeGetConvexity`, re-audited for this fix rather than trusted from #703's own audit.
+
+Tests: `Issue703EdgeConvexityOrderTests`'s through-hole case
+(`throughHoleConcaveCountIsPinnedPendingIssue723`, an explicitly-labelled characterisation test
+pinning the old formula's wrong answer of `2`) is rewritten as a real ground-truth test
+(`throughHoleHasNoConcaveEdges`, pinning the correct answer of `0`), with its fixture bug fixed in
+the same change. Proved by injection per `okf/policies/prove-the-test-fails.md`: the rewritten test,
+run against the pre-#723 formula, fails at three of its four parametrized thicknesses (2 concave
+edges reported, and a false 1-pocket count, at 20/40/60mm); restoring the `ChFi3d` fix makes all
+four pass. The suite's other tests (plain box, glued boxes, genuine pocket, square pocket) are
+unaffected, since `ChFi3d` agrees with the centroid formula everywhere except the through-hole rim.
+
+### `OCCTEdgeGetConvexity` no longer depends on which face is passed first (#703)
+
+Found via Cluster A's census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`) while
+confirming #699's own fix, then confirmed directly on the simplest possible input:
+`detectPocketsAAG()` reported a pocket on a plain, uncut, convex 10mm box.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.detectPocketsAAG().count)   // was 1, now 0
+```
+
+A convex solid has no concave edges and therefore no pockets. `OCCTEdgeGetConvexity`'s formula, the
+sign of `(tangent × n1) · n2`, is a scalar triple product of the edge tangent and the two face
+normals: swapping which normal is `n1` and which is `n2` swaps two of its three terms, which negates
+a triple product. `AAG.buildGraph()`'s pairwise loop picks `face1`/`face2` by array position
+(`faces[i]`, `faces[j]`, `i < j`), not by any geometric convention, so the same physical edge
+reported opposite convexity depending on face enumeration order rather than on geometry. Two of a
+plain box's four side-wall-to-top-face dihedrals were misclassified concave this way, feeding a
+false pocket. The same mechanism, once per box, explains the `1`/`2` counts
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests` used to pin on their
+split-box fixtures.
+
+**Fixed**: convexity is a property of an edge with respect to the solid it bounds, not of which face
+a caller happens to pass first, so the new formula is built to be symmetric under the face1/face2
+swap rather than merely observed to be on the fixtures it was checked against.
+`OCCTEdgeGetConvexity` now takes each face's own area centroid (`BRepGProp::SurfaceProperties`), a
+point well inside the face and away from the edge, and checks which side of the OTHER face's
+tangent plane (at the edge midpoint) that centroid falls on, using that face's own outward normal:
+a negative dot product means the two faces wrap around the solid's material at this edge (convex), a
+positive one means the material recedes (concave). Doing this both ways, face1's centroid against
+face2's normal and face2's centroid against face1's normal, then averaging, makes swapping which
+face is `face1` relabel the same two terms of the sum rather than change it.
+
+**Migration note**: `detectPocketsAAG()`, `AAG.concaveNeighbors(of:)`/`convexNeighbors(of:)`, and any
+`AAGEdge.convexity` a caller reads directly can all report a different, now-correct, answer for a
+shape that previously hit this defect. Measured moves: a plain box's `detectPocketsAAG().count`
+goes from `1` to `0`; the split-box fixtures in `Issue642AAGNodeIdentityTests` and
+`Issue699AAGSolidScopedAdjacencyTests` move from `1`/`1` to `0`/`0` in both compound member orders
+(both fixtures are two plain boxes glued face to face, which have no concave edges to begin with);
+a compound of two disjoint boxes plus a free face moves from `2` to `0`. A genuine pocket (real
+overlap between a box and its cutting tool) is unaffected in kind: `detectPocketsAAG()` still finds
+it and still reports concave edges at the floor/wall junction: the fix corrects the sign
+convention, it does not flatten every edge to convex. This ships in v2.0.0, a major version, so it
+is not recorded as a [`SEMVER.md`](SEMVER.md) exception, since that mechanism is for breaks shipping
+within a major line.
+
+`AAG` (`Sources/OCCTSwift/FeatureRecognition.swift`) is the only Swift caller of
+`OCCTEdgeGetConvexity`, re-audited for this fix rather than trusted from #701's own earlier audit,
+so the blast radius is exactly the AAG-derived API surface above and nothing else.
+
+Two long-standing fixtures needed correcting alongside the bridge fix, not because of it: the
+`detectPocketsAAG()` doc example in `FeatureRecognition.swift` and the `detectPocket()` test in
+`Tests/OCCTModelingTests/OCCTModelingTests.swift` both placed their pocket-cutting tool at
+`origin: SIMD3(5, 5, 10)` against a box centred at the origin
+(`Shape.box(width:height:depth:)` spans -10...10 on a 20mm axis), so the tool's z range (10...25)
+only ever touched the box's top face at z=10 with zero volume in common (measured:
+`result.volume == box.volume`, unchanged). The single "pocket" both used to report was entirely
+this same order-dependence, not a real feature of either shape. Both now place the tool at
+`origin: SIMD3(-5, -5, 0)`, which actually overlaps the box and cuts a real 10mm-deep pocket.
+
+Tests: `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift` (new), plus updated pins in
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests`. `swift run Censuses
+cluster-a`'s two `detectPocketsAAG().count` rows move from `1/1/1` to `0/0/0`; the census and its
+README (`Scripts/repro/cluster-a-subshape-enumeration/README.md`) are updated to match. This is
+Cluster A's last open member (#664).
+
+**Follow-up from PR #720's automated review**: three real, independently-measured issues in the fix
+above, addressed without touching the classification formula itself (a formula change is #723's
+scope, deliberately deferred):
+
+- **Performance (finding 7, confirmed).** `OCCTEdgeGetConvexity` called
+  `BRepGProp::SurfaceProperties` on `face1`/`face2` directly, so `AAG.buildGraph()`'s pairwise loop
+  repeated a face's own whole-face integration once per neighbor. Measured 7-12x slower building
+  the AAG of a 134-face part than the pre-#703 formula (which does no integration at all). Fixed:
+  a new `OCCTFaceGetAreaCentroid` bridge call lets `buildGraph()` compute each face occurrence's
+  centroid once, before the pairwise loop, and pass it into `OCCTEdgeGetConvexity` (which no longer
+  computes it internally), cutting the redundant-integration half of the regression exactly in half
+  (measured 2.06x, matching the 2.09x the call-count reduction predicts). The remaining gap versus
+  the pre-#703 baseline is the inherent cost of the centroid approach itself, not a caching problem;
+  see `Scripts/repro/703-edge-convexity-order/` for the full measurement.
+- **Sliver-face guard (findings 2 and 9, not reproduced, added defensively).** A dedicated probe
+  (`Scripts/repro/703-edge-convexity-order/repro_sliver.mm`) fusing two boxes with a deliberate
+  sliver overlap found no instability: OCCT's own boolean tolerance handling does not let a
+  genuinely near-zero-area face survive as its own topological face. `OCCTFaceGetAreaCentroid`
+  still declines any face under area `1e-9` (several orders below the smallest sliver measured) and
+  reports "no centroid", which `OCCTEdgeGetConvexity` treats as Smooth: free, from the finding-7
+  restructuring, not because a live bug was found.
+- **Integration accuracy (finding 8, confirmed as a real gap, closed).** The plain
+  `SurfaceProperties` overload has no bounded relative error; `OCCTFaceGetAreaCentroid` now uses the
+  adaptive-integration overload (`Eps = 1e-6`, matching `Face.area()`'s own default), which does.
+
+Two findings were investigated and are not regressions:
+
+- **Finding 3** (removing the tangent-magnitude cusp guard). The new formula's terms are the edge
+  midpoint's position, the two face normals, and the two face centroids, none of which derive
+  from the edge curve's own parametric derivative. A cusp in the curve's parameterization (a
+  vanishing derivative) cannot perturb an answer with no dependence on that derivative; the removed
+  code was dead relative to the new method, not a guard the new method still needed.
+- **Findings 1 and 4** (the centroid-toward-material assumption failing for holes/curved faces, and
+  `smoothThreshold` no longer bounding a real angle). Both restate #723, already filed and tracked
+  separately with its own measurement (a through-hole rim's classification drifting with plate
+  thickness). Every fixture in the PR's own verification comment shows this PR matching or beating
+  the base branch, never regressing it, including on holed/curved geometry; see
+  `Issue703EdgeConvexityOrderTests.throughHoleHasNoConcaveEdges` (renamed and rewritten as a ground
+  truth test when #723 landed; see that entry above) /
+  `squarePocketHasExactlyEightConcaveEdges` (new, finding 6) for regression locks on curved/holed
+  geometry that do NOT depend on #723's disputed cases.
+
+Finding 5 (`(result.volume ?? 0) < (box.volume ?? 0)` masking a nil volume computation as `0`) is a
+test-quality fix, not a formula question: both occurrences (`OCCTModelingTests.detectPocket()` and
+`Issue703EdgeConvexityOrderTests.genuinePocketStillReportsConcaveEdges`) now unwrap both volumes and
+fail loudly if either is nil, matching this suite's own `guard let ..., let v0 = shape.volume else
+{ #expect(Bool(false), ...) }` idiom.
+
 ### `plateSurface`'s point constraints reject `.g2` in Swift instead of relying on OCCT's own throw (#437)
 
 Cluster D's continuity census (#513/#667, `Scripts/repro/cluster-d-continuity/`) measured #437 as a
@@ -141,6 +336,127 @@ same pass, `ci.yml`'s comment for `count-operations.py` is corrected: it said th
 an unrecognised" option, which was true only until the same-day commit that made it exit 2 instead
 (confirmed still correct: `count-operations.py --self-test` and `--bogus` both exit 2 with a usage
 message).
+
+#### `Shape.analyze(tolerance:)` reported zero free edges for every shape, and a `healed()`/`fixSolid()` demotion had no reliable signal (#702)
+
+`Shape.healed()` and `Shape.fixSolid()` can reach `isValid == true` by demoting a solid to a
+shell: `ShapeFix_Solid` (via `ShapeFix_Shape`'s delegation, for `healed()`) hands back the shell
+unpromoted whenever it cannot close it, already correctly documented for `fixSolid()` since #442.
+A shell has no closure requirement of its own, so the demoted result is genuinely `isValid`, and
+the issue asked for a way to tell.
+
+**The issue's own reproducer does not reproduce on this branch.** It measured a
+`ThruSectionsBuilder(isSolid: true, isRuled: false)` loft through a 36-tooth bevel gear's six
+section wires (1152 points each) on OCCT v1.17.0. Three independent reconstructions against this
+kernel (8.0.1 + patches), matching gear-tooth polygons at various tooth counts/tapers/twists, a
+dense sinusoidal profile, and a faithful port of `OCCTSwiftScripts/recipes/04-spur-gear`'s
+involute math scaled per section (matching the issue's own 1152-points-per-wire figure exactly at
+`flankSamples = 14`, plus a spiral-twist variant), all produced a `BRepCheck_Analyzer`-valid raw
+loft, across 400+ parameter combinations. `BRepCheck_Analyzer` itself does not flag 3D
+self-intersection between non-adjacent faces either: a deliberately self-intersecting
+179-degree-twisted star-prism loft still reports `isValid == true`, confirmed directly and
+matching `analyze()`'s own `selfIntersectionCount`, which is hardcoded to 0 and always has been
+(see below). Source-reading `ShapeFix_Solid::Perform()`/`CreateSolids()`/`CollectSolids()` found
+no path that demotes a genuinely closed shell either: every demotion in that class is gated on
+`BRep_Tool::IsClosed`/`ShapeAnalysis_FreeBounds` finding real free edges, matching #442's
+documented contract. No fix was made for this specific scenario because nothing was found broken
+there; per the issue's own instruction, a non-reproducing report closes with the evidence rather
+than a manufactured fix.
+
+**What does reproduce, trivially, with no loft at all: an open shell wrapped as a `TopoDS_Solid`**
+(a box missing one face, sewn, then `Shape.solidFromShells([shell])`, exactly what
+`BRepBuilderAPI_MakeSolid` does with a single non-closed shell, no fixing). `fixSolid()`/`healed()`
+correctly demote it to a shell (#442's contract), `isValid` reads `true` on the result, and this
+is where the issue's own complaint held: `analyze(tolerance:)` read zero free edges on it
+regardless.
+
+**Root cause, and fixed:** `OCCTShapeAnalyze` (`OCCTBridge_Healing.mm`) called
+`ShapeAnalysis_Shell::LoadShells()` and then read `HasFreeEdges()`/`FreeEdges()`. `LoadShells()`
+only registers a shell for `NbLoaded()`/`Loaded()` bookkeeping; it runs no edge analysis at all.
+Only `CheckOrientedShells()` populates the free-edge set those accessors read, exactly as the
+sibling entry point `OCCTShapeAnalyzeShell` (backing `Shape.analyzeShell()`) already calls it. So
+`freeEdgeCount` was hardcoded to 0 for every shape passed to `analyze(tolerance:)`, however open,
+and `freeFaceCount`'s own local variable was never incremented anywhere in the function; both
+silently agreed with a defect no matter what it was. Now `CheckOrientedShells(shell, alsofree:
+true)` is called, `freeEdgeCount` reports the real count, and `freeFaceCount` counts the shells
+found not fully closed, matching the field's own existing header comment ("Number of free faces
+(shell not closed)").
+
+**`Shape.isValidSolid` already answered the issue's actual question, unaffected by either bug**,
+for a reason unrelated to this fix: added for #206/#208 (an unrelated self-intersecting-loft
+hazard), it checks `shapeType == .solid` before running `BRepCheck_Analyzer`, so it reads `false`
+on any demoted shell where plain `isValid` reads `true`. It had no test at all for that branch:
+every existing assertion (`Issue225ThreadedRodTests`, `Issue257MultiStartTests`,
+`Issue397CircularHoleTests`, `OCCTShapeHealingTests`) only tested the positive, already-a-solid
+case. Also documented: `selfIntersectionCount` is another permanent 0 (the bridge's own comment:
+"would require more expensive computation"), not a computed absence of self-intersection.
+
+`healed()` gained the demotion warning `fixSolid()` has carried since #442 (it shares the same
+`ShapeFix_Solid` mechanism, confirmed by reading `ShapeFix_Shape.cxx`'s delegation), and both now
+cross-reference `isValidSolid` as the reliable check. This is a bug fix to the values
+`Shape.analyze(tolerance:)` returns, not a new field or a signature change. Like the
+#605/#609/#583/#595 fabricated-zero fixes before it, this is a PATCH-level correction (a wrong
+value repaired, per `SEMVER.md`'s own quick-reference table), not a recorded exception: nothing
+could have correctly relied on a hardcoded 0.
+
+New tests: `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`, 11 cases on the tiny
+open-shell fixture above (a box missing one face is the "smallest shape that demotes" the issue
+asked for). Proven to catch the fix: reverting `OCCTShapeAnalyze` back to `LoadShells()` fails
+exactly the three tests exercising `freeEdgeCount`/`freeFaceCount` (open shell, demoted shell, a
+two-shell compound) and leaves the other seven (`isValidSolid`, demotion-to-shell, closed-box
+negative control) green, confirming the new tests target this bug specifically rather than the
+already-correct demotion behaviour.
+
+**Follow-up from code review, before this landed:**
+
+- **`OCCTShapeAnalyze`'s new `CheckOrientedShells` call omitted `checkinternaledges`**, the third
+  argument, unlike the sibling `OCCTShapeAnalyzeShell`, which already passed `true`.
+  `ShapeAnalysis_Shell.cxx`: with `checkinternaledges` false, a FORWARD/REVERSED edge with no
+  opposite-orientation partner is unconditionally free; with it true, an edge that also occurs with
+  `TopAbs_INTERNAL` orientation elsewhere in the same shell (matched by `IsSame`: same TShape and
+  Location, ignoring orientation) is read as connected through that occurrence instead. The two
+  entry points could silently disagree on any shell carrying an INTERNAL-oriented edge, directly
+  contradicting this fix's own "`analyze()` must agree with `analyzeShell()`" test invariant. The
+  original fixture (the box missing one face) has no INTERNAL-oriented edges, so it could not catch
+  the divergence; a new fixture does (a single face wrapped as a shell, with an `.internal`-oriented
+  duplicate of one of its own boundary edges embedded back into the face before the face joins the
+  shell). Both call sites now share one helper (`occtAnalyzeShellOrientation`), so the argument
+  cannot drift between them again the way it just did.
+- **`totalProblems` double-counted an open shell's defect**: once via `freeEdgeCount` (one count
+  per free edge) and again as a flat `+1` via `freeFaceCount` (one shell found not fully closed),
+  now that this fix makes both fields live for the same shape at once for the first time.
+  `freeFaceCount` is a derived summary of the same scan, not an independent defect category, so
+  `totalProblems` no longer includes it; `freeFaceCount` stays a public field for callers who want
+  the shell-level breakdown.
+- **The per-shell scan gained a per-iteration `try`/`catch`.** `CheckOrientedShells` is a real OCCT
+  computation, unlike the `LoadShells()` it replaced, so it can raise `Standard_Failure` on a
+  malformed shell; without a scoped catch, one bad shell in a multi-shell shape would abort to this
+  function's outer `catch` and discard every other shell's free-edge count along with the
+  small-edge/small-face/gap counts computed afterward, rather than just skipping that one shell's
+  contribution.
+
+**A second, corrected review pass** retracted five of the first pass's seven points (a docs gap on
+`fixed`/`upgraded`, the per-shell try/catch above, duplicated scan logic, and two writing-style
+nits) as not part of its own verified output, keeping only two (`checkinternaledges` and the
+`totalProblems` double-count, both already listed above) and replacing the rest with two genuinely
+different findings:
+
+- **`isValidSolid`, `isValid` and `healed()`'s doc comments carried no fenced `swift` code block.**
+  `isValid` and `healed()` gained new demotion-hazard prose in this same fix and neither picked up
+  an example; `isValidSolid` had none even before this fix touched its doc, so the review's claim
+  held on all three. All three now carry a runnable snippet that builds the box-missing-one-face
+  fixture and shows `isValid == true` / `isValidSolid == false` on the demoted shell: the exact
+  hazard each paragraph describes, not a decorative unrelated example. Each snippet's literal code
+  was run once as a throwaway test before being written into the doc comment.
+- **`Issue702SolidDemotionTests.openShellMissingOneFace()` duplicated a fixture
+  `Issue442FixSolidMultiBodyTests.swift` already built inline**, in the same test target: both drop
+  one face from a box, compound the remaining five and sew them, the smallest input that reaches
+  `ShapeFix_Solid`'s cannot-close branch. Extracted to
+  `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift`
+  (`sewnBoxMissingOneFace(_:tolerance:)`, parameterized on the box so the two suites keep their own
+  box size/origin), following the precedent `Tests/OCCTStressTests/StressTestFixtures.swift` already
+  set for sharing fixtures within one test target. Both suites re-verified unchanged after the
+  refactor.
 
 ### CI builds the same kernel the branch is written against
 

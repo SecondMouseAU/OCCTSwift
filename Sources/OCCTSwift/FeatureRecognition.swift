@@ -518,9 +518,14 @@ extension Shape {
     /// ``AAGNode/isPlanar``, which ``buildAAG()`` derives per face occurrence, so the result no
     /// longer depends on a compound's member order (#642).
     ///
+    /// `Shape.box(width:height:depth:)` is centred at the origin, so a 20mm box spans -10...10 on
+    /// every axis; the pocket tool's footprint sits under the box's own top and its z range starts
+    /// below it, so the cut actually removes material rather than merely touching the top face
+    /// (#703).
+    ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
-    /// let pocket = Shape.box(origin: SIMD3(5, 5, 10), width: 10, height: 10, depth: 15)!
+    /// let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
     /// let result = box.subtracting(pocket)!
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```
