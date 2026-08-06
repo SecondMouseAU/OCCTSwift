@@ -1115,23 +1115,33 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 
 ### `Shape.FilletResult`
 
-Result of a fillet call that also reports which requested edges OCCT declined (#639).
+Result of a fillet call that also reports which requested edges OCCT declined (#639), and -- for
+`blendedEdgesWithReport(_:)` -- which duplicate entries were silently overwritten (#633).
 
 ```swift
 public struct FilletResult: Sendable {
     public let shape: Shape
     public let declinedEdgeIndices: [Int]
+    public let overwrittenDuplicateIndices: [Int]
 }
 ```
 
 - **Fields:** `shape`: the filleted shape, identical to what the non-reporting sibling returns for
   the same input. `declinedEdgeIndices`: 0-based indices, matching `Edge.index`, of the requested
   edges OCCT declined to fillet. Empty when every requested edge was accepted.
-- **Notes:** there is no *reason* alongside the list. `BRepFilletAPI_MakeFillet::Add` returns
+  `overwrittenDuplicateIndices`: 0-based edge indices whose radius a *later* entry in the same
+  request overwrote. Empty for every `WithReport` sibling except `blendedEdgesWithReport(_:)`, the
+  one entry point whose per-edge radius array can name the same edge twice.
+- **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
   nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
   during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
   0`, populated by `Add()` and not `Build()`, is the only signal OCCT itself exposes, so this reports
-  *which* edges were declined, not *why*.
+  *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
+  deduplicating it: an edge requested three times, and declined, is reported three times in
+  `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
+  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
+  for distinct edges.
 
 ---
 
@@ -1794,7 +1804,11 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeBlendEdges`).
 - **Notes:** one non-positive radius rejects the whole batch, the same contract
   [`filleted(edges:radius:)`](#filletededgesradius) applies to its single radius (#489), and one
-  index that does not resolve rejects it too rather than being skipped (#520).
+  index that does not resolve rejects it too rather than being skipped (#520). The same edge index
+  named twice is **not** rejected: `BRepFilletAPI_MakeFillet::Add(radius, edge)` writes to that
+  edge's own fillet-contour slot, so the *second* call silently overwrites the first radius (#633).
+  Unchanged, existing behaviour -- see [`blendedEdgesWithReport(_:)`](#blendededgeswithreport_) for
+  the same fillet with a report naming which entries a duplicate overwrote.
 - **Example:**
   ```swift
   let blended = shape.blendedEdges([
@@ -1808,6 +1822,40 @@ public func blendedEdges(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> Sha
 
   // Rejected: 99_999 names no edge, so the batch fails rather than filleting edge 0
   let outOfRange = shape.blendedEdges([(0, 1.0), (99_999, 2.0)])  // nil
+
+  // Not rejected: edge 0's first radius (1.0) is silently overwritten by the second (3.0)
+  let overwritten = shape.blendedEdges([(0, 1.0), (0, 3.0)])
+  ```
+
+---
+
+### `blendedEdgesWithReport(_:)`
+
+`blendedEdges(_:)`, also reporting which requested edges OCCT declined to fillet, and which
+duplicate entries a later request overwrote (#633).
+
+```swift
+public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> FilletResult?
+```
+
+- **Parameters:** same as `blendedEdges(_:)`.
+- **Returns:** a `FilletResult`, or `nil` on failure under the same conditions as
+  `blendedEdges(_:)`.
+- **OCCT:** `BRepFilletAPI_MakeFillet.Add(radius, edge)` (via `OCCTShapeBlendEdges`), reading
+  `Contour(edge)` for each requested edge after `Add()` and before `Build()` for the declined-edge
+  axis; the duplicate-overwrite axis is computed Swift-side from `edgeRadii` itself and needs no
+  OCCT call at all, since an edge index maps to exactly one edge regardless of how many times it is
+  requested.
+- **Notes:** neither report changes the shape returned, which is byte-identical to what
+  `blendedEdges(_:)` gives for the same input. See `Shape.FilletResult` above for the mirror-the-
+  request convention both of its list fields share.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  if let report = box.blendedEdgesWithReport([(0, 2.0), (0, 5.0)]) {
+      print(report.overwrittenDuplicateIndices)   // [0]: edge 0's first radius (2.0) was overwritten
+      print(report.declinedEdgeIndices)            // []: every edge of a closed box fillets
+  }
   ```
 
 ---

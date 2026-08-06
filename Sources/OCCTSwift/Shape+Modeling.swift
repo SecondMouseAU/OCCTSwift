@@ -72,6 +72,30 @@ extension Shape {
         /// edge twice reports it twice, so the count matches how many entries of the caller's list
         /// were refused. Use `Set(declinedEdgeIndices)` for distinct edges.
         public let declinedEdgeIndices: [Int]
+        /// 0-based edge indices, matching ``Edge/index``, whose radius a *later* entry in the same
+        /// request overwrote (#633). Empty for every `WithReport` sibling except
+        /// ``Shape/blendedEdgesWithReport(_:)``, the one entry point that takes a per-edge radius
+        /// array where naming an edge twice is even possible.
+        ///
+        /// `BRepFilletAPI_MakeFillet::Add(radius, edge)` resolves the edge's own slot within its
+        /// contour and writes there, so a second `Add` on the same edge silently replaces the first
+        /// radius rather than erroring or combining the two. This mirrors the request list, the
+        /// same convention as `declinedEdgeIndices`: an edge index requested three times reports
+        /// two overwritten entries here (the two radii that lost), not one. Use
+        /// `Set(overwrittenDuplicateIndices)` for distinct edges.
+        public let overwrittenDuplicateIndices: [Int]
+
+        /// Explicit rather than the synthesized memberwise init: a `let` property with a default
+        /// value is fixed and dropped from Swift's synthesized memberwise init entirely (it is not
+        /// an overridable parameter, unlike a `var` with a default), so the three existing
+        /// `WithReport` call sites -- none of which have anything to say about a duplicate index --
+        /// need `overwrittenDuplicateIndices` to keep defaulting to empty without themselves
+        /// changing.
+        public init(shape: Shape, declinedEdgeIndices: [Int], overwrittenDuplicateIndices: [Int] = []) {
+            self.shape = shape
+            self.declinedEdgeIndices = declinedEdgeIndices
+            self.overwrittenDuplicateIndices = overwrittenDuplicateIndices
+        }
     }
 
     /// Fillet specific edges with uniform radius
@@ -740,6 +764,12 @@ extension Shape {
     /// this shape, on the same all-or-nothing basis: one that does not rejects the batch rather
     /// than being skipped, so a result is never a partial fillet reported as a complete one.
     ///
+    /// The same edge index named twice is **not** rejected and does not combine the two radii: OCCT
+    /// writes both `Add` calls to that edge's own slot within its fillet contour, so the *second*
+    /// silently overwrites the first (#633). This is unchanged, existing behaviour, documented here
+    /// because it used to be undocumented and silent; use ``blendedEdgesWithReport(_:)`` for the
+    /// same fillet with a report naming which entries a duplicate overwrote.
+    ///
     /// - Parameter edgeRadii: Array of (0-based edgeIndex, radius) pairs; each radius must be > 0
     /// - Returns: Filleted shape, or nil on failure, including an empty array, a non-positive
     ///   radius anywhere in the array, or an index that names no edge of this shape
@@ -770,12 +800,80 @@ extension Shape {
             handle,
             &indices,
             &radii,
-            Int32(edgeRadii.count)
+            Int32(edgeRadii.count),
+            nil,
+            nil
         ) else {
             return nil
         }
         return Shape(handle: result)
     }
+
+    /// ``blendedEdges(_:)``, also reporting which requested edges OCCT declined to fillet, and
+    /// which duplicate entries were silently overwritten (#633).
+    ///
+    /// `blendedEdges(_:)` does not deduplicate `edgeRadii`: naming the same edge index twice writes
+    /// the same fillet slot twice, and only the *last* radius written survives -- the earlier one is
+    /// discarded with no signal, the same shape of silent-wrong-answer #639 found on the declined-edge
+    /// axis of this family. That existing behaviour is unchanged here; this method only adds a way
+    /// to observe it, following #639's recommendation to extend ``FilletResult`` rather than invent
+    /// a second reporting shape for the same idea.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// if let report = box.blendedEdgesWithReport([(0, 2.0), (0, 5.0)]) {
+    ///     print(report.overwrittenDuplicateIndices)   // [0]: edge 0's first radius (2.0) lost
+    ///     print(report.declinedEdgeIndices)            // []: every edge of a closed box fillets
+    /// }
+    /// ```
+    ///
+    /// - Parameter edgeRadii: Array of (0-based edgeIndex, radius) pairs; each radius must be > 0
+    /// - Returns: A ``FilletResult``, or nil on failure under the same conditions as
+    ///   ``blendedEdges(_:)``.
+    public func blendedEdgesWithReport(_ edgeRadii: [(edgeIndex: Int, radius: Double)]) -> FilletResult? {
+        guard !edgeRadii.isEmpty, edgeRadii.allSatisfy({ $0.radius > 0 }) else { return nil }
+
+        var indices = edgeRadii.map { Int32($0.edgeIndex) }
+        var radii = edgeRadii.map { $0.radius }
+
+        var declined = [Int32](repeating: 0, count: edgeRadii.count)
+        var declinedCount: Int32 = 0
+        let result: OCCTShapeRef? = declined.withUnsafeMutableBufferPointer { declinedBuffer in
+            OCCTShapeBlendEdges(
+                handle,
+                &indices,
+                &radii,
+                Int32(edgeRadii.count),
+                declinedBuffer.baseAddress,
+                &declinedCount
+            )
+        }
+        guard let result else { return nil }
+        let declinedIndices = declined.prefix(Int(declinedCount)).map { Int($0) }
+        return FilletResult(shape: Shape(handle: result), declinedEdgeIndices: declinedIndices,
+                            overwrittenDuplicateIndices: Shape.overwrittenDuplicateIndices(in: edgeRadii))
+    }
+
+    /// 0-based edge indices from `edgeRadii` that a later entry in the same request overwrote.
+    ///
+    /// This is a property of `edgeRadii` itself: `edgeIndex` maps to a unique edge via `Shape`'s own
+    /// `TopExp` enumeration, so two entries naming the same numeric index always name the same edge,
+    /// and no OCCT round trip is needed to tell which entries lost. Mirrors ``FilletResult`` /
+    /// `declinedEdgeIndices`'s own convention: every overwritten *entry* is reported, not just the
+    /// distinct edges, so `[(0, 1.0), (0, 2.0), (0, 3.0)]` reports `[0, 0]` -- two entries lost, one
+    /// (the last) won -- not `[0]`.
+    private static func overwrittenDuplicateIndices(in edgeRadii: [(edgeIndex: Int, radius: Double)]) -> [Int] {
+        var lastPosition: [Int: Int] = [:]
+        for (position, pair) in edgeRadii.enumerated() {
+            lastPosition[pair.edgeIndex] = position
+        }
+        var overwritten: [Int] = []
+        for (position, pair) in edgeRadii.enumerated() where lastPosition[pair.edgeIndex] != position {
+            overwritten.append(pair.edgeIndex)
+        }
+        return overwritten
+    }
+
     /// Create a wedge (tapered box).
     ///
     /// A wedge is a box whose top face is narrowed in the X direction.

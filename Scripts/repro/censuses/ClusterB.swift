@@ -186,7 +186,7 @@ enum ClusterB {
             let firstOnlyVolume = box.blendedEdges([(0, 2.0)])?.volume
             let dupVerdict: String
             if volumesAgree(dupVolume, lastOnlyVolume) && !volumesAgree(dupVolume, firstOnlyVolume) {
-                dupVerdict = "OVERWRITE: last radius wins (dup \(fmt(dupVolume)) == last-only \(fmt(lastOnlyVolume)), != first-only \(fmt(firstOnlyVolume))) -- #633"
+                dupVerdict = "OVERWRITE: last radius wins (dup \(fmt(dupVolume)) == last-only \(fmt(lastOnlyVolume)), != first-only \(fmt(firstOnlyVolume))) -- #633 fixed: blendedEdgesWithReport(_:) sibling reports overwrittenDuplicateIndices"
             } else if volumesAgree(dupVolume, firstOnlyVolume) {
                 dupVerdict = "OVERWRITE: first radius wins (dup \(fmt(dupVolume)) == first-only \(fmt(firstOnlyVolume)))"
             } else {
@@ -202,7 +202,7 @@ enum ClusterB {
             record("fillet-edges (per-edge radius)", "blendedEdges(_:)",
                    duplicate: dupVerdict,
                    outOfRange: outOfRange == nil ? "REJECT (nil)" : "measured non-nil",
-                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea)))" : "REJECT (nil)",
+                   declined: declined != nil ? "SKIP (non-nil, area \(fmt(declined?.surfaceArea)) vs unfilleted \(fmt(shellPlainArea))) -- #633 fixed: blendedEdgesWithReport(_:) sibling also reports declinedEdgeIndices, adopting #639's mechanism" : "REJECT (nil)",
                    empty: box.blendedEdges([]) == nil ? "REJECT (nil)" : "non-nil",
                    note: "compound out-of-range: \(compoundOutOfRange == nil ? "REJECT (nil), matches single-solid" : "non-nil")")
         }

@@ -303,6 +303,65 @@ moves the file's own "twelve recorded exceptions" count. `Scripts/repro/cluster-
 is unchanged: the census measures the contract, this issue only adds a way to observe one axis of
 it, and the measured grid itself (SKIP/REJECT per cell) does not move.
 
+#### `blendedEdges(_:)` reports which duplicate entries were overwritten (#633)
+
+The last open member of Cluster B (#665). `BRepFilletAPI_MakeFillet::Add(radius, edge)` resolves an
+edge's own slot within its fillet contour and writes there, so naming the same edge index twice in
+`blendedEdges(_:)`'s `edgeRadii` writes that slot twice -- the *second* `Add` silently overwrites the
+first, with no exception, no false return and nothing in the result to say a radius was ever
+discarded. Re-measured on this tree rather than trusted from the issue: `blendedEdges([(0, 2.0),
+(0, 5.0)])` gives the identical volume (946.349541) to `blendedEdges([(0, 5.0)])` and differs from
+`blendedEdges([(0, 2.0)])` (991.415927) -- last-wins, confirmed.
+
+**Sequenced deliberately after #639**, which decided the reporting mechanism for the family's other
+silent axis (an edge OCCT declines outright) and recommended, in its own PR, extending the same
+shape to also cover this one rather than re-deriving a mechanism. That recommendation is taken
+here without a reason found to deviate: **report, do not reject or pick a "winning" direction.**
+Converging `blendedEdges(_:)` onto reject, or onto first-wins (matching the chamfer family, see
+below), would change what it returns for every existing caller who happens to name an edge twice
+and currently gets a built shape -- a behaviour change wider than this issue, and the same move #639
+rejected for its own axis.
+
+**Fixed**: `blendedEdgesWithReport(_:)` is a new `WithReport` sibling, returning
+`Shape.FilletResult`, now with a second field, `overwrittenDuplicateIndices` -- the 0-based edge
+indices whose radius a later entry in the same request overwrote, mirroring the request list the
+same way `declinedEdgeIndices` already does (an edge named three times reports two overwritten
+entries, not one distinct index). Computing it needs no OCCT round trip at all: an edge index maps
+to exactly one edge via `Shape`'s own `TopExp` enumeration, so which entries lose is a property of
+the caller's `edgeRadii` array alone, resolved Swift-side. `blendedEdgesWithReport(_:)` also adopts
+#639's declined-edge mechanism for this entry point (`OCCTShapeBlendEdges` gained the same two
+nullable trailing out-parameters `OCCTShapeFilletEdges`/`OCCTShapeFilletEdgesLinear` already carry,
+threaded through the shared `occtShapeFilletEdgeList` skeleton) rather than leaving that field
+permanently empty for this one sibling: a report that answered one axis and silently stayed blank
+on the other would be the same shape of silent-wrong-answer this whole cluster exists to fix.
+`blendedEdges(_:)` itself, and every other `FilletResult`-returning method, are unchanged -- the new
+field defaults to `[]` for `filletedWithReport(edges:radius:)`,
+`filletedWithReport(edges:startRadius:endRadius:)` and `filletEvolvingWithReport(_:)`, none of
+which has a duplicate axis of its own to report.
+
+**`filletEvolving(_:)` measures the identical last-wins mechanism** (documented on
+`EvolvingFilletEdge`'s own doc comment, and confirmed again by this PR's re-measurement), and is
+deliberately left alone here: extending `filletEvolvingWithReport(_:)` with the same field is a
+natural follow-up, not a requirement of this issue, which is scoped to `blendedEdges(_:)` by its
+own title.
+
+New tests: `Tests/OCCTModelingTests/Issue633BlendedEdgesDuplicateReportTests.swift`, seven cases.
+Proven against three independent injections, each restored and confirmed green afterward:
+
+| Injection | Result |
+|---|---|
+| The Swift-side helper drops the report (`return []`) | The 3 tests asserting a non-empty `overwrittenDuplicateIndices` fail; the 4 that expect it empty, or check `declinedEdgeIndices` only, correctly stay green |
+| The Swift-side helper deduplicates (`Array(Set(overwritten))`) instead of mirroring the request | Only the triple-duplicate test fails (`[0, 0]` collapses to `[0]`); the single-duplicate test is insensitive to this distinction and stays green, as does everything else |
+| `OCCTShapeBlendEdges` stops forwarding its two new out-parameters (`nullptr, nullptr` always) | The 2 tests asserting a non-empty `declinedEdgeIndices` fail; both duplicate-only tests, unaffected by this axis, correctly stay green |
+
+This is additive, non-breaking Swift API (one new method, one new field on an existing struct, no
+existing signature or behaviour changed), recorded in
+[`SEMVER.md`](SEMVER.md#633-additive-blend-duplicate-reporting-not-an-exception) -- checked and
+confirmed the file's "thirteen recorded exceptions" count is unaffected.
+`Scripts/repro/cluster-b-fillet-edge-contract/` and `Scripts/repro/censuses/ClusterB.swift` are
+updated to annotate the now-fixed cell; the measured grid itself does not move (`swift run Censuses
+cluster-b` still emits 16 rows).
+
 #### `AAG` rode the lossy `faces()`, so `detectPocketsAAG()` answered 2 or 1 for the same geometry depending on compound member order (#642)
 
 `AAG.buildGraph()` built its node set from `Shape.faces()`, the `IsSame`-keyed enumeration #614

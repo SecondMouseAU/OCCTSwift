@@ -714,8 +714,14 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance) {
 // Shares occtShapeFilletEdgeList (OCCTBridge_Internal.h) with OCCTShapeFilletEdges and
 // OCCTShapeFilletEdgesLinear in OCCTBridge_Modeling.mm, supplying only the per-edge radius.
 // This is the entry point that had no radius precondition at all; see that helper. #489
+//
+// #633: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined
+// (occtFilletWriteDeclined), the same contract #639 gave the other three edge-list entry points.
+// Both are nullable and the existing skip behaviour is unchanged when they are null.
 OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
-                                  const int32_t* edgeIndices, const double* radii, int32_t count) {
+                                  const int32_t* edgeIndices, const double* radii, int32_t count,
+                                  int32_t* declinedEdgeIndices, int32_t* outDeclinedCount) {
+    if (outDeclinedCount) *outDeclinedCount = 0;
     if (!occtValidFilletRadii(radii, count)) return nullptr;
 
     return occtShapeFilletEdgeList(shape, edgeIndices, count,
@@ -723,7 +729,7 @@ OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
                                            const TopoDS_Edge& edge, int32_t entry) {
         fillet.Add(radii[entry], edge);
         return true;
-    });
+    }, declinedEdgeIndices, outDeclinedCount);
 }
 
 // MARK: - Surface filling (#430/#434)

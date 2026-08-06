@@ -427,6 +427,41 @@ same question, documented in this PR with a runnable recipe rather than given ne
 [`CHANGELOG.md`](CHANGELOG.md#the-fillet-family-could-not-report-a-declined-edge-only-skip-it-silently-639)
 for the full measurement and the reasoning against converging fillet's SKIP behaviour onto reject.
 
+#### #633: additive blend-duplicate reporting, not an exception
+
+**Recorded here for the same reason #639 immediately above is: a public-API change written down
+now, not because this one is a recorded exception.** `blendedEdges(_:)` gained a `WithReport`
+sibling, `blendedEdgesWithReport(_:)`, returning the same `Shape.FilletResult` #639 introduced,
+now carrying a second field: `overwrittenDuplicateIndices`, the 0-based edge indices whose radius a
+later entry in the same request silently overwrote (#633).
+
+This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
+unchanged by this entry, for the same reason #639's did not: no existing method's signature or
+behaviour changed. `blendedEdges(_:)` still returns exactly what it always did, for exactly the
+same inputs -- last-wins, silently, on a duplicated edge index -- and a caller who never calls
+`blendedEdgesWithReport(_:)` sees no difference at all. This is the **MINOR**, additive Swift API
+case the quick reference table already names.
+
+Adding `overwrittenDuplicateIndices` to the existing `FilletResult` struct, rather than a second
+result type, follows #639's own recommendation for this issue and the standing lesson #490 already
+drew from a family of near-identical continuity mappers: one struct, extended, not a parallel
+encoding of the same idea started fresh. It is a purely additive struct change: a `let` property
+with a default is not exposed on Swift's synthesized memberwise init (only a `var` with a default
+is), so `FilletResult` now carries an explicit `public init` with the new field defaulted to `[]`
+-- every existing call site (`filletedWithReport(edges:radius:)`,
+`filletedWithReport(edges:startRadius:endRadius:)`, `filletEvolvingWithReport(_:)`) compiles
+unchanged and reads an empty array for a field none of the three has a duplicate axis to populate.
+
+**The fillet/chamfer first-wins/last-wins asymmetry itself is unchanged and not addressed here.**
+`Scripts/repro/cluster-b-fillet-edge-contract/` measured the wider family as internally consistent
+but split in *opposite* directions (fillet last-wins, chamfer first-wins) -- converging the two onto
+one direction was considered and rejected for the same reason #639 rejected reject-over-skip:
+it would change what an existing call returns for every input that currently succeeds, which is a
+bigger and more disruptive decision than this issue's own defect (a silent discard with no
+signal). See
+[`CHANGELOG.md`](CHANGELOG.md#blendededges-reports-which-duplicate-entries-were-overwritten-633)
+for the full measurement and the injection matrix proving the new report.
+
 ### MINOR — `x.y.0`
 
 A minor bump is for additive change. Two routes:
