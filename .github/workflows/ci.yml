@@ -38,20 +38,28 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all four are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all five are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #   - each script's --self-test runs alongside its real invocation. A gate whose detector is
   #     wrong reports "all clear" just as confidently as a gate whose subject is clean; this branch
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other three. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other four. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
-  # Two of the four (check-bridge-index, check-null-handle-guards) resolve their inputs relative to
-  # the working directory and exit 2 with "run from the repo root" elsewhere; the other two resolve
-  # from __file__. A GitHub Actions step starts at the repo root, so both kinds are satisfied.
+  # Three of the five (check-bridge-index, check-null-handle-guards, derive-bridge-header-split)
+  # resolve their inputs relative to the working directory and exit 2 with "run from the repo root"
+  # elsewhere; the other two resolve from __file__. A GitHub Actions step starts at the repo root,
+  # so both kinds are satisfied.
+  #
+  # derive-bridge-header-split.py joined as the fifth in #673: --verify answers a question that
+  # keeps mattering after the one-time #395 split it was written for -- does each bridge
+  # declaration still sit in the header its .mm owns -- and every ~100-operation release adds
+  # declarations by hand, so the drift this checks for is ongoing, not a one-off migration risk.
+  # It runs `--verify`, not the bare form: the bare form only prints the manifest and always exits
+  # 0, unlike its three self-test-carrying siblings above, whose bare invocation already gates.
   # Deliberately NO `name:` key. The check-run name GitHub publishes is a job's `name:` when it has
   # one and the job id otherwise, and that string is what a required-status-check rule matches. A
   # prose name reads like a comment, so rewording it for clarity would silently stop satisfying the
@@ -104,9 +112,18 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-docs-defaults.py
 
-      # No --self-test of its own. It takes no options other than --fix/--audit and ignores an
-      # unrecognised one, so it is invoked bare; `--self-test` would be silently accepted and run
-      # the ordinary report, which reads as a passing self-test that never existed.
+      - name: derive-bridge-header-split.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --self-test
+
+      - name: derive-bridge-header-split.py --verify
+        if: '!cancelled()'
+        run: python3 Scripts/derive-bridge-header-split.py --verify
+
+      # No --self-test of its own. It takes no options other than --fix/--audit and rejects an
+      # unrecognised one (exit 2), so it is invoked bare; `--self-test` would otherwise be the
+      # natural thing to write when extending this list, and read as a passing self-test that
+      # never existed rather than the usage error it actually is.
       - name: count-operations.py
         if: '!cancelled()'
         run: python3 Scripts/count-operations.py

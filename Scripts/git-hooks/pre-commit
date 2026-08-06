@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Opt-in pre-commit hook: runs the same four static gate scripts CI's `gate-scripts` job runs.
+# Opt-in pre-commit hook: runs the same five static gate scripts CI's `gate-scripts` job runs.
 #
 # NOT installed by cloning. A repo cannot install its own hooks — `.git/hooks` is not versioned —
 # and that is the right default here: a hook that appears in a contributor's workflow without them
@@ -27,7 +27,7 @@
 #   which resolves to the worktree you are committing in, not the main checkout.
 #
 # Skip it for one commit with `git commit --no-verify`. CI is the authority either way: this hook is
-# a faster local copy of the same checks, never a substitute. The seven INVOCATIONS below are
+# a faster local copy of the same checks, never a substitute. The nine INVOCATIONS below are
 # deliberately identical to the CI job's, flag for flag, so a disagreement can never come from the
 # two running different things. Three ways they can still diverge, none of them worth closing here:
 #
@@ -75,6 +75,8 @@ run "check-null-handle-guards.py --self-test" Scripts/check-null-handle-guards.p
 run "check-null-handle-guards.py"             Scripts/check-null-handle-guards.py
 run "check-docs-defaults.py --self-test"      Scripts/check-docs-defaults.py --self-test
 run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py
+run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
+run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
 
 if [ ${#failed[@]} -ne 0 ]; then
