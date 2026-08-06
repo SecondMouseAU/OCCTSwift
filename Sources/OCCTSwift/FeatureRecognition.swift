@@ -198,6 +198,24 @@ public final class AAG: @unchecked Sendable {
         // within their own solid, on top of the correct same-solid adjacencies.
         let groups = Self.solidGroups(occurrenceCount: faces.count, in: shape)
 
+        // #720 review of #703, finding 7: OCCTEdgeGetConvexity used to recompute face1's and
+        // face2's own BRepGProp::SurfaceProperties internally, on every adjacent pair, so a face
+        // with K neighbors paid for K redundant whole-face numerical integrations building one
+        // AAG. A face's centroid depends only on the face itself, so compute each occurrence's
+        // once here, before the pairwise loop, and hand the same value to every pair it appears
+        // in. Measured 7-12x faster on a 134-face part with this change alone
+        // (Scripts/repro/703-edge-convexity-order/). `nil` (a face too small to trust a centroid
+        // from, or a failed computation) is passed through as NaN, which OCCTEdgeGetConvexity
+        // treats the same way its predecessor treated a near-zero centroid direction: fall back to
+        // Smooth for any edge touching that face.
+        var centroids: [SIMD3<Double>?] = Array(repeating: nil, count: faceCount)
+        for (index, face) in faces.enumerated() {
+            var x = 0.0, y = 0.0, z = 0.0
+            if OCCTFaceGetAreaCentroid(face.handle, &x, &y, &z) {
+                centroids[index] = SIMD3(x, y, z)
+            }
+        }
+
         // Build edges by checking all face pairs for adjacency
         for i in 0..<faceCount {
             for j in (i+1)..<faceCount {
@@ -229,9 +247,13 @@ public final class AAG: @unchecked Sendable {
                     // Get convexity from first shared edge
                     var convexity: EdgeConvexity = .smooth
                     if edgeCount > 0, let firstEdge = sharedEdges[0] {
+                        let c1 = centroids[i]
+                        let c2 = centroids[j]
                         let occtConvexity = OCCTEdgeGetConvexity(
                             shape.handle, firstEdge,
-                            face1.handle, face2.handle
+                            face1.handle, face2.handle,
+                            c1?.x ?? .nan, c1?.y ?? .nan, c1?.z ?? .nan,
+                            c2?.x ?? .nan, c2?.y ?? .nan, c2?.z ?? .nan
                         )
                         convexity = EdgeConvexity(fromOCCT: occtConvexity)
 
@@ -518,9 +540,14 @@ extension Shape {
     /// ``AAGNode/isPlanar``, which ``buildAAG()`` derives per face occurrence, so the result no
     /// longer depends on a compound's member order (#642).
     ///
+    /// `Shape.box(width:height:depth:)` is centred at the origin, so a 20mm box spans -10...10 on
+    /// every axis; the pocket tool's footprint sits under the box's own top and its z range starts
+    /// below it, so the cut actually removes material rather than merely touching the top face
+    /// (#703).
+    ///
     /// ```swift
     /// let box = Shape.box(width: 20, height: 20, depth: 20)!
-    /// let pocket = Shape.box(origin: SIMD3(5, 5, 10), width: 10, height: 10, depth: 15)!
+    /// let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
     /// let result = box.subtracting(pocket)!
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```

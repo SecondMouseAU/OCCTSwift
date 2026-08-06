@@ -211,6 +211,19 @@ int32_t OCCTFaceGetSurfaceType(OCCTFaceRef face);
 /// Get surface area of a single face
 double OCCTFaceGetArea(OCCTFaceRef face, double tolerance);
 
+/// Get a single face's own area centroid (`BRepGProp::SurfaceProperties`' `CentreOfMass()`),
+/// using the adaptive-integration overload so the result carries a bounded relative error rather
+/// than the plain overload's unspecified one (#720 review of #703, finding 8). Returns false
+/// (leaving `outX`/`outY`/`outZ` untouched) for a null face or one whose area is too small to
+/// trust a centroid from (below `1e-9`, comfortably under the smallest sliver face a boolean
+/// operation's own fuzzy tolerance was measured to still produce:
+/// `Scripts/repro/703-edge-convexity-order/`), so a caller gets an explicit "no reliable centroid"
+/// signal instead of a silently unstable point (#720 review, findings 2 and 9).
+/// `OCCTEdgeGetConvexity` calls this once per face
+/// occurrence; callers with several edges on the same face should do the same, once, rather than
+/// asking `OCCTEdgeGetConvexity` to repeat this integration for every edge (#720 review, finding 7).
+bool OCCTFaceGetAreaCentroid(OCCTFaceRef face, double* outX, double* outY, double* outZ);
+
 /// Get the primary axis of a face's underlying surface if cylindrical/conical/spherical/
 /// toroidal/surface-of-revolution/surface-of-extrusion. Returns false for non-axial surfaces. v0.137.
 /// outKind: 0=none, 1=cylinder, 2=cone, 3=sphere, 4=torus, 5=revolution, 6=extrusion.

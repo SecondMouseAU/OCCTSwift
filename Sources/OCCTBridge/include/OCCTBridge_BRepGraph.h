@@ -34,8 +34,19 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
 /// @param edge The shared edge
 /// @param face1 First adjacent face
 /// @param face2 Second adjacent face
+/// @param centroid1X/Y/Z face1's own area centroid (`OCCTFaceGetAreaCentroid`), or NaN in any
+///   component if the caller has none (a degenerate face, or one it chose not to compute); NaN
+///   makes this edge report Smooth, the same fallback a face this formula can't classify has
+///   always used. Callers checking several edges on the same face should compute each face's
+///   centroid once and pass it to every one of that face's edges, rather than asking this function
+///   to repeat the whole-face integration per edge: #720's review of #703 measured that repeated
+///   integration as a 7-12x slowdown building the AAG of a 134-face part (`buildAAG()`'s only
+///   caller does this; see `Scripts/repro/703-edge-convexity-order/`).
+/// @param centroid2X/Y/Z face2's own area centroid, same contract as centroid1X/Y/Z.
 /// @return Convexity type (concave, smooth, or convex)
-OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2);
+OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2,
+                                        double centroid1X, double centroid1Y, double centroid1Z,
+                                        double centroid2X, double centroid2Y, double centroid2Z);
 
 /// Get all edges shared between two faces
 /// @param shape The shape containing the faces
