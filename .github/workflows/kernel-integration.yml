@@ -68,11 +68,22 @@ jobs:
       # immediately after the build finishes rather than as an automatic post step queued for the
       # end of the job (see the top-of-file comment for why that distinction is the fix for #727).
       # This job now has nothing after the build, so plain actions/cache would already close that
-      # gap in the ordinary case. The explicit save is defense in depth against the other way a
-      # run gets cut short: this workflow's own `concurrency.cancel-in-progress`, which cancels the
-      # whole in-progress run (both jobs) if a new commit lands on the same ref while the build is
-      # still going. `if: always()` still runs a step after a cancellation signal, which a
-      # not-yet-started automatic post step does not get.
+      # gap in the ordinary case. The explicit save keeps the decision about WHEN to save visible
+      # in the file rather than delegated to a post step's own rules.
+      #
+      # It saves only on a SUCCESSFUL build, which is narrower than it first looks like it should
+      # be. An earlier revision used a bare `if: always()`, reasoning that a run cut short by this
+      # workflow's own `concurrency.cancel-in-progress` should still bank its 79 minutes of work.
+      # That is backwards: a build cancelled or failed part-way leaves a PARTIAL
+      # `Libraries/OCCT.xcframework`, and a GitHub Actions cache key cannot be overwritten once
+      # written. Saving that partial tree pins it permanently, so every later run for the same
+      # patch set gets `cache-hit: true`, skips the rebuild, and runs `swift test` against a
+      # truncated kernel. The suite then fails in a way indistinguishable from a real regression
+      # in the patch under test, and no amount of re-running clears it.
+      #
+      # Losing 79 minutes to a cancellation is cheap. Silently pinning a broken kernel for every
+      # future run of that patch set is not, and it is the same class of defect as #585: CI red or
+      # green for a reason that has nothing to do with the code being tested.
       - name: Restore OCCT.xcframework cache
         id: occt-cache
         uses: actions/cache/restore@v6
@@ -87,11 +98,12 @@ jobs:
         run: brew install rapidjson
 
       - name: Build OCCT from source (cache miss only)
+        id: build-occt
         if: steps.occt-cache.outputs.cache-hit != 'true'
         run: ./Scripts/build-occt.sh
 
       - name: Save OCCT.xcframework cache
-        if: always() && steps.occt-cache.outputs.cache-hit != 'true'
+        if: always() && steps.occt-cache.outputs.cache-hit != 'true' && steps.build-occt.outcome == 'success'
         uses: actions/cache/save@v6
         with:
           path: Libraries/OCCT.xcframework
