@@ -419,6 +419,12 @@ Adds a curve to the profiler.
 public func addCurve(_ curve: Curve3D)
 ```
 
+- **Returns:** `Void`. If `curve` wraps a null `Geom_Curve` handle, it is silently dropped instead
+  of added (#710 defensive hardening; no public `Curve3D` factory can produce that state today),
+  and there is no `curveCount`/`isValid` signal at the call site itself. A drop only shows up
+  indirectly: the profiler ends up holding one fewer curve than the caller believes it added, so a
+  `curveIndex` passed to `poles(curveIndex:)` that counted the dropped curve addresses the wrong
+  curve (or is out of range and returns `[]`).
 - **OCCT:** `GeomFill_Profiler::AddCurve`.
 
 ---

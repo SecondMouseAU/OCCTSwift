@@ -52,10 +52,20 @@ uncatchably on a null `Handle(Geom_Curve)`:
 - `OCCTGeomFillSectionPlacement`'s `sectionCurve` argument (`GeomFill_SectionPlacement` ctor --
   its `pathCurve` argument is already safe, wrapped in `GeomAdaptor_Curve` first)
 
-Each gets `if (<curve>.IsNull()) return <fallback>;` immediately after binding the alias, matching
-this file's existing idiom -- the alias form itself is untouched, so this does not teach the
-checker to see a future fourth site shaped this way (the six already-guarded sites keep the same
-invisible form regardless of what this fix does).
+Each gets `if (<curve>.IsNull()) return <fallback>;` immediately after binding the alias. The three
+guarded aliases (`curveRef`'s `curve` in `OCCTGeomFillProfilerAddCurve`, `curveRefs[i]`'s `curve` in
+`OCCTGeomFillAppSurf`'s loop, `sectionCurveRef`'s `sectionCurve` in `OCCTGeomFillSectionPlacement`)
+are bound through `->curve` field access rather than the file's `*(const Handle(Geom_Curve)*)ref`
+cast form, so `check-null-handle-guards.py`'s already-recognised "handle alias" pattern sees them:
+removing any one of the three guards is now a CI failure, confirmed by injection: remove, checker
+reports the site, restore, checker is clean again (for all three). `pathCurve` in
+`OCCTGeomFillSectionPlacement` and the six pre-existing `GeomAdaptor_Curve`-wrapped sites keep the
+cast form, unchanged: `pathCurve` needs no guard (`GeomAdaptor_Curve` copes), and `ALLOWED` has no
+per-argument granularity, so exempting `OCCTGeomFillSectionPlacement` by name to cover `pathCurve`
+would also blind the checker to the `sectionCurve` guard this fix depends on. Teaching the checker
+the cast form itself as a general fifth alias shape remains the separate, deferred follow-up work
+described below and in the repro README; this is a narrower, in-place idiom swap at exactly the
+three sites this fix already touches, not that census.
 
 **Reachability, measured rather than assumed.** #710's own filing said `CurveProfiler` "has ...
 no public factory anywhere," concluding its guard was latent. That premise was wrong:
@@ -76,6 +86,32 @@ established idiom and the invariant is a fact about today's sites, not a guarant
 one. See `Scripts/repro/644-710-geomfill-appsurf-null-arity/README.md` for the full measurement,
 including why teaching the checker this alias form is real but separate follow-up work, not part
 of this fix.
+
+**Automated review pass on PR #722.** Three of four findings held up and are folded into the fix
+above (the checker-visibility idiom swap is described there); the fourth was verified and rejected
+with evidence rather than implemented:
+
+- `CurveProfiler.addCurve(_:)`'s null-handle drop had no doc comment, unlike `sectionPlacement`'s
+  sibling entry updated in the same original commit. Added to both the `///` comment
+  (`CurveProfiler.swift`) and `docs/reference/Shape-Completions.md`, describing the only indirect
+  signal available: a dropped curve shifts every later `curveIndex` passed to `poles(curveIndex:)`
+  by one.
+- `Tests/OCCTSurfaceTests/OCCTSurfaceTests.swift`'s pre-existing `approximateSurface` (in
+  `GeomFillAppSurfTests`) asserted inside a nested `if let`, silently skipping on `nil`: the same
+  blind pattern the new regression tests in this fix deliberately avoid two tests below it.
+  Converted to the same `guard ... else { Issue.record(...); return }` idiom. Proven by injection:
+  temporarily made `appSurf(curves:)` always return `nil`, confirmed `approximateSurface` now fails
+  (it previously would have passed silently), restored, confirmed green again.
+- **Rejected**: that `appSurf`'s `curves.count >= 2` guard exists only in Swift and the bridge
+  function itself SIGSEGVs if reached directly with `count < 2`. True, but not a gap this PR
+  introduced: `OCCTGeomFillNSections` and `OCCTGeomFillGenerator`, the two sibling bridge
+  functions backing `Surface.nSections(curves:params:)` and `Surface.generatedFromSections`, have
+  the identical gap and predate this PR untouched. Adding a bridge-side arity guard to only
+  `OCCTGeomFillAppSurf` would make it inconsistent with both siblings, not more correct; the
+  Swift-boundary guard is this family's established, deliberate convention (`OCCTBridge` is an
+  internal target, not a public product; see #486). The review's separate observation that no
+  automated gate covers arity the way `check-null-handle-guards.py` covers null handles is accurate
+  and is left as a genuine, but separate, future census.
 
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 

@@ -3262,16 +3262,20 @@ struct GeomFillSectionPlacementTests {
 struct GeomFillAppSurfTests {
     @Test("approximate surface from sections")
     func approximateSurface() {
-        if let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
-           let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) {
-            if let result = Surface.appSurf(curves: [c1, c2]) {
-                #expect(result.isDone)
-                #expect(result.uDegree > 0)
-                #expect(result.vDegree > 0)
-                #expect(result.nbUPoles > 0)
-                #expect(result.nbVPoles > 0)
-            }
+        guard let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5),
+              let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 3) else {
+            Issue.record("failed to build probe curves")
+            return
         }
+        guard let result = Surface.appSurf(curves: [c1, c2]) else {
+            Issue.record("appSurf(curves:) unexpectedly returned nil for 2 valid curves")
+            return
+        }
+        #expect(result.isDone)
+        #expect(result.uDegree > 0)
+        #expect(result.vDegree > 0)
+        #expect(result.nbUPoles > 0)
+        #expect(result.nbVPoles > 0)
     }
 
     // #644: GeomFill_AppSurf's approximation solver SIGSEGVs (uncatchably) when driven with fewer

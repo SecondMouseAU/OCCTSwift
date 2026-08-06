@@ -2972,7 +2972,11 @@ OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void) {
 void OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref, OCCTCurve3DRef _Nonnull curveRef) {
     try {
         auto* opaque = (GeomFillProfilerOpaque*)ref;
-        const Handle(Geom_Curve)& curve = *(const Handle(Geom_Curve)*)curveRef;
+        // Bound through curveRef->curve (not this file's other *(const Handle(Geom_Curve)*)curveRef
+        // cast idiom) specifically so check-null-handle-guards.py's already-recognised "handle
+        // alias" form can see this guard: a future removal is then a CI failure, not a silent
+        // regression.
+        const Handle(Geom_Curve)& curve = curveRef->curve;
         // #710: GeomFill_Profiler::AddCurve dereferences Curve unconditionally
         // (Curve->IsInstance(...) before any null check), an uncatchable SIGSEGV on a null Handle.
         if (curve.IsNull()) return;
@@ -3254,7 +3258,13 @@ OCCTSectionPlacementResult OCCTGeomFillSectionPlacement(OCCTCurve3DRef _Nonnull 
     OCCTSectionPlacementResult result = {};
     try {
         const Handle(Geom_Curve)& pathCurve = *(const Handle(Geom_Curve)*)pathCurveRef;
-        const Handle(Geom_Curve)& sectionCurve = *(const Handle(Geom_Curve)*)sectionCurveRef;
+        // Bound through sectionCurveRef->curve (not pathCurve's *(const Handle(Geom_Curve)*)ref
+        // cast above) specifically so check-null-handle-guards.py's already-recognised "handle
+        // alias" form can see this guard: a future removal is then a CI failure, not a silent
+        // regression. pathCurve is left on the cast form deliberately: it needs no guard (see
+        // below), and an ALLOWED entry would have to be keyed by function, exempting sectionCurve
+        // too and blinding the checker to the guard this comment is about.
+        const Handle(Geom_Curve)& sectionCurve = sectionCurveRef->curve;
         // #710: pathCurve is safe -- GeomAdaptor_Curve below raises a catchable Standard_Failure
         // on a null Handle. sectionCurve is not: the GeomFill_SectionPlacement ctor dereferences
         // Section unconditionally (Section->IsInstance(...) before any null check), an uncatchable
@@ -3294,7 +3304,11 @@ OCCTAppSurfResult OCCTGeomFillAppSurf(const OCCTCurve3DRef _Nonnull * _Nonnull c
         // bridge-side C functions.
         GeomFill_SectionGenerator secGen;
         for (int i = 0; i < count; i++) {
-            const Handle(Geom_Curve)& curve = *(const Handle(Geom_Curve)*)curveRefs[i];
+            // Bound through curveRefs[i]->curve (not this file's other
+            // *(const Handle(Geom_Curve)*)ref cast idiom) specifically so
+            // check-null-handle-guards.py's already-recognised "handle alias" form can see this
+            // guard: a future removal is then a CI failure, not a silent regression.
+            const Handle(Geom_Curve)& curve = curveRefs[i]->curve;
             // #710: GeomFill_SectionGenerator::AddCurve is the inherited, non-virtual
             // GeomFill_Profiler::AddCurve, which dereferences curve unconditionally -- an
             // uncatchable SIGSEGV on a null Handle, same mechanism as

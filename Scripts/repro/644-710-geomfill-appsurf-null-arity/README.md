@@ -57,11 +57,23 @@ catchable `Standard_Failure` on a null `Handle` -- already absorbed by each func
 wrapped in `new GeomAdaptor_Curve(pathCurve)` before use, which is one of the six catchable sites.
 
 **Fix**: each site gets `if (<curve>.IsNull()) return <fallback>;` immediately after binding the
-alias, matching this file's existing idiom for every other guarded site in the family. The alias
-form itself is left exactly as it was -- this is a minimal, surgical guard, not a rewrite to the
-checker-visible `wrapper->curve` idiom. That means fixing these three does **not** teach
-`check-null-handle-guards.py` to see a future fourth site in this shape; see "Should the checker
-learn this shape" below.
+alias, matching this file's existing idiom for every other guarded site in the family.
+
+**Addendum, PR #722 review pass.** The first version of this fix left the three aliases bound
+through the file's `*(const Handle(Geom_Curve)*)ref` cast form, invisible to
+`check-null-handle-guards.py`: a real gap an automated review caught, since nothing stopped a
+future edit from silently deleting one of the three `IsNull()` checks. Fixed by rebinding just
+those three aliases (`curveRef->curve`, `curveRefs[i]->curve`, `sectionCurveRef->curve`) through
+the field access the checker's existing "handle alias" pattern already recognises, instead of the
+cast form; no change to the checker itself. `sectionCurve`'s sibling argument `pathCurve` keeps the
+cast form deliberately: it needs no guard, and `ALLOWED` has no per-argument granularity, so
+exempting `OCCTGeomFillSectionPlacement` by name to cover `pathCurve` would blind the checker to
+the `sectionCurve` guard entirely. Proven by injection: removing each of the three guards in turn
+now makes `check-null-handle-guards.py` report exactly that site; restoring it goes clean again.
+This does **not** teach the checker to see a future fourth site written in the cast form: the six
+untouched `GeomAdaptor_Curve`-wrapped sites (including `pathCurve`) keep using it, so the shape
+itself stays in the tree; see "Should the checker learn this shape" below, unchanged by this
+addendum.
 
 **Reachability, measured, not assumed.** Two of the three are reachable from public Swift API
 (`Surface.swift`'s `appSurf(curves:)`, `Curve3D.swift`'s `sectionPlacement(section:...)`). The
