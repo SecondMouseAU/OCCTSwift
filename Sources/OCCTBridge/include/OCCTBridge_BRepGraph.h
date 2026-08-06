@@ -29,12 +29,23 @@ typedef enum {
 /// @return Number of adjacent faces (0, 1, or 2)
 int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef* outFace1, OCCTFaceRef* outFace2);
 
-/// Determine the convexity of an edge between two faces
+/// Determine the convexity of an edge between two faces.
+///
+/// Backed by OCCT's own classifier, `ChFi3d::DefineConnectType`, the same one the fillet and
+/// chamfer builders use to decide which edges they can round or bevel (#723). It samples the
+/// LOCAL dihedral at the edge midpoint (each face's normal there, from its pcurve's `D1`, against
+/// the edge tangent), unlike the formula this replaced, which used each face's GLOBAL area
+/// centroid as a stand-in for "which side is material" and drifted with face proportions: #723
+/// measured a through-hole rim classifying concave depending on plate thickness, since the
+/// cylindrical wall's centroid moves as the wall gets taller while the rim geometry itself never
+/// changes. `ChFi3d::DefineConnectType` needs no such proxy and no per-face integration, so this
+/// also removes the caching `AAG.buildGraph()` grew in #720 to make the old formula's integration
+/// affordable, since there is nothing left to cache.
 /// @param shape The shape containing the geometry
 /// @param edge The shared edge
 /// @param face1 First adjacent face
 /// @param face2 Second adjacent face
-/// @return Convexity type (concave, smooth, or convex)
+/// @return Convexity type (concave, smooth/tangential, or convex)
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2);
 
 /// Get all edges shared between two faces

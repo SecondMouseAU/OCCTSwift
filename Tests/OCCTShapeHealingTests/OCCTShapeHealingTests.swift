@@ -96,10 +96,13 @@ struct ShapeAnalysisTests {
         let analysis = box.analyze()!
 
         #expect(analysis.totalProblems >= 0)
-        // Check that totalProblems is consistent with component counts
+        // Check that totalProblems is consistent with component counts. freeFaceCount is
+        // deliberately excluded: it is a derived summary of the same scan freeEdgeCount already
+        // counts (this shell has at least one free edge), not an independent defect, so including
+        // both would double-count one open shell's boundary gap (#717 review, the totalProblems double-count).
         let expectedTotal = analysis.smallEdgeCount + analysis.smallFaceCount +
                            analysis.gapCount + analysis.selfIntersectionCount +
-                           analysis.freeEdgeCount + analysis.freeFaceCount +
+                           analysis.freeEdgeCount +
                            (analysis.hasInvalidTopology ? 1 : 0)
         #expect(analysis.totalProblems == expectedTotal)
     }

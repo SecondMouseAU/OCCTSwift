@@ -65,6 +65,12 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
     /// The defect itself, reverted: before the fix this was 1 vs 2 for identical geometry
     /// (measured directly against the tree at HEAD before this fix landed).
+    ///
+    /// - Note: #703 later moved the agreed count from `1` to `0`. `1` was never the geometrically
+    ///   right answer: this fixture is two plain boxes glued face to face along a vertical wall,
+    ///   and a plain box has no concave edges, so neither piece can contribute a pocket. The `1`
+    ///   this test used to pin was `OCCTEdgeGetConvexity`'s own face1/face2 order-dependence
+    ///   (`Issue703EdgeConvexityOrderTests`), not a real feature of this shape.
     @Test("detectPocketsAAG() agrees across compound member order on a vertical cut")
     func detectPocketsAgreesAcrossOrder() {
         guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
@@ -78,9 +84,10 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
         #expect(pocketsA.count == pocketsB.count)
         // Pinned to the measured value so a future change that breaks this loudly disagrees with
-        // a concrete number rather than only with itself.
-        #expect(pocketsA.count == 1)
-        #expect(pocketsB.count == 1)
+        // a concrete number rather than only with itself. Two boxes glued face to face have no
+        // concave edges anywhere (#703), so 0 is the geometrically correct answer.
+        #expect(pocketsA.count == 0)
+        #expect(pocketsB.count == 0)
     }
 
     /// `buildAAG().nodes.count` is unaffected: #699 restricts EDGES, not the node set #642 already
@@ -172,9 +179,11 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
     /// #642's own horizontal-cut fixture must still agree across compound member order after #699.
     /// The exact count moved from `2` to `1` (see the suite's own doc comment and
-    /// `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix");
-    /// what must never regress is the AGREEMENT itself, which is what #642 was about and what this
-    /// fixture is uniquely positioned to catch since the vertical fixture above never reaches
+    /// `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix"),
+    /// and #703 later moved it again, from `1` to `0`: two plain boxes glued face to face have no
+    /// concave edges anywhere, so `0` is the geometrically right answer, not `1`. What must never
+    /// regress is the AGREEMENT itself, which is what #642 was about and what this fixture is
+    /// uniquely positioned to catch since the vertical fixture above never reaches
     /// `isHorizontal()`/`isUpward()` at all.
     @Test("#642's horizontal-cut fixture still agrees across order, at the corrected count")
     func horizontalFixtureStillAgreesAtCorrectedCount() {
@@ -192,8 +201,8 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         let pocketsB = orderB.detectPocketsAAG()
 
         #expect(pocketsA.count == pocketsB.count)
-        #expect(pocketsA.count == 1)
-        #expect(pocketsB.count == 1)
+        #expect(pocketsA.count == 0)
+        #expect(pocketsB.count == 0)
     }
 
     // MARK: - The two fallback branches (review follow-up)
@@ -244,7 +253,11 @@ struct Issue699AAGSolidScopedAdjacencyTests {
         // Falling back is a complete, non-crashing graph over every occurrence.
         let aag = mixed.buildAAG()
         #expect(aag.nodes.count == total)
-        #expect(mixed.detectPocketsAAG().count == 2)
+        // Pinned `2` before #703 (one false-positive pocket per disjoint box, the same
+        // order-dependent `OCCTEdgeGetConvexity` defect measured on a single plain box). Neither
+        // box has a real concave edge, and the two are too far apart to be adjacent to each other
+        // or to the free face, so the geometrically right count is 0.
+        #expect(mixed.detectPocketsAAG().count == 0)
     }
 
     /// Both other fixtures are exactly two solids, so the partition loop is only ever exercised
