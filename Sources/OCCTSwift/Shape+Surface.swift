@@ -359,7 +359,7 @@ extension Shape {
         tolerance: Double = 0.01
     ) -> Shape? {
         guard points.count >= 3, points.count == orders.count else { return nil }
-        guard !orders.contains(where: \.isUnsupportedForPointConstraint) else { return nil }
+        guard !Shape.plateRejectsPointOrders(orders) else { return nil }
 
         var flatPoints: [Double] = []
         for p in points {
@@ -378,8 +378,23 @@ extension Shape {
         return Shape(handle: result)
     }
 
+    /// Whether any order in a batch of *point* constraints would fail
+    /// `GeomPlate_PointConstraint`'s own domain check (#437), i.e. whether any element is
+    /// ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    ///
+    /// The one shared implementation behind both plate-point entry points' rejection guard:
+    /// `plateSurface(through:orders:)` and, via ``plateMixedRejectsPointOrders(_:)``,
+    /// `plateSurface(pointConstraints:curveConstraints:)`. Each passes its own `orders` shape
+    /// (a flat array here, a `(point, order)` tuple array there), but both defer the actual
+    /// domain question to this one function rather than each re-testing
+    /// `isUnsupportedForPointConstraint` inline.
+    static func plateRejectsPointOrders(_ orders: some Sequence<SurfaceContinuity>) -> Bool {
+        orders.contains(where: \.isUnsupportedForPointConstraint)
+    }
+
     /// Whether any point constraint here would fail `GeomPlate_PointConstraint`'s own domain
-    /// check (#437), i.e. whether any `order` is ``SurfaceContinuity/isUnsupportedForPointConstraint``.
+    /// check (#437). Thin adapter over ``plateRejectsPointOrders(_:)`` for the mixed overload's
+    /// `(point, order)` tuple shape.
     ///
     /// Deliberately takes only `points`, not `curves`: `GeomPlate_CurveConstraint` has no such
     /// restriction, so curve orders must never be able to influence this decision. That is a
@@ -388,7 +403,7 @@ extension Shape {
     static func plateMixedRejectsPointOrders(
         _ points: [(point: SIMD3<Double>, order: SurfaceContinuity)]
     ) -> Bool {
-        points.contains(where: { $0.order.isUnsupportedForPointConstraint })
+        plateRejectsPointOrders(points.map(\.order))
     }
 
     /// Create a plate surface with mixed point and curve constraints.
@@ -400,6 +415,15 @@ extension Shape {
     /// order 2 outright, #437) but is fine for a **curve** constraint (`GeomPlate_CurveConstraint`
     /// accepts order 2 directly); see ``SurfaceContinuity/isUnsupportedForPointConstraint``. Only
     /// `points`' orders are checked; `curves`' orders are not.
+    ///
+    /// ```swift
+    /// // A point held to G0 alongside a rectangular boundary wire held to G0.
+    /// // A .g2 point order here would make the whole call return nil (see above).
+    /// let surface = Shape.plateSurface(
+    ///     pointConstraints: [(point: SIMD3(5, 5, 3), order: .g0)],
+    ///     curveConstraints: [(wire: boundaryWire, order: .g0)]
+    /// )
+    /// ```
     ///
     /// - Parameters:
     ///   - points: Point constraints with positions and orders (`.g2` always rejected, see above)

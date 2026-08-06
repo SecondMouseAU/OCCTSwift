@@ -27,11 +27,27 @@ import simd
 /// `mixedGuardIgnoresCurveOrders`, which call the new pure-Swift guards directly, went red when
 /// the guards they cover were broken.
 ///
+/// After the automated review on PR #719 pointed out the point-order rejection check was
+/// implemented twice (inline in `plateSurface(through:orders:)`, and again in
+/// `plateMixedRejectsPointOrders`), both were consolidated onto one shared
+/// `Shape.plateRejectsPointOrders(_:)`. `sharedPointOrderGuardIsUnified` exercises that function
+/// directly and goes red when it is forced to always return `false`.
+/// `mixedGuardIgnoresCurveOrders` also goes red under that same injection, transitively through
+/// `plateMixedRejectsPointOrders`. `allG2Rejected`/`oneG2AmongValidOrdersRejected` do **not**:
+/// forcing `plateRejectsPointOrders` to `false` only removes the Swift-side rejection, and the
+/// `.g2` orders those two tests use still reach `GeomPlate_PointConstraint` and throw there,
+/// caught by the bridge into the same `nil`, measured rather than assumed, same as the
+/// guard-clause deletion below.
+///
 /// | case | guard broken | result |
 /// |---|---|---|
 /// | `pointConstraintSupport` | `isUnsupportedForPointConstraint` forced to `false` | **red** |
 /// | `mixedGuardIgnoresCurveOrders` | same (transitively) | **red** |
 /// | `mixedGuardIgnoresCurveOrders` | `plateMixedRejectsPointOrders` forced to `false` | **red** |
+/// | `mixedGuardIgnoresCurveOrders` | `plateRejectsPointOrders` forced to `false` | **red** (transitively) |
+/// | `sharedPointOrderGuardIsUnified` | `plateRejectsPointOrders` forced to `false` | **red** |
+/// | `allG2Rejected` | `plateRejectsPointOrders` forced to `false` | green (OCCT's own throw still catches `.g2`) |
+/// | `oneG2AmongValidOrdersRejected` | same | green (same reason) |
 /// | `allG2Rejected` | `plateSurface(through:orders:)`'s guard clause deleted | green (decorative for this guard) |
 /// | `oneG2AmongValidOrdersRejected` | same | green (decorative) |
 /// | `g0AndG1StillBuild` | same | green (never touches `.g2`, unaffected either way) |
@@ -46,9 +62,12 @@ struct Issue437PlatePointG2Tests {
         SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2), SIMD3(0, 10, 1), SIMD3(5, 5, 3)
     ]
 
-    private var rectangleWire: Wire {
-        Wire.path([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)],
-                  closed: true)!
+    // `try #require` rather than force-unwrap: a nil here should fail the one test that asked
+    // for it, not abort the whole `swift test` binary and silently discard every other suite's
+    // results in the same run.
+    private func rectangleWire() throws -> Wire {
+        try #require(Wire.path([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)],
+                                closed: true))
     }
 
     // MARK: - The guards themselves -- these are the tests that actually prove the mechanism
@@ -86,6 +105,19 @@ struct Issue437PlatePointG2Tests {
         #expect(Shape.plateMixedRejectsPointOrders(mixed))
     }
 
+    // Both entry points' rejection checks (`plateSurface(through:orders:)`'s inline guard and
+    // `plateMixedRejectsPointOrders`, above) now defer to this one function rather than each
+    // re-testing `isUnsupportedForPointConstraint` independently, which is the consolidation
+    // the automated review on PR #719 asked for. Exercised directly, and against a plain array
+    // (`plateSurface(through:orders:)`'s shape) rather than the tuple array
+    // `plateMixedRejectsPointOrders` covers above, so this is not just a copy of that test.
+    @Test("The shared point-order guard is the one implementation both entry points defer to")
+    func sharedPointOrderGuardIsUnified() {
+        #expect(!Shape.plateRejectsPointOrders([SurfaceContinuity]()))
+        #expect(!Shape.plateRejectsPointOrders([SurfaceContinuity.g0, .g1]))
+        #expect(Shape.plateRejectsPointOrders([SurfaceContinuity.g0, .g2, .g1]))
+    }
+
     // MARK: - Public contract: plateSurface(through:orders:)
     //
     // These pin the observable answer (still `nil` for a point .g2, as it was before this PR),
@@ -119,19 +151,19 @@ struct Issue437PlatePointG2Tests {
     // Same labelling as the section above: contract tests, not proof of the mechanism.
 
     @Test("A g2 point constraint is rejected even alongside otherwise-valid curve constraints")
-    func mixedPointG2RejectedAlongsideValidCurve() {
+    func mixedPointG2RejectedAlongsideValidCurve() throws {
         let shape = Shape.plateSurface(
             pointConstraints: [(point: SIMD3(5, 5, 3), order: .g2)],
-            curveConstraints: [(wire: rectangleWire, order: .g0)]
+            curveConstraints: [(wire: try rectangleWire(), order: .g0)]
         )
         #expect(shape == nil)
     }
 
     @Test("g0/g1 point constraints alongside a curve constraint still build")
-    func mixedPointG0G1StillBuild() {
+    func mixedPointG0G1StillBuild() throws {
         let g0 = Shape.plateSurface(
             pointConstraints: [(point: SIMD3(5, 5, 3), order: .g0)],
-            curveConstraints: [(wire: rectangleWire, order: .g0)]
+            curveConstraints: [(wire: try rectangleWire(), order: .g0)]
         )
         #expect(g0 != nil)
     }
