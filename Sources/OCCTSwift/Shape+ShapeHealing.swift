@@ -1260,8 +1260,13 @@ public extension Shape {
     ///   ```
     ///
     ///   When a single body came back, the result is that body rather than a compound, so
-    ///   `healed.shapeType == .shell` answers it directly. A body that came back *unhealed*
-    ///   is still a solid — use ``Shape/isValid`` for that.
+    ///   `healed.shapeType == .shell` answers it directly, or check ``Shape/isValidSolid``
+    ///   directly, which does the same `shapeType == .solid` test itself before its own
+    ///   `BRepCheck_Analyzer` pass, so it reads `false` on a demoted shell where plain
+    ///   ``Shape/isValid`` reads `true` (#702: a demoted shell has no closure requirement of its
+    ///   own, so it is genuinely, unmisleadingly valid, just not a solid any more). A body that
+    ///   came back *unhealed* is still a solid: use ``Shape/isValid`` for that, or
+    ///   ``Shape/isValidSolid`` for both checks in one.
     ///
     /// ```swift
     /// let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!

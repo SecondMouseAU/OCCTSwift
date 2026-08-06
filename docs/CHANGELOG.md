@@ -106,6 +106,127 @@ an unrecognised" option, which was true only until the same-day commit that made
 (confirmed still correct: `count-operations.py --self-test` and `--bogus` both exit 2 with a usage
 message).
 
+#### `Shape.analyze(tolerance:)` reported zero free edges for every shape, and a `healed()`/`fixSolid()` demotion had no reliable signal (#702)
+
+`Shape.healed()` and `Shape.fixSolid()` can reach `isValid == true` by demoting a solid to a
+shell: `ShapeFix_Solid` (via `ShapeFix_Shape`'s delegation, for `healed()`) hands back the shell
+unpromoted whenever it cannot close it, already correctly documented for `fixSolid()` since #442.
+A shell has no closure requirement of its own, so the demoted result is genuinely `isValid`, and
+the issue asked for a way to tell.
+
+**The issue's own reproducer does not reproduce on this branch.** It measured a
+`ThruSectionsBuilder(isSolid: true, isRuled: false)` loft through a 36-tooth bevel gear's six
+section wires (1152 points each) on OCCT v1.17.0. Three independent reconstructions against this
+kernel (8.0.1 + patches), matching gear-tooth polygons at various tooth counts/tapers/twists, a
+dense sinusoidal profile, and a faithful port of `OCCTSwiftScripts/recipes/04-spur-gear`'s
+involute math scaled per section (matching the issue's own 1152-points-per-wire figure exactly at
+`flankSamples = 14`, plus a spiral-twist variant), all produced a `BRepCheck_Analyzer`-valid raw
+loft, across 400+ parameter combinations. `BRepCheck_Analyzer` itself does not flag 3D
+self-intersection between non-adjacent faces either: a deliberately self-intersecting
+179-degree-twisted star-prism loft still reports `isValid == true`, confirmed directly and
+matching `analyze()`'s own `selfIntersectionCount`, which is hardcoded to 0 and always has been
+(see below). Source-reading `ShapeFix_Solid::Perform()`/`CreateSolids()`/`CollectSolids()` found
+no path that demotes a genuinely closed shell either: every demotion in that class is gated on
+`BRep_Tool::IsClosed`/`ShapeAnalysis_FreeBounds` finding real free edges, matching #442's
+documented contract. No fix was made for this specific scenario because nothing was found broken
+there; per the issue's own instruction, a non-reproducing report closes with the evidence rather
+than a manufactured fix.
+
+**What does reproduce, trivially, with no loft at all: an open shell wrapped as a `TopoDS_Solid`**
+(a box missing one face, sewn, then `Shape.solidFromShells([shell])`, exactly what
+`BRepBuilderAPI_MakeSolid` does with a single non-closed shell, no fixing). `fixSolid()`/`healed()`
+correctly demote it to a shell (#442's contract), `isValid` reads `true` on the result, and this
+is where the issue's own complaint held: `analyze(tolerance:)` read zero free edges on it
+regardless.
+
+**Root cause, and fixed:** `OCCTShapeAnalyze` (`OCCTBridge_Healing.mm`) called
+`ShapeAnalysis_Shell::LoadShells()` and then read `HasFreeEdges()`/`FreeEdges()`. `LoadShells()`
+only registers a shell for `NbLoaded()`/`Loaded()` bookkeeping; it runs no edge analysis at all.
+Only `CheckOrientedShells()` populates the free-edge set those accessors read, exactly as the
+sibling entry point `OCCTShapeAnalyzeShell` (backing `Shape.analyzeShell()`) already calls it. So
+`freeEdgeCount` was hardcoded to 0 for every shape passed to `analyze(tolerance:)`, however open,
+and `freeFaceCount`'s own local variable was never incremented anywhere in the function; both
+silently agreed with a defect no matter what it was. Now `CheckOrientedShells(shell, alsofree:
+true)` is called, `freeEdgeCount` reports the real count, and `freeFaceCount` counts the shells
+found not fully closed, matching the field's own existing header comment ("Number of free faces
+(shell not closed)").
+
+**`Shape.isValidSolid` already answered the issue's actual question, unaffected by either bug**,
+for a reason unrelated to this fix: added for #206/#208 (an unrelated self-intersecting-loft
+hazard), it checks `shapeType == .solid` before running `BRepCheck_Analyzer`, so it reads `false`
+on any demoted shell where plain `isValid` reads `true`. It had no test at all for that branch:
+every existing assertion (`Issue225ThreadedRodTests`, `Issue257MultiStartTests`,
+`Issue397CircularHoleTests`, `OCCTShapeHealingTests`) only tested the positive, already-a-solid
+case. Also documented: `selfIntersectionCount` is another permanent 0 (the bridge's own comment:
+"would require more expensive computation"), not a computed absence of self-intersection.
+
+`healed()` gained the demotion warning `fixSolid()` has carried since #442 (it shares the same
+`ShapeFix_Solid` mechanism, confirmed by reading `ShapeFix_Shape.cxx`'s delegation), and both now
+cross-reference `isValidSolid` as the reliable check. This is a bug fix to the values
+`Shape.analyze(tolerance:)` returns, not a new field or a signature change. Like the
+#605/#609/#583/#595 fabricated-zero fixes before it, this is a PATCH-level correction (a wrong
+value repaired, per `SEMVER.md`'s own quick-reference table), not a recorded exception: nothing
+could have correctly relied on a hardcoded 0.
+
+New tests: `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`, 11 cases on the tiny
+open-shell fixture above (a box missing one face is the "smallest shape that demotes" the issue
+asked for). Proven to catch the fix: reverting `OCCTShapeAnalyze` back to `LoadShells()` fails
+exactly the three tests exercising `freeEdgeCount`/`freeFaceCount` (open shell, demoted shell, a
+two-shell compound) and leaves the other seven (`isValidSolid`, demotion-to-shell, closed-box
+negative control) green, confirming the new tests target this bug specifically rather than the
+already-correct demotion behaviour.
+
+**Follow-up from code review, before this landed:**
+
+- **`OCCTShapeAnalyze`'s new `CheckOrientedShells` call omitted `checkinternaledges`**, the third
+  argument, unlike the sibling `OCCTShapeAnalyzeShell`, which already passed `true`.
+  `ShapeAnalysis_Shell.cxx`: with `checkinternaledges` false, a FORWARD/REVERSED edge with no
+  opposite-orientation partner is unconditionally free; with it true, an edge that also occurs with
+  `TopAbs_INTERNAL` orientation elsewhere in the same shell (matched by `IsSame`: same TShape and
+  Location, ignoring orientation) is read as connected through that occurrence instead. The two
+  entry points could silently disagree on any shell carrying an INTERNAL-oriented edge, directly
+  contradicting this fix's own "`analyze()` must agree with `analyzeShell()`" test invariant. The
+  original fixture (the box missing one face) has no INTERNAL-oriented edges, so it could not catch
+  the divergence; a new fixture does (a single face wrapped as a shell, with an `.internal`-oriented
+  duplicate of one of its own boundary edges embedded back into the face before the face joins the
+  shell). Both call sites now share one helper (`occtAnalyzeShellOrientation`), so the argument
+  cannot drift between them again the way it just did.
+- **`totalProblems` double-counted an open shell's defect**: once via `freeEdgeCount` (one count
+  per free edge) and again as a flat `+1` via `freeFaceCount` (one shell found not fully closed),
+  now that this fix makes both fields live for the same shape at once for the first time.
+  `freeFaceCount` is a derived summary of the same scan, not an independent defect category, so
+  `totalProblems` no longer includes it; `freeFaceCount` stays a public field for callers who want
+  the shell-level breakdown.
+- **The per-shell scan gained a per-iteration `try`/`catch`.** `CheckOrientedShells` is a real OCCT
+  computation, unlike the `LoadShells()` it replaced, so it can raise `Standard_Failure` on a
+  malformed shell; without a scoped catch, one bad shell in a multi-shell shape would abort to this
+  function's outer `catch` and discard every other shell's free-edge count along with the
+  small-edge/small-face/gap counts computed afterward, rather than just skipping that one shell's
+  contribution.
+
+**A second, corrected review pass** retracted five of the first pass's seven points (a docs gap on
+`fixed`/`upgraded`, the per-shell try/catch above, duplicated scan logic, and two writing-style
+nits) as not part of its own verified output, keeping only two (`checkinternaledges` and the
+`totalProblems` double-count, both already listed above) and replacing the rest with two genuinely
+different findings:
+
+- **`isValidSolid`, `isValid` and `healed()`'s doc comments carried no fenced `swift` code block.**
+  `isValid` and `healed()` gained new demotion-hazard prose in this same fix and neither picked up
+  an example; `isValidSolid` had none even before this fix touched its doc, so the review's claim
+  held on all three. All three now carry a runnable snippet that builds the box-missing-one-face
+  fixture and shows `isValid == true` / `isValidSolid == false` on the demoted shell: the exact
+  hazard each paragraph describes, not a decorative unrelated example. Each snippet's literal code
+  was run once as a throwaway test before being written into the doc comment.
+- **`Issue702SolidDemotionTests.openShellMissingOneFace()` duplicated a fixture
+  `Issue442FixSolidMultiBodyTests.swift` already built inline**, in the same test target: both drop
+  one face from a box, compound the remaining five and sew them, the smallest input that reaches
+  `ShapeFix_Solid`'s cannot-close branch. Extracted to
+  `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift`
+  (`sewnBoxMissingOneFace(_:tolerance:)`, parameterized on the box so the two suites keep their own
+  box size/origin), following the precedent `Tests/OCCTStressTests/StressTestFixtures.swift` already
+  set for sharing fixtures within one test target. Both suites re-verified unchanged after the
+  refactor.
+
 ### CI builds the same kernel the branch is written against
 
 `Package.swift` now pins the [`v2.0.0-kernel.1`](https://github.com/SecondMouseAU/OCCTSwift/releases/tag/v2.0.0-kernel.1)
