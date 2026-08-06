@@ -3165,6 +3165,32 @@ struct BRepGPropVinertGKTests {
             }
         }
     }
+
+    /// #732: `errorReached` was hardcoded to `0.0` on every call, which reads as "this integration
+    /// was exact" even when it was not. A planar box face (the two tests above) genuinely can
+    /// converge with zero measured error, so it cannot distinguish the hardcode from a real answer;
+    /// a curved face at a loose tolerance can, because Gauss-Kronrod integration on a sphere always
+    /// has some residual to report.
+    ///
+    /// Not pinned to a literal (#726): the analytic sphere volume comes from
+    /// `GeometryProperties.sphereVolume`, an independent OCCT computation, not a hardcoded number,
+    /// and the bound checked is a relationship between two measured quantities, not a magic constant.
+    @Test("vinertGK reports a nonzero error on a curved face, consistent with the true deviation")
+    func errorReachedIsNonzeroOnCurvedFace() throws {
+        let radius = 10.0
+        let sphere = try #require(Shape.sphere(radius: radius))
+        let firstFace = try #require(sphere.faces().first)
+        let face = try #require(Shape.fromFace(firstFace))
+
+        let r = face.vinertGK(tolerance: 1e-3)
+        #expect(r.errorReached > 0,
+                "a curved face's Gauss-Kronrod integration should report a nonzero error, not the exact-answer sentinel 0.0")
+
+        let trueVolume = GeometryProperties.sphereVolume(radius: radius)
+        let relativeDeviation = abs(r.mass - trueVolume) / trueVolume
+        #expect(relativeDeviation <= r.errorReached,
+                "the reported relative error should bound the sphere's actual relative deviation from its analytic volume")
+    }
 }
 
 // MARK: - v0.80.0: Extrema 3D/2D, GeomTools persistence, ProjLib, gce_* factories

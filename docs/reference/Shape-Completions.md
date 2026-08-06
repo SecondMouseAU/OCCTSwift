@@ -363,14 +363,18 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
   - `location` — the reference point for inertia computation; defaults to the origin.
   - `tolerance` — relative integration error bound; default `0.001`.
   - `computeCG` — whether to compute the centre of gravity; default `true`.
-- **Returns:** A `VinertGKResult` with `.mass`, `.errorReached`, `.absoluteError`, and an optional
-  `.center`.
+- **Returns:** A `VinertGKResult` with `.mass`, `.errorReached`, and an optional `.center`.
 - **OCCT:** `BRepGProp_VinertGK`.
 - **Note:** This method operates on a face shape. The `.mass` field is the signed volume
   contribution, and stays non-optional because a zero contribution is a real answer that a caller
   summing over a shell needs. `.center` is `nil` when the contribution is 0, and when `computeCG` was
   `false`; both used to report (0,0,0), which is indistinguishable from a real centroid at the origin
-  (#609).
+  (#609). `.errorReached` is `BRepGProp_VinertGK::GetErrorReached()`, the relative integration error
+  as a fraction of `.mass`; it used to be hardcoded to `0.0` on every call (#732). There is no
+  `.absoluteError`: OCCT declares `GetAbsolutError()` on the same class but never defines it, so
+  calling it fails to link, and deriving one from `.errorReached * .mass` would go wrong exactly in
+  OCCT's own near-zero-mass branch, so the field was removed rather than kept as a second silent
+  zero.
 - **Example:**
   ```swift
   let face = Shape.box(dx: 10, dy: 10, dz: 10)!.faces.first!
@@ -388,7 +392,6 @@ Result struct returned by `vinertGK(location:tolerance:computeCG:)`.
 public struct VinertGKResult {
     public let mass: Double
     public let errorReached: Double
-    public let absoluteError: Double
     public let center: SIMD3<Double>?
 }
 ```

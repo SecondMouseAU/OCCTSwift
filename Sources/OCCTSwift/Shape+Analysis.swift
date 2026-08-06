@@ -1536,10 +1536,21 @@ extension Shape {
     /// ``center`` is nil when ``mass`` is 0, and also when `computeCG` was false, since no centre
     /// was asked for. Both used to report (0,0,0), which is indistinguishable from a real centroid
     /// at the origin (#609).
+    ///
+    /// ``errorReached`` is `BRepGProp_VinertGK::GetErrorReached()`: the relative integration error
+    /// the Gauss-Kronrod adaptive quadrature reached, as a fraction of ``mass``. It used to be
+    /// hardcoded to `0.0` on every call. `GetErrorReached()` is defined inline in the OCCT header,
+    /// which is why it has no linkable symbol, not evidence it is unusable (#732). There is no
+    /// paired absolute-error field: `BRepGProp_VinertGK::GetAbsolutError()` is declared in the same
+    /// header but has no definition anywhere in the OCCT 8.0.1 sources, so calling it fails at link
+    /// time, confirmed by compiling against it. Multiplying ``errorReached`` by ``mass`` recovers it
+    /// in the common case, but not in OCCT's own near-zero-mass branch (where the un-normalized
+    /// value is kept as-is rather than divided), so that derivation would quietly go wrong exactly
+    /// where a caller most needs a reliable number. Use ``errorReached`` as the relative confidence
+    /// figure; there is no absolute counterpart.
     public struct VinertGKResult {
         public let mass: Double
         public let errorReached: Double
-        public let absoluteError: Double
         public let center: SIMD3<Double>?
     }
 
@@ -1548,15 +1559,15 @@ extension Shape {
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let r = Shape.fromFace(box.faces()[0])!.vinertGK(tolerance: 1e-4)
-    /// r.mass      // this face's volume contribution about the location point
-    /// r.center    // its centroid, nil when the contribution is 0 or computeCG was false
+    /// r.mass          // this face's volume contribution about the location point
+    /// r.errorReached  // the relative integration error reached, nonzero on curved faces
+    /// r.center        // its centroid, nil when the contribution is 0 or computeCG was false
     /// ```
     public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
                          tolerance: Double = 0.001, computeCG: Bool = true) -> VinertGKResult {
         let r = OCCTBRepGPropVinertGK(handle, location.x, location.y, location.z,
                                        tolerance, computeCG)
         return VinertGKResult(mass: r.mass, errorReached: r.errorReached,
-                              absoluteError: r.absoluteError,
                               center: (computeCG && r.mass != 0) ? SIMD3(r.centerX, r.centerY, r.centerZ) : nil)
     }
 
