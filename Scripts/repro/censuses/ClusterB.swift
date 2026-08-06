@@ -443,19 +443,26 @@ enum ClusterB {
         // MARK: - chamfer2D(edgePairs:distances:)  [2D, face-level, batch]
 
         do {
-            // NOT called live: rectFace.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0])
-            // SIGSEGVs (uncatchable -- an OS signal, the same shape of defect CLAUDE.md's "Known
-            // OCCT Bugs" section already documents for this family). Confirmed in isolation before
-            // writing this note: it crashes on the FIRST duplicated-pair call, immediately, with no
-            // other statement in this block reached first. Likely mechanism (not chased further,
-            // since diagnosing it is a fix, not a census): BRepFilletAPI_MakeFillet2d::AddChamfer
-            // rebuilds the face incrementally, so the edge handles resolved from the ORIGINAL
-            // `edgeMap` before the loop starts are stale by the second call on the same pair --
-            // `fillet2D`'s equivalent duplicate-vertex call does NOT crash (measured below), so
-            // this is specific to AddChamfer, not the shared TopTools_IndexedMapOfShape lookup.
-            // This is a NEW finding, not previously in #520/#568/#612/#633/#639, and out of scope
-            // to fix here per #665's own instruction that this is the census only.
-            let dupVerdict = "CRASH (SIGSEGV, uncatchable): a duplicated edge pair [(0,1),(0,1)] crashes BRepFilletAPI_MakeFillet2d::AddChamfer on its second call. Not run live in this census -- see comment above."
+            // #705: this used to be UNSAFE to call live. A duplicated edge pair, e.g.
+            // [(0,1),(0,1)], SIGSEGV'd (uncatchable -- an OS signal) inside the repeat call's own
+            // BRepFilletAPI_MakeFillet2d::AddChamfer, which rebuilds the face incrementally, so a
+            // second call naming the same pair resolved against edge handles the first call had
+            // already made stale. Fixed in OCCTFace2DChamfer (OCCTBridge_Modeling.mm) by rejecting
+            // the whole call when any two entries name the same pair, in either order, before
+            // AddChamfer ever sees the second one -- matching fillet2D's own contract for a
+            // duplicated vertex on this same builder (#568). Reusing ONE edge across two
+            // DIFFERENT pairs (chamfering adjacent corners of a polygon) is unaffected and still
+            // measured non-nil below; only the identical pair repeated is refused. Now run live.
+            let dup = rectFace.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0])
+            let reversedDup = rectFace.chamfer2D(edgePairs: [(0, 1), (1, 0)], distances: [1.0, 2.0])
+            let sharedEdgeDifferentPairs = rectFace.chamfer2D(
+                edgePairs: [(0, 1), (1, 2)], distances: [1.0, 1.0])
+            let dupVerdict: String
+            if dup == nil && reversedDup == nil && sharedEdgeDifferentPairs != nil {
+                dupVerdict = "REJECT (nil) on a duplicated edge pair, order-independent (fixed by #705, was CRASH: SIGSEGV, uncatchable); one edge across two DIFFERENT pairs stays non-nil"
+            } else {
+                dupVerdict = "unexpected: dup \(dup == nil ? "nil" : "non-nil"), reversedDup \(reversedDup == nil ? "nil" : "non-nil"), sharedEdgeDifferentPairs \(sharedEdgeDifferentPairs == nil ? "nil" : "non-nil")"
+            }
             let outOfRange = rectFace.chamfer2D(edgePairs: [(0, 1), (2, 99_999)], distances: [1.0, 1.0])
             record("2D chamfer (face)", "chamfer2D(edgePairs:distances:)",
                    duplicate: dupVerdict,

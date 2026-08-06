@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **twelve** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **thirteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other nine change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other ten change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -34,8 +34,9 @@ The other nine change behaviour **without breaking the build**, which is the set
 - [#642](#recorded-exception-unreleased-aag-builds-nodes-from-face-occurrences-642) moves `AAG`'s node set from distinct faces to face occurrences, so `detectPocketsAAG()` and `buildAAG().nodes` can return more entries on a shape with a shared face.
 - [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
 - [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
+- [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
 
-A thirteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
+A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
 ## Rules
 
@@ -363,6 +364,43 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
+#### Recorded exception: Unreleased, `chamfer2D` refuses a repeated edge pair instead of crashing (#705)
+
+**One behaviour change, not a compile error, and not really a break at all: the old answer was an
+uncatchable process crash.** `chamfer2D(edgePairs:distances:)` SIGSEGVs when the same edge pair
+appears twice, confirmed in a separate process before this fix (raw exit code 139), because of an
+upstream OCCT defect: `BRepFilletAPI_MakeFillet2d::AddChamfer` looks up the pair's shared vertex and
+dereferences the edges that lookup returns without checking its status first, and the repeat call's
+lookup fails because that vertex was already consumed chamfering the pair the first time. Recorded
+here before the tag is cut:
+
+| Break | What a caller does |
+|---|---|
+| `chamfer2D(edgePairs:distances:)` returns `nil` when the same pair (in either order) appears more than once in `edgePairs` | Nothing on a call with no repeated pair, which includes chamfering every corner of a polygon (adjacent pairs legitimately share one edge, e.g. `(0, 1), (1, 2)`; only the identical pair repeated is refused). A caller building `edgePairs` from a selection or a loop that can produce an exact duplicate now gets `nil` instead of a crash, and should dedupe before calling |
+
+The exception was taken because:
+
+- **This is a crash fix, not a contract redesign.** There was no prior "answer" to disagree with:
+  the process went down. `nil` is strictly more information than a SIGSEGV, and every existing
+  caller that never produced a duplicate pair is unaffected.
+- **It matches the sibling contract already on this builder.** `fillet2D(vertexIndices:radii:)`,
+  the other entry point on the same `BRepFilletAPI_MakeFillet2d`, already rejects a duplicated
+  vertex index (#568) rather than doing anything with it. `chamfer2D` could not fail the same
+  incidental way, since its duplicate crashes inside OCCT before `Build()`/`IsDone()` ever run, so
+  an explicit guard was required either way, and reject is the answer already established one call
+  away.
+- **Reject, not first-wins or last-wins.** #633 is open on the wider fillet/chamfer family's
+  duplicate-index direction (fillet is last-wins, chamfer is first-wins, measured by
+  `Scripts/repro/cluster-b-fillet-edge-contract/`), and this entry point is deliberately left out
+  of that debate: picking a "wins" direction here would still require silently discarding one of
+  two distances with no signal to the caller, the same ambiguity #568 already refused to resolve
+  by guessing. This is a data point for #633, not an attempt to settle it.
+- **Reusing one edge across two different pairs is unaffected**, which is pinned by a positive
+  test chamfering every corner of a rectangle (`(0, 1), (1, 2), (2, 3), (3, 0)`, each edge shared
+  by two pairs) that must keep succeeding.
+- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
+  notes.
+
 #### #639: additive fillet decline reporting, not an exception
 
 **Recorded here per #664's own rule of writing a public-API change down in this file before the
@@ -372,7 +410,7 @@ sibling (`filletedWithReport(edges:radius:)`, `filletedWithReport(edges:startRad
 `filletEvolvingWithReport(_:)`) returning a new `Shape.FilletResult`: the edges OCCT declined to
 fillet, alongside the shape, for a caller who wants to know (#639).
 
-This does **not** move the "twelve recorded exceptions" count above, checked and confirmed
+This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
 unchanged by this entry: no existing method's signature or behaviour changed. `filleted(edges:
 radius:)` and its two siblings still return exactly what they always did, for exactly the same
 inputs; a caller who never calls the three new methods sees no difference at all. This is the

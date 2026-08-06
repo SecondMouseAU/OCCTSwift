@@ -55,6 +55,16 @@ extension Shape {
     ///   rather than being skipped (#568). Previously the pair was dropped and the corners that
     ///   did resolve were cut, reported as a complete result.
     ///
+    /// - Note: The same edge pair named twice fails the whole call rather than crashing (#705).
+    ///   This is an upstream OCCT defect in `BRepFilletAPI_MakeFillet2d::AddChamfer`, not this
+    ///   wrapper's own: the pair's second call finds its shared vertex already consumed by the
+    ///   first chamfer, and the resulting failure returns two null edges that `AddChamfer`
+    ///   dereferences without checking for first. The process SIGSEGV'd, uncatchably, before this
+    ///   guard existed. The check is order independent: `(0, 1)` and `(1, 0)` name the same pair
+    ///   and both are refused. Reusing one edge across two *different* pairs is unaffected and
+    ///   still works, e.g. chamfering every corner of a rectangle with
+    ///   `(0, 1), (1, 2), (2, 3), (3, 0)`.
+    ///
     /// - Parameters:
     ///   - edgePairs: Array of (edge1Index, edge2Index) pairs identifying adjacent edges
     ///   - distances: Chamfer distance for each edge pair
@@ -64,6 +74,9 @@ extension Shape {
     /// let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
     /// let cut = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2, 2])
     /// print(cut?.edgeCount ?? 0)   // 6: two corners replaced by chamfer edges
+    ///
+    /// // A repeated pair is refused, not crashed, and not silently collapsed to one chamfer.
+    /// print(face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1, 2]) == nil)   // true
     /// ```
     public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape? {
         guard !edgePairs.isEmpty, edgePairs.count == distances.count else { return nil }

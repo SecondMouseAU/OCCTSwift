@@ -1,0 +1,15 @@
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi2d/ChFi2d_Builder_0.cxx b/src/ModelingAlgorithms/TKFillet/ChFi2d/ChFi2d_Builder_0.cxx
+index 3ba6b22d..b52041c2 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi2d/ChFi2d_Builder_0.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi2d/ChFi2d_Builder_0.cxx
+@@ -99,6 +99,10 @@ TopoDS_Edge ChFi2d_Builder::AddChamfer(const TopoDS_Edge& E1,
+   // on <newFace>
+   TopoDS_Edge EE1, EE2;
+   status = ChFi2d::FindConnectedEdges(newFace, commonVertex, EE1, EE2);
++  if (status == ChFi2d_ConnexionError)
++  {
++    return chamfer;
++  }
+   if (EE1.IsSame(E2))
+   {
+     TopAbs_Orientation orient = EE1.Orientation();

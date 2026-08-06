@@ -914,6 +914,13 @@ public func chamfer2D(edgePairs: [(Int, Int)], distances: [Double]) -> Shape?
 - **Note:** *either* half of a pair naming no edge of that first face fails the whole call rather
   than being skipped (#568); previously the pair was dropped and the corners that did resolve were
   cut, reported as a complete result.
+- **Note:** the same edge pair named twice fails the whole call rather than crashing (#705); this
+  is an upstream OCCT defect in `BRepFilletAPI_MakeFillet2d::AddChamfer`, not this wrapper's own.
+  The pair's second call finds its shared vertex already consumed by the first chamfer, and the
+  resulting failure returns two null edges that `AddChamfer` dereferences without checking for
+  first, and the process SIGSEGV'd, uncatchably, before this guard existed. The check is order
+  independent, so `(0, 1)` and `(1, 0)` both name the refused pair; reusing one edge across two
+  *different* pairs (chamfering every corner of a rectangle) is unaffected.
 
 ---
 

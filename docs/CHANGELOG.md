@@ -169,6 +169,63 @@ silent no-op on any machine that had built before: the old tag's sources were co
 under the new version's number. It now requires `HEAD` to be at the tag the script names and aborts
 otherwise, naming the tree so a diagnostic probe left by an investigation is not destroyed silently.
 
+### `chamfer2D` SIGSEGVs, uncatchably, on a repeated edge pair (#705)
+
+Found by Cluster B's edge/vertex-index census (#665, `Scripts/repro/cluster-b-fillet-edge-contract/`),
+which records the crash rather than running it live, since an in-process OS signal would kill the
+census itself. `Shape.chamfer2D(edgePairs:distances:)` crashed the whole process, uncatchably, when
+the same edge pair appeared twice:
+
+```swift
+let wire = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true)!
+let rectFace = Shape.face(from: wire)!
+_ = rectFace.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0])   // SIGSEGV, exit 139
+```
+
+Confirmed in a separate process (a temporarily-repointed `Sources/OCCTTest/main.swift`, restored
+after), since an in-process crash kills the test runner rather than failing one test:
+
+| Input | Before | After |
+|---|---|---|
+| `[(0, 1), (0, 1)]` | SIGSEGV, exit 139 | `nil`, exit 0 |
+| `[(0, 1), (1, 0)]` (reversed, same pair) | SIGSEGV, exit 139 | `nil`, exit 0 |
+| `[(0, 1), (0, 1), (0, 1)]` | SIGSEGV, exit 139 | `nil`, exit 0 |
+| `[(0, 1), (1, 2)]` (one edge, two different pairs) | non-nil, unaffected | non-nil, unaffected |
+| `[(0, 1), (1, 2), (2, 3), (3, 0)]` (every corner) | non-nil, unaffected | non-nil, unaffected |
+
+The crash is inside the repeat call's own `BRepFilletAPI_MakeFillet2d::AddChamfer`, an OS signal
+the bridge's `catch (...)` cannot absorb, and it is an upstream OCCT defect, not this bridge's own.
+`AddChamfer(edge1, edge2, ...)` calls `ChFi2d::FindConnectedEdges` to look up the pair's shared
+vertex and dereferences the two edges it returns without checking the returned status first, and
+that lookup leaves both edges null on every failure path. A pair's second call fails the lookup,
+because its shared vertex was already consumed chamfering the pair the first time. The sibling
+overload (`AddChamfer(edge, vertex, distance, angle)`) checks the identical status correctly, which
+is the precedent the upstream filing cites. Reusing one edge across two *different* pairs, i.e.
+chamfering adjacent corners of a polygon, the ordinary multi-corner case, does not crash, measured
+above. Only the identical pair repeated does, order-independent. A kernel patch is carried
+separately, tracked in a follow-up PR; the guard below is what protects callers until it ships.
+
+**Fixed**: `OCCTFace2DChamfer` (`OCCTBridge_Modeling.mm`) now checks each pair against every prior
+pair in the same call before invoking `AddChamfer`, and rejects the whole request (returns `nullptr`)
+on a match in either order. This matches `fillet2D(vertexIndices:radii:)`'s own contract for a
+duplicated vertex on the same builder (#568) and the #568 idiom already used one line above in the
+same function for an out-of-range index: the whole call fails rather than guessing which of two
+distances to keep. #633 is open on the wider family's duplicate-index direction (fillet is
+last-wins, chamfer is first-wins) and is deliberately not settled here; this fix removes a crash,
+not a vote in that debate, though it is recorded as a data point for it.
+
+This is a behaviour change on a public API with no compile error, recorded in
+[`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705).
+A call with no repeated pair, which includes every existing caller, is unaffected. Tests:
+`Tests/OCCTModelingTests/Issue568IndexSkipTests.swift`'s `chamfer2DRejectsDuplicatePair` and
+`chamfer2DAcceptsSharedEdgeAcrossDifferentPairs`, the latter proven to catch an overly broad fix by
+injecting one (reject on any repeated single index rather than a repeated pair) and confirming it
+turns the shared-edge test red, then restoring.
+
+The census's own row for `chamfer2D` is updated from `CRASH (SIGSEGV, uncatchable)` to the measured
+`REJECT (nil)`, now safe to run live: `swift run Censuses cluster-b` calls it directly rather than
+noting it as unsafe to run.
+
 ### Pass 1b of the #377 duplication audit
 
 #### The fillet family could not report a declined edge, only skip it silently (#639)
