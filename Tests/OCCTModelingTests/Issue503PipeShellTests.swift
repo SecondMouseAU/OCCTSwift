@@ -16,6 +16,9 @@ struct Issue503PipeShellTests {
     /// Curved enough that Frenet, corrected Frenet and a fixed binormal all disagree.
     /// A straight spine will not do: with no torsion the modes coincide, which is how the
     /// silent fall-through survived a test suite that only ever swept straight lines.
+    ///
+    /// Not private: Issue598PipeShellFrenetModeTests (same target) reuses this fixture directly
+    /// rather than keeping a byte-for-byte copy the two files could silently drift apart on.
     static func curvedSpine() -> Wire? {
         Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 5, 0), SIMD3(20, -5, 10), SIMD3(30, 0, 10)])
     }
@@ -76,7 +79,11 @@ struct Issue503PipeShellTests {
             Shape.pipeShell(spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1))))
 
         if let frenet, let fixed {
-            #expect(frenet.volume.isApproximatelyEqual(to: 180.286724, tolerance: 1e-5))
+            // 177.347557, not 180.286724: that was the pre-#598 value, and it was the
+            // corrected-Frenet solid, not the Frenet one. .frenet and .correctedFrenet were
+            // wired to each other's OCCT mode. This literal moved when #598 fixed the swap;
+            // Issue598PipeShellFrenetModeTests pins the fix itself against an independent oracle.
+            #expect(frenet.volume.isApproximatelyEqual(to: 177.347557, tolerance: 1e-5))
             #expect(fixed.volume.isApproximatelyEqual(to: 149.999816, tolerance: 1e-5))
             #expect(!frenet.volume.isApproximatelyEqual(to: fixed.volume, tolerance: 1e-6))
         } else {
@@ -231,7 +238,9 @@ struct Issue503PipeShellTests {
     }
 }
 
-private extension Double {
+// Not private: Issue598PipeShellFrenetModeTests (same target) reuses this rather than
+// reimplementing the same scale-relative tolerance formula a third time.
+extension Double {
     func isApproximatelyEqual(to other: Double, tolerance: Double) -> Bool {
         abs(self - other) <= tolerance * Swift.max(1.0, abs(self), abs(other))
     }

@@ -1709,8 +1709,11 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 ```
 
 Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1 and `Shape.plateSurface(through:orders:)`
-returns `nil` if any point is given `.g2`.
+`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
+point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
+before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
+`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
@@ -2057,11 +2060,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-Each point independently specifies G0 (position), G1 (position + tangent), or G2 (position + tangent + curvature) continuity.
+Each point independently specifies G0 (position) or G1 (position + tangent) continuity.
+**`.g2` always returns `nil`**: `GeomPlate_PointConstraint` rejects order 2 outright for a bare
+point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`,
+before any constraint is built, rather than relying on OCCT's own throw.
 
 - **Parameters:**
   - `points` — 3D points (minimum 3); must match `orders.count`.
-  - `orders` — per-point constraint orders.
+  - `orders` — per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
   - `degree` — maximum polynomial degree (default 3).
   - `pointsOnCurves` — sample points on internal curves (default 15).
   - `iterations` — solver iterations (default 2).
@@ -2084,10 +2090,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-At least one of `points` or `curves` must be non-empty.
+At least one of `points` or `curves` must be non-empty. `.g2` is rejected up front for a **point**
+constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is fine for a
+**curve** constraint (`GeomPlate_CurveConstraint` accepts order 2 directly); only `points`'
+orders are checked.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `SurfaceContinuity`.
+  - `points` — point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
+    rejected, see above).
   - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree` — maximum polynomial degree (default 3).
   - `tolerance` — approximation tolerance.
