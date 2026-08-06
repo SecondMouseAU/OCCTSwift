@@ -11,17 +11,29 @@ prove nothing moved to the wrong header.
     python3 Scripts/derive-bridge-header-split.py            # print the manifest summary
     python3 Scripts/derive-bridge-header-split.py --list      # print every symbol and its target
     python3 Scripts/derive-bridge-header-split.py --verify    # exit 1 if the split is not total
+    python3 Scripts/derive-bridge-header-split.py --self-test # prove each failure mode is caught
 
 Exits 2 if run from anywhere but the repo root, matching the other gate scripts (#625).
+`--self-test` runs on synthetic fixtures and does not need the repo tree, so it is exempt.
 
 Why this is a script and not a list in an issue: the repo's history is full of censuses that were
 built by grep, written into an issue body, and then turned out to be wrong once measured (#558,
 #571, #583, #595, #573). A derivation that can be re-run does not go stale in the same way.
 
 Before #395 this read a single 21,896-line OCCTBridge.h. After #395 the declarations live across
-16 files (Sources/OCCTBridge/include/OCCTBridge*.h); this reads all of them and concatenates their
-text before deriving, so the script keeps meaning the same thing (does every declared function map
-to exactly one .mm file) whether run pre-split, mid-split, or on the settled post-split tree.
+16 files (Sources/OCCTBridge/include/OCCTBridge*.h). `--verify` originally only asked whether every
+declared function maps to exactly one .mm file, which was the whole question before there was more
+than one header to get wrong. #673: after the split there is a second question -- is each
+declaration actually in the header its .mm owns? A declaration can sit in the wrong domain header
+and still map to exactly one .mm, so the first question passing says nothing about the second.
+This now tracks declarations per header file, not just concatenated across all of them, so it can
+answer both: MISFILED symbols below are declared somewhere other than the header their .mm owns.
+
+Comments are excluded from the per-header declaration scan. The umbrella's cross-reference index
+names hundreds of symbols in `// Class -> OCCTFoo (aside)` lines, and a mention followed by a
+parenthetical aside matches the same `name(` shape a real declaration does -- reading those as
+declarations was how a hand check for #673 first turned up 29 apparent duplicates, all of them
+comment mentions rather than a second real declaration.
 """
 
 import argparse
@@ -42,6 +54,20 @@ DEFN = re.compile(r"^[A-Za-z_][\w\s\*\(\)<>,:]*?\b(OCCT[A-Za-z0-9_]+)\s*\(", re.
 DECL = re.compile(r"\b(OCCT[A-Za-z0-9_]+)\s*\(")
 # Opaque handle typedefs stay in the umbrella header, they are not functions.
 TYPEDEF = re.compile(r"typedef\s+struct\s+\w+\s*\*\s*(OCCT[A-Za-z0-9_]+)\s*;")
+LINE_COMMENT = re.compile(r"//[^\n]*")
+BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.S)
+
+
+def strip_comments(text):
+    """Remove // line comments and /* */ block comments (#673).
+
+    A per-header declaration scan has to run on this, not the raw text: the cross-reference
+    index names symbols in `// Class -> OCCTFoo (aside)` lines, and a parenthetical aside
+    right after the name matches the same `name(` shape DECL looks for. Left in, a mention
+    inside a comment reads as a second declaration of a symbol that is for real declared
+    somewhere else -- the false "duplicate" shape #673's hand check found.
+    """
+    return LINE_COMMENT.sub("", BLOCK_COMMENT.sub(" ", text))
 
 
 def target_header(mm_name):
@@ -55,17 +81,34 @@ def header_files():
     return sorted(glob.glob(os.path.join(HEADER_DIR, "OCCTBridge*.h")))
 
 
-def derive():
-    definitions = {}
-    for name in sorted(os.listdir(SRC_DIR)):
-        if name.endswith(".mm"):
-            text = open(os.path.join(SRC_DIR, name), errors="ignore").read()
-            definitions[name] = set(DEFN.findall(text))
+def declared_in(header_text):
+    """The real (non-comment) OCCT-prefixed declarations in one header's text."""
+    stripped = strip_comments(header_text)
+    return set(DECL.findall(stripped)) - set(TYPEDEF.findall(stripped))
 
-    header = ""
-    for path in header_files():
-        header += open(path, errors="ignore").read()
-    declared = set(DECL.findall(header)) - set(TYPEDEF.findall(header))
+
+def compute(mm_texts, header_texts):
+    """Everything this script reports, computed from in-memory text.
+
+    Kept separate from disk I/O so `--self-test` can run the exact same logic `--verify`
+    runs, on synthetic fixtures, rather than a parallel implementation that could drift
+    from what the real gate checks. `mm_texts` and `header_texts` are name -> file text.
+
+    Returns (mapping, ambiguous, unmapped, misfiled):
+      mapping    symbol -> the one header its owning .mm's domain header should be
+      ambiguous  symbol -> headers, when more than one .mm defines the same symbol
+      unmapped   symbols the header(s) declare that no .mm defines
+      misfiled   (symbol, wrong headers, expected header) for #673: a header, other than
+                 the one mapping says the symbol belongs in, that declares it for real.
+                 Checked per declaration site, not per symbol, so a symbol correctly
+                 declared in its own header AND, wrongly, also in a second one is still
+                 reported for that second header even though a correct declaration
+                 exists elsewhere.
+    """
+    definitions = {mm: set(DEFN.findall(text)) for mm, text in mm_texts.items()}
+
+    concatenated = "".join(header_texts.values())
+    declared = set(DECL.findall(concatenated)) - set(TYPEDEF.findall(concatenated))
 
     mapping, ambiguous, unmapped = {}, {}, []
     for symbol in sorted(declared):
@@ -76,7 +119,101 @@ def derive():
             ambiguous[symbol] = [target_header(o) for o in owners]
         else:
             unmapped.append(symbol)
-    return mapping, ambiguous, unmapped
+
+    home = collections.defaultdict(set)
+    for header, text in header_texts.items():
+        for symbol in declared_in(text):
+            home[symbol].add(header)
+
+    misfiled = []
+    for symbol, expected in mapping.items():
+        wrong = home.get(symbol, set()) - {expected}
+        if wrong:
+            misfiled.append((symbol, sorted(wrong), expected))
+
+    return mapping, ambiguous, unmapped, sorted(misfiled)
+
+
+def derive():
+    mm_texts = {}
+    for name in sorted(os.listdir(SRC_DIR)):
+        if name.endswith(".mm"):
+            mm_texts[name] = open(os.path.join(SRC_DIR, name), errors="ignore").read()
+
+    header_texts = {}
+    for path in header_files():
+        header_texts[os.path.basename(path)] = open(path, errors="ignore").read()
+
+    return compute(mm_texts, header_texts)
+
+
+# Each case is its own tiny .mm/.h universe, not a shared fixture, so removing one guard
+# cannot make an unrelated case fail for the wrong reason. `check` is handed compute()'s
+# own return value and answers True/False for that one case's claim only -- the same
+# function --verify calls, not a parallel implementation that could drift from it.
+SELF_TEST = [
+    (
+        "clean split: nothing flagged",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {"OCCTBridge_A.h": "void OCCTFooA(void);\n"},
+        lambda mapping, ambiguous, unmapped, misfiled: (
+            mapping.get("OCCTFooA") == "OCCTBridge_A.h" and not ambiguous and not unmapped and not misfiled
+        ),
+    ),
+    (
+        "ambiguous: two .mm files define the same symbol",
+        {
+            "OCCTBridge_A.mm": "void OCCTFooA(void) {}\n",
+            "OCCTBridge_B.mm": "void OCCTFooA(void) {}\n",
+        },
+        {"OCCTBridge_A.h": "void OCCTFooA(void);\n"},
+        lambda mapping, ambiguous, unmapped, misfiled: "OCCTFooA" in ambiguous,
+    ),
+    (
+        "unmapped: header declares a symbol no .mm defines",
+        {"OCCTBridge_A.mm": ""},
+        {"OCCTBridge_A.h": "void OCCTGhost(void);\n"},
+        lambda mapping, ambiguous, unmapped, misfiled: "OCCTGhost" in unmapped,
+    ),
+    (
+        "misfiled: declared in B.h, defined in A.mm (#673)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {"OCCTBridge_A.h": "", "OCCTBridge_B.h": "void OCCTFooA(void);\n"},
+        lambda mapping, ambiguous, unmapped, misfiled: (
+            "OCCTFooA", ["OCCTBridge_B.h"], "OCCTBridge_A.h") in misfiled,
+    ),
+    (
+        "line-comment mention elsewhere is not a misfile (#673)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": "void OCCTFooA(void);\n",
+            "OCCTBridge_B.h": "// SomeClass -> OCCTFooA (see the real header)\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: not misfiled,
+    ),
+    (
+        "block-comment mention elsewhere is not a misfile (#673)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": "void OCCTFooA(void);\n",
+            "OCCTBridge_B.h": "/* mentions OCCTFooA(void) here too */\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: not misfiled,
+    ),
+]
+
+
+def self_test():
+    """Prove each failure mode this script covers is caught, and each correct shape is not."""
+    failed = 0
+    for name, mm_texts, header_texts, check in SELF_TEST:
+        mapping, ambiguous, unmapped, misfiled = compute(mm_texts, header_texts)
+        ok = check(mapping, ambiguous, unmapped, misfiled)
+        failed += not ok
+        print(f"  {'ok  ' if ok else 'FAIL'}  {name}")
+    total = len(SELF_TEST)
+    print(f"{total - failed}/{total} cases correct")
+    return 1 if failed else 0
 
 
 def main():
@@ -84,13 +221,17 @@ def main():
     ap.add_argument("--list", action="store_true", help="print every symbol and its target header")
     ap.add_argument("--verify", action="store_true", help="exit 1 unless every symbol maps to one header")
     ap.add_argument("--json", metavar="PATH", help="write the manifest as JSON")
+    ap.add_argument("--self-test", action="store_true", help="prove each failure mode is caught")
     args = ap.parse_args()
+
+    if args.self_test:
+        return self_test()
 
     if not os.path.isdir(SRC_DIR) or not os.path.isfile(UMBRELLA):
         print(f"error: run from the repo root (expected {SRC_DIR} and {UMBRELLA})", file=sys.stderr)
         return 2
 
-    mapping, ambiguous, unmapped = derive()
+    mapping, ambiguous, unmapped, misfiled = derive()
 
     if args.list:
         for symbol, header in sorted(mapping.items(), key=lambda kv: (kv[1], kv[0])):
@@ -99,23 +240,28 @@ def main():
         for header, count in collections.Counter(mapping.values()).most_common():
             print(f"  {count:5d}  {header}")
 
-    print(f"\nmapped: {len(mapping)}   ambiguous: {len(ambiguous)}   unmapped: {len(unmapped)}")
+    print(f"\nmapped: {len(mapping)}   ambiguous: {len(ambiguous)}   "
+          f"unmapped: {len(unmapped)}   misfiled: {len(misfiled)}")
 
     for symbol, headers in sorted(ambiguous.items()):
         print(f"  AMBIGUOUS  {symbol}: {', '.join(headers)}", file=sys.stderr)
     for symbol in unmapped:
         print(f"  UNMAPPED   {symbol}", file=sys.stderr)
+    for symbol, wrong, expected in misfiled:
+        print(f"  MISFILED   {symbol}: declared in {', '.join(wrong)}, owned by {expected}", file=sys.stderr)
 
     if args.json:
         json.dump(mapping, open(args.json, "w"), indent=0, sort_keys=True)
         print(f"manifest written to {args.json}")
 
-    if args.verify and (ambiguous or unmapped):
+    if args.verify and (ambiguous or unmapped or misfiled):
         print(
             "\nThe split is not total. Resolve each symbol above before moving declarations:\n"
             "  AMBIGUOUS means two .mm files define the same symbol, which is a real defect.\n"
             "  UNMAPPED means the header declares something no .mm defines, so it is either dead\n"
-            "  or defined somewhere the parser does not look.",
+            "  or defined somewhere the parser does not look.\n"
+            "  MISFILED means the symbol is declared in a header other than the one its .mm owns\n"
+            "  (#673) -- move the declaration to the header the summary above says it should be in.",
             file=sys.stderr,
         )
         return 1

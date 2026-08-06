@@ -15,6 +15,53 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
+
+`--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
+which was the whole question before #395 split the header. After that split there is a second
+question it did not ask: is the declaration actually in the header its `.mm` owns? A declaration
+could sit in `OCCTBridge_Surface.h` while its implementation lived in `OCCTBridge_Modeling.mm` and
+`--verify` would still report clean, because the symbol still maps to exactly one `.mm`.
+
+The script now tracks declarations per header file, not just concatenated across all sixteen, so
+it can answer both. A hand check at the time #673 was filed found 0 misfiled of 4022, with 29
+apparent duplicates all traced to mentions inside the umbrella's cross-reference index comment
+block. Re-measuring rather than trusting that number: **0 misfiled of 4018** today (the drop from
+4022 is unrelated churn, not a regression). Comments have to be excluded from the per-header scan
+for the same reason the hand check found 29 false duplicates: `// Class -> OCCTFoo (aside)` names a
+symbol followed immediately by `(`, the same shape a real declaration has, so an unstripped scan
+credits whichever header holds the comment with a second declaration of a symbol that is for real
+declared somewhere else.
+
+**Gained a `--self-test`**, the one thing this script's three siblings already had and it did not.
+Six cases, each proven by removing the guard it covers and watching the count drop, not merely
+added and trusted:
+
+| case | guard removed | result |
+|---|---|---|
+| clean split: nothing flagged | dropped `- {expected}` from the wrong-header set | 3/6 |
+| ambiguous: two `.mm` files define the same symbol | disabled the `ambiguous` branch | 5/6 |
+| unmapped: header declares a symbol no `.mm` defines | disabled the `unmapped` branch | 5/6 |
+| misfiled: declared in B.h, defined in A.mm | disabled misfiled detection outright | 5/6 |
+| line-comment mention elsewhere is not a misfile | dropped `//` stripping | 5/6 |
+| block-comment mention elsewhere is not a misfile | dropped `/* */` stripping | 5/6 |
+
+Each restored to 6/6 after its own row. The "clean split" row also catches the two comment-guard
+rows collapsing at once, since all three share the same `wrong = home - {expected}` computation;
+the other four guards are each isolated to exactly one row.
+
+**Joins `ci.yml`'s `gate-scripts` job as the fifth script**, run with `--verify` (its bare form
+only prints the manifest and always exits 0). Unlike the other two `derive-*.py` scripts in
+`Scripts/`, which are one-time censuses for a split not yet done, this one protects an invariant
+from a split already shipped (#395) that every ~100-operation release can still violate by hand.
+The pre-commit hook (`Scripts/git-hooks/pre-commit`) gains the matching two invocations to stay
+flag-for-flag identical to CI, and `CLAUDE.md`'s Static Gate Scripts section, `ci.yml`'s own header
+comment, and the hook's header comment are updated from four/seven to five/nine accordingly. In the
+same pass, `ci.yml`'s comment for `count-operations.py` is corrected: it said the script "ignores
+an unrecognised" option, which was true only until the same-day commit that made it exit 2 instead
+(confirmed still correct: `count-operations.py --self-test` and `--bogus` both exit 2 with a usage
+message).
+
 ### CI builds the same kernel the branch is written against
 
 `Package.swift` now pins the [`v2.0.0-kernel.1`](https://github.com/SecondMouseAU/OCCTSwift/releases/tag/v2.0.0-kernel.1)
