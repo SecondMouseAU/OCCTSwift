@@ -21,9 +21,19 @@ status = ChFi2d::FindConnectedEdges(newFace, commonVertex, EE1, EE2);
 if (EE1.IsSame(E2))   // no status check first
 ```
 
-`ChFi2d::FindConnectedEdges` (`ChFi2d.cxx`) leaves both output edges null (default-constructed) on
-every failure path, including the one this repro hits: the vertex is not present in the current
-face's vertex-to-edge map at all, which returns `ChFi2d_ConnexionError` with neither edge assigned.
+`ChFi2d::FindConnectedEdges` (`ChFi2d.cxx`) returns `ChFi2d_ConnexionError` on **every** failure
+path, which is what the fix keys on. It does **not** leave both edges null on every one of them, and
+the distinction matters for anyone reasoning about a different failure than this repro's:
+
+| failure | `E1` | `E2` |
+|---|---|---|
+| vertex absent from the face's vertex-to-edge map (this repro) | unassigned | unassigned |
+| vertex present, zero incident edges | unassigned | unassigned |
+| exactly one incident edge | **assigned** | unassigned |
+| three or more incident edges | **assigned** | **assigned** |
+
+So a guard written against nullness would miss two of the four. The status is uniform across all
+four, so that is what the patch checks.
 
 Calling `AddChamfer(E1, E2, D1, D2)` a second time with the *same* pair triggers exactly this: the
 first call's own `BuildNewWire` rebuilds the face's wire, replacing the pair's shared vertex with

@@ -317,7 +317,10 @@ twice, found by Cluster B's fillet/chamfer edge-set census (#665).
 
 `ChFi2d_Builder::AddChamfer(E1, E2, D1, D2)` calls `ChFi2d::FindConnectedEdges` to look up the
 pair's shared vertex, then dereferences the two edges it returns without checking the returned
-status first. `FindConnectedEdges` leaves both edges null on every failure path, and a second call
+status first. `FindConnectedEdges` returns `ChFi2d_ConnexionError` on every failure path, which is
+what this patch checks; it does not leave both edges null on all of them (one incident edge assigns
+`E1`, three or more assign both, see the repro README's table), so nullness would have been the
+wrong thing to guard on. A second call
 naming the same pair hits exactly that: the pair's shared vertex is removed from the face's wire by
 the first call's own `BuildNewWire`, so the second call's lookup fails and the two null edges it
 returns reach `ComputeChamfer` unchecked. Confirmed with a debug (`-O0`) single-TU override-link
