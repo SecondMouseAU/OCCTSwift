@@ -80,11 +80,65 @@ struct Issue703EdgeConvexityOrderTests {
             Issue.record("could not build the pocketed box")
             return
         }
-        #expect((result.volume ?? 0) < (box.volume ?? 0),
+        // #720 review of #703, finding 5: `?? 0` on both sides would still pass if either volume
+        // computation silently failed (nil), so unwrap and fail loudly instead; see
+        // OCCTModelingTests.detectPocket()'s identical fix for the full reasoning.
+        guard let resultVolume = result.volume, let boxVolume = box.volume else {
+            #expect(Bool(false), "volume computation failed; fixture proves nothing")
+            return
+        }
+        #expect(resultVolume < boxVolume,
                 "pocket tool must actually remove material, or this fixture proves nothing")
 
         let aag = result.buildAAG()
         #expect(aag.edges.contains { $0.convexity == .concave })
         #expect(result.detectPocketsAAG().count == 1)
+    }
+
+    /// #720's automated review of this PR (findings 1 and 6) is right that every fixture above is
+    /// planar and axis-aligned, and that the replacement formula (each face's own area centroid,
+    /// a GLOBAL property, standing in for a LOCAL one) is not exact everywhere: #723 tracks a
+    /// measured case (a through-hole rim) where the answer drifts with plate thickness, and that
+    /// residual is deliberately NOT fixed here. But "not exact everywhere" is not "untested on
+    /// curved/holed geometry": a plain round through-hole has an unambiguous ground truth, namely
+    /// exactly two concave edges, where the cylindrical wall meets the top and bottom faces, and
+    /// nothing else, independent of plate thickness, since the wall is one full-period
+    /// cylindrical face with no vertical seam. This fixture (50mm square plate, 10mm-radius hole)
+    /// does not trip #723's drift at any of the four thicknesses tried, including the two
+    /// (20, 40) that bracket where #723's own fixture drifted, so it is a real regression lock
+    /// against the base branch's formula, not a restatement of the known residual.
+    @Test("a round through-hole has exactly two concave edges, at several plate thicknesses",
+          arguments: [20.0, 40.0, 60.0, 120.0])
+    func throughHoleHasExactlyTwoConcaveEdges(thickness: Double) throws {
+        let plate = try #require(Shape.box(width: 50, height: 50, depth: thickness))
+        let drill = try #require(Shape.cylinder(
+            at: SIMD3(0, 0, -5), direction: SIMD3(0, 0, 1), radius: 10, height: thickness + 10))
+        let drilled = try #require(plate.subtracting(drill))
+
+        let aag = drilled.buildAAG()
+        let label: Comment = "thickness=\(thickness)"
+        #expect(aag.edges.count == 14, label)
+        #expect(aag.edges.filter { $0.convexity == .concave }.count == 2, label)
+    }
+
+    /// The curved-geometry counterpart above covers a hole; this covers a genuine blind pocket
+    /// with a curved answer that IS pinned exactly, unlike the through-hole's height-dependent
+    /// residual. A blind square pocket's floor meets its four walls, and its four walls meet the
+    /// surrounding top face, at eight distinct concave dihedrals (material recedes at each); no
+    /// other edge in the fixture is concave. This is exactly what #723's own measurement recorded
+    /// for a square pocket ("concave set exact") at multiple depths, so pinning it here locks in
+    /// the one part of that measurement that is not in dispute.
+    @Test("a blind square pocket has exactly eight concave edges, at several depths",
+          arguments: [2.0, 10.0, 25.0])
+    func squarePocketHasExactlyEightConcaveEdges(depth: Double) throws {
+        let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
+        let pocket = try #require(Shape.box(
+            origin: SIMD3(-5, -5, 15 - depth), width: 10, height: 10, depth: depth + 1))
+        let pocketed = try #require(box.subtracting(pocket))
+
+        let aag = pocketed.buildAAG()
+        let label: Comment = "depth=\(depth)"
+        #expect(aag.edges.filter { $0.convexity == .concave }.count == 8, label)
+        #expect(pocketed.detectPocketsAAG().count == 1, label)
     }
 }

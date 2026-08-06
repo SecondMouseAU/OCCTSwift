@@ -1,0 +1,14 @@
+=== overlap gap 0.0005mm (above BRepAlgoAPI's fuzzy tolerance) ===
+  sliver face 5: [plain]  area=0.00999999999998 centroid=(19.9997,0,10)
+  sliver face 5: [Eps=1e-6] area=0.00999999999998 err=0 centroid=(19.9997,0,10)
+  sliver face 6: [plain]  area=0.00999999999998 centroid=(19.9997,10,20)
+  sliver face 6: [Eps=1e-6] area=0.00999999999998 err=0 centroid=(19.9997,10,20)
+  sliver face 7: [plain]  area=0.00999999999998 centroid=(19.9997,20,10)
+  sliver face 7: [Eps=1e-6] area=0.00999999999998 err=0 centroid=(19.9997,20,10)
+  sliver face 8: [plain]  area=0.00999999999998 centroid=(19.9997,10,0)
+  sliver face 8: [Eps=1e-6] area=0.00999999999998 err=0 centroid=(19.9997,10,0)
+gap=0.0005: total faces=14, sliver faces (area<1.0)=4
+
+=== overlap gap 1e-7mm (at/below BRepAlgoAPI's default fuzzy tolerance) ===
+gap=1e-07: total faces=10, sliver faces (area<1.0)=0
+

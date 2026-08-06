@@ -81,6 +81,53 @@ cluster-a`'s two `detectPocketsAAG().count` rows move from `1/1/1` to `0/0/0`; t
 README (`Scripts/repro/cluster-a-subshape-enumeration/README.md`) are updated to match. This is
 Cluster A's last open member (#664).
 
+**Follow-up from PR #720's automated review**: three real, independently-measured issues in the fix
+above, addressed without touching the classification formula itself (a formula change is #723's
+scope, deliberately deferred):
+
+- **Performance (finding 7, confirmed).** `OCCTEdgeGetConvexity` called
+  `BRepGProp::SurfaceProperties` on `face1`/`face2` directly, so `AAG.buildGraph()`'s pairwise loop
+  repeated a face's own whole-face integration once per neighbor. Measured 7-12x slower building
+  the AAG of a 134-face part than the pre-#703 formula (which does no integration at all). Fixed:
+  a new `OCCTFaceGetAreaCentroid` bridge call lets `buildGraph()` compute each face occurrence's
+  centroid once, before the pairwise loop, and pass it into `OCCTEdgeGetConvexity` (which no longer
+  computes it internally), cutting the redundant-integration half of the regression exactly in half
+  (measured 2.06x, matching the 2.09x the call-count reduction predicts). The remaining gap versus
+  the pre-#703 baseline is the inherent cost of the centroid approach itself, not a caching problem;
+  see `Scripts/repro/703-edge-convexity-order/` for the full measurement.
+- **Sliver-face guard (findings 2 and 9, not reproduced, added defensively).** A dedicated probe
+  (`Scripts/repro/703-edge-convexity-order/repro_sliver.mm`) fusing two boxes with a deliberate
+  sliver overlap found no instability: OCCT's own boolean tolerance handling does not let a
+  genuinely near-zero-area face survive as its own topological face. `OCCTFaceGetAreaCentroid`
+  still declines any face under area `1e-9` (several orders below the smallest sliver measured) and
+  reports "no centroid", which `OCCTEdgeGetConvexity` treats as Smooth: free, from the finding-7
+  restructuring, not because a live bug was found.
+- **Integration accuracy (finding 8, confirmed as a real gap, closed).** The plain
+  `SurfaceProperties` overload has no bounded relative error; `OCCTFaceGetAreaCentroid` now uses the
+  adaptive-integration overload (`Eps = 1e-6`, matching `Face.area()`'s own default), which does.
+
+Two findings were investigated and are not regressions:
+
+- **Finding 3** (removing the tangent-magnitude cusp guard). The new formula's terms are the edge
+  midpoint's position, the two face normals, and the two face centroids, none of which derive
+  from the edge curve's own parametric derivative. A cusp in the curve's parameterization (a
+  vanishing derivative) cannot perturb an answer with no dependence on that derivative; the removed
+  code was dead relative to the new method, not a guard the new method still needed.
+- **Findings 1 and 4** (the centroid-toward-material assumption failing for holes/curved faces, and
+  `smoothThreshold` no longer bounding a real angle). Both restate #723, already filed and tracked
+  separately with its own measurement (a through-hole rim's classification drifting with plate
+  thickness). Every fixture in the PR's own verification comment shows this PR matching or beating
+  the base branch, never regressing it, including on holed/curved geometry; see
+  `Issue703EdgeConvexityOrderTests.throughHoleHasExactlyTwoConcaveEdges`/
+  `squarePocketHasExactlyEightConcaveEdges` (new, finding 6) for regression locks on curved/holed
+  geometry that do NOT depend on #723's disputed cases.
+
+Finding 5 (`(result.volume ?? 0) < (box.volume ?? 0)` masking a nil volume computation as `0`) is a
+test-quality fix, not a formula question: both occurrences (`OCCTModelingTests.detectPocket()` and
+`Issue703EdgeConvexityOrderTests.genuinePocketStillReportsConcaveEdges`) now unwrap both volumes and
+fail loudly if either is nil, matching this suite's own `guard let ..., let v0 = shape.volume else
+{ #expect(Bool(false), ...) }` idiom.
+
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 
 `--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
