@@ -50,6 +50,51 @@ chance to run after that cancellation signal, unlike a not-yet-started automatic
 exists to stop wasting, had not completed by the time the PR was opened. See the PR description for
 exactly what ran and what remained outstanding.
 
+||||||| d2ae082
+### `plateSurface`'s point constraints reject `.g2` in Swift instead of relying on OCCT's own throw (#437)
+
+Cluster D's continuity census (#513/#667, `Scripts/repro/cluster-d-continuity/`) measured #437 as a
+genuine instance of the cluster's shared root: `SurfaceContinuity`'s raw value is forwarded as a
+literal `GeomPlate_PointConstraint`/`GeomPlate_CurveConstraint` order, with no `GeomAbs_Shape`
+decode step at all. `GeomPlate_PointConstraint`'s point constructor throws above order 1 (pinned
+`V8_0_1`, `GeomPlate_PointConstraint.cxx`): a bare point carries no curvature to match, so `.g2`
+was always out of domain for a point constraint. `GeomPlate_CurveConstraint` has no such
+restriction and accepts order 2 directly, so this is a point-only defect.
+
+`Shape.plateSurface(through:orders:...)` and the point half of
+`Shape.plateSurface(pointConstraints:curveConstraints:...)` clamped the incoming order into
+`[0, 2]` and passed it straight to the constructor, which threw, unwound past the whole constraint
+loop, and was swallowed by the bridge's blanket `catch (...)`, returning `nil` with no indication
+which constraint was at fault.
+
+**Rejected at the Swift boundary instead of clamped or split into a new type.** Three options were
+on the table (`SurfaceContinuity.g2` documented as unsupported here already, from #436):
+
+- **Clamp to `[0, 1]` in the bridge.** Silently substitutes a lower order than the caller asked
+  for, the same class of behaviour #430/#432/#434 deliberately moved away from ("used or the
+  constraint fails, never silently substituted").
+- **Give point constraints a narrower type that cannot express curvature.** Most precise, but adds
+  a fourth continuity vocabulary right where #398/#490 spent real effort collapsing nine into two,
+  and unlike #619 (which *retired* a parameter because its name lied about what it took), this
+  would be introducing a new type for a shared enum that is correct everywhere else it is used
+  (`Shape.fill`, `FillingSurface`, curve constraints all accept `.g2` legitimately).
+- **Reject in Swift, before building any constraint.** Chosen. Keeps the single `SurfaceContinuity`
+  vocabulary, and makes the `nil` a deliberate, documented decision instead of an accidental
+  side effect of OCCT happening to throw where our bridge happens to catch.
+
+The public answer does not change: a point `.g2` was already `nil` and stays `nil`. What changes
+is that the rejection is now asserted in Swift
+(`SurfaceContinuity.isUnsupportedForPointConstraint`, `Shape.plateMixedRejectsPointOrders`) rather
+than incidentally produced by relying on OCCT's internal domain check, and it no longer builds any
+`GeomPlate_PointConstraint`s before failing. `Issue437PlatePointG2Tests` has the guard-removal
+matrix proving which of its own cases exercise the new mechanism and which pin the (unchanged)
+public contract only, per `okf/policies/prove-the-test-fails.md`.
+
+**Not fixed here:** #438, a different, API-duplication-shaped defect in the same file that the
+census's own measurement confirmed is unrelated to this one (two public APIs correctly decoding
+the same continuity through the same canonical decoder, but setting different criteria on the
+builder).
+
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 
 `--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
@@ -250,6 +295,50 @@ It cloned `occt-src` only when the directory was absent, so bumping `OCCT_VERSIO
 silent no-op on any machine that had built before: the old tag's sources were compiled and packaged
 under the new version's number. It now requires `HEAD` to be at the tag the script names and aborts
 otherwise, naming the tree so a diagnostic probe left by an investigation is not destroyed silently.
+
+### `GeomTools_Curve2dSet`/`SurfaceSet` null-handle census: closed on evidence, kernel patch carried (#643)
+
+Cluster C's own census (#666, PR #711) concluded, without re-measuring, that #643 is already
+bridge-guarded and the remaining defect is upstream. Re-verified rather than inherited, per this
+issue's own instructions.
+
+**The guard holds.** `OCCTGeomToolsCurve2dSetWrite`/`OCCTGeomToolsSurfaceSetWrite`
+(`Sources/OCCTBridge/src/OCCTBridge_IO.mm`) already refuse a null handle per array element before
+calling `GeomTools_Curve2dSet::Add`/`GeomTools_SurfaceSet::Add` (the #618 "array element through a
+cast" shape), and these two functions are the only call sites of either class anywhere in the tree.
+Confirmed dynamically too, not just by reading the guard: override-linking the real
+`OCCTBridge_IO.mm` against a genuinely null-handle-wrapping `OCCTCurve2D`/`OCCTSurface` returns
+`nullptr` rather than crashing, for both a null-only array and a mixed valid+null array. Removing
+the guard (injected, then restored) reproduces the SIGSEGV through the real bridge function,
+confirming it is load-bearing rather than incidental.
+
+**The upstream asymmetry is real and still live.** `GeomTools_CurveSet::Add` guards a null handle
+and drops it (`return (C.IsNull()) ? 0 : myMap.Add(C);`); `GeomTools_Curve2dSet::Add` and
+`GeomTools_SurfaceSet::Add` don't, so a null is bound at a valid-looking index and only crashes
+later, inside `Write()`. Re-measured directly against the pinned kernel (`v2.0.0-kernel.1`, OCCT
+`V8_0_1` + eleven carried patches) rather than assumed from the issue's original 8.0.0p1 report:
+identical result. A second, previously unnamed divergence was found checking whether the three
+writers disagree anywhere else: `Index()` has the same asymmetry (`CurveSet::Index` guards, the
+siblings don't). It doesn't crash (`NCollection_IndexedMap::FindIndex` never dereferences its
+argument), but the two siblings silently report a bogus non-zero index for a handle that was never
+validly bound, where `CurveSet::Index` correctly answers 0. Both files are byte-identical between
+the pinned `V8_0_1` tag and current upstream `master`.
+
+**Filed upstream and carried, not fixed bridge-side.** This repo's own guard already prevents any
+caller from reaching the defect, so the fix belongs in the container, not the wrapper. Kernel patch
+`Scripts/patches/0023-GeomTools_Curve2dSet-SurfaceSet-null-handle-643.patch` mirrors
+`GeomTools_CurveSet`'s own correct guard onto `Add`/`Index` on both siblings (four one-line
+changes), verified by override-linking the patched files ahead of the unpatched archive: all three
+classes' `Add()` now return 0 for a null handle and `Write()` completes normally; all three
+classes' `Index()` now return 0. Filed as
+[Open-Cascade-SAS/OCCT#1434](https://github.com/Open-Cascade-SAS/OCCT/issues/1434) (repro) /
+[OCCT#1435](https://github.com/Open-Cascade-SAS/OCCT/pull/1435) (fix). Inert until the pinned
+xcframework is rebuilt (#512); this change does not rebuild or bump the pin.
+
+No bridge behavior change, no public API change. See
+[`Scripts/repro/643-geomtools-null-write/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/643-geomtools-null-write)
+for the reproducer and the full "prove the test fails" injection matrix (bridge guard removed →
+SIGSEGV reproduced; kernel patch applied → both defects resolved).
 
 ### `chamfer2D` SIGSEGVs, uncatchably, on a repeated edge pair (#705)
 
