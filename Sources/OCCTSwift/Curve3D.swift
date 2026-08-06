@@ -787,7 +787,10 @@ extension Curve3D {
     ///   - other: The other curve
     ///   - maxCount: Output *capacity* (default 20), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
-    /// - Returns: Array of extremal distance results
+    /// - Returns: Array of extremal distance results. Empty when the curves are parallel: OCCT
+    ///   represents that case as a single unbounded family of equidistant solutions rather than a
+    ///   finite set of point pairs, so there is no `(point1, point2)` pair to report (#636). Use
+    ///   ``minDistance(to:)`` to get the (well-defined) distance in that case.
     public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaResult] {
         let maxCount = Sampling.capacity(maxCount)
         guard maxCount > 0 else { return [] }

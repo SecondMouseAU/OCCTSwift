@@ -5230,6 +5230,57 @@ their truncation contract again. This is the same defect and the same fix as
 unmodified bridge first: the count-agreement test failed at 100 versus 150, which is the property
 the truncation broke.
 
+#### `Curve3D.extrema` SIGSEGV'd, uncatchably, on parallel curves at every capacity (#636)
+
+Found while building a fixture for #622: a parallel-curve fixture for `extrema(with:)` crashed the
+process outright, unrelated to the count bound #622 was about. `CLAUDE.md`'s Known OCCT Bugs
+already documents the topological sibling (`BRepExtrema_ExtCC` crashes on parallel edges, guarded
+with `isParallel`); `OCCTCurve3DExtrema` (`OCCTBridge_Curve3D.mm`), reached from the Swift API by a
+different bridge path through `GeomAPI_ExtremaCurveCurve`, had no equivalent guard.
+
+**Root cause, confirmed against the pinned `V8_0_1` source before touching anything**:
+`GeomAPI_ExtremaCurveCurve` wraps `Extrema_ExtCC`. On parallel curves,
+`Extrema_ExtCC::PrepareParallelResult` reports exactly one "extremum" by appending a distance to
+its private `mySqDist` sequence, but several of its branches (an unbounded pair, or a bounded pair
+whose projected ranges overlap, where a whole span is equidistant rather than one discrete closest
+point) never append the matching pair to `mypoints`. `NbExtrema()` reports 1
+(`mySqDist.Length()`), so `Points()` indexes an empty `NCollection_Sequence`. This project's OCCT
+is built with `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` (`No_Exception`), so the bounds check that
+would normally throw `Standard_OutOfRange` compiles to nothing: the out-of-range access is
+undefined behaviour, confirmed via a standalone binary linked directly against `libOCCT-macos.a` to
+be a genuine SIGSEGV, not a C++ exception. A `catch (...)` around the call cannot help: an OS
+signal never reaches it.
+
+**Measured against two fixtures**, both crashing before the fix and both built from real `Curve3D`
+factory methods: two unbounded parallel `Geom_Line`s (`Curve3D.line(through:direction:)`), and two
+*bounded* parallel segments with overlapping projected ranges (`Curve3D.segment(from:to:)`, the
+exact fixture shape `Issue622AllocationBoundsTests` deliberately avoided making parallel, per its
+own comment).
+
+**Fixed**: `OCCTCurve3DExtrema` now queries `IsParallel()` and returns empty before touching any
+solution, mirroring the guard already in place for the sibling `Extrema_ExtCC`/`Extrema_ExtCS`
+entry points in the same file (`OCCTExtremaExtCC`/`OCCTExtremaExtCS`). `OCCTCurve3DMinDistanceToCurve`
+(`Curve3D.minDistance(to:)`), which shares the same `GeomAPI_ExtremaCurveCurve` construction, needed
+no change: it only calls `LowerDistance()`, which reads `mySqDist`, populated correctly in every
+parallel branch, and never touches the empty `mypoints`. Measured, not assumed: it already
+reported the correct offset distance for both parallel fixtures before this fix.
+
+Audited the rest of the bridge for the same shape (every `GeomAPI_ExtremaCurveCurve`,
+`Extrema_ExtCC`/`Extrema_ExtCS`, and `BRepExtrema_ExtCC` call site): `OCCTCurve3DExtrema` was the
+only unguarded one. `OCCTBridge_Geom2d.mm`'s `OCCTCurve2DAllExtrema` (`Geom2dAPI_ExtremaCurveCurve`)
+has the identical unguarded `.Points()` call and is very likely the 2D sibling of this same defect,
+but that file is outside this PR's scope; noted here as a follow-up rather than fixed.
+
+`Issue636ExtremaParallelCurvesTests` (`Tests/OCCTCurveTests`), 4 tests. Since this is an uncatchable
+OS-signal crash, an in-process test cannot observe "before" without taking the whole test runner
+down with it: the defect and the fix were instead proven out-of-process first, via a temporary
+probe in `Sources/OCCTTest/main.swift` (restored byte-identical afterward) run as
+`swift run OCCTTest`. With the guard removed: SIGSEGV (exit 139). With the guard restored: clean
+exit reporting the expected empty result. The permanent, safe-to-run-in-process regression tests
+landed only once both were confirmed.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
 ### `OCCT.xcframework` rebuilt: the #484 null-context guard is now in the kernel binary (#512)
 
 A carried patch does nothing until the xcframework is rebuilt from source, so `0017` above was inert
