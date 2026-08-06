@@ -40,7 +40,7 @@ struct Issue702SolidDemotion {
     /// A box with one face dropped, sewn into an open shell: the smallest input that reaches
     /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face. Delegates to
     /// `sewnBoxMissingOneFace(_:tolerance:)` (`ShapeHealingTestFixtures.swift`), shared with
-    /// `Issue442FixSolidMultiBodyTests` (#717 review finding 5).
+    /// `Issue442FixSolidMultiBodyTests` (#717 review, the duplicated open-shell fixture).
     private func openShellMissingOneFace() -> Shape? {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else { return nil }
         return sewnBoxMissingOneFace(box)
@@ -160,7 +160,7 @@ struct Issue702SolidDemotion {
         #expect(analysis.freeEdgeCount == shellAnalysis.freeEdgeCount,
                 "analyze() must agree with the already-correct analyzeShell()")
         #expect(analysis.freeFaceCount == 1, "one shell, and it is not fully closed")
-        // #717 review finding 2: totalProblems must count this shell's free edges once, not once
+        // #717 review (the totalProblems double-count): totalProblems must count this shell's free edges once, not once
         // via freeEdgeCount and again as +1 via freeFaceCount for the same open shell. The expected
         // sum is recomputed from the other fields, not hardcoded: this fixture also measures a
         // nonzero gapCount (a pre-existing, unrelated characteristic of a box-minus-one-face sewn
@@ -188,7 +188,7 @@ struct Issue702SolidDemotion {
         #expect(analysis.freeEdgeCount == 4)
         #expect(analysis.freeFaceCount == 1)
         #expect(!analysis.isHealthy, "a shape with real free edges must not report healthy")
-        // #717 review finding 2, same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
+        // #717 review (the totalProblems double-count), same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
         #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
@@ -223,7 +223,7 @@ struct Issue702SolidDemotion {
         }
         #expect(analysis.freeEdgeCount == 8, "4 free edges per shell, two shells")
         #expect(analysis.freeFaceCount == 2, "both shells are open")
-        // #717 review finding 2, same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
+        // #717 review (the totalProblems double-count), same reasoning as analyzeReportsFreeEdgesOnOpenShell above.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
         #expect(analysis.totalProblems != expected + analysis.freeFaceCount,
@@ -241,7 +241,7 @@ struct Issue702SolidDemotion {
             (analysis.hasInvalidTopology ? 1 : 0)
     }
 
-    // MARK: - checkinternaledges must match between analyze() and analyzeShell() (#717 review finding 1)
+    // MARK: - checkinternaledges must match between analyze() and analyzeShell() (#717 review, the checkinternaledges divergence)
 
     /// A single square face wrapped directly as a shell (`TopoDS_Builder::MakeShell` + `Add`, no
     /// sewing at all), with an `.internal`-oriented duplicate of one of its own 4 boundary edges

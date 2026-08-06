@@ -355,7 +355,7 @@ struct Issue442FixSolidMultiBody {
         }
         // An open shell that wraps the hollow body: the big box's faces minus one, sewn.
         // (`sewnBoxMissingOneFace`, `ShapeHealingTestFixtures.swift`, shared with
-        // Issue702SolidDemotionTests, #717 review finding 5.)
+        // Issue702SolidDemotionTests, #717 review, the duplicated open-shell fixture.)
         guard let openQuilt = sewnBoxMissingOneFace(bigBox),
               let openShell = openQuilt.shells.first
         else {

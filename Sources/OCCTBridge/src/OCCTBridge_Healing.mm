@@ -147,10 +147,18 @@
 
 // MARK: - Shape Healing & Analysis (v0.13.0)
 
-// #717 review (findings 1 and 5, filed against #702): OCCTShapeAnalyze and OCCTShapeAnalyzeShell
+// Comments here name a #717 review finding by what it said, never by its number. That PR drew two
+// automated review passes and the second retracted the first, renumbering as it went: the
+// try/catch below was the first pass's finding 4, while the second pass's finding 4 is an
+// unrelated missing doc snippet. A bare ordinal is not a stable citation when the thing it indexes
+// can be reissued, and a cross-reference that silently comes to mean something else is worse than
+// none (the #549 tombstone lesson). Cite the substance.
+//
+// #717 review (the checkinternaledges divergence and the duplicated scan, filed against #702):
+// OCCTShapeAnalyze and OCCTShapeAnalyzeShell
 // both ran ShapeAnalysis_Shell::CheckOrientedShells and then read HasFreeEdges()/FreeEdges() off
-// it, hand-duplicated in each function. That duplication is how finding 1 happened: this file's
-// two copies drifted apart on the third argument, checkinternaledges, so the two entry points
+// it, hand-duplicated in each function. That duplication is how the divergence happened: this
+// file's two copies drifted apart on the third argument, checkinternaledges, so the two entry points
 // could silently disagree on a shell with a TopAbs_INTERNAL-oriented edge, contradicting the
 // #702 test's own "analyze() must agree with analyzeShell()" invariant. Per
 // ShapeAnalysis_Shell.cxx: an edge with no FORWARD/REVERSED partner is unconditionally free when
@@ -208,7 +216,7 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         // never by LoadShells(); that hardcoded freeEdges/freeFaces to 0 for every shape, however
         // open, regardless of tolerance).
         //
-        // #717 review finding 4: CheckOrientedShells is a real OCCT computation now, not the
+        // #717 review (the missing per-shell try/catch): CheckOrientedShells is a real OCCT computation now, not the
         // near-no-op LoadShells() was, so it can raise Standard_Failure on a malformed shell. The
         // try/catch is scoped to one shell's iteration: a shell that throws contributes nothing to
         // freeEdges/freeFaces and the loop continues, rather than one bad shell discarding the
