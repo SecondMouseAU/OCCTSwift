@@ -166,11 +166,20 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         int smallFaces = 0;
         int gaps = 0;
 
-        // Analyze shells for free faces and closure
+        // Analyze shells for free faces and closure.
+        //
+        // #702: this used to call LoadShells(shell) and then read HasFreeEdges()/FreeEdges().
+        // LoadShells() only registers the shell for NbLoaded()/Loaded() bookkeeping -- it runs
+        // no edge analysis at all. HasFreeEdges()/FreeEdges() read the myFree map, which only
+        // CheckOrientedShells() ever populates (see its header: "alsofree: free edges can be
+        // queried"). OCCTShapeAnalyzeShell below already calls CheckOrientedShells correctly;
+        // this was the one call site that did not. The result was that freeEdges/freeFaces were
+        // hardcoded to 0 for every shape passed to OCCTShapeAnalyze, however open -- silently
+        // hiding exactly the defect this scan exists to report.
         for (TopExp_Explorer shellExp(shape->shape, TopAbs_SHELL); shellExp.More(); shellExp.Next()) {
             TopoDS_Shell shell = TopoDS::Shell(shellExp.Current());
             ShapeAnalysis_Shell shellAnalysis;
-            shellAnalysis.LoadShells(shell);
+            shellAnalysis.CheckOrientedShells(shell, /*alsofree*/ true);
 
             // Check for free faces
             if (shellAnalysis.HasFreeEdges()) {
@@ -179,6 +188,7 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
                 for (TopExp_Explorer edgeExp(freeEdgesCompound, TopAbs_EDGE); edgeExp.More(); edgeExp.Next()) {
                     freeEdges++;
                 }
+                freeFaces++;   // this shell is not fully closed (freeFaceCount's own contract)
             }
         }
 

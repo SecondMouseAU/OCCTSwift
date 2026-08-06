@@ -75,7 +75,11 @@ let unified  = shape.unified()                         // merge co-planar faces 
 let upgraded = shape.upgraded(tolerance: 1e-3)         // sew + make-solid + heal pipeline
 ```
 
-- **`healed()`** — quick, general clean-up. Reach for this first.
+- **`healed()`**: quick, general clean-up. Reach for this first. For solid input it can return a
+  **shell** instead when the solid cannot be closed (`ShapeFix_Shape` delegates to `ShapeFix_Solid`,
+  same as `Shape.fixSolid()`); the demoted shell is genuinely `isValid`, since a shell has no
+  closure requirement of its own, so check `isValidSolid` (or `shapeType`) rather than `isValid`
+  if the caller depends on getting a solid back (#702).
 - **`fixed(tolerance:…)`** — `ShapeFix_Shape` with per-component flags; raise `tolerance` to match the
   precision of imported data (e.g. `1e-3`, not the default `1e-6`).
 - **`unified()`** — `ShapeUpgrade_UnifySameDomain`; the standard **post-boolean** cleanup that merges

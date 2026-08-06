@@ -743,12 +743,30 @@ public final class Shape: @unchecked Sendable {
 
     // MARK: - Validation
 
-    /// Check if shape is valid
+    /// Check if shape is valid (`BRepCheck_Analyzer`).
+    ///
+    /// - Note: This checks whatever `shapeType` the receiver already has, and a well-formed
+    ///   **open** shell reports `true` here just as readily as a closed one, since a shell has
+    ///   no closure requirement of its own. It does not detect 3D self-intersection either. So
+    ///   `isValid == true` never implies "this is a solid" or "this does not overlap itself"; use
+    ///   ``isValidSolid`` for the former and ``isSelfIntersecting(timeout:)`` for the latter
+    ///   (#702).
     public var isValid: Bool {
         OCCTShapeIsValid(handle)
     }
 
-    /// Attempt to repair/heal the shape
+    /// Attempt to repair/heal the shape, using `ShapeFix_Shape`.
+    ///
+    /// - Warning: For solid input, this can return a **shell** instead of a repaired solid.
+    ///   `ShapeFix_Shape` delegates to `ShapeFix_Solid` for every solid it finds, and
+    ///   `ShapeFix_Solid` hands back the shell unpromoted whenever it cannot close it, the same
+    ///   mechanism ``Shape/fixSolid()`` documents at length, since it wraps `ShapeFix_Solid`
+    ///   directly. The demoted shell is not flagged by ``isValid`` or ``volume``: a shell has no
+    ///   closure requirement of its own, so it can report `isValid == true` and a correct
+    ///   `volume` even though the input used to be a solid and no longer is (#702). Check
+    ///   ``isValidSolid`` (single body) or `shapeType`/`subShapeCount(ofType: .solid)`
+    ///   (multi-body) if the caller depends on getting a solid back, rather than inferring it
+    ///   from `isValid` or `volume`.
     public func healed() -> Shape? {
         guard let handle = OCCTShapeHeal(self.handle) else { return nil }
         return Shape(handle: handle)
@@ -2007,6 +2025,13 @@ public final class Shape: @unchecked Sendable {
     /// booleans (it made `subtracting` hang indefinitely before #206 bounded it). To screen
     /// for that, use ``isSelfIntersecting(timeout:)``. See also ``signedVolume`` /
     /// ``orientedForward()`` for the separate reversed-orientation hazard.
+    ///
+    /// This is also the reliable way to notice a ``healed()``/``fixSolid()`` demotion: both
+    /// check `shapeType` first and return `false` immediately when it is anything but `.solid`,
+    /// so a shell they could not close reads `false` here even though it reads `true` for
+    /// plain ``isValid`` (#702). It answers a single body directly; for a multi-body result
+    /// (a compound of solids), check each child, or `subShapeCount(ofType: .solid)` against the
+    /// input body count, since the compound itself is never typed `.solid`.
     public var isValidSolid: Bool {
         OCCTShapeIsValidSolid(handle)
     }
