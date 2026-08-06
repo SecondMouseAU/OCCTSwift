@@ -78,6 +78,11 @@ run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
+# Self-test only. census-unmeasured-values.py is #726's census, not a gate: it exits 0 whether or
+# not it finds sites, because its output is a list for a human to adjudicate rather than a verdict.
+# Running it bare here would add a check that cannot fail. Its detector can still go blind, so that
+# is what both this hook and CI hold it to.
+run "census-unmeasured-values.py --self-test" Scripts/census-unmeasured-values.py --self-test
 
 if [ ${#failed[@]} -ne 0 ]; then
     echo ""
