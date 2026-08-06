@@ -3046,6 +3046,7 @@ int32_t OCCTBRepGraphSampleEdgeCurve(OCCTBRepGraphRef g, int32_t edgeIndex,
 #include <TopExp.hxx>
 #include <TopTools_ListOfShape.hxx>
 // TopTools_ListIteratorOfListOfShape.hxx removed in OCCT 8.0
+#include <cmath>
 
 int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef* outFace1, OCCTFaceRef* outFace2) {
     if (!shape || !edge || !outFace1 || !outFace2) return 0;
@@ -3083,9 +3084,21 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
     }
 }
 
-OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2) {
+OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2,
+                                        double centroid1X, double centroid1Y, double centroid1Z,
+                                        double centroid2X, double centroid2Y, double centroid2Z) {
     if (!shape || !edge || !face1 || !face2) return OCCTEdgeConvexitySmooth;
-    
+
+    // #720 review of #703, findings 2/7/9: a caller with no reliable centroid for a face (an
+    // area too small to trust, see OCCTFaceGetAreaCentroid, or one it chose not to compute)
+    // signals that with NaN rather than some sentinel coordinate a real centroid could coincide
+    // with. Falling back to Smooth here matches every other "can't classify this edge" guard in
+    // this function.
+    if (std::isnan(centroid1X) || std::isnan(centroid1Y) || std::isnan(centroid1Z) ||
+        std::isnan(centroid2X) || std::isnan(centroid2Y) || std::isnan(centroid2Z)) {
+        return OCCTEdgeConvexitySmooth;
+    }
+
     try {
         // Get the edge curve and midpoint
         BRepAdaptor_Curve edgeCurve(edge->edge);
@@ -3139,23 +3152,42 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
             n2.Reverse();
         }
         
-        // Get edge tangent at midpoint
-        gp_Vec tangent;
-        gp_Pnt unused;
-        edgeCurve.D1(midParam, unused, tangent);
-        
-        if (tangent.Magnitude() < 1e-10) {
+        // #703: convexity is a property of the edge with respect to the solid, not of which face
+        // the caller happens to pass as face1 vs face2. The formula this replaced -- the sign of
+        // (tangent x n1).n2, a scalar triple product of the edge tangent and the two normals --
+        // swaps two of its three terms when face1/face2 swap, which negates a triple product, so
+        // the same physical edge reported opposite convexity depending on argument order alone.
+        // That reproduced on a single, uncut convex box (no compound needed): two of the four
+        // side-wall-to-top-face dihedrals came out concave purely because of index order, which is
+        // what fed the false pocket #703 measured (#664's census, "Update following #699's fix").
+        //
+        // Fixed sign, built to be symmetric under that swap rather than merely observed to be:
+        // take a point well inside each face -- its area centroid, away from this edge -- and see
+        // which side of the OTHER face's tangent plane (at the edge midpoint) it falls on, using
+        // that face's own outward normal. A point deep in face1 landing on face2's material side
+        // (a negative dot with face2's outward normal) means the two faces wrap around the solid
+        // at this edge: convex. Landing on face2's void side means the solid recedes here:
+        // concave. Doing this both ways -- face1's centroid against n2, and face2's centroid
+        // against n1 -- and averaging makes swapping face1/face2 relabel the same two terms
+        // rather than change their sum, so the result cannot depend on argument order by
+        // construction, not only on the fixtures this was checked against.
+        //
+        // #720 review of #703, finding 7: this used to call BRepGProp::SurfaceProperties on
+        // face1/face2 directly, so a face with K neighbors paid for K redundant whole-face
+        // integrations building one AAG (measured a 7-12x slowdown on a 134-face part; see
+        // OCCTFaceGetAreaCentroid's doc comment). The centroids are now the caller's job, computed
+        // once per face occurrence and passed in.
+        gp_Vec towardCentroid1(midPt, gp_Pnt(centroid1X, centroid1Y, centroid1Z));
+        gp_Vec towardCentroid2(midPt, gp_Pnt(centroid2X, centroid2Y, centroid2Z));
+
+        if (towardCentroid1.Magnitude() < 1e-10 || towardCentroid2.Magnitude() < 1e-10) {
             return OCCTEdgeConvexitySmooth;
         }
-        tangent.Normalize();
-        
-        // Determine convexity:
-        // Cross product of tangent with n1 gives direction "into" face1
-        // If n2 points in same direction as this cross product, edge is concave
-        gp_Vec intoFace1 = tangent.Crossed(n1);
-        
-        double dot = intoFace1.Dot(n2);
-        
+        towardCentroid1.Normalize();
+        towardCentroid2.Normalize();
+
+        double dot = (towardCentroid1.Dot(n2) + towardCentroid2.Dot(n1)) / 2.0;
+
         // Threshold for smooth (nearly tangent)
         const double smoothThreshold = 0.01;  // ~0.5 degrees
         

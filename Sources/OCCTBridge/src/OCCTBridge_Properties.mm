@@ -253,6 +253,33 @@ double OCCTFaceGetArea(OCCTFaceRef face, double tolerance) {
     }
 }
 
+bool OCCTFaceGetAreaCentroid(OCCTFaceRef face, double* outX, double* outY, double* outZ) {
+    if (!face || !outX || !outY || !outZ) return false;
+
+    try {
+        // #720 review of #703, findings 2/7/8/9: the Eps overload runs adaptive 2D Gauss
+        // integration with a bounded relative error (1e-6, matching Face.area()'s own default),
+        // unlike the plain overload OCCTEdgeGetConvexity used to call directly. Below this area a
+        // centroid is not trustworthy enough to classify convexity from: measured
+        // (Scripts/repro/703-edge-convexity-order/) the smallest sliver face a boolean fuzzy
+        // tolerance still lets survive as its own topological face is several orders of magnitude
+        // above 1e-9, so this only ever declines a face BRepAlgoAPI itself would have merged away
+        // if it were any smaller.
+        const double minTrustedArea = 1e-9;
+        GProp_GProps props;
+        BRepGProp::SurfaceProperties(face->face, props, 1e-6);
+        if (props.Mass() < minTrustedArea) return false;
+
+        gp_Pnt centroid = props.CentreOfMass();
+        *outX = centroid.X();
+        *outY = centroid.Y();
+        *outZ = centroid.Z();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 #include <Geom_SurfaceOfRevolution.hxx>
 #include <Geom_SurfaceOfLinearExtrusion.hxx>
 

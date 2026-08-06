@@ -35,7 +35,7 @@ guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else { retur
 let tangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
 guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: tangent, radius: wireRadius),
       let spring  = Shape.pipeShell(spine: spine, profile: profile,
-                                    mode: .correctedFrenet, solid: true) else { return }
+                                    mode: .frenet, solid: true) else { return }
 // spring.isValid == true; spring.volume ≈ π·wireRadius²·(coil length)
 ```
 
@@ -49,9 +49,14 @@ guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: tangent, radius:
 
 <sub>🖱️ Drag to orbit · scroll to zoom · auto-rotating. The static render shows until the 3D model loads. (Model exported straight from the snippet above via `Exporter.writeGLTF`.)</sub>
 
-Use `mode: .correctedFrenet` — for a coil it keeps the section true (its volume matches `π·r²` times
-the coil length). Plain `.frenet` also builds a valid solid but lets the section twist slightly along
-the path.
+Use `mode: .frenet`: for this coil it keeps the section true to the textbook tube volume
+(`π·wireRadius²` times the coil length, matched to within numerical tolerance and cross-checked
+against an independent `PipeShellBuilder` oracle). `.correctedFrenet` also builds a valid solid on
+this spine, but measured, not assumed, it does not preserve that volume here (about 12% larger on
+the parameters above). `.correctedFrenet`'s own purpose is avoiding twist at a genuine curvature
+*inflection* (see its doc comment); a helix has constant, never-zero curvature, so that case never
+arises here, and this recipe does not need it. See [`CHANGELOG.md`](../../CHANGELOG.md)'s #598 entry
+for the measurement and why this recipe changed which mode it names.
 
 ## Conical, tapered, and variable-pitch coils
 

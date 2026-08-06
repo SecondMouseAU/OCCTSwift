@@ -454,9 +454,14 @@ Whether the shape is a topologically valid closed solid.
 public var isValidSolid: Bool { get }
 ```
 
-Runs `BRepCheck_Analyzer` — a **topology** check only. It does not detect global self-intersection (overlapping faces). A self-intersecting B-spline solid can pass this check yet cause booleans to hang or return garbage. Use `isSelfIntersecting(timeout:)` for the complementary geometric check.
+Runs `BRepCheck_Analyzer`, a **topology** check only. It does not detect global self-intersection (overlapping faces). A self-intersecting B-spline solid can pass this check yet cause booleans to hang or return garbage. Use `isSelfIntersecting(timeout:)` for the complementary geometric check.
 
-- **Returns:** `true` if `BRepCheck_Analyzer` reports no errors.
+Checks `shapeType == .solid` first and returns `false` immediately otherwise, so it is the
+reliable way to notice a `healed()`/`fixSolid()` demotion (#702): a shell they could not close
+reads `false` here even though plain `isValid` reads `true` on it (a shell has no closure
+requirement of its own).
+
+- **Returns:** `true` if `shapeType == .solid` and `BRepCheck_Analyzer` reports no errors.
 - **OCCT:** `BRepCheck_Analyzer` (via `OCCTShapeIsValidSolid`).
 
 ---
@@ -1551,6 +1556,28 @@ public struct ShapeAnalysisResult {
 
 `isHealthy` is `true` when `totalProblems == 0 && !hasInvalidTopology`.
 
+- **`selfIntersectionCount` is always 0.** It has never been computed (the bridge's own comment
+  reads "would require more expensive computation"). Use `isSelfIntersecting(timeout:)` for a
+  real answer.
+- **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
+  called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
+  instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
+  fixed: `freeEdgeCount` is the true count across every shell, and `freeFaceCount` is how many of
+  those shells are not fully closed. The bridge asks `CheckOrientedShells` to also exclude an edge
+  that has a matching `TopAbs_INTERNAL`-oriented occurrence elsewhere in the same shell from
+  `freeEdgeCount` (it is genuinely connected through that occurrence, not a boundary gap): the
+  same rule `analyzeShell()` already used, so the two agree on any shape either can see.
+- **`totalProblems` counts `freeEdgeCount`, not `freeFaceCount`.** `freeFaceCount` is a derived
+  summary over the same scan (this shell has at least one free edge), not an independent defect:
+  it is never nonzero without `freeEdgeCount` also being nonzero, and adding both would count one
+  open shell's boundary gap twice (once per edge, once more as a flat "+1 shell"). `freeFaceCount`
+  stays a public field for callers who want the shell-level breakdown; it is just not folded into
+  the total again.
+- **A "clean" (`isHealthy == true`) result never means "this is a solid."** A well-formed open
+  shell, or a shell `healed()`/`fixSolid()` demoted from a solid it could not close, has no
+  closure requirement of its own and can report zero free edges accurately while still not being a
+  solid. Check `shapeType` or `isValidSolid` for that.
+
 ---
 
 ### `analyze(tolerance:)`
@@ -1709,8 +1736,11 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 ```
 
 Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1 and `Shape.plateSurface(through:orders:)`
-returns `nil` if any point is given `.g2`.
+`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
+point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
+before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
+`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
@@ -2057,11 +2087,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-Each point independently specifies G0 (position), G1 (position + tangent), or G2 (position + tangent + curvature) continuity.
+Each point independently specifies G0 (position) or G1 (position + tangent) continuity.
+**`.g2` always returns `nil`**: `GeomPlate_PointConstraint` rejects order 2 outright for a bare
+point (#437), and this is checked in Swift, via `SurfaceContinuity.isUnsupportedForPointConstraint`,
+before any constraint is built, rather than relying on OCCT's own throw.
 
 - **Parameters:**
   - `points` — 3D points (minimum 3); must match `orders.count`.
-  - `orders` — per-point constraint orders.
+  - `orders` — per-point constraint orders (`.g0` or `.g1`; `.g2` is rejected, see above).
   - `degree` — maximum polynomial degree (default 3).
   - `pointsOnCurves` — sample points on internal curves (default 15).
   - `iterations` — solver iterations (default 2).
@@ -2084,10 +2117,14 @@ public static func plateSurface(
 ) -> Shape?
 ```
 
-At least one of `points` or `curves` must be non-empty.
+At least one of `points` or `curves` must be non-empty. `.g2` is rejected up front for a **point**
+constraint (`GeomPlate_PointConstraint` rejects order 2 outright, #437) but is fine for a
+**curve** constraint (`GeomPlate_CurveConstraint` accepts order 2 directly); only `points`'
+orders are checked.
 
 - **Parameters:**
-  - `points` — point constraints, each with a position and a `SurfaceContinuity`.
+  - `points` — point constraints, each with a position and a `SurfaceContinuity` (`.g2` always
+    rejected, see above).
   - `curves` — curve constraints, each with a `Wire` and a `SurfaceContinuity`.
   - `degree` — maximum polynomial degree (default 3).
   - `tolerance` — approximation tolerance.

@@ -41,16 +41,40 @@ struct Issue642AAGNodeIdentityTests {
         return Shape.compound(Array(ordered))
     }
 
+    /// A genuinely pocketed single solid (real overlap between the box and the cutting tool, floor
+    /// strictly inside the material), split so the pocket survives intact in one piece and the two
+    /// pieces still share a face. `horizontalSplitBoxCompound()` no longer produces any pocket
+    /// after #703 (it never contained a real one; see `detectPocketsAgreesAcrossOrder`'s own doc
+    /// comment), so `pocketIndicesResolveAgainstOrientedFaces` needs a fixture that has BOTH a
+    /// shared face (to exercise the oriented-vs-distinct index distinction) AND an actual pocket
+    /// (to have an index to check at all). The cut at x=8 stays clear of the pocket's own
+    /// footprint (x -5...5), so it neither destroys the pocket nor complicates the shared wall.
+    /// The pieces are compounded pocket-piece-last: measured directly, that is what pushes at
+    /// least one pocket index past `faces().count` (the natural split order does not -- the
+    /// pocket's own piece is first, so none of its indices shift).
+    static func pocketedSplitBoxCompound() -> Shape? {
+        guard let box = Shape.box(width: 20, height: 20, depth: 20),
+              let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15),
+              let pocketed = box.subtracting(pocketTool),
+              let pieces = pocketed.split(atPlane: SIMD3(8, 0, 0), normal: SIMD3(1, 0, 0)),
+              pieces.count == 2
+        else { return nil }
+        return Shape.compound(pieces.reversed())
+    }
+
     // MARK: - The headline
 
     /// The defect itself, reverted: before this fix it was 2 vs 1 for identical geometry.
     ///
     /// - Note: The pinned count moved from `2` to `1` under #699, which restricted `AAG`'s
-    ///   adjacency/convexity checks to same-solid face pairs. That is a DIFFERENT, later fix
-    ///   (`Issue699AAGSolidScopedAdjacencyTests`). The count it corrected was itself partly built
-    ///   from a cross-solid false adjacency, which #642 alone had no way to see. What this test
-    ///   still guards, unchanged since #642, is the AGREEMENT across compound member order; see
-    ///   `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix".
+    ///   adjacency/convexity checks to same-solid face pairs, and then from `1` to `0` under #703,
+    ///   which fixed `OCCTEdgeGetConvexity` itself. Both are DIFFERENT, later fixes (see
+    ///   `Issue699AAGSolidScopedAdjacencyTests` and `Issue703EdgeConvexityOrderTests`). `1` was
+    ///   never the geometrically right answer: this fixture is two plain boxes glued face to face,
+    ///   and a plain box has no concave edges, so neither piece can contribute a pocket either way
+    ///   round. What this test still guards, unchanged since #642, is the AGREEMENT across
+    ///   compound member order; see `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s
+    ///   "Update following #699's fix" and #703's own section for the measurement history.
     @Test("detectPocketsAAG() agrees across compound member order")
     func detectPocketsAgreesAcrossOrder() {
         guard let orderA = Self.horizontalSplitBoxCompound(order: .asSplit),
@@ -64,9 +88,11 @@ struct Issue642AAGNodeIdentityTests {
 
         #expect(pocketsA.count == pocketsB.count)
         // Pinned to the measured value so a future change that breaks this loudly disagrees with
-        // a concrete number rather than only with itself.
-        #expect(pocketsA.count == 1)
-        #expect(pocketsB.count == 1)
+        // a concrete number rather than only with itself. Two boxes glued face to face have no
+        // concave edges anywhere (#703), so 0 is the geometrically correct answer, not just the
+        // agreed one.
+        #expect(pocketsA.count == 0)
+        #expect(pocketsB.count == 0)
     }
 
     /// The AAG-level symptom the issue named directly: the upward+horizontal node set's SIZE must
@@ -220,7 +246,7 @@ struct Issue642AAGNodeIdentityTests {
     /// rather than academic.
     @Test("PocketFeature's indices resolve against orientedFaces(), not faces()")
     func pocketIndicesResolveAgainstOrientedFaces() {
-        guard let compound = Self.horizontalSplitBoxCompound(order: .asSplit) else {
+        guard let compound = Self.pocketedSplitBoxCompound() else {
             Issue.record("fixture build failed")
             return
         }

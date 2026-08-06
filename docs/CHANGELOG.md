@@ -113,6 +113,164 @@ with evidence rather than implemented:
   automated gate covers arity the way `check-null-handle-guards.py` covers null handles is accurate
   and is left as a genuine, but separate, future census.
 
+||||||| abc0f32
+### `OCCTEdgeGetConvexity` no longer depends on which face is passed first (#703)
+
+Found via Cluster A's census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`) while
+confirming #699's own fix, then confirmed directly on the simplest possible input:
+`detectPocketsAAG()` reported a pocket on a plain, uncut, convex 10mm box.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.detectPocketsAAG().count)   // was 1, now 0
+```
+
+A convex solid has no concave edges and therefore no pockets. `OCCTEdgeGetConvexity`'s formula, the
+sign of `(tangent × n1) · n2`, is a scalar triple product of the edge tangent and the two face
+normals: swapping which normal is `n1` and which is `n2` swaps two of its three terms, which negates
+a triple product. `AAG.buildGraph()`'s pairwise loop picks `face1`/`face2` by array position
+(`faces[i]`, `faces[j]`, `i < j`), not by any geometric convention, so the same physical edge
+reported opposite convexity depending on face enumeration order rather than on geometry. Two of a
+plain box's four side-wall-to-top-face dihedrals were misclassified concave this way, feeding a
+false pocket. The same mechanism, once per box, explains the `1`/`2` counts
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests` used to pin on their
+split-box fixtures.
+
+**Fixed**: convexity is a property of an edge with respect to the solid it bounds, not of which face
+a caller happens to pass first, so the new formula is built to be symmetric under the face1/face2
+swap rather than merely observed to be on the fixtures it was checked against.
+`OCCTEdgeGetConvexity` now takes each face's own area centroid (`BRepGProp::SurfaceProperties`), a
+point well inside the face and away from the edge, and checks which side of the OTHER face's
+tangent plane (at the edge midpoint) that centroid falls on, using that face's own outward normal:
+a negative dot product means the two faces wrap around the solid's material at this edge (convex), a
+positive one means the material recedes (concave). Doing this both ways, face1's centroid against
+face2's normal and face2's centroid against face1's normal, then averaging, makes swapping which
+face is `face1` relabel the same two terms of the sum rather than change it.
+
+**Migration note**: `detectPocketsAAG()`, `AAG.concaveNeighbors(of:)`/`convexNeighbors(of:)`, and any
+`AAGEdge.convexity` a caller reads directly can all report a different, now-correct, answer for a
+shape that previously hit this defect. Measured moves: a plain box's `detectPocketsAAG().count`
+goes from `1` to `0`; the split-box fixtures in `Issue642AAGNodeIdentityTests` and
+`Issue699AAGSolidScopedAdjacencyTests` move from `1`/`1` to `0`/`0` in both compound member orders
+(both fixtures are two plain boxes glued face to face, which have no concave edges to begin with);
+a compound of two disjoint boxes plus a free face moves from `2` to `0`. A genuine pocket (real
+overlap between a box and its cutting tool) is unaffected in kind: `detectPocketsAAG()` still finds
+it and still reports concave edges at the floor/wall junction: the fix corrects the sign
+convention, it does not flatten every edge to convex. This ships in v2.0.0, a major version, so it
+is not recorded as a [`SEMVER.md`](SEMVER.md) exception, since that mechanism is for breaks shipping
+within a major line.
+
+`AAG` (`Sources/OCCTSwift/FeatureRecognition.swift`) is the only Swift caller of
+`OCCTEdgeGetConvexity`, re-audited for this fix rather than trusted from #701's own earlier audit,
+so the blast radius is exactly the AAG-derived API surface above and nothing else.
+
+Two long-standing fixtures needed correcting alongside the bridge fix, not because of it: the
+`detectPocketsAAG()` doc example in `FeatureRecognition.swift` and the `detectPocket()` test in
+`Tests/OCCTModelingTests/OCCTModelingTests.swift` both placed their pocket-cutting tool at
+`origin: SIMD3(5, 5, 10)` against a box centred at the origin
+(`Shape.box(width:height:depth:)` spans -10...10 on a 20mm axis), so the tool's z range (10...25)
+only ever touched the box's top face at z=10 with zero volume in common (measured:
+`result.volume == box.volume`, unchanged). The single "pocket" both used to report was entirely
+this same order-dependence, not a real feature of either shape. Both now place the tool at
+`origin: SIMD3(-5, -5, 0)`, which actually overlaps the box and cuts a real 10mm-deep pocket.
+
+Tests: `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift` (new), plus updated pins in
+`Issue642AAGNodeIdentityTests` and `Issue699AAGSolidScopedAdjacencyTests`. `swift run Censuses
+cluster-a`'s two `detectPocketsAAG().count` rows move from `1/1/1` to `0/0/0`; the census and its
+README (`Scripts/repro/cluster-a-subshape-enumeration/README.md`) are updated to match. This is
+Cluster A's last open member (#664).
+
+**Follow-up from PR #720's automated review**: three real, independently-measured issues in the fix
+above, addressed without touching the classification formula itself (a formula change is #723's
+scope, deliberately deferred):
+
+- **Performance (finding 7, confirmed).** `OCCTEdgeGetConvexity` called
+  `BRepGProp::SurfaceProperties` on `face1`/`face2` directly, so `AAG.buildGraph()`'s pairwise loop
+  repeated a face's own whole-face integration once per neighbor. Measured 7-12x slower building
+  the AAG of a 134-face part than the pre-#703 formula (which does no integration at all). Fixed:
+  a new `OCCTFaceGetAreaCentroid` bridge call lets `buildGraph()` compute each face occurrence's
+  centroid once, before the pairwise loop, and pass it into `OCCTEdgeGetConvexity` (which no longer
+  computes it internally), cutting the redundant-integration half of the regression exactly in half
+  (measured 2.06x, matching the 2.09x the call-count reduction predicts). The remaining gap versus
+  the pre-#703 baseline is the inherent cost of the centroid approach itself, not a caching problem;
+  see `Scripts/repro/703-edge-convexity-order/` for the full measurement.
+- **Sliver-face guard (findings 2 and 9, not reproduced, added defensively).** A dedicated probe
+  (`Scripts/repro/703-edge-convexity-order/repro_sliver.mm`) fusing two boxes with a deliberate
+  sliver overlap found no instability: OCCT's own boolean tolerance handling does not let a
+  genuinely near-zero-area face survive as its own topological face. `OCCTFaceGetAreaCentroid`
+  still declines any face under area `1e-9` (several orders below the smallest sliver measured) and
+  reports "no centroid", which `OCCTEdgeGetConvexity` treats as Smooth: free, from the finding-7
+  restructuring, not because a live bug was found.
+- **Integration accuracy (finding 8, confirmed as a real gap, closed).** The plain
+  `SurfaceProperties` overload has no bounded relative error; `OCCTFaceGetAreaCentroid` now uses the
+  adaptive-integration overload (`Eps = 1e-6`, matching `Face.area()`'s own default), which does.
+
+Two findings were investigated and are not regressions:
+
+- **Finding 3** (removing the tangent-magnitude cusp guard). The new formula's terms are the edge
+  midpoint's position, the two face normals, and the two face centroids, none of which derive
+  from the edge curve's own parametric derivative. A cusp in the curve's parameterization (a
+  vanishing derivative) cannot perturb an answer with no dependence on that derivative; the removed
+  code was dead relative to the new method, not a guard the new method still needed.
+- **Findings 1 and 4** (the centroid-toward-material assumption failing for holes/curved faces, and
+  `smoothThreshold` no longer bounding a real angle). Both restate #723, already filed and tracked
+  separately with its own measurement (a through-hole rim's classification drifting with plate
+  thickness). Every fixture in the PR's own verification comment shows this PR matching or beating
+  the base branch, never regressing it, including on holed/curved geometry; see
+  `Issue703EdgeConvexityOrderTests.throughHoleHasExactlyTwoConcaveEdges`/
+  `squarePocketHasExactlyEightConcaveEdges` (new, finding 6) for regression locks on curved/holed
+  geometry that do NOT depend on #723's disputed cases.
+
+Finding 5 (`(result.volume ?? 0) < (box.volume ?? 0)` masking a nil volume computation as `0`) is a
+test-quality fix, not a formula question: both occurrences (`OCCTModelingTests.detectPocket()` and
+`Issue703EdgeConvexityOrderTests.genuinePocketStillReportsConcaveEdges`) now unwrap both volumes and
+fail loudly if either is nil, matching this suite's own `guard let ..., let v0 = shape.volume else
+{ #expect(Bool(false), ...) }` idiom.
+
+### `plateSurface`'s point constraints reject `.g2` in Swift instead of relying on OCCT's own throw (#437)
+
+Cluster D's continuity census (#513/#667, `Scripts/repro/cluster-d-continuity/`) measured #437 as a
+genuine instance of the cluster's shared root: `SurfaceContinuity`'s raw value is forwarded as a
+literal `GeomPlate_PointConstraint`/`GeomPlate_CurveConstraint` order, with no `GeomAbs_Shape`
+decode step at all. `GeomPlate_PointConstraint`'s point constructor throws above order 1 (pinned
+`V8_0_1`, `GeomPlate_PointConstraint.cxx`): a bare point carries no curvature to match, so `.g2`
+was always out of domain for a point constraint. `GeomPlate_CurveConstraint` has no such
+restriction and accepts order 2 directly, so this is a point-only defect.
+
+`Shape.plateSurface(through:orders:...)` and the point half of
+`Shape.plateSurface(pointConstraints:curveConstraints:...)` clamped the incoming order into
+`[0, 2]` and passed it straight to the constructor, which threw, unwound past the whole constraint
+loop, and was swallowed by the bridge's blanket `catch (...)`, returning `nil` with no indication
+which constraint was at fault.
+
+**Rejected at the Swift boundary instead of clamped or split into a new type.** Three options were
+on the table (`SurfaceContinuity.g2` documented as unsupported here already, from #436):
+
+- **Clamp to `[0, 1]` in the bridge.** Silently substitutes a lower order than the caller asked
+  for, the same class of behaviour #430/#432/#434 deliberately moved away from ("used or the
+  constraint fails, never silently substituted").
+- **Give point constraints a narrower type that cannot express curvature.** Most precise, but adds
+  a fourth continuity vocabulary right where #398/#490 spent real effort collapsing nine into two,
+  and unlike #619 (which *retired* a parameter because its name lied about what it took), this
+  would be introducing a new type for a shared enum that is correct everywhere else it is used
+  (`Shape.fill`, `FillingSurface`, curve constraints all accept `.g2` legitimately).
+- **Reject in Swift, before building any constraint.** Chosen. Keeps the single `SurfaceContinuity`
+  vocabulary, and makes the `nil` a deliberate, documented decision instead of an accidental
+  side effect of OCCT happening to throw where our bridge happens to catch.
+
+The public answer does not change: a point `.g2` was already `nil` and stays `nil`. What changes
+is that the rejection is now asserted in Swift
+(`SurfaceContinuity.isUnsupportedForPointConstraint`, `Shape.plateMixedRejectsPointOrders`) rather
+than incidentally produced by relying on OCCT's internal domain check, and it no longer builds any
+`GeomPlate_PointConstraint`s before failing. `Issue437PlatePointG2Tests` has the guard-removal
+matrix proving which of its own cases exercise the new mechanism and which pin the (unchanged)
+public contract only, per `okf/policies/prove-the-test-fails.md`.
+
+**Not fixed here:** #438, a different, API-duplication-shaped defect in the same file that the
+census's own measurement confirmed is unrelated to this one (two public APIs correctly decoding
+the same continuity through the same canonical decoder, but setting different criteria on the
+builder).
+
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 
 `--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
@@ -159,6 +317,127 @@ same pass, `ci.yml`'s comment for `count-operations.py` is corrected: it said th
 an unrecognised" option, which was true only until the same-day commit that made it exit 2 instead
 (confirmed still correct: `count-operations.py --self-test` and `--bogus` both exit 2 with a usage
 message).
+
+#### `Shape.analyze(tolerance:)` reported zero free edges for every shape, and a `healed()`/`fixSolid()` demotion had no reliable signal (#702)
+
+`Shape.healed()` and `Shape.fixSolid()` can reach `isValid == true` by demoting a solid to a
+shell: `ShapeFix_Solid` (via `ShapeFix_Shape`'s delegation, for `healed()`) hands back the shell
+unpromoted whenever it cannot close it, already correctly documented for `fixSolid()` since #442.
+A shell has no closure requirement of its own, so the demoted result is genuinely `isValid`, and
+the issue asked for a way to tell.
+
+**The issue's own reproducer does not reproduce on this branch.** It measured a
+`ThruSectionsBuilder(isSolid: true, isRuled: false)` loft through a 36-tooth bevel gear's six
+section wires (1152 points each) on OCCT v1.17.0. Three independent reconstructions against this
+kernel (8.0.1 + patches), matching gear-tooth polygons at various tooth counts/tapers/twists, a
+dense sinusoidal profile, and a faithful port of `OCCTSwiftScripts/recipes/04-spur-gear`'s
+involute math scaled per section (matching the issue's own 1152-points-per-wire figure exactly at
+`flankSamples = 14`, plus a spiral-twist variant), all produced a `BRepCheck_Analyzer`-valid raw
+loft, across 400+ parameter combinations. `BRepCheck_Analyzer` itself does not flag 3D
+self-intersection between non-adjacent faces either: a deliberately self-intersecting
+179-degree-twisted star-prism loft still reports `isValid == true`, confirmed directly and
+matching `analyze()`'s own `selfIntersectionCount`, which is hardcoded to 0 and always has been
+(see below). Source-reading `ShapeFix_Solid::Perform()`/`CreateSolids()`/`CollectSolids()` found
+no path that demotes a genuinely closed shell either: every demotion in that class is gated on
+`BRep_Tool::IsClosed`/`ShapeAnalysis_FreeBounds` finding real free edges, matching #442's
+documented contract. No fix was made for this specific scenario because nothing was found broken
+there; per the issue's own instruction, a non-reproducing report closes with the evidence rather
+than a manufactured fix.
+
+**What does reproduce, trivially, with no loft at all: an open shell wrapped as a `TopoDS_Solid`**
+(a box missing one face, sewn, then `Shape.solidFromShells([shell])`, exactly what
+`BRepBuilderAPI_MakeSolid` does with a single non-closed shell, no fixing). `fixSolid()`/`healed()`
+correctly demote it to a shell (#442's contract), `isValid` reads `true` on the result, and this
+is where the issue's own complaint held: `analyze(tolerance:)` read zero free edges on it
+regardless.
+
+**Root cause, and fixed:** `OCCTShapeAnalyze` (`OCCTBridge_Healing.mm`) called
+`ShapeAnalysis_Shell::LoadShells()` and then read `HasFreeEdges()`/`FreeEdges()`. `LoadShells()`
+only registers a shell for `NbLoaded()`/`Loaded()` bookkeeping; it runs no edge analysis at all.
+Only `CheckOrientedShells()` populates the free-edge set those accessors read, exactly as the
+sibling entry point `OCCTShapeAnalyzeShell` (backing `Shape.analyzeShell()`) already calls it. So
+`freeEdgeCount` was hardcoded to 0 for every shape passed to `analyze(tolerance:)`, however open,
+and `freeFaceCount`'s own local variable was never incremented anywhere in the function; both
+silently agreed with a defect no matter what it was. Now `CheckOrientedShells(shell, alsofree:
+true)` is called, `freeEdgeCount` reports the real count, and `freeFaceCount` counts the shells
+found not fully closed, matching the field's own existing header comment ("Number of free faces
+(shell not closed)").
+
+**`Shape.isValidSolid` already answered the issue's actual question, unaffected by either bug**,
+for a reason unrelated to this fix: added for #206/#208 (an unrelated self-intersecting-loft
+hazard), it checks `shapeType == .solid` before running `BRepCheck_Analyzer`, so it reads `false`
+on any demoted shell where plain `isValid` reads `true`. It had no test at all for that branch:
+every existing assertion (`Issue225ThreadedRodTests`, `Issue257MultiStartTests`,
+`Issue397CircularHoleTests`, `OCCTShapeHealingTests`) only tested the positive, already-a-solid
+case. Also documented: `selfIntersectionCount` is another permanent 0 (the bridge's own comment:
+"would require more expensive computation"), not a computed absence of self-intersection.
+
+`healed()` gained the demotion warning `fixSolid()` has carried since #442 (it shares the same
+`ShapeFix_Solid` mechanism, confirmed by reading `ShapeFix_Shape.cxx`'s delegation), and both now
+cross-reference `isValidSolid` as the reliable check. This is a bug fix to the values
+`Shape.analyze(tolerance:)` returns, not a new field or a signature change. Like the
+#605/#609/#583/#595 fabricated-zero fixes before it, this is a PATCH-level correction (a wrong
+value repaired, per `SEMVER.md`'s own quick-reference table), not a recorded exception: nothing
+could have correctly relied on a hardcoded 0.
+
+New tests: `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`, 11 cases on the tiny
+open-shell fixture above (a box missing one face is the "smallest shape that demotes" the issue
+asked for). Proven to catch the fix: reverting `OCCTShapeAnalyze` back to `LoadShells()` fails
+exactly the three tests exercising `freeEdgeCount`/`freeFaceCount` (open shell, demoted shell, a
+two-shell compound) and leaves the other seven (`isValidSolid`, demotion-to-shell, closed-box
+negative control) green, confirming the new tests target this bug specifically rather than the
+already-correct demotion behaviour.
+
+**Follow-up from code review, before this landed:**
+
+- **`OCCTShapeAnalyze`'s new `CheckOrientedShells` call omitted `checkinternaledges`**, the third
+  argument, unlike the sibling `OCCTShapeAnalyzeShell`, which already passed `true`.
+  `ShapeAnalysis_Shell.cxx`: with `checkinternaledges` false, a FORWARD/REVERSED edge with no
+  opposite-orientation partner is unconditionally free; with it true, an edge that also occurs with
+  `TopAbs_INTERNAL` orientation elsewhere in the same shell (matched by `IsSame`: same TShape and
+  Location, ignoring orientation) is read as connected through that occurrence instead. The two
+  entry points could silently disagree on any shell carrying an INTERNAL-oriented edge, directly
+  contradicting this fix's own "`analyze()` must agree with `analyzeShell()`" test invariant. The
+  original fixture (the box missing one face) has no INTERNAL-oriented edges, so it could not catch
+  the divergence; a new fixture does (a single face wrapped as a shell, with an `.internal`-oriented
+  duplicate of one of its own boundary edges embedded back into the face before the face joins the
+  shell). Both call sites now share one helper (`occtAnalyzeShellOrientation`), so the argument
+  cannot drift between them again the way it just did.
+- **`totalProblems` double-counted an open shell's defect**: once via `freeEdgeCount` (one count
+  per free edge) and again as a flat `+1` via `freeFaceCount` (one shell found not fully closed),
+  now that this fix makes both fields live for the same shape at once for the first time.
+  `freeFaceCount` is a derived summary of the same scan, not an independent defect category, so
+  `totalProblems` no longer includes it; `freeFaceCount` stays a public field for callers who want
+  the shell-level breakdown.
+- **The per-shell scan gained a per-iteration `try`/`catch`.** `CheckOrientedShells` is a real OCCT
+  computation, unlike the `LoadShells()` it replaced, so it can raise `Standard_Failure` on a
+  malformed shell; without a scoped catch, one bad shell in a multi-shell shape would abort to this
+  function's outer `catch` and discard every other shell's free-edge count along with the
+  small-edge/small-face/gap counts computed afterward, rather than just skipping that one shell's
+  contribution.
+
+**A second, corrected review pass** retracted five of the first pass's seven points (a docs gap on
+`fixed`/`upgraded`, the per-shell try/catch above, duplicated scan logic, and two writing-style
+nits) as not part of its own verified output, keeping only two (`checkinternaledges` and the
+`totalProblems` double-count, both already listed above) and replacing the rest with two genuinely
+different findings:
+
+- **`isValidSolid`, `isValid` and `healed()`'s doc comments carried no fenced `swift` code block.**
+  `isValid` and `healed()` gained new demotion-hazard prose in this same fix and neither picked up
+  an example; `isValidSolid` had none even before this fix touched its doc, so the review's claim
+  held on all three. All three now carry a runnable snippet that builds the box-missing-one-face
+  fixture and shows `isValid == true` / `isValidSolid == false` on the demoted shell: the exact
+  hazard each paragraph describes, not a decorative unrelated example. Each snippet's literal code
+  was run once as a throwaway test before being written into the doc comment.
+- **`Issue702SolidDemotionTests.openShellMissingOneFace()` duplicated a fixture
+  `Issue442FixSolidMultiBodyTests.swift` already built inline**, in the same test target: both drop
+  one face from a box, compound the remaining five and sew them, the smallest input that reaches
+  `ShapeFix_Solid`'s cannot-close branch. Extracted to
+  `Tests/OCCTShapeHealingTests/ShapeHealingTestFixtures.swift`
+  (`sewnBoxMissingOneFace(_:tolerance:)`, parameterized on the box so the two suites keep their own
+  box size/origin), following the precedent `Tests/OCCTStressTests/StressTestFixtures.swift` already
+  set for sharing fixtures within one test target. Both suites re-verified unchanged after the
+  refactor.
 
 ### CI builds the same kernel the branch is written against
 
@@ -314,6 +593,50 @@ silent no-op on any machine that had built before: the old tag's sources were co
 under the new version's number. It now requires `HEAD` to be at the tag the script names and aborts
 otherwise, naming the tree so a diagnostic probe left by an investigation is not destroyed silently.
 
+### `GeomTools_Curve2dSet`/`SurfaceSet` null-handle census: closed on evidence, kernel patch carried (#643)
+
+Cluster C's own census (#666, PR #711) concluded, without re-measuring, that #643 is already
+bridge-guarded and the remaining defect is upstream. Re-verified rather than inherited, per this
+issue's own instructions.
+
+**The guard holds.** `OCCTGeomToolsCurve2dSetWrite`/`OCCTGeomToolsSurfaceSetWrite`
+(`Sources/OCCTBridge/src/OCCTBridge_IO.mm`) already refuse a null handle per array element before
+calling `GeomTools_Curve2dSet::Add`/`GeomTools_SurfaceSet::Add` (the #618 "array element through a
+cast" shape), and these two functions are the only call sites of either class anywhere in the tree.
+Confirmed dynamically too, not just by reading the guard: override-linking the real
+`OCCTBridge_IO.mm` against a genuinely null-handle-wrapping `OCCTCurve2D`/`OCCTSurface` returns
+`nullptr` rather than crashing, for both a null-only array and a mixed valid+null array. Removing
+the guard (injected, then restored) reproduces the SIGSEGV through the real bridge function,
+confirming it is load-bearing rather than incidental.
+
+**The upstream asymmetry is real and still live.** `GeomTools_CurveSet::Add` guards a null handle
+and drops it (`return (C.IsNull()) ? 0 : myMap.Add(C);`); `GeomTools_Curve2dSet::Add` and
+`GeomTools_SurfaceSet::Add` don't, so a null is bound at a valid-looking index and only crashes
+later, inside `Write()`. Re-measured directly against the pinned kernel (`v2.0.0-kernel.1`, OCCT
+`V8_0_1` + eleven carried patches) rather than assumed from the issue's original 8.0.0p1 report:
+identical result. A second, previously unnamed divergence was found checking whether the three
+writers disagree anywhere else: `Index()` has the same asymmetry (`CurveSet::Index` guards, the
+siblings don't). It doesn't crash (`NCollection_IndexedMap::FindIndex` never dereferences its
+argument), but the two siblings silently report a bogus non-zero index for a handle that was never
+validly bound, where `CurveSet::Index` correctly answers 0. Both files are byte-identical between
+the pinned `V8_0_1` tag and current upstream `master`.
+
+**Filed upstream and carried, not fixed bridge-side.** This repo's own guard already prevents any
+caller from reaching the defect, so the fix belongs in the container, not the wrapper. Kernel patch
+`Scripts/patches/0023-GeomTools_Curve2dSet-SurfaceSet-null-handle-643.patch` mirrors
+`GeomTools_CurveSet`'s own correct guard onto `Add`/`Index` on both siblings (four one-line
+changes), verified by override-linking the patched files ahead of the unpatched archive: all three
+classes' `Add()` now return 0 for a null handle and `Write()` completes normally; all three
+classes' `Index()` now return 0. Filed as
+[Open-Cascade-SAS/OCCT#1434](https://github.com/Open-Cascade-SAS/OCCT/issues/1434) (repro) /
+[OCCT#1435](https://github.com/Open-Cascade-SAS/OCCT/pull/1435) (fix). Inert until the pinned
+xcframework is rebuilt (#512); this change does not rebuild or bump the pin.
+
+No bridge behavior change, no public API change. See
+[`Scripts/repro/643-geomtools-null-write/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/643-geomtools-null-write)
+for the reproducer and the full "prove the test fails" injection matrix (bridge guard removed →
+SIGSEGV reproduced; kernel patch applied → both defects resolved).
+
 ### `chamfer2D` SIGSEGVs, uncatchably, on a repeated edge pair (#705)
 
 Found by Cluster B's edge/vertex-index census (#665, `Scripts/repro/cluster-b-fillet-edge-contract/`),
@@ -372,6 +695,111 @@ The census's own row for `chamfer2D` is updated from `CRASH (SIGSEGV, uncatchabl
 noting it as unsafe to run.
 
 ### Pass 1b of the #377 duplication audit
+
+#### `PipeSweepMode.frenet` and `.correctedFrenet` were wired to each other's OCCT mode (#598)
+
+Found while measuring #572, which needed the pipe shell driven in a specific trihedron mode.
+`BRepOffsetAPI_MakePipeShell::SetMode`'s parameter is named `IsFrenet`, and its header (confirmed
+against the pinned `V8_0_1` source before changing anything) says so: "If IsFrenet is false, a
+corrected Frenet trihedron is used." `occtPipeShellSetMode` (`OCCTBridge_Modeling.mm:494`) passed
+the opposite boolean for both enum cases: `OCCTPipeModeFrenet` called `SetMode(Standard_False)`
+(corrected Frenet) and `OCCTPipeModeCorrectedFrenet` called `SetMode(Standard_True)` (plain
+Frenet). `PipeSweepMode.frenet` is the default `mode:` on all three `Shape.pipeShell*` spellings,
+so this affected every caller who never named a mode, not only one who asked for `.frenet`
+explicitly.
+
+**Measured, not assumed, that the two modes actually differ**, using an independent oracle:
+`PipeShellBuilder.setFrenet(_:)` calls `BRepFill_PipeShell::Set(frenet)` directly, a separate
+bridge function this bug never touched. On a curved B-spline spine (the same fixture
+`Issue503PipeShellTests.curvedSpine()` uses) with a rectangular profile, `Shape.pipeShell`'s
+`.frenet` and `PipeShellBuilder.setFrenet(true)` disagreed before this fix (180.286724 vs
+177.347557) and agree after it; `.correctedFrenet` and `setFrenet(false)` disagreed the other way
+and now agree too. **On a spine with no torsion the two OCCT trihedron laws coincide**, so the
+swap was silent there: a straight-line spine produces byte-identical volumes for `.frenet` and
+`.correctedFrenet` both before and after this fix, confirmed by a test that stays green with the
+defect deliberately reinjected.
+
+**Fixed**: swap the two `SetMode` booleans in `occtPipeShellSetMode`. A second, related site was
+found in the same file and left behavior-unchanged: `OCCTShapeCreatePipeShellWithLaw` (line 4134)
+hardcodes `SetMode(Standard_False)` with a `// Frenet` comment that was equally wrong (it builds
+corrected Frenet); that entry point takes no `mode:` parameter at all, so no public contract
+changed, only the misleading comment.
+
+**Not recorded as a SemVer exception.** This lands in v2.0.0, a major version, where SemVer permits
+breaking changes outright: `SEMVER.md`'s own words scope its recorded-exception ledger to a break
+"within a major line", which a break shipping in the major bump itself is not. An earlier revision
+of this entry added a fourteenth exception here anyway; review of #715 (this fix's own PR) caught
+that as a category error, and it also introduced counter drift in two other places (`SEMVER.md`
+stated both "thirteen" and "fourteen" total exceptions in different paragraphs, and left #609
+mis-numbered as the "fourteenth" held-for-v2.0.0 break instead of the fifteenth). `SEMVER.md` is
+restored to the state it was in before this issue; this changelog entry is the migration note a
+consumer needs instead.
+
+**Blast radius, corrected after review of #715, not fully measured the first time.** The original
+measurement covered a spine with ordinary curvature/torsion and a spine with none; neither is the
+case `.correctedFrenet`'s own doc comment names as its reason to exist ("avoids twisting at
+inflection points"). Measured properly this time, on a planar S-curve whose curvature crosses
+exactly zero at its midpoint (confirmed by sampling `curvature(at:)` across the domain rather than
+assumed from the control points):
+
+| Mode | Result on the inflection spine |
+|---|---|
+| `.frenet` (the default) | **Self-intersects** (`Shape.isSelfIntersecting()` reports `true`) |
+| `.correctedFrenet` | Stays valid (`Shape.isSelfIntersecting()` reports `false`) |
+
+This is the regression class review of #715 asked for: a caller who never named a mode and sweeps
+a spine through a curvature inflection now gets an invalid solid where the pre-#598 (wrongly-wired)
+default happened to build the safer sweep instead, by accident, under the old bug. There is no
+general substitute for naming `.correctedFrenet` explicitly here: if a spine's curvature may pass
+through zero, do not rely on the `.frenet` default.
+
+**Also corrected: the claim that a circular profile makes the two trihedron laws produce "the
+identical swept volume" everywhere was wrong**, and it was the reason this entry originally gave
+for why `docs/guides/cookbook/helices.md`'s spring recipe needed no update. Measured directly
+against the independent `PipeShellBuilder` oracle, on the cookbook's own r=10, pitch=4, turns=5,
+wireRadius=1.5 helix: `.frenet` reproduces the textbook tube volume (`π·wireRadius²·coilLength`,
+2225.1497 measured vs 2225.1564 expected) but `.correctedFrenet` does not (2495.4373 measured,
+about 12% larger). A circular profile only guarantees the two laws agree on a spine with no
+torsion (the case actually tested above); a helix has constant, non-zero curvature and does
+distinguish them. Since the cookbook's own claimed invariant
+(`spring.volume ≈ π·wireRadius²·(coil length)`) now holds only for `.frenet` on this recipe, the
+recipe is corrected in this same PR to use `.frenet`, and its prose no longer claims rotational
+symmetry makes the two laws interchangeable.
+
+Every other existing pipe-shell call site in this repo's tests uses either a straight spine or a
+non-Frenet mode (`.fixed(binormal:)`, `.auxiliary(spine:)`) this bug never touched. Exactly one
+existing hardcoded literal needed updating: `Issue503PipeShellTests.fixedBinormalDiffersFromFrenet`'s
+pinned `.frenet` volume moves from 180.286724 to 177.347557. `Shape+Modeling.swift`'s own
+`pipeShell` doc snippet had the same stale literal (`180.29`) and is corrected to `177.35`.
+
+New tests: `Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift`. Six cases: `.frenet`
+and `.correctedFrenet` each matched against the `PipeShellBuilder` oracle on the curved spine (and
+confirmed to disagree with the *other* oracle value, so a match isn't a coincidence of tolerance),
+the multi-section spelling inheriting the same fix through the shared helper, the no-torsion
+control, the curvature-inflection self-intersection case above, and the cookbook recipe's volume
+invariant above. `curvedSpine()` and the scale-relative tolerance helper are no longer duplicated
+in this file: review of #715 found three near-identical copies of the same tolerance formula (with
+two different default tolerances) split across this file and `Issue503PipeShellTests.swift`
+(same target); both fixtures are now promoted from `Issue503PipeShellTests.swift` and reused
+directly instead.
+
+Proved each new/changed case catches its own defect, per test rather than as a suite total:
+reinjecting the original swap (`SetMode(Standard_False)` for `OCCTPipeModeFrenet`,
+`SetMode(Standard_True)` for `OCCTPipeModeCorrectedFrenet`), rebuilding, and rerunning:
+
+| Test | With defect reinjected | With fix restored |
+|---|---|---|
+| `frenetMatchesTrueFrenet` | FAIL (3 issues) | PASS |
+| `correctedFrenetMatchesTrueCorrectedFrenet` | FAIL (3 issues) | PASS |
+| `multiSectionSpellingAlsoFixed` | FAIL (1 issue) | PASS |
+| `theTwoModesAgreeOnASpineWithNoTorsion` | PASS (confirms silence) | PASS |
+| `frenetSelfIntersectsAtCurvatureInflection` | FAIL (2 issues) | PASS |
+| `cookbookSpringRecipeVolumeInvariant` | FAIL (4 issues) | PASS |
+| `Issue503PipeShellTests.fixedBinormalDiffersFromFrenet` | FAIL (1 issue) | PASS |
+
+13 issues across 5 new/changed tests plus the pre-existing literal, while the no-torsion control
+stays green throughout, confirming it really is a silent case rather than an assumption. Restoring
+the fix returns all of them to green.
 
 #### The fillet family could not report a declined edge, only skip it silently (#639)
 
@@ -1582,6 +2010,183 @@ nominally ~189 GB `[OCCTRayHit]` costs nothing until it is touched. The trapping
 reached first. Worth recording, because it means the allocation size is the wrong thing to reason
 about when judging which of these entry points is dangerous — the `int32_t` cast is what fires, and
 it fires identically whether the element is 8 bytes or 88.
+
+#### The math dimension family traps on a consistent-but-negative dimension, and one site reads out of bounds (#640)
+
+`#622`'s own writeup deliberately left the math solver/optimizer family unfixed: its numbers are
+problem *dimensions* that must agree with the caller's own arrays, not sampling capacities, so
+`Sampling.requested`/`capacity` is the wrong tool and clamping one would hand back a
+garbage-dimension solve. That premise is correct. The remedy it suggested, a consistency check
+against the caller's arrays, is not, measured:
+
+```swift
+MathJacobi.eigenvalues(matrix: [1.0], n: -1)
+// matrix.count == n * n holds exactly: 1 == (-1) * (-1)
+// still aborts: Fatal error: Can't construct Array with count < 0
+```
+
+A consistency check alone cannot exclude this shape: whenever one factor of a product is zero, the
+other is unconstrained, so `rows: 0, cols: -1` (or the symmetric `n: -1` case above, where
+`matrix.count` is 1 either way) satisfies `matrix.count == rows * cols` for *any* value of the
+other factor. `MathSVD.solve` and `MathHouseholder.solve` have the identical gap. A positivity
+bound closes it, alongside the consistency check, not instead of it.
+
+**`MathSolver.leastSquares` is worse: it had no consistency check at all**, so a `rows`/`cols` pair
+that is positive but does not match `matrix`/`rhs`'s real length sails straight through and reaches
+the bridge's `matA[i*nCols+j]`/`b[i]` loops, which read unconditionally. That is an out-of-bounds
+read, not a trap: confirmed in a standalone process, `rows: 1000, cols: 1000` against a 1-element
+`matrix` crashes with `Bus error: 10`; smaller mismatches silently returned `nil` from a
+garbage-fed `IsDone()` instead, never a reliable failure either way.
+
+**Re-deriving the census by reading each candidate bridge function, rather than trusting the
+trap-shaped count either side had produced, found 20 affected entry points, not 13.** #634's own
+writeup had already grown the count from 10 to 13 under review (`MathSVD.solve`, `MathJacobi.
+eigenvalues`, `MathHouseholder.solve` were unnamed anywhere until then); measuring by allocation
+shape and by trapping `Int32(_:)` conversion, as suggested, reproduces that 13. A third lens, does
+a bridge function index a raw pointer up to a caller-supplied count with no check that the backing
+Swift array is actually that long, found five more, invisible to both prior lenses because none of
+them constructs a `[Double]` sized by the vulnerable dimension:
+
+- `MathGauss.determinant` / `MathCrout.determinant` return a scalar `Double`; the unconditional
+  `matrixData[i*n+j]` loop is exactly `leastSquares`'s shape, just with nothing to trap on. Both
+  crash with `Bus error: 10` at `n: 1000` against a 1-element `matrix`, confirmed in a standalone
+  process.
+- `MathSolver.eigenvalues(diagonal:subdiagonal:)` / `.eigenvaluesAndVectors` derive their dimension
+  from `diagonal.count` (never negative), but read `subdiagonal[i]` for `i in 0..<diagonal.count`
+  with no check that `subdiagonal` is that long: the `///` comment already said "must be same
+  length"; it was never enforced. Measured: a 50-element `diagonal` against a 1-element
+  `subdiagonal` returns eigenvalues up to `1.17e+131`, silently.
+- `MathSolver.gaussMultipleIntegration` derives `nVars` from `lower.count` and reads
+  `upper[i]`/`order[i]` up to it the same unguarded way. `.gaussSetIntegration` has both this gap
+  *and* the trapping one (`nEquations` sizes its result array).
+
+All 20 now require the dimension argument to be positive and every array it indexes into to match
+it exactly, closing the trap and the read together:
+
+| site | fix |
+|---|---|
+| `MathGauss.determinant`, `MathCrout.determinant` | `n > 0`, `matrix.count == n * n` |
+| `MathSVD.solve`, `MathHouseholder.solve` | `rows > 0`, `cols > 0` added to the existing consistency check |
+| `MathJacobi.eigenvalues` | `n > 0` added to the existing consistency check |
+| `MathSolver.solveSystem`, `.solveSystemNewton` | `variables > 0`, `equations > 0`, `startPoint.count == variables` |
+| `MathSolver.minimize`, `.minimizePowell`, `.minimizeNewton` | `variables > 0`, `startPoint.count == variables` |
+| `MathSolver.particleSwarm` | `variables > 0`, `lower`/`upper`/`steps`.count == variables` |
+| `MathSolver.globalMinimize` | `variables > 0`, `lower`/`upper`.count == variables` |
+| `MathSolver.leastSquares` | `rows > 0`, `cols > 0`, `matrix.count == rows * cols`, `rhs.count == rows` (new: had nothing) |
+| `MathSolver.uzawa` | `nConstraints > 0`, `nVars > 0`, and all three arrays checked against them (new: had nothing) |
+| `MathSolver.eigenvalues`, `.eigenvaluesAndVectors` | `subdiagonal.count == diagonal.count` (new) |
+| `MathSolver.gaussMultipleIntegration` | `upper.count == lower.count`, `order.count == lower.count` (new) |
+| `MathSolver.gaussSetIntegration` | `nEquations > 0` plus the same array checks as `gaussMultipleIntegration` |
+
+**Also in scope, reached by a different lens: `findAllRoots(samples:)` (both overloads) is a
+sampler by name and by role, not a problem dimension**, despite superficially trapping the same
+`Int32(_:)` way. It is routed through `Sampling.requested` instead, matching #558's own family,
+and rejects with `[]` rather than trapping past `Int32.max`. Checked alongside it and confirmed
+correctly excluded: `kronrodIntegrate`/`kronrodIntegrateAdaptive`/`integGauss`/`integKronrod`/
+`integKronrodAdaptive`'s `points`/`gaussPoints` parameters trap the identical way at
+`Int(Int32.max) + 1`, but select a quadrature rule order inside OCCT: no bridge function indexes
+an array by them, and a negative value is rejected cleanly via `IsDone() == false`, measured, not
+assumed. #634's "kernel-side, not a Swift buffer" reasoning holds for these; it did not hold for
+`findAllRoots`.
+
+Regression suite: `Tests/OCCTMathTests/Issue640MathDimensionBoundsTests.swift`, 17 tests covering
+all 20 entry points plus a positive control per function. Proved by injection at four
+representative guards spanning both failure shapes: removing `MathJacobi.eigenvalues`'s positivity
+bound crashes the whole `swift test` process (`exited with unexpected signal code 5`, matching
+`raycast`'s own #622 precedent) rather than failing one test; removing `solveSystem`'s
+`startPoint.count == variables` check and `eigenvalues`'s `subdiagonal.count == diagonal.count`
+check both instead produce ordinary, reportable test failures with the exact garbage values quoted
+above; removing `findAllRoots`'s `Sampling.requested` call reproduces the same whole-process crash
+as the positivity case. All four restored and re-verified green. A fifth injection, removing only
+`MathGauss.determinant`'s consistency check and leaving positivity, did **not** reproduce the crash
+inside `swift test`'s process (unlike the standalone probe, which crashed reliably at the same
+input): the read is undefined behaviour, not a guaranteed crash, and its outcome depends on the
+process's own memory layout. This is the same point the out-of-bounds-read finding makes at the
+API level, one level down in the tooling used to demonstrate it.
+
+#### PR #716 review follow-up: three new closure-return-length traps, a mis-measured integral, and a shared validator (#640)
+
+An automated review of #716 (the PR above) found ten distinct defects, the most severe of which
+was the PR reintroducing its own bug class in three new places: guarding a caller's **argument**
+arrays against a dimension mismatch, then indexing a **closure's return value** against that same
+dimension with no check at all. A closure returning a short array trapped the process exactly the
+way #640 exists to prevent, just relocated from the caller's arguments to the caller's closure.
+Fixed at every site that shape occurs: `solveSystem`/`solveSystemNewton`'s `values`/`jacobian`
+callbacks, `minimize`/`minimizeNewton`'s `gradient`/`hessian`, and `gaussSetIntegration`'s
+`values`. `minimizeFRPR` shares the identical `OCCTMathMultiVarGradCallback` shape but was not
+itself named by the review; fixed and tested alongside the others for the same reason. Every
+guard was proved in a standalone process (the #705 technique, temporarily pointing
+`Sources/OCCTTest/main.swift` at a case-selecting probe): removing any one of them reproduces
+`Fatal error: Index out of range`, a process trap, not a test failure; restoring it returns `nil`.
+
+**The review's own finding 2 uncovered a real defect, not a wrong literal.** It read a new
+regression test, `gaussIntegrationLengthBounds()`, as asserting the double integral of `x + y`
+over the unit square is `0.5`, and pointed out the true value is `1.0` by symmetry. Both
+observations were correct, and neither was the actual story: measured directly against the pinned
+kernel, `gaussSetIntegration(nEquations: 1, lower: [0, 0], upper: [1, 1], order: [10, 10])`
+integrating `x + y` genuinely returns `0.5` -- but not because it computes any correct 2-variable
+integral. `math_GaussSetIntegration`'s own header documents "the case M>1 is not implemented": a
+probe built directly against the class confirms its constructor only ever varies the *first*
+integration variable (`Lower.Value(Lower.Lower())`), leaving every other component of its working
+vector pinned at its initial value, `0`. So `0.5` is `∫x dx` over `[0, 1]` with `y` silently held
+at `0` the entire time, never `∫∫(x + y) dx dy`. OCCT's own runtime check for this
+(`Standard_NotImplemented_Raise_if(NbVar != 1, ...)`) does not survive this project's
+`No_Exception` production kernel build (the same class of gap #487/#555/#603 measured elsewhere),
+so instead of failing loudly it silently computed the wrong thing. Changing the test's literal
+from `0.5` to `1.0` would have enshrined a *different* wrong answer -- `gaussSetIntegration` can
+never legitimately produce `1.0` for that call, because it never touches the second variable at
+all. The actual fix is a new guard: `gaussSetIntegration` now requires `lower.count == 1`,
+returning `nil` for any call with more than one variable, matching what the class actually
+supports (one variable, any number of equations -- a true "set of functions", each integrated
+over the same one-dimensional domain). `gaussMultipleIntegration` is unaffected: its own class,
+`math_GaussMultipleIntegration`, integrates recursively over every dimension and was confirmed
+correct at 2 variables independently. The pre-existing `Tests/OCCTIntegrationTests/
+OCCTIntegrationTests.swift`'s `GaussSetIntegrationTests.integrateSet()` predated #640 and carried
+the identical two-variable call and the identical `0.5` assertion; fixed to a valid one-variable,
+two-equation case (`[x, x^2]` over `[0, 2]`, giving `[2.0, 8/3]`) plus an explicit assertion that
+the old two-variable shape now returns `nil`.
+
+The remaining seven findings were all confirmed and fixed:
+
+- **Finding 1**: both `findAllRoots` overloads called `Sampling.requested(samples)` without
+  `atLeast: 1`, so the default floor of `2` applied even though this file's own doc comments and
+  the reference docs already documented the valid range as `1...10,000,000`. `samples: 1` was
+  silently rejected -- the closure was never called -- before returning `[]`. Fixed by passing
+  `atLeast: 1` at both call sites.
+- **Finding 7**: `MathGauss.determinant`/`MathCrout.determinant` returned a bare `Double`, so the
+  `0.0` sentinel for an invalid dimension was indistinguishable from `0.0`, the correct
+  determinant of a genuinely singular matrix. Both now return `Double?`; `nil` means invalid
+  input, `.some(0.0)` means a real, correctly-computed zero.
+- **Finding 8**: every positivity guard in this family computed `n * n` or `rows * cols` with the
+  plain `*` operator, which traps on overflow for a sufficiently large positive dimension (e.g.
+  `n: .max`) -- the exact process-trap #640 exists to eliminate, reintroduced by the guard meant
+  to prevent it. Fixed by routing every such guard through the new `MathDimension` type below,
+  which uses `multipliedReportingOverflow(by:)` (the same idiom `Sampling.gridTotal` already
+  carries) and rejects rather than traps.
+- **Finding 9**: the "dimension positive, and every array it sizes matches exactly" check (or,
+  for `rows`/`cols`, "the flat array is exactly their product") was hand-duplicated at 18 call
+  sites with no shared validator, unlike the `Sampling` family this same PR already reuses for
+  `findAllRoots`. `Sources/OCCTSwift/MathDimension.swift` factors it into four functions --
+  `valid`, `consistent`, `validSquare`, `validRectangle` -- and all 18 sites now share it,
+  fixing finding 8's overflow gap everywhere at once rather than site by site.
+- **Finding 10**: the 18 changed doc comments carried no fenced `swift` snippet, which CLAUDE.md
+  makes mandatory for public API changes since context7 only harvests fenced snippets. All 18
+  gained one, modeled on `Sampling.maximumSampleCount`'s doc.
+- Also removed: `docs/SEMVER.md`'s recorded-exception entry for this issue. The maintainer ruled
+  that mechanism is for breaks shipping *within* a major line; this work ships in v2.0.0, a
+  major, where breaking changes are permitted outright, so no exception entry is needed --
+  this note is the migration record instead. The counters at the top of `docs/SEMVER.md` are
+  restored to their pre-#640 values (thirteen recorded exceptions), and the pre-existing counter
+  drift #640's own PR fixed (a stale hardcoded number in #639's entry, once out of sync with the
+  count at the top of the file) is kept: that entry now reads the count in prose rather than
+  restating it as a number that can drift again.
+
+Full `swift test`: 5384 tests (5373 baseline + 11 new -- 7 in
+`Issue640MathDimensionBoundsTests.swift`, 4 in a new `MathDimensionTests` suite exercising
+`MathDimension` directly, the same way `Issue558SamplingCountBoundsTests.swift` exercises
+`Sampling.requested`/`capacity`/`gridTotal` directly). `swift run Censuses cluster-a`: 45 rows.
+`cluster-b`: 16 rows. All four gate scripts and their three `--self-tests` pass from the repo
+root.
 
 #### A fillet radius law goes to the edge's own slot, in the edge's own contour (#612)
 

@@ -1416,8 +1416,11 @@ struct MathGaussTests {
     }
 
     @Test func determinant() {
-        let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2)
-        #expect(abs(det - 5.0) < 1e-10)
+        if let det = MathGauss.determinant(matrix: [2.0, 1.0, 1.0, 3.0], n: 2) {
+            #expect(abs(det - 5.0) < 1e-10)
+        } else {
+            Issue.record("expected a determinant")
+        }
     }
 }
 
@@ -1511,8 +1514,11 @@ struct MathCroutTests {
     }
 
     @Test func determinant() {
-        let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2)
-        #expect(abs(det - 8.0) < 1e-10)
+        if let det = MathCrout.determinant(matrix: [4.0, 2.0, 2.0, 3.0], n: 2) {
+            #expect(abs(det - 8.0) < 1e-10)
+        } else {
+            Issue.record("expected a determinant")
+        }
     }
 }
 
