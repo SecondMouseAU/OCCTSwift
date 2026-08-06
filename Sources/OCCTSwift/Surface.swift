@@ -3809,8 +3809,24 @@ extension Surface {
     }
 
     /// Approximate a surface from N section curves using GeomFill_AppSurf.
+    ///
+    /// Requires at least 2 curves. `GeomFill_AppSurf`'s underlying approximation solver
+    /// (`AppDef_Compute`, reached through `AppBlend_AppSurf::InternalPerform`) is never driven
+    /// with fewer than 2 sections anywhere in the kernel; at a single section the first and last
+    /// constraint point are the same section evaluated twice, and the solver SIGSEGVs setting up
+    /// degree-of-freedom bookkeeping that assumes at least one free interior span (#644, measured:
+    /// counts of 0 and 1 crash, 2 and 3 return `isDone: true` cleanly). Matches the guard
+    /// `nSections(curves:params:)` and `generatedFromSections(curves:tolerance:)` already carry
+    /// for the same `GeomFill_*` section-curve family.
+    ///
+    /// ```swift
+    /// let c1 = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let c2 = Curve3D.circle(center: SIMD3(0, 0, 10), normal: SIMD3(0, 0, 1), radius: 5)!
+    /// let surf = Surface.appSurf(curves: [c1, c2])
+    /// ```
     public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
                                tol3d: Double = 1e-3, tol2d: Double = 1e-3) -> AppSurfResult? {
+        guard curves.count >= 2 else { return nil }
         let refs = curves.map { $0.handle as OCCTCurve3DRef }
         return refs.withUnsafeBufferPointer { buf in
             let r = OCCTGeomFillAppSurf(buf.baseAddress!, Int32(curves.count),

@@ -419,6 +419,12 @@ Adds a curve to the profiler.
 public func addCurve(_ curve: Curve3D)
 ```
 
+- **Returns:** `Void`. If `curve` wraps a null `Geom_Curve` handle, it is silently dropped instead
+  of added (#710 defensive hardening; no public `Curve3D` factory can produce that state today),
+  and there is no `curveCount`/`isValid` signal at the call site itself. A drop only shows up
+  indirectly: the profiler ends up holding one fewer curve than the caller believes it added, so a
+  `curveIndex` passed to `poles(curveIndex:)` that counted the dropped curve addresses the wrong
+  curve (or is out of range and returns `[]`).
 - **OCCT:** `GeomFill_Profiler::AddCurve`.
 
 ---
@@ -855,10 +861,12 @@ public static func appSurf(curves: [Curve3D], degMin: Int = 3, degMax: Int = 8,
 ```
 
 - **Parameters:**
-  - `curves` — ordered section curves to interpolate/approximate.
+  - `curves`: ordered section curves to interpolate/approximate. **Requires at least 2** (#644);
+    fewer returns `nil` instead of crashing the underlying `GeomFill_AppSurf` solver, which is
+    never driven with fewer than 2 sections anywhere in the kernel.
   - `degMin`, `degMax` — minimum and maximum allowed BSpline degree.
   - `tol3d`, `tol2d` — 3D and 2D fitting tolerances.
-- **Returns:** An `AppSurfResult` on success, or `nil` if the algorithm fails.
+- **Returns:** An `AppSurfResult` on success, or `nil` if the algorithm fails or fewer than 2 curves are given.
 - **OCCT:** `GeomFill_AppSurf`.
 - **Example:**
   ```swift
