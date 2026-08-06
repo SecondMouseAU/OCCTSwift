@@ -76,7 +76,11 @@ struct Issue503PipeShellTests {
             Shape.pipeShell(spine: spine, profile: profile, mode: .fixed(binormal: SIMD3(0, 0, 1))))
 
         if let frenet, let fixed {
-            #expect(frenet.volume.isApproximatelyEqual(to: 180.286724, tolerance: 1e-5))
+            // 177.347557, not 180.286724: that was the pre-#598 value, and it was the
+            // corrected-Frenet solid, not the Frenet one. .frenet and .correctedFrenet were
+            // wired to each other's OCCT mode. This literal moved when #598 fixed the swap;
+            // Issue598PipeShellFrenetModeTests pins the fix itself against an independent oracle.
+            #expect(frenet.volume.isApproximatelyEqual(to: 177.347557, tolerance: 1e-5))
             #expect(fixed.volume.isApproximatelyEqual(to: 149.999816, tolerance: 1e-5))
             #expect(!frenet.volume.isApproximatelyEqual(to: fixed.volume, tolerance: 1e-6))
         } else {

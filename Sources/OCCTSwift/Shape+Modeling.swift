@@ -344,7 +344,7 @@ extension Shape {
     /// // A fixed binormal keeps it upright instead, which is a different solid.
     /// let upright = Shape.pipeShell(spine: spine, profile: profile,
     ///                               mode: .fixed(binormal: SIMD3(0, 0, 1)))
-    /// print(rolled?.volume ?? 0)    // 180.29
+    /// print(rolled?.volume ?? 0)    // 177.35
     /// print(upright?.volume ?? 0)   // 150.00
     /// ```
     ///

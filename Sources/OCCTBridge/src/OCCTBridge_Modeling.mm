@@ -491,14 +491,19 @@ OCCTShapeRef OCCTShapeRemoveFeatures(OCCTShapeRef shape, const int32_t* faceIndi
 
 // Apply an orientation mode. Returns false when the mode's own argument is missing;
 // a zero-length binormal throws out of gp_Dir and is caught by the caller.
+//
+// SetMode's own parameter is named IsFrenet, and its header says so: "If IsFrenet is false,
+// a corrected Frenet trihedron is used." #598: this used to pass the opposite boolean for
+// both cases, so OCCTPipeModeFrenet built a corrected-Frenet sweep and OCCTPipeModeCorrectedFrenet
+// built a plain Frenet one, straight through to every public PipeSweepMode caller.
 static bool occtPipeShellSetMode(BRepOffsetAPI_MakePipeShell& pipeShell, OCCTPipeMode mode,
                                  double bnX, double bnY, double bnZ, OCCTWireRef auxSpine) {
     switch (mode) {
         case OCCTPipeModeFrenet:
-            pipeShell.SetMode(Standard_False);
+            pipeShell.SetMode(Standard_True);
             return true;
         case OCCTPipeModeCorrectedFrenet:
-            pipeShell.SetMode(Standard_True);
+            pipeShell.SetMode(Standard_False);
             return true;
         case OCCTPipeModeFixedBinormal:
             pipeShell.SetMode(gp_Dir(bnX, bnY, bnZ));
@@ -4131,7 +4136,10 @@ OCCTShapeRef OCCTShapeCreatePipeShellWithLaw(OCCTWireRef spine,
     if (!spine || !profile || !law || law->law.IsNull()) return nullptr;
     try {
         BRepOffsetAPI_MakePipeShell pipeShell(spine->wire);
-        pipeShell.SetMode(Standard_False); // Frenet
+        // Standard_False -> corrected Frenet (#598 found this comment claiming plain Frenet,
+        // which SetMode's own IsFrenet parameter does not: no public mode parameter reaches
+        // this entry point, so the trihedron itself is unchanged, only the comment was wrong).
+        pipeShell.SetMode(Standard_False); // corrected Frenet
         pipeShell.SetLaw(profile->wire, law->law, Standard_False, Standard_False);
         return occtPipeShellFinish(pipeShell, solid);
     } catch (...) {

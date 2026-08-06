@@ -228,6 +228,67 @@ noting it as unsafe to run.
 
 ### Pass 1b of the #377 duplication audit
 
+#### `PipeSweepMode.frenet` and `.correctedFrenet` were wired to each other's OCCT mode (#598)
+
+Found while measuring #572, which needed the pipe shell driven in a specific trihedron mode.
+`BRepOffsetAPI_MakePipeShell::SetMode`'s parameter is named `IsFrenet`, and its header (confirmed
+against the pinned `V8_0_1` source before changing anything) says so: "If IsFrenet is false, a
+corrected Frenet trihedron is used." `occtPipeShellSetMode` (`OCCTBridge_Modeling.mm:494`) passed
+the opposite boolean for both enum cases: `OCCTPipeModeFrenet` called `SetMode(Standard_False)`
+(corrected Frenet) and `OCCTPipeModeCorrectedFrenet` called `SetMode(Standard_True)` (plain
+Frenet). `PipeSweepMode.frenet` is the default `mode:` on all three `Shape.pipeShell*` spellings,
+so this affected every caller who never named a mode, not only one who asked for `.frenet`
+explicitly.
+
+**Measured, not assumed, that the two modes actually differ**, using an independent oracle:
+`PipeShellBuilder.setFrenet(_:)` calls `BRepFill_PipeShell::Set(frenet)` directly, a separate
+bridge function this bug never touched. On a curved B-spline spine (the same fixture
+`Issue503PipeShellTests.curvedSpine()` uses) with a rectangular profile, `Shape.pipeShell`'s
+`.frenet` and `PipeShellBuilder.setFrenet(true)` disagreed before this fix (180.286724 vs
+177.347557) and agree after it; `.correctedFrenet` and `setFrenet(false)` disagreed the other way
+and now agree too. **On a spine with no torsion the two OCCT trihedron laws coincide**, so the
+swap was silent there: a straight-line spine produces byte-identical volumes for `.frenet` and
+`.correctedFrenet` both before and after this fix, confirmed by a test that stays green with the
+defect deliberately reinjected.
+
+**Fixed**: swap the two `SetMode` booleans in `occtPipeShellSetMode`. A second, related site was
+found in the same file and left behavior-unchanged: `OCCTShapeCreatePipeShellWithLaw` (line 4132)
+hardcodes `SetMode(Standard_False)` with a `// Frenet` comment that was equally wrong (it builds
+corrected Frenet); that entry point takes no `mode:` parameter at all, so no public contract
+changed, only the misleading comment.
+
+**Decision: swap and record as a SemVer exception (the #642/#699 pattern), not retire-and-replace
+(the #619/#651 pattern).** Full reasoning in
+[`SEMVER.md`](SEMVER.md#recorded-exception-unreleased-pipesweepmodefrenet-and-correctedfrenet-were-wired-to-each-others-occt-mode-598).
+In short: `.frenet`/`.correctedFrenet`'s own doc comments already state the correct meaning, so
+there is nothing to rename them to; `PipeSweepMode` has no raw value and no `Comparable`
+conformance, so the numeric-reinterpretation-feeds-a-threshold hazard `continuityOrder` (#619) was
+retired to prevent cannot occur here; and OCCT offers exactly two named trihedron laws, both
+already correctly named in this API, so a retirement would only prompt rewriting `.frenet` as
+`.frenet`.
+
+**Blast radius, measured rather than guessed:** every existing pipe-shell call site in this repo's
+tests and cookbook docs uses either a straight spine, a rotationally-symmetric circular profile
+(immune to trihedron twist by construction, since twisting a circle about its own axis changes
+nothing), or a non-Frenet mode (`.fixed(binormal:)`, `.auxiliary(spine:)`) this bug never touched.
+Exactly one existing hardcoded literal needed updating:
+`Issue503PipeShellTests.fixedBinormalDiffersFromFrenet`'s pinned `.frenet` volume moves from
+180.286724 to 177.347557. `Shape+Modeling.swift`'s own `pipeShell` doc snippet had the same stale
+literal (`180.29`) and is corrected to `177.35`. `docs/guides/cookbook/helices.md`'s spring recipe
+uses `.correctedFrenet` with a circular profile, so it was unaffected either way and needed no
+change (a circle's rotational symmetry makes the two trihedron laws produce the identical swept
+volume, which is exactly what that page's own text already argues).
+
+New tests: `Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift`. Four cases: `.frenet`
+and `.correctedFrenet` each matched against the `PipeShellBuilder` oracle on the curved spine (and
+confirmed to disagree with the *other* oracle value, so a match isn't a coincidence of tolerance),
+the multi-section spelling inheriting the same fix through the shared helper, and the no-torsion
+control. Proved each catches its own defect: reinjecting the original swap (`SetMode(Standard_False)`
+for `OCCTPipeModeFrenet`, `SetMode(Standard_True)` for `OCCTPipeModeCorrectedFrenet`) fails all
+three frenet-sensitive new tests plus the pre-existing `fixedBinormalDiffersFromFrenet` literal (8
+issues across 4 tests), while the no-torsion control test stays green throughout, confirming it
+really is a silent case rather than an assumption. Restoring the fix returns all of them to green.
+
 #### The fillet family could not report a declined edge, only skip it silently (#639)
 
 `BRepFilletAPI_MakeFillet::Add` does nothing, with no exception and no false return, for an edge it
