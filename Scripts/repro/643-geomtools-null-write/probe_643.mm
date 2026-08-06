@@ -25,6 +25,7 @@
 //   clang++ -std=c++17 -ObjC++ -w -fobjc-arc \
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
 //     -I"Sources/OCCTBridge/include" \
+//     -I"Sources/OCCTBridge/src" \
 //     -L"Libraries/OCCT.xcframework/macos-arm64" \
 //     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
 //     Sources/OCCTBridge/src/OCCTBridge_IO.mm \
