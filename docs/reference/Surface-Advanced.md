@@ -663,8 +663,14 @@ public static func joinBezierPatches(
 
 Adjacent patches must share boundary curves. The `patches` array is row-major (`patches[v * cols + u]`).
 
+Every patch must be non-rational in both directions. `GeomConvert_CompBezierSurfacesToBSplineSurface`
+has no rational path at all: its own precondition against rational input is compiled out by this
+project's Release kernel, so without this check it would silently join the *polynomial* surface
+through a rational patch's control net (dropping its weights) and report success (#725). Weights are
+never clamped or dropped: a rational patch is refused outright, not silently approximated.
+
 - **Parameters:** `patches` — 2D array of Bezier surfaces (row-major order; must equal `rows * cols`); `rows` — patch row count; `cols` — patch column count.
-- **Returns:** Combined BSpline surface, or `nil` if the count doesn't match `rows * cols` or joining fails.
+- **Returns:** Combined BSpline surface, or `nil` if the count doesn't match `rows * cols`, any patch is rational in either direction, or joining fails.
 - **OCCT:** `GeomConvert_CompBezierSurfacesToBSplineSurface`.
 - **Example:**
   ```swift

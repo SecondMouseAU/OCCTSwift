@@ -2404,6 +2404,40 @@ struct JoinBezierPatchesTests {
         let joined = try #require(Surface.joinBezierPatches([patch1, patch2], rows: 2, cols: 1))
         #expect(joined.handle != nil)
     }
+
+    @Test("Rejects a rational patch instead of silently dropping its weights (#725)")
+    func joinRejectsRationalPatch() throws {
+        // GeomConvert_CompBezierSurfacesToBSplineSurface has no rational path: its own
+        // Standard_NotImplemented_Raise_if(isrational, ...) guard is compiled out by this
+        // project's Release kernel (No_Exception), so without this bridge-side check the
+        // converter proceeds anyway and returns the POLYNOMIAL surface through the same
+        // control net, with IsDone() == true. This is exactly the ground-truth fixture from
+        // #725: a single rational quarter-cylinder Bezier patch (radius 10, three poles, the
+        // standard quadratic-rational-Bezier middle weight 1/sqrt(2)), measured (before this
+        // fix) to convert to a 0.606602-off polynomial surface reported as a success.
+        let invSqrt2 = 1.0 / 2.0.squareRoot()
+        let radius = 10.0
+        let height = 5.0
+        let patch = try #require(Surface.bezier(
+            poles: [
+                [SIMD3(radius, 0, 0), SIMD3(radius, 0, height)],
+                [SIMD3(radius, radius, 0), SIMD3(radius, radius, height)],
+                [SIMD3(0, radius, 0), SIMD3(0, radius, height)],
+            ],
+            weights: [
+                [1, 1],
+                [invSqrt2, invSqrt2],
+                [1, 1],
+            ]))
+        // Sanity check the fixture is genuinely rational. IsURational()/IsVRational() are
+        // OCCT's own, and this bridge's `poles[uRow][vCol]` axis does not correspond 1:1 to
+        // OCCT's internal U/V (OCCTSurfaceCreateBezier's row/col map onto
+        // Geom_BezierSurface's ColLength()/RowLength() the other way around), so check the
+        // same `isURational || isVRational` predicate the fix itself uses rather than assuming
+        // which one flips.
+        #expect(patch.bezierProperties.isURational || patch.bezierProperties.isVRational)
+        #expect(Surface.joinBezierPatches([patch], rows: 1, cols: 1) == nil)
+    }
 }
 
 @Suite("BRepFill Pipe Tests")
@@ -2610,6 +2644,31 @@ struct GeomFillSweepTests {
         guard let path = pathEdge, let section = sectionEdge else { return }
         let result = Shape.geomFillSweep(path: path, section: section)
         #expect(result != nil)
+    }
+
+    @Test("Rejects a sweep that misses its own tolerance instead of reporting it as done (#597)")
+    func sweepRejectsOutOfToleranceFit() throws {
+        // GeomFill_Sweep::Build's general path (BuildAll) always fits the swept surface with an
+        // internal Approx_SweepApproximation and records the achieved deviation in
+        // ErrorOnSurface(). IsDone() alone says only that SOME surface was produced, not that
+        // it met the tolerance this call builds at. This entry point used to accept whatever
+        // Build() returned without ever reading that number. A rapidly oscillating spine (two
+        // out-of-phase sine/cosine components, five and seven periods over the same span)
+        // stresses the fixed degree<=10/segments<=50 C2 fit: measured via a standalone
+        // GeomFill_Sweep harness, this exact path/circle(1) pair reports IsDone() true with
+        // ErrorOnSurface() == 13.0, five orders of magnitude past the 1e-4 tolerance this
+        // bridge function builds at.
+        var points: [SIMD3<Double>] = []
+        let n = 60
+        for i in 0..<n {
+            let t = Double(i) / Double(n - 1) * 20.0 * Double.pi
+            points.append(SIMD3(t, 3.0 * sin(t * 5.0), 2.0 * cos(t * 7.0)))
+        }
+        let path = try #require(Curve3D.interpolate(points: points))
+        let pathEdge = try #require(Shape.edgeFromCurve(path))
+        let sectionEdge = try #require(Shape.edgeFromCircle(
+            center: .zero, axis: SIMD3(0, 0, 1), radius: 1, p1: 0, p2: 2 * .pi))
+        #expect(Shape.geomFillSweep(path: pathEdge, section: sectionEdge) == nil)
     }
 }
 
@@ -5950,30 +6009,82 @@ struct GeomFillGordonReportTests {
         assertMatchesQuarterCylinder(surface)
     }
 
-    @Test func networkSurfaceReportsKnotAlignmentFailedOnUnpreparedNetwork() {
-        // `GeomFill_NetworkSurface`'s own header documents it as a LOW-LEVEL builder for
-        // an ALREADY-prepared network: explicit non-periodic B-splines, pre-reparametrized
-        // so intersection knots line up, with the real (possibly non-unit) rational weight
-        // at each grid point supplied by the caller ("This class does not find curve
-        // intersections, sort the network, convert arbitrary curves, or reparametrize the
-        // input. These operations are handled by GeomFill_Gordon before calling this
-        // builder."). `OCCTGeomFillNetworkSurface` does none of that preparation: it
-        // converts curves to B-splines, assigns uniform 0...1 locator parameters, and
-        // hardcodes every intersection weight to 1.0 regardless of the curves' actual
-        // rationality. Measured directly: this makes it fail identically -- the same
-        // .knotAlignmentFailed -- on every network tried, including the simplest possible
-        // 2-straight-line-each-direction bilinear patch. That is very likely a real
-        // limitation of the bridge wrapper rather than of any particular fixture; filed as
-        // #689 and left unfixed here, since #645 is about coverage, not this wrapper. This
-        // test pins today's actual, specific, falsifiable behavior instead of accepting
-        // any non-.notStarted status.
+    @Test func networkSurfaceBuildsTheQuarterCylinderNetwork() {
+        // #689: `OCCTGeomFillNetworkSurface` used to fail EVERY network tried with
+        // .knotAlignmentFailed, including the simplest possible bilinear patch (see
+        // `networkSurfaceBuildsASimpleBilinearPatch` below), and not because the intersection
+        // grid was wrong: the locator parameters it handed GeomFill_NetworkSurface were a
+        // caller-invented [0,1] fraction rather than each curve's own raw parameter in
+        // the OTHER family's domain, which `alignSurfaces`' `sameKnotRange` check requires to
+        // match before it will align anything. Fixed by computing real per-pair contact points
+        // and parameters via `GeomAPI_ExtremaCurveCurve` and averaging them the way
+        // `GeomFill_Gordon.cxx` does. This fixture is the hardest in the suite, with genuinely
+        // rational profile curves (quarter-circle arcs), and now reproduces the reference
+        // cylinder despite the intersection grid's weights all being 1.0, because
+        // `makeCorrectedProfileSkin`'s rational branch combines the already-rational profile
+        // and guide skins independently of that weight.
         guard let network = makeQuarterCylinderGordonNetwork() else {
             Issue.record("quarter-cylinder network fixture failed to build"); return
         }
         let (surface, status) = Surface.networkSurface(profiles: network.profiles, guides: network.guides,
                                                         tolerance: 1e-6)
-        #expect(status == .knotAlignmentFailed)
-        #expect(surface == nil)
+        #expect(status == .done)
+        guard let surface else {
+            Issue.record("networkSurface returned nil despite .done"); return
+        }
+        assertMatchesQuarterCylinder(surface)
+    }
+
+    @Test func networkSurfaceBuildsASimpleBilinearPatch() throws {
+        // The issue's own simplest repro: two straight, non-rational lines each direction,
+        // forming a flat 10x10 square. Before #689 this failed identically to every other
+        // fixture tried, despite being a perfect, error-free network: proof the defect was
+        // the parameter DOMAIN, not curve intersection accuracy (the naive uniform-fraction
+        // grid this bridge already computed for a bilinear rectangle happens to be exactly
+        // right; only the locator parameters handed alongside it were wrong).
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .done)
+        guard let surface else {
+            Issue.record("networkSurface returned nil despite .done"); return
+        }
+        let bounds = surface.parameterBounds
+        let mid = surface.point(atU: (bounds.uMin + bounds.uMax) / 2, v: (bounds.vMin + bounds.vMax) / 2)
+        #expect(abs(mid.x - 5) < 1e-9)
+        #expect(abs(mid.y - 5) < 1e-9)
+        #expect(abs(mid.z - 0) < 1e-9)
+    }
+
+    @Test func networkSurfaceParallelCurvesDoNotCrash() throws {
+        // A malformed network, a "guide" running parallel to the profiles instead of
+        // crossing them, reaches the same `GeomAPI_ExtremaCurveCurve` construction
+        // `Curve3D.extrema` uses, which SIGSEGVs on parallel curves with overlapping projected
+        // ranges at every capacity (#636: `NbExtrema()` reports 1 but `Points()`/`Parameters()`
+        // index an empty sequence, and this Release kernel disables the bounds check that would
+        // otherwise throw `Standard_OutOfRange`). Confirmed via a standalone ground-truth
+        // binary linked directly against `libOCCT-macos.a` (mirroring PR #730's own
+        // verification for #636): the same construction crashes with SIGSEGV when
+        // `Points()`/`Parameters()` are called unconditionally, and returns cleanly once gated
+        // on `IsParallel()`. This is the regression lock for that guard. It does not
+        // reproduce the crash (that would take down the whole test process); it asserts the
+        // guarded call keeps returning a real, non-crashing result instead.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
+        // Both "guides" run parallel to the profiles (along X, overlapping their projected
+        // range) instead of crossing them: not a valid network, but not a crash either.
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 5, 0), SIMD3(10, 5, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 6, 0), SIMD3(10, 6, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        // Not asserting a specific status: the point of this test is that the process is still
+        // running to make the assertion at all. A malformed network failing is expected; a
+        // malformed network crashing the host process is the bug #636's guard prevents.
+        #expect(status != .notStarted)
+        _ = surface
     }
 
     @Test func networkSurfaceTooFewCurves() {
