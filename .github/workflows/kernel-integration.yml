@@ -7,6 +7,17 @@ name: Kernel Integration
 # regression (#585, surfaced by #519). This workflow only runs when Scripts/patches/ or the build
 # script itself changes, builds OCCT from source with those patches applied, and runs swift test
 # against that binary instead of the pinned release.
+#
+# Two jobs, not one (#727). The trigger paths above and the xcframework cache key below are the
+# same condition, so every run this workflow is designed to do is by construction a first-time
+# cache miss: there is no run where the ~79-minute build is skipped. With build and test as one
+# job, `actions/cache`'s save runs as an automatic post step queued for the end of the job, after
+# every other step, so a job cancelled by its own timeout partway through `swift test` skips that
+# post step entirely (reported "skipped", not "cancelled") and discards a build that already
+# finished successfully. Retrying reruns the same build, times out at the same place, forever.
+# Splitting the build into its own job means the build has nothing left to run after it, so the
+# cache save is no longer hostage to the test job's runtime, and each job gets a timeout sized for
+# what it actually does.
 
 on:
   pull_request:
@@ -30,10 +41,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: swift test against patched kernel (macOS)
+  build-kernel:
+    name: build patched OCCT.xcframework (macOS)
     runs-on: macos-15
-    timeout-minutes: 90
+    # Measured 79 min for a cache-miss build (#727). 120 leaves a ~50% margin without also
+    # masking a genuine hang the way a much larger number would.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
 
@@ -47,23 +60,25 @@ jobs:
       # runs, so caching the half-built tree would just restore an unusable cache every time (same
       # gotcha as caching a local build directory across sibling checkouts on one machine). The key
       # is the patch set plus the build script itself, so a pinned-OCCT-version bump also
-      # invalidates it.
-      - name: Cache OCCT.xcframework
+      # invalidates it. The swift-test job below restores the same key; it is computed the same way
+      # in both jobs (not passed as a job output) because both check out the same commit, so
+      # hashFiles() is guaranteed to agree.
+      #
+      # restore/save as two explicit steps, not the combined actions/cache action, so the save runs
+      # immediately after the build finishes rather than as an automatic post step queued for the
+      # end of the job (see the top-of-file comment for why that distinction is the fix for #727).
+      # This job now has nothing after the build, so plain actions/cache would already close that
+      # gap in the ordinary case. The explicit save is defense in depth against the other way a
+      # run gets cut short: this workflow's own `concurrency.cancel-in-progress`, which cancels the
+      # whole in-progress run (both jobs) if a new commit lands on the same ref while the build is
+      # still going. `if: always()` still runs a step after a cancellation signal, which a
+      # not-yet-started automatic post step does not get.
+      - name: Restore OCCT.xcframework cache
         id: occt-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: Libraries/OCCT.xcframework
           key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
-
-      - name: Cache SwiftPM artifacts
-        uses: actions/cache@v6
-        with:
-          path: |
-            .build
-            ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-spm-kernel-${{ hashFiles('Package.swift') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-kernel-
 
       # The one third-party product this build enables (every other USE_* is OFF). Without it cmake
       # fails configure outright with "Could not find headers of used third-party products".
@@ -74,6 +89,51 @@ jobs:
       - name: Build OCCT from source (cache miss only)
         if: steps.occt-cache.outputs.cache-hit != 'true'
         run: ./Scripts/build-occt.sh
+
+      - name: Save OCCT.xcframework cache
+        if: always() && steps.occt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: Libraries/OCCT.xcframework
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+
+  swift-test:
+    name: swift test against patched kernel (macOS)
+    needs: build-kernel
+    runs-on: macos-15
+    # The equivalent suite takes 7-13 min in ci.yml, which downloads a prebuilt kernel rather than
+    # restoring this job's cache; 30 min covers that plus checkout/restore overhead with margin,
+    # without reintroducing the ~11-minute budget #727 measured.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      # Always a cache hit in normal operation: build-kernel above just saved this exact key, and
+      # `needs:` means this job does not start unless that job succeeded. fail-on-cache-miss turns
+      # an unexpected miss (e.g. GitHub evicting the entry between the two jobs) into a clear error
+      # instead of silently falling through to a missing Libraries/OCCT.xcframework three steps
+      # later at `swift test`.
+      - name: Restore OCCT.xcframework cache
+        uses: actions/cache/restore@v6
+        with:
+          path: Libraries/OCCT.xcframework
+          key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
+          fail-on-cache-miss: true
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-kernel-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-kernel-
 
       # OCCTSWIFT_LOCAL=1, not Package.swift's auto-detect. The step above restores
       # ~/Library/Caches/org.swift.swiftpm, which caches the manifest *evaluation* — including the

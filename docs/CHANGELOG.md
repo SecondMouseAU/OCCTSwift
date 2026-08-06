@@ -15,6 +15,41 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `kernel-integration.yml` no longer discards a successful 79-minute build on timeout (#727)
+
+The workflow's trigger paths (`Scripts/patches/**`, `Scripts/build-occt.sh`) and its xcframework
+cache key (`hashFiles` of those same two globs) were the same condition, so every run the workflow
+exists to do was, by construction, a first-time cache miss: there was no run where the ~79-minute
+build could be skipped. With build and `swift test` as one job, `actions/cache`'s save runs as an
+automatic post step queued for the end of the job; a job cancelled by its own `timeout-minutes`
+partway through `swift test` never reaches that post step, so it reports **skipped**, not
+cancelled, discarding a build that had already finished successfully one step earlier. Measured on
+PR #718's job 92538270414: 79 min to build OCCT (success), 10 min into `swift test` before the
+90-minute job timeout fired (cancelled), cache save skipped. Retrying reruns the same build and
+times out at the same place, so there was no path to green by re-running.
+
+Split into two jobs: `build-kernel` builds and caches `Libraries/OCCT.xcframework`
+(`timeout-minutes: 120`, roughly 50% margin over the measured 79 min), and `swift-test` (`needs:
+build-kernel`, `timeout-minutes: 30`) restores that cache and runs `swift test` against it. The
+build job now has nothing left to run after the build, so its cache save is no longer hostage to
+the test job's runtime, and each job's timeout matches what it actually does instead of both
+sharing one 90-minute budget. The xcframework reaches the second job only through `actions/cache`,
+never `actions/upload-artifact`: the two jobs compute the same cache key independently (`hashFiles`
+of the same commit each checks out), rather than passing it as a job output.
+
+The build job's own cache handling also moved from the combined `actions/cache` action to explicit
+`actions/cache/restore` plus `actions/cache/save` (the latter `if: always()`), placed immediately
+after the build step instead of left as an automatic post step. Splitting the job already closes
+the main gap; this closes a narrower, related one the split does not: this workflow's own
+`concurrency.cancel-in-progress` cancels the *whole* in-progress run, both jobs, if a new commit
+lands on the same ref while the build is still going, and an `if: always()` step still gets a
+chance to run after that cancellation signal, unlike a not-yet-started automatic post step.
+
+**Verified**: the two-job workflow parses and its `workflow_dispatch` trigger is reachable.
+**Not verified in this change**: a real cache-miss run start to finish, the ~80-minute cost this fix
+exists to stop wasting, had not completed by the time the PR was opened. See the PR description for
+exactly what ran and what remained outstanding.
+
 ### `derive-bridge-header-split.py` now verifies each declaration is in the header its `.mm` owns (#673)
 
 `--verify` only ever asked whether every declared bridge function maps to exactly one `.mm` file,
