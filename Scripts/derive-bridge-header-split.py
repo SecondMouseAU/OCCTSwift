@@ -105,9 +105,17 @@ def compute(mm_texts, header_texts):
                  reported for that second header even though a correct declaration
                  exists elsewhere.
     """
-    definitions = {mm: set(DEFN.findall(text)) for mm, text in mm_texts.items()}
+    # Comment-stripped on every path, not just the misfiled one. `declared` and `definitions`
+    # scanned raw text until #673's review pointed out they carry the identical false-positive
+    # shape this script's own `home` computation was hardened against: a symbol named only inside
+    # a comment. In a header that reads as a spurious `declared` entry, and if nothing defines it,
+    # a false UNMAPPED; in a `.mm` it makes one file look like a second definer, a false AMBIGUOUS.
+    # The umbrella header's cross-reference index block is exactly the shape that would do it.
+    # Today's tree is clean either way, so this is hardening rather than a fix, but leaving one of
+    # three scans raw while hardening the other two is the inconsistency that lets it come back.
+    definitions = {mm: set(DEFN.findall(strip_comments(text))) for mm, text in mm_texts.items()}
 
-    concatenated = "".join(header_texts.values())
+    concatenated = strip_comments("".join(header_texts.values()))
     declared = set(DECL.findall(concatenated)) - set(TYPEDEF.findall(concatenated))
 
     mapping, ambiguous, unmapped = {}, {}, []
@@ -199,6 +207,32 @@ SELF_TEST = [
             "OCCTBridge_B.h": "/* mentions OCCTFooA(void) here too */\n",
         },
         lambda mapping, ambiguous, unmapped, misfiled: not misfiled,
+    ),
+    (
+        # The review of #673 noted the six cases above all exercise the `home`/misfiled path,
+        # which was hardened against comment mentions, while `declared` and `definitions` scanned
+        # raw text and carried the identical shape. These two cover that, one per scan.
+        "a symbol named only in a header comment is not declared (#673 review)",
+        {"OCCTBridge_A.mm": "void OCCTFooA(void) {}\n"},
+        {
+            "OCCTBridge_A.h": "void OCCTFooA(void);\n",
+            # OCCTGoneAway is defined by nothing. Counted as declared, it is a false UNMAPPED.
+            "OCCTBridge_B.h": "// index: SomeClass -> OCCTGoneAway(void), retired in v1.9\n",
+        },
+        lambda mapping, ambiguous, unmapped, misfiled: not unmapped and "OCCTGoneAway" not in mapping,
+    ),
+    (
+        "a symbol named only in a .mm comment does not make it a second definer (#673 review)",
+        {
+            "OCCTBridge_A.mm": "void OCCTFooA(void) {}\n",
+            # A mention, not a definition, inside a BLOCK comment whose inner line begins with
+            # the identifier. A `//` line cannot reach DEFN at all, which is anchored at ^ with
+            # [A-Za-z_], so a `//` fixture here would pass with or without stripping and prove
+            # nothing. This shape does reach it.
+            "OCCTBridge_B.mm": "/* dispatch notes:\nvoid OCCTFooA(void) handles the planar case\n*/\n",
+        },
+        {"OCCTBridge_A.h": "void OCCTFooA(void);\n"},
+        lambda mapping, ambiguous, unmapped, misfiled: not ambiguous and mapping.get("OCCTFooA") == "OCCTBridge_A.h",
     ),
 ]
 
