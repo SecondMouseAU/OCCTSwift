@@ -104,15 +104,28 @@ constructor, now confirmed for a curve arriving by this second route too. Added 
 Full method, the guard-removal matrix and the triage are in
 `Scripts/repro/cluster-c-null-handle-shapes/README.md`.
 
+NOW ALSO TAUGHT (follow-up, same PR): the constructor-init connector, `Handle(Geom_Curve) c2d(
+BRep_Tool::CurveOnSurface(...));` - #656's exact shape, written with parens instead of `=`. The
+false-positive direction two paragraphs below (`Handle(Geom_Curve) w(wrapper->curve);` defeating
+the WRAPPER-ARGUMENT alias binding) is a different code path (`aliases()`, not `LOCAL_HANDLE_DECL`)
+and is UNCHANGED by this - a local sourced from a wrapper's own field and a local sourced from
+`BRep_Tool::` are tracked by two different mechanisms, and only the second gained paren support
+here. Also added: a dedicated fixture for the `occ::handle<>` spelling as a LOCAL declaration
+(previously only exercised as a helper's parameter type, fixture R) - the regex already covered it,
+but nothing had proven that for a local until now. Zero real occurrences of either form motivated
+both; see the census README for the measurement and the extended guard-removal matrix.
+
 STILL NOT TAUGHT, DELIBERATELY, AND STILL BLIND: every item in the list above (non-dominating
 guard, negated guard, partial-path helper, `(*cast).field`, reference-to-wrapper alias) applies
 just as much to a `BRep_Tool::`-sourced local, and none has a known instance in this tree today.
 Also still blind: a `BRep_Tool::` handle carried through one more level of copy (`Handle(Geom_Curve)
-tmp = c3d;`) rather than used directly, and any locally-obtained handle whose producer is not
-spelled `BRep_Tool::` - a different OCCT accessor with the same null-for-valid-topology contract
-would not be caught by this walk. Enumerating that wider set was explicitly out of scope for this
-pass; the census README's method section says why `BRep_Tool::` specifically, not "every OCCT
-call", was the line drawn.
+tmp = c3d;`) rather than used directly, any locally-obtained handle whose producer is not spelled
+`BRep_Tool::` - a different OCCT accessor with the same null-for-valid-topology contract would not
+be caught by this walk - and the `extern "C" { ... }` block form (as opposed to the per-function
+prefix this PR does handle), which would need to widen `FUNC`'s notion of "outside a function" to
+cover a whole enclosing block rather than one definition line. Enumerating the wider producer set
+was explicitly out of scope for this pass; the census README's method section says why
+`BRep_Tool::` specifically, not "every OCCT call", was the line drawn.
 
 A FIFTH ALIAS FORM, FOUND BUT NOT TAUGHT: `OCCTBridge_Surface.mm` has nine sites shaped
 `const Handle(Geom_Curve)& x = *(const Handle(Geom_Curve)*)wrapperParam;` (and its `occ::handle<>`
@@ -260,10 +273,14 @@ HANDLE_PARAM = re.compile(r'(?:occ::handle\s*<|\bHandle\s*\()')
 # accessor rather than a wrapper argument - the #656 shape. `BRep_Tool::` is a deliberate
 # allowlist, not "any call": see the module docstring for why (672 candidates unrestricted, 63
 # once narrowed to the accessor family OCCT documents as legitimately null-returning).
+# The connector between the name and the producer is `=` (the assignment form) or `(` (the
+# constructor-init form, `Handle(Type) name(BRep_Tool::Whatever(...));`) - #656's exact shape,
+# written with parens instead of `=`. Both spellings, both connectors: four surface forms, one
+# regex, since only the text between `name` and `BRep_Tool::` differs.
 LOCAL_HANDLE_DECL = re.compile(
     r'\b(?:Handle\s*\(\s*(Geom_Curve|Geom2d_Curve|Geom_Surface)\s*\)|'
     r'occ::handle\s*<\s*(Geom_Curve|Geom2d_Curve|Geom_Surface)\s*>)'
-    r'\s+(\w+)\s*=\s*(BRep_Tool::\w+)\s*\(')
+    r'\s+(\w+)\s*(?:=|\()\s*(BRep_Tool::\w+)\s*\(')
 
 
 def strip_comments(text):
@@ -633,6 +650,29 @@ bool OCCTFixtureO(OCCTSurfaceRef surf, OCCTShapeRef faceRef) {
             return surf->IsUPeriodic();
         }
     } catch (...) { return false; }
+}'''),
+    # #666 follow-up: the constructor-init connector. LOCAL_HANDLE_DECL required `name =
+    # BRep_Tool::...(`; this is #656's exact shape written with parens instead - `name(BRep_Tool::
+    # ...(`. The module docstring already warned this spelling defeats the wrapper-argument walk's
+    # alias binding; it applied equally here and was unaddressed until now.
+    ('local handle from BRep_Tool::, constructor-init paren syntax (the #656 shape, no `=`)', '''
+double OCCTFixtureT(OCCTShapeRef edgeRef, OCCTShapeRef faceRef) {
+    try {
+        double first, last;
+        Handle(Geom2d_Curve) c2d(BRep_Tool::CurveOnSurface(edgeRef->shape, faceRef->shape, first, last));
+        return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
+    } catch (...) { return 0.0; }
+}'''),
+    # #666 follow-up: the `occ::handle<>` spelling had never been exercised for a LOCAL
+    # declaration (only for a helper's parameter type, fixture R) - the regex already covered it,
+    # but nothing proved that until this fixture.
+    ('local handle from BRep_Tool::, occ::handle<> spelling, unguarded', '''
+double OCCTFixtureU(OCCTShapeRef edgeRef) {
+    try {
+        double first, last;
+        occ::handle<Geom_Curve> curve = BRep_Tool::Curve(edgeRef->shape, first, last);
+        return curve->FirstParameter();
+    } catch (...) { return 0.0; }
 }'''),
 ]
 

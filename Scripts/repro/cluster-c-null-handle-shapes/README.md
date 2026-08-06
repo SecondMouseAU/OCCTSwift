@@ -138,6 +138,48 @@ named this with "zero occurrences today," confirmed still true by grep - this is
 not a live finding. Real report is unchanged (0 unguarded, same 62/63 split); a dedicated MISSED
 fixture (`extern "C" int OCCTFixtureN(...)`) is what proves the parser can now see through it.
 
+### Shape 3 (follow-up, maintainer-approved, same PR): the constructor-init connector and the `occ::handle<>` fixture gap
+
+Two hardening fixes to `local_handle_sites()` added after the maintainer's own review measured
+both against the real tree and found **zero occurrences of either**, which is why they land here
+rather than as a separate PR: neither can turn the gate red, and the cost is one regex alternation
+plus two fixtures.
+
+**Finding 1: the constructor-init connector.** `LOCAL_HANDLE_DECL` required `name = BRep_Tool::
+...(`. It never matched `name(BRep_Tool::...(` - #656's exact shape, written with parens:
+
+```cpp
+Handle(Geom2d_Curve) c2d(BRep_Tool::CurveOnSurface(edgeRef->shape, faceRef->shape, first, last));
+return BRepTools::EvalAndUpdateTol(edgeRef->shape, c2d, first, last);
+```
+
+The module docstring already warned this exact spelling defeats the WRAPPER-ARGUMENT alias binding
+(`Handle(Geom_Curve) w(wrapper->curve);`, `aliases()`'s own blind spot, unrelated to and unchanged
+by this fix) - it applied equally to the new local-handle mechanism and was simply not checked
+there before this pass. Fixed by widening the connector between the variable name and the producer
+call from `=` to `(?:=|\()`, which handles both forms with one alternation since the text after the
+connector (`BRep_Tool::Whatever(`) is identical either way.
+
+**Finding 2: `occ::handle<>` had no fixture for a LOCAL declaration.** The regex and docstring both
+claimed `occ::handle<Geom_Curve> curve = BRep_Tool::Curve(...)` is tracked identically to the
+`Handle(Geom_Curve)` spelling - and it already was, correctly, with no code change needed - but no
+fixture had ever exercised that spelling for a local; the existing `occ::handle<>` fixture (S, the
+bridge-helper one) only uses it for a helper's *parameter* type. Per this PR's own measure-before-
+you-trust standard, an untested claim of coverage is not coverage. Added a dedicated fixture.
+
+Measured before writing either fixture, per the maintainer's own zero-site claim:
+
+```
+local, BRep_Tool producer, constructor-init paren form      : 0 occurrences
+occ::handle<> local declaration with a BRep_Tool producer    : 0 occurrences
+```
+
+Confirmed. Real report stayed at 0 unguarded, same 24 `ALLOWED` entries, both before and after -
+teaching either shape reported nothing new, exactly as the zero-site measurement predicted.
+
+Self-test 19/19 -> 21/21 (two new MISSED fixtures, `T` and `U`); guard-removal proof for both is
+in the extended matrix below.
+
 ### Found, deliberately not taught: a fifth alias form, with three real, live SIGSEGVs
 
 While confirming there was nothing else obviously in scope for #644 (Cluster C's own arity
@@ -208,6 +250,38 @@ confirm the new path actually depends on them rather than merely being adjacent 
 distinction Cluster A's own audit drew between guards J/K (real, but only ever exercised by
 `self_test()`'s own bypass) and guards A/D/G/L (real and load-bearing on the actual corpus).
 
+### Extended: the Shape 3 follow-up (constructor-init connector, `occ::handle<>` local fixture)
+
+Same method, run against the tree with fixtures `T` and `U` added (21 total cases). Both rows below
+are measured against this 21-case baseline, not the 19-case one above:
+
+| guard removed | self-test | FAILS | real report |
+|---|---|---|---|
+| (none, baseline, post follow-up) | 21/21 | | 0 unguarded (same 24 `ALLOWED` entries) |
+| constructor-init connector narrowed back to `=` only | 20/21 | `local handle from BRep_Tool::, constructor-init paren syntax (the #656 shape, no =)` | unchanged (0 real occurrences either way - the maintainer's zero-site measurement holds) |
+| `occ::handle<>` alternative removed from `LOCAL_HANDLE_DECL` | 20/21 | `local handle from BRep_Tool::, occ::handle<> spelling, unguarded` | unchanged (0 real occurrences either way) |
+
+Both rows are single-case failures with no real-report change, exactly as the maintainer's own
+zero-site measurement predicted before either fixture was written - neither shape was a live
+finding, both were pure fixture-coverage gaps.
+
+**A near-miss while building the removal test for the second row, worth recording since it is
+exactly the failure mode this whole exercise exists to catch.** `LOCAL_HANDLE_DECL` has two
+alternative type-spelling groups (`Handle(Type)` is group 1, `occ::handle<Type>` is group 2), so
+removing the `occ::handle<>` alternative shifts every later group index down by one everywhere the
+match is read. The first removal attempt patched `local_handle_sites()`'s own `m.group(3)`/
+`m.group(4)` reads but missed the scope fence's `later.group(3)` comparison a few lines below -
+which silently degraded into comparing a variable name against a producer name, never matching, so
+the scope fence stopped firing for every redeclaration case. That produced a false "1 unguarded,
+CHANGED" result and an unrelated CLEAN-case failure, which would have been read as "removing
+`occ::handle<>` support somehow also breaks the scope fence" - a plausible-sounding but wrong
+conclusion. Fixing the second reference (`later.group(2)`) reproduced the two-guard-removal
+harness correctly, giving the clean, single-case-failure result the table reports. Not a defect in
+the shipped checker - `local_handle_sites()` itself only ever reads `m.group(3)`/`m.group(4)`
+against the REAL, unmodified `LOCAL_HANDLE_DECL`, where the group numbering is fixed and correct -
+only in the throwaway ad hoc removal script built to test it, which is precisely why the *fixed*
+version of the removal test, not the first draft, is what belongs in this table.
+
 ## Which of #636 / #643 / #644 the upgraded checker catches
 
 **None of the three.** This is the expected, correct answer, not a shortfall: none of the three is
@@ -274,6 +348,15 @@ actually a null-handle-guard defect in the bridge.
   named members turned out to need no checker change to explain (#636, #644) or were already
   bridge-side mitigated (#643); the fifth alias form and its three live SIGSEGVs were not on
   anyone's list going in.
+- **The Shape 3 follow-up's own zero-site measurement held, but the verification harness built to
+  prove it needed its own fix first.** The maintainer's pre-review measurement (0 occurrences of
+  both the constructor-init and `occ::handle<>`-local forms) was independently reproduced before
+  either fixture was written, and both post-fixture guard-removal rows confirm it: single-case
+  self-test failures, zero real-report change. The one wrinkle was in the removal *test* itself, not
+  the shipped detector - see the extended guard-removal matrix's note on the `occ::handle<>` group-
+  index near-miss. Recorded because it is a small, concrete instance of exactly the risk
+  `okf/policies/prove-the-test-fails.md` warns about: a removal check that looks right on first
+  read can still be measuring the wrong thing.
 
 ## Does this belong in the shared `Censuses` target too?
 
