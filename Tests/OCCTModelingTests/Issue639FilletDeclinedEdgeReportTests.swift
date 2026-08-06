@@ -182,4 +182,39 @@ struct Issue639FilletDeclinedEdgeReport {
             #expect(!record.generated.isEmpty)
         }
     }
+
+    /// The review noted no case drove a **duplicate** requested edge through a `WithReport` method,
+    /// which is also the semantics nit 1 documents: `declinedEdgeIndices` mirrors the request list
+    /// rather than deduplicating it, so a declined edge named twice is reported twice.
+    ///
+    /// Pinning it matters because the alternative, silently deduplicating, is the more "obvious"
+    /// implementation and would make the count stop matching how many entries of the caller's list
+    /// were refused.
+    @Test("A declined edge named twice is reported twice, matching the request list")
+    func declinedEdgeNamedTwiceIsReportedTwice() {
+        guard let shell = Self.openShell() else {
+            Issue.record("could not build the open-shell fixture")
+            return
+        }
+        let edges = shell.edges()
+        guard let declined = Self.declinedIndices.first, declined < edges.count else {
+            Issue.record("fixture has no declined edge to duplicate")
+            return
+        }
+        // An accepted edge has to be in the list too. Requesting only declined edges leaves
+        // nothing to fillet, so Build() fails and the call returns nil with no report to read,
+        // which is a different behaviour and not the one under test here.
+        guard let accepted = (0..<edges.count).first(where: { !Self.declinedIndices.contains($0) }) else {
+            Issue.record("fixture has no accepted edge")
+            return
+        }
+        let doubled = [edges[declined], edges[declined], edges[accepted]]
+        guard let report = shell.filletedWithReport(edges: doubled, radius: 0.5) else {
+            Issue.record("filletedWithReport returned nil for the duplicated declined edge")
+            return
+        }
+        #expect(report.declinedEdgeIndices.count == 2,
+                "expected the decline reported once per request entry, got \(report.declinedEdgeIndices)")
+        #expect(Set(report.declinedEdgeIndices) == [declined])
+    }
 }

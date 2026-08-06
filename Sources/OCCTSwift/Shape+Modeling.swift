@@ -67,6 +67,10 @@ extension Shape {
         public let shape: Shape
         /// 0-based indices, matching ``Edge/index``, of the requested edges OCCT declined to
         /// fillet. Empty when every requested edge was accepted.
+        ///
+        /// This mirrors the request list rather than deduplicating it: naming the same declined
+        /// edge twice reports it twice, so the count matches how many entries of the caller's list
+        /// were refused. Use `Set(declinedEdgeIndices)` for distinct edges.
         public let declinedEdgeIndices: [Int]
     }
 
@@ -83,7 +87,8 @@ extension Shape {
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - radius: Fillet radius; must be > 0
-    /// - Returns: Filleted shape, or nil on failure, including an edge that is not this shape's
+    /// - Returns: Filleted shape, or nil on failure, including when the list names an edge that is not
+    ///   this shape's.
     public func filleted(edges: [Edge], radius: Double) -> Shape? {
         guard !edges.isEmpty, radius > 0 else { return nil }
 
@@ -119,7 +124,8 @@ extension Shape {
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - radius: Fillet radius; must be > 0
-    /// - Returns: A ``FilletResult``, or nil on failure, including an edge that is not this shape's
+    /// - Returns: A ``FilletResult``, or nil on failure, including when the list names an edge that is not
+    ///   this shape's.
     public func filletedWithReport(edges: [Edge], radius: Double) -> FilletResult? {
         guard !edges.isEmpty, radius > 0 else { return nil }
 
@@ -157,7 +163,8 @@ extension Shape {
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - startRadius: Radius at start of each edge; must be > 0
     ///   - endRadius: Radius at end of each edge; must be > 0
-    /// - Returns: Filleted shape, or nil on failure, including an edge that is not this shape's
+    /// - Returns: Filleted shape, or nil on failure, including when the list names an edge that is not
+    ///   this shape's.
     public func filleted(edges: [Edge], startRadius: Double, endRadius: Double) -> Shape? {
         guard !edges.isEmpty, startRadius > 0, endRadius > 0 else { return nil }
 
@@ -183,7 +190,8 @@ extension Shape {
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - startRadius: Radius at start of each edge; must be > 0
     ///   - endRadius: Radius at end of each edge; must be > 0
-    /// - Returns: A ``FilletResult``, or nil on failure, including an edge that is not this shape's
+    /// - Returns: A ``FilletResult``, or nil on failure, including when the list names an edge that is not
+    ///   this shape's.
     public func filletedWithReport(edges: [Edge], startRadius: Double, endRadius: Double) -> FilletResult? {
         guard !edges.isEmpty, startRadius > 0, endRadius > 0 else { return nil }
 

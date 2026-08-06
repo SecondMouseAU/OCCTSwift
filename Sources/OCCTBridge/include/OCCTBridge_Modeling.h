@@ -270,7 +270,9 @@ OCCTShapeRef OCCTDrawingGetEdges(OCCTDrawingRef drawing, OCCTEdgeType edgeType);
 ///   `edgeIndices`, that OCCT declined to fillet (#639) -- a free-boundary edge, e.g. Must have
 ///   capacity >= edgeCount when non-NULL.
 /// @param outDeclinedCount Optional (may be NULL): set to the number of entries written to
-///   `declinedEdgeIndices`, or 0 if the call fails before OCCT is touched.
+///   `declinedEdgeIndices`. **Read it only when the returned shape is non-NULL.** It is zeroed on
+///   entry, so an early failure leaves 0, but a Build() failure returns NULL with the count already
+///   written, and that count describes a shape the caller never receives.
 /// @return Filleted shape, or NULL on failure
 OCCTShapeRef OCCTShapeFilletEdges(OCCTShapeRef shape, const int32_t* edgeIndices,
                                    int32_t edgeCount, double radius,
