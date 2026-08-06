@@ -241,6 +241,23 @@ shape-based sibling `OCCTBRepGraphEdgeMaxContinuity`'s own comment names as the 
 -- reports `[0, 6, 0]` for the identical cylinder's three edges. The graph path is not reporting a
 boring C0; it cannot report anything else.
 
+**It is blocked upstream, not merely unattended**, which changes what the follow-up is. The comment
+directly above the stub says so:
+
+> OCCT 8.0.0p1: edge continuity is conceptually the `BRepGraph_LayerRegularity` layer, but that
+> class is broken in p1 (uncompilable header, absent from `libOCCT`), so the graph path is
+> unavailable. Use the shape-based `Shape.maxContinuity` (`BRep_Tool::MaxContinuity`) instead.
+
+Measured against the pinned `V8_0_1` rather than the p1 that comment describes, and it is **stronger
+than the comment says**: `BRepGraph_LayerRegularity` is not broken there, it is **absent**. Zero
+files under `Libraries/occt-src` match the name, zero source files reference it, and it is not in
+the shipped `OCCT.xcframework` headers.
+
+So the follow-up is not "write the implementation" and not "re-check whether it compiles". The class
+does not exist in the kernel this tree pins, so the graph path cannot be implemented at all until
+upstream adds it. That makes the honest-stub doc comment the whole of the near-term work, and the
+implementation an upstream question rather than a local one.
+
 This is #513's one live defect that has NOT been fixed since #513 was filed (`FilletBuilder.
 setContinuity` and `OCCTThruSectionsSetContinuity` were, as part of #490's own PR). It has also not
 been given the honest-stub documentation treatment its sibling `OCCTBRepGraphSetEdgeRegularity` /
