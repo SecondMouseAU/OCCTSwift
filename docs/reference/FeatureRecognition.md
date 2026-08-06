@@ -347,7 +347,25 @@ Detects pocket features in the shape by AAG analysis.
 public func detectPockets() -> [PocketFeature]
 ```
 
-A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) that floor has at least one concave-edge neighbor; (3) the concave neighbors are vertical faces (walls). Results are sorted by ascending `zLevel` (deepest pocket first).
+A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) that floor has at least one concave-edge neighbor; (3) the concave neighbors are vertical faces (walls); (4) each such wall's own bounding-box minimum Z matches the floor's Z (#724), meaning the wall must actually rest ON that floor, not merely open past it. Results are sorted by ascending `zLevel` (deepest pocket first).
+
+Requirement (4) exists because a wall's own exterior opening can satisfy (1)-(3) too: the exterior
+surface a pocket opens through is upward-facing, horizontal and planar exactly like the real floor,
+and its rim edge to the wall can classify concave in the same cases a real floor's does (a curved
+wall's rim commonly does, pending #723's replacement of `OCCTEdgeGetConvexity`'s formula). Without
+(4), a single blind cylindrical pocket reported **two** pockets: the real floor at the bottom of
+the bore, and the box's own top face at the wall's other end, for what is physically one cavity. A
+floor is always the low end of the walls that rise from it; a wall's high end is where it opens,
+never where it floors. This does not depend on any edge's classification being correct, only on
+the floor actually sitting at the bottom of its own walls, which is a geometric fact independent of
+#723.
+
+```swift
+let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+let cut  = box.subtracting(tool)!
+print(cut.detectPocketsAAG().count)   // 1, not 2 (#724)
+```
 
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**

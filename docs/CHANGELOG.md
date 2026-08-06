@@ -15,6 +15,52 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `detectPocketsAAG()` no longer double-counts a single pocket's floor (#724)
+
+A single blind cylindrical pocket reported two pockets instead of one:
+
+```swift
+let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+let cut  = box.subtracting(tool)!
+print(cut.detectPocketsAAG().count)   // was 2, now 1
+```
+
+Ground truth for this solid, from OCCT's own classifier `ChFi3d::DefineConnectType`: 13 convex
+edges, 1 concave (the bore's floor meeting its cylindrical wall), 1 tangential (the cylinder's own
+seam). One concave edge joining a wall to a floor is one pocket.
+
+This was a grouping defect, not a classification one, and is independent of #703 above and of
+#723 (in flight separately, replacing `OCCTEdgeGetConvexity`'s formula with
+`ChFi3d::DefineConnectType`): `AAG.detectPockets()` selects a floor candidate on
+`isUpward && isHorizontal && isPlanar` plus at least one concave, vertical neighbor, with no check
+that the neighbor is actually resting on that floor rather than merely touching it somewhere along
+its height. A curved wall's rim, where it meets the exterior surface it opens through, can
+classify concave under the current formula even after #703's face1/face2 fix, since that fix
+addressed a planar/planar order-dependence and left a planar/cylindrical pair's classification
+unchanged. The box's own top face satisfies the floor predicate exactly as well as the real floor
+does, and once its rim edge to the bore's wall is (wrongly) concave, it is indistinguishable from a
+second, shallower floor sharing the same wall.
+
+**Fixed**: a wall only counts toward a given floor candidate if the wall's own bounding-box minimum
+Z matches that floor's Z, within a tolerance far tighter than any real pocket depth and far looser
+than bounding-box noise on an exact primitive. A pocket floor is upward-facing, so it is always the
+low end of the walls that rise from it; a wall's high end is where it opens, whether to the
+exterior, to a shallower pocket's floor, or to open air, never to a floor of its own. This holds
+regardless of whether the wall's rim classified concave for a legitimate reason or a wrong one, so
+the fix does not depend on #723 landing and will not need revisiting when it does.
+
+**Migration note**: `detectPocketsAAG()`/`AAG.detectPockets()` can now report fewer pockets, and a
+`PocketFeature.wallFaceIndices` can now be shorter, for any shape where a wall's rim classified
+concave without the wall actually bottoming out at that candidate floor. A genuine multi-wall
+pocket, where every wall shares the same floor Z, is unaffected: measured on the existing
+square-pocket fixtures (`Issue703EdgeConvexityOrderTests`, `Shape.detectPocketsAAG()`'s own doc
+example), the pocket count and each wall count are unchanged. One known limitation, not exercised
+by any fixture in this codebase: a filleted floor/wall junction would round the wall's bounding box
+past the floor's own Z by roughly the fillet radius, which could exceed the tolerance.
+
+Tests: `Tests/OCCTModelingTests/Issue724PocketGroupingFloorTests.swift` (new).
+
 ### `OCCTEdgeGetConvexity` no longer depends on which face is passed first (#703)
 
 Found via Cluster A's census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`) while
