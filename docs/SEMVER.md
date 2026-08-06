@@ -17,13 +17,13 @@ The policy is calibrated to the [SemVer 2.0.0](https://semver.org/) spec with on
 | **MINOR** (`x.y.0`) | xcframework rebuild against a new OCCT release **OR** additive new public Swift API | A new wrapped operation, a new type, a new bridge function exposed to Swift |
 | **PATCH** (`x.y.z`) | Bug fix, internal refactor, doc-only — **no public API surface change** | A `nil`-returning regression repaired, a wrong sort-order fixed, a dependency floor bump |
 
-The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **fourteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
+The load-bearing guarantee is the SemVer guarantee: **no breaking change without a major bump**. Within a major line, all minor and patch updates are safe to take blindly, with **thirteen** recorded exceptions. Three of them **do not compile** until the caller acts, so an upgrade cannot silently absorb them:
 
 - [v1.17.0](#recorded-exception-v1170-2026-07-29) breaks source compatibility in two named places.
 - [#495](#recorded-exception-unreleased--junction-analysis-flags-become-optional-495) in one, making junction-analysis flags optional.
 - [#619](#recorded-exception-unreleased-continuityorder-is-retired-rather-than-reinterpreted-619) retires `Curve3D.continuityOrder`, `Curve2D.continuityOrder` and `Surface.surfaceContinuityOrder` outright — deliberately, to convert a change that had already happened to their *values* into one a caller cannot miss.
 
-The other eleven change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
+The other ten change behaviour **without breaking the build**, which is the set to read before upgrading blindly:
 
 - [#499](#recorded-exception-unreleased-pathparser-forwards-to-osdpath-499) changes what two deprecated `PathParser` methods return.
 - [#541](#recorded-exception-unreleased-one-meaning-for-a-face-index-541) moves six sub-shape index conventions onto one.
@@ -35,7 +35,6 @@ The other eleven change behaviour **without breaking the build**, which is the s
 - [#651](#recorded-exception-unreleased-nbedgesnbfacesnbvertices-are-deprecated-and-forward-to-the-deduplicated-count-651) deprecates `Shape.nbEdges`/`nbFaces`/`nbVertices` in favour of `edgeCount`/`faceCount`/`vertexCount`, and changes what the deprecated three return on the way.
 - [#699](#recorded-exception-unreleased-aag-adjacency-and-convexity-are-scoped-to-one-solid-699) restricts `AAG`'s adjacency/convexity checks to same-solid face pairs, further changing what `detectPocketsAAG()` can return on a multi-solid compound: the same public API #642 already named, corrected further rather than a new one opened.
 - [#705](#recorded-exception-unreleased-chamfer2d-refuses-a-repeated-edge-pair-instead-of-crashing-705) makes `chamfer2D(edgePairs:distances:)` return `nil` on a repeated edge pair; it used to SIGSEGV the process, uncatchably.
-- [#598](#recorded-exception-unreleased-pipesweepmodefrenet-and-correctedfrenet-were-wired-to-each-others-occt-mode-598) swaps which OCCT trihedron law `PipeSweepMode.frenet` and `.correctedFrenet` actually build, since they were wired to each other's mode.
 
 A fourteenth was **not** taken: [#609](#held-for-the-next-major-v200)'s twelve breaks are held for v2.0.0 instead.
 
@@ -402,61 +401,6 @@ The exception was taken because:
 - Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
   notes.
 
-#### Recorded exception: Unreleased, `PipeSweepMode.frenet` and `.correctedFrenet` were wired to each other's OCCT mode (#598)
-
-**One behaviour change, not a compile error.** `BRepOffsetAPI_MakePipeShell::SetMode`'s own
-parameter is named `IsFrenet`, and its header says so: "If IsFrenet is false, a corrected Frenet
-trihedron is used." `occtPipeShellSetMode` (`OCCTBridge_Modeling.mm`) passed the opposite boolean
-for both cases, so `PipeSweepMode.frenet` built a corrected-Frenet sweep and `.correctedFrenet`
-built a plain Frenet one, straight through every public `Shape.pipeShell*` entry point.
-`.frenet` is the default `mode:` value on all three, so this affected every caller who never
-named a mode at all, not only one who asked for `.frenet` explicitly. Recorded here before the
-tag is cut:
-
-| Break | What a caller does |
-|---|---|
-| `Shape.pipeShell(...)`, `pipeShellMultiSection(...)` and the deprecated `pipeShellWithTransition(...)` now build the trihedron their `mode:` name actually says, for `.frenet` and `.correctedFrenet` | Nothing on a spine with no torsion (a straight line, or any spine without curvature reversing), where the two trihedron laws coincide and the swap was silent. On a spine with genuine curvature/torsion, a caller who relied on the old (wrong) geometry, by name or by taking the `.frenet` default, gets a different, now-correct, solid. Measured on a curved B-spline spine: `.frenet` moves from 180.286724 to 177.347557, `.correctedFrenet` moves from 177.347557 to 180.286724, the two values trade places exactly, because the fix is the swap corrected |
-
-The exception was taken, over retiring the two cases and forcing a compile error (the #619/#651
-pattern), because:
-
-- **The names were never ambiguous; the wiring was wrong.** `PipeSweepMode.frenet`'s and
-  `.correctedFrenet`'s own doc comments ("Standard Frenet trihedron", "avoids twisting at
-  inflection points") already state the correct, unchanged meaning, unlike `continuityOrder`
-  (#619), whose *value* legitimately meant two different things across a refactor. There is
-  nothing to rename these two cases to; the fix makes each one build what its existing name
-  already said, so `unavailable` would have nowhere useful to point a caller.
-- **There is no numeric-comparison hazard for this to hide behind.** #619's compile error was
-  forced specifically because a silently reinterpreted ordinal fed a threshold comparison
-  (`continuityOrder >= 2`) that kept type-checking and silently took the wrong geometric branch.
-  `PipeSweepMode` is a plain enum with no `RawValue` and no `Comparable` conformance: a caller can
-  only name a case, never compare or threshold one, so the specific silent-wrong-branch mechanism
-  #619 exists to prevent cannot occur here.
-- **Retiring would have meant inventing new names for the same two concepts**, since OCCT only
-  offers these two trihedron laws and the Swift API already names them correctly. Unlike `nbEdges`
-  (#651), which had an existing, better-named sibling (`edgeCount`) to deprecate in favour of,
-  there is no third name to forward `.frenet`/`.correctedFrenet` to: the "fix" a retirement would
-  prompt a caller to make is rewriting `.frenet` as `.frenet`, which teaches nothing.
-- **On the shapes most existing tests and call sites use, nothing moves.** Measured directly: a
-  straight spine (`Wire.line`) produces byte-identical volumes for `.frenet` and `.correctedFrenet`
-  both before and after this fix, because a spine with no torsion cannot distinguish the two
-  trihedron laws, pinned by
-  `Issue598PipeShellFrenetModeTests.theTwoModesAgreeOnASpineWithNoTorsion`, which stays green with
-  the defect deliberately reinjected. Every existing pipe-shell test and cookbook recipe in this
-  repo that hardcodes a numeric literal uses either a straight spine, a rotationally-symmetric
-  circular profile (immune to trihedron twist by construction), or a non-Frenet mode
-  (`.fixed(binormal:)`, `.auxiliary(spine:)`) untouched by this bug; only one existing literal
-  (`Issue503PipeShellTests.fixedBinormalDiffersFromFrenet`'s pinned `.frenet` volume) needed
-  updating, from 180.286724 to 177.347557.
-- **Verified against an independent oracle, not a second copy of the same mistake.**
-  `PipeShellBuilder.setFrenet(_:)` calls `BRepFill_PipeShell::Set(frenet)` directly and was never
-  affected by this bug (`OCCTPipeShellSetFrenet` is a separate bridge function from
-  `occtPipeShellSetMode`). `Issue598PipeShellFrenetModeTests` measures `Shape.pipeShell(mode:)`
-  against `PipeShellBuilder`'s output on the identical spine/profile and requires them to agree,
-  rather than pinning a literal that could coincidentally match a still-wrong implementation.
-- Named in [`CHANGELOG.md`](CHANGELOG.md) with the measurement, and to be named in the release
-  notes.
-
 #### #639: additive fillet decline reporting, not an exception
 
 **Recorded here per #664's own rule of writing a public-API change down in this file before the
@@ -482,6 +426,41 @@ Two of the issue's own named members (`filletedWithFullHistory(radius:edges:)`,
 same question, documented in this PR with a runnable recipe rather than given new bridge code. See
 [`CHANGELOG.md`](CHANGELOG.md#the-fillet-family-could-not-report-a-declined-edge-only-skip-it-silently-639)
 for the full measurement and the reasoning against converging fillet's SKIP behaviour onto reject.
+
+#### #633: additive blend-duplicate reporting, not an exception
+
+**Recorded here for the same reason #639 immediately above is: a public-API change written down
+now, not because this one is a recorded exception.** `blendedEdges(_:)` gained a `WithReport`
+sibling, `blendedEdgesWithReport(_:)`, returning the same `Shape.FilletResult` #639 introduced,
+now carrying a second field: `overwrittenDuplicateIndices`, the 0-based edge indices whose radius a
+later entry in the same request silently overwrote (#633).
+
+This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
+unchanged by this entry, for the same reason #639's did not: no existing method's signature or
+behaviour changed. `blendedEdges(_:)` still returns exactly what it always did, for exactly the
+same inputs -- last-wins, silently, on a duplicated edge index -- and a caller who never calls
+`blendedEdgesWithReport(_:)` sees no difference at all. This is the **MINOR**, additive Swift API
+case the quick reference table already names.
+
+Adding `overwrittenDuplicateIndices` to the existing `FilletResult` struct, rather than a second
+result type, follows #639's own recommendation for this issue and the standing lesson #490 already
+drew from a family of near-identical continuity mappers: one struct, extended, not a parallel
+encoding of the same idea started fresh. It is a purely additive struct change: a `let` property
+with a default is not exposed on Swift's synthesized memberwise init (only a `var` with a default
+is), so `FilletResult` now carries an explicit `public init` with the new field defaulted to `[]`
+-- every existing call site (`filletedWithReport(edges:radius:)`,
+`filletedWithReport(edges:startRadius:endRadius:)`, `filletEvolvingWithReport(_:)`) compiles
+unchanged and reads an empty array for a field none of the three has a duplicate axis to populate.
+
+**The fillet/chamfer first-wins/last-wins asymmetry itself is unchanged and not addressed here.**
+`Scripts/repro/cluster-b-fillet-edge-contract/` measured the wider family as internally consistent
+but split in *opposite* directions (fillet last-wins, chamfer first-wins) -- converging the two onto
+one direction was considered and rejected for the same reason #639 rejected reject-over-skip:
+it would change what an existing call returns for every input that currently succeeds, which is a
+bigger and more disruptive decision than this issue's own defect (a silent discard with no
+signal). See
+[`CHANGELOG.md`](CHANGELOG.md#blendededges-reports-which-duplicate-entries-were-overwritten-633)
+for the full measurement and the injection matrix proving the new report.
 
 ### MINOR — `x.y.0`
 

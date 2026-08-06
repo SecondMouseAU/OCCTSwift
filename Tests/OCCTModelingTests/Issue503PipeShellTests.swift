@@ -16,6 +16,9 @@ struct Issue503PipeShellTests {
     /// Curved enough that Frenet, corrected Frenet and a fixed binormal all disagree.
     /// A straight spine will not do: with no torsion the modes coincide, which is how the
     /// silent fall-through survived a test suite that only ever swept straight lines.
+    ///
+    /// Not private: Issue598PipeShellFrenetModeTests (same target) reuses this fixture directly
+    /// rather than keeping a byte-for-byte copy the two files could silently drift apart on.
     static func curvedSpine() -> Wire? {
         Wire.bspline([SIMD3(0, 0, 0), SIMD3(10, 5, 0), SIMD3(20, -5, 10), SIMD3(30, 0, 10)])
     }
@@ -235,7 +238,9 @@ struct Issue503PipeShellTests {
     }
 }
 
-private extension Double {
+// Not private: Issue598PipeShellFrenetModeTests (same target) reuses this rather than
+// reimplementing the same scale-relative tolerance formula a third time.
+extension Double {
     func isApproximatelyEqual(to other: Double, tolerance: Double) -> Bool {
         abs(self - other) <= tolerance * Swift.max(1.0, abs(self), abs(other))
     }
