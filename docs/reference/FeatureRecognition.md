@@ -25,7 +25,9 @@ public enum EdgeConvexity: Int32, Sendable {
 }
 ```
 
-Maps to `OCCTEdgeConvexity` from the bridge. The classification is computed by `OCCTEdgeGetConvexity` using `BRepAdaptor_Surface` surface normals and each face's own area centroid (`BRepGProp::SurfaceProperties`) at the edge midpoint: specifically, whether a point deep inside one face falls on the material or void side of the other face's tangent plane, averaged over both faces so the result cannot depend on which one the caller passed as `face1` versus `face2` (#703; an earlier formula, the sign of `(tangent × n1) · n2`, silently depended on that argument order).
+Maps to `OCCTEdgeConvexity` from the bridge. The classification is computed by `OCCTEdgeGetConvexity`, which calls OCCT's own classifier, `ChFi3d::DefineConnectType`: the same one the fillet and chamfer builders use to decide which edges they can round or bevel (#723). It samples the LOCAL dihedral at the edge midpoint: each face's normal there (from its pcurve's `D1` evaluation) against the edge tangent, reporting the identical classification regardless of which face the caller passes as `face1` versus `face2`.
+
+Before #723 this used each face's own GLOBAL area centroid (`BRepGProp::SurfaceProperties`) as a stand-in for "which side is material": whether a point deep inside one face fell on the material or void side of the other face's tangent plane, averaged over both faces for the same order-independence `ChFi3d` now gives natively. That formula (#703, replacing an even earlier one, the sign of `(tangent × n1) · n2`, that silently depended on argument order) drifted with face proportions: a through-hole rim could classify concave or convex purely as a function of plate thickness, since a cylindrical wall's centroid moves as the wall gets taller while the rim geometry itself never changes.
 
 `OCCTEdgeGetConvexity` (like `OCCTFacesAreAdjacent`) has no notion of which solid `face1`/`face2` belong to; it is `AAG.buildGraph()` that restricts which pairs reach it to occurrences sharing a solid (#699). Called directly on two faces from different solids the result is not meaningful for either, see `AAG`, below.
 
@@ -112,10 +114,10 @@ Constructs the AAG by traversing all face-occurrence pairs in the shape.
 public init(shape: Shape)
 ```
 
-Calls `buildGraph()` which reads `shape.orientedFaces()`, computes each occurrence's own area centroid once via `OCCTFaceGetAreaCentroid` (`BRepGProp::SurfaceProperties`, adaptive integration) before the pairwise loop, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface` + the two precomputed centroids, #703). The centroids are computed once per occurrence rather than once per adjacent pair so a face with K neighbors pays for one whole-face integration, not K (PR #720's review of #703, finding 7).
+Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`ChFi3d::DefineConnectType`, #723). Unlike the #703/#720 centroid formula this replaced, `ChFi3d::DefineConnectType` needs no per-face integration, since it samples the local dihedral directly, so there is nothing to precompute or cache before the pairwise loop.
 
 - **Parameters:** `shape` — the solid to analyse. Works best on closed solids.
-- **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `BRepAdaptor_Surface` + `BRep_Tool::CurveOnSurface` + `BRepGProp::SurfaceProperties` (convexity).
+- **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `ChFi3d::DefineConnectType` (convexity).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 5)!

@@ -39,6 +39,8 @@
 #include <NCollection_DynamicArray.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <GeomAbs_Shape.hxx>
+#include <ChFi3d.hxx>
+#include <ChFiDS_TypeOfConcavity.hxx>
 
 
 // === Extracted BRepGraph block ===
@@ -3084,119 +3086,55 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
     }
 }
 
-OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2,
-                                        double centroid1X, double centroid1Y, double centroid1Z,
-                                        double centroid2X, double centroid2Y, double centroid2Z) {
+OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2) {
     if (!shape || !edge || !face1 || !face2) return OCCTEdgeConvexitySmooth;
 
-    // #720 review of #703, findings 2/7/9: a caller with no reliable centroid for a face (an
-    // area too small to trust, see OCCTFaceGetAreaCentroid, or one it chose not to compute)
-    // signals that with NaN rather than some sentinel coordinate a real centroid could coincide
-    // with. Falling back to Smooth here matches every other "can't classify this edge" guard in
-    // this function.
-    if (std::isnan(centroid1X) || std::isnan(centroid1Y) || std::isnan(centroid1Z) ||
-        std::isnan(centroid2X) || std::isnan(centroid2Y) || std::isnan(centroid2Z)) {
-        return OCCTEdgeConvexitySmooth;
-    }
-
     try {
-        // Get the edge curve and midpoint
-        BRepAdaptor_Curve edgeCurve(edge->edge);
-        double midParam = (edgeCurve.FirstParameter() + edgeCurve.LastParameter()) / 2.0;
-        gp_Pnt midPt = edgeCurve.Value(midParam);
-        
-        // Get surface adapters
-        BRepAdaptor_Surface surf1(face1->face);
-        BRepAdaptor_Surface surf2(face2->face);
-        
-        // Project point onto surfaces to get UV parameters
-        Standard_Real u1, v1, u2, v2;
-        
-        // Use edge parameters on face - find the PCurve
-        Standard_Real f, l;
-        Handle(Geom2d_Curve) pcurve1 = BRep_Tool::CurveOnSurface(edge->edge, face1->face, f, l);
-        Handle(Geom2d_Curve) pcurve2 = BRep_Tool::CurveOnSurface(edge->edge, face2->face, f, l);
-        
-        if (pcurve1.IsNull() || pcurve2.IsNull()) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        
-        // Get UV at midpoint
-        gp_Pnt2d uv1 = pcurve1->Value(midParam);
-        gp_Pnt2d uv2 = pcurve2->Value(midParam);
-        
-        u1 = uv1.X(); v1 = uv1.Y();
-        u2 = uv2.X(); v2 = uv2.Y();
-        
-        // Get normals at those points
-        gp_Pnt p1, p2;
-        gp_Vec d1u, d1v, d2u, d2v;
-        surf1.D1(u1, v1, p1, d1u, d1v);
-        surf2.D1(u2, v2, p2, d2u, d2v);
-        
-        gp_Vec n1 = d1u.Crossed(d1v);
-        gp_Vec n2 = d2u.Crossed(d2v);
-        
-        if (n1.Magnitude() < 1e-10 || n2.Magnitude() < 1e-10) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        
-        n1.Normalize();
-        n2.Normalize();
-        
-        // Account for face orientation
-        if (face1->face.Orientation() == TopAbs_REVERSED) {
-            n1.Reverse();
-        }
-        if (face2->face.Orientation() == TopAbs_REVERSED) {
-            n2.Reverse();
-        }
-        
-        // #703: convexity is a property of the edge with respect to the solid, not of which face
-        // the caller happens to pass as face1 vs face2. The formula this replaced -- the sign of
-        // (tangent x n1).n2, a scalar triple product of the edge tangent and the two normals --
-        // swaps two of its three terms when face1/face2 swap, which negates a triple product, so
-        // the same physical edge reported opposite convexity depending on argument order alone.
-        // That reproduced on a single, uncut convex box (no compound needed): two of the four
-        // side-wall-to-top-face dihedrals came out concave purely because of index order, which is
-        // what fed the false pocket #703 measured (#664's census, "Update following #699's fix").
+        // #723: OCCT already ships a convexity classifier, ChFi3d::DefineConnectType, and it is
+        // the one the fillet/chamfer builder itself calls (ChFi3d_Builder_1.cxx:930, with
+        // CorrectPoint=true, the call this mirrors) to decide which edges it can round or bevel.
+        // It samples the LOCAL dihedral at the edge midpoint: each face's normal there (from its
+        // pcurve's D1 evaluation) against the edge tangent, and needs no area integration at all.
         //
-        // Fixed sign, built to be symmetric under that swap rather than merely observed to be:
-        // take a point well inside each face -- its area centroid, away from this edge -- and see
-        // which side of the OTHER face's tangent plane (at the edge midpoint) it falls on, using
-        // that face's own outward normal. A point deep in face1 landing on face2's material side
-        // (a negative dot with face2's outward normal) means the two faces wrap around the solid
-        // at this edge: convex. Landing on face2's void side means the solid recedes here:
-        // concave. Doing this both ways -- face1's centroid against n2, and face2's centroid
-        // against n1 -- and averaging makes swapping face1/face2 relabel the same two terms
-        // rather than change their sum, so the result cannot depend on argument order by
-        // construction, not only on the fixtures this was checked against.
+        // Replaces the formula #703/#720 built and fixed here: that formula used each face's
+        // GLOBAL area centroid as a stand-in for "which side is material", which drifts with face
+        // proportions. #723 measured the residual directly: a through-hole rim classified concave
+        // or convex depending on plate thickness alone, since the cylindrical wall's centroid moves
+        // as the wall gets taller while the rim geometry itself never changes, the same failure
+        // class #703 fixed (a geometric answer depending on something that isn't the local
+        // geometry), re-parameterised. `ChFi3d::DefineConnectType` reports the identical
+        // classification for (face1, face2) and (face2, face1) by construction (it derives the
+        // edge tangent from each face's own pcurve rather than combining the two orientations), so
+        // #703's order-independence requirement holds with no centroid argument needed, and #720's
+        // caching (this function used to take precomputed centroids so AAG.buildGraph() didn't pay
+        // for a whole-face SurfaceProperties integration per adjacent pair) has nothing left to do.
         //
-        // #720 review of #703, finding 7: this used to call BRepGProp::SurfaceProperties on
-        // face1/face2 directly, so a face with K neighbors paid for K redundant whole-face
-        // integrations building one AAG (measured a 7-12x slowdown on a 134-face part; see
-        // OCCTFaceGetAreaCentroid's doc comment). The centroids are now the caller's job, computed
-        // once per face occurrence and passed in.
-        gp_Vec towardCentroid1(midPt, gp_Pnt(centroid1X, centroid1Y, centroid1Z));
-        gp_Vec towardCentroid2(midPt, gp_Pnt(centroid2X, centroid2Y, centroid2Z));
+        // SinTol is literally sin(angular tolerance) by this API's own convention
+        // (BRepOffset_Analyse::Perform: `SinTol = std::abs(std::sin(Angle))`); reusing the previous
+        // formula's smoothThreshold (0.01, "~0.5 degrees") keeps the same practical tangency
+        // tolerance rather than introducing a new number (asin(0.01) ~= 0.57 degrees).
+        const double smoothThreshold = 0.01;
+        ChFiDS_TypeOfConcavity connectType =
+            ChFi3d::DefineConnectType(edge->edge, face1->face, face2->face, smoothThreshold, true);
 
-        if (towardCentroid1.Magnitude() < 1e-10 || towardCentroid2.Magnitude() < 1e-10) {
-            return OCCTEdgeConvexitySmooth;
-        }
-        towardCentroid1.Normalize();
-        towardCentroid2.Normalize();
-
-        double dot = (towardCentroid1.Dot(n2) + towardCentroid2.Dot(n1)) / 2.0;
-
-        // Threshold for smooth (nearly tangent)
-        const double smoothThreshold = 0.01;  // ~0.5 degrees
-        
-        if (std::abs(dot) < smoothThreshold) {
-            return OCCTEdgeConvexitySmooth;
-        } else if (dot > 0) {
-            return OCCTEdgeConvexityConcave;
-        } else {
-            return OCCTEdgeConvexityConvex;
+        switch (connectType) {
+            case ChFiDS_Concave:
+                return OCCTEdgeConvexityConcave;
+            case ChFiDS_Convex:
+                return OCCTEdgeConvexityConvex;
+            case ChFiDS_Tangential:
+                return OCCTEdgeConvexitySmooth;
+            case ChFiDS_FreeBound:
+            case ChFiDS_Other:
+            case ChFiDS_Mixed:
+            default:
+                // Same "can't classify this edge" fallback this function has always reported for
+                // an edge it can't resolve: ChFiDS_Other is returned when a face has no pcurve for
+                // this edge (this function's own null-pcurve guard, pre-#723); ChFiDS_Mixed is two
+                // spline faces whose local concavity itself isn't single-valued (ChFi3d.cxx's own
+                // "faces locally mixed" debug note); ChFiDS_FreeBound doesn't arise here since both
+                // faces are known to share this edge.
+                return OCCTEdgeConvexitySmooth;
         }
     } catch (...) {
         return OCCTEdgeConvexitySmooth;

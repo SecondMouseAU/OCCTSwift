@@ -63,3 +63,37 @@ itself, the same formula-change territory as #723, out of scope here. Swapping t
 `ChFi3d::DefineConnectType` (the reviewer's/verification comment's suggestion for #723) would also
 remove this overhead as a side effect, since it samples locally rather than integrating a whole
 face; worth noting for whoever picks that up, not a reason to do it in this PR.
+
+## Update following #723's fix
+
+#723 replaced the centroid formula with `ChFi3d::DefineConnectType` entirely, which removed the
+centroid caching this finding added (there is nothing left to precompute) along with the
+`OCCTFaceGetAreaCentroid` bridge call it depended on. Re-measured with the same method, a fresh
+throwaway `Shape.buildAAG()` timing fixture, `env -u OCCTSWIFT_BRIDGE_PREBUILT OCCTSWIFT_LOCAL=1
+swift test`, three runs per configuration, **built to the same description** (a 300x300x20mm
+plate, through-holes on a 16x16 grid, radius 5) but yielding 262 faces / 524 adjacent pairs, not
+this finding's 134/140: the exact hole radius and spacing were not recorded above, and this fixture
+does not reproduce them. The two are different fixtures at a similar scale, not the same one:
+
+| configuration | `buildAAG()` wall time (262 faces / 524 pairs) |
+|---|---|
+| #703 + this fix (centroid formula, cached) | 354 / 632 / 833 ms, 469 / 448 / 404 ms (two fresh builds) |
+| #723 (`ChFi3d::DefineConnectType`, no caching needed) | 113 / 110 / 112 ms, 185 / 156 / 155 ms (two fresh builds) |
+
+Every #723 run is faster than every cached-centroid run (min 110ms vs min 354ms, over 3x), even
+though this fixture is roughly double the face count of the one above, and both configurations show
+run-to-run variance consistent with ambient system load rather than the classifier itself: the
+gap between configurations is far larger than the gap between runs of the same configuration.
+`ChFi3d::DefineConnectType` needs no numerical integration at all (a handful of `D1` derivative
+evaluations per edge, the same order of cost as the pre-#703 tangent-plane formula this table's
+first row measured at 15ms on the smaller 134-face fixture), so this is the expected outcome, not a
+surprise: the caching this finding added existed only to make an expensive formula affordable, and
+#723 removed the expense instead.
+
+**A caveat on the absolute numbers**: unlike this finding's own table, these were measured on a
+machine also running other work, and a `git stash`/`stash pop` cycle between configurations was
+found to leave a stale, un-rebuilt `.o` on one occasion (SwiftPM's incremental build did not notice
+the restored source content had changed), caught only because the resulting timing matched the
+*other* configuration almost exactly, and fixed by forcing a rebuild (`touch` the changed sources)
+before every timed run. Anyone repeating this measurement should force a clean rebuild between
+configurations rather than trust an incremental one after restoring stashed changes.
