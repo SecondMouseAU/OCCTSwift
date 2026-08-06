@@ -85,12 +85,16 @@ extension Shape {
         /// `Set(overwrittenDuplicateIndices)` for distinct edges.
         public let overwrittenDuplicateIndices: [Int]
 
-        /// Explicit rather than the synthesized memberwise init: a `let` property with a default
-        /// value is fixed and dropped from Swift's synthesized memberwise init entirely (it is not
-        /// an overridable parameter, unlike a `var` with a default), so the three existing
-        /// `WithReport` call sites -- none of which have anything to say about a duplicate index --
-        /// need `overwrittenDuplicateIndices` to keep defaulting to empty without themselves
-        /// changing.
+        /// Explicit rather than the synthesized memberwise init, and the reason is this method,
+        /// not the three that came before it. A `let` property with a default value is dropped from
+        /// Swift's synthesized memberwise init entirely: it is not an overridable parameter the way
+        /// a `var` with a default is, so a caller **cannot pass it at all**.
+        ///
+        /// The three existing `WithReport` call sites would have compiled unchanged against the
+        /// synthesized init, silently taking the `[]` default, since none of them has anything to
+        /// say about a duplicate index. `blendedEdgesWithReport(_:)` is the first caller that needs
+        /// to pass a **non-default** value, and that is what the synthesized init structurally
+        /// cannot express.
         public init(shape: Shape, declinedEdgeIndices: [Int], overwrittenDuplicateIndices: [Int] = []) {
             self.shape = shape
             self.declinedEdgeIndices = declinedEdgeIndices
