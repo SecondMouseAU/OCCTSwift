@@ -22,7 +22,8 @@
 // and three of those nine are genuinely unguarded, reaching GeomFill_Profiler::AddCurve,
 // GeomFill_SectionGenerator::AddCurve (OCCTGeomFillAppSurf's own curve array - #644's own
 // function) and the GeomFill_SectionPlacement constructor with no IsNull() check at all. Measured
-// here, not fixed: see the census README's "Beyond the mandated scope" section for why.
+// here, not fixed: see the census README's "Found, deliberately not taught: a fifth alias form,
+// with three real, live SIGSEGVs" section for why.
 #include <GeomAdaptor_Curve.hxx>
 #include <GeomFill_Profiler.hxx>
 #include <GeomFill_SectionGenerator.hxx>
@@ -96,7 +97,11 @@ int main() {
         secGen.AddCurve(nullCurve);
         printf("      added ok\n");
     });
-    probe("GeomFill_SectionPlacement(loc, nullCurve) ctor            [OCCTGeomFillSectionPlacement]", [&] {
+    // Labelled ctor+Perform, not just ctor: the crash's exact origin within this body is not
+    // isolated (the probe forks the whole lambda, so a SIGSEGV anywhere inside it reads the same
+    // from outside). Matches OCCTGeomFillSectionPlacement's own call sequence (construct, then
+    // Perform, then IsDone) rather than claiming a narrower verdict than what was actually run.
+    probe("GeomFill_SectionPlacement(loc, nullCurve) ctor+Perform     [OCCTGeomFillSectionPlacement]", [&] {
         occ::handle<GeomFill_LocationDraft> loc = new GeomFill_LocationDraft(gp_Dir(0, 0, 1), 0.0);
         gp_Ax2 axes(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1));
         occ::handle<Geom_Curve> path = new Geom_Circle(axes, 5.0);

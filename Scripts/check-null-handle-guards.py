@@ -70,9 +70,12 @@ handle alias once declared - the same `classify()`, the same DownCast exclusion,
 guarding-helper exclusion - so a use before an `IsNull()` guard is reported the same way. Two things
 this needed that the wrapper-argument walk did not:
 
-  * A PRODUCER ALLOWLIST, NOT "ANY CALL". The RHS has to start with `BRep_Tool::` - the accessor
-    family OCCT documents as legitimately returning a null handle for ordinary topology (no 3D
-    curve; no pcurve on a given face). "Any local Handle initialised from any call" was tried first
+  * A PRODUCER ALLOWLIST, NOT "ANY CALL". The RHS has to start with `BRep_Tool::`. At least
+    `Curve` ("May be a Null handle") and `CurveOnSurface` ("Returns a NULL handle if this curve
+    does not exist") say so in `BRep_Tool.hxx` itself; `Surface(const TopoDS_Face&)` documents no
+    such thing ("Returns the geometric surface of the face"), and is tracked anyway as a
+    conservative over-approximation, not because OCCT promises a null there. "Any local Handle
+    initialised from any call" was tried first
     and matched 672 declarations tree-wide - mostly `new T(...)` (never null), a same-family
     `DownCast` (null-safe by construction, and this bridge's own established cloning idiom: `Handle
     (Geom_Curve) copy = Handle(Geom_Curve)::DownCast(c->curve->Copy());`), or a builder's
@@ -127,6 +130,27 @@ cover a whole enclosing block rather than one definition line. Enumerating the w
 was explicitly out of scope for this pass; the census README's method section says why
 `BRep_Tool::` specifically, not "every OCCT call", was the line drawn.
 
+FOUR MORE, SAME CLASS - `LOCAL_HANDLE_DECL` requires an explicit `Handle(Type)`/`occ::handle<Type>`
+spelling directly followed by a bare name and one of the two known connectors, so anything else
+between the type and the producer call is invisible, guarded or not:
+
+  * a deduced type: `auto c2d = BRep_Tool::CurveOnSurface(...);` - no type name for the regex to
+    anchor on at all. NOT hypothetical: `OCCTBRepToolCurveOnSurface` (`OCCTBridge_Topology.mm:3717`)
+    uses exactly this, already guarded in substance (`if (c2d.IsNull()) return nullptr;` the next
+    line) - safe today, invisible either way.
+  * a reference binding: `const Handle(Geom_Surface)& s = BRep_Tool::Surface(...);` - the `&`
+    sits exactly where the regex expects nothing but whitespace before the bare name. Zero
+    occurrences.
+  * global qualification: `::BRep_Tool::Curve(...)` - the leading `::` breaks the literal
+    `BRep_Tool::` anchor. Zero occurrences.
+  * a ternary initialiser: `Handle(Geom_Curve) c = cond ? BRep_Tool::Curve(...) : ...;` - anything
+    between the connector and `BRep_Tool::` breaks the immediate-adjacency the regex requires.
+    Zero occurrences.
+
+Not taught here: this is a documentation-accuracy pass over an already-shipped mechanism, not a
+new detection pass, and the one real instance found is already safe. Re-measure before assuming
+that stays true.
+
 A FIFTH ALIAS FORM, FOUND BUT NOT TAUGHT: `OCCTBridge_Surface.mm` has nine sites shaped
 `const Handle(Geom_Curve)& x = *(const Handle(Geom_Curve)*)wrapperParam;` (and its `occ::handle<>`
 spelling, used safely 12 more times elsewhere, always guarded) - a raw pointer reinterpretation
@@ -156,6 +180,17 @@ Two exclusions, both load-bearing:
     The mechanism's only real safeguard is that it lives in a tracked file, so an entry has to
     survive review. Re-measure before trusting an entry you did not write, and delete it rather
     than widen it when a function grows a new argument.
+
+    #666 made this coarser, not just still-coarse: the same key now ALSO exempts every
+    `local_handle_sites()` finding for that function, not only `unguarded_sites()`'s wrapper
+    arguments. `OCCTGeomFillCoonsAlgPatchEval` is the concrete cost, bounded but real: it passed
+    the wrapper-argument walk clean *before* #666 and was never in this table, so its new entry
+    (added for the local-handle finding) retroactively exempts wrapper-argument checking on that
+    function too - dead weight today only because the function happens to have no
+    `OCCTCurve3DRef`/`OCCTCurve2DRef`/`OCCTSurfaceRef` parameter to check, not because the table
+    knows that. State which walk (or walks) an entry was actually measured against in its reason,
+    going forward, so a reader can tell what a given entry does and does not cover without
+    re-deriving it from the function's signature.
 
 Usage (from the repo root):
 
@@ -247,11 +282,14 @@ ALLOWED = {
 
     # --- #666: a local handle fetched from BRep_Tool::, not a wrapper argument ---
     ('OCCTBridge_Surface.mm', 'OCCTGeomFillCoonsAlgPatchEval'):
-        'measured #666 (Scripts/repro/cluster-c-null-handle-shapes/probe_cluster_c.mm): '
-        'GeomAdaptor_Curve raises a catchable Standard_Failure on a null Handle(Geom_Curve), on '
-        'both the 1-arg and the 3-arg (trimmed) constructor - same verdict #618 already recorded '
-        'for OCCTExtremaExtCC, now confirmed for a curve obtained from BRep_Tool::Curve rather '
-        'than a wrapper argument',
+        'measured against local_handle_sites() only (this function has no OCCTCurve3DRef/'
+        'OCCTCurve2DRef/OCCTSurfaceRef parameter for unguarded_sites() to check, so this entry '
+        'costs nothing on that walk today, but see the docstring rule above this table for what '
+        'that would mean if it ever grew one): #666 '
+        '(Scripts/repro/cluster-c-null-handle-shapes/probe_cluster_c.mm), GeomAdaptor_Curve raises '
+        'a catchable Standard_Failure on a null Handle(Geom_Curve), on both the 1-arg and the '
+        '3-arg (trimmed) constructor - same verdict #618 already recorded for OCCTExtremaExtCC, '
+        'now confirmed for a curve obtained from BRep_Tool::Curve rather than a wrapper argument',
 }
 
 # extern "C" is tolerated ahead of the return type (#666): without it, a function defined that way
@@ -272,7 +310,8 @@ HANDLE_PARAM = re.compile(r'(?:occ::handle\s*<|\bHandle\s*\()')
 # #666: a local Handle of one of the three tracked types, freshly obtained from a BRep_Tool
 # accessor rather than a wrapper argument - the #656 shape. `BRep_Tool::` is a deliberate
 # allowlist, not "any call": see the module docstring for why (672 candidates unrestricted, 63
-# once narrowed to the accessor family OCCT documents as legitimately null-returning).
+# once narrowed to the `BRep_Tool::` accessor family - at least two of which document a null
+# return; the walk tracks the family conservatively rather than per-documented-function).
 # The connector between the name and the producer is `=` (the assignment form) or `(` (the
 # constructor-init form, `Handle(Type) name(BRep_Tool::Whatever(...));`) - #656's exact shape,
 # written with parens instead of `=`. Both spellings, both connectors: four surface forms, one
@@ -536,6 +575,18 @@ def local_handle_sites(sources, helpers):
       case's unguarded use (see the module docstring's G1) - or the reverse, an earlier unrelated
       guard on the same name wrongly "protects" a later, genuinely unguarded redeclaration (G2),
       which is why the use-window also starts at THIS declaration's own end, never before it.
+
+      The fence itself is textual, not scope-aware: a redeclaration inside a NESTED block still
+      ends the outer variable's window at that point, so a real use of the outer variable resuming
+      after the nested block closes goes untracked (both would have to be named the same for this
+      to matter at all); a non-initialising declaration (`Handle(Geom_Curve) x;`) or a plain
+      reassignment (`x = other;`) does not fence anything, since `LOCAL_HANDLE_DECL` only matches
+      an initialising declaration off a `BRep_Tool::` call. Also unguarded against: a mid-window
+      reassignment of the tracked name is itself picked up by the use-scan (there is no equivalent
+      of `unguarded_sites()`'s `spans` exclusion for "this occurrence merely binds/rebinds, it is
+      not a read"), so it can be misclassified as a use - a false-positive-only risk, the same
+      direction as a spurious report rather than a missed one. None of the four has a known
+      instance in this tree.
     """
     found = []
     for path, raw in sources:

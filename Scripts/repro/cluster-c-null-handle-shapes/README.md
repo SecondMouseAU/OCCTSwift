@@ -29,11 +29,17 @@ method is:
    construction, and this bridge's own established `Copy()`+`DownCast` cloning idiom), or a
    builder's post-success result accessor. None of those is #656's shape, and auditing 672 by hand
    would have been a bigger, less careful repeat of #618's own "blind to indirection" mistake with
-   a different indirection. Narrowing the producer to `BRep_Tool::` - the accessor family OCCT
-   documents as legitimately returning a null handle for ordinary topology (no 3D curve; no pcurve
-   on a given face) - cut it to 63 real declarations of the three tracked types
-   (`Handle(Geom_Curve)`/`Handle(Geom2d_Curve)`/`Handle(Geom_Surface)`, `occ::handle<>` spelling
-   included).
+   a different indirection. Narrowing the producer to `BRep_Tool::` cut it to 63 real declarations
+   of the three tracked types (`Handle(Geom_Curve)`/`Handle(Geom2d_Curve)`/`Handle(Geom_Surface)`,
+   `occ::handle<>` spelling included). At least two members of that family document the null
+   themselves - `BRep_Tool.hxx`'s `Curve` ("May be a Null handle") and `CurveOnSurface` ("Returns
+   a NULL handle if this curve does not exist") - but not all: `Surface(const TopoDS_Face&)`'s own
+   doc comment says only "Returns the geometric surface of the face," no null mentioned anywhere.
+   Tracking `Geom_Surface` through this walk anyway is the right conservative over-approximation -
+   #656's own defect involved `Surface` too, alongside `Curve` and `CurveOnSurface` - but the
+   claim should say what was verified, not what would be tidy: `BRep_Tool::` is tracked as a
+   family because that is the natural boundary this bridge's own accessor usage falls into, not
+   because every member of it documents a null return.
 3. **Reuse, don't reinvent, the existing classification.** Once a local is tracked, it goes through
    the exact same `classify()` - the same DownCast exclusion, the same guarding-helper exclusion -
    that the wrapper-argument walk already uses and this repo's prior censuses (#618, #624/#630)
@@ -200,7 +206,7 @@ PART 2: GeomFill_* family on a null Handle(Geom_Curve), the fifth alias form the
 
   GeomFill_Profiler().AddCurve(nullCurve)                  [OCCTGeomFillProfilerAddCurve]          SIGSEGV (uncatchable)
   GeomFill_SectionGenerator().AddCurve(nullCurve)          [OCCTGeomFillAppSurf, #644's own fn]     SIGSEGV (uncatchable)
-  GeomFill_SectionPlacement(loc, nullCurve) ctor            [OCCTGeomFillSectionPlacement]          SIGSEGV (uncatchable)
+  GeomFill_SectionPlacement(loc, nullCurve) ctor+Perform     [OCCTGeomFillSectionPlacement]          SIGSEGV (uncatchable)
 ```
 
 `OCCTGeomFillAppSurf` is **#644's own function** - and this is a genuinely different bug from the
