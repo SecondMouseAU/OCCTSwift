@@ -791,6 +791,28 @@ extension Curve3D {
     ///   represents that case as a single unbounded family of equidistant solutions rather than a
     ///   finite set of point pairs, so there is no `(point1, point2)` pair to report (#636). Use
     ///   ``minDistance(to:)`` to get the (well-defined) distance in that case.
+    ///
+    /// An empty array therefore means one of two different things, and this method cannot tell you
+    /// which: the curves are parallel, or they simply have no extremal relationship. If you need to
+    /// distinguish them, ``extremaCC(range1:other:range2:)`` returns a `CurveCurveExtrema` carrying
+    /// `isParallel` alongside the count, from the same underlying computation.
+    ///
+    /// ```swift
+    /// let a = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))!
+    /// let b = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0))!
+    ///
+    /// let pairs = a.extrema(with: b)              // [], but why?
+    /// if pairs.isEmpty {
+    ///     let info = a.extremaCC(other: b)
+    ///     print(info.isParallel)                  // true: an infinite equidistant family
+    ///     print(a.minDistance(to: b) ?? 0)        // 5.0, the well-defined separation
+    /// }
+    /// ```
+    ///
+    /// "Parallel" here is OCCT's own predicate, which is narrower than "the tangent directions are
+    /// parallel". Two parallel segments whose parameter ranges do not overlap have a single
+    /// well-defined nearest-endpoint pair; `isParallel` is false for them, and this method returns
+    /// that pair normally.
     public func extrema(with other: Curve3D, maxCount: Int = 20) -> [CurveExtremaResult] {
         let maxCount = Sampling.capacity(maxCount)
         guard maxCount > 0 else { return [] }

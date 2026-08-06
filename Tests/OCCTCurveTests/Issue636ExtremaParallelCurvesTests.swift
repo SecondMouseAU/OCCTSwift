@@ -31,10 +31,31 @@ import Foundation
 @Suite("Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)")
 struct Issue636ExtremaParallelCurvesTests {
 
+    /// The two crashing shapes, defined once. `minDistanceUnaffectedByTheGuard` below exercises the
+    /// same geometry as the two tests above it, and the point of that test is that it is the same
+    /// geometry, so the fixtures are shared rather than copied. Copies drift: tighten one and the
+    /// test asserting the contrast silently starts contrasting something else.
+    ///
+    /// Both pairs are 5.0 apart, which every distance assertion here depends on.
+    private static let parallelOffset = 5.0
+
+    private static func unboundedParallelLines() throws -> (Curve3D, Curve3D) {
+        (try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))),
+         try #require(Curve3D.line(through: SIMD3(0, parallelOffset, 0), direction: SIMD3(1, 0, 0))))
+    }
+
+    /// Bounded, and their projected ranges OVERLAP, which is the condition that makes
+    /// `Extrema_ExtCC` report a solution it never stored. Disjoint ranges are a different case:
+    /// `IsParallel()` returns false for those and the endpoint solution is real, so they are not a
+    /// fixture for this bug. See the suite's own note and PR #730's verification comment.
+    private static func overlappingParallelSegments() throws -> (Curve3D, Curve3D) {
+        (try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))),
+         try #require(Curve3D.segment(from: SIMD3(0, parallelOffset, 0), to: SIMD3(10, parallelOffset, 0))))
+    }
+
     @Test("Two unbounded parallel lines: extrema is empty, not a crash")
     func parallelUnboundedLinesReturnEmpty() throws {
-        let a = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
-        let b = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let (a, b) = try Self.unboundedParallelLines()
 
         #expect(a.extrema(with: b).isEmpty)
         #expect(a.extrema(with: b, maxCount: 1).isEmpty)
@@ -43,8 +64,7 @@ struct Issue636ExtremaParallelCurvesTests {
 
     @Test("Two bounded parallel segments with overlapping projected ranges: extrema is empty")
     func parallelBoundedSegmentsReturnEmpty() throws {
-        let a = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
-        let b = try #require(Curve3D.segment(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)))
+        let (a, b) = try Self.overlappingParallelSegments()
 
         #expect(a.extrema(with: b).isEmpty)
     }
@@ -55,15 +75,28 @@ struct Issue636ExtremaParallelCurvesTests {
     /// `mypoints` sequence, so it needs no guard and must keep reporting the real distance.
     @Test("minDistance(to:) keeps reporting the true offset for the same parallel pairs")
     func minDistanceUnaffectedByTheGuard() throws {
-        let a = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
-        let b = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let (a, b) = try Self.unboundedParallelLines()
         let d = try #require(a.minDistance(to: b))
-        #expect(abs(d - 5.0) < 1e-9)
+        #expect(abs(d - Self.parallelOffset) < 1e-9)
 
-        let s1 = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
-        let s2 = try #require(Curve3D.segment(from: SIMD3(0, 5, 0), to: SIMD3(10, 5, 0)))
+        let (s1, s2) = try Self.overlappingParallelSegments()
         let sd = try #require(s1.minDistance(to: s2))
-        #expect(abs(sd - 5.0) < 1e-9)
+        #expect(abs(sd - Self.parallelOffset) < 1e-9)
+    }
+
+    /// The case PR #730's review argued was silently regressed by the guard, measured and kept as a
+    /// regression lock. Two parallel segments whose projected ranges are DISJOINT have one real
+    /// nearest-endpoint solution, and `IsParallel()` returns false for them, so the guard never
+    /// fires and that solution is still returned. If a future change widens the guard to test
+    /// tangent direction rather than trusting `IsParallel()`, this goes red.
+    @Test("Parallel segments with disjoint ranges keep their real endpoint solution")
+    func disjointParallelSegmentsStillReportTheirEndpointSolution() throws {
+        let a = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
+        let b = try #require(Curve3D.segment(from: SIMD3(20, 5, 0), to: SIMD3(30, 5, 0)))
+
+        #expect(!a.extrema(with: b).isEmpty)
+        let d = try #require(a.minDistance(to: b))
+        #expect(abs(d - hypot(10.0, 5.0)) < 1e-6)   // (10,0,0) to (20,5,0)
     }
 
     @Test("Non-parallel curves are unaffected: extrema still reports real solutions")
@@ -72,5 +105,24 @@ struct Issue636ExtremaParallelCurvesTests {
         let b = try #require(Curve3D.line(through: SIMD3(5, -5, 1), direction: SIMD3(0, 1, 0)))
         let result = a.extrema(with: b)
         #expect(!result.isEmpty)
+    }
+}
+
+/// Compiles and runs the doc snippet on `Curve3D.extrema(with:maxCount:)` verbatim. A doc snippet
+/// that does not compile is the documentation equivalent of a pinned value nobody measured (#726),
+/// and this one asserts specific numbers.
+@Suite("The extrema doc snippet is runnable and its printed values are true (#636)")
+struct Issue636ExtremaDocSnippetTests {
+    @Test("the snippet's API calls resolve and its stated values hold")
+    func snippetHolds() throws {
+        let a = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let b = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+
+        let pairs = a.extrema(with: b)
+        #expect(pairs.isEmpty)
+
+        let info = a.extremaCC(other: b)
+        #expect(info.isParallel)
+        #expect(abs((a.minDistance(to: b) ?? 0) - 5.0) < 1e-9)
     }
 }
