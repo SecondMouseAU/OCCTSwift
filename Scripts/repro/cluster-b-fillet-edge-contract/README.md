@@ -57,7 +57,7 @@ python3 Scripts/repro/cluster-b-fillet-edge-contract/classify_fillet_sites.py --
 |---|---|---|---|---|---|
 | fillet-edges | `filleted(edges:radius:)` | N/A: uniform radius (dup 991.415927 == single 991.415927) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) -- **#639 fixed**: `filletedWithReport(edges:radius:)` sibling reports `declinedEdgeIndices` | REJECT (nil) |
 | fillet-linear | `filleted(edges:startRadius:endRadius:)` | N/A: uniform law (dup 990.523733 == single 990.523733) | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) -- **#639 fixed**: `filletedWithReport(edges:startRadius:endRadius:)` sibling reports `declinedEdgeIndices` | REJECT (nil) |
-| fillet-edges (per-edge radius) | `blendedEdges(_:)` | **OVERWRITE: last radius wins** (dup 946.349541 == last-only 946.349541, != first-only 991.415927) -- #633 | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) | REJECT (nil) |
+| fillet-edges (per-edge radius) | `blendedEdges(_:)` | **OVERWRITE: last radius wins** (dup 946.349541 == last-only 946.349541, != first-only 991.415927) -- **#633 fixed**: `blendedEdgesWithReport(_:)` sibling reports `overwrittenDuplicateIndices` | REJECT (nil) | SKIP (non-nil, area 465.097336 vs unfilleted 500.000000) -- **#633 fixed**: the same sibling also reports `declinedEdgeIndices`, adopting #639's mechanism | REJECT (nil) |
 | fillet-variable | `filletedVariable(edgeIndex:radiusProfile:)` | N/A: scalar edgeIndex, no list | REJECT (nil) | REJECT (nil): single edge, no partial fillet possible | N/A: no list; `radiusProfile` needs >=2 points, stricter than `filletEvolving`'s >=1 |
 | fillet-evolving | `filletEvolving(_:)` | **OVERWRITE: last law wins** (dup 946.349541 == last-only 946.349541), documented on `EvolvingFilletEdge`, same mechanism as #633 | REJECT (nil) | SKIP (non-nil, area 465.097336) -- **#639 fixed**: `filletEvolvingWithReport(_:)` now reports `declinedEdgeIndices` | REJECT (nil) |
 | fillet-edges (with history) | `filletedWithFullHistory(radius:edges:)` | N/A: uniform radius (dup 997.853982 == single-edge 997.853982) | REJECT (nil) | SKIP (non-nil, area 465.097336) -- **#639**: needed no new API; `history.record(of:)`'s `!isDeleted && generated.isEmpty` already names the declined set | REJECT (nil) |
@@ -93,12 +93,20 @@ loop at all, reproduce the identical direction per family. The behaviour lives i
 `BRepFilletAPI_MakeFillet::Add`/`BRepFilletAPI_MakeChamfer::Add` themselves, not in anything this
 bridge's own loops do.
 
-**#633 asks for one contract, chosen and applied across the whole family.** This measurement says
-the fillet side is internally consistent (three independent entry points, plus the class API, all
-last-wins) and the chamfer side is *also* internally consistent (two entry points plus its own
-class API, all first-wins) -- so unifying the two families onto one contract is a bigger decision
-than #633's own title suggests, since it means picking a *direction* and changing it for one whole
-family, not just deciding to reject/dedupe/document.
+**#633 asked for one contract, chosen and applied across the whole family; what actually landed is
+report, not converge -- the same decision #639 made for the OCCT-declined axis of this same grid.**
+Changing what `blendedEdges(_:)` returns for an input it already accepts would be a behaviour
+change on every existing caller who happens to name an edge twice, for a benefit (picking a
+"winning" direction) no caller asked for. `blendedEdgesWithReport(_:)` reports which entries a
+duplicate overwrote (`Shape.FilletResult.overwrittenDuplicateIndices`, extending the same struct
+#639 introduced rather than adding a second reporting shape), and `blendedEdges(_:)` itself is
+byte-for-byte unchanged. **This measurement's own finding stands, unrevised**: the fillet side is
+internally consistent (three independent entry points, plus the class API, all last-wins) and the
+chamfer side is *also* internally consistent (two entry points plus its own class API, all
+first-wins) -- unifying the two families onto one contract is still a bigger decision than #633's
+own title suggested, since it means picking a *direction* and changing it for one whole family, not
+just deciding to reject/dedupe/document. That decision remains open; #633 closes on observability
+alone, matching #639.
 
 ## New findings (not in #520/#568/#612/#633/#639)
 

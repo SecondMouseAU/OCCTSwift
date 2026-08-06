@@ -137,14 +137,27 @@ OCCTWireRef OCCTWireChamferAll2D(OCCTWireRef wire, double distance);
 /// OCCTShapeFilletEdges and OCCTShapeFilletEdgesLinear. Implemented in OCCTBridge_Healing.mm
 /// while the other two are in OCCTBridge_Modeling.mm, which is how it came to be the one without
 /// a radius precondition. #489
+///
+/// #633: `declinedEdgeIndices`/`outDeclinedCount` report which of `edgeIndices` OCCT declined,
+/// same contract #639 gave OCCTShapeFilletEdges/OCCTShapeFilletEdgesLinear/OCCTShapeFilletEvolving.
+/// Both are nullable and the existing skip behaviour is unchanged when they are null;
+/// `blendedEdges(_:)` passes null for both, `blendedEdgesWithReport(_:)` does not. The *other* axis
+/// this function's caller has to report -- the same edge index named twice, which silently
+/// overwrites one radius with another at the shared fillet slot -- needs no OCCT round trip at all,
+/// since it is a property of `edgeIndices` itself; it is computed Swift-side.
 /// @param shape The shape to blend
 /// @param edgeIndices Array of edge indices (0-based; an index naming no edge of `shape` rejects
 ///   the whole call, #520)
 /// @param radii Array of radii (one per edge); every element must be > 0, or the whole call fails
 /// @param count Number of edges
+/// @param declinedEdgeIndices Optional (may be NULL): buffer of at least `count` int32s to receive
+///   the 0-based indices of requested edges OCCT declined to fillet, in `edgeIndices`' own order.
+///   Same contract as OCCTShapeFilletEdges.
+/// @param outDeclinedCount Optional (may be NULL): same contract as OCCTShapeFilletEdges.
 /// @return Blended shape, or NULL on failure
 OCCTShapeRef OCCTShapeBlendEdges(OCCTShapeRef shape,
-                                  const int32_t* edgeIndices, const double* radii, int32_t count);
+                                  const int32_t* edgeIndices, const double* radii, int32_t count,
+                                  int32_t* declinedEdgeIndices, int32_t* outDeclinedCount);
 
 /// Parameters for surface filling operation
 ///
