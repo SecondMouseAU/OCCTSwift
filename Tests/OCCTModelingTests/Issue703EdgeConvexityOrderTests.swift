@@ -95,41 +95,52 @@ struct Issue703EdgeConvexityOrderTests {
         #expect(result.detectPocketsAAG().count == 1)
     }
 
-    /// CHARACTERISATION TEST. It pins what this formula currently answers, which is NOT the
-    /// correct answer. Do not read the pinned `2` as ground truth, and do not treat a future
-    /// change of it to `0` as a regression: that change is #723 landing.
+    /// GROUND TRUTH TEST (#723). A round through-hole has **zero** concave edges, independent of
+    /// plate thickness. A hole rim is convex: at the rim the solid occupies the quarter-space
+    /// below the top face and outside the cylinder, so the material angle is 90 degrees, not the
+    /// 270 that makes an edge concave. The concave edge of a hole is the one where a wall meets a
+    /// FLOOR, and a through-hole has no floor. Verified independently against OCCT's own
+    /// classifier, `ChFi3d::DefineConnectType`, the one the fillet and chamfer builders use, on
+    /// this exact fixture at every thickness below: 15 edges (12 box + top rim + bottom rim + the
+    /// cylindrical wall's own seam), 14 convex, 0 concave, 1 tangential (the seam, where the one
+    /// periodic face meets itself). `AAG` never builds a graph edge for that seam (it is one face
+    /// meeting itself, not two adjacent faces, so `buildGraph()`'s own identity guard skips it; see
+    /// `AAGNode.distinctFaceIndex`'s doc comment), which is why the 14 pairs below and the 15 raw
+    /// edges above differ by exactly that one edge.
     ///
-    /// The correct answer for a round through-hole is **zero** concave edges. A hole rim is
-    /// convex: at the rim the solid occupies the quarter-space below the top face and outside the
-    /// cylinder, so the material angle is 90 degrees, not the 270 that makes an edge concave. The
-    /// concave edge of a hole is the one where a wall meets a FLOOR, and a through-hole has no
-    /// floor. Measured on this exact fixture with OCCT's own classifier,
-    /// `ChFi3d::DefineConnectType`, which the fillet and chamfer builders use: 15 edges, 15
-    /// convex, 0 concave, at every one of the four thicknesses below.
+    /// Before #723, `OCCTEdgeGetConvexity` used each face's own GLOBAL area centroid as a stand-in
+    /// for "which side is material", which drifts with face proportions: it answered 2 concave
+    /// here (misclassifying both rims) at plate thickness 20, and 0 (correctly, by accident) at
+    /// 40/60/120, because the cylindrical wall's centroid moves as the wall gets taller while the
+    /// rim geometry itself never changes, a geometric answer depending on something that is not the
+    /// local geometry, the same failure class #703 fixed, re-parameterised. `ChFi3d`, sampling the
+    /// LOCAL dihedral at the rim instead, gives the SAME answer at every thickness, which is
+    /// exactly why it is a fix and not a different set of wrong answers.
     ///
-    /// The two vocabularies do agree elsewhere, which is what makes this a defect rather than a
-    /// definitional difference: on a plain box both say 12 convex and 0 concave, on the L-shape
-    /// both say 19 convex and 1 concave, and the square-pocket test below pins 8 concave, which is
-    /// exactly what `ChFi3d` reports for it. They diverge only here, where the centroid formula is
-    /// wrong, because the direction from the rim to the cylindrical wall's area centroid is a
-    /// GLOBAL property that says nothing about the LOCAL dihedral at the rim.
-    ///
-    /// Kept rather than deleted because it still locks out the base branch's order-dependent
-    /// formula, which answered 6 here, and because pinning the current answer makes #723's effect
-    /// visible in the diff instead of silent.
-    @Test("a round through-hole: current formula answers two concave edges, correct answer is zero (#723)",
+    /// **The fixture itself had a bug that made this test easy to get wrong**: the drill's base
+    /// was originally pinned at a fixed Z (`-5`) rather than scaled with `thickness`, so for every
+    /// thickness actually exercised (20/40/60/120) the drill's bottom face never reached the
+    /// plate's own bottom face (`Shape.box(width:height:depth:)` centers the box, so the plate's
+    /// bottom is at `-thickness/2`, which is below `-5` once `thickness > 10`). The fixture was
+    /// therefore a BLIND pocket with a floor fixed at Z=-5, not a through-hole, for every one of
+    /// the four thicknesses below; confirmed independently via `ChFi3d`, which reports 1 concave
+    /// (the floor/wall junction) on that construction, matching a blind round pocket exactly, not
+    /// 0. Fixed here by anchoring the drill's base `thickness/2 + 5` below center, so it clears the
+    /// plate by 5mm on both faces at every thickness, same as the original author's evident intent.
+    @Test("a round through-hole has zero concave edges, at several plate thicknesses (#723)",
           arguments: [20.0, 40.0, 60.0, 120.0])
-    func throughHoleConcaveCountIsPinnedPendingIssue723(thickness: Double) throws {
+    func throughHoleHasNoConcaveEdges(thickness: Double) throws {
         let plate = try #require(Shape.box(width: 50, height: 50, depth: thickness))
         let drill = try #require(Shape.cylinder(
-            at: SIMD3(0, 0, -5), direction: SIMD3(0, 0, 1), radius: 10, height: thickness + 10))
+            at: SIMD3(0, 0, -thickness / 2 - 5), direction: SIMD3(0, 0, 1),
+            radius: 10, height: thickness + 10))
         let drilled = try #require(plate.subtracting(drill))
 
         let aag = drilled.buildAAG()
         let label: Comment = "thickness=\(thickness)"
         #expect(aag.edges.count == 14, label)
-        // 2 is this formula's answer. ChFi3d::DefineConnectType says 0, and it is right. #723.
-        #expect(aag.edges.filter { $0.convexity == .concave }.count == 2, label)
+        #expect(aag.edges.filter { $0.convexity == .concave }.count == 0, label)
+        #expect(drilled.detectPocketsAAG().count == 0, label)
     }
 
     /// The curved-geometry counterpart above covers a hole; this covers a genuine blind pocket

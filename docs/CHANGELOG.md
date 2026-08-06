@@ -15,6 +15,86 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+### `OCCTEdgeGetConvexity` replaces its hand-rolled formula with OCCT's own classifier (#723)
+
+#703 (below) fixed the face1/face2 argument-order dependence by replacing a scalar triple product
+with a formula built from each face's own area centroid, a GLOBAL property of the face, standing in
+for a LOCAL one (which side of an edge is material). That residual was filed as #723: the two
+averaged centroid terms are each a different global measure, so their sum drifts with face
+proportions. Measured: a round through-hole's rim classified 2 concave edges at plate thickness 20
+but 0 (correctly, by accident) at 40/60/120, because the cylindrical wall's own centroid moves as
+the wall gets taller while the rim geometry itself never changes, the same failure class #703
+fixed (a geometric answer depending on something that is not the local geometry), re-parameterised.
+
+**Fixed** by replacing the formula entirely with `ChFi3d::DefineConnectType`, the classifier the
+3D fillet and chamfer builders use themselves to decide which edges they can round or bevel, called
+with `CorrectPoint=true`, matching `ChFi3d_Builder_1.cxx`'s own call. It samples the LOCAL dihedral
+at the edge midpoint (each face's normal there, from its pcurve's `D1`, against the edge tangent),
+needs no per-face integration, and reports the identical classification for `(face1, face2)` and
+`(face2, face1)` by construction, so #703's order-independence requirement holds with no centroid
+argument needed. `ChFiDS_Concave`/`ChFiDS_Convex` map onto the existing `OCCTEdgeConvexity` enum
+directly; `ChFiDS_Tangential` (and the residual `ChFiDS_Other`/`ChFiDS_Mixed`/`ChFiDS_FreeBound`
+cases this classifier can decline to resolve) map to `Smooth`, the same "can't classify this edge"
+fallback the function has always used. `SinTol` reuses the previous formula's `smoothThreshold`
+(0.01, ~0.5°) rather than introducing a new tolerance.
+
+```swift
+let plate = Shape.box(width: 50, height: 50, depth: 20)!
+let drill = Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 10, height: 30)!
+let drilled = plate.subtracting(drill)!
+print(drilled.buildAAG().edges.filter { $0.convexity == .concave }.count)   // was 2, now 0
+```
+
+**Migration note**: a hole rim (the edge where a cylindrical/conical wall meets the face it
+penetrates) now consistently reports `.convex`, never `.concave`, independent of wall
+height/thickness: a hole rim is convex by construction, since the solid occupies the quarter-space below
+the pierced face and outside the wall, a 90° material angle, not the 270° that makes an edge
+concave. `detectPocketsAAG()` no longer reports a through-hole as a 1-wall pocket at any thickness.
+This ships in v2.0.0, a major version, so it is not recorded as a [`SEMVER.md`](SEMVER.md)
+exception, since that mechanism is for breaks shipping within a major line.
+
+**Dead plumbing removed.** #720's review of #703 added `OCCTFaceGetAreaCentroid` (a cached
+`BRepGProp::SurfaceProperties` centroid, adaptive integration) plus a widened `OCCTEdgeGetConvexity`
+signature taking each face's precomputed centroid, so `AAG.buildGraph()` could avoid repeating a
+whole-face integration per adjacent pair. `ChFi3d::DefineConnectType` needs no centroid at all, so
+all of that becomes dead: `OCCTEdgeGetConvexity` drops back to its original four-argument signature
+(`shape, edge, face1, face2`), `OCCTFaceGetAreaCentroid` is removed outright (confirmed to have no
+other caller before deleting it), and `buildGraph()`'s centroid-precompute loop is gone.
+
+**Performance improves further, it does not regress.** #720 measured a 7-12x slowdown from
+`OCCTEdgeGetConvexity` recomputing `BRepGProp::SurfaceProperties` per face-pair, then recovered
+2.06x by caching each face's centroid once per occurrence instead. `ChFi3d::DefineConnectType` needs
+no integration at all, just a handful of `D1` derivative evaluations per edge, the same order of cost as
+the pre-#703 tangent-plane formula. Re-measured with the same method (`Shape.buildAAG()` on a
+many-faced drilled-plate fixture, three runs per configuration): every post-#723 run was faster than
+every pre-#723 (cached-centroid) run, by more than 3x at the extremes (min 110ms vs min 354ms on a
+262-face/524-pair fixture). See `Scripts/repro/703-edge-convexity-order/README.md`'s "Update
+following #723's fix" for the full numbers and a caveat about a stale-incremental-build artifact hit
+while measuring.
+
+**Fixture bug found and fixed alongside the classifier swap.** The through-hole regression test
+added under #703 pinned its drill's base at a fixed Z (`-5`) rather than scaling it with plate
+thickness, so for every thickness the test actually exercised (20/40/60/120mm) the drill never
+reached the plate's own bottom face (`Shape.box(width:height:depth:)` centers the box, so the
+plate's bottom is at `-thickness/2`, below `-5` once `thickness > 10`), so the fixture was silently a
+BLIND pocket with a floor fixed at Z=-5 for every tested thickness, not a through-hole at all,
+independently confirmed via `ChFi3d` (1 concave edge, matching a blind round pocket exactly, not the
+0 a through-hole reports). Fixed by anchoring the drill's base `thickness/2 + 5` below center, so it
+clears the plate by 5mm on both faces regardless of thickness, matching the fixture's evident intent.
+
+`AAG` (`Sources/OCCTSwift/FeatureRecognition.swift`) is the only Swift caller of
+`OCCTEdgeGetConvexity`, re-audited for this fix rather than trusted from #703's own audit.
+
+Tests: `Issue703EdgeConvexityOrderTests`'s through-hole case
+(`throughHoleConcaveCountIsPinnedPendingIssue723`, an explicitly-labelled characterisation test
+pinning the old formula's wrong answer of `2`) is rewritten as a real ground-truth test
+(`throughHoleHasNoConcaveEdges`, pinning the correct answer of `0`), with its fixture bug fixed in
+the same change. Proved by injection per `okf/policies/prove-the-test-fails.md`: the rewritten test,
+run against the pre-#723 formula, fails at three of its four parametrized thicknesses (2 concave
+edges reported, and a false 1-pocket count, at 20/40/60mm); restoring the `ChFi3d` fix makes all
+four pass. The suite's other tests (plain box, glued boxes, genuine pocket, square pocket) are
+unaffected, since `ChFi3d` agrees with the centroid formula everywhere except the through-hole rim.
+
 ### `OCCTEdgeGetConvexity` no longer depends on which face is passed first (#703)
 
 Found via Cluster A's census (#664, `Scripts/repro/cluster-a-subshape-enumeration/`) while
@@ -118,7 +198,8 @@ Two findings were investigated and are not regressions:
   separately with its own measurement (a through-hole rim's classification drifting with plate
   thickness). Every fixture in the PR's own verification comment shows this PR matching or beating
   the base branch, never regressing it, including on holed/curved geometry; see
-  `Issue703EdgeConvexityOrderTests.throughHoleHasExactlyTwoConcaveEdges`/
+  `Issue703EdgeConvexityOrderTests.throughHoleHasNoConcaveEdges` (renamed and rewritten as a ground
+  truth test when #723 landed; see that entry above) /
   `squarePocketHasExactlyEightConcaveEdges` (new, finding 6) for regression locks on curved/holed
   geometry that do NOT depend on #723's disputed cases.
 
