@@ -29,24 +29,24 @@ typedef enum {
 /// @return Number of adjacent faces (0, 1, or 2)
 int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef* outFace1, OCCTFaceRef* outFace2);
 
-/// Determine the convexity of an edge between two faces
+/// Determine the convexity of an edge between two faces.
+///
+/// Backed by OCCT's own classifier, `ChFi3d::DefineConnectType`, the same one the fillet and
+/// chamfer builders use to decide which edges they can round or bevel (#723). It samples the
+/// LOCAL dihedral at the edge midpoint (each face's normal there, from its pcurve's `D1`, against
+/// the edge tangent), unlike the formula this replaced, which used each face's GLOBAL area
+/// centroid as a stand-in for "which side is material" and drifted with face proportions: #723
+/// measured a through-hole rim classifying concave depending on plate thickness, since the
+/// cylindrical wall's centroid moves as the wall gets taller while the rim geometry itself never
+/// changes. `ChFi3d::DefineConnectType` needs no such proxy and no per-face integration, so this
+/// also removes the caching `AAG.buildGraph()` grew in #720 to make the old formula's integration
+/// affordable, since there is nothing left to cache.
 /// @param shape The shape containing the geometry
 /// @param edge The shared edge
 /// @param face1 First adjacent face
 /// @param face2 Second adjacent face
-/// @param centroid1X/Y/Z face1's own area centroid (`OCCTFaceGetAreaCentroid`), or NaN in any
-///   component if the caller has none (a degenerate face, or one it chose not to compute); NaN
-///   makes this edge report Smooth, the same fallback a face this formula can't classify has
-///   always used. Callers checking several edges on the same face should compute each face's
-///   centroid once and pass it to every one of that face's edges, rather than asking this function
-///   to repeat the whole-face integration per edge: #720's review of #703 measured that repeated
-///   integration as a 7-12x slowdown building the AAG of a 134-face part (`buildAAG()`'s only
-///   caller does this; see `Scripts/repro/703-edge-convexity-order/`).
-/// @param centroid2X/Y/Z face2's own area centroid, same contract as centroid1X/Y/Z.
-/// @return Convexity type (concave, smooth, or convex)
-OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2,
-                                        double centroid1X, double centroid1Y, double centroid1Z,
-                                        double centroid2X, double centroid2Y, double centroid2Z);
+/// @return Convexity type (concave, smooth/tangential, or convex)
+OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2);
 
 /// Get all edges shared between two faces
 /// @param shape The shape containing the faces

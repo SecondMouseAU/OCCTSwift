@@ -194,8 +194,9 @@
 //
 // --- BRepOffset ---
 // BRepOffset_Analyse                  → OCCTAnalyse*, OCCTShapeAnalyzeEdgeConcavity,
-//                                       OCCTShapeCountEdgeConcavity (OCCTEdgeGetConvexity computes
-//                                       convexity by hand from BRepAdaptor_Curve/Surface instead)
+//                                       OCCTShapeCountEdgeConcavity (OCCTEdgeGetConvexity is a
+//                                       DIFFERENT edge-convexity classifier, ChFi3d::DefineConnectType,
+//                                       not this class; see the ChFi3d entry below, #723)
 // BRepOffset_MakeOffset               → OCCTShapeOffsetPerFace
 // BRepOffset_MakeSimpleOffset         → OCCTShapeSimpleOffset
 // BRepOffset_Offset                   → OCCTBRepOffsetOffsetFace
@@ -244,6 +245,13 @@
 // ChFi2d_ChamferAPI                   → OCCTChFi2dChamferEdges
 // ChFi2d_FilletAlgo                   → OCCTChFi2dFilletAlgo
 // ChFi2d_FilletAPI                    → OCCTChFi2dFilletEdges
+//
+// --- ChFi3d ---
+// ChFi3d                               → OCCTEdgeGetConvexity (ChFi3d::DefineConnectType, the same
+//                                       static facade the 3D fillet/chamfer builder itself calls
+//                                       to classify an edge; not the ChFi3d_Builder that actually
+//                                       builds the fillet, which BRepFilletAPI_MakeFillet reaches
+//                                       instead and is not wrapped directly here, #723)
 //
 // --- FilletSurf ---
 // FilletSurf_Builder                  → OCCTFilletSurfBuild, OCCTFilletSurfError
