@@ -1537,17 +1537,40 @@ extension Shape {
     /// was asked for. Both used to report (0,0,0), which is indistinguishable from a real centroid
     /// at the origin (#609).
     ///
-    /// ``errorReached`` is `BRepGProp_VinertGK::GetErrorReached()`: the relative integration error
-    /// the Gauss-Kronrod adaptive quadrature reached, as a fraction of ``mass``. It used to be
-    /// hardcoded to `0.0` on every call. `GetErrorReached()` is defined inline in the OCCT header,
-    /// which is why it has no linkable symbol, not evidence it is unusable (#732). There is no
-    /// paired absolute-error field: `BRepGProp_VinertGK::GetAbsolutError()` is declared in the same
-    /// header but has no definition anywhere in the OCCT 8.0.1 sources, so calling it fails at link
-    /// time, confirmed by compiling against it. Multiplying ``errorReached`` by ``mass`` recovers it
-    /// in the common case, but not in OCCT's own near-zero-mass branch (where the un-normalized
-    /// value is kept as-is rather than divided), so that derivation would quietly go wrong exactly
-    /// where a caller most needs a reliable number. Use ``errorReached`` as the relative confidence
-    /// figure; there is no absolute counterpart.
+    /// ``errorReached`` is `BRepGProp_VinertGK::GetErrorReached()`. It used to be hardcoded to `0.0`
+    /// on every call. `GetErrorReached()` is defined inline in the OCCT header, which is why it has
+    /// no linkable symbol, not evidence it is unusable (#732). There is no paired absolute-error
+    /// field: `BRepGProp_VinertGK::GetAbsolutError()` is declared in the same header but has no
+    /// definition anywhere in the OCCT 8.0.1 sources, so calling it fails at link time, confirmed by
+    /// compiling against it.
+    ///
+    /// **``errorReached`` is not unconditionally relative.** Reading `BRepGProp_VinertGK.cxx` (around
+    /// line 492) shows two branches: the raw quadrature residual is divided by `|mass|` to produce a
+    /// relative fraction only when `|mass|` clears an internal floor (`Epsilon()` of the residual
+    /// itself, i.e. its own floating-point ULP, on the order of `1e-19` to `1e-25` for a realistic
+    /// residual); below that floor, division is skipped and the undivided absolute residual is
+    /// returned instead, with no signal in the return value distinguishing which branch ran.
+    /// Multiplying ``errorReached`` by ``mass`` to recover an absolute figure is correspondingly
+    /// unsound in that second branch (the un-normalized value is kept as-is, not divided), which is
+    /// why that derivation was rejected rather than shipped as a second field.
+    ///
+    /// **That second branch could not be exercised through the public API to pin its behaviour
+    /// directly** (measured for the PR #738 review): the floor is set relative to the residual's own
+    /// ULP, so triggering it needs `|mass|` to underflow to essentially bit-exact `0.0`, not merely
+    /// small. Driving a genuinely curved face's mass toward zero, using a half-cylinder lateral face
+    /// (`u` spanning less than a full period, whose mass is provably affine in a location offset,
+    /// solved for its exact root from two measurements), bottoms out around `1e-14`, the
+    /// double-precision noise floor for an integral at this scale, five to ten orders of magnitude
+    /// short of the threshold. The only realistic way to force literal-zero mass is a face whose
+    /// integrand is identically zero pointwise (e.g. a planar face exactly coplanar with
+    /// `location`), and that same degeneracy makes the residual identically zero too, so the two
+    /// branches are observably indistinguishable in every case this API can actually construct.
+    ///
+    /// What **is** observable, and is what the regression test below pins: short of that
+    /// unreachable branch, ``errorReached`` keeps behaving as a genuine relative fraction as `mass`
+    /// shrinks. It grows, staying finite and non-negative, rather than quietly staying small or
+    /// misreporting high confidence right where a caller most needs a reliable number. Treat a large
+    /// (or growing) ``errorReached`` as a signal to distrust ``mass``, not the reverse.
     public struct VinertGKResult {
         public let mass: Double
         public let errorReached: Double

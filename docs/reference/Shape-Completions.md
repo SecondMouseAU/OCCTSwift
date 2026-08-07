@@ -369,12 +369,17 @@ public func vinertGK(location: SIMD3<Double> = SIMD3(0, 0, 0),
   contribution, and stays non-optional because a zero contribution is a real answer that a caller
   summing over a shell needs. `.center` is `nil` when the contribution is 0, and when `computeCG` was
   `false`; both used to report (0,0,0), which is indistinguishable from a real centroid at the origin
-  (#609). `.errorReached` is `BRepGProp_VinertGK::GetErrorReached()`, the relative integration error
-  as a fraction of `.mass`; it used to be hardcoded to `0.0` on every call (#732). There is no
-  `.absoluteError`: OCCT declares `GetAbsolutError()` on the same class but never defines it, so
-  calling it fails to link, and deriving one from `.errorReached * .mass` would go wrong exactly in
-  OCCT's own near-zero-mass branch, so the field was removed rather than kept as a second silent
-  zero.
+  (#609). `.errorReached` is `BRepGProp_VinertGK::GetErrorReached()`; it used to be hardcoded to
+  `0.0` on every call (#732). It is **not unconditionally relative**: OCCT divides the raw quadrature
+  residual by `|.mass|` only when `|.mass|` clears an internal, near-machine-epsilon floor, and
+  returns the undivided residual as-is below it, a distinction the return value gives no way to
+  tell apart. That second branch could not be pinned by a test through the public API (measured: the
+  floor needs `|.mass|` to underflow to essentially bit-exact `0.0`, far below what floating-point
+  cancellation reaches for a real integral, ~`1e-14` at best); see the doc comment on
+  `VinertGKResult` in `Shape+Analysis.swift` for the full investigation. There is no `.absoluteError`:
+  OCCT declares `GetAbsolutError()` on the same class but never defines it, so calling it fails to
+  link, and deriving one from `.errorReached * .mass` would go wrong exactly in that same
+  near-zero-mass branch, so the field was removed rather than kept as a second silent zero.
 - **Example:**
   ```swift
   let face = Shape.box(dx: 10, dy: 10, dz: 10)!.faces.first!
