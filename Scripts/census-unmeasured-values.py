@@ -28,7 +28,7 @@ Three sub-kinds, per the issue (the third added for #771):
      turning into a Swift-side `nil` on the false path, the #583/#595/#609 idiom) is permanently
      unreachable while looking exactly like a working instance of that idiom. The seed instance is
      `OCCTShapeAxis.hasExtent` (`OCCTBridge_Topology.mm`, all 3 call sites `false`, none `true`),
-     found by #763 and fixed on the sibling PR #770 — #771 is "teach the census this shape, don't
+     found by #763 and fixed on the sibling PR #770. #771 is "teach the census this shape, don't
      just trust the one-off grep that found it". See SUB-KIND 3 ALGORITHM below.
 
 WHY A SCRIPT, NOT A LIST IN THE ISSUE: this repo's own history of censuses built by grep and
@@ -113,7 +113,7 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
     (both `include/*.h` and `src/*.mm`/`*.h`) and collect every `bool` field each one declares.
     Deliberately NOT filtered to a `hasX`/`isX` name: this is what teaches the "not named
     `hasSomething`" shape (`isValid`, `defined`, `ok`, `found`, ...) the naive pass named as a blind
-    spot — any boolean struct field is a candidate gate, whatever it is called.
+    spot: any boolean struct field is a candidate gate, whatever it is called.
   - For every function definition in the same corpus, bind local identifiers to a KNOWN struct type
     by two shapes: a local declaration (`OCCTShapeAxis a;`) and a pointer or reference PARAMETER
     (`OCCTShapeAxis* outAxes`, `OCCTShapeAxis& a`). The parameter form is what teaches the "flipped
@@ -124,7 +124,7 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
   - Within each function, match every `var.field = RHS;`, `var->field = RHS;` and
     `var[idx].field = RHS;` assignment (a strict superset of sub-kind 1's `var.field` pattern) where
     `var` is bound to a struct with `field` in its bool-field set. Classify the RHS `true`, `false`,
-    or COMPUTED (anything else — a call, a variable, a member access).
+    or COMPUTED (anything else: a call, a variable, a member access).
   - A COMPUTED assignment to a field marks that (struct, field) as "not provably stuck" wherever it
     is found, even if no literal `true` ever appears for it: `OCCTCurve3DValidateRange`'s
     `result.wasAdjusted = false;` default next to `result.wasAdjusted = adjusted;` (a real
@@ -139,7 +139,7 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
     itself unreachable" shape): (a) it sits inside an `if (false) { ... }` / `if (0) { ... }` /
     `while (false) { ... }` block, or (b) it is preceded, within the same brace-delimited straight-
     line block, by an unconditional `return`/`continue`/`break`/`throw` statement that STARTS its
-    own statement (immediately after a `;`, `{`, `}` or the top of the block) — a `return` inside a
+    own statement (immediately after a `;`, `{`, `}` or the top of the block): a `return` inside a
     braceless `if (cond) return x;` guard does NOT count, since it is conditional, not a straight-
     line exit, and treating it as one produced a real false positive in this tree's own corpus (see
     the removal matrix in the self-test below).
@@ -150,8 +150,8 @@ WHAT SUB-KIND 3 STILL CANNOT SEE, against the four blind spots the issue named f
 plus what was found reading its own false positives on this tree:
 
   - THE `kind` ENUM VARIANT OF "not named hasSomething" IS NOT TAUGHT. The issue's example bundles
-    plain bool fields under other names (`isValid`, `defined`, `ok`, `found` — all TAUGHT, since the
-    struct-field parse is not name-filtered) with "a `kind` enum with a never-emitted case" — a
+    plain bool fields under other names (`isValid`, `defined`, `ok`, `found`, all TAUGHT, since the
+    struct-field parse is not name-filtered) with "a `kind` enum with a never-emitted case", a
     fundamentally different question, since an enum can have arbitrarily many cases and "never
     emitted" needs the full declared case list PLUS which case means "gate open", which is semantic,
     not syntactic. Not attempted.
@@ -169,12 +169,17 @@ plus what was found reading its own false positives on this tree:
     regex looks for the type name directly adjacent to the variable, not behind a cast.
   - A MORE ELABORATE "ALWAYS FALSE" CONDITION defeats the two unreachable-`true` checks: `if (1 ==
     2)`, `if (SOME_FALSE_MACRO)`, `#if 0` preprocessor exclusion, or a `switch` case that is never
-    reached. Only the literal spellings `false` and `0` are recognised.
+    reached. Only the literal spellings `false` and `0` are recognised. This is about the
+    condition's SPELLING; the BLOCK'S DELIMITER (braced vs braceless) is a distinct question and IS
+    handled for both: PR #774's review found the first version of `false_condition_spans` only
+    recognised the braced form (`if (false) { field = true; }`), so a braceless always-false guard
+    (`if (false) field = true;`) counted as reachable and a genuinely stuck flag would have gone
+    unreported. See `false_condition_spans`'s own docstring for the fix.
   - THE SWIFT SIDE IS SWEPT FOR COMPUTED PROPERTIES ONLY (`swift_gate_candidates` below), per the
     issue's own scope note ("sweep Sources/OCCTSwift too if the rule generalises cleanly, say so if
     it does not"): a Swift `var x: Bool { ... }` with `return false` somewhere and `return true`
-    nowhere in its body is caught. A Swift STORED property mutated across multiple methods — the
-    closer analogue of the C struct case — is NOT: it would need the same corpus-wide type-binding
+    nowhere in its body is caught. A Swift STORED property mutated across multiple methods (the
+    closer analogue of the C struct case) is NOT: it would need the same corpus-wide type-binding
     machinery applied to Swift class/struct declarations and their methods, which is a bigger lift
     than a single self-contained function body, and was not attempted this pass. The dead-code-
     unreachability checks (if-false, dead-after-return) are also not applied on the Swift side: Swift
@@ -204,20 +209,45 @@ real, observed source of noise in the candidate list, not a hypothetical:
     `MathInteg::KronrodConfig` x1) needed a human to notice the struct never leaves the function as
     a return value. FIXED (#771, prompted during that issue's sub-kind 3 review, folded into the
     same PR since it was cheap while already in this script): `is_input_only_struct()` excludes a
-    local var that is handed to some call as a bare argument and never surfaces afterward, "surfaces"
-    meaning a bare `return var;`, storage into a container (`push_back`/`emplace_back`/
-    `push_front`/`emplace_front`/`insert`), or a direct `arr[i] = var;` copy into an array/vector
-    element -- any ONE of those three wins over the exclusion, since excluding a real result would
-    make this script blind to exactly the class of defect #771's `hasExtent` itself was
-    (`OCCTShapeAxis a` is built, `collected.push_back(a)`, later copied to an out-param array: the
-    same shape as `opts`, up to which call it is handed to). The three protections are proven
-    individually necessary, not just the rule as a whole, in the self-test removal matrix (see
-    below): removing the `push_back`-family check alone regresses the `ShapeAxis` fixture, removing
-    the bare-`return` check alone regresses a dedicated fixture built to prove it, and same for the
-    array-element check. Measured: 54 candidates in this tree drop to 49, exactly the 5 known sites,
-    nothing else moves. Still not attempted: a config struct that is reassigned to a plain variable
-    (`T copy = opts;`) before that variable is what leaves the function -- not observed in this
-    tree, so not worth the extra tracking it would need.
+    local var that is handed to some call as a bare argument and never surfaces afterward,
+    "surfaces" meaning a bare `return var;`, storage into a container (`push_back`/`emplace_back`/
+    `push_front`/`emplace_front`/`insert`, through EITHER `.` or `->`, as ONE argument among
+    several or the only one), or a direct `arr[i] = var;` copy into an array/vector element. Any
+    ONE of those protections wins over the exclusion, since excluding a real result would make this
+    script blind to exactly the class of defect #771's `hasExtent` itself was (`OCCTShapeAxis a` is
+    built, `collected.push_back(a)`, later copied to an out-param array: the same shape as `opts`,
+    up to which call it is handed to). The protections are proven individually necessary, not just
+    the rule as a whole, in the self-test removal matrix (see below). Measured: 54 candidates in
+    this tree drop to 49, exactly the 5 known sites, nothing else moves.
+
+    A second review round (still #774) found the first version of this fix had three further gaps
+    of the same shape, each closed the same way (case first, watch it fail, then fix, per
+    `okf/policies/prove-the-test-fails.md`): the store protection matched `.` only, never `->`
+    (a container reached through a pointer out-param, one indirection past the seed shape, would
+    have regressed exactly like `push_back` itself would have without protection at all); the store
+    protection only matched a SINGLE-argument call (the parens had to contain nothing but the
+    tracked variable), so `insert`'s own
+    standard two-argument idiom (`insert(iterator, value)`) fell through despite `insert` being
+    named as covered; and `call_arg_lists`' `CALL_START` had no keyword exclusion at all, unlike
+    `c_functions()`, so `if (...)`/`for (...)`/`while (...)`/`switch (...)` and `sizeof(...)` were
+    all treated as call argument lists, with `sizeof(result)` the cleanest failure since `sizeof` is
+    an operator and cannot consume or take ownership of its operand. All three fixed together:
+    `call_arg_lists` now returns `(callee, args)` pairs excluding `NOT_A_CALL` (`NOT_A_FUNCTION`
+    plus `sizeof`), and the store check searches the WHOLE args text for a bare `var` token rather
+    than requiring it to be the sole argument, which handles arrow notation and multiple arguments
+    in one pass since neither depends on what precedes the call or how many other arguments sit
+    beside `var`. Still not attempted: a config struct that is reassigned to a plain variable
+    (`T copy = opts;`) before that variable is what leaves the function; not observed in this tree,
+    so not worth the extra tracking it would need.
+
+    The SAME review also found sub-kind 1's core `FIELD_ASSIGN` (not just this exclusion) was
+    dot-only, unlike sub-kind 3's `ASSIGN_ANY`, and so was blind to any result built through an
+    out-param pointer (`out->field = ...;`) or array element (`out[i].field = ...;`) from the start.
+    The real corpus has many of both (`OCCTBridge_AIS.mm`, `OCCTBridge_Geom2d.mm`,
+    `OCCTBridge_Spatial.mm`, `OCCTBridge_Surface.mm`). FIXED: `FIELD_ASSIGN` now matches the same
+    three shapes `ASSIGN_ANY` does. Measured: 49 candidates becomes 73 on this tree; the 24 new
+    ones are adjudicated in `triage-gate-flags.md` and issue #781 (10 verdict 2 needing a real fix,
+    10 verdict 1, 4 needing further investigation before either verdict applies).
   - A FIELD ASSIGNED TWO OR MORE DIFFERENT LITERAL VALUES ACROSS DIFFERENT BRANCHES OF THE SAME
     FUNCTION IS THE COMMON, LEGITIMATE CASE, NOT THE RARE ONE, and this script does not
     distinguish it from a field pinned to the SAME literal on every reached path. `result.isValid =
@@ -443,7 +473,13 @@ def depth_at(segments, pos):
     return 0
 
 
-FIELD_ASSIGN = re.compile(r'\b([A-Za-z_]\w*)\.([A-Za-z_]\w*)\s*=\s*([^=][^;]*);')
+# Dot, arrow AND array-index, matching sub-kind 3's ASSIGN_ANY: a result built through an
+# out-param pointer (`out->field = ...;`) is exactly as much "returned through an API" as a local
+# value built with dot notation, and the real corpus has many of the pointer-built kind (#774's
+# review: OCCTBridge_AIS.mm, OCCTBridge_Geom2d.mm). Dot-only here was a silent under-report, the
+# same failure mode the arrow/array-index gaps in is_input_only_struct's checks were.
+FIELD_ASSIGN = re.compile(
+    r'\b([A-Za-z_]\w*)(?:\s*\[[^\]]*\])?\s*(?:\.|->)\s*([A-Za-z_]\w*)\s*=\s*([^=][^;]*);')
 LITERAL_RHS = re.compile(
     r'^-?\s*(?:\d+\.?\d*(?:[eE][-+]?\d+)?[fFlL]?|\.\d+[fFlL]?|true|false|nullptr|NULL|""|\'\S\')\s*$'
 )
@@ -453,19 +489,31 @@ def is_literal(rhs):
     return bool(LITERAL_RHS.match(rhs.strip().strip('() \t\r\n')))
 
 
-CALL_START = re.compile(r'\b\w+\s*\(')
-STORE_METHOD = ('push_back', 'emplace_back', 'push_front', 'emplace_front', 'insert')
+CALL_START = re.compile(r'\b(\w+)\s*\(')
+STORE_METHOD = {'push_back', 'emplace_back', 'push_front', 'emplace_front', 'insert'}
+# sizeof is an operator, not a call: it cannot consume, store or take ownership of its operand, so
+# treating `sizeof(var)` as "var handed to a call" is wrong regardless of what surrounds it. Reuses
+# c_functions' own NOT_A_FUNCTION set for the control-flow keywords, which call_arg_lists had none
+# of at all before #774's review: `if (...)`, `for (...)`, `while (...)` and `switch (...)` were
+# all being treated as call argument lists, just like c_functions would wrongly treat them as
+# function definitions without the same exclusion.
+NOT_A_CALL = NOT_A_FUNCTION | {'sizeof'}
 
 
 def call_arg_lists(body):
-    """Text of every balanced (...) argument list following an identifier, paren-depth matched
-    (the same style catch_spans/conditional_brace_positions already use for braces) so a nested
-    cast or call inside the arguments does not truncate it. `Add(*(const TopoDS_Shape*)shape,
-    opts)` is exactly the shape that needs this: a naive `[^()]*` capture stops at the cast's own
-    `)` and never sees `opts` as part of the outer call's argument list at all."""
+    """(callee, args_text) for every call `callee(...)`, paren-depth matched (the same style
+    catch_spans/conditional_brace_positions already use for braces) so a nested cast or call
+    inside the arguments does not truncate it. `Add(*(const TopoDS_Shape*)shape, opts)` is exactly
+    the shape that needs this: a naive `[^()]*` capture stops at the cast's own `)` and never sees
+    `opts` as part of the outer call's argument list at all. `callee` excludes NOT_A_CALL (control-
+    flow keywords, and sizeof), so `if (n == sizeof(result))` yields no entries at all: neither
+    `if` nor the nested `sizeof` is a call that can consume `result`."""
     out = []
     n = len(body)
     for m in CALL_START.finditer(body):
+        callee = m.group(1)
+        if callee in NOT_A_CALL:
+            continue
         i, depth, start = m.end(), 1, m.end()
         while i < n and depth > 0:
             if body[i] == '(':
@@ -473,31 +521,34 @@ def call_arg_lists(body):
             elif body[i] == ')':
                 depth -= 1
             i += 1
-        out.append(body[start:i - 1])
+        out.append((callee, body[start:i - 1]))
     return out
 
 
 def is_input_only_struct(body, var):
     """True if `var` is a local config/options struct handed to a call as an argument and never
     surfaces afterward: not returned bare, not stored into a container (push_back/emplace_back/
-    push_front/emplace_front/insert), and not copied into an array/vector element. This is the
-    shape `BRepGraph::ShapesView::Options`/`MathInteg::KronrodConfig` locals have (built, handed to
-    one OCCT call, discarded) versus `OCCTShapeAxis a`'s (built in a loop, `collected.push_back(a)`,
-    later copied to an out-param array) -- syntactically identical "literal beside computed
-    sibling" shapes that this function is what tells apart. Getting this backwards in the unsafe
-    direction -- excluding a real result struct -- would make sub-kind 1 blind to exactly the class
-    of defect #771's hasExtent was, so a var is only ever excluded, never force-included, by this
-    check, and every one of the "protected" shapes below wins over the "excluded" one if both are
-    present."""
+    push_front/emplace_front/insert, through EITHER `.` or `->`, and whether that call takes `var`
+    as its only argument or one of several, e.g. `insert(iterator, var)`), and not copied into an
+    array/vector element. This is the shape `BRepGraph::ShapesView::Options`/
+    `MathInteg::KronrodConfig` locals have (built, handed to one OCCT call, discarded) versus
+    `OCCTShapeAxis a`'s (built in a loop, `collected.push_back(a)`, later copied to an out-param
+    array), syntactically identical "literal beside computed sibling" shapes that this function is
+    what tells apart. Getting this backwards in the unsafe direction, excluding a real result
+    struct, would make sub-kind 1 blind to exactly the class of defect #771's hasExtent was, so a
+    var is only ever excluded, never force-included, by this check, and every one of the
+    "protected" shapes below wins over the "excluded" one if both are present."""
     name = re.escape(var)
     if re.search(r'\breturn\s+' + name + r'\s*;', body):
         return False  # returned by value: definitely surfaces
-    if re.search(r'\.\s*(?:' + '|'.join(STORE_METHOD) + r')\s*\(\s*&?\s*' + name + r'\s*\)', body):
-        return False  # stored into a container: survives past this function
     if re.search(r'\w+\s*\[[^\]]*\]\s*=\s*&?\s*' + name + r'\s*;', body):
         return False  # copied into an array/vector element: same idea, no container call needed
     bare = re.compile(r'(?<![.\w])' + name + r'(?![.\w(])')
-    for args in call_arg_lists(body):
+    calls = call_arg_lists(body)
+    for callee, args in calls:
+        if callee in STORE_METHOD and bare.search(args):
+            return False  # stored into a container (dot or arrow, any argument position)
+    for callee, args in calls:
         if bare.search(args):
             return True  # handed to some other call as a bare argument, and nothing above fired
     return False
@@ -706,8 +757,13 @@ def is_dead_after_terminator(body, pos, segs):
 
 
 def false_condition_spans(body):
-    """[(open_brace_pos, close_brace_pos), ...] for every `if (false)`/`if (0)`/`while (false)`/
-    `while (0)` block: a literal always-false condition, not any conditional whatsoever."""
+    """[(span_start, span_end), ...] for the body of every `if (false)`/`if (0)`/`while (false)`/
+    `while (0)`: a literal always-false condition, not any conditional whatsoever. Covers both the
+    braced form (`if (false) { ... }`, span is the `{...}`) and the braceless single-statement form
+    (`if (false) field = true;`, span is that one statement up to its own top-level `;`). A
+    braceless always-false guard is exactly as unreachable as a braced one, and #774's review
+    found the braced-only version missed it entirely, silently under-reporting a genuinely stuck
+    flag."""
     spans = []
     for m in IF_WHILE_COND.finditer(body):
         i, depth, cond_start = m.end(), 1, m.end()
@@ -718,10 +774,12 @@ def false_condition_spans(body):
                 depth -= 1
             i += 1
         cond = body[cond_start:i - 1].strip()
+        if cond not in ('false', '0'):
+            continue
         j = i
         while j < len(body) and body[j] in ' \t\r\n':
             j += 1
-        if j < len(body) and body[j] == '{' and cond in ('false', '0'):
+        if j < len(body) and body[j] == '{':
             depth2, k = 0, j
             while k < len(body):
                 if body[k] == '{':
@@ -730,6 +788,20 @@ def false_condition_spans(body):
                     depth2 -= 1
                     if depth2 == 0:
                         break
+                k += 1
+            spans.append((j, k))
+        elif j < len(body):
+            # Braceless: the guarded statement runs from here to its own top-level `;` (a nested
+            # call's argument-list parens don't end the statement early).
+            k, pdepth = j, 0
+            while k < len(body):
+                if body[k] == '(':
+                    pdepth += 1
+                elif body[k] == ')':
+                    pdepth -= 1
+                elif body[k] == ';' and pdepth == 0:
+                    k += 1
+                    break
                 k += 1
             spans.append((j, k))
     return spans
@@ -812,7 +884,7 @@ SWIFT_RETURN_LITERAL = re.compile(r'\breturn\s+(true|false)\b')
 def swift_gate_candidates(sources):
     """(file, line, property, snippet) for every Swift `var x: Bool { ... }` computed property
     that returns literal false somewhere in its body and literal true nowhere. Stored properties
-    mutated across multiple methods (the closer analogue of the C struct case) are not covered —
+    mutated across multiple methods (the closer analogue of the C struct case) are not covered;
     see SUB-KIND 3 ALGORITHM's Swift-side note."""
     found = []
     for path, raw in sources:
@@ -914,6 +986,50 @@ void OCCTFixtureFillOne(OCCTShapeRef shape, OCCTFixtureResult* outArr) {
     occtLogResult(result);
     outArr[0] = result;
 }'''),
+    ('a struct handed to a helper call AND stored into a container reached through a POINTER '
+     '(outVec->push_back(a), not a plain local): the store protection has to recognise arrow '
+     'notation, not just dot notation, or this regresses one indirection past the seed shape', '''
+int32_t OCCTFixtureAxesViaPointerContainer(double x, OCCTFixtureAxis* outAxes, int32_t maxAxes) {
+    std::vector<OCCTFixtureAxis>* collected = new std::vector<OCCTFixtureAxis>();
+    OCCTFixtureAxis a;
+    a.originX = x;
+    a.hasExtent = false;
+    occtLogAxis(a);
+    collected->push_back(a);
+    return (int32_t)collected->size();
+}'''),
+    ('a struct handed to a helper call AND stored via the two-argument insert(iterator, value) '
+     'form, std::vector::insert\'s standard idiom, not the one-argument form the store check '
+     'used to require', '''
+int32_t OCCTFixtureAxesViaInsertAtEnd(double x, OCCTFixtureAxis* outAxes, int32_t maxAxes) {
+    std::vector<OCCTFixtureAxis> collected;
+    OCCTFixtureAxis a;
+    a.originX = x;
+    a.hasExtent = false;
+    occtLogAxis(a);
+    collected.insert(collected.end(), a);
+    return (int32_t)collected.size();
+}'''),
+    ('a struct that is never returned, stored or array-assigned, and appears only inside '
+     'sizeof(...) nested in an if-condition: neither if nor sizeof is a call that can consume or '
+     'take ownership of its operand, so this must not count as "handed to a call" evidence', '''
+void OCCTFixtureCheckSize(OCCTShapeRef shape, int32_t n) {
+    OCCTFixtureResult result = {};
+    result.count = occtRealCount(shape);
+    result.flagged = false;
+    if (n == sizeof(result)) {
+        occtLogSizeMatch();
+    }
+}'''),
+    ('a result built through an OUT-PARAM POINTER (out->field = ...), not a local dot-notation '
+     'variable: FIELD_ASSIGN itself, sub-kind 1\'s core mechanism (not just the config-struct '
+     'exclusion), is dot-only and never sees this shape at all. The real corpus has many of '
+     'them, e.g. OCCTBridge_Geom2d.mm\'s extractBisecSolution: "out->radius = 0;" beside '
+     '"out->px = lin.Location().X();" in the same switch-case branch', '''
+static void occtFixtureExtractSolution(OCCTShapeRef shape, OCCTFixturePointerResult* out) {
+    out->count = occtRealCount(shape);
+    out->flagged = false;
+}'''),
 ]
 
 # The other failure mode: a literal reached only under a real, checked condition, with no computed
@@ -961,7 +1077,7 @@ OCCTFixtureStyle OCCTFixtureStyleCreate(void) {
     return result;
 }'''),
     ('a local config/options struct handed to a call as an argument and discarded, not a returned '
-     'result -- the real BRepGraph::ShapesView::Options / MathInteg::KronrodConfig shape, '
+     'result, the real BRepGraph::ShapesView::Options / MathInteg::KronrodConfig shape, '
      'including the nested-cast argument list that defeats a naive [^()]* capture', '''
 void OCCTFixtureAppend(OCCTFixtureRef g, OCCTShapeRef shape, bool parallel) {
     if (!g || !shape) return;
@@ -1084,6 +1200,19 @@ void occtFixtureDeadAfterReturn(OCCTFixtureDeadAfterReturn* outGate) {
     g.reachable = false;
     return;
     g.reachable = true;
+}'''),
+    ('indirection shape 2c: the only literal true is inside a BRACELESS if (false), no braces at '
+     'all: false_condition_spans only recognised the braced form', '''
+typedef struct {
+    double value;
+    bool reachable;
+} OCCTFixtureDeadIfFalseBraceless;
+''', '''
+void occtFixtureDeadIfFalseBraceless(OCCTFixtureDeadIfFalseBraceless* outGate) {
+    OCCTFixtureDeadIfFalseBraceless g;
+    g.value = 1.0;
+    g.reachable = false;
+    if (false) g.reachable = true;
 }'''),
 ]
 
