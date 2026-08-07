@@ -64,6 +64,10 @@ difference between a reviewer trusting the suite and taking your word for it.
 
 ## Related
 
+- [Measure, do not assume, and verify with a second construction](measure-dont-assume.md). That is
+  the weaker, more general rule; this one is what a *detector* additionally needs, because a blind
+  detector reports clean exactly as confidently as a clean tree.
+
 - [Documentation updates are mandatory](docs-current.md)
 - [Search before building](search-before-building.md)
 - `CLAUDE.md` → Test Conventions, for the repo-specific test rules this sits alongside.
