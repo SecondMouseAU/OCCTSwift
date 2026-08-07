@@ -1560,21 +1560,23 @@ public struct ShapeAnalysisResult {
   to sit here (through v1.x) but was always 0, never computed (the bridge's own comment read
   "would require more expensive computation"); it was removed in #763 rather than kept as a
   permanent zero. Use `hasSelfIntersection`, populated via
-  `analyze(tolerance:checkSelfIntersection:hardTimeout:)`, or `isSelfIntersecting(timeout:)`
-  directly, for a real answer.
-- **`hasSelfIntersection` is `nil` unless `analyze(checkSelfIntersection: true)` was used (#772).**
-  The self-intersection check (`BOPAlgo_ArgumentAnalyzer`'s self-interference test, #319) is
-  orders of magnitude more expensive than the rest of this scan, and on pathological input the
-  gap is not small: measured on the #319 pathological artifact, roughly 1800x-4100x the cost of
-  the rest of the scan combined (a few milliseconds vs 30+ seconds at the default `hardTimeout`).
-  On ordinary shapes, including a real 662-face mesh-sewn import, the measured overhead was
-  1x-3x, cheap enough to opt into freely; see `Scripts/repro/772-analyze-self-intersection/` for
-  the full measurement. `nil` covers two cases the type deliberately does not distinguish: not
-  requested, or requested but indeterminate (the check did not resolve within `hardTimeout`,
-  matching `isSelfIntersecting`'s own `nil` = indeterminate). `nil` is never "clean": only
-  `hasSelfIntersection == false` means that. `totalProblems` adds a flat +1 when
-  `hasSelfIntersection == true`, +0 for `false` or `nil`, so it never reflects self-intersection
-  unless the analysis actually checked for it.
+  `analyze(tolerance:selfIntersectionTimeout:)`, or `isSelfIntersecting(timeout:)` directly, for a
+  real answer.
+- **`hasSelfIntersection` is `nil` unless `analyze(selfIntersectionTimeout:)` was passed a
+  non-`nil` value (#772).** The self-intersection check (`BOPAlgo_ArgumentAnalyzer`'s
+  self-interference test, #319) is orders of magnitude more expensive than the rest of this scan,
+  and on pathological input the gap is not small: measured on the #319 pathological artifact,
+  roughly 3000x-4000x the cost of the rest of the scan combined (a few milliseconds vs 30+
+  seconds at a 30s timeout). On ordinary shapes, including a real 662-face mesh-sewn import, the
+  measured overhead was 1x-3x, cheap enough to opt into freely; see
+  `Scripts/repro/772-analyze-self-intersection/` for the full measurement, including why this
+  forwards to `isSelfIntersecting(timeout:)` and not `isSelfIntersecting(hardTimeout:)` (measuring
+  both, not just the pathological case, found the latter is not a strict improvement here). `nil`
+  covers two cases the type deliberately does not distinguish: not requested, or requested but
+  indeterminate (the check did not resolve within the timeout, matching `isSelfIntersecting`'s own
+  `nil` = indeterminate). `nil` is never "clean": only `hasSelfIntersection == false` means that.
+  `totalProblems` adds a flat +1 when `hasSelfIntersection == true`, +0 for `false` or `nil`, so
+  it never reflects self-intersection unless the analysis actually checked for it.
 - **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
   called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
   instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
@@ -1596,38 +1598,61 @@ public struct ShapeAnalysisResult {
 
 ---
 
-### `analyze(tolerance:checkSelfIntersection:hardTimeout:)`
+### `analyze(tolerance:selfIntersectionTimeout:)`
 
 Analyzes a shape for problems such as small edges, gaps, and invalid topology.
 
 ```swift
-public func analyze(tolerance: Double = 1e-6, checkSelfIntersection: Bool = false,
-                    hardTimeout: Double = 30) -> ShapeAnalysisResult?
+public func analyze(tolerance: Double = 1e-6, selfIntersectionTimeout: Double? = nil) -> ShapeAnalysisResult?
 ```
 
+- **Important:** passing `selfIntersectionTimeout` makes this call **synchronously block the
+  calling thread** for up to that many seconds (more, if OCCT never reaches a checkpoint to poll:
+  see `isSelfIntersecting(timeout:)`'s own warning, inherited unchanged). Do not pass it from a
+  UI/main thread without accepting that stall.
 - **Parameters:**
   - `tolerance`: size threshold for detecting small features.
-  - `checkSelfIntersection`: if `true`, also runs `isSelfIntersecting(hardTimeout:)` and
-    populates `ShapeAnalysisResult.hasSelfIntersection`. Default `false` (#772): that check costs
-    1x-3x the rest of this scan on ordinary shapes but roughly 1800x-4100x on pathological input
-    (measured, `Scripts/repro/772-analyze-self-intersection/`), so it stays opt-in rather than
-    silently turning a cheap call into an occasionally unbounded-shaped one.
-  - `hardTimeout`: only used when `checkSelfIntersection` is `true`; forwarded to
-    `isSelfIntersecting(hardTimeout:)` as its true wall-clock deadline. Default 30 seconds.
+  - `selfIntersectionTimeout`: `nil` (the default) skips the self-intersection check entirely and
+    leaves `ShapeAnalysisResult.hasSelfIntersection` `nil`. A non-`nil` value opts in, forwarded
+    as the `timeout:` to `isSelfIntersecting(timeout:)` (the cooperative check, not
+    `isSelfIntersecting(hardTimeout:)`: measuring both, not just on a pathological artifact, found
+    the `hardTimeout:` background-thread mechanism is not a strict improvement, see below). There
+    is no way to supply a timeout that does not enable the check: the two used to be separate
+    parameters (`checkSelfIntersection: Bool`, `hardTimeout: Double`) until review found that
+    shape let a caller's `hardTimeout` be silently discarded whenever they forgot
+    `checkSelfIntersection: true`, compiling and running with no signal at all (#772). Collapsing
+    them into one optional makes that mistake unrepresentable.
+
+    Costs 1x-3x the rest of this scan on ordinary shapes, including a real 662-face mesh-sewn
+    import, but roughly 3000x-4000x on the #319 pathological artifact (measured,
+    `Scripts/repro/772-analyze-self-intersection/`), so it stays opt-in rather than silently
+    turning a cheap call into an occasionally unbounded-shaped one.
 - **Returns:** `ShapeAnalysisResult` with problem counts, or `nil` if the analysis itself fails.
-- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`), plus `BOPAlgo_ArgumentAnalyzer` when `checkSelfIntersection` is `true`.
+- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`), plus `BOPAlgo_ArgumentAnalyzer` when `selfIntersectionTimeout` is non-`nil`.
+- **Why `timeout:`, not `hardTimeout:`:** `isSelfIntersecting(hardTimeout:)` looks like the safer
+  default (a true wall-clock guarantee via `deepCopy()` + a background thread + a semaphore), but
+  its `deepCopy()` step, while cheap on its own (under 1ms on every fixture measured), guards an
+  internal `OCCTShapeSelfIntersectsBounded` call that passes 0 (unbounded); the only bound left is
+  the caller-side semaphore wait. On the #319 pathological artifact this produced a **worse**
+  answer than `timeout:` at the same deadline: `timeout:` reliably returned a conclusive
+  `self-intersects` around 30.1s, while `hardTimeout:` reliably returned `nil` (indeterminate) at
+  exactly 30.0s, the same wall-clock budget for a strictly less useful answer, plus an abandoned
+  background computation left running. `analyze()` is already fully synchronous, so a caller has
+  already committed to blocking; `hardTimeout:`'s guarantee buys nothing over `timeout:` in that
+  context. A caller that genuinely needs the hard guarantee should call
+  `isSelfIntersecting(hardTimeout:)` directly and accept its documented trade-offs.
 - **Example:**
   ```swift
   if let a = shape.analyze(tolerance: 0.001) {
       if !a.isHealthy { print("\(a.totalProblems) problems found") }   // self-intersection not included
   }
 
-  // Opt into the expensive check when it's actually needed:
-  if let a = shape.analyze(tolerance: 0.001, checkSelfIntersection: true) {
+  // Opt into the expensive, thread-blocking check when it's actually needed:
+  if let a = shape.analyze(tolerance: 0.001, selfIntersectionTimeout: 30) {
       switch a.hasSelfIntersection {
       case .some(true):  print("self-intersects")
       case .some(false): print("clean")
-      case nil:          print("indeterminate, hardTimeout elapsed first")
+      case nil:          print("indeterminate, timeout elapsed before a checkpoint")
       }
   }
   ```

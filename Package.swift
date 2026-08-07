@@ -223,6 +223,20 @@ let package = Package(
             ]
         ),
 
+        // Shared dispatch logic for every "one executable target, many named entries" shared
+        // target below (Censuses, Harnesses): the registry type and the list/all/run-by-name
+        // switch, factored out after #772 review found Harnesses had reproduced Censuses' own
+        // dispatch code almost line for line instead of sharing it. A plain library target, not
+        // an executable: both executables below declare it as a dependency. Its own directory
+        // holds only this one Swift file, so it needs no `exclude:` either.
+        .target(
+            name: "RunnerCore",
+            path: "Scripts/repro/runner-core",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
+
         // #694: one shared executable target for every cluster census docs/v2.0.0-plan.md's
         // census-once rule asks for, replacing the one-target-per-cluster `ClusterACensus`
         // (#664 was the first). `swift run Censuses <cluster>` (or `all`, or no argument to list).
@@ -236,7 +250,7 @@ let package = Package(
         // maintain was #694's other objection to one target per cluster.
         .executableTarget(
             name: "Censuses",
-            dependencies: ["OCCTSwift"],
+            dependencies: ["OCCTSwift", "RunnerCore"],
             path: "Scripts/repro/censuses",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
@@ -248,13 +262,14 @@ let package = Package(
         // the same #694 reasoning: a manifest path into a per-issue repro directory couples
         // `swift build` to a directory name that does get renamed, and a second `exclude:` list
         // per harness is a second thing to maintain. `swift run Harnesses <name>` (or `all`, or
-        // no argument to list); see HarnessRunner.swift for the dispatch logic. Source lives
-        // under Scripts/repro/harnesses/, not Scripts/repro/<issue-dir>/: an issue's own repro
+        // no argument to list); see HarnessRunner.swift for the registry and RunnerCore's
+        // GenericRunner for the dispatch logic it shares with Censuses. Source lives under
+        // Scripts/repro/harnesses/, not Scripts/repro/<issue-dir>/: an issue's own repro
         // directory keeps only its README and captured output (neither is Swift source SwiftPM
         // needs to see), so no `exclude:` is needed here at all.
         .executableTarget(
             name: "Harnesses",
-            dependencies: ["OCCTSwift"],
+            dependencies: ["OCCTSwift", "RunnerCore"],
             path: "Scripts/repro/harnesses",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
