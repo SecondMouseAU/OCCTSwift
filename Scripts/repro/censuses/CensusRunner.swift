@@ -23,6 +23,7 @@ enum CensusRunner {
         CensusEntry(name: "cluster-a", summary: "sub-shape enumeration and orientation (#664)", run: ClusterA.run),
         CensusEntry(name: "cluster-b", summary: "fillet and chamfer edge-set contract (#665)", run: ClusterB.run),
         CensusEntry(name: "cluster-d", summary: "continuity handling across the kernel and bridge (#513/#667)", run: ClusterD.run),
+        CensusEntry(name: "issue-761", summary: "AAG vs BRepGraph face/edge adjacency (#761)", run: Issue761.run),
     ]
 
     static func main() {

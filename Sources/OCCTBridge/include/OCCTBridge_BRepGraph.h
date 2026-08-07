@@ -51,11 +51,32 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
 /// Get all edges shared between two faces
 /// @param shape The shape containing the faces
 /// @param face1 First face
-/// @param face2 Second face  
+/// @param face2 Second face
 /// @param outEdges Output array for shared edges (caller allocates)
 /// @param maxEdges Maximum number of edges to return
-/// @return Number of shared edges found
+/// @return Number of shared edges found, truncated at maxEdges if the true count is larger. Call
+///   OCCTFaceGetSharedEdgeCount first to size outEdges exactly and avoid truncation (#761).
 int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges);
+
+/// The true number of edges shared between two faces, with no cap.
+///
+/// `AAG.buildGraph()` (`FeatureRecognition.swift`) used to call `OCCTFaceGetSharedEdges` directly
+/// with a hardcoded `maxEdges: 10`, so `AAGEdge.sharedEdgeCount` silently truncated at 10 on any
+/// face pair sharing more edges -- plausible after healing splits a boundary into segments, and
+/// reproduced directly: an 11-notch synthetic fixture measured 12 shared edges between two faces,
+/// reported as 10 (`Scripts/repro/761-aag-brepgraph-adjacency/`). This is the same count-then-fetch
+/// idiom `BRepGraph.swift`'s own `fetchIndices` helper already uses for every `...Count`/
+/// `...Indices` bridge pair: call this first to size the buffer exactly, then call
+/// OCCTFaceGetSharedEdges with that exact count. Same O(e1 * e2) cost as OCCTFaceGetSharedEdges
+/// itself (each face's own edge count, never the whole shape), so sizing correctly costs nothing
+/// beyond running that comparison twice, which #761's own measurement found negligible next to the
+/// alternative of routing through BRepGraph.sharedEdges(between:and:) instead (a real, measured
+/// performance regression at model scale -- see that repro directory's README for the numbers).
+/// @param shape The shape containing the faces
+/// @param face1 First face
+/// @param face2 Second face
+/// @return Number of shared edges, uncapped.
+int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
 
 /// Check if two faces are adjacent (share at least one edge)
 bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);

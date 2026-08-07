@@ -141,6 +141,51 @@ public struct AAGEdge: Sendable {
 /// // Order-independent: both sides of the shared wall are their own node either way.
 /// print(orderA.detectPocketsAAG().count == orderB.detectPocketsAAG().count)   // true
 /// ```
+///
+/// ## Why this does not build on `BRepGraph` (#761)
+///
+/// `BRepGraph` (`BRepGraph.swift`) answers the same two raw questions this type does --
+/// `adjacentFaces(of:)`/`sharedEdges(between:and:)` look like a ready-made replacement for the
+/// pairwise `OCCTFacesAreAdjacent`/`OCCTFaceGetSharedEdges` calls `buildGraph()` makes below.
+/// Measured (`Scripts/repro/761-aag-brepgraph-adjacency/`), not assumed, they are not
+/// interchangeable, for two independent reasons:
+///
+/// 1. **`BRepGraph`'s face-node identity is `IsSame`-deduplicated**, exactly the collapse rule
+///    `Shape.faces()` uses and #642's own fix moved AAG's node set away from
+///    (`BRepGraph::ShapesView::FindNode` hashes on `TopTools_ShapeMapHasher`, which is `IsSame`:
+///    same underlying face, either orientation, one node). A face shared by two solids has ONE
+///    `BRepGraph` node, not two occurrence nodes -- confirmed by mapping every occurrence of
+///    `orientedFaces()` to its `BRepGraph` node via `findNode(for:)` on both split fixtures: the
+///    wall's two occurrences always resolve to the identical node index. Querying that one node's
+///    `adjacentFaces(of:)` returns neighbors from BOTH solids merged (measured: 8 faces spanning
+///    both solid groups on the vertical- and horizontal-cut fixtures), because `BRepGraph` has no
+///    concept of "this face as seen from solid A" versus "from solid B" to keep them apart. That
+///    is exactly the cross-solid contamination #699 fixed by restricting `buildGraph()`'s own
+///    pairwise loop to same-solid pairs -- a fix that is possible here because `AAG` keeps a
+///    separate node per occurrence, and would not be expressible against a graph that has already
+///    thrown that distinction away.
+/// 2. **A per-pair swap is measurably slower, and the gap widens with model size.** `BRepGraph`'s
+///    own `adjacentFaces(of:)`/`sharedEdges(between:and:)` (`bgAdjacentFaces`/`bgSharedEdges`,
+///    `OCCTBridge_BRepGraph.mm`) each linearly scan every edge in the WHOLE graph, because OCCT
+///    8.0.0p1 dropped `TopoView::FaceOps`'s direct face-face helpers and there is no indexed
+///    face-to-face incidence to query instead. `OCCTFaceGetSharedEdges` compares only the two
+///    faces' own (small, typically 4-6) edge sets. Measured on a plate with a grid of drilled
+///    holes: replacing the inner call, same O(n^2) outer loop, cost 2.4x more wall time at 22
+///    face occurrences and 8x more at 70 -- growing, not constant, because the graph's own edge
+///    count grows with the model while each face's own edge count does not. Restricting the swap
+///    to only the pairs already confirmed adjacent (a much smaller, roughly-linear subset) still
+///    roughly doubled the total cost of `buildGraph()`, because `BRepGraph`'s per-call scan cost is
+///    comparable to this type's ENTIRE current O(n^2) probe, before even counting the cost of
+///    building the `BRepGraph` and the occurrence-to-node map in the first place.
+///
+/// What #761 fixed instead: the one genuine correctness gap the comparison surfaced,
+/// `AAGEdge.sharedEdgeCount` silently capping at 10 (`OCCTFaceGetSharedEdges`'s buffer, sized by a
+/// hardcoded caller argument, not the true count) even though `BRepGraph.sharedEdges(between:and:)`
+/// has no such cap -- confirmed on a synthetic fixture at 12 real shared edges, reported as 10.
+/// Fixed at the root, in the SAME direct call this type already makes: a new
+/// `OCCTFaceGetSharedEdgeCount` sizes the buffer exactly before `OCCTFaceGetSharedEdges` fills it,
+/// same O(e1 * e2) cost as before (run twice on each face's own small edge set, never the whole
+/// shape), with none of the scaling cost a `BRepGraph`-routed fix would have carried.
 public final class AAG: @unchecked Sendable {
     /// The shape this graph represents
     public let shape: Shape
@@ -238,24 +283,38 @@ public final class AAG: @unchecked Sendable {
 
                 // Check if adjacent
                 if OCCTFacesAreAdjacent(shape.handle, face1.handle, face2.handle) {
-                    // Get shared edge count and convexity
-                    var sharedEdges: [OCCTEdgeRef?] = Array(repeating: nil, count: 10)
-                    let edgeCount = OCCTFaceGetSharedEdges(
-                        shape.handle, face1.handle, face2.handle,
-                        &sharedEdges, 10
-                    )
-
-                    // Get convexity from first shared edge
+                    // #761: size the buffer from the TRUE count first, rather than a fixed 10.
+                    // The old fixed size silently truncated `AAGEdge.sharedEdgeCount` whenever a
+                    // face pair shared more than 10 edges -- measured directly (a synthetic
+                    // 11-notch fixture shares 12 edges between two faces; the old code reported
+                    // 10). This costs the same O(e1 * e2) comparison OCCTFaceGetSharedEdges itself
+                    // runs, twice instead of once, over each face's own (small) edge set -- never
+                    // the whole shape, so it does not scale with face/edge count the way routing
+                    // through BRepGraph.sharedEdges(between:and:) would have (measured separately,
+                    // see Scripts/repro/761-aag-brepgraph-adjacency/README.md: a naive per-pair
+                    // swap onto BRepGraph was 2-8x slower and getting worse with model size, since
+                    // that primitive scans every edge in the whole graph, not just these two
+                    // faces' own).
+                    let trueCount = Int(OCCTFaceGetSharedEdgeCount(shape.handle, face1.handle, face2.handle))
                     var convexity: EdgeConvexity = .smooth
-                    if edgeCount > 0, let firstEdge = sharedEdges[0] {
-                        let occtConvexity = OCCTEdgeGetConvexity(
-                            shape.handle, firstEdge,
-                            face1.handle, face2.handle
+                    if trueCount > 0 {
+                        var sharedEdges: [OCCTEdgeRef?] = Array(repeating: nil, count: trueCount)
+                        let fetchedCount = OCCTFaceGetSharedEdges(
+                            shape.handle, face1.handle, face2.handle,
+                            &sharedEdges, Int32(trueCount)
                         )
-                        convexity = EdgeConvexity(fromOCCT: occtConvexity)
+
+                        // Get convexity from first shared edge
+                        if fetchedCount > 0, let firstEdge = sharedEdges[0] {
+                            let occtConvexity = OCCTEdgeGetConvexity(
+                                shape.handle, firstEdge,
+                                face1.handle, face2.handle
+                            )
+                            convexity = EdgeConvexity(fromOCCT: occtConvexity)
+                        }
 
                         // Release edges
-                        for k in 0..<Int(edgeCount) {
+                        for k in 0..<Int(fetchedCount) {
                             if let edge = sharedEdges[k] {
                                 OCCTEdgeRelease(edge)
                             }
@@ -267,7 +326,7 @@ public final class AAG: @unchecked Sendable {
                         face1Index: i,
                         face2Index: j,
                         convexity: convexity,
-                        sharedEdgeCount: Int(edgeCount)
+                        sharedEdgeCount: trueCount
                     )
                     edges.append(edge)
 
@@ -492,10 +551,14 @@ extension AAG {
     /// `sharedEdgeCount` is a **total** across the whole face pair, inner wires included, so a boss
     /// wall's own inner-wire edge was being added to the same sum as the outer boundary's: closed
     /// three walls plus one boss edge could reach four and look complete while the outer loop
-    /// itself still had a real gap. It is also capped: `OCCTFaceGetSharedEdges`'s fixed buffer
-    /// silently truncates past its slot count, so a floor/wall pair sharing more edges than that
-    /// (plausible after healing splits a boundary into segments) would undercount regardless of
-    /// wire scope. Testing membership per edge instead of comparing sums removes both failure modes
+    /// itself still had a real gap. It was also capped at the time: `OCCTFaceGetSharedEdges`'s
+    /// fixed buffer silently truncated past its slot count, so a floor/wall pair sharing more
+    /// edges than that (plausible after healing splits a boundary into segments, and confirmed on
+    /// a synthetic fixture by #761) would undercount regardless of wire scope -- `buildGraph()`
+    /// now sizes that buffer from `OCCTFaceGetSharedEdgeCount` instead of a fixed 10, so
+    /// `AAGEdge.sharedEdgeCount` itself is no longer capped, but the per-edge test below still
+    /// does not depend on it being accurate, which is the point: it does not read
+    /// `sharedEdgeCount` at all. Testing membership per edge instead of comparing sums removes both failure modes
     /// structurally: the loop never visits an inner-wire edge in the first place, and it never reads
     /// a total that could be capped.
     ///

@@ -3174,6 +3174,33 @@ int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRe
     }
 }
 
+int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2) {
+    if (!shape || !face1 || !face2) return 0;
+
+    try {
+        // Same comparison OCCTFaceGetSharedEdges runs, just counting instead of allocating and
+        // writing OCCTEdge wrappers -- see #761 for why AAG.buildGraph() needs this uncapped.
+        TopTools_IndexedMapOfShape edges1, edges2;
+        TopExp::MapShapes(face1->face, TopAbs_EDGE, edges1);
+        TopExp::MapShapes(face2->face, TopAbs_EDGE, edges2);
+
+        int32_t count = 0;
+        for (int i = 1; i <= edges1.Extent(); i++) {
+            const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
+            for (int j = 1; j <= edges2.Extent(); j++) {
+                const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
+                if (e1.IsSame(e2)) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        return count;
+    } catch (...) {
+        return 0;
+    }
+}
+
 bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2) {
     if (!shape || !face1 || !face2) return false;
     
