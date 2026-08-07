@@ -26,7 +26,9 @@ public static func geomFillSweep(path: Shape, section: Shape) -> Shape?
 ```
 
 - **Parameters:** `path` — edge defining the sweep path. `section` — edge defining the cross-section profile.
-- **Returns:** A `Shape` wrapping the swept face, or `nil` on failure.
+- **Returns:** A `Shape` wrapping the swept face, or `nil` on failure, including when `GeomFill_Sweep`
+  fits the surface but misses its own 1e-4 tolerance (`ErrorOnSurface()`); a surface reported `IsDone()`
+  is not necessarily within the tolerance it was built at, so this is checked rather than assumed (#597).
 - **OCCT:** `GeomFill_Sweep`
 - **Example:**
   ```swift
