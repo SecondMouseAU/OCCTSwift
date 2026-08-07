@@ -158,20 +158,39 @@ struct Issue598PipeShellFrenetModeTests {
 
     /// Review of #715: the CHANGELOG claimed a circular profile makes `.frenet` and
     /// `.correctedFrenet` produce "the identical swept volume" on
-    /// `docs/guides/cookbook/helices.md`'s spring recipe, so the page needed no update. Measured,
-    /// not assumed, using the exact recipe (r=10, pitch=4, turns=5, wireRadius=1.5) and an
-    /// independent `PipeShellBuilder` oracle: the claim is false. `.frenet` reproduces the
-    /// textbook tube volume (pi * wireRadius^2 * coil length) to within numerical tolerance;
-    /// `.correctedFrenet` does not (measured ~12% larger, cross-checked against
-    /// `PipeShellBuilder.setFrenet(false)` giving the identical value). The cookbook page is
-    /// fixed in the same PR that adds this test: its recipe now uses `.frenet`.
-    @Test("the cookbook spring recipe: .frenet matches the textbook tube volume; .correctedFrenet does not")
+    /// `docs/guides/cookbook/helices.md`'s spring recipe, so the page needed no update. This test
+    /// used to measure the opposite (`.correctedFrenet` ~12% larger than textbook) -- but #721
+    /// found that measurement's own construction was wrong, not `.correctedFrenet`.
+    ///
+    /// The recipe placed the profile at `SIMD3(r, 0, 0)` with tangent
+    /// `normalize(0, r, pitch/2pi)`, describing that as "the helix start, with its normal along
+    /// the helix tangent there." It is neither. `Wire.helix`'s default `clockwise: false` reverses
+    /// the build axis to -Z (see its doc comment), so the wire's actual start is `(-r, ~0, 0)`,
+    /// descending, and the real tangent's Z-component has the opposite sign from the formula
+    /// above. Measured directly (`spine.edges().first!.curve3D!.d1(at: domain.lowerBound)`): the
+    /// real start point is `(-10, 0, 0)`, 20 units from where the old recipe put the profile.
+    ///
+    /// `.frenet`'s volume was insensitive to this (still matched textbook to 1e-6) only by an
+    /// unrelated coincidence: `BRepOffsetAPI_MakePipeShell` re-derives the Frenet trihedron from
+    /// the spine itself and a circle has no preferred rotation, so a profile whose *plane* is
+    /// merely consistent with *some* congruent helix (this one, mirrored) still sweeps to the
+    /// right volume under `.frenet`. `.correctedFrenet` is not insensitive to it: its per-edge
+    /// twist-angle law is referenced to the input frame, and the mismatch propagates into a real,
+    /// large error. With the profile at its *actual* measured position and tangent, both modes
+    /// agree with each other and with the textbook volume to 1e-6 relative -- see
+    /// `Issue721CorrectedFrenetPlacementTests` for the full sweep across pitch and turn count that
+    /// established this. There is no `.correctedFrenet` defect on this fixture family.
+    @Test("the cookbook spring recipe, correctly placed: .frenet and .correctedFrenet both match the textbook tube volume")
     func cookbookSpringRecipeVolumeInvariant() {
         let r = 10.0, pitch = 4.0, turns = 5.0, wireRadius = 1.5
         guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns),
-              let profile = Wire.circle(origin: SIMD3(r, 0, 0),
-                                        normal: simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi))),
-                                        radius: wireRadius),
+              let firstEdge = spine.edges().first, let curve = firstEdge.curve3D else {
+            Issue.record("Could not build the spine"); return
+        }
+        // The profile belongs at the spine's own measured start point and tangent, not at a
+        // point/tangent merely consistent with *some* congruent helix (#721).
+        let (p0, t0) = curve.d1(at: curve.domain.lowerBound)
+        guard let profile = Wire.circle(origin: p0, normal: simd_normalize(t0), radius: wireRadius),
               let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, solid: true),
               let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
               let trueFrenet = Self.groundTruth(spine: spine, profile: profile, frenet: true),
@@ -190,7 +209,55 @@ struct Issue598PipeShellFrenetModeTests {
         let textbookVolume = Double.pi * wireRadius * wireRadius * coilLength
         #expect(vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
                 ".frenet (\(vFrenet)) should match the textbook tube volume (\(textbookVolume))")
-        #expect(!vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-2),
-                ".correctedFrenet (\(vCorrected)) must not match the textbook tube volume on this spine")
+        #expect(vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
+                ".correctedFrenet (\(vCorrected)) should also match the textbook tube volume (\(textbookVolume)) once the profile is correctly placed (#721)")
+        #expect(vFrenet.isApproximatelyEqual(to: vCorrected, tolerance: 1e-4),
+                ".frenet (\(vFrenet)) and .correctedFrenet (\(vCorrected)) must agree: a circular profile is symmetric under rotation about the tangent, the only axis the two laws differ on")
+    }
+
+    /// #721: the measurement that made the old version of the test above (and the old cookbook
+    /// recipe) look like a `.correctedFrenet` defect. Kept as a permanent regression against
+    /// reintroducing the mis-placed-profile construction: it reproduces the issue's own reported
+    /// numbers (`.correctedFrenet` 27.6% high at pitch=12, reversing to -19.9% at pitch=30) from a
+    /// profile that is 20 units from the spine, proving the divergence is a property of that
+    /// specific mistake and not of `.correctedFrenet`, `GeomFill_CorrectedFrenet`, or
+    /// `BRepFill_Edge3DLaw`'s per-edge trihedron construction.
+    ///
+    /// Injection check (the "prove the test fails" policy, `okf/policies/prove-the-test-fails.md`):
+    /// replacing the mis-signed tangent below with the correctly-measured one from the test above
+    /// collapses `corrRatio` to 1.0 and fails the `!isApproximatelyEqual` assertion -- confirmed
+    /// by hand while writing this test, not left as an assumption.
+    @Test("a profile placed at the mirror point with a mirror tangent reproduces #721's reported divergence")
+    func misplacedProfileReproducesIssue721Divergence() {
+        let r = 10.0, wireRadius = 1.5
+        for (pitch, turns, expectedRatio) in [(1.0, 3.0, 1.005), (4.0, 3.0, 1.075),
+                                              (12.0, 3.0, 1.276), (30.0, 3.0, 0.801)] {
+            guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else {
+                Issue.record("Could not build spine at pitch \(pitch)"); continue
+            }
+            // The ORIGINAL (wrong) recipe: origin at (r, 0, 0) -- the antipode of the wire's real
+            // start (-r, 0, 0) -- with a tangent sign that matches an ascending helix, not the
+            // descending one `clockwise: false` actually builds.
+            let mismatchedTangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
+            guard let profile = Wire.circle(origin: SIMD3(r, 0, 0), normal: mismatchedTangent, radius: wireRadius),
+                  let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet, solid: true),
+                  let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet, solid: true),
+                  let vFrenet = frenet.volume, let vCorrected = corrected.volume else {
+                Issue.record("Could not build the sweeps at pitch \(pitch)"); continue
+            }
+            let coilLength = turns * sqrt(pow(2 * .pi * r, 2) + pow(pitch, 2))
+            let textbookVolume = Double.pi * wireRadius * wireRadius * coilLength
+            let corrRatio = vCorrected / textbookVolume
+
+            #expect(vFrenet.isApproximatelyEqual(to: textbookVolume, tolerance: 1e-3),
+                    "pitch \(pitch): .frenet stays correct even with this mis-placed profile")
+            // Smallest reported divergence is pitch=1 at 0.51%; 2e-3 stays well below that while
+            // sitting far above the ~1e-6 relative noise floor a genuine match shows elsewhere in
+            // this file, so it can't accidentally pass on numerical noise.
+            #expect(!vCorrected.isApproximatelyEqual(to: textbookVolume, tolerance: 2e-3),
+                    "pitch \(pitch): .correctedFrenet should reproduce the reported divergence, got ratio \(corrRatio)")
+            #expect(corrRatio.isApproximatelyEqual(to: expectedRatio, tolerance: 5e-3),
+                    "pitch \(pitch): expected ratio close to the issue's own \(expectedRatio), got \(corrRatio)")
+        }
     }
 }

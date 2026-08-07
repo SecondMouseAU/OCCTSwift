@@ -881,6 +881,21 @@ distinguish them. Since the cookbook's own claimed invariant
 recipe is corrected in this same PR to use `.frenet`, and its prose no longer claims rotational
 symmetry makes the two laws interchangeable.
 
+**Revised after OCCTSwift #721: the paragraph above was itself wrong, not just the cookbook.** The
+"about 12% larger" measurement placed the profile at `SIMD3(r, 0, 0)` with tangent
+`normalize(0, r, pitch/2pi)`, describing that as the helix's own start point and tangent. It is
+neither: `Wire.helix`'s default `clockwise: false` reverses the build axis to -Z, so the wire's
+actual start is `(-r, ~0, 0)`, descending, and the real tangent's Z-component has the opposite
+sign. With the profile placed at the spine's own measured start point and tangent instead,
+`.frenet` and `.correctedFrenet` agree with each other and with the textbook volume to ~1e-6
+relative, at every pitch and turn count tested (see #721's own PR for the full sweep). The
+rotational-symmetry argument this entry originally walked back was correct after all; the
+measurement that contradicted it was constructing the wrong profile, not testing a real
+`.correctedFrenet` limitation. `docs/guides/cookbook/helices.md`'s recipe and this repo's own
+`Issue598PipeShellFrenetModeTests.cookbookSpringRecipeVolumeInvariant` are corrected in #721's PR to
+measure the tangent from the wire rather than compute it analytically, and `.correctedFrenet` is
+restored as a mode that also produces the textbook volume on a helical spring.
+
 Every other existing pipe-shell call site in this repo's tests uses either a straight spine or a
 non-Frenet mode (`.fixed(binormal:)`, `.auxiliary(spine:)`) this bug never touched. Exactly one
 existing hardcoded literal needed updating: `Issue503PipeShellTests.fixedBinormalDiffersFromFrenet`'s
