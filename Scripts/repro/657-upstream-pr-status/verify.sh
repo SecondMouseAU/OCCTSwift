@@ -79,7 +79,19 @@ for pair in "${PAIRS[@]}"; do
     --jq '[.state, .merged, .mergeable, .comments, .review_comments] | map(if . == null then "null" else . end) | @tsv' \
     >"$JOB_DIR/$pr.tsv" &
 done
-wait
+
+# Collect each job's exit status rather than a bare `wait`. A `gh api` job that dies
+# partway can leave a non-empty but truncated line, which the `-s` check below waves
+# through; `read` then assigns empty strings to the fields that never arrived and the
+# table prints blank columns instead of stopping. Failing here makes that loud.
+gh_failed=0
+for job in $(jobs -p); do
+  wait "$job" || gh_failed=1
+done
+if [ "$gh_failed" -ne 0 ]; then
+  echo "ERROR: at least one gh api lookup exited non-zero; the table below would be incomplete." >&2
+  exit 1
+fi
 
 for pair in "${PAIRS[@]}"; do
   patch="${pair%%:*}"
@@ -131,7 +143,7 @@ fi
 # leaves the working tree alone rather than reporting "nothing to do", verified by
 # injecting a local edit into a tracked file and confirming `checkout -B` preserves
 # it while `reset --hard` discards it, matching a stale/corrupted cached checkout.
-(cd "$SCRATCH/occt-master" && git fetch --depth 100 origin master && git checkout -B master origin/master && git reset --hard origin/master)
+(cd "$SCRATCH/occt-master" && git fetch --depth 100 origin master && git checkout -f -B master origin/master && git reset --hard origin/master && git clean -qfd)
 MASTER_SHA="$(git -C "$SCRATCH/occt-master" rev-parse HEAD)"
 MASTER_DATE="$(git -C "$SCRATCH/occt-master" log -1 --format='%ci')"
 echo "master tip: $MASTER_SHA $MASTER_DATE"
