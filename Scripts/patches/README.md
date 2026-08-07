@@ -307,6 +307,10 @@ The defect is invisible whenever the cut result happens to have one solid, which
 
 **A second defect in the same heuristic, not fixed here.** `PerformThruNext`'s closest-interval fallback (`BRepFeat_MakeCylindricalHole.cxx:217-242`) has a misplaced brace: the `// parbar > Last` branch is nested *inside* `if (parbar < First)`, as the `else` of the distance comparison, so the "beyond `Last`" case is unreachable as written. `PerformBlind`'s equivalent fallback (`:602-616`) compares `std::abs(First - parbar)` uniformly and has no such structure. The fallback only runs when no tool part's barycentre lies in `[First, Last]`, which none of the probed geometries reach, so it is reported rather than changed.
 
+Re-verified directly against current upstream `master` (not assumed from the `V8_0_0_p1` baseline this was first measured on): the four call sites are unchanged, `BRepFeat_Form`/`BRepFeat_RibSlot` still use the two-argument overload, and the second, unfixed defect is still present at the same lines. The touched file is byte-identical between `master` and our pin. Compiled `BRepFeat_MakeCylindricalHole.cxx` from `master` as an override translation unit, once unmodified and once with this patch, and ran the `Scripts/repro/532-cylindrical-hole-part-selection/` probe against both: the unmodified build reproduces every "before" figure above (including the oversized-radius `InvalidPlacement`), the patched build reproduces every "after" figure.
+
+Filed upstream as [Open-Cascade-SAS/OCCT#1447](https://github.com/Open-Cascade-SAS/OCCT/pull/1447), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058).
+
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0021-CPnts-adaptive-arc-length-integration-603.patch
