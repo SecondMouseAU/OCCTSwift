@@ -969,3 +969,255 @@ smoothThreshold = 0.01, CorrectPoint = true (matches OCCTEdgeGetConvexity exactl
       F1: Plane area=60 centroid=(-6,3,5) radial=N/A
       F2: Plane area=36 centroid=(-3,3,0) radial=N/A
   (38 manifold edges total)
+
+=== 9. South floor fillet (r=3) + separate vertical corner fillet (r=2), west junction left sharp ===
+  edge #1: TANGENT(smooth)
+      F1: Plane area=56 centroid=(1,-5,6.5) radial=N/A
+      F2: Cylinder area=37.6991 centroid=(1,-3.90986,1.09014) radial=INWARD (dot=-1.000000)
+  edge #2: TANGENT(smooth)
+      F1: Plane area=56 centroid=(1,-5,6.5) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #3: CONCAVE
+      F1: Plane area=56 centroid=(1,-5,6.5) radial=N/A
+      F2: Plane area=98.0686 centroid=(5,0.0852754,5.08528) radial=N/A
+  edge #4: CONVEX
+      F1: Plane area=56 centroid=(1,-5,6.5) radial=N/A
+      F2: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+  edge #5: TANGENT(smooth)
+      F1: Cylinder area=37.6991 centroid=(1,-3.90986,1.09014) radial=INWARD (dot=-1.000000)
+      F2: Torus area=11.218 centroid=(-4.1202,-3.55329,1.44671) radial=N/A
+  edge #6: CONCAVE
+      F1: Cylinder area=37.6991 centroid=(1,-3.90986,1.09014) radial=INWARD (dot=-1.000000)
+      F2: Plane area=98.0686 centroid=(5,0.0852754,5.08528) radial=N/A
+  edge #7: TANGENT(smooth)
+      F1: Cylinder area=37.6991 centroid=(1,-3.90986,1.09014) radial=INWARD (dot=-1.000000)
+      F2: Plane area=56 centroid=(1,1.5,0) radial=N/A
+  edge #8: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Torus area=11.218 centroid=(-4.1202,-3.55329,1.44671) radial=N/A
+  edge #9: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=63.7854 centroid=(-5,1.01271,6.01271) radial=N/A
+  edge #10: CONVEX
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+  edge #11: CONVEX
+      F1: Plane area=98.0686 centroid=(5,0.0852754,5.08528) radial=N/A
+      F2: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+  edge #12: CONCAVE
+      F1: Plane area=98.0686 centroid=(5,0.0852754,5.08528) radial=N/A
+      F2: Plane area=56 centroid=(1,1.5,0) radial=N/A
+  edge #13: CONCAVE
+      F1: Plane area=98.0686 centroid=(5,0.0852754,5.08528) radial=N/A
+      F2: Plane area=99.1416 centroid=(0.039424,5,5.03942) radial=N/A
+  edge #14: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=63.7854 centroid=(-5,1.01271,6.01271) radial=N/A
+  edge #15: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=99.1416 centroid=(0.039424,5,5.03942) radial=N/A
+  edge #16: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #17: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #18: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #19: CONVEX
+      F1: Plane area=300.858 centroid=(-0.0129913,-0.0129913,10) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #20: TANGENT(smooth)
+      F1: Torus area=11.218 centroid=(-4.1202,-3.55329,1.44671) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,1.5,0.72676) radial=INWARD (dot=-1.000000)
+  edge #21: TANGENT(smooth)
+      F1: Torus area=11.218 centroid=(-4.1202,-3.55329,1.44671) radial=N/A
+      F2: Plane area=63.7854 centroid=(-5,1.01271,6.01271) radial=N/A
+  edge #22: TANGENT(smooth)
+      F1: Plane area=56 centroid=(1,1.5,0) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,1.5,0.72676) radial=INWARD (dot=-1.000000)
+  edge #23: CONCAVE
+      F1: Plane area=56 centroid=(1,1.5,0) radial=N/A
+      F2: Plane area=99.1416 centroid=(0.039424,5,5.03942) radial=N/A
+  edge #24: CONCAVE
+      F1: Plane area=63.7854 centroid=(-5,1.01271,6.01271) radial=N/A
+      F2: Plane area=99.1416 centroid=(0.039424,5,5.03942) radial=N/A
+  edge #25: TANGENT(smooth)
+      F1: Plane area=63.7854 centroid=(-5,1.01271,6.01271) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,1.5,0.72676) radial=INWARD (dot=-1.000000)
+  edge #26: CONCAVE
+      F1: Plane area=99.1416 centroid=(0.039424,5,5.03942) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,1.5,0.72676) radial=INWARD (dot=-1.000000)
+  edge #27: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #28: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #29: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #30: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #31: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #32: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #33: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #34: CONVEX
+      F1: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  (34 manifold edges total)
+
+=== 10. Fully rounded pocket: floor fillet (r=3) all four sides + vertical corner fillet (r=2) all four corners ===
+  edge #1: TANGENT(smooth)
+      F1: Plane area=42 centroid=(1.03092e-16,-5,6.5) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(-1.67954e-14,-4.01181,1.18402) radial=INWARD (dot=-1.000000)
+  edge #2: TANGENT(smooth)
+      F1: Plane area=42 centroid=(1.03092e-16,-5,6.5) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #3: TANGENT(smooth)
+      F1: Plane area=42 centroid=(1.03092e-16,-5,6.5) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #4: CONVEX
+      F1: Plane area=42 centroid=(1.03092e-16,-5,6.5) radial=N/A
+      F2: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+  edge #5: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(-1.67954e-14,-4.01181,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(-3.7665,-3.7665,1.48235) radial=N/A
+  edge #6: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(-1.67954e-14,-4.01181,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(3.7665,-3.7665,1.48235) radial=N/A
+  edge #7: TANGENT(smooth)
+      F1: Cylinder area=24.6021 centroid=(-1.67954e-14,-4.01181,1.18402) radial=INWARD (dot=-1.000000)
+      F2: Plane area=16 centroid=(5.72459e-17,2.77556e-17,0) radial=N/A
+  edge #8: CONCAVE
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(-3.7665,-3.7665,1.48235) radial=N/A
+  edge #9: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=42 centroid=(-5,1.34813e-16,6.5) radial=N/A
+  edge #10: CONVEX
+      F1: Cylinder area=21.9911 centroid=(-4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+  edge #11: CONCAVE
+      F1: Cylinder area=21.9911 centroid=(4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(3.7665,-3.7665,1.48235) radial=N/A
+  edge #12: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=42 centroid=(5,1.34813e-16,6.5) radial=N/A
+  edge #13: CONVEX
+      F1: Cylinder area=21.9911 centroid=(4.27324,-4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+  edge #14: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=42 centroid=(5,1.34813e-16,6.5) radial=N/A
+  edge #15: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=42 centroid=(-5,1.34813e-16,6.5) radial=N/A
+  edge #16: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #17: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #18: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=42 centroid=(1.03092e-16,5,6.5) radial=N/A
+  edge #19: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #20: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #21: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #22: CONVEX
+      F1: Plane area=303.434 centroid=(-1.82943e-17,5.85419e-17,10) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #23: CONCAVE
+      F1: BSpline area=9.9202 centroid=(-3.7665,-3.7665,1.48235) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(-4.01181,6.55701e-16,1.18402) radial=INWARD (dot=-1.000000)
+  edge #24: CONCAVE
+      F1: BSpline area=9.9202 centroid=(3.7665,-3.7665,1.48235) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(4.01181,1.95026e-14,1.18402) radial=INWARD (dot=-1.000000)
+  edge #25: TANGENT(smooth)
+      F1: Plane area=16 centroid=(5.72459e-17,2.77556e-17,0) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(-4.01181,6.55701e-16,1.18402) radial=INWARD (dot=-1.000000)
+  edge #26: TANGENT(smooth)
+      F1: Plane area=16 centroid=(5.72459e-17,2.77556e-17,0) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(4.01181,1.95026e-14,1.18402) radial=INWARD (dot=-1.000000)
+  edge #27: TANGENT(smooth)
+      F1: Plane area=16 centroid=(5.72459e-17,2.77556e-17,0) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(8.74247e-15,4.01181,1.18402) radial=INWARD (dot=-1.000000)
+  edge #28: TANGENT(smooth)
+      F1: Plane area=42 centroid=(-5,1.34813e-16,6.5) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(-4.01181,6.55701e-16,1.18402) radial=INWARD (dot=-1.000000)
+  edge #29: TANGENT(smooth)
+      F1: Plane area=42 centroid=(-5,1.34813e-16,6.5) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(-4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #30: TANGENT(smooth)
+      F1: Plane area=42 centroid=(5,1.34813e-16,6.5) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(4.01181,1.95026e-14,1.18402) radial=INWARD (dot=-1.000000)
+  edge #31: TANGENT(smooth)
+      F1: Plane area=42 centroid=(5,1.34813e-16,6.5) radial=N/A
+      F2: Cylinder area=21.9911 centroid=(4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+  edge #32: CONCAVE
+      F1: Cylinder area=21.9911 centroid=(4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(3.7665,3.7665,1.48235) radial=N/A
+  edge #33: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=42 centroid=(1.03092e-16,5,6.5) radial=N/A
+  edge #34: CONCAVE
+      F1: Cylinder area=21.9911 centroid=(-4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(-3.7665,3.7665,1.48235) radial=N/A
+  edge #35: TANGENT(smooth)
+      F1: Cylinder area=21.9911 centroid=(-4.27324,4.27324,6.5) radial=INWARD (dot=-1.000000)
+      F2: Plane area=42 centroid=(1.03092e-16,5,6.5) radial=N/A
+  edge #36: TANGENT(smooth)
+      F1: Plane area=42 centroid=(1.03092e-16,5,6.5) radial=N/A
+      F2: Cylinder area=24.6021 centroid=(8.74247e-15,4.01181,1.18402) radial=INWARD (dot=-1.000000)
+  edge #37: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #38: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #39: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #40: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #41: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #42: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #43: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #44: CONVEX
+      F1: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #45: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(-4.01181,6.55701e-16,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(-3.7665,3.7665,1.48235) radial=N/A
+  edge #46: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(4.01181,1.95026e-14,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(3.7665,3.7665,1.48235) radial=N/A
+  edge #47: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(8.74247e-15,4.01181,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(-3.7665,3.7665,1.48235) radial=N/A
+  edge #48: CONCAVE
+      F1: Cylinder area=24.6021 centroid=(8.74247e-15,4.01181,1.18402) radial=INWARD (dot=-1.000000)
+      F2: BSpline area=9.9202 centroid=(3.7665,3.7665,1.48235) radial=N/A
+  (48 manifold edges total)

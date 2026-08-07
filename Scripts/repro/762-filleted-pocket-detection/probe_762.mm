@@ -439,6 +439,144 @@ static TopoDS_Shape lShapedPocketPartiallyFilleted(double radius) {
     return mkFillet.Shape();
 }
 
+// The south floor/wall junction filleted (radius floorRadius), and, separately, the vertical
+// corner edge between the west and south walls also filleted (radius cornerRadius), with the
+// WEST floor/wall junction left SHARP (unfilleted). Ground-truths the OR-fusion bug (#762
+// review round 4): the ORIGINAL crossable test for a `.smooth` edge leaving an already
+// confirmed fillet was `isRadiallyInwardFillet(edge.face1Index) ||
+// isRadiallyInwardFillet(edge.face2Index)`, which tests EITHER end of the edge. Once the
+// south fillet is confirmed, that OR is trivially satisfied by the south fillet's own half
+// regardless of what is on the far side, so it wrongly crossed into this corner-blend
+// cylinder and, since the cylinder is vertical and radially inward too, wrongly accepted it
+// as a WALL. The corner-blend cylinder is reached only through the south fillet's own further
+// (non-floor-bordering) torus junction, never directly from the floor.
+static TopoDS_Shape southFilletPlusVerticalCornerFillet(double floorRadius, double cornerRadius) {
+    TopoDS_Shape box = centeredBox(20);
+    TopoDS_Shape tool = BRepPrimAPI_MakeBox(gp_Pnt(-5, -5, 0), 10, 10, 15).Shape();
+    TopoDS_Shape cut = BRepAlgoAPI_Cut(box, tool).Shape();
+
+    // South floor/wall junction: z=0, y=-5, x spanning [-5,5].
+    TopoDS_Edge southEdge;
+    bool foundSouth = false;
+    {
+        TopExp_Explorer exp(cut, TopAbs_EDGE);
+        for (; exp.More(); exp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
+            Bnd_Box bbox;
+            BRepBndLib::Add(edge, bbox);
+            double xmin, ymin, zmin, xmax, ymax, zmax;
+            bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+            if (abs(zmin) < 1e-6 && abs(zmax) < 1e-6 &&
+                abs(ymin - (-5)) < 1e-6 && abs(ymax - (-5)) < 1e-6) {
+                southEdge = edge;
+                foundSouth = true;
+                break;
+            }
+        }
+    }
+    if (!foundSouth) {
+        cerr << "  !! southFilletPlusVerticalCornerFillet: south edge not found\n";
+        return cut;
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet1(cut);
+    mkFillet1.Add(floorRadius, southEdge);
+    mkFillet1.Build();
+    if (!mkFillet1.IsDone()) {
+        cerr << "  !! southFilletPlusVerticalCornerFillet: south fillet build FAILED\n";
+        return cut;
+    }
+    TopoDS_Shape filletedSouth = mkFillet1.Shape();
+
+    // Vertical corner edge between west (x=-5) and south (y=-5) walls: x=-5, y=-5, spanning z.
+    TopoDS_Edge cornerEdge;
+    bool foundCorner = false;
+    {
+        TopExp_Explorer exp(filletedSouth, TopAbs_EDGE);
+        for (; exp.More(); exp.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(exp.Current());
+            Bnd_Box bbox;
+            BRepBndLib::Add(edge, bbox);
+            double xmin, ymin, zmin, xmax, ymax, zmax;
+            bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+            if (abs(xmin - (-5)) < 1e-3 && abs(xmax - (-5)) < 1e-3 &&
+                abs(ymin - (-5)) < 1e-3 && abs(ymax - (-5)) < 1e-3 &&
+                (zmax - zmin) > 1.0) {
+                cornerEdge = edge;
+                foundCorner = true;
+                break;
+            }
+        }
+    }
+    if (!foundCorner) {
+        cerr << "  !! southFilletPlusVerticalCornerFillet: corner edge not found\n";
+        return filletedSouth;
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet2(filletedSouth);
+    mkFillet2.Add(cornerRadius, cornerEdge);
+    mkFillet2.Build();
+    if (!mkFillet2.IsDone()) {
+        cerr << "  !! southFilletPlusVerticalCornerFillet: corner fillet build FAILED\n";
+        return filletedSouth;
+    }
+    return mkFillet2.Shape();
+}
+
+// All four floor/wall junctions filleted (radius floorRadius) AND all four vertical corners
+// separately filleted (radius cornerRadius): a torus/corner-fillet ring all the way around
+// the pocket. Stresses whether junction-to-junction chaining, now confined by the #762 review
+// round 4 fix to producing only further junctions past the first floor-bordering hop, still
+// finds exactly the four genuine flat walls without wandering into any of the eight curved
+// junction faces (four floor fillets, four corner fillets) or the four BSpline surfaces OCCT
+// inserts to reconcile the mismatched-radius corners.
+static TopoDS_Shape fullyRoundedPocket(double floorRadius, double cornerRadius) {
+    TopoDS_Shape cut = sharpPocket();
+    vector<TopoDS_Edge> floorEdges = pocketJunctionEdges(cut);
+    BRepFilletAPI_MakeFillet mkFillet1(cut);
+    for (auto& edge : floorEdges) mkFillet1.Add(floorRadius, edge);
+    mkFillet1.Build();
+    if (!mkFillet1.IsDone()) {
+        cerr << "  !! fullyRoundedPocket: floor fillet build FAILED\n";
+        return cut;
+    }
+    TopoDS_Shape filletedFloor = mkFillet1.Shape();
+
+    // TopTools_IndexedMapOfShape, not a plain TopExp_Explorer: a bare explorer over a solid
+    // visits each edge once per face-wire occurrence (twice for an edge shared by two faces),
+    // so counting matches directly against it would double-count every corner edge found.
+    vector<TopoDS_Edge> cornerEdges;
+    TopTools_IndexedMapOfShape edgeMap;
+    TopExp::MapShapes(filletedFloor, TopAbs_EDGE, edgeMap);
+    for (int i = 1; i <= edgeMap.Extent(); i++) {
+        TopoDS_Edge edge = TopoDS::Edge(edgeMap(i));
+        Bnd_Box bbox;
+        BRepBndLib::Add(edge, bbox);
+        double xmin, ymin, zmin, xmax, ymax, zmax;
+        bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+        // A true vertical corner edge is a single (x,y) point swept in z: tight x/y extent of
+        // its own, at one of the pocket's four (+-5,+-5) corners. Distinguishes it from a
+        // diagonal boundary edge of the corner-reconciliation patch the floor fillet itself
+        // inserts, which can loosely satisfy a min-only x/y check but spans a wide x/y range.
+        if ((zmax - zmin) > 1.0 && (xmax - xmin) < 0.5 && (ymax - ymin) < 0.5 &&
+            abs(abs(xmin) - 5) < 1e-2 && abs(abs(ymin) - 5) < 1e-2) {
+            cornerEdges.push_back(edge);
+        }
+    }
+    if (cornerEdges.size() != 4) {
+        cerr << "  !! fullyRoundedPocket: expected 4 corner edges, found " << cornerEdges.size() << "\n";
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet2(filletedFloor);
+    for (auto& edge : cornerEdges) mkFillet2.Add(cornerRadius, edge);
+    mkFillet2.Build();
+    if (!mkFillet2.IsDone()) {
+        cerr << "  !! fullyRoundedPocket: corner fillet build FAILED\n";
+        return filletedFloor;
+    }
+    return mkFillet2.Shape();
+}
+
 int main() {
     cout << "#762 ground truth: ChFi3d::DefineConnectType at floor/wall junctions\n";
     cout << "smoothThreshold = 0.01, CorrectPoint = true (matches OCCTEdgeGetConvexity exactly)\n";
@@ -461,6 +599,12 @@ int main() {
 
     reportJunctions(lShapedPocketPartiallyFilleted(1.0),
                      "8. L-shaped pocket, reflex corner, one of its two walls filleted, radius=1.0");
+
+    reportJunctions(southFilletPlusVerticalCornerFillet(3.0, 2.0),
+                     "9. South floor fillet (r=3) + separate vertical corner fillet (r=2), west junction left sharp");
+
+    reportJunctions(fullyRoundedPocket(3.0, 2.0),
+                     "10. Fully rounded pocket: floor fillet (r=3) all four sides + vertical corner fillet (r=2) all four corners");
 
     return 0;
 }

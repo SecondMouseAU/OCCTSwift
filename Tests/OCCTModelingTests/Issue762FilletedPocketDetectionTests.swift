@@ -258,6 +258,143 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
     }
 }
 
+// MARK: - Junction-to-junction chaining (round 4 review)
+
+// PR #778's third review round found the `.smooth` crossable test for a face reached from an
+// already-confirmed fillet, `neighborNode.isVertical || isRadiallyInwardFillet(neighbor)`,
+// made no distinction between ENTERING a floor's own fillet and CONTINUING past it into a
+// further corner blend: once `current` was confirmed, every vertical `.smooth` neighbor
+// looked eligible to become the wall, including a corner-blend face that is itself another
+// junction, not the wall at all. These two suites are the guards against that, each proven to
+// matter by actually forcing `currentBordersFloorDirectly` true (its pre-fix effective value)
+// and re-running (see the PR body's removal-matrix update).
+
+@Suite("A vertical corner-blend fillet is a junction, not a wall (#762 review round 4)")
+struct Issue762VerticalCornerBlendNotAWallTests {
+
+    /// A vertical corner-blend cylinder is reentrant and radially inward exactly like a
+    /// genuine fillet, and vertical exactly like a genuine wall, so the pre-fix crossable test
+    /// wrongly accepted it as the wall itself once its own entering fillet was confirmed.
+    ///
+    /// Ground-truthed against `ChFi3d::DefineConnectType`
+    /// (`Scripts/repro/762-filleted-pocket-detection/`, fixture 9): the south floor/wall
+    /// junction is filleted (radius 3), and, separately, the vertical corner edge between the
+    /// west and south walls is ALSO filleted (radius 2), with the west floor/wall junction
+    /// left sharp. The corner-blend cylinder is reached only through the south fillet's own
+    /// further torus junction (`.smooth`, ground truth edge #5), never directly from the
+    /// floor.
+    ///
+    /// Fixed in `wallsAndJunctions(fromFloor:floorZ:tolerance:)`: `currentBordersFloorDirectly`
+    /// distinguishes a junction whose own entering edge came from the floor (the fillet built
+    /// to blend the floor to its wall specifically) from one reached only through another
+    /// junction. Only the former's vertical neighbor is eligible to become a wall; the
+    /// latter's is absorbed as a further junction regardless of the #724 Z-check, keeping the
+    /// search going without wrongly promoting it.
+    @Test("the vertical corner-blend cylinder is excluded from walls, not wrongly promoted")
+    func verticalCornerBlendCylinderIsExcludedFromWalls() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(pocketTool))
+
+        let southEdge = cut.edges(where: {
+            abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 &&
+            abs($0.bounds.min.y - (-5)) < 1e-6 && abs($0.bounds.max.y - (-5)) < 1e-6
+        })
+        #expect(southEdge.count == 1)
+        let filletedSouth = try #require(cut.filleted(edges: southEdge, radius: 3.0))
+
+        let cornerEdge = filletedSouth.edges(where: {
+            abs($0.bounds.min.x - (-5)) < 1e-3 && abs($0.bounds.max.x - (-5)) < 1e-3 &&
+            abs($0.bounds.min.y - (-5)) < 1e-3 && abs($0.bounds.max.y - (-5)) < 1e-3 &&
+            ($0.bounds.max.z - $0.bounds.min.z) > 1.0
+        })
+        #expect(cornerEdge.count == 1)
+        let doubleFillet = try #require(filletedSouth.filleted(edges: cornerEdge, radius: 2.0))
+
+        let pockets = doubleFillet.detectPocketsAAG()
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(!pocket.isOpen)
+
+        let occFaces = doubleFillet.orientedFaces()
+        for wallIndex in pocket.wallFaceIndices {
+            #expect(occFaces[wallIndex].surfaceType == .plane)
+        }
+    }
+}
+
+@Suite("Junction-to-junction chaining around a fully rounded pocket finds only the four genuine walls (#762 review round 4)")
+struct Issue762FullyRoundedPocketChainingTests {
+
+    /// Stresses the same fix on a much richer topology: all four floor/wall junctions
+    /// filleted (radius 3) AND all four vertical corners separately filleted (radius 2),
+    /// producing a torus/corner-fillet ring all the way around the pocket (eight curved
+    /// junction faces plus four BSpline surfaces OCCT inserts to reconcile the
+    /// mismatched-radius corners; ground-truthed,
+    /// `Scripts/repro/762-filleted-pocket-detection/`, fixture 10). Checks that
+    /// junction-to-junction chaining, confined by `currentBordersFloorDirectly` to producing
+    /// only further junctions past the first floor-bordering hop, still finds exactly the
+    /// four genuine flat walls without wandering into misclassifying any of the twelve curved
+    /// or freeform junction faces, and that the BFS terminates regardless: `visited` bounds
+    /// the total work to this floor's own face count no matter how many junction faces it
+    /// absorbs along the way.
+    ///
+    /// Measured (not assumed) where each wall is actually found here: every one of the four
+    /// is reached in exactly one hop past its own floor-bordering horizontal fillet (ground
+    /// truth edge #1/#12/#14/#18, wall to horizontal fillet cylinder, `.smooth`), the identical
+    /// depth as the single-corner fixture above, even though this shape ALSO offers a second,
+    /// longer route to the same wall through the vertical corner cylinder and BSpline (ground
+    /// truth edges #2/#9, #3/#12, etc.). The BFS reaches a wall by its shortest route first, so
+    /// the longer route is never actually needed to find it here.
+    ///
+    /// That is exactly why a fixed hop limit was rejected in favor of
+    /// `currentBordersFloorDirectly`, a structural fact (whether `current`'s own entering edge
+    /// came from the floor) rather than a count: a fillet is built to blend exactly the two
+    /// named faces it sits between, so a floor-bordering fillet's OTHER tangent relationship is
+    /// its wall by construction, regardless of how much unrelated corner-to-corner chaining
+    /// exists elsewhere in the same graph. No fixture built for this issue required a genuine
+    /// wall to be found more than one hop past a floor-bordering junction; this fixture
+    /// deliberately offers a longer alternative route to the same wall specifically to check
+    /// that the shorter, correct one still wins, not to demonstrate that a longer one is ever
+    /// required.
+    @Test("all four vertical corner-blend cylinders are excluded, only the four flat walls remain")
+    func fullyRoundedPocketFindsExactlyFourWalls() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(pocketTool))
+
+        let floorEdges = cut.edges(where: {
+            abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 &&
+            $0.bounds.min.x > -5.5 && $0.bounds.max.x < 5.5 &&
+            $0.bounds.min.y > -5.5 && $0.bounds.max.y < 5.5
+        })
+        #expect(floorEdges.count == 4)
+        let filletedFloor = try #require(cut.filleted(edges: floorEdges, radius: 3.0))
+
+        let cornerEdges = filletedFloor.edges(where: {
+            ($0.bounds.max.z - $0.bounds.min.z) > 1.0 &&
+            ($0.bounds.max.x - $0.bounds.min.x) < 0.5 &&
+            ($0.bounds.max.y - $0.bounds.min.y) < 0.5 &&
+            abs(abs($0.bounds.min.x) - 5) < 1e-2 &&
+            abs(abs($0.bounds.min.y) - 5) < 1e-2
+        })
+        #expect(cornerEdges.count == 4)
+        let doubleRing = try #require(filletedFloor.filleted(edges: cornerEdges, radius: 2.0))
+
+        let pockets = doubleRing.detectPocketsAAG()
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(!pocket.isOpen)
+
+        let occFaces = doubleRing.orientedFaces()
+        for wallIndex in pocket.wallFaceIndices {
+            #expect(occFaces[wallIndex].surfaceType == .plane)
+        }
+    }
+}
+
 // MARK: - False-positive guards
 
 // #762 named the risk explicitly: "transitive tangency could sweep in faces that are not

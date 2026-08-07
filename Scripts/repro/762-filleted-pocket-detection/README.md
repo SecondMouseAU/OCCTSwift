@@ -18,10 +18,11 @@ clang++ -std=c++17 -ObjC++ -w \
 /tmp/probe_762
 ```
 
-Recorded output is in `ground-truth-output.txt` (971 lines, every manifold edge of all ten
-fixture variants, not excerpted; fixtures 1 through 6 were measured before the fix was written,
-fixture 8 was added afterward, during review, to test a removal-matrix conjunction, see below).
-`probe_762.mm` calls `ChFi3d::DefineConnectType` with the
+Recorded output is in `ground-truth-output.txt` (every manifold edge of all ten fixture variants,
+not excerpted; fixtures 1 through 6 were measured before the fix was written, fixture 8 was added
+during a second review round to test a removal-matrix conjunction, and fixtures 9 and 10 were added
+during a third review round to ground-truth the OR-fusion bug described below, see "The OR-fusion
+bug" section). `probe_762.mm` calls `ChFi3d::DefineConnectType` with the
 identical arguments `OCCTEdgeGetConvexity` does (`smoothThreshold = 0.01`, `CorrectPoint = true`),
 against fixtures built with plain OCCT primitives, no bridge and no Swift, so this is OCCT's own
 classifier's answer, not this project's wrapper of it.
@@ -42,6 +43,8 @@ this fix inverted it), unless noted:
 | 6 | Filleted boss (convex feature, r = 1) | floor `.smooth` to cylinder `.smooth` to boss wall | 0 | 1, **open** (matches sharp boss, see below) |
 | 7 | Plain box, own top exterior edges filleted, r = 2 (not in the probe binary, measured directly against the Swift API, see below) | floor `.smooth` to cylinder (radially OUTWARD) | 0 | **0** (must never become 1) |
 | 8 | L-shaped pocket, reflex corner, one of its two reflex-corner walls filleted, r = 1 (added during review, see "The `.convex` guard" below) | floor `.smooth` to cylinder `.smooth` to fillet, then `.convex` to the unfilleted wall | n/a (built after the fix) | 2 pockets (the L's own coplanar floor split), both open |
+| 9 | South floor/wall junction filleted (r = 3), and, separately, the vertical corner edge between west and south walls also filleted (r = 2), west's own floor/wall junction left SHARP (added during round-4 review, see "The OR-fusion bug" below) | floor `.smooth` to horizontal fillet cylinder `.smooth` to torus `.smooth` to vertical corner-blend cylinder | n/a (built after the fix) | 1 pocket, 4 walls, enclosed; the vertical corner-blend cylinder correctly excluded |
+| 10 | Fully rounded pocket: all four floor/wall junctions filleted (r = 3) AND all four vertical corners separately filleted (r = 2) (added during round-4 review, a stress generalization of fixture 9) | a torus/corner-fillet ring: 8 curved junction faces plus 4 BSpline corner-reconciliation faces | n/a (built after the fix) | 1 pocket, exactly 4 (flat) walls, enclosed; all 12 curved/freeform faces correctly excluded |
 
 "pre-fix" / "post-fix" counts are from `Sources/OCCTTest/main.swift` scratch runs against
 `detectPocketsAAG()` before and after the fix in this PR (the scratch probe itself is not
@@ -214,18 +217,105 @@ conjunction does not reveal a new failure mode beyond B alone; it is consistent 
 now-real effect being masked once B is also disabled, the same shape of interaction as the
 visited-marking bug's masking, just between two live guards rather than a guard and a bug.
 
+## The OR-fusion bug: entering a junction vs. continuing past one
+
+A third review round on this PR found the `.smooth` crossable test for a face reached from an
+already-confirmed fillet (`currentIsConfirmedFillet == true`) checked `neighborNode.isVertical ||
+isRadiallyInwardFillet(neighbor)` with no further distinction of WHERE the candidate sits relative
+to the floor. Once `current` is confirmed, every vertical `.smooth` neighbor looked eligible to
+become the wall, including a face that is itself another junction, not the wall at all.
+
+This traces back to an earlier, algebraically equivalent form the review named directly: the
+original crossable test was `isRadiallyInwardFillet(edge.face1Index) ||
+isRadiallyInwardFillet(edge.face2Index)`, testing EITHER end of the edge. `buildGraph()` always
+populates `edge.face1Index`/`edge.face2Index` as exactly `{current, neighbor}` as a set (`i < j` in
+occurrence order, unrelated to which node the BFS is currently expanding from), so that OR is
+provably identical to `isRadiallyInwardFillet(current) || isRadiallyInwardFillet(neighbor)`. Once
+`current` is confirmed, its own half of the OR is trivially true, making the far side irrelevant to
+crossability, exactly the "entering vs. continuing" ambiguity the review named.
+
+Built to prove this is reachable, not argued (the review's explicit instruction, given this PR had
+already been wrong twice about something looking "untestable" or "geometrically impossible" that
+turned out to be a live bug: the `.convex` guard's own history above): fixture 9. A vertical,
+radially-inward, but non-planar corner-blend cylinder (the separately-filleted west/south corner)
+is reached only through the south fillet's own further torus junction, never directly from the
+floor. Before the fix, `detectPocketsAAG()` reports `floor=6 walls=[0, 2, 3, 7, 8]`, five wall
+indices; node 2 is the corner-blend cylinder, wrongly promoted. Fixture 10 generalizes this to all
+four corners of a fully rounded pocket and shows a far more dramatic failure: `walls=[0, 2, 3, 8,
+9, 10, 11, 12]`, eight indices, all four corner-blend cylinders wrongly promoted, not just one.
+
+### The fix that was tried first, and regressed real walls
+
+The first fix attempted required a wall candidate to be `isVertical && isPlanar`, reasoning that a
+curved face satisfying `isVertical` (its own sampled normal is horizontal, which a vertical-axis
+cylinder or torus satisfies regardless of curvature) could not be a genuine flat wall.  Measured
+against the full suite, this broke three pre-existing, unrelated tests:
+`Issue735PocketEnclosureTests.cylindricalPocketIsEnclosed` and two floor-boss enclosure tests,
+because a SHARP cylindrical pocket's own bore, and a boss's own cylindrical side wall, are
+genuinely curved walls reached directly (no fillet at all), and `isPlanar` excluded them too. The
+`isPlanar` requirement was answering "is this face flat," which is not the same question as "is
+this face a wall of this floor's own pocket," and a curved fillet junction and a curved genuine
+wall can look identical by that one property alone. This confirms the same shape of mistake as
+round 2's retracted "no fixture reached it" argument: a plausible-sounding local property is not
+the same as measuring the actual distinguishing structure, and it cost a second full pass through
+the suite to find.
+
+### The fix that shipped: `currentBordersFloorDirectly`
+
+The distinguishing property that actually separates a genuine wall from an incidental corner blend
+is not a property of the CANDIDATE face at all: it is a property of `current`, the node whose edges
+are being examined. `currentBordersFloorDirectly` is true when `current` is the floor itself, or a
+junction whose own entering edge came directly from the floor: exactly the fillet or chamfer built
+to blend the floor to its wall specifically, which by construction has exactly two "long"
+tangent/concave relationships (to the floor, and to that wall) and nothing else. A junction reached
+only through ANOTHER junction (a corner blend continuing the chain, e.g. fixture 9's torus and
+second fillet) is not that relationship: it exists to reconcile two OTHER faces, and its own far
+neighbor is not automatically this floor's wall just because it is vertical and radially inward,
+since a further corner blend can be both of those too.
+
+A vertical candidate reached when `currentBordersFloorDirectly` is false is absorbed as a further
+junction instead (kept in the search, not dropped), so a genuine wall further down the same chain
+is still reachable by whichever route finds it. Measured on fixtures 9 and 10, both now report
+exactly the intended walls (`[0, 3, 7, 8]` and `[0, 8, 9, 12]` respectively, each all planar), with
+every corner-blend cylinder and BSpline correctly absorbed as a junction instead.
+
+### Why not a hop limit
+
+Fixture 10 was built specifically to check whether a fixed hop limit would have worked instead
+(the review's own question: "if a bound is needed on junction chaining, prefer something
+principled"). Measured, not assumed: every wall in fixture 10 is found in exactly one hop past its
+own floor-bordering horizontal fillet (ground truth edges #1/#12/#14/#18), the identical depth as
+the single-corner fixtures above, even though the same shape also offers a longer route to the same
+wall through its own vertical corner cylinder and BSpline (ground truth edges #2/#9, #3/#12, etc.).
+The BFS finds a wall by whichever route reaches it first, so the longer route is never actually
+needed here, and no fixture built for this issue required a genuine wall to be found more than one
+hop past a floor-bordering junction. `currentBordersFloorDirectly` gates on a structural fact
+(whether `current`'s own entering edge came from the floor) rather than a hop count precisely
+because a fillet is built to blend exactly the two named faces it sits between: a floor-bordering
+fillet's OTHER tangent relationship is its wall by construction, independent of how much unrelated
+corner-to-corner chaining exists elsewhere in the same graph. Termination does not depend on this
+gate either: `visited` already bounds the total work to this floor's own face count regardless of
+how many junction faces a chain absorbs (see "A direct dead end stays revisitable" above for the
+matching argument about the dead-end case).
+
 ## Removal matrix, final
 
 | injection | what was disabled | tests that failed |
 |---|---|---|
 | A | `.smooth`-edge radially-inward gate, unconditionally crossable | 3: plain-box exterior fillet, both L-shape tests (sharp and filleted) |
-| B | Z-tolerance bypass for chain-discovered walls | 10: all 4 fillet-radius cases, chamfer, partial-fillet, filleted through-slot, inverted `Issue753FilletedJunctionDetectedTests`, L-shape reflex corner, and the new dead-end test |
+| B | Z-tolerance bypass for chain-discovered walls | 12: all 4 fillet-radius cases, chamfer, partial-fillet, filleted through-slot, inverted `Issue753FilletedJunctionDetectedTests`, L-shape reflex corner, the dead-end test, the fixture-9 corner-blend test, and the fixture-10 ring test |
 | C | `.convex` edge block, alone | **2**: filleted through-slot, L-shape reflex corner (see table above) |
-| D | B and C together | 10, identical to B's own set |
+| D | B and C together | 12, identical to B's own set |
 
-Four injections, twenty-two tests, and every one of the four now has a real, non-vacuous failure
-set: none reads as decorative on inspection alone, and each was confirmed by actually breaking the
-code and watching the intended tests, and no others, fail.
+Re-run in full after the `currentBordersFloorDirectly` fix, since crossability rules changed what
+each injection reaches: the failure sets above are unchanged in shape from the pre-round-4 matrix
+plus exactly the two new round-4 tests, both folding into B/D's set (their own mechanism is a
+fillet chain, so removing the Z-tolerance bypass breaks them the same way as every other
+chain-discovered wall), and neither appearing under A or C, confirming the new gate is independent
+of those two guards rather than overlapping or subsuming them. `Issue762FilletedPocketDetectionTests.swift`
+carries 15 `@Test` functions after this round (13 before), and all four injections were re-run
+against the full `Issue762|Issue753|Issue735|Issue747` filter (34 tests), confirming no other,
+unrelated test picked up a new failure under any of the four.
 
 ## The radial material-side test was duplicated, now shared
 

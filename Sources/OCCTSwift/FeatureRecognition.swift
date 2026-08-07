@@ -798,6 +798,25 @@ extension AAG {
             for current in frontier {
                 let reachedThroughJunction = current != floorIndex
                 guard current < adjacencyList.count else { continue }
+                // Whether `current` is itself a confirmed reentrant fillet, i.e. whether we
+                // are CONTINUING an already-verified chain rather than trying to ENTER a new
+                // one. `isRadiallyInwardFillet(current)` is always false for `current ==
+                // floorIndex` (a floor is planar, never a fillet), so this is the entering
+                // case at BFS level 0 by construction, not a separate check.
+                let currentIsConfirmedFillet = isRadiallyInwardFillet(current)
+                // Whether `current` is close enough to the floor, structurally, for a face it
+                // borders to be THIS floor's own wall (#762 review, round 4). "Close enough"
+                // means the floor itself, or a junction whose OWN entering edge came directly
+                // from the floor: exactly the fillet or chamfer built to blend the floor to its
+                // wall, which by construction has exactly two "long" tangent/concave
+                // relationships, to the floor and to that wall, and nothing else. A junction
+                // reached only through ANOTHER junction (a corner blend continuing the chain,
+                // e.g. the torus and second fillet in fixture 2 below) is not that specific
+                // relationship: it exists to reconcile two OTHER faces, and its own far
+                // neighbor is not automatically this floor's wall just because it is vertical
+                // and radially inward, since a further corner blend can be both of those too.
+                let currentBordersFloorDirectly = !reachedThroughJunction
+                    || (floorIndex < adjacencyList.count && adjacencyList[floorIndex][current] != nil)
                 for (neighbor, edgeIndex) in adjacencyList[current] {
                     guard !visited.contains(neighbor) else { continue }
                     let edge = edges[edgeIndex]
@@ -808,7 +827,25 @@ extension AAG {
                     case .concave:
                         crossable = true
                     case .smooth:
-                        crossable = isRadiallyInwardFillet(edge.face1Index) || isRadiallyInwardFillet(edge.face2Index)
+                        // ENTERING a fillet chain for the first time (`current` is not itself
+                        // one) requires the candidate to be a confirmed reentrant fillet: this
+                        // is the only sign a tangent edge carries (#762 review). CONTINUING an
+                        // already-confirmed chain accepts either the wall the fillet blends
+                        // into (a vertical face, checked below) or another face that
+                        // independently confirms the same reentrant curvature (a further corner
+                        // blend, e.g. a torus or a second fillet, continuing the same physical
+                        // corner). This is deliberately NOT `isRadiallyInwardFillet(edge.face1Index)
+                        // || isRadiallyInwardFillet(edge.face2Index)`: that tests EITHER end of
+                        // the edge, and once `current` is a confirmed fillet it always
+                        // satisfies its own half of that OR, making every `.smooth` edge
+                        // leaving it crossable regardless of what is actually on the far side,
+                        // including an unrelated tangent face. Crossability alone does not
+                        // decide wall vs. junction below; `currentBordersFloorDirectly` does.
+                        if currentIsConfirmedFillet {
+                            crossable = nodes[neighbor].isVertical || isRadiallyInwardFillet(neighbor)
+                        } else {
+                            crossable = isRadiallyInwardFillet(neighbor)
+                        }
                     }
                     guard crossable else { continue }
 
@@ -823,8 +860,22 @@ extension AAG {
                     // is not a terminal outcome for the face, only for this particular edge.
                     let candidate = nodes[neighbor]
                     guard candidate.isVertical else {
-                        // Not a wall itself: a junction face (fillet or chamfer) absorbed into
-                        // the floor/wall transition. Keep looking past it for the true wall.
+                        // Not a wall itself: a junction face (fillet, chamfer, or a curved
+                        // corner blend) absorbed into the floor/wall transition. Keep looking
+                        // past it for the true wall.
+                        visited.insert(neighbor)
+                        junctions.append(neighbor)
+                        next.append(neighbor)
+                        continue
+                    }
+                    guard currentBordersFloorDirectly else {
+                        // Vertical, but reached from a junction that does not itself border the
+                        // floor: not this floor's wall (that relationship belongs solely to the
+                        // floor-bordering junction), and not a dead end either, since it may
+                        // still be worth searching past (#762 review, round 4, fixture 2: a
+                        // vertical corner-blend cylinder between a floor-bordering fillet's own
+                        // torus and the genuine wall). Absorbed as a further junction instead of
+                        // a wall, regardless of how the Z-check below would have scored it.
                         visited.insert(neighbor)
                         junctions.append(neighbor)
                         next.append(neighbor)
