@@ -1117,7 +1117,13 @@ extension Wire {
     ///   as a naive right-handed parametrization would suggest. If you need the exact start point
     ///   or tangent (for example to place a profile for `Shape.pipeShell`), measure it from the
     ///   wire itself rather than computing it analytically:
-    ///   `spine.edges().first?.curve3D?.d1(at: domain.lowerBound)`. Computing it analytically and
+    ///
+    ///   ```swift
+    ///   guard let curve = spine.edges().first?.curve3D else { return }
+    ///   let (start, tangent) = curve.d1(at: curve.domain.lowerBound)
+    ///   ```
+    ///
+    ///   Computing it analytically and
     ///   getting the axis convention backwards is exactly what produced OCCTSwift #721, where a
     ///   profile ended up 2×radius from the spine with an inverted tangent, silently corrupting
     ///   `.correctedFrenet` sweeps (but not `.frenet`, by an unrelated coincidence) on the

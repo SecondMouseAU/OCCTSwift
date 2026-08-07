@@ -124,3 +124,29 @@ struct Issue721CorrectedFrenetPlacementTests {
                 "expected a real discontinuity in the corrected-Frenet normal across the internal edge boundary, measured \(angleDeg) degrees")
     }
 }
+
+/// Compiles and runs `Wire.helix`'s own doc snippet verbatim. The first version of that snippet
+/// referenced an undefined `domain` and would not have compiled if anyone pasted it, which is the
+/// same class of defect as the unverified placement formula that produced #721 in the first place.
+/// A snippet shipped alongside a warning about unverified formulas should itself be verified.
+@Suite("Wire.helix's doc snippet compiles and measures the real start (#721)")
+struct Issue721HelixDocSnippetTests {
+    @Test("the documented way to measure a helix start point works and disagrees with the naive one")
+    func snippetCompilesAndIsNotTheNaiveAnswer() throws {
+        let spine = try #require(Wire.helix(radius: 10, pitch: 4, turns: 3))
+
+        // Verbatim from the doc comment on Wire.helix.
+        guard let curve = spine.edges().first?.curve3D else {
+            Issue.record("helix has no first edge curve")
+            return
+        }
+        let (start, tangent) = curve.d1(at: curve.domain.lowerBound)
+
+        // The measured start is NOT origin + (radius, 0, 0): that assumption is #721.
+        let naive = SIMD3(10.0, 0.0, 0.0)
+        let offBy = (start - naive)
+        #expect((offBy.x * offBy.x + offBy.y * offBy.y + offBy.z * offBy.z).squareRoot() > 1.0,
+                "the naive start should be measurably wrong, that is the point of the warning")
+        #expect(tangent.z < 0, "the real tangent descends; the naive one was assumed ascending")
+    }
+}
