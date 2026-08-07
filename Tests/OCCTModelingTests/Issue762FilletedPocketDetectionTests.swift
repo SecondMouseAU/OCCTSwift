@@ -123,8 +123,8 @@ struct Issue762PartialFilletDetectionTests {
 @Suite("An L-shaped pocket's reflex corner, partially filleted, is still measured correctly (#762)")
 struct Issue762ReflexCornerPartialFilletTests {
 
-    /// Built specifically to test a removal-matrix conjunction a review of this fix's PR
-    /// raised: a wall reached PAST an already-absorbed junction (where the #724 Z-tolerance
+    /// Built specifically to test a removal-matrix conjunction an earlier review of this fix's
+    /// PR raised: a wall reached PAST an already-absorbed junction (where the #724 Z-tolerance
     /// check is deliberately bypassed) via a `.convex` edge, with no other, more direct route
     /// from the floor for an earlier BFS visit to have already resolved. `ChFi3d` was
     /// ground-truthed first (`Scripts/repro/762-filleted-pocket-detection/`, fixture 8): at
@@ -147,12 +147,18 @@ struct Issue762ReflexCornerPartialFilletTests {
     /// correctness check on reflex-corner geometry combined with a partial fillet, a
     /// combination nothing else in this file covers.
     ///
-    /// A wider tolerance (1e-3, not the default 1e-4) is used deliberately: at the default,
-    /// WallX0's own measured low-Z bound (-0.0001000...22, a `BRepFilletAPI` corner-blending
-    /// artifact) sits within a hair of the tolerance boundary itself, and whether it clears it
-    /// is numerical noise, not a property of this fix. `Issue762FilletedPocketDetectionTests`
-    /// above already covers the default tolerance on every other fixture; this one is about
-    /// the reflex-corner geometry, not about re-proving the default itself.
+    /// Runs at the DEFAULT tolerance (not a widened one). A second review round found the
+    /// earlier version of this test widened `tolerance` to 1e-3 specifically to make WallX0's
+    /// own near-boundary low-Z bound clear the check reliably, and that widening was concealing
+    /// a real, separate bug (`visited` marked too early, fixed below in
+    /// `Issue762DeadEndRevisitableThroughJunctionTests`): at the default tolerance, on the
+    /// UNFIXED code, whichever way that near-boundary noise happened to fall was the difference
+    /// between "found directly" and "silently dropped forever," not between "found directly"
+    /// and "found through the junction instead." With that bug fixed, WallX0 still does not
+    /// appear at the default tolerance, but for the reason already established above (the
+    /// `.convex` guard, not a numerical coincidence): its only OTHER route is the `.convex`
+    /// edge from the fillet, which stays blocked on purpose. `wallCounts` below is `[2, 4]`,
+    /// not `[3, 5]`, at the default tolerance for exactly that reason.
     ///
     /// The L-shape's own floor splits into two separate, coplanar faces (matched by the sharp,
     /// unfilleted control below), each reporting its own partial wall loop and `isOpen == true`
@@ -192,13 +198,63 @@ struct Issue762ReflexCornerPartialFilletTests {
         #expect(wallY0Edges.count == 1)
         let filleted = try #require(cut.filleted(edges: wallY0Edges, radius: 1.0))
 
-        let pockets = filleted.detectPocketsAAG(tolerance: 1e-3)
+        // Default tolerance: see this test's own doc comment for why WallX0 is correctly
+        // absent here (the `.convex` guard, not a numerical near-miss).
+        let pockets = filleted.detectPocketsAAG()
         #expect(pockets.count == 2)
         let wallCounts = pockets.map { $0.wallFaceIndices.count }.sorted()
-        #expect(wallCounts == [3, 5])
+        #expect(wallCounts == [2, 4])
         for pocket in pockets {
             #expect(pocket.isOpen)
         }
+    }
+}
+
+@Suite("A face rejected as a direct dead end stays reachable through its own junction (#762 review)")
+struct Issue762DeadEndRevisitableThroughJunctionTests {
+
+    /// Review of this fix found `wallsAndJunctions(fromFloor:floorZ:tolerance:)` marked
+    /// `visited` as soon as an edge was crossable, before deciding wall, junction, or dead end.
+    /// A face that failed the #724 Z-check as a DIRECT neighbor (`reachedThroughJunction ==
+    /// false`) was marked visited regardless, so a SEPARATE edge reaching that same face
+    /// through an already-absorbed junction (where the Z-check is bypassed) could never run:
+    /// the face was already, wrongly, closed off.
+    ///
+    /// Ground-truthed rather than assumed (`Sources/OCCTTest/main.swift` scratch diagnostic):
+    /// the partial-fillet fixture's two SHARP walls each have their own low-Z bound offset from
+    /// the floor's exact Z by about `1.5e-7`, a `BRepFilletAPI_MakeFillet` corner-blending
+    /// artifact where each meets the ADJACENT filleted wall's own fillet. That is far below the
+    /// default tolerance (`1e-4`), so it is invisible there, but a deliberately smaller
+    /// tolerance (`1e-8`, well under the measured offset) reliably fails each sharp wall's
+    /// DIRECT concave route from the floor while its OWN fillet's separate, `.concave` (not
+    /// `.convex`, so not screened by that unrelated guard) edge to the same wall would accept
+    /// it unconditionally once reached through the junction, since #724's Z check does not
+    /// apply there.
+    ///
+    /// Proved by injection: temporarily moving `visited.insert(neighbor)` back to before the
+    /// wall/junction/dead-end decision (the original, unfixed placement) and rerunning this
+    /// exact fixture at this exact tolerance drops both sharp walls entirely
+    /// (`wallFaceIndices.count` 4 to 2, `isOpen` false to true); restoring the fix returns both
+    /// walls and the correct enclosed verdict. See the PR body's removal-matrix update for the
+    /// full injection record.
+    @Test("a sharp wall that fails the direct Z-check is still found through its own fillet's junction")
+    func deadEndSharpWallIsStillFoundThroughItsOwnJunction() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(pocketTool))
+
+        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        #expect(junctionEdges.count == 4)
+        let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
+
+        // Deliberately smaller than the sharp walls' own measured ~1.5e-7 natural offset, so
+        // their direct route fails while the junction route (unconditional past #724's Z
+        // check) still accepts them.
+        let pockets = filleted.detectPocketsAAG(tolerance: 1e-8)
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(!pocket.isOpen)
     }
 }
 

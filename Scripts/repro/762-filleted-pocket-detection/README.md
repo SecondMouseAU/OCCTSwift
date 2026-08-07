@@ -143,74 +143,100 @@ open: the two exit ends have no neighbor at all (a `.convex` edge to the box's o
 so nothing is absorbed there and the enclosure test still sees the gap. The verdict (open) does not
 change. *Why* it is open does.
 
-## The `.convex` guard: load-bearing past a junction, but untested there
+## The visited-marking bug that had been hiding the `.convex` guard's own proof
 
-`wallsAndJunctions(fromFloor:floorZ:tolerance:)` never crosses a `.convex` edge. A first pass at the
-removal matrix (injection C, disabling that block alone) came back green on every test in this PR,
-which read as "decorative." That reading was wrong, caught in review, and worth recording precisely.
+`wallsAndJunctions(fromFloor:floorZ:tolerance:)` marked a face `visited` as soon as an edge into
+it was crossable, before deciding wall, junction, or dead end. Review found this directly: a face
+that failed the #724 Z-tolerance check as a DIRECT floor neighbor was marked visited regardless,
+so a SEPARATE edge reaching that same face through an already-absorbed junction, where the Z check
+is bypassed and would have accepted it, could never run. Fixed by marking `visited` only once the
+outcome is decided, leaving a dead end (a direct vertical neighbor that fails the Z check)
+revisitable through a later junction.
 
-The guard has two call sites with different backstops. For a DIRECT (1-hop) floor neighbor, the
-#724 Z-tolerance check is independent cover: even with `.convex` disabled, a direct neighbor still
-has to bottom out at the floor's own Z to become a wall, and nothing in this PR's fixtures happens
-to do that by coincidence. For a face reached PAST an already-absorbed junction, the Z check is
-deliberately bypassed (see "Why a chain-discovered wall skips the #724 Z-tolerance check" in
-`wallsAndJunctions`'s own doc comment), so `.convex` is the ONLY remaining protection there.
-Injection C alone came back clean because every fixture in the original set happened to exercise
-the direct-neighbor case, never the past-a-junction one in isolation. Untested and proven-safe read
-identically in a green run.
+Measured on this codebase's own fixtures, not only argued: a partially-filleted pocket's two SHARP
+walls each have a low-Z bound offset from the floor's exact Z by about `1.5e-7`, a
+`BRepFilletAPI_MakeFillet` corner-blending artifact invisible at the default tolerance but decisive
+at a smaller one (`1e-8`). At that tolerance, the direct route fails and the fillet's own separate
+`.concave` edge to the same wall is the only thing that finds it. Proved by injection: reverting
+the fix and rerunning drops both sharp walls entirely (`wallFaceIndices.count` 4 to 2, `isOpen`
+false to true); restoring the fix returns both. See
+`Issue762DeadEndRevisitableThroughJunctionTests` in the test suite for the committed version.
 
-Two fixtures were built specifically to isolate the past-a-junction case, both ground-truthed
-against `ChFi3d` first (fixtures 5 and 8), and both failed to isolate it, for related but distinct
-reasons:
+## The `.convex` guard: proven load-bearing, once dead ends could be retried
 
-- **The filleted through-slot (fixture 5).** Its open end's exterior wall is convex-connected to
-  the fillet, but that same exterior wall is ALSO a direct (1-hop) neighbor of the floor (the
-  floor's own polygon reaches the same exterior boundary the fillet does, since they share that
-  corner). The #724 Z-check resolves it via the direct route before the fillet's own convex edge is
-  ever tried.
-- **The L-shaped pocket, reflex corner, partially filleted (fixture 8).** Built to test the reflex
-  vertex of a non-convex floor boundary: at an ORDINARY corner of a rectangular pocket, two walls
-  meet via a `.concave` edge (fixture 1, edges #17-24); at a REFLEX corner (the inner corner of an
-  L, where a small block of material sticks into the cavity, the mirror image of a boss standing in
-  a room's corner), the hypothesis was that the two walls instead meet via `.convex`, matching how
-  two of a boss's own base fillets meet convexly going around its corner (fixture 6, edges
-  #9/#11/#13/#15). Measured: the hypothesis holds (edge #9, `Cylinder` to `Plane`, `.convex`). But
-  filleting only ONE of the two reflex-corner walls and leaving the other sharp does not isolate the
-  guard either: `BRepFilletAPI_MakeFillet`'s own corner-blending, needed to keep the result
-  watertight where a fillet ends at an unfilleted reflex corner, reshapes the unfilleted wall's own
-  face so the FLOOR borders it directly too (confirmed via exact bounding boxes on the Swift side,
-  not inferred from face areas: `Sources/OCCTTest/main.swift` scratch diagnostic). So the same
-  masking recurs, for a kernel-side reason rather than a floor-topology one.
+A first removal-matrix pass (injection C, disabling the `.convex` block alone) came back green on
+every test in this PR at the time, read as proof the guard was decorative. That reading was wrong,
+and the visited-marking bug above is why: it was not that no fixture could isolate the
+past-a-junction path where `.convex` is the only protection (the #724 Z-check independently covers
+DIRECT neighbors, so `.convex` only matters once `reachedThroughJunction` bypasses that check). Two
+fixtures were built specifically to isolate it (fixtures 5 and 8, both ground-truthed against
+`ChFi3d` first), and both appeared to fail: the filleted through-slot's open-end exterior wall, and
+the L-shaped pocket's reflex-corner far wall, were each also a direct (1-hop) floor neighbor, so the
+Z-check seemed to resolve them first.
 
-A geometric argument, not just "no fixture reached it," emerged from both attempts: a floor's own
-boundary is a closed loop, and every vertex on it has exactly two incident edges, both bordering
-something the floor is directly adjacent to at the same BFS level (level 0) the junction's own
-convex-edged neighbor would only be reached at level 1 or later. A reentrant floor/wall pairing is
-never itself `.convex`, so the floor's own two edges at any vertex are always crossable, and always
-explored one level before a junction reached from that same vertex gets a chance to explore its own
-neighbors. Whatever a junction's convex-edged neighbor turns out to be, tracing it back reaches a
-vertex the floor already has its own, earlier route to. The same reasoning was checked (not
-re-built as a fixture) against a floor-boss-inside-a-pocket configuration too: a boss's wall is
-always additionally reachable via the floor's own inner-wire boundary, independent of any outer-wall
-fillet's own corner.
+That conclusion rested on an unexamined assumption, the same one the bug made in code: that a
+direct neighbor failing the Z-check was fully resolved. Both "masking" direct routes were actually
+REJECTING (near-boundary Z-tolerance noise in each case: the through-slot's own construction, and
+the reflex corner's `BRepFilletAPI` corner-blending artifact landing exactly on the tolerance
+boundary), and a rejected direct neighbor used to be marked `visited` anyway, permanently closing
+off the very `.convex`-gated path under investigation. Neither "masking" fixture was independent
+confirmation of anything: both were the visited-marking bug, not yet found.
 
-This argument covers the pocket topologies this investigation could construct and reason through.
-It is not offered as an exhaustive proof over every shape `BRepFilletAPI`/`BRepAlgoAPI` can produce,
-and it has not been used to justify removing the guard: `.convex` stays blocked, at essentially zero
-runtime cost, with its status recorded accurately as untested-but-plausibly-necessary rather than
-proven either way. A fixture that would settle it needs a face with genuinely no OTHER route to the
-floor at all, which on this evidence likely means two separate solids sharing an edge rather than
-one solid's own corner. That is a real, specific target for the next person who wants to close it,
-not a dead end.
+With dead ends left revisitable and `Issue762ReflexCornerPartialFilletTests` restored to the
+default tolerance (rather than widened past the noise, which is what let it clear the direct route
+and hide this), injection C alone now fails on exactly those two fixtures:
 
-### Injection D: the conjunction, not each half separately
+| fixture | before injection C | under injection C |
+|---|---|---|
+| Filleted through-slot | `wallFaceIndices.count` 2, `isOpen` true | `wallFaceIndices.count` **4**, `isOpen` **false** |
+| L-shaped pocket, reflex corner | `wallCounts` `[2, 4]` | `wallCounts` `[2, **5**]` |
 
-Per review, `.convex` (injection C) and the Z-tolerance bypass (injection B) were also disabled
-TOGETHER (injection D), re-running the full 21-test suite (`Tests/OCCTModelingTests
-/Issue762FilletedPocketDetectionTests.swift`, `Issue753FilletedJunctionDetectedTests`,
-`Issue735PocketEnclosureTests`) after each. Injection D's failure set was IDENTICAL to injection B's
-own, 9 of 21 tests, the same 9 in both cases. The conjunction reveals nothing beyond injection B
-alone on this fixture set, which is itself consistent with (not independent confirmation of) the
-masking argument above: if `.convex`'s own removal changes no outcome by itself, removing it
-alongside something else that does change outcomes should not produce a different failure set
-either, unless the two guards interact on some fixture in a way that cancels out. None here do.
+`.convex` is not untested any more. It is what stops both of these, proven by the same injection
+that once read as clearing it.
+
+The earlier "geometric argument" this README used to make (that a floor's own polygon vertex
+always gives it an equally early, non-`.convex` route to whatever a junction's `.convex` neighbor
+could reach, so the guard's own contribution was always redundant) is retracted, not merely
+superseded. It was true of the graph as the code then implemented it, where a rejected direct
+neighbor's `visited` marking made that route's failure equivalent to its success, both closing off
+the second route equally. It was never true of the geometry itself, only of a bug that happened to
+make the two indistinguishable in every fixture built to tell them apart.
+
+### Injection D: the conjunction, re-measured
+
+`.convex` (injection C) and the Z-tolerance bypass (injection B) were disabled TOGETHER (injection
+D) again after both fixes, re-running the full 22-test suite. Injection D's failure set (10 of 22
+tests) is identical to injection B's own (also 10, now including the new dead-end test), not to
+injection C's smaller, more specific pair. With the Z-tolerance bypass gone, most fillet-mediated
+walls are not found at all regardless of `.convex`, so there is nothing left for a relaxed
+`.convex` to over-include on top of that: B's much larger breakage dominates C's narrower one. The
+conjunction does not reveal a new failure mode beyond B alone; it is consistent with C's own
+now-real effect being masked once B is also disabled, the same shape of interaction as the
+visited-marking bug's masking, just between two live guards rather than a guard and a bug.
+
+## Removal matrix, final
+
+| injection | what was disabled | tests that failed |
+|---|---|---|
+| A | `.smooth`-edge radially-inward gate, unconditionally crossable | 3: plain-box exterior fillet, both L-shape tests (sharp and filleted) |
+| B | Z-tolerance bypass for chain-discovered walls | 10: all 4 fillet-radius cases, chamfer, partial-fillet, filleted through-slot, inverted `Issue753FilletedJunctionDetectedTests`, L-shape reflex corner, and the new dead-end test |
+| C | `.convex` edge block, alone | **2**: filleted through-slot, L-shape reflex corner (see table above) |
+| D | B and C together | 10, identical to B's own set |
+
+Four injections, twenty-two tests, and every one of the four now has a real, non-vacuous failure
+set: none reads as decorative on inspection alone, and each was confirmed by actually breaking the
+code and watching the intended tests, and no others, fail.
+
+## The radial material-side test was duplicated, now shared
+
+Review also found `isRadiallyInwardFillet(_:)` (used above) and `detectHoles()`'s own inline
+material-side check had drifted into near-duplicates: identical `uMid`/`vMid` midpoint,
+identical `offset`/`radial`/`radialLength` computation, identical `1e-9` guard, identical final
+dot-product test, differing only in whether a sphere is handled (a fillet junction can be a corner
+blend; `detectHoles()` is already gated to `.cylinder`/`.cone` and never needs it). Factored into
+one shared, `static` helper, `AAG.isMaterialRadiallyInward(of:revolution:uv:allowSphere:)`, taking
+the already-computed `revolution`/`uv` both callers already have rather than recomputing them.
+`detectHoles()`'s own tests (`Issue747DetectHolesConvexClassifierTests`) and the `#762` suites here
+both continue to pass unchanged, confirming the extraction is behavior-preserving. #723 and #747
+both already fixed this exact test once, on the copy that existed at the time; the point of sharing
+it now is that a third fix only has to happen once.
