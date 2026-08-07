@@ -78,10 +78,34 @@ public final class Face: @unchecked Sendable {
     }
 
     /// Get the bounding box of the face
+    ///
+    /// - Note: This box is enlarged by the face's mesh deflection whenever the shape has already
+    ///   been meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior) — the same
+    ///   `Face` can report a looser box after a call to ``Shape/mesh(linearDeflection:angularDeflection:)``
+    ///   than before it, with no other change. Code that needs a bound tied only to the face's own
+    ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
         OCCTFaceGetBounds(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
+        return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
+    }
+
+    /// The face's bounding box computed from its exact geometry only, ignoring any triangulation
+    /// the face may carry (#733).
+    ///
+    /// `bounds` calls into `BRepBndLib::Add` with `useTriangulation=true` (OCCT's own default),
+    /// which enlarges the result by the mesh's deflection whenever a triangulation is present —
+    /// so its answer depends on whether *anything* meshed this shape before this call, not only on
+    /// the face's geometry. Measured on the cylindrical wall of a bored pocket (#733's repro): at
+    /// the library's own default deflection (0.1) the low-Z bound drifted by 0.029 units after
+    /// meshing, ~300x AAG's own 1e-4 floor/wall tolerance, and even the finest deflection tried
+    /// (0.001) still drifted 5x past it. `exactBounds` is unaffected by meshing at any deflection,
+    /// which is what ``AAG`` uses internally for its own floor/wall matching.
+    internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+        var minX: Double = 0, minY: Double = 0, minZ: Double = 0
+        var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
+        OCCTFaceGetBoundsExact(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
         return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
     }
 

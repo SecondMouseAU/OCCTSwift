@@ -68,7 +68,9 @@ public struct AAGNode: Sendable {
     /// Z level if horizontal planar face
     public let zLevel: Double?
 
-    /// Bounding box of the face
+    /// Bounding box of the face's exact geometry (#733). Unlike ``Face/bounds``, this is never
+    /// enlarged by mesh triangulation, so it does not change depending on whether the shape has
+    /// been meshed before ``AAG`` was built from it.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 }
 
@@ -184,7 +186,13 @@ public final class AAG: @unchecked Sendable {
                 isDownward: face.isDownwardFacing(),
                 isVertical: face.isVertical(),
                 zLevel: face.zLevel,
-                bounds: face.bounds
+                // #733: exactBounds, not bounds -- AAG's own floor/wall matching (see
+                // detectPockets()'s floorRestsOnWallTolerance) compares this box against a 1e-4
+                // tolerance, and `bounds` silently grows by the mesh deflection once anything has
+                // meshed this shape. AAGNode represents the shape's geometry, not its incidental
+                // tessellation state, so its bounds must not move depending on whether the caller
+                // happened to call mesh() first.
+                bounds: face.exactBounds
             )
             nodes.append(node)
         }

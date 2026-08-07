@@ -56,7 +56,7 @@ public struct AAGNode: Sendable {
 }
 ```
 
-All fields are populated once during `AAG.buildGraph()` by querying the corresponding `Face` properties. `normal` is `nil` for degenerate faces; `zLevel` is `nil` for non-planar or non-horizontal faces.
+All fields are populated once during `AAG.buildGraph()` by querying the corresponding `Face` properties. `normal` is `nil` for degenerate faces; `zLevel` is `nil` for non-planar or non-horizontal faces. `bounds` is the face's exact-geometry bounding box (`Face.exactBounds`, not `Face.bounds`), so it is unaffected by any triangulation the face carries — meshing a shape before building an `AAG` from it does not change this value (#733).
 
 - `faceIndex`: this node's position in the graph, the index every `AAG` method (`neighbors(of:)`, `edge(between:and:)`, `concaveNeighbors(of:)`, `convexNeighbors(of:)`) takes and returns. An occurrence index into `Shape.orientedFaces()`, not a distinct face index.
 - `distinctFaceIndex`: this occurrence's underlying face, its position in `Shape.faces()`, the deduplicated enumeration. Two nodes with the same `distinctFaceIndex` are the two sides of one face shared between two solids in a compound, same geometry, opposite orientation, opposed normals. On a shape whose faces are not shared, every node has `distinctFaceIndex == faceIndex`.
