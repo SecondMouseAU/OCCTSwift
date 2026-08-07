@@ -91,3 +91,51 @@ struct Issue733MeshTriangulationBoundsTests {
         #expect(checkedAWall, "fixture produced no candidate wall to check -- test is vacuous")
     }
 }
+
+// #733, second finding: `floorRestsOnWallTolerance` was a `private static let`, the only
+// hardcoded, non-configurable tolerance anywhere in this module (every other tolerance in
+// `Curve3D`, `Surface`, `Shape`, etc. -- 296 occurrences -- is a caller-supplied parameter with a
+// default). A shape modeled in meters or thousandths of an inch has no way to widen or narrow the
+// 1e-4 default to match its own scale. Fixed by promoting it to a `tolerance:` parameter on both
+// `AAG.detectPockets(tolerance:)` and `Shape.detectPocketsAAG(tolerance:)`, defaulting to the same
+// 1e-4 (now `AAG.defaultFloorRestsOnWallTolerance`, a public constant), so existing call sites are
+// unaffected and only a caller who explicitly wants a different value needs to know it exists.
+@Suite("detectPocketsAAG(tolerance:) is caller-configurable (#733)")
+struct Issue733ConfigurableToleranceTests {
+    /// An absurdly tight tolerance (tighter than the ~1e-7 floating-point noise `exactBounds`
+    /// itself carries on an exact primitive) must reject even a real, exactly-modeled pocket --
+    /// proving the parameter actually reaches the comparison, not just that it type-checks.
+    @Test("an absurdly tight tolerance rejects a real pocket")
+    func absurdlyTightToleranceRejectsRealPocket() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let result = try #require(box.subtracting(pocketTool))
+
+        #expect(result.detectPocketsAAG().count == 1)
+        #expect(result.detectPocketsAAG(tolerance: 1e-12).count == 0)
+    }
+
+    /// The same absurdly tight tolerance reaches `AAG.detectPockets(tolerance:)` directly, not
+    /// only through the `Shape` convenience wrapper -- both entry points take the parameter.
+    @Test("AAG.detectPockets(tolerance:) itself honors a tight tolerance")
+    func aagDetectPocketsHonorsTolerance() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let result = try #require(box.subtracting(pocketTool))
+        let aag = result.buildAAG()
+
+        #expect(aag.detectPockets().count == 1)
+        #expect(aag.detectPockets(tolerance: 1e-12).count == 0)
+    }
+
+    /// A caller who explicitly widens the tolerance (e.g. for a coarser model scale) must still
+    /// find the pocket -- the parameter is not a one-way ratchet toward stricter answers only.
+    @Test("a generous tolerance still finds the pocket")
+    func generousToleranceStillFindsPocket() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let result = try #require(box.subtracting(pocketTool))
+
+        #expect(result.detectPocketsAAG(tolerance: 1.0).count == 1)
+    }
+}

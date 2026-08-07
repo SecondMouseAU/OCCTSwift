@@ -341,20 +341,20 @@ Pure-Swift computed property; no bridge call.
 
 These methods extend `AAG` with higher-level feature detection.
 
-### `AAG.detectPockets()`
+### `AAG.detectPockets(tolerance:)`
 
 Detects pocket features in the shape by AAG analysis.
 
 ```swift
-public func detectPockets() -> [PocketFeature]
+public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature]
 ```
 
-A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) that floor has at least one concave-edge neighbor; (3) the concave neighbors are vertical faces (walls); (4) each such wall's own bounding-box minimum Z matches the floor's Z (#724), meaning the wall must actually rest ON that floor, not merely open past it. Results are sorted by ascending `zLevel` (deepest pocket first).
+A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) that floor has at least one concave-edge neighbor; (3) the concave neighbors are vertical faces (walls); (4) each such wall's own bounding-box minimum Z matches the floor's Z within `tolerance` (#724), meaning the wall must actually rest ON that floor, not merely open past it. Results are sorted by ascending `zLevel` (deepest pocket first).
 
 Requirement (4) exists because a wall's own exterior opening can satisfy (1)-(3) too: the exterior
 surface a pocket opens through is upward-facing, horizontal and planar exactly like the real floor,
 and its rim edge to the wall can classify concave in the same cases a real floor's does (a curved
-wall's rim commonly does, pending #723's replacement of `OCCTEdgeGetConvexity`'s formula). Without
+wall's rim commonly does, prior to #723's replacement of `OCCTEdgeGetConvexity`'s formula). Without
 (4), a single blind cylindrical pocket reported **two** pockets: the real floor at the bottom of
 the bore, and the box's own top face at the wall's other end, for what is physically one cavity. A
 floor is always the low end of the walls that rise from it; a wall's high end is where it opens,
@@ -369,6 +369,16 @@ let cut  = box.subtracting(tool)!
 print(cut.detectPocketsAAG().count)   // 1, not 2 (#724)
 ```
 
+The comparison in (4) reads `AAGNode.bounds`, which is always the wall's exact-geometry bounding
+box (`Face.exactBounds`), never the mesh-enlarged one `Face.bounds` can return once a shape has
+been meshed -- so a prior call to `Shape.mesh(...)`/`meshWithProgress(...)` does not change the
+result (#733).
+
+- **Parameters:**
+  - `tolerance` — how close (model units) a wall's own low-Z bound must come to a candidate floor's
+    Z to count as resting on it. Defaults to `defaultFloorRestsOnWallTolerance` (1e-4). Not a fixed
+    constant (#733): a shape modeled at a different scale than millimeters may need a different
+    value.
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**
   ```swift
@@ -379,6 +389,19 @@ print(cut.detectPocketsAAG().count)   // 1, not 2 (#724)
       print("floor \(p.floorFaceIndex), depth \(p.depth), open: \(p.isOpen)")
   }
   ```
+
+---
+
+### `AAG.defaultFloorRestsOnWallTolerance`
+
+The default value of `detectPockets(tolerance:)`'s `tolerance` parameter (#733).
+
+```swift
+public static let defaultFloorRestsOnWallTolerance: Double  // 1e-4
+```
+
+Public so a caller who widens or narrows the tolerance can still express it relative to the
+library's own default rather than hardcoding `1e-4` again.
 
 ---
 
@@ -429,16 +452,17 @@ Convenience wrapper around `AAG(shape: self)`. The graph's nodes are face occurr
 
 ---
 
-### `Shape.detectPocketsAAG()`
+### `Shape.detectPocketsAAG(tolerance:)`
 
 Detects pockets using AAG-based feature recognition.
 
 ```swift
-public func detectPocketsAAG() -> [PocketFeature]
+public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature]
 ```
 
-Equivalent to `buildAAG().detectPockets()`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before that fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry. #699 closed a second, independent source of the same symptom: `concaveNeighbors(of:)` (which `detectPockets()` reads to find candidate walls) used to include neighbors from a *different* solid than the floor's own, which could make the result order-dependent on a fixture #642 alone did not fix (a vertical, rather than horizontal, two-solid split) and could inflate the count with a wall that was never really adjacent to that floor in either solid.
+Equivalent to `buildAAG().detectPockets(tolerance:)`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before that fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry. #699 closed a second, independent source of the same symptom: `concaveNeighbors(of:)` (which `detectPockets()` reads to find candidate walls) used to include neighbors from a *different* solid than the floor's own, which could make the result order-dependent on a fixture #642 alone did not fix (a vertical, rather than horizontal, two-solid split) and could inflate the count with a wall that was never really adjacent to that floor in either solid.
 
+- **Parameters:** `tolerance` — forwarded to `AAG.detectPockets(tolerance:)`; see its doc.
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**
   ```swift

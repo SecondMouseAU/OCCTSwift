@@ -393,11 +393,17 @@ public struct PocketFeature: Sendable {
 // MARK: - Feature Recognition Extensions
 
 extension AAG {
-    /// Tolerance (model units) used to decide whether a candidate floor sits at the bottom of one
-    /// of its candidate walls (#724). Far tighter than any real pocket depth in the test suite
-    /// (millimeters or more), far looser than the ~1e-7 bounding-box noise `OCCTFaceGetBounds`
-    /// reports on an exact primitive.
-    private static let floorRestsOnWallTolerance = 1e-4
+    /// Default tolerance (model units) used to decide whether a candidate floor sits at the
+    /// bottom of one of its candidate walls (#724). Far tighter than any real pocket depth in the
+    /// test suite (millimeters or more), far looser than the ~1e-7 bounding-box noise
+    /// `Face.exactBounds` reports on an exact primitive.
+    ///
+    /// This is a default, not a fixed constant: ``detectPockets(tolerance:)`` and
+    /// ``Shape/detectPocketsAAG(tolerance:)`` both take a caller-supplied `tolerance:` parameter
+    /// with this value as its default (#733), matching every other tolerance in this module
+    /// (`Curve3D`, `Surface`, `Shape`'s own geometry methods, ...) rather than hardcoding one
+    /// millimeter-scale constant for every caller regardless of the model's own units.
+    public static let defaultFloorRestsOnWallTolerance = 1e-4
 
     /// Detect pockets in the shape using AAG analysis
     ///
@@ -441,7 +447,14 @@ extension AAG {
     /// One known limitation: a filleted floor/wall junction would round the wall's bounding box
     /// past the floor's own Z by roughly the fillet radius, which could exceed this tolerance. No
     /// fixture in this codebase exercises that combination yet.
-    public func detectPockets() -> [PocketFeature] {
+    ///
+    /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
+    ///   candidate floor's Z to count as resting on it. Defaults to
+    ///   ``defaultFloorRestsOnWallTolerance``. Scale this with the model: the default is tuned for
+    ///   millimeter-scale parts, and a shape modeled in meters or in thousandths of an inch may
+    ///   need a different value (#733) -- `AAGNode.bounds` itself is unaffected by meshing either
+    ///   way (#733), so widening this is about the model's own units, not about tessellation noise.
+    public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         var pockets: [PocketFeature] = []
 
         // Find all upward-facing horizontal faces as potential floors
@@ -461,7 +474,7 @@ extension AAG {
             let wallIndices = concaveNeighbors.filter { neighborIndex in
                 let wall = nodes[neighborIndex]
                 guard wall.isVertical else { return false }
-                return abs(wall.bounds.min.z - floorZ) < Self.floorRestsOnWallTolerance
+                return abs(wall.bounds.min.z - floorZ) < tolerance
             }
 
             // Need at least one wall to be a pocket
@@ -583,8 +596,11 @@ extension Shape {
     /// let result = box.subtracting(pocket)!
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```
-    public func detectPocketsAAG() -> [PocketFeature] {
+    ///
+    /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)`` -- see its doc for
+    ///   what it controls and why it defaults the way it does (#733).
+    public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         let aag = buildAAG()
-        return aag.detectPockets()
+        return aag.detectPockets(tolerance: tolerance)
     }
 }
