@@ -2578,21 +2578,16 @@ bool OCCTShapeConstructAdjustCurve2D(OCCTCurve2DRef _Nonnull curve,
 }
 
 // MARK: - Bisector_PointOnBis + Bisector_Inter (v0.76)
-// --- Bisector_PointOnBis ---
 
-OCCTBisectorPointOnBis OCCTBisectorPointOnBisCreate(double param1, double param2,
-                                                      double paramBis, double distance,
-                                                      double px, double py) {
-    OCCTBisectorPointOnBis result = {};
-    result.paramOnC1 = param1;
-    result.paramOnC2 = param2;
-    result.paramOnBis = paramBis;
-    result.distance = distance;
-    result.pointX = px;
-    result.pointY = py;
-    result.isInfinite = false;
-    return result;
-}
+// OCCTBisectorPointOnBisCreate lived here: it echoed its 6 double parameters into a plain C
+// struct and never touched Bisector_PointOnBis itself, so isInfinite (this struct's one bool
+// field) was always the literal false the constructor had no parameter to override. No Swift
+// call site (BisectorPoint, the Swift struct it built for, had no public initializer either, so
+// nothing outside this bridge could construct one). Found by census-unmeasured-values.py's
+// sub-kind 3 (#771), which flags a bool struct field assigned literal false somewhere and literal
+// true nowhere; the field's fate turned out to be dead code around it, not a stuck gate on a live
+// path. Removed by #771.
+
 // --- Bisector_Inter ---
 
 int OCCTBisectorInterPointPoint(double ax, double ay, double bx, double by,

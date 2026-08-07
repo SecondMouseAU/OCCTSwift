@@ -961,19 +961,13 @@ bool OCCTShapeConstructAdjustCurve2D(OCCTCurve2DRef _Nonnull curve,
 
 // MARK: - Bisector_PointOnBis / PolyBis / Inter
 
-typedef struct {
-    double paramOnC1;
-    double paramOnC2;
-    double paramOnBis;
-    double distance;
-    double pointX, pointY;
-    bool isInfinite;
-} OCCTBisectorPointOnBis;
-
-/// Create a PointOnBis value.
-OCCTBisectorPointOnBis OCCTBisectorPointOnBisCreate(double param1, double param2,
-                                                      double paramBis, double distance,
-                                                      double px, double py);
+/// OCCTBisectorPointOnBis and OCCTBisectorPointOnBisCreate were declared here: a plain
+/// echo-your-parameters-into-a-struct constructor that never called into Bisector_PointOnBis
+/// itself, had no Swift call site, and the Swift-side BisectorPoint it built for had no public
+/// initializer either, so nothing outside this bridge could construct one. Its isInfinite field,
+/// always the literal false this constructor's own 6-double parameter list has no way to set, is
+/// what census-unmeasured-values.py's sub-kind 3 (#771) flagged; the field's fate turned out to be
+/// dead code around it, not a stuck gate on a live path. Removed by #771.
 
 /// Bisector intersection point result.
 typedef struct {
