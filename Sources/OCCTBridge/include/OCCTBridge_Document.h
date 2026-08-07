@@ -895,8 +895,18 @@ bool OCCTDocumentExpandShape(OCCTDocumentRef doc, int64_t labelId);
 void OCCTDocumentSetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape,
     int32_t colorType, double r, double g, double b);
 
+/// Set RGBA color on a shape (not by label), preserving alpha (#763).
+/// `OCCTDocumentSetShapeColor` above stores through the RGB-only
+/// `XCAFDoc_ColorTool::SetColor` overload, so alpha is unrecoverable afterwards; this uses the
+/// RGBA overload so a subsequent `OCCTDocumentGetShapeColor` reports the real value.
+/// @param colorType 0=generic, 1=surface, 2=curve
+void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc, OCCTShapeRef shape,
+    int32_t colorType, double r, double g, double b, float alpha);
+
 /// Get color for a shape (not by label).
-/// @return OCCTColor with isSet=true if color was found
+/// @return OCCTColor with isSet=true if color was found. `a` is the color's real alpha (#763):
+///   1.0 for a color stored via the RGB-only `SetColor` overload, and the stored value otherwise
+///   (e.g. a STEP import with a transparent surface style, or `OCCTDocumentSetShapeColorRGBA`).
 OCCTColor OCCTDocumentGetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape, int32_t colorType);
 
 /// Check if color is set on a shape.

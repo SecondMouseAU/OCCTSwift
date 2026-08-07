@@ -963,16 +963,34 @@ extension Document {
 
 extension Document {
     /// Set color on a shape directly (not by label).
+    ///
+    /// `color.alpha` is preserved (#763) — previously it was silently dropped, so a subsequent
+    /// ``shapeColor(_:type:)`` always reported fully opaque regardless of what was set here.
+    ///
     /// - Parameters:
     ///   - shape: The shape to color
     ///   - color: The color to set
     ///   - type: Color type — generic (0), surface (1), or curve (2)
+    ///
+    /// ```swift
+    /// let doc = Document.create()!
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// doc.addShape(box)
+    /// doc.setShapeColor(box, color: Color(red: 1, green: 0, blue: 0, alpha: 0.5))
+    /// let readBack = doc.shapeColor(box)
+    /// // readBack?.alpha == 0.5
+    /// ```
     public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OCCTColorTypeSurface) {
-        OCCTDocumentSetShapeColor(handle, shape.handle, Int32(type.rawValue),
-                                   color.red, color.green, color.blue)
+        OCCTDocumentSetShapeColorRGBA(handle, shape.handle, Int32(type.rawValue),
+                                       color.red, color.green, color.blue, Float(color.alpha))
     }
 
     /// Get color for a shape (not by label).
+    ///
+    /// `alpha` reflects the real stored value (#763) — a shape colored via
+    /// ``setShapeColor(_:color:type:)`` or imported from a file with a transparent surface style
+    /// reports its actual alpha, rather than always 1.0.
+    ///
     /// - Parameters:
     ///   - shape: The shape to query
     ///   - type: Color type — generic (0), surface (1), or curve (2)
