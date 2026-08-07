@@ -214,13 +214,49 @@ See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU
 
 2. **A point count below 2 stores out of bounds.** Both classes document `theNbPoints >= 2` and enforce it with `Standard_ConstructionError_Raise_if`, which compiles to nothing under `No_Exception`, how the shipped Release kernel is built (see `0016`'s neighbour issue #487). `GCPnts_QuasiUniformAbscissa`'s Bezier/BSpline branch then allocates `new NCollection_HArray1<double>(1, theNbPoints)`, an empty range for such a count, and the next statement is an unconditional `myParams->SetValue(1, theU1)`. `SetValue`'s own bounds check is a `Raise_if` too, so the store lands out of bounds: uncatchable SIGSEGV, same class as `0001`/#263, `0004`/#310, `0005`/#317 and `0006`/#318.
 
-**Fix:** for the second, an ordinary `if` after each `Raise_if`, leaving the object not done for a count below 2. The `Raise_if` stays, so a build with exceptions enabled throws exactly as before; this only stops the undefined behaviour where the check is compiled out. Applied to both classes, since `GCPnts_UniformAbscissa` had the same missing precondition without the crash (it answered a request for zero points with five). For the first, `Perform` also accepts a point that coincides with the end **in 3D** within the caller's tolerance, not only one close in parameter: the 3D tolerance is threaded in alongside the parametric one, the end point is evaluated once outside the walk, and the distance test sits behind a cheap `aUU2 - aUi < aDelta` gate so it runs on the final step rather than every step. Keeping the exact end parameter is the point: clamping `myNbPoints` to the request, the other obvious fix, would drop it and leave the distribution stopping short of the curve.
+**Fix:** for the second, an ordinary `if` that **replaces** each `Raise_if` (not one added alongside
+it), leaving the object not done for a count below 2 in every build, not only one that defines
+`No_Exception`. Applied to both classes, since `GCPnts_UniformAbscissa` had the same missing
+precondition without the crash (it answered a request for zero points with five). For the first,
+`Perform` also accepts a point that coincides with the end **in 3D** within the caller's tolerance,
+not only one close in parameter: the tolerance is threaded in alongside the parametric one, squared
+once outside the loop, and compared with `SquareDistance()` rather than `Distance()` on every
+candidate step; the end point is evaluated once outside the walk, and the distance test sits behind
+a cheap `aUU2 - aUi < aDelta` gate so it runs on the final step rather than every step. Keeping the
+exact end parameter is the point: clamping `myNbPoints` to the request, the other obvious fix, would
+drop it and leave the distribution stopping short of the curve.
 
 No public API signature changes.
 
+**Revised 2026-08-07 (#755), patch content above updated in place, not a new patch number.**
+Maintainer gkv311 [reviewed the upstream PR](https://github.com/Open-Cascade-SAS/OCCT/pull/1417#issuecomment-3150937)
+with three requests. Two were mechanical (`SquareDistance()`/hoisted tolerance instead of `Distance()`
+in the loop; the `Perform` parameter renamed `theTol3d` to `theTol`, since the same template also
+instantiates on `Adaptor2d_Curve2d`, where "3d" was simply wrong). The third needed a decision, not
+just compliance: he offered two ways to stop duplicating `Standard_ConstructionError_Raise_if`, an
+assert-grade macro meant to compile away under `No_Exception`: (a) replace it with an unconditional
+`throw`, or (b) drop the duplicate and answer not-done unconditionally. We build with
+`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` (`No_Exception` defined), so (a) would start throwing for a
+degenerate count in our own build where it currently cannot, and (b) would not. Measured rather than
+guessed: every one of the 9 bridge call sites that construct either class with a caller-supplied count
+(one of them a shared static helper with 2 further callers, 11 total) already wraps the construction
+in `catch (...)`, and `Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
+contract for exactly this input across every one of those entry points, so both options are
+observably identical for OCCTSwift's own contract. Chose **(b)**: it is the option that does not
+depend on a build flag, and it is what #555 argued for in the first place, a silent not-done rather
+than an exception. Confirmed directly by compiling both variants **without** `No_Exception` and
+constructing each class with a degenerate count: the pre-review patch still throws
+`Standard_ConstructionError` there (exceptions enabled, so the un-replaced `Raise_if` fires);
+after this revision, neither class throws in either build configuration. Re-ran the full
+232/6766-configuration equivalence sweep and the degenerate-count sweep (5 curve types, both
+classes, counts `{0, 1, -3}`) against the revised patch, override-linked with production flags: both
+verdicts unchanged from the numbers below.
+
 **Validation** (fast path, no full rebuild, see the `#0001` entry above for the override-link technique, but compile the two TUs with `-DNDEBUG -DNo_Exception` to match the production build, or the `Raise_if` comes back and the measurement is of a kernel nobody ships): across 17 curve types and counts 2 to 200, 6766 configurations, **232 lines change and they are exactly the 232 that were over-requesting**; every other line is byte-identical, and on the changed lines the last parameter is still exactly the end. Over-request goes to 0, and every degenerate count on every curve returns `IsDone() == false` for both classes. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction byte for byte. Full `swift test` (4842 tests / 1346 suites) clean.
 
-See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
+See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup, and
+[`Scripts/repro/555-gcpnts-count-contract/upstream/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract/upstream)
+for the prepared post-review commit and the drafted reply. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
 
 **Retire** once the bundled OCCT includes this fix.
 
