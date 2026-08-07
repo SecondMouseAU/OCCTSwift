@@ -298,10 +298,18 @@ public final class AAG: @unchecked Sendable {
                     let trueCount = Int(OCCTFaceGetSharedEdgeCount(shape.handle, face1.handle, face2.handle))
                     var convexity: EdgeConvexity = .smooth
                     if trueCount > 0 {
-                        var sharedEdges: [OCCTEdgeRef?] = Array(repeating: nil, count: trueCount)
+                        // Fetch exactly ONE edge, not `trueCount` of them (#779 review). Only
+                        // sharedEdges[0] is ever read, for convexity; the count itself comes from
+                        // OCCTFaceGetSharedEdgeCount above. Sizing this array by trueCount would
+                        // heap-allocate an OCCTEdge wrapper per shared segment and release all but
+                        // the first immediately below, which the old code did too but bounded at
+                        // 10. Removing the cap without this would have traded a fixed waste for an
+                        // unbounded one, worst exactly where this PR's own fixture aims: a healed
+                        // or notched pair sharing hundreds of segments.
+                        var sharedEdges: [OCCTEdgeRef?] = Array(repeating: nil, count: 1)
                         let fetchedCount = OCCTFaceGetSharedEdges(
                             shape.handle, face1.handle, face2.handle,
-                            &sharedEdges, Int32(trueCount)
+                            &sharedEdges, 1
                         )
 
                         // Get convexity from first shared edge
