@@ -1,0 +1,65 @@
+#772 timing: Shape.analyze(tolerance:) vs both isSelfIntersecting entry points
+=================================================================
+
+1. Simple box
+  faces=6 edges=12
+  analyze(tolerance:):                          0.000501 s
+  deepCopy() alone:                             0.000037 s
+  isSelfIntersecting(timeout: 30):             0.000524 s  [clean]  <- what analyze(selfIntersectionTimeout:) calls
+  isSelfIntersecting(hardTimeout: 30):         0.000445 s  [clean]  (measured for comparison, not used by analyze())
+  overhead vs analyze(), timeout (shipped):     1.0x
+  overhead vs analyze(), hardTimeout (rejected):0.9x
+
+2. Moderately complex fused/filleted solid
+  faces=16 edges=39
+  analyze(tolerance:):                          0.001266 s
+  deepCopy() alone:                             0.000030 s
+  isSelfIntersecting(timeout: 30):             0.002486 s  [clean]  <- what analyze(selfIntersectionTimeout:) calls
+  isSelfIntersecting(hardTimeout: 30):         0.002519 s  [clean]  (measured for comparison, not used by analyze())
+  overhead vs analyze(), timeout (shipped):     2.0x
+  overhead vs analyze(), hardTimeout (rejected):2.0x
+
+3. Mesh-sewn imported solid (kiha10 body5, #348 fixture)
+  faces=662 edges=1072
+  analyze(tolerance:):                          0.039823 s
+  deepCopy() alone:                             0.000850 s
+  isSelfIntersecting(timeout: 30):             0.056468 s  [self-intersects]  <- what analyze(selfIntersectionTimeout:) calls
+  isSelfIntersecting(hardTimeout: 30):         0.054596 s  [self-intersects]  (measured for comparison, not used by analyze())
+  overhead vs analyze(), timeout (shipped):     1.4x
+  overhead vs analyze(), hardTimeout (rejected):1.4x
+
+4. #319 pathological artifact (dualskin_lateral.15)
+  faces=1 edges=3
+  analyze(tolerance:):                          0.007188 s
+  deepCopy() alone:                             0.000006 s
+  isSelfIntersecting(timeout: 30):             30.080 s  [self-intersects]  <- what analyze(selfIntersectionTimeout:) calls
+  isSelfIntersecting(hardTimeout: 30):         30.013 s  [indeterminate (timed out)]  (measured for comparison, not used by analyze())
+  overhead vs analyze(), timeout (shipped):     4184.7x
+  overhead vs analyze(), hardTimeout (rejected):4175.3x
+
+4b. Same artifact, isSelfIntersecting(hardTimeout: 5): true wall-clock bound
+  actual wall-clock: 5.004 s (background check left running past the deadline is abandoned, not cancelled, and unbounded internally: see Shape.swift:2158)
+
+=================================================================
+Summary (markdown table):
+
+| Shape | Faces | Edges | analyze(tolerance:) | deepCopy() | timeout: 30 (shipped path) | hardTimeout: 30 (rejected) | Overhead (shipped) |
+|---|---|---|---|---|---|---|---|
+| 1. Simple box | 6 | 12 | 0.000501 s | 0.000037 s | 0.000524 s [clean] | 0.000445 s [clean] | 1.0x |
+| 2. Moderately complex fused/filleted solid | 16 | 39 | 0.001266 s | 0.000030 s | 0.002486 s [clean] | 0.002519 s [clean] | 2.0x |
+| 3. Mesh-sewn imported solid (kiha10 body5, #348 fixture) | 662 | 1072 | 0.039823 s | 0.000850 s | 0.056468 s [self-intersects] | 0.054596 s [self-intersects] | 1.4x |
+| 4. #319 pathological artifact (dualskin_lateral.15) | 1 | 3 | 0.007188 s | 0.000006 s | 30.080 s [self-intersects] | 30.013 s [indeterminate (timed out)] | 4184.7x |
+
+---
+
+Captured from `swift run -c release Harnesses 772-self-intersection` on macOS arm64, this branch's
+pinned kernel (v2.0.0-kernel.2, remote binaryTarget since no local Libraries/OCCT.xcframework was
+present in the worktree this was measured from). One representative run of three; see README.md
+"Measured" section for the range across all three and how the decision follows from these numbers.
+
+Review round 2 replaced this file's earlier content: the first version measured only
+`isSelfIntersecting(timeout:)` on the ordinary rows while `analyze()` at the time actually called
+`isSelfIntersecting(hardTimeout:)`, a different and more expensive mechanism never measured on
+anything but the pathological artifact. This version measures `deepCopy()` alone and both
+self-intersection entry points, at the same deadline, on every row. `analyze()` now forwards to
+`timeout:`, not `hardTimeout:`; see README.md for why.
