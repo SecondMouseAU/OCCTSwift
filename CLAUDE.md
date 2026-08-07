@@ -32,8 +32,8 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 
 ### Static Gate Scripts
 
-Five gates plus one census, all pure Python over the repo's own text. No OCCT, no build, ~3s for
-the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
+Five gates, one census and one merge-history audit, all pure Python over the repo's own text. No
+OCCT, no build, no network, ~3s for the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
 `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
 its own status check when `build-and-test` is red for an unrelated reason. Each exits 1 on a
@@ -65,6 +65,7 @@ python3 Scripts/check-docs-defaults.py           # every default docs/reference/
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
+python3 Scripts/check-changelog-transcription.py # REPORT, not a gate yet: merges that landed with no CHANGELOG entry (#742)
 ```
 
 `census-unmeasured-values.py` is the one entry that is **not a gate**. It exits 0 whether or not it
@@ -81,8 +82,12 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs the same ten invocations
-locally, flag for flag. It is **opt-in and not installed by cloning** — enable it deliberately:
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs eleven of CI's twelve
+invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real run, which
+audits the branch's merge history and so answers a question about the branch rather than about the
+commit you are making; its `--self-test` does run. That is the only deliberate divergence between
+the two lists, and it is here rather than in a comment because an undocumented difference between
+the hook and CI is exactly the thing that makes a passing hook misleading. It is **opt-in and not installed by cloning**, so enable it deliberately:
 
 ```bash
 # main checkout — surgical, leaves other hooks alone
