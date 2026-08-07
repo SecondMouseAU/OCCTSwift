@@ -518,8 +518,13 @@ two for every touched file, so there is no rebase to do before filing. `clang-fo
 --Werror` against OCCT's own `.clang-format` reports zero violations on all three changed files.
 
 See [`Scripts/repro/636-extrema-parallel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/636-extrema-parallel)
-for the reproducer and the full caller survey. Not yet filed upstream (prepared, not sent, per this
-issue's own scope) — see that directory's `draft-issue.md`/`draft-pr.md`.
+for the reproducer and the full caller survey. **Filed upstream 2026-08-07 as
+[Open-Cascade-SAS/OCCT#1445](https://github.com/Open-Cascade-SAS/OCCT/pull/1445)**, PR only and no
+companion issue, per `okf/policies/upstream-occt-style.md` and the precedent of `0018`, `0019` and
+`0021`: the fix was ready, so the PR description carries the repro and root cause that a standalone
+issue would have. Verified applying cleanly to upstream `master` at `b8f597c6` immediately before
+filing. That directory's `draft-issue.md` is retained as the text to use if the defect ever needs
+reporting ahead of a fix; `draft-pr.md` is what was sent.
 
 **Retire** once the bundled OCCT includes this fix.
 
