@@ -78,6 +78,15 @@ run "check-docs-defaults.py"                  Scripts/check-docs-defaults.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 run "count-operations.py"                     Scripts/count-operations.py
+
+# Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
+# a resolver written for the default two-way style strips <<<<<<< / ======= / >>>>>>> and leaves the
+# ||||||| ancestor line behind. Five reached docs/CHANGELOG.md before anyone noticed.
+if git grep -nE '^(<<<<<<< |\|\|\|\|\|\|\| |>>>>>>> )' -- . ; then
+    echo ""
+    echo "--- FAIL: merge conflict markers in tracked files (listed above)"
+    failed+=("conflict-markers")
+fi
 # Self-test only. census-unmeasured-values.py is #726's census, not a gate: it exits 0 whether or
 # not it finds sites, because its output is a list for a human to adjudicate rather than a verdict.
 # Running it bare here would add a check that cannot fail. Its detector can still go blind, so that

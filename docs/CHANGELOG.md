@@ -50,9 +50,6 @@ chance to run after that cancellation signal, unlike a not-yet-started automatic
 exists to stop wasting, had not completed by the time the PR was opened. See the PR description for
 exactly what ran and what remained outstanding.
 
-||||||| d2ae082
-||||||| 133f8b1
-||||||| 2754b6d
 ### `Surface.appSurf(curves:)` rejects fewer than 2 curves instead of crashing; two sibling `GeomFill_*` null-handle guards (#644, #710)
 
 Two independent, uncatchable SIGSEGVs in `OCCTGeomFillAppSurf` (`OCCTBridge_Surface.mm`) and its
@@ -151,8 +148,6 @@ with evidence rather than implemented:
   automated gate covers arity the way `check-null-handle-guards.py` covers null handles is accurate
   and is left as a genuine, but separate, future census.
 
-||||||| abc0f32
-||||||| d0884ad
 ### `OCCTEdgeGetConvexity` replaces its hand-rolled formula with OCCT's own classifier (#723)
 
 #703 (below) fixed the face1/face2 argument-order dependence by replacing a scalar triple product
