@@ -33,7 +33,7 @@ let occtTarget: Target = useLocalBinary
         name: "OCCT",
         path: "Libraries/OCCT.xcframework"
     )
-    // OCCT V8_0_1 + the eleven carried patches listed below.
+    // OCCT V8_0_1 + the fourteen carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
     // their writeups kept in Scripts/patches/README.md under "Retired patches"). The eleven that
@@ -49,7 +49,7 @@ let occtTarget: Target = useLocalBinary
     // (BRepFeat_MakeCylindricalHole tool-part selection, #532), and 0021 (CPnts adaptive
     // arc-length integration, #603).
     //
-    // Pinned to the v2.0.0-kernel.1 PRE-RELEASE: upstream V8_0_1 plus the eleven patches listed
+    // Pinned to the v2.0.0-kernel.2 PRE-RELEASE: upstream V8_0_1 plus the fourteen patches listed
     // above. This is a kernel-only pre-release, not a library release, and it exists so ci.yml
     // builds the same kernel this branch's tests are written against.
     //
@@ -68,8 +68,8 @@ let occtTarget: Target = useLocalBinary
     // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0-kernel.1/OCCT.xcframework.zip",
-        checksum: "1f1e5cd95eb10b2098b2aa5d7bedcb973c44d8575477a9457e35f5a0d84cf217"
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0-kernel.2/OCCT.xcframework.zip",
+        checksum: "f82b66a2d5a68492359134f4b1975317eff8fedd435566a9ca4b3aa23ae63341"
     )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
