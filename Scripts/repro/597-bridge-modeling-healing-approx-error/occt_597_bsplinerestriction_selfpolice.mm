@@ -30,7 +30,6 @@ int main() {
             poles.SetValue(i, j, gp_Pnt(i * 2.0, j * 2.0,
                                           5.0 * std::sin(i * 0.9) * std::cos(j * 0.85)));
     int degree = 7;
-    int nKnots = nu - degree; // interior + 2 end knots simplified via uniform clamped construction
     TColStd_Array1OfReal uknots(1, nu - degree + 1), vknots(1, nv - degree + 1);
     for (int i = 1; i <= uknots.Length(); i++) uknots.SetValue(i, double(i - 1) / (uknots.Length() - 1));
     for (int i = 1; i <= vknots.Length(); i++) vknots.SetValue(i, double(i - 1) / (vknots.Length() - 1));

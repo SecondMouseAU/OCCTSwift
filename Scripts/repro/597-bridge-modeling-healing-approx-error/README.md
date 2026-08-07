@@ -9,24 +9,20 @@ left as remaining scope: **the bridge-side sites in `OCCTBridge_Modeling.mm` and
 
 ## Census
 
-Every OCCT class in the two files capable of reporting a fitting/approximation error, and what
-happens to that error:
-
-| site | file | error API | reads it? | verdict |
-|---|---|---|---|---|
-| `occtPlateApproxSurface` (backs `OCCTShapePlatePoints`, `OCCTShapePlateCurves`, +4 more in `OCCTBridge_ProjLib_NLPlate.mm`) | Healing.mm (shared helper in ProjLib_NLPlate.mm) | `GeomPlate_MakeApprox::ApproxError()`/`CriterionError()` | no | **investigated, not a fixable defect — see below** |
-| `OCCTShapeFillBuildResult` (backs `OCCTShapeFill`, `OCCTShapeFillWithSupport`, `OCCTShapeFillConstraints`) | Healing.mm | `BRepOffsetAPI_MakeFilling::G0Error()`/`G1Error()`/`G2Error()` | no | **investigated, not a fixable defect — see below** |
-| `occtUnifySameDomain` / `OCCTUnifySameDomain` builder | Healing.mm / Modeling.mm | none — `ShapeUpgrade_UnifySameDomain` exposes no error getter at all | n/a | confirms #741's finding; nothing to read |
-| `PipeShellBuilder` (`OCCTPipeShell*`) | Modeling.mm | `BRepFill_PipeShell::ErrorOnSurface()` | **yes** — `error`/`errorOnSurface` are public Swift properties | not a defect: deliberate manual-builder design (see below) |
-| `FillingSurface` (`OCCTFilling*`) | Modeling.mm | `BRepOffsetAPI_MakeFilling::G0Error()`/`G1Error()`/`G2Error()` | **yes** — `OCCTFillingG0Error`/`G1Error`/`G2Error` are exposed | same as above |
-| `ShapeCustom_BSplineRestriction` (`OCCTShapeBSplineRestrictionAdvanced`) | Healing.mm | `SurfaceError()`/`Curve3dError()`/`Curve2dError()`/`MaxErrors()` | no | **investigated, self-polices — see below** |
-| `ShapeCustom_ConvertToBSpline`, `ShapeCustom_ConvertToRevolution` | Healing.mm | none | n/a | not an approximation with a reported error |
-| `BRepFill_NSections`, `BRepOffsetAPI_ThruSections`, `BRepOffsetAPI_MakeOffset(Shape)`, `BRepFill_Evolved` | both | none | n/a | no error-reporting API in OCCT for these |
-| `GeomAPI_PointsToBSpline(Surface)`, `GeomAPI_Interpolate` | Modeling.mm | — | n/a | `#include`d only; no construction site in either file |
+This is a Cluster E (#668) member issue. Per `docs/v2.0.0-plan.md`'s census-once rule, the
+cluster's census artifact is [`Scripts/repro/572-approx-consumer-sweep/`](../572-approx-consumer-sweep/README.md);
+start there, not here. It already identified `GeomFill_Sweep`/`ShapeUpgrade_UnifySameDomain` as
+the defect #597 investigates (fixed by #741) and is this issue's own origin. This investigation
+widened that census beyond `GeomConvert_ApproxSurface` consumers specifically, to every OCCT class
+in `OCCTBridge_Modeling.mm`/`OCCTBridge_Healing.mm` capable of reporting a fitting/approximation
+error at all; that wider enumeration and its verdicts have been added to the 572 artifact's own
+README (its "#597: the wider family" section) rather than duplicated as a second table here, per
+the same rule.
 
 The count the issue's rescoped comment implied (some fixable remainder in these two files) turned
-out to be **zero**, but only after two of the six rows above were built, measured, and reverted.
-Recording why, since the census-once rule exists precisely so nobody re-derives this.
+out to be **zero**, but only after two of the sites in that table were built, measured, and
+reverted. The rest of this document is that measurement: why `occtPlateApproxSurface` and
+`OCCTShapeFillBuildResult` looked fixable and were not, and why the other rows need nothing.
 
 ## Why `occtPlateApproxSurface` is not fixable this way
 
@@ -79,18 +75,66 @@ what the caller was actually promised.
 **does** measure distance to the caller's own constraints, unlike the plate case above. This one
 looked like the right metric. It still isn't safe to gate on.
 
-`occt_597_fill_g0_realistic.mm` builds a warped four-edge boundary (a twisted-quad BSpline ring,
-not an artificial extreme case) with the bridge's exact default filling parameters
-(`Degree=3, NbPtsOnCur=15, NbIter=2, MaxDeg=8, MaxSegments=9`):
+`occt_597_fill_g0_realistic.mm` builds a warped four-edge boundary (a wavy quad, not an artificial
+extreme case) with the bridge's exact default filling parameters
+(`Degree=3, NbPtsOnCur=15, NbIter=2, MaxDeg=8, MaxSegments=9`).
+
+**Correction, PR #751 review.** The numbers originally reported here were measured against a
+fixture that did not build what it claimed. `wavyEdge()`'s sine-sampled points were handed to
+`Geom_BSplineCurve` as a single-span, full-multiplicity curve, i.e. as **control poles of a
+degree-13 Bezier**, not points the curve passes through. A high-degree Bezier damps a
+high-frequency control polygon severely: for this function's own parameters (`amp=4.0, waves=3,
+npts=14`), the realized curve's peak was 1.490 against an intended 4.0, so 62.8% of the amplitude
+is gone. The boundary tested was a much gentler shape than the one the code and comments described.
+Fixed by building `wavyEdge()` on `GeomAPI_Interpolate` instead, which actually interpolates the
+sampled points (matching this repo's own naming precedent: `OCCTCurve3DInterpolate` in
+`OCCTBridge_Curve3D.mm` is `GeomAPI_Interpolate`-based; `GeomAPI_PointsToBSpline`, this repo's
+"FitPoints", approximates rather than interpolates and would have the same problem for this
+purpose). Re-measured:
 
 ```
-tol3d=0.0001     isDone=true  G0Error=5.89516e-05  within tol
-tol3d=1e-05      isDone=true  G0Error=9.4905e-06   within tol
-tol3d=1e-06      isDone=true  G0Error=9.4905e-06   EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+tol3d=0.0001     isDone=true  G0Error=0.20369      bboxDiag=1044.12    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 501.602
+tol3d=1e-05      isDone=true  G0Error=0.203757     bboxDiag=1043.96    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 500.763
+tol3d=1e-06      isDone=true  G0Error=0.226344     bboxDiag=1247.59    EXCEEDS TOLERANCE, ACCEPTED ANYWAY
+  face surface: BSpline degU=8 degV=8 nPolesU=9 nPolesV=9
+  max pole distance from boundary centre (5,5,0): 529.592
 ```
+
+**The conclusion this script was cited for does not survive unchanged, and it needs to be stated
+loudly rather than folded in quietly.** With the damped fixture, this boundary stayed *within* the
+bridge's default tolerance (`G0Error=5.9e-05` at `tol3d=1e-4`) and only exceeded tolerance once the
+caller tightened it to `1e-6`, offered as evidence that a "genuinely difficult but not absurd"
+boundary is normally fine at the bridge's own default. With the real, full-amplitude boundary, it
+is not: `G0Error` exceeds even the loosest tested tolerance, the bridge's own `1e-4` default, by
+roughly 2000x. Worse, the two bounding diagnostics added alongside the fix (bounding-box diagonal,
+max control-pole distance from the boundary's centre) show the accepted surface is not merely
+"somewhat off": its poles land up to ~530 units from a boundary whose own extent is about 10 units
+across. `BRepOffsetAPI_MakeFilling` reports `IsDone() == true` for a surface that has blown out
+roughly 50x its input's scale, and `G0Error()` alone (0.2) does not communicate how bad the result
+actually is.
+
+**This does not reverse the PR's conclusion that gating `OCCTShapeFillBuildResult` on
+`G0Error() > tolerance` is unsafe; if anything it sharpens why.** The load-bearing evidence for that
+conclusion is independent of this fixture: gating broke 2 of 17 `FillingSupportFaceTests` whose
+surfaces are correct, already-tested, and legitimately exceed the default tolerance by a modest
+factor (not 2000x). This corrected measurement adds a harder case in the same direction: a
+boundary whose fit is genuinely bad (poles 50x outside the input's scale) also exceeds tolerance,
+by three orders of magnitude more than the good-but-demanding test cases do, but there is no single
+threshold on `G0Error()`'s raw value that rejects this case while keeping those two passing: a
+threshold near `tolerance` rejects both, a threshold near this case's `0.2` would accept everything
+in `FillingSupportFaceTests` too. `G0Error()` does not by itself distinguish "correct but
+demanding" from "diverged", which is a stronger and more concerning version of the same
+not-safe-to-gate-on-a-single-number finding, not a different one. Whether a *different* signal
+(e.g. comparing the fitted surface's own scale to its boundary's) could separate the two is outside
+#597's scope and not investigated here.
 
 `occt_597_fill_g0_mechanism.mm` pushes further to show the mechanism cleanly on a hyperbolic-
-paraboloid-ish boundary:
+paraboloid-ish boundary built directly from degree-3 Bezier control points (not sampled/damped, so
+unaffected by the fixture defect above):
 
 ```
 bridge-default-1e-4    tol3d=0.0001     isDone=true  G0Error=6.22713e-05
