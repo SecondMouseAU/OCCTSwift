@@ -38,6 +38,10 @@ import sys
 
 CHANGELOG = "docs/CHANGELOG.md"
 
+# The policy's own file. default_since() anchors to the commit that introduced it, because the
+# policy cannot govern merges that predate it.
+POLICY = "okf/policies/changelog-on-merge.md"
+
 # A merge may opt out by saying so. Matched case-insensitively on its own line, trailer-style, and
 # the reason is required: `No-Changelog:` with nothing after it is not an opt-out, because the whole
 # point is that the decision is legible to whoever reads the history later.
@@ -53,16 +57,53 @@ def git(args, cwd=None):
     return out.stdout
 
 
-def merge_commits(since, cwd=None):
-    """Merge commits in `since..HEAD`, oldest first."""
-    out = git(["log", "--merges", "--reverse", "--format=%H", f"{since}..HEAD"], cwd=cwd)
-    return [line for line in (out or "").split("\n") if line]
+# A squash landing has one parent, so `--merges` cannot see it. GitHub appends `(#N)` to the
+# subject when squashing, and that SUFFIX is the marker. Not the `type(#N):` prefix this repo's
+# conventional-commit style also uses: that names the ISSUE the commit addresses and appears on
+# ordinary commits too, so matching it would count non-landings. Measured on this branch: of 22
+# single-parent mainline commits, 20 carry the suffix and 19 carry the prefix, and they are not the
+# same 19. The first draft of the fixture below used the prefix and the two squash cases silently
+# failed to register as landings at all, which is how this distinction got established.
+SQUASH = re.compile(r"\(#\d+\)\s*$")
 
 
-def all_commits(since, cwd=None):
-    """Every commit in `since..HEAD`, oldest first, so a merge's window can be walked."""
-    out = git(["log", "--reverse", "--format=%H", f"{since}..HEAD"], cwd=cwd)
-    return [line for line in (out or "").split("\n") if line]
+def mainline(since, cwd=None):
+    """First-parent commits in `since..HEAD`, oldest first.
+
+    `--first-parent` is load-bearing twice over, and plain `git log` is wrong for both.
+
+    It excludes feature-branch commits, which is what makes the windows below correct. `git log`
+    orders by commit date, so a branch created AFTER an earlier merge, carrying its own CHANGELOG
+    commit, sorts that commit into the earlier merge's window and credits it there. The earlier
+    merge is then reported clean having shipped no entry at all. That is a false negative in the
+    one thing this script exists to find, and it is invisible to a fixture that creates and merges
+    branches in strict sequence, because then date order and mainline order agree.
+
+    And it is what makes a squash landing visible at all: squashes have a single parent, so
+    `--merges` skips them silently. Absent from every total is worse than reported, because the
+    report then looks complete.
+    """
+    out = git(["log", "--first-parent", "--reverse", "--format=%H%x1f%P%x1f%s",
+               f"{since}..HEAD"], cwd=cwd)
+    rows = []
+    for line in (out or "").split("\n"):
+        if not line:
+            continue
+        sha, parents, subj = line.split("\x1f", 2)
+        rows.append((sha, len(parents.split()), subj))
+    return rows
+
+
+def is_landing(nparents, subject):
+    """Did this mainline commit land a PR? A merge, or a squash carrying GitHub's `(#N)` suffix.
+
+    One definition, called from one place. An earlier revision had the rule written twice, here and
+    inline in audit(), and the copy here was dead. The guard-removal matrix is what found it:
+    deleting the squash clause from this function left the self-test at 10/10, which is the exact
+    signature of a decorative case that `okf/policies/prove-the-test-fails.md` says to rewrite
+    rather than celebrate.
+    """
+    return nparents > 1 or bool(SQUASH.search(subject))
 
 
 def touches_changelog(sha, cwd=None):
@@ -91,39 +132,35 @@ def subject(sha, cwd=None):
 def audit(since, cwd=None):
     """Return (untranscribed, opted_out_list, clean_count).
 
-    A merge is satisfied if the CHANGELOG changed in the merge itself or in any commit after it and
-    before the next merge. That window is what the policy permits: the entry may be added on the
-    PR's own branch just before merging, or in a commit on the base immediately after.
+    A landing is satisfied if `docs/CHANGELOG.md` changed in the landing commit itself or in any
+    mainline commit after it and before the next landing. That window is what the policy permits:
+    the entry may be added on the PR's own branch just before merging, which a merge's first-parent
+    diff shows, or in a commit on the base immediately after.
+
+    The walk is first-parent throughout, which is what keeps the windows honest. See mainline().
     """
-    merges = merge_commits(since, cwd)
-    if not merges:
+    rows = mainline(since, cwd)
+    if not rows:
         return [], [], 0
 
-    ordered = all_commits(since, cwd)
-    position = {sha: i for i, sha in enumerate(ordered)}
-    merge_positions = sorted(position[m] for m in merges if m in position)
+    land_idx = [i for i, (sha, np, subj) in enumerate(rows) if is_landing(np, subj)]
+    if not land_idx:
+        return [], [], 0
 
     untranscribed, opts, clean = [], [], 0
-    for m in merges:
-        skipped, reason = opted_out(m, cwd)
+    for n, i in enumerate(land_idx):
+        sha, _, subj = rows[i]
+        skipped, reason = opted_out(sha, cwd)
         if skipped:
-            opts.append((m, subject(m, cwd), reason))
+            opts.append((sha, subj, reason))
             continue
 
-        start = position.get(m)
-        if start is None:
-            continue
-        later = [p for p in merge_positions if p > start]
-        end = later[0] if later else len(ordered)
-
-        if any(touches_changelog(ordered[i], cwd) for i in range(start, end)):
+        end = land_idx[n + 1] if n + 1 < len(land_idx) else len(rows)
+        if any(touches_changelog(rows[j][0], cwd) for j in range(i, end)):
             clean += 1
         else:
-            untranscribed.append((m, subject(m, cwd)))
+            untranscribed.append((sha, subj))
     return untranscribed, opts, clean
-
-
-POLICY = "okf/policies/changelog-on-merge.md"
 
 
 def default_since(cwd=None):
@@ -163,6 +200,18 @@ def default_since(cwd=None):
 def _run(args, cwd):
     subprocess.run(["git"] + args, cwd=cwd, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _stamped_commit(cwd, message, when):
+    env = dict(os.environ, GIT_COMMITTER_DATE=when, GIT_AUTHOR_DATE=when)
+    subprocess.run(["git", "commit", "-qm", message], cwd=cwd, check=True, env=env,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def _stamped_merge(cwd, branch, message, when):
+    env = dict(os.environ, GIT_COMMITTER_DATE=when, GIT_AUTHOR_DATE=when)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "-m", message, branch], cwd=cwd, check=True,
+                   env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def _write(cwd, path, text):
@@ -212,16 +261,39 @@ def _build_fixture(root):
     feature("e")
     _run(["merge", "-q", "--no-ff", "-m", "Merge e\n\nNo-Changelog:", "e"], root)
 
-    # Control: a plain non-merge commit touching nothing relevant. Must never be reported,
-    # because only merges are audited.
+    # F: a SQUASH landing with no entry. One parent, so `--merges` cannot see it; recognised by
+    # the `(#N)` subject GitHub gives a squash. Must be reported.
+    feature("f")
+    _run(["merge", "-q", "--squash", "f"], root)
+    _run(["commit", "-qm", "fix: squashed landing with no entry (#901)"], root)
+
+    # G: a squash landing that DOES carry its entry. Must be clean.
+    feature("g", changelog_in_branch=True)
+    _run(["merge", "-q", "--squash", "g"], root)
+    _run(["commit", "-qm", "fix: squashed landing with its entry (#902)"], root)
+
+    # H/I: overlapping branch lifetimes. H merges with NO entry. I is branched AFTERWARDS, carries
+    # its own entry on its branch, and merges later. Ordered by commit DATE, I's entry falls inside
+    # H's window and H is credited with it, so H reads clean having shipped nothing. Ordered by
+    # first parent, I's branch commit is not on the mainline at all and H is correctly reported.
+    # This is the shape the original fixture could not produce, because it built every branch in
+    # strict sequence, where date order and mainline order agree.
+    feature("h")
+    _stamped_merge(root, "h", "Merge h", "2026-01-01T12:00:00")
+    _run(["checkout", "-q", "-b", "i", "main"], root)
+    _write(root, CHANGELOG, "### i\n")
+    _stamped_commit(root, "work on i, carries its own entry", "2026-01-01T13:00:00")
+    _run(["checkout", "-q", "main"], root)
+    _stamped_merge(root, "i", "Merge i", "2026-01-01T14:00:00")
+
+    # Control: a plain non-merge commit with no PR marker. Must never be reported: it is neither a
+    # merge nor a squash landing, just a direct commit.
     _write(root, "unrelated.txt", "y\n")
     _run(["commit", "-qm", "plain commit, no changelog"], root)
 
 
 SELF_TEST_EXPECTED = {
-    "reported": {"Merge b", "Merge e"},
     "opted_out": {"Merge c"},
-    "clean": 2,          # Merge a, Merge d
 }
 
 
@@ -235,6 +307,14 @@ def self_test():
             print(f"self-test: could not build the git fixture ({exc})", file=sys.stderr)
             return 1
         untranscribed, opts, clean = audit("v0", cwd=root)
+        # Every case above passes --since explicitly, so none of them touches default_since(). A
+        # NameError lived there through a whole refactor because of exactly that, and the default
+        # is the path CI runs. Exercise it.
+        try:
+            default_ok = bool(default_since(cwd=root))
+        except Exception as exc:                                  # noqa: BLE001
+            print(f"  FAIL  default_since() raised: {exc!r}", file=sys.stderr)
+            default_ok = False
 
     got_reported = {s for _, s in untranscribed}
     got_opts = {s for _, s, _ in opts}
@@ -245,8 +325,14 @@ def self_test():
         ("a merge with No-Changelog and a reason is an opt-out", got_opts == SELF_TEST_EXPECTED["opted_out"]),
         ("an entry transcribed in a follow-up commit is clean", "Merge d" not in got_reported),
         ("No-Changelog with no reason is NOT an opt-out", "Merge e" in got_reported),
-        ("nothing but merges is audited", clean == SELF_TEST_EXPECTED["clean"]),
-        ("no merge is both reported and opted out", not (got_reported & got_opts)),
+        ("no landing is both reported and opted out", not (got_reported & got_opts)),
+        ("a squash landing with no entry is reported",
+         any("(#901)" in x for x in got_reported)),
+        ("a squash landing carrying its entry is clean",
+         not any("(#902)" in x for x in got_reported)),
+        ("a later branch's entry is not credited to an earlier merge", "Merge h" in got_reported),
+        ("the later merge that owns that entry is itself clean", "Merge i" not in got_reported),
+        ("default_since() resolves without error", default_ok),
     ]
     ok = sum(1 for _, passed in cases if passed)
     for label, passed in cases:
@@ -259,7 +345,7 @@ def self_test():
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--since", metavar="REF", help="audit merges after REF (default: last tag)")
+    ap.add_argument("--since", metavar="REF", help="audit landings after REF (default: where the policy landed)")
     ap.add_argument("--strict", action="store_true",
                     help="exit 1 on any untranscribed merge instead of only reporting")
     ap.add_argument("--self-test", action="store_true",

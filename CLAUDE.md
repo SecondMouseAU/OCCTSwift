@@ -74,7 +74,7 @@ the tree. CI therefore runs only its `--self-test`: a bare run could never fail 
 signal. Its detector can still go blind, which is the failure every other entry here exists to
 prevent, so that is what CI holds it to.
 
-Four of the five gates take `--self-test`, as does the census, which runs a fixture battery proving the *detector* catches each
+Four of the five gates take `--self-test`, as do the census and the merge-history audit, each running a fixture battery proving the *detector* catches each
 failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
 were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
 is blind looks exactly like one reporting "all clear" because the tree is clean.
