@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: gsdali <51393997+gsdali@users.noreply.github.com>
+Date: Fri, 7 Aug 2026 08:42:00 +0000
+Subject: [PATCH] Modeling Data - Fix GCPnts arc-length sampler point counts
+
+GCPnts_UniformAbscissa::NbPoints() is not bounded by the requested count. initialize()
+sizes myParams at theNbPoints + 5 and the walk fills it until it reaches the end
+parameter or runs out of room, so a caller that sizes its own buffer from the requested
+count rather than from NbPoints() is handed more points than it asked for.
+GCPnts_QuasiUniformAbscissa inherits this for every curve that is neither Bezier nor
+BSpline, since it forwards to GCPnts_UniformAbscissa for those, so the same class
+returns exactly theNbPoints on a Bezier and possibly more on an ellipse.
+
+The cause is a tolerance mismatch. Perform() terminates on
+abs(aUi - aUU2) <= theEPSILON, where theEPSILON is theC.Resolution(theTol): a parametric
+tolerance derived from a 3D one using the curve's largest derivative. On an ellipse with
+major radius 1e6 and minor radius 1e-3 that is about 1e-13, while the local derivative
+at the end of that curve is 1e-3, so the parametric tolerance actually corresponding to
+1e-7 in 3D there is about 1e-4. The walk stops 1.557e-08 short of the end, does not
+treat that as done, takes one more step and snaps it to the end. The appended point is a
+duplicate: 1.175e-10 from its neighbour in 3D. On that curve, 22 of the counts from 2 to
+60 return one point more than requested.
+
+- Perform() also accepts a point that coincides with the end within the caller's 3D
+  tolerance, not only one that is close in parameter. The tolerance is squared once,
+  outside the loop, and compared against SquareDistance() rather than calling Distance()
+  on every iteration; the parameter is named theTol rather than theTol3d, since Perform()
+  also instantiates on Adaptor2d_Curve2d. The end point is evaluated once before the
+  walk, and the distance test is gated behind aUU2 - aUi < aDelta so it runs on the final
+  step rather than on every step.
+
+Clamping myNbPoints to theNbPoints was the other option and is worse: the surplus point
+is the one carrying the exact end parameter, so clamping leaves the distribution
+stopping short of the curve.
+
+Separately, a point count below 2 stores out of bounds. Both classes document
+theNbPoints >= 2 and previously enforced it with Standard_ConstructionError_Raise_if,
+which compiles to nothing when No_Exception is defined, as it is for Release builds
+with BUILD_RELEASE_DISABLE_EXCEPTIONS. GCPnts_QuasiUniformAbscissa::initialize() then
+allocates NCollection_HArray1<double>(1, theNbPoints), an empty range for such a count,
+and the next statement is an unconditional myParams->SetValue(1, theU1). SetValue()'s own
+bounds check is a Raise_if too, so the store lands out of bounds. Reproduced on a 4-pole
+Bezier and an 8-point BSpline fit with theNbPoints = 0 and with a negative count.
+
+- Both classes now leave the object not done for a count below 2 by construction, not by
+  a macro that a build configuration can compile away: the ordinary if replaces
+  Standard_ConstructionError_Raise_if rather than duplicating its condition alongside it,
+  so the result is the same whether or not No_Exception is defined. GCPnts_UniformAbscissa
+  had the same missing precondition without the out-of-bounds store, answering a request
+  for zero points with five, and is guarded the same way.
+
+No public API signature changes.
+
+Measured across 17 curve types (line, circles of radius 1e-6 to 1e7, two ellipses,
+hyperbola, parabola, two Beziers, two BSplines, two offsets, a trimmed circle) and counts
+2 to 200 for both classes, 6766 configurations: 232 results change from the unpatched
+baseline and they are exactly the 232 that were returning more points than requested.
+Every other result is identical parameter for parameter, and on the changed ones the
+last parameter is still exactly the end. Re-measured after the count-below-2 guard
+stopped duplicating Standard_ConstructionError_Raise_if: identical 232/6766, and a
+degenerate count now answers IsDone() == false in every build rather than only when
+No_Exception is defined.
+---
+ .../TKGeomBase/GCPnts/GCPnts_QuasiUniformAbscissa.cxx    | 10 +++++++---
+ .../TKGeomBase/GCPnts/GCPnts_UniformAbscissa.cxx         | 24 +++++++++++++++-------
+ 2 files changed, 24 insertions(+), 10 deletions(-)
+
+diff --git a/src/ModelingData/TKGeomBase/GCPnts/GCPnts_QuasiUniformAbscissa.cxx b/src/ModelingData/TKGeomBase/GCPnts/GCPnts_QuasiUniformAbscissa.cxx
+index 4cccafa0..8da83102 100644
+--- a/src/ModelingData/TKGeomBase/GCPnts/GCPnts_QuasiUniformAbscissa.cxx
++++ b/src/ModelingData/TKGeomBase/GCPnts/GCPnts_QuasiUniformAbscissa.cxx
+@@ -127,9 +127,13 @@ void GCPnts_QuasiUniformAbscissa::initialize(const TheCurve& theC,
+     return;
+   }
+
+-  Standard_ConstructionError_Raise_if(
+-    theNbPoints <= 1,
+-    "GCPnts_QuasiUniformAbscissa::Initialize(), number of points should be >= 2");
++  if (theNbPoints <= 1)
++  {
++    // Not-done in every build, independent of whether No_Exception is defined.
++    myDone     = false;
++    myNbPoints = 0;
++    return;
++  }
+
+   // evaluate the approximative length of the 3dCurve
+   myNbPoints           = theNbPoints;
+diff --git a/src/ModelingData/TKGeomBase/GCPnts/GCPnts_UniformAbscissa.cxx b/src/ModelingData/TKGeomBase/GCPnts/GCPnts_UniformAbscissa.cxx
+index 64b5a983..068bf955 100644
+--- a/src/ModelingData/TKGeomBase/GCPnts/GCPnts_UniformAbscissa.cxx
++++ b/src/ModelingData/TKGeomBase/GCPnts/GCPnts_UniformAbscissa.cxx
+@@ -94,7 +94,8 @@ static bool Perform(NCollection_Array1<double>& theParameters,
+                     const double                theU2,
+                     const double                theTotalLength,
+                     int&                        theNbPoints,
+-                    const double                theEPSILON)
++                    const double                theEPSILON,
++                    const double                theTol)
+ {
+   bool   isLocalDone = true;
+   double aUU1 = std::min(theU1, theU2), aUU2 = std::max(theU1, theU2);
+@@ -104,6 +105,8 @@ static bool Perform(NCollection_Array1<double>& theParameters,
+   double aDelta  = (theAbscissa / theTotalLength) * (aUU2 - aUU1);
+   int    anIndex = 1;
+   theParameters.SetValue(anIndex, aUU1);
++  const typename GCPnts_TCurveTypes<TheCurve>::Point aPEnd = theC.Value(aUU2);
++  const double aTol2 = theTol * theTol;
+   for (bool isNotDone = true; isNotDone;)
+   {
+     double aUi = theParameters.Value(anIndex) + aDelta;
+@@ -125,7 +128,10 @@ static bool Perform(NCollection_Array1<double>& theParameters,
+     {
+       anIndex += 1;
+       aUi = anAbscissaFinder.Parameter();
+-      if (std::abs(aUi - aUU2) <= theEPSILON)
++      // theEPSILON is a parametric tolerance derived from theTol via Resolution(), which can be
++      // far tighter than theTol locally; also accept a point within theTol of the end in 3D.
++      if (std::abs(aUi - aUU2) <= theEPSILON
++          || (aUU2 - aUi < aDelta && theC.Value(aUi).SquareDistance(aPEnd) <= aTol2))
+       {
+         theParameters.SetValue(anIndex, aUU2);
+         isNotDone = false;
+@@ -437,7 +443,8 @@ void GCPnts_UniformAbscissa::initialize(const TheCurve& theC,
+                        theU2,
+                        aL,
+                        myNbPoints,
+-                       anEPSILON);
++                       anEPSILON,
++                       std::max(theTol, Precision::Confusion()));
+       break;
+     }
+   }
+@@ -492,11 +499,13 @@ void GCPnts_UniformAbscissa::initialize(const TheCurve& theC,
+                                         const double    theU2,
+                                         const double    theTol)
+ {
+-  Standard_ConstructionError_Raise_if(
+-    theNbPoints <= 1,
+-    "GCPnts_UniformAbscissa::Initialize() - number of points should be >= 2");
+   myNbPoints = 0;
+   myDone     = false;
++  if (theNbPoints <= 1)
++  {
++    // Not-done in every build, independent of whether No_Exception is defined.
++    return;
++  }
+
+   const double anEPSILON = theC.Resolution(std::max(theTol, Precision::Confusion()));
+   // although very similar to Initialize with Abscissa this avoid
+@@ -550,7 +559,8 @@ void GCPnts_UniformAbscissa::initialize(const TheCurve& theC,
+                        theU2,
+                        aL,
+                        myNbPoints,
+-                       anEPSILON);
++                       anEPSILON,
++                       std::max(theTol, Precision::Confusion()));
+       break;
+     }
+   }
+--
+2.43.0
