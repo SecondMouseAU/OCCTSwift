@@ -3030,11 +3030,12 @@ bool OCCTDocumentExpandShape(OCCTDocumentRef doc, int64_t labelId) {
 
 void OCCTDocumentSetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape,
     int32_t colorType, double r, double g, double b) {
-    if (!doc || !shape || doc->colorTool.IsNull()) return;
-    try {
-        Quantity_Color color(r, g, b, Quantity_TOC_RGB);
-        doc->colorTool->SetColor(shape->shape, color, static_cast<XCAFDoc_ColorType>(colorType));
-    } catch (...) {}
+    // #763: delegates rather than storing through the RGB-only SetColor overload. It has no callers
+    // left (Document.setShapeColor moved to the RGBA entry point), but it stays exported and so
+    // stays reachable, and the two bodies side by side were one copy-paste away from silently
+    // reintroducing the alpha loss this pass just fixed. Opaque is the only alpha an RGB-only
+    // caller can mean.
+    OCCTDocumentSetShapeColorRGBA(doc, shape, colorType, r, g, b, 1.0f);
 }
 
 void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc, OCCTShapeRef shape,
