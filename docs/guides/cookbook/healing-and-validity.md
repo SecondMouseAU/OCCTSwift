@@ -38,8 +38,7 @@ For a defect inventory rather than a yes/no, `analyze(tolerance:)` returns count
 ```swift
 if let report = box.analyze(tolerance: 1e-3) {
     print(report.smallEdgeCount, report.gapCount,
-          report.selfIntersectionCount, report.freeEdgeCount,
-          report.hasInvalidTopology)
+          report.freeEdgeCount, report.hasInvalidTopology)
 }
 ```
 

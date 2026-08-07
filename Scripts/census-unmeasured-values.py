@@ -39,9 +39,17 @@ A derivation that can be re-run does not go stale the same way a hand-count does
 WHAT THIS DOES NOT DO, DELIBERATELY: this is a CENSUS, not a gate. It is not wired into
 `ci.yml`'s `gate-scripts` job, and its exit code in report mode is always 0 (barring a crash) even
 when it finds candidates. Every one of the sites below still needs a human verdict. Some are
-real instances of the class; several measured here are the OPPOSITE, a value that already uses the
-"make absence representable" fix #583/#595/#609 established (e.g. `OCCTShapeAxis.hasExtent`
-correctly gating `extentMin`/`extentMax` into a `nil` on the Swift side). And #726 itself scopes
+real instances of the class; several measured are the OPPOSITE, a value that already uses the
+"make absence representable" fix #583/#595/#609 established.
+
+DO NOT TRUST AN EXAMPLE IN THIS COMMENT OVER A MEASUREMENT. Until #763 this paragraph named
+`OCCTShapeAxis.hasExtent` as its example of the correct pattern, "correctly gating
+`extentMin`/`extentMax` into a `nil` on the Swift side". It was not correct. All three assignments
+in `OCCTBridge_Topology.mm` set it `false` and nothing anywhere set it `true`, so `ShapeAxis.extent`
+was unconditionally `nil` and the gating never gated anything. It was the same defect as
+`selfIntersectionCount`, one layer removed, dressed as the remedy for it. The census had flagged
+that exact site and a reader dismissed it from the shape of the code rather than by checking whether
+the flag ever flips. And #726 itself scopes
 the gate-script question ("a struct field assigned only a literal across every path") as a
 follow-up spike, not something this pass commits to.
 
