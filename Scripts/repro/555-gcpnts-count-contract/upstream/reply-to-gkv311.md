@@ -3,9 +3,7 @@ not yet posted (see #755's hard constraint: prepare and stop, do not comment on 
 
 ---
 
-Thank you for the review. Prepared an update addressing all three points; commit ready at
-`Scripts/repro/555-gcpnts-count-contract/upstream/0001-gcpnts-review-fixes.patch` in our tracking
-repo, to be force-pushed to this branch.
+Thank you for the review. Pushed an update addressing all three points.
 
 **1. The `No_Exception` guard.** Took option (b), replacing `Standard_ConstructionError_Raise_if`
 with the plain `if` rather than adding an unconditional `throw` alongside it. Both classes now
@@ -28,8 +26,9 @@ does not pre-validate: grepped `src/` for both classes outside their own `GCPnts
 production call sites and one Draw test command construct either class with a count; every one
 either hardcodes it (`N = 40`, `NbOfPnts = 61`, `npt = 4`/`8`) or clamps/rejects it first
 (`std::max(2, aNbPoints)`, `std::max(3, aNbSamplePoints)`, the Draw command's own
-`if (aSrcNbPnts < 2) { ...; return 1; }`). So (a) would not change observed behavior for any caller
-in the tree today either, on top of not changing it for us.
+`if (aSrcNbPnts < 2) { ...; return 1; }`). So no caller in the tree can reach the degenerate
+branch at all today, and neither option changes observed behavior anywhere in OCCT, on top of not
+changing it for us.
 
 Given that, we preferred (b) over (a) for a reason external to our own build: an explicit
 `if (...) throw ...;` makes every OCCT-internal caller of these two classes' count-based
