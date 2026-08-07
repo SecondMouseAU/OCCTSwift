@@ -154,6 +154,14 @@ public final class AAG: @unchecked Sendable {
     /// Adjacency list: for each face index, list of (neighbor index, edge index)
     public private(set) var adjacencyList: [[Int: Int]] = []
 
+    /// The same face occurrences ``nodes`` was built from (``Shape/orientedFaces()``), cached
+    /// once here so a consumer that needs the underlying `Face` (``AAG/detectPockets(tolerance:)``,
+    /// for the floor's own outer wire) does not re-run the traversal `buildGraph()` already paid
+    /// for (#753). Index-for-index aligned with ``nodes``, by construction: both come from this
+    /// one array. Not `Sendable`-relevant beyond what ``nodes``/``edges``/``adjacencyList`` already
+    /// are, since it is written once here, in `buildGraph()`, and never mutated again.
+    private var faceOccurrences: [Face] = []
+
     /// Create an AAG from a shape
     public init(shape: Shape) {
         self.shape = shape
@@ -170,6 +178,9 @@ public final class AAG: @unchecked Sendable {
         // shape whose faces are not shared this is exactly the faces() node set, in the same order.
         let faces = shape.orientedFaces()
         let faceCount = faces.count
+        // Cached for detectPockets() (#753): same array, same traversal, so caching it here
+        // costs nothing this method wasn't already paying and saves a re-traversal per call.
+        faceOccurrences = faces
 
         // Initialize adjacency list
         adjacencyList = Array(repeating: [:], count: faceCount)
@@ -466,13 +477,27 @@ extension AAG {
     ///
     /// The fix tests the definition the field documents: the floor plus its walls form a closed
     /// loop around the floor's own boundary exactly when every boundary edge of the floor's outer
-    /// wire is shared with a wall in ``PocketFeature/wallFaceIndices``. This needs nothing beyond
-    /// what `AAG` already computes — `AAGEdge.sharedEdgeCount` for each floor/wall pair, and the
-    /// floor's own outer wire via ``Shape/orientedFaces()``, the same reindexing
-    /// ``PocketFeature/floorFaceIndex``'s own doc comment already documents as correct. An inner
-    /// wire (an island inside the pocket, e.g. a boss) is deliberately not part of this count: the
-    /// question is whether the pocket is closed to the *outside*, which is exactly what the outer
-    /// wire bounds.
+    /// wire borders a wall in ``PocketFeature/wallFaceIndices``. Tested **per edge**, not by
+    /// comparing counts (#753): for each edge of the floor's own outer wire, ask which faces
+    /// border it in the shape (``Edge/adjacentFaces(in:)``) and check whether one of them is a
+    /// member of `wallIndices`, by structural identity (`TopoDS_Shape::IsSame`). An inner wire (an
+    /// island inside the pocket, e.g. a boss) never enters this test at all: the loop only ever
+    /// visits the outer wire's own edges, so a boss's wall, which passes every filter above and
+    /// legitimately lands in `wallIndices`, cannot mask a gap in the outer boundary the way it
+    /// could when the old and new formulas both summed a per-face-pair total.
+    ///
+    /// This replaced an earlier version of this same fix that summed `AAGEdge.sharedEdgeCount`
+    /// over `wallIndices` and compared the sum to the outer wire's edge count. Review of #753 found
+    /// two ways that arithmetic could go wrong even though it was already wire-scoped on one side:
+    /// `sharedEdgeCount` is a **total** across the whole face pair, inner wires included, so a boss
+    /// wall's own inner-wire edge was being added to the same sum as the outer boundary's: closed
+    /// three walls plus one boss edge could reach four and look complete while the outer loop
+    /// itself still had a real gap. It is also capped: `OCCTFaceGetSharedEdges`'s fixed buffer
+    /// silently truncates past its slot count, so a floor/wall pair sharing more edges than that
+    /// (plausible after healing splits a boundary into segments) would undercount regardless of
+    /// wire scope. Testing membership per edge instead of comparing sums removes both failure modes
+    /// structurally: the loop never visits an inner-wire edge in the first place, and it never reads
+    /// a total that could be capped.
     ///
     /// A second candidate was considered and rejected: whether the pocket's bounding box sits
     /// strictly inside the parent solid's, in the horizontal axes. It is cheaper, but wrong for a
@@ -480,6 +505,21 @@ extension AAG {
     /// on every side that matters (e.g. a pocket machined flush with one face of a plate) — that is
     /// a statement about *where* the pocket sits, not about whether it is closed, and the two are
     /// independent. Enclosure is a property of the wall loop, not of the pocket's position in space.
+    ///
+    /// ## The tolerance filter's limitation was measured and did not reproduce (#753 finding 3)
+    ///
+    /// Review raised a plausible-sounding compounding failure: a wall dropped by the `#724`
+    /// tolerance filter above (e.g. a filleted floor/wall junction rounding the wall's low-Z bound
+    /// past `floorZ`) would also drop its edges from the enclosure count, permanently misreporting
+    /// a fully enclosed filleted pocket as open. Measured directly with a filleted floor/wall
+    /// junction (radii 0.5 through 4 on a 10×10×15 pocket): the fillet does not reproduce this,
+    /// because it never reaches the tolerance filter at all. A fillet replaces the sharp floor/wall
+    /// edge with a tangent (`smooth`, not `concave`) transition through the fillet face, so the
+    /// filleted neighbor never appears in `concaveNeighbors(of:)` in the first place:
+    /// `wallIndices` comes back empty and the floor is skipped by the guard below before the
+    /// tolerance filter, or this enclosure test, ever runs. This is a pre-existing limitation of
+    /// pocket *detection* (a fully filleted pocket is not recognized as a pocket at all), unrelated
+    /// to #735/#753's change and not fixed here.
     ///
     /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
     ///   candidate floor's Z to count as resting on it. Defaults to
@@ -497,8 +537,8 @@ extension AAG {
 
         // #735: reindexed against occurrences exactly like `PocketFeature.floorFaceIndex`'s own
         // doc comment does, so `occFaces[floorIndex]` is the same Face the floor's AAGNode
-        // describes. Computed once outside the loop rather than per candidate floor.
-        let occFaces = shape.orientedFaces()
+        // describes. Cached on the AAG by buildGraph() (#753) rather than recomputed here.
+        let occFaces = faceOccurrences
 
         for (floorIndex, floorNode) in potentialFloors {
             guard let floorZ = floorNode.zLevel else { continue }
@@ -534,22 +574,15 @@ extension AAG {
                 maxZ = max(maxZ, wallBounds.max.z)
             }
 
-            // Enclosure, not wall count (#735): closed exactly when every boundary edge of the
-            // floor's own outer wire is shared with a wall in wallIndices. `AAGEdge.sharedEdgeCount`
-            // already partitions the floor's boundary edges by which neighbor they're shared with
-            // (each B-Rep edge borders exactly two faces), so summing it over the selected walls
-            // counts exactly the boundary edges this floor's wall loop accounts for.
-            let floorBoundaryEdgeCount = occFaces[floorIndex].outerWire?.edges().count
-            let coveredEdgeCount = wallIndices.reduce(0) { total, wallIndex in
-                total + (edge(between: floorIndex, and: wallIndex)?.sharedEdgeCount ?? 0)
-            }
-            // If the floor's own boundary can't be measured, don't claim an enclosure that wasn't
-            // established: default to open rather than silently trusting an unmeasured loop.
-            let isOpen: Bool
-            if let floorBoundaryEdgeCount, floorBoundaryEdgeCount > 0 {
-                isOpen = coveredEdgeCount < floorBoundaryEdgeCount
-            } else {
-                isOpen = true
+            // Enclosure, not wall count (#735), tested per edge rather than by comparing counts
+            // (#753): every boundary edge of the floor's own OUTER wire must border one of
+            // wallIndices, or this pocket is open. Folding the "can't measure the boundary" case
+            // into `?? []`/`isEmpty` (review finding 6) makes "no outer wire" and "an outer wire
+            // with zero edges" the same case they already behave as: don't claim an enclosure
+            // that wasn't established, default to open.
+            let floorOuterEdges = occFaces[floorIndex].outerWire?.edges() ?? []
+            let isOpen = floorOuterEdges.isEmpty || floorOuterEdges.contains { boundaryEdge in
+                !isEdgeCoveredByAWall(boundaryEdge, among: wallIndices, in: occFaces)
             }
 
             let pocket = PocketFeature(
@@ -570,6 +603,41 @@ extension AAG {
         pockets.sort { $0.zLevel < $1.zLevel }
 
         return pockets
+    }
+
+    /// Whether `edge` borders one of the faces at `wallIndices`, tested by structural identity
+    /// rather than by counting (#753).
+    ///
+    /// `edge` is expected to be one of the floor's own outer-wire edges, obtained via
+    /// ``Wire/edges()``, which converts the wire to its own standalone one-off `Shape` to extract
+    /// edges, so `edge.index` names a position in *that* throwaway shape, not in `shape`. This
+    /// deliberately never reads `edge.index`: ``Edge/adjacentFaces(in:)`` looks the edge up in
+    /// `shape` by its underlying geometry and location (`TopoDS_Shape::IsSame`, the same identity
+    /// rule the wire-to-shape conversion preserves), not by index, so which throwaway shape the
+    /// `Edge` was minted from does not matter here.
+    private func isEdgeCoveredByAWall(_ edge: Edge, among wallIndices: [Int], in occFaces: [Face]) -> Bool {
+        guard let (face1, face2) = edge.adjacentFaces(in: shape) else { return false }
+        return wallIndices.contains { wallIndex in
+            let wall = occFaces[wallIndex]
+            return facesAreSame(face1, wall) || (face2.map { facesAreSame($0, wall) } ?? false)
+        }
+    }
+
+    /// `TopoDS_Shape::IsSame` between two faces: same underlying surface and placement,
+    /// orientation ignored.
+    ///
+    /// Needed because ``Edge/adjacentFaces(in:)`` mints fresh `Face` wrappers with no meaningful
+    /// ``Face/index`` (it has no parent shape to index against), so they cannot be compared to
+    /// `occFaces`'s entries by index the way ``PocketFeature/floorFaceIndex`` and
+    /// ``PocketFeature/wallFaceIndices`` are elsewhere in this file. Bridging a `Face` into a
+    /// generic shape-level comparison via `OCCTShapeFromFace` is the same idiom
+    /// ``Edge/pcurveParams(on:)`` already uses to call a shape-level bridge function on a `Face`.
+    private func facesAreSame(_ a: Face, _ b: Face) -> Bool {
+        guard let shapeA = OCCTShapeFromFace(a.handle) else { return false }
+        defer { OCCTShapeRelease(shapeA) }
+        guard let shapeB = OCCTShapeFromFace(b.handle) else { return false }
+        defer { OCCTShapeRelease(shapeB) }
+        return OCCTShapeIsSame(shapeA, shapeB)
     }
 
     /// Detect holes (through or blind) in the shape
