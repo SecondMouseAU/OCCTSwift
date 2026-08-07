@@ -1545,7 +1545,6 @@ public struct ShapeAnalysisResult {
     public let smallEdgeCount: Int
     public let smallFaceCount: Int
     public let gapCount: Int
-    public let selfIntersectionCount: Int
     public let freeEdgeCount: Int
     public let freeFaceCount: Int
     public let hasInvalidTopology: Bool
@@ -1556,9 +1555,10 @@ public struct ShapeAnalysisResult {
 
 `isHealthy` is `true` when `totalProblems == 0 && !hasInvalidTopology`.
 
-- **`selfIntersectionCount` is always 0.** It has never been computed (the bridge's own comment
-  reads "would require more expensive computation"). Use `isSelfIntersecting(timeout:)` for a
-  real answer.
+- **This never reports self-intersections.** A `selfIntersectionCount` field used to sit here
+  (through v1.x) but was always 0, never computed (the bridge's own comment read "would require
+  more expensive computation"); it was removed in #763 rather than kept as a permanent zero. Use
+  `isSelfIntersecting(timeout:)` for a real answer.
 - **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
   called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
   instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
