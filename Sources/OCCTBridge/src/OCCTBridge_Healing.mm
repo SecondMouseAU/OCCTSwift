@@ -885,6 +885,19 @@ static void OCCTShapeFillCollectEdges(const OCCTWireRef* boundaries, int32_t wir
     }
 }
 
+// #597 investigated gating this on G0Error() > Tol3d (the same "read the error" shape #741 fixed
+// for OCCTGeomFillSweep in OCCTBridge_Surface.mm). Measured and reverted: unlike that site's fixed
+// 1e-4, `Shape.fill`'s effective Tol3d is ALWAYS 1e-4 too (FillingParameters' own Swift default,
+// not a fallback for an unset value), and G0Error() — BRepFill_Filling's own header: "the maximum
+// distance between the result and the constraints" — routinely and legitimately exceeds it for
+// exactly the demanding fills this API exists for: FillingSupportFaceTests' own curvature-vs-
+// tangency and interior-pull cases build correct, already-tested surfaces whose G0Error() is
+// several times 1e-4. Gating on it breaks two existing, passing tests without those surfaces being
+// wrong. Unlike the plate case, G0Error() is a meaningful distance-to-constraints figure here, not
+// the wrong metric — the problem is 1e-4 was never a real, enforced promise for this family, and
+// nothing establishes what the right one would be without inventing a number (#726). See
+// Scripts/repro/597-bridge-modeling-healing-approx-error. FillingSurface's manual builder API
+// already exposes G0Error()/G1Error()/G2Error() for a caller who wants to check it themselves.
 static OCCTShapeRef OCCTShapeFillBuildResult(BRepOffsetAPI_MakeFilling& filling) {
     filling.Build();
     if (!filling.IsDone()) return nullptr;
