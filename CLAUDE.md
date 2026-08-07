@@ -7,9 +7,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the **`v2.0.0-kernel.1` pre-release**, which is that same `V8_0_1` plus the eleven carried patches
-`0010`-`0012` and `0014`-`0021`. A clean checkout with no local `Libraries/` now gets the right
+the **`v2.0.0-kernel.2` pre-release**, which is that same `V8_0_1` plus the fourteen carried patches
+`0010`-`0012` and `0014`-`0024`. A clean checkout with no local `Libraries/` now gets the right
 kernel, and `ci.yml`'s macOS job is a real signal again.
+
+**Check the count against `Scripts/patches/` before trusting it.** The pin holds whatever was in the
+tree when the asset was built, and patches land after. Any patch present in `Scripts/patches/` but
+absent from the pinned asset is exercised by **no CI job at all**, because `build-and-test` resolves
+the asset rather than building from source. That is #585's failure shape, so it is worth ten seconds:
+`ls Scripts/patches/*.patch | wc -l` against the number in this paragraph. If they differ, the
+difference is the untested set, and any claim that a fix in it "is in the kernel" is unevidenced
+until a rebuild. `v2.0.0-kernel.1` held eleven against a tree of fourteen for exactly this reason
+(#512).
 
 Until 2026-08-04 this was not true: the pin was the v1.15.18 asset (`V8_0_0_p1` + patches
 `0001`-`0016`), so every test asserting a newer patch's fix failed in CI indistinguishably from a
