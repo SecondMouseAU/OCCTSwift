@@ -186,9 +186,9 @@ public final class AAG: @unchecked Sendable {
                 isDownward: face.isDownwardFacing(),
                 isVertical: face.isVertical(),
                 zLevel: face.zLevel,
-                // #733: exactBounds, not bounds -- AAG's own floor/wall matching (see
-                // detectPockets()'s floorRestsOnWallTolerance) compares this box against a 1e-4
-                // tolerance, and `bounds` silently grows by the mesh deflection once anything has
+                // #733: exactBounds, not bounds. AAG's own floor/wall matching (see
+                // detectPockets()'s defaultFloorRestsOnWallTolerance) compares this box against a
+                // 1e-4 tolerance, and `bounds` silently grows by the mesh deflection once anything has
                 // meshed this shape. AAGNode represents the shape's geometry, not its incidental
                 // tessellation state, so its bounds must not move depending on whether the caller
                 // happened to call mesh() first.
@@ -452,7 +452,7 @@ extension AAG {
     ///   candidate floor's Z to count as resting on it. Defaults to
     ///   ``defaultFloorRestsOnWallTolerance``. Scale this with the model: the default is tuned for
     ///   millimeter-scale parts, and a shape modeled in meters or in thousandths of an inch may
-    ///   need a different value (#733) -- `AAGNode.bounds` itself is unaffected by meshing either
+    ///   need a different value (#733). `AAGNode.bounds` itself is unaffected by meshing either
     ///   way (#733), so widening this is about the model's own units, not about tessellation noise.
     public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         var pockets: [PocketFeature] = []
@@ -597,7 +597,7 @@ extension Shape {
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```
     ///
-    /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)`` -- see its doc for
+    /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)``. See its doc for
     ///   what it controls and why it defaults the way it does (#733).
     public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         let aag = buildAAG()

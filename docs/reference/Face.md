@@ -164,7 +164,7 @@ public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
 - **Returns:** Tuple of min and max corners of the AABB. Returns `(.zero, .zero)` on error.
 - **OCCT:** `BRepBndLib::Add` + `Bnd_Box::Get`.
 - **Note:** This box is enlarged by the face's mesh deflection whenever the shape has already been
-  meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior) — the same face can
+  meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior); the same face can
   report a looser box after a call to `Shape.mesh(linearDeflection:angularDeflection:)` than before
   it, with no other change (#733). `AAG`'s own floor/wall matching (`detectPockets(tolerance:)`)
   reads a tessellation-independent bound internally for this reason.

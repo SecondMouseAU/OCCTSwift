@@ -80,7 +80,7 @@ public final class Face: @unchecked Sendable {
     /// Get the bounding box of the face
     ///
     /// - Note: This box is enlarged by the face's mesh deflection whenever the shape has already
-    ///   been meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior) — the same
+    ///   been meshed (`BRepBndLib::Add`'s documented `useTriangulation=true` behavior); the same
     ///   `Face` can report a looser box after a call to ``Shape/mesh(linearDeflection:angularDeflection:)``
     ///   than before it, with no other change. Code that needs a bound tied only to the face's own
     ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
@@ -95,7 +95,7 @@ public final class Face: @unchecked Sendable {
     /// the face may carry (#733).
     ///
     /// `bounds` calls into `BRepBndLib::Add` with `useTriangulation=true` (OCCT's own default),
-    /// which enlarges the result by the mesh's deflection whenever a triangulation is present —
+    /// which enlarges the result by the mesh's deflection whenever a triangulation is present,
     /// so its answer depends on whether *anything* meshed this shape before this call, not only on
     /// the face's geometry. Measured on the cylindrical wall of a bored pocket (#733's repro): at
     /// the library's own default deflection (0.1) the low-Z bound drifted by 0.029 units after

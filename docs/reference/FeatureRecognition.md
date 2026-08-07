@@ -56,7 +56,7 @@ public struct AAGNode: Sendable {
 }
 ```
 
-All fields are populated once during `AAG.buildGraph()` by querying the corresponding `Face` properties. `normal` is `nil` for degenerate faces; `zLevel` is `nil` for non-planar or non-horizontal faces. `bounds` is the face's exact-geometry bounding box (`Face.exactBounds`, not `Face.bounds`), so it is unaffected by any triangulation the face carries — meshing a shape before building an `AAG` from it does not change this value (#733).
+All fields are populated once during `AAG.buildGraph()` by querying the corresponding `Face` properties. `normal` is `nil` for degenerate faces; `zLevel` is `nil` for non-planar or non-horizontal faces. `bounds` is the face's exact-geometry bounding box (`Face.exactBounds`, not `Face.bounds`), so it is unaffected by any triangulation the face carries: meshing a shape before building an `AAG` from it does not change this value (#733).
 
 - `faceIndex`: this node's position in the graph, the index every `AAG` method (`neighbors(of:)`, `edge(between:and:)`, `concaveNeighbors(of:)`, `convexNeighbors(of:)`) takes and returns. An occurrence index into `Shape.orientedFaces()`, not a distinct face index.
 - `distinctFaceIndex`: this occurrence's underlying face, its position in `Shape.faces()`, the deduplicated enumeration. Two nodes with the same `distinctFaceIndex` are the two sides of one face shared between two solids in a compound, same geometry, opposite orientation, opposed normals. On a shape whose faces are not shared, every node has `distinctFaceIndex == faceIndex`.
@@ -371,11 +371,11 @@ print(cut.detectPocketsAAG().count)   // 1, not 2 (#724)
 
 The comparison in (4) reads `AAGNode.bounds`, which is always the wall's exact-geometry bounding
 box (`Face.exactBounds`), never the mesh-enlarged one `Face.bounds` can return once a shape has
-been meshed -- so a prior call to `Shape.mesh(...)`/`meshWithProgress(...)` does not change the
+been meshed, so a prior call to `Shape.mesh(...)`/`meshWithProgress(...)` does not change the
 result (#733).
 
 - **Parameters:**
-  - `tolerance` — how close (model units) a wall's own low-Z bound must come to a candidate floor's
+  - `tolerance`: how close (model units) a wall's own low-Z bound must come to a candidate floor's
     Z to count as resting on it. Defaults to `defaultFloorRestsOnWallTolerance` (1e-4). Not a fixed
     constant (#733): a shape modeled at a different scale than millimeters may need a different
     value.
@@ -462,7 +462,7 @@ public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTole
 
 Equivalent to `buildAAG().detectPockets(tolerance:)`. Selects on each node's `isUpward`, `isHorizontal` and `isPlanar`, which `buildAAG()` derives per face occurrence, so the result no longer depends on a compound's member order (#642): before that fix, a face shared between two solids in a compound could report a different pocket count depending only on which order the solids were compounded in, for identical geometry. #699 closed a second, independent source of the same symptom: `concaveNeighbors(of:)` (which `detectPockets()` reads to find candidate walls) used to include neighbors from a *different* solid than the floor's own, which could make the result order-dependent on a fixture #642 alone did not fix (a vertical, rather than horizontal, two-solid split) and could inflate the count with a wall that was never really adjacent to that floor in either solid.
 
-- **Parameters:** `tolerance` — forwarded to `AAG.detectPockets(tolerance:)`; see its doc.
+- **Parameters:** `tolerance`: forwarded to `AAG.detectPockets(tolerance:)`; see its doc.
 - **Returns:** Array of `PocketFeature` values, sorted deepest-first.
 - **Example:**
   ```swift

@@ -6,7 +6,7 @@ import Foundation
 // floor's Z within a 1e-4 tolerance (`AAG.defaultFloorRestsOnWallTolerance`). That comparison used
 // `Face.bounds`, which calls `BRepBndLib::Add` with `useTriangulation=true` (OCCT's own default).
 // OCCT's own header documents the consequence: once a face carries a triangulation, the returned
-// box is enlarged by "the sum of the triangulation deflection and the face tolerance" -- so the
+// box is enlarged by "the sum of the triangulation deflection and the face tolerance", so the
 // SAME face reports a looser box after `Shape.mesh(...)` runs than before it, with nothing else
 // changing.
 //
@@ -14,14 +14,13 @@ import Foundation
 // (`useTriangulation=true` takes the triangulation's `MinMax()` then enlarges by
 // `T->Deflection() + BRep_Tool::Tolerance(F)`; `useTriangulation=false` always takes the exact
 // analytic branch instead): a planar wall triangulates exactly (zero curvature, zero chordal
-// deviation), so a
-// square pocket's four planar walls never drifted, at any deflection -- this defect is invisible
-// on #724's own square-pocket fixtures. A CURVED wall (the cylindrical bore that is #724's own
-// headline fixture) does deviate: at the library's own default deflection (0.1), the wall's
-// low-Z bound drifted 0.029 units off the true floor Z, ~290x the 1e-4 tolerance; even the finest
-// deflection tried (0.001) still drifted 5x past it. Every drift measured, at every deflection
-// from 0.001 to 5.0, exceeded the tolerance -- so meshing this shape at all, before calling
-// `detectPocketsAAG()`, drops the pocket entirely (`pockets.count` 1 -> 0).
+// deviation), so a square pocket's four planar walls never drifted, at any deflection. This defect
+// is invisible on #724's own square-pocket fixtures. A CURVED wall (the cylindrical bore that is
+// #724's own headline fixture) does deviate: at the library's own default deflection (0.1), the
+// wall's low-Z bound drifted 0.029 units off the true floor Z, ~290x the 1e-4 tolerance; even the
+// finest deflection tried (0.001) still drifted 5x past it. Every drift measured, at every
+// deflection from 0.001 to 5.0, exceeded the tolerance, so meshing this shape at all, before
+// calling `detectPocketsAAG()`, drops the pocket entirely (`pockets.count` 1 -> 0).
 //
 // Fixed by giving `AAGNode.bounds` its own bridge call, `OCCTFaceGetBoundsExact`
 // (`BRepBndLib::Add(face, box, useTriangulation: false)`), so it reflects only the face's exact
@@ -88,22 +87,23 @@ struct Issue733MeshTriangulationBoundsTests {
                 #expect(drift < 1e-4, "deflection=\(deflection) drift=\(drift)")
             }
         }
-        #expect(checkedAWall, "fixture produced no candidate wall to check -- test is vacuous")
+        #expect(checkedAWall, "fixture produced no candidate wall to check, test is vacuous")
     }
 }
 
 // #733, second finding: `floorRestsOnWallTolerance` was a `private static let`, the only
 // hardcoded, non-configurable tolerance anywhere in this module (every other tolerance in
-// `Curve3D`, `Surface`, `Shape`, etc. -- 296 occurrences -- is a caller-supplied parameter with a
-// default). A shape modeled in meters or thousandths of an inch has no way to widen or narrow the
-// 1e-4 default to match its own scale. Fixed by promoting it to a `tolerance:` parameter on both
-// `AAG.detectPockets(tolerance:)` and `Shape.detectPocketsAAG(tolerance:)`, defaulting to the same
-// 1e-4 (now `AAG.defaultFloorRestsOnWallTolerance`, a public constant), so existing call sites are
-// unaffected and only a caller who explicitly wants a different value needs to know it exists.
+// `Curve3D`, `Surface`, `Shape`, etc., 296 occurrences total, is a caller-supplied parameter with
+// a default). A shape modeled in meters or thousandths of an inch has no way to widen or narrow
+// the 1e-4 default to match its own scale. Fixed by promoting it to a `tolerance:` parameter on
+// both `AAG.detectPockets(tolerance:)` and `Shape.detectPocketsAAG(tolerance:)`, defaulting to the
+// same 1e-4 (now `AAG.defaultFloorRestsOnWallTolerance`, a public constant), so existing call
+// sites are unaffected and only a caller who explicitly wants a different value needs to know it
+// exists.
 @Suite("detectPocketsAAG(tolerance:) is caller-configurable (#733)")
 struct Issue733ConfigurableToleranceTests {
     /// An absurdly tight tolerance (tighter than the ~1e-7 floating-point noise `exactBounds`
-    /// itself carries on an exact primitive) must reject even a real, exactly-modeled pocket --
+    /// itself carries on an exact primitive) must reject even a real, exactly-modeled pocket,
     /// proving the parameter actually reaches the comparison, not just that it type-checks.
     @Test("an absurdly tight tolerance rejects a real pocket")
     func absurdlyTightToleranceRejectsRealPocket() throws {
@@ -116,7 +116,7 @@ struct Issue733ConfigurableToleranceTests {
     }
 
     /// The same absurdly tight tolerance reaches `AAG.detectPockets(tolerance:)` directly, not
-    /// only through the `Shape` convenience wrapper -- both entry points take the parameter.
+    /// only through the `Shape` convenience wrapper: both entry points take the parameter.
     @Test("AAG.detectPockets(tolerance:) itself honors a tight tolerance")
     func aagDetectPocketsHonorsTolerance() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
@@ -129,7 +129,7 @@ struct Issue733ConfigurableToleranceTests {
     }
 
     /// A caller who explicitly widens the tolerance (e.g. for a coarser model scale) must still
-    /// find the pocket -- the parameter is not a one-way ratchet toward stricter answers only.
+    /// find the pocket: the parameter is not a one-way ratchet toward stricter answers only.
     @Test("a generous tolerance still finds the pocket")
     func generousToleranceStillFindsPocket() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))

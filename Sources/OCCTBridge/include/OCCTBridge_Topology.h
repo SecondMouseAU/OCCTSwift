@@ -160,7 +160,7 @@ void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* min
 /// Get the bounding box of a face from its exact geometry, ignoring any triangulation the face
 /// may carry (#733). `OCCTFaceGetBounds` calls `BRepBndLib::Add` with `useTriangulation=true`
 /// (the default), which OCCT's own docs say enlarges the box by the mesh's deflection whenever a
-/// triangulation is present — so its answer silently depends on whether the shape happened to be
+/// triangulation is present, so its answer silently depends on whether the shape happened to be
 /// meshed before this call, not just on the face's geometry. This variant always passes
 /// `useTriangulation=false`, so the result is deterministic across meshed and unmeshed shapes.
 /// @param face The face to get bounds from
