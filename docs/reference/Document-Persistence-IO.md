@@ -1287,7 +1287,7 @@ Methods on `Document` for assigning and querying colors directly on `Shape` valu
 
 ### `setShapeColor(_:color:type:)`
 
-Set a color on a shape.
+Set a color on a shape, including alpha (#763).
 
 ```swift
 public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OCCTColorTypeSurface)
@@ -1295,23 +1295,40 @@ public func setShapeColor(_ shape: Shape, color: Color, type: OCCTColorType = OC
 
 - **Parameters:**
   - `shape` — the shape to color.
-  - `color` — RGB color value.
+  - `color` — RGBA color value. `color.alpha` is stored, not just RGB.
   - `type` — `OCCTColorTypeGeneric` (0), `OCCTColorTypeSurface` (1), or `OCCTColorTypeCurve` (2). Default is surface color.
-- **OCCT:** `XCAFDoc_ColorTool::SetColor`.
+- **OCCT:** `XCAFDoc_ColorTool::SetColor` (the `Quantity_ColorRGBA` overload).
+- Before #763, `color.alpha` was silently dropped on write (stored through the RGB-only
+  `SetColor` overload), so a subsequent `shapeColor(_:type:)` always read back `alpha == 1.0`
+  regardless of what was set here.
+
+```swift
+let doc = Document.create()!
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+doc.addShape(box)
+doc.setShapeColor(box, color: Color(red: 1, green: 0, blue: 0, alpha: 0.5))
+let readBack = doc.shapeColor(box)
+// readBack?.alpha == 0.5
+```
 
 ---
 
 ### `shapeColor(_:type:)`
 
-Get the color assigned to a shape.
+Get the color assigned to a shape, with its real alpha (#763).
 
 ```swift
 public func shapeColor(_ shape: Shape, type: OCCTColorType = OCCTColorTypeSurface) -> Color?
 ```
 
 - **Parameters:** `shape` — shape to query; `type` — color type.
-- **Returns:** `Color` if a color of the given type is set, `nil` otherwise.
-- **OCCT:** `XCAFDoc_ColorTool::GetColor`.
+- **Returns:** `Color` if a color of the given type is set, `nil` otherwise. `alpha` is the real
+  stored value: before #763 it was hardcoded to `1.0` regardless of what was actually set (the
+  bridge read through `XCAFDoc_ColorTool`'s RGB-only `GetColor` overload, which fetches the real
+  RGBA value internally and then discards alpha). A shape colored via `setShapeColor(_:color:type:)`
+  with `alpha < 1.0`, or imported from a file with a transparent surface style, now reports its
+  actual alpha.
+- **OCCT:** `XCAFDoc_ColorTool::GetColor` (the `Quantity_ColorRGBA` overload).
 
 ---
 

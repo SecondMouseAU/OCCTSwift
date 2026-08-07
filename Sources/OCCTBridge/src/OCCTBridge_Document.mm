@@ -3037,17 +3037,30 @@ void OCCTDocumentSetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape,
     } catch (...) {}
 }
 
+void OCCTDocumentSetShapeColorRGBA(OCCTDocumentRef doc, OCCTShapeRef shape,
+    int32_t colorType, double r, double g, double b, float alpha) {
+    if (!doc || !shape || doc->colorTool.IsNull()) return;
+    try {
+        Quantity_ColorRGBA color(Quantity_Color(r, g, b, Quantity_TOC_RGB), alpha);
+        doc->colorTool->SetColor(shape->shape, color, static_cast<XCAFDoc_ColorType>(colorType));
+    } catch (...) {}
+}
+
 OCCTColor OCCTDocumentGetShapeColor(OCCTDocumentRef doc, OCCTShapeRef shape, int32_t colorType) {
     OCCTColor result = {0, 0, 0, 1.0, false};
     if (!doc || !shape || doc->colorTool.IsNull()) return result;
     try {
-        Quantity_Color color;
+        // #763: read via the RGBA overload (XCAFDoc_ColorTool::GetColor(shape, type, Quantity_Color&)
+        // internally fetches the RGBA value and then discards alpha) so a real stored alpha -
+        // e.g. from a STEP import's transparent surface style, or OCCTDocumentSetShapeColorRGBA -
+        // is reported instead of the hardcoded 1.0 OCCTDocumentGetLabelColor already avoids.
+        Quantity_ColorRGBA color;
         bool hasColor = doc->colorTool->GetColor(shape->shape, static_cast<XCAFDoc_ColorType>(colorType), color);
         if (hasColor) {
-            result.r = color.Red();
-            result.g = color.Green();
-            result.b = color.Blue();
-            result.a = 1.0;
+            result.r = color.GetRGB().Red();
+            result.g = color.GetRGB().Green();
+            result.b = color.GetRGB().Blue();
+            result.a = color.Alpha();
             result.isSet = true;
         }
     } catch (...) {}
