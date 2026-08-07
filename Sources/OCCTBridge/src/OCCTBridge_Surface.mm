@@ -6716,8 +6716,20 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
         // Per-pair real contact point + each curve's own raw parameter there.
         // profParam(i,j): profile i's own parameter at its contact with guide j.
         // guideParam(i,j): guide j's own parameter at its contact with profile i.
-        NCollection_Array2<gp_Pnt> ipts(1, profileCount, 1, guideCount);
-        NCollection_Array2<double> iwts(1, profileCount, 1, guideCount);
+        // Row is GUIDE, column is PROFILE, which is the opposite of the obvious reading and is
+        // what GeomFill_NetworkSurface::Init's own isReadyToBuild() requires: rows must match
+        // theGuideParameters and columns theProfileParameters, following BSplSLib::Interpolate's
+        // UParameters/ColLength convention. NCollection_Array2 makes this easy to get backwards,
+        // because ColLength() returns NbRows() and RowLength() returns NbColumns(), the reverse of
+        // what both names suggest.
+        //
+        // Getting it backwards is silent on a square network: with an equal profile and guide count
+        // the swapped grid is still the right SHAPE, so Init accepts it and the builder returns a
+        // surface with its two off-diagonal corners exactly point-reflected, reporting .done. That
+        // is how it shipped, and how a 2x2 regression fixture failed to catch it (#748). On any
+        // non-square network the same bug is loud: a 2x3 fails Init outright with invalidInput.
+        NCollection_Array2<gp_Pnt> ipts(1, guideCount, 1, profileCount);
+        NCollection_Array2<double> iwts(1, guideCount, 1, profileCount);
         NCollection_Array2<double> profParam(1, profileCount, 1, guideCount);
         NCollection_Array2<double> guideParam(1, profileCount, 1, guideCount);
         for (int i = 0; i < profileCount; i++) {
@@ -6740,8 +6752,8 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
                 ex.NearestPoints(pp, gp);
                 double pparam, gparam;
                 ex.LowerDistanceParameters(pparam, gparam);
-                ipts.SetValue(i + 1, j + 1, pp);
-                iwts.SetValue(i + 1, j + 1, 1.0);
+                ipts.SetValue(j + 1, i + 1, pp);
+                iwts.SetValue(j + 1, i + 1, 1.0);
                 profParam.SetValue(i + 1, j + 1, pparam);
                 guideParam.SetValue(i + 1, j + 1, gparam);
             }
