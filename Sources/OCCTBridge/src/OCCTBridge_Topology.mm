@@ -4145,6 +4145,18 @@ void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* min
     }
 }
 
+void OCCTFaceGetBoundsExact(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ) {
+    if (!face || !minX || !minY || !minZ || !maxX || !maxY || !maxZ) return;
+
+    try {
+        Bnd_Box box;
+        BRepBndLib::Add(face->face, box, false);
+        box.Get(*minX, *minY, *minZ, *maxX, *maxY, *maxZ);
+    } catch (...) {
+        *minX = *minY = *minZ = *maxX = *maxY = *maxZ = 0;
+    }
+}
+
 bool OCCTFaceIsPlanar(OCCTFaceRef face) {
     if (!face) return false;
 

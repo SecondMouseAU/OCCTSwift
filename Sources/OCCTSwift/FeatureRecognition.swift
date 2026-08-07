@@ -68,7 +68,9 @@ public struct AAGNode: Sendable {
     /// Z level if horizontal planar face
     public let zLevel: Double?
 
-    /// Bounding box of the face
+    /// Bounding box of the face's exact geometry (#733). Unlike ``Face/bounds``, this is never
+    /// enlarged by mesh triangulation, so it does not change depending on whether the shape has
+    /// been meshed before ``AAG`` was built from it.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 }
 
@@ -184,7 +186,13 @@ public final class AAG: @unchecked Sendable {
                 isDownward: face.isDownwardFacing(),
                 isVertical: face.isVertical(),
                 zLevel: face.zLevel,
-                bounds: face.bounds
+                // #733: exactBounds, not bounds. AAG's own floor/wall matching (see
+                // detectPockets()'s defaultFloorRestsOnWallTolerance) compares this box against a
+                // 1e-4 tolerance, and `bounds` silently grows by the mesh deflection once anything has
+                // meshed this shape. AAGNode represents the shape's geometry, not its incidental
+                // tessellation state, so its bounds must not move depending on whether the caller
+                // happened to call mesh() first.
+                bounds: face.exactBounds
             )
             nodes.append(node)
         }
@@ -385,13 +393,68 @@ public struct PocketFeature: Sendable {
 // MARK: - Feature Recognition Extensions
 
 extension AAG {
+    /// Default tolerance (model units) used to decide whether a candidate floor sits at the
+    /// bottom of one of its candidate walls (#724). Far tighter than any real pocket depth in the
+    /// test suite (millimeters or more), far looser than the ~1e-7 bounding-box noise
+    /// `Face.exactBounds` reports on an exact primitive.
+    ///
+    /// This is a default, not a fixed constant: ``detectPockets(tolerance:)`` and
+    /// ``Shape/detectPocketsAAG(tolerance:)`` both take a caller-supplied `tolerance:` parameter
+    /// with this value as its default (#733), matching every other tolerance in this module
+    /// (`Curve3D`, `Surface`, `Shape`'s own geometry methods, ...) rather than hardcoding one
+    /// millimeter-scale constant for every caller regardless of the model's own units.
+    public static let defaultFloorRestsOnWallTolerance = 1e-4
+
     /// Detect pockets in the shape using AAG analysis
     ///
     /// A pocket is identified by:
     /// 1. An upward-facing horizontal floor face
-    /// 2. Surrounded by vertical wall faces
+    /// 2. Surrounded by vertical wall faces, each resting on that floor (#724)
     /// 3. Connected to walls via concave edges
-    public func detectPockets() -> [PocketFeature] {
+    ///
+    /// ## A wall only floors where it bottoms out (#724)
+    ///
+    /// A blind pocket's floor is not the only upward-facing horizontal planar face touching a
+    /// concave edge to one of its walls: the exterior surface the pocket opens THROUGH, at the
+    /// wall's other end, is upward-facing and horizontal too, and is a false "floor" whenever that
+    /// rim edge classifies concave, which a curved wall's rim can do even for a correctly-open
+    /// pocket, pending #723's replacement of the underlying convexity formula. Requiring the
+    /// candidate wall's own bounding-box minimum Z to match the floor's Z (rather than trusting
+    /// every concave-and-vertical neighbor) tells the two apart without depending on that edge's
+    /// classification at all: a pocket floor is upward-facing, so it is always the LOW end of the
+    /// walls that rise from it, and a wall's high end is where it opens, whether to the exterior,
+    /// to a shallower pocket's floor above it, or to open air; never to a floor of its own.
+    ///
+    /// A single blind cylindrical pocket bored partway into a box is the fixture that first
+    /// surfaced this: the wall's own top rim (mis)classified concave made the box's outer top
+    /// face, sitting at the wall's high end rather than its low end, register as a second pocket
+    /// floor for the very same wall.
+    ///
+    /// ```swift
+    /// let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+    /// let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+    /// let cut  = box.subtracting(tool)!
+    /// print(cut.detectPocketsAAG().count)   // 1, not 2
+    /// ```
+    ///
+    /// This does not depend on which of the wall's two rims classifies concave: a wall whose
+    /// bounding box does not bottom out at a given candidate floor's Z is excluded from that
+    /// floor's walls regardless of why it was a concave neighbor in the first place. It also
+    /// requires nothing about every edge classification in the graph being correct, only that a
+    /// genuine floor is geometrically the low end of its own walls, which is true independent of
+    /// #723.
+    ///
+    /// One known limitation: a filleted floor/wall junction would round the wall's bounding box
+    /// past the floor's own Z by roughly the fillet radius, which could exceed this tolerance. No
+    /// fixture in this codebase exercises that combination yet.
+    ///
+    /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
+    ///   candidate floor's Z to count as resting on it. Defaults to
+    ///   ``defaultFloorRestsOnWallTolerance``. Scale this with the model: the default is tuned for
+    ///   millimeter-scale parts, and a shape modeled in meters or in thousandths of an inch may
+    ///   need a different value (#733). `AAGNode.bounds` itself is unaffected by meshing either
+    ///   way (#733), so widening this is about the model's own units, not about tessellation noise.
+    public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         var pockets: [PocketFeature] = []
 
         // Find all upward-facing horizontal faces as potential floors
@@ -405,9 +468,13 @@ extension AAG {
             // Get concave neighbors (these should be walls)
             let concaveNeighbors = self.concaveNeighbors(of: floorIndex)
 
-            // Filter to vertical faces only
+            // Filter to vertical faces that actually rest on this floor (#724): a wall's low Z
+            // bound must match the floor's own Z, or this floor is really that wall's opening,
+            // not its bottom.
             let wallIndices = concaveNeighbors.filter { neighborIndex in
-                nodes[neighborIndex].isVertical
+                let wall = nodes[neighborIndex]
+                guard wall.isVertical else { return false }
+                return abs(wall.bounds.min.z - floorZ) < tolerance
             }
 
             // Need at least one wall to be a pocket
@@ -529,8 +596,11 @@ extension Shape {
     /// let result = box.subtracting(pocket)!
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```
-    public func detectPocketsAAG() -> [PocketFeature] {
+    ///
+    /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)``. See its doc for
+    ///   what it controls and why it defaults the way it does (#733).
+    public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         let aag = buildAAG()
-        return aag.detectPockets()
+        return aag.detectPockets(tolerance: tolerance)
     }
 }
