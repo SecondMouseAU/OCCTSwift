@@ -64,7 +64,7 @@ public enum GenericRunner {
         print("Available:")
         let width = entries.map(\.name.count).max() ?? 0
         for entry in entries {
-            let name = entry.name.count >= width ? entry.name : entry.name + String(repeating: " ", count: width - entry.name.count)
+            let name = entry.name.count == width ? entry.name : entry.name + String(repeating: " ", count: width - entry.name.count)
             print("  \(name) \(entry.summary)")
         }
     }

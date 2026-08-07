@@ -131,6 +131,13 @@ fileprivate struct SelfIntersectionTimingRow {
     let timeoutOutcome: String
     let hardTimeoutSeconds: Double
     let hardTimeoutOutcome: String
+
+    /// Computed once here so `report()`'s per-row print and `run()`'s summary table read the same
+    /// number rather than each deriving it (#773 review). A formula with two call sites is a
+    /// formula that gets changed in one of them.
+    var overheadTimeout: Double {
+        analyzeSeconds > 0 ? timeoutSeconds / analyzeSeconds : Double.infinity
+    }
 }
 
 /// Measures `analyze(tolerance:)`, `deepCopy()` alone, `isSelfIntersecting(timeout:)`, and
@@ -159,13 +166,13 @@ fileprivate func report(name: String, shape: Shape, deadline: Double,
         hardTimeoutOutcome = shape.isSelfIntersecting(hardTimeout: deadline)
     }
 
-    rows.append(SelfIntersectionTimingRow(
+    let row = SelfIntersectionTimingRow(
         name: name, faces: faces, edges: edges,
         analyzeSeconds: analyzeSeconds, deepCopySeconds: deepCopySeconds,
         timeoutSeconds: timeoutSeconds, timeoutOutcome: describe(timeoutOutcome),
-        hardTimeoutSeconds: hardTimeoutSeconds, hardTimeoutOutcome: describe(hardTimeoutOutcome)))
+        hardTimeoutSeconds: hardTimeoutSeconds, hardTimeoutOutcome: describe(hardTimeoutOutcome))
+    rows.append(row)
 
-    let overheadTimeout = analyzeSeconds > 0 ? timeoutSeconds / analyzeSeconds : Double.infinity
     let overheadHard = analyzeSeconds > 0 ? hardTimeoutSeconds / analyzeSeconds : Double.infinity
 
     print("\(name)")
@@ -174,7 +181,7 @@ fileprivate func report(name: String, shape: Shape, deadline: Double,
     print("  deepCopy() alone:                             \(fmt(deepCopySeconds))")
     print("  isSelfIntersecting(timeout: \(Int(deadline))):             \(fmt(timeoutSeconds))  [\(describe(timeoutOutcome))]  <- what analyze(selfIntersectionTimeout:) calls")
     print("  isSelfIntersecting(hardTimeout: \(Int(deadline))):         \(fmt(hardTimeoutSeconds))  [\(describe(hardTimeoutOutcome))]  (measured for comparison, not used by analyze())")
-    print("  overhead vs analyze(), timeout (shipped):     \(String(format: "%.1f", overheadTimeout))x")
+    print("  overhead vs analyze(), timeout (shipped):     \(String(format: "%.1f", row.overheadTimeout))x")
     print("  overhead vs analyze(), hardTimeout (rejected):\(String(format: "%.1f", overheadHard))x")
     print()
 }
@@ -224,8 +231,7 @@ enum AnalyzeSelfIntersectionTiming {
         print("| Shape | Faces | Edges | analyze(tolerance:) | deepCopy() | timeout: 30 (shipped path) | hardTimeout: 30 (rejected) | Overhead (shipped) |")
         print("|---|---|---|---|---|---|---|---|")
         for row in rows {
-            let overheadTimeout = row.analyzeSeconds > 0 ? row.timeoutSeconds / row.analyzeSeconds : Double.infinity
-            let overheadStr = overheadTimeout.isFinite ? String(format: "%.1fx", overheadTimeout) : "n/a"
+            let overheadStr = row.overheadTimeout.isFinite ? String(format: "%.1fx", row.overheadTimeout) : "n/a"
             print("| \(row.name) | \(row.faces) | \(row.edges) | \(fmt(row.analyzeSeconds)) | \(fmt(row.deepCopySeconds)) | \(fmt(row.timeoutSeconds)) [\(row.timeoutOutcome)] | \(fmt(row.hardTimeoutSeconds)) [\(row.hardTimeoutOutcome)] | \(overheadStr) |")
         }
     }
