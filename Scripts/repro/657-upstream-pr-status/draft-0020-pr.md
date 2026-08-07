@@ -89,6 +89,12 @@ mkHole.PerformUntilEnd();
 | `Perform(R, 0, 30)` | `NoError` | 1570.7963 | 1570.7963 |
 | `Perform(R, 30, 70)` | `NoError` | 1570.7963 | 1570.7963 |
 
+`PerformBlind(20)`'s length is measured from the axis origin `(0, 0, 15)`, which sits 5mm above
+plate A's entry face at axis parameter 5, not from that face. A blind depth of 20 therefore reaches
+axis parameter 20, boring only 15mm of the plate's 20mm thickness: `1178.0972`, matching
+`pi * r^2 * 15`. That is the mode's own contract, not a defect this patch touches or a
+discrepancy against the other rows.
+
 And on a single 8mm-wide bar an `r = 5` bore severs, where "parts" was two pieces of one workpiece
 rather than two bodies:
 
