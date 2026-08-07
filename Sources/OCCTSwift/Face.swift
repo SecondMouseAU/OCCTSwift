@@ -85,9 +85,20 @@ public final class Face: @unchecked Sendable {
     ///   than before it, with no other change. Code that needs a bound tied only to the face's own
     ///   geometry, independent of any prior meshing, should use ``exactBounds`` instead (#733).
     public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
+        boundsVia(OCCTFaceGetBounds)
+    }
+
+    /// The two bounds accessors differ only in which bridge function they call, so the six-out-
+    /// parameter dance lives here once. A third variant, or a validity check on the result, then
+    /// has one place to go rather than two that can drift apart.
+    private func boundsVia(
+        _ fn: (OCCTFaceRef?, UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?,
+               UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?,
+               UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?) -> Void
+    ) -> (min: SIMD3<Double>, max: SIMD3<Double>) {
         var minX: Double = 0, minY: Double = 0, minZ: Double = 0
         var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
-        OCCTFaceGetBounds(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
+        fn(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
         return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
     }
 
@@ -103,10 +114,7 @@ public final class Face: @unchecked Sendable {
     /// (0.001) still drifted 5x past it. `exactBounds` is unaffected by meshing at any deflection,
     /// which is what ``AAG`` uses internally for its own floor/wall matching.
     internal var exactBounds: (min: SIMD3<Double>, max: SIMD3<Double>) {
-        var minX: Double = 0, minY: Double = 0, minZ: Double = 0
-        var maxX: Double = 0, maxY: Double = 0, maxZ: Double = 0
-        OCCTFaceGetBoundsExact(handle, &minX, &minY, &minZ, &maxX, &maxY, &maxZ)
-        return (min: SIMD3(minX, minY, minZ), max: SIMD3(maxX, maxY, maxZ))
+        boundsVia(OCCTFaceGetBoundsExact)
     }
 
     /// Check if the face is planar (flat)
