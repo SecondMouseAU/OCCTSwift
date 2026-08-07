@@ -1910,6 +1910,27 @@ OCCTSurfaceKnotSplitResult OCCTSurfaceKnotSplitting(OCCTSurfaceRef surface,
     return result;
 }
 
+// #725: GeomConvert_CompBezierSurfacesToBSplineSurface has no rational path at all.
+// GeomConvert_CompBezierSurfacesToBSplineSurface.cxx:374-389 computes
+// `isrational |= IsURational() || IsVRational()` over every patch and then
+// `Standard_NotImplemented_Raise_if(isrational, ...)`, which this project's Release kernel
+// compiles out via No_Exception (the same defect class #640 fixed for
+// math_GaussSetIntegration). The converter proceeds anyway, silently dropping every patch's
+// weights and returning the POLYNOMIAL surface through the same control net, with
+// IsDone() == true: measured on a rational quarter-cylinder Bezier patch, a 0.606602 radius
+// error reported as success. Reject before constructing the converter using the exact
+// predicate the compiled-out guard uses, mirroring #640's resolution. Clamping or silently
+// dropping the weights is not an option here, for the same reason it was not in #430/#437.
+static bool occtAnyBezierPatchIsRational(const TColGeom_Array2OfBezierSurface& bezArray) {
+    for (int32_t r = bezArray.LowerRow(); r <= bezArray.UpperRow(); r++) {
+        for (int32_t c = bezArray.LowerCol(); c <= bezArray.UpperCol(); c++) {
+            const Handle(Geom_BezierSurface)& bez = bezArray.Value(r, c);
+            if (!bez.IsNull() && (bez->IsURational() || bez->IsVRational())) return true;
+        }
+    }
+    return false;
+}
+
 OCCTSurfaceRef OCCTSurfaceJoinBezierPatches(
     const OCCTSurfaceRef* patches, int32_t nRows, int32_t nCols) {
     if (!patches || nRows <= 0 || nCols <= 0) return nullptr;
@@ -1924,6 +1945,7 @@ OCCTSurfaceRef OCCTSurfaceJoinBezierPatches(
                 bezArray.SetValue(r + 1, c + 1, bez);
             }
         }
+        if (occtAnyBezierPatchIsRational(bezArray)) return nullptr;
         GeomConvert_CompBezierSurfacesToBSplineSurface conv(bezArray);
         if (!conv.IsDone()) return nullptr;
         Handle(Geom_BSplineSurface) bsurf = new Geom_BSplineSurface(
@@ -2428,9 +2450,32 @@ OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sec
         Handle(GeomFill_UniformSection) sectionLaw = new GeomFill_UniformSection(sectionCurve);
 
         // Sweep
+        // #597: GeomFill_Sweep::Build's general path (BuildAll) always fits the swept surface
+        // with an internal Approx_SweepApproximation and records the achieved deviation in
+        // ErrorOnSurface(). IsDone() alone says only that SOME surface was produced, not that
+        // it is within the tolerance this call asks for. This entry point used to accept
+        // whatever Build() returned without ever reading that number: the same "accepts an
+        // approximation without reading the error it reports" shape #597 names at
+        // GeomFill_Sweep.cxx:296 and ShapeUpgrade_UnifySameDomain.cxx:3629, except neither of
+        // those two sites is reachable from this file (see the PR body for the measurement;
+        // both live behind PipeShellBuilder/UnifySameDomainBuilder in OCCTBridge_Modeling.mm),
+        // and the ForceApproxC1 one's reported error is a hardcoded constant that cannot move
+        // once that branch fires, the same shape as #522's zero, so reading it would not have
+        // helped even from there. Here the number is real and does move, so reject rather than
+        // silently hand back a surface that missed the tolerance it was built at.
+        // A bridge-chosen fit tolerance, not an OCCT default: GeomFill_Sweep::SetTolerance(const
+        // double Tol3d, const double BoundTol = 1.0, const double Tol2d = 1.0e-5, const double
+        // TolAngular = 1.0) has no default for Tol3d at all, and none of its three actual
+        // defaults equals 1e-4. Not caller-configurable today (Shape.geomFillSweep(path:section:)
+        // takes no tolerance parameter, unlike the sibling GeomFill_NetworkSurface/GeomFill_Gordon
+        // entry points in this file); left that way here rather than as a drive-by API change --
+        // see the PR notes for why.
+        const double tolerance = 1e-4;
         GeomFill_Sweep sweep(location);
+        sweep.SetTolerance(tolerance);
         sweep.Build(sectionLaw, GeomFill_Location, GeomAbs_C2, 10, 50);
         if (!sweep.IsDone()) return nullptr;
+        if (sweep.ErrorOnSurface() > tolerance) return nullptr;
 
         Handle(Geom_Surface) surface = sweep.Surface();
         if (surface.IsNull()) return nullptr;
@@ -6537,6 +6582,7 @@ OCCTSurfaceRef OCCTGeomEvalAHTBezierSurfaceCreate(
 // MARK: - GeomFill_Gordon report + GeomFill_NetworkSurface — OCCT 8.0.0p1
 
 #include <GeomFill_NetworkSurface.hxx>
+#include <GeomAPI_ExtremaCurveCurve.hxx>
 
 // Build a Gordon surface reporting status + approximate flag.
 OCCTSurfaceRef OCCTGeomFillGordonReport(const OCCTCurve3DRef* profiles, int32_t profileCount,
@@ -6583,11 +6629,63 @@ OCCTSurfaceRef OCCTGeomFillGordonReport(const OCCTCurve3DRef* profiles, int32_t 
     }
 }
 
-// Low-level GeomFill_NetworkSurface builder. Takes profile + guide curves and
-// builds a compatible non-periodic B-spline network: profiles are evaluated in
-// U, guides in V; the intersection grid is sampled at the natural [first,last]
-// parameter range of each curve, and the profile/guide locator parameters are
-// uniformly spaced. Returns the surface or NULL; writes the ResultStatus ordinal.
+// #689: real per-pair contact points and RAW (not normalized) locator parameters.
+//
+// GeomFill_NetworkSurface::Perform() builds a profile skin whose U-axis is the profile
+// curves' own natural parameter domain and a guide skin whose U-axis is theGuideParameters
+// (GeomFill_NetworkSurface.cxx's makeNetworkSurface/alignSurfaces); the two are required to
+// share ONE knot RANGE (sameKnotRange, called from uniteKnots) before either is aligned to the
+// other. theGuideParameters is documented as "U parameters locating guides on profile skin",
+// i.e. it has to live in the profile curves' own domain, not a caller-invented one, and the
+// mirror image holds for theProfileParameters against the guide curves' domain. The previous
+// implementation stuffed a uniform [0,1] fraction into both arrays regardless of what domain
+// the curves actually used, which only shares a range with a profile/guide domain that also
+// happens to be [0,1] by coincidence. Measured directly (see PR body): that is why every
+// fixture tried failed identically with KnotAlignmentFailed, including the simplest possible
+// 2x2 bilinear patch built from two unit-length straight lines each way, a network that is
+// otherwise a perfect, error-free fit.
+//
+// Fix: use GeomAPI_ExtremaCurveCurve (the same public class GeomFill_Gordon's own internal
+// network preparation uses for this) to find each profile/guide pair's real contact point and
+// each curve's own raw parameter there, then average across the family the way
+// GeomFill_Gordon.cxx does (aGuideParamValues = columnMeans, aProfileParamValues = rowMeans) to
+// get one locator value per profile and per guide, both already in the domain the corresponding
+// skin needs. This does not replicate GeomFill_Gordon's full network preparation (curve
+// reordering, non-linear reparametrization to a common basis, rational contact weights); that
+// machinery is private to GeomFill_Gordon.cxx (GeomFill_GordonUtilities.pxx, not part of
+// any installed header), and the class's own doc comment says a "GeomFill_NetworkSurface does
+// not find curve intersections, sort the network, convert arbitrary curves, or reparametrize
+// the input" by design. What is fixed is the one defect present on every input tried, including
+// the fully consistent, non-degenerate ones: the wrong parameter DOMAIN. Verified against a 2x2
+// bilinear patch (symmetric and asymmetric), a 3x3 curved grid, and the existing rational
+// quarter-cylinder Gordon fixture (profiles are quarter-circle arcs): all four now report
+// .done and reproduce their reference geometry to within 1e-14, the last one on real weight-1
+// intersection points despite genuinely rational profile curves, because
+// makeCorrectedProfileSkin's own rational branch combines the (correctly rational) profile and
+// guide skins independently of what weight the intersection grid was given.
+//
+// GeomAPI_ExtremaCurveCurve SIGSEGVs on parallel curves at every capacity (#636, a kernel
+// defect one layer under Extrema_ExtCC: NbExtrema() reports 1 but Points()/Parameters() index
+// an empty sequence when IsParallel(), and this Release kernel disables the bounds check that
+// would otherwise throw). PR #730 proposes the same IsParallel() guard for the OTHER call site
+// of this class (Curve3D.extrema, OCCTBridge_Curve3D.mm), but it has not merged: as this tree
+// stands, that call site has no guard at all and still SIGSEGVs on parallel curves. The
+// IsParallel() check below is this function's own guard, protecting this new call site
+// regardless of whether or when #730 lands.
+//
+// A pair with no real extremum (parallel, or the search otherwise found none) has no contact
+// point to measure. The previous version of this fix substituted each curve's own
+// FirstParameter() and averaged that invented point in with the real ones -- exactly the
+// failure class #726 tracks: a value nobody measured, blended into a result reported .done
+// with no error. Fixed by rejecting the whole network as .invalidInput instead (see below);
+// the caller can already distinguish that from .done, the same as an undersized input.
+// Also fixed in the same pass: Points(1, ...)/Parameters(1, ...) unconditionally read
+// solution index 1, but GeomAPI_ExtremaCurveCurve exposes NearestPoints()/
+// LowerDistanceParameters() precisely because index 1 is not guaranteed to be the globally
+// nearest extremum -- on a curved profile/guide pair the wrong index can feed a real but
+// spurious contact point into the surface build with no error signal. Uses the same pair of
+// accessors already established for this class elsewhere in this file (OCCTSurfaceExtrema,
+// above).
 OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_t profileCount,
                                           const OCCTCurve3DRef* guides, int32_t guideCount,
                                           double tolerance, int32_t* outStatus) {
@@ -6615,38 +6713,67 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
             gds.SetValue(i + 1, bs);
         }
 
-        // Uniform locator parameters in [0,1].
-        NCollection_Array1<double> profileParams(1, profileCount);
-        for (int i = 0; i < profileCount; i++)
-            profileParams.SetValue(i + 1, occtUniformParameter(0.0, 1.0, i, profileCount));
-        NCollection_Array1<double> guideParams(1, guideCount);
-        for (int j = 0; j < guideCount; j++)
-            guideParams.SetValue(j + 1, occtUniformParameter(0.0, 1.0, j, guideCount));
-
-        // Intersection grid: row = profile (i), col = guide (j). Sample profile i
-        // at the parameter matching guide j's normalized position along the profile.
-        NCollection_Array2<gp_Pnt> ipts(1, profileCount, 1, guideCount);
-        NCollection_Array2<double> iwts(1, profileCount, 1, guideCount);
+        // Per-pair real contact point + each curve's own raw parameter there.
+        // profParam(i,j): profile i's own parameter at its contact with guide j.
+        // guideParam(i,j): guide j's own parameter at its contact with profile i.
+        // Row is GUIDE, column is PROFILE, which is the opposite of the obvious reading and is
+        // what GeomFill_NetworkSurface::Init's own isReadyToBuild() requires: rows must match
+        // theGuideParameters and columns theProfileParameters, following BSplSLib::Interpolate's
+        // UParameters/ColLength convention. NCollection_Array2 makes this easy to get backwards,
+        // because ColLength() returns NbRows() and RowLength() returns NbColumns(), the reverse of
+        // what both names suggest.
+        //
+        // Getting it backwards is silent on a square network: with an equal profile and guide count
+        // the swapped grid is still the right SHAPE, so Init accepts it and the builder returns a
+        // surface with its two off-diagonal corners exactly point-reflected, reporting .done. That
+        // is how it shipped, and how a 2x2 regression fixture failed to catch it (#748). On any
+        // non-square network the same bug is loud: a 2x3 fails Init outright with invalidInput.
+        NCollection_Array2<gp_Pnt> ipts(1, guideCount, 1, profileCount);
+        NCollection_Array2<double> iwts(1, guideCount, 1, profileCount);
+        NCollection_Array2<double> profParam(1, profileCount, 1, guideCount);
+        NCollection_Array2<double> guideParam(1, profileCount, 1, guideCount);
         for (int i = 0; i < profileCount; i++) {
             const Handle(Geom_BSplineCurve)& pc = profs.Value(i + 1);
-            double f = pc->FirstParameter(), l = pc->LastParameter();
             for (int j = 0; j < guideCount; j++) {
-                // The one site of the ten that is not a bit-identical substitution. It read
-                // `f + (l - f) * ((double)j / (guideCount - 1))`, so folding it into the shared
-                // helper reassociates the multiply and the divide: `(l-f)*(j/(n-1))` becomes
-                // `((l-f)*j)/(n-1)`. Measured across ten realistic [FirstParameter, LastParameter]
-                // ranges, 25-33% of cases differ by 1-2 ulp (<= 4e-15 over the whole span, and
-                // exactly 0 on this repo's own Gordon fixture). One structural consequence beyond
-                // the magnitude: the old form always landed the last sample exactly on
-                // f + (l - f), whereas this one can land 1 ulp PAST LastParameter (4 cases of
-                // n = 2..60 on a 0..2pi profile). Probed as harmless here because the builder
-                // SetNotPeriodic()s these curves first, so Geom_BSplineCurve::D0 does not throw
-                // just outside the range — but it is a boundary the old expression structurally
-                // could not cross, so a future caller that stops doing that must re-check it.
-                double t = occtUniformParameter(f, l, j, guideCount);
-                ipts.SetValue(i + 1, j + 1, pc->Value(t));
-                iwts.SetValue(i + 1, j + 1, 1.0);
+                const Handle(Geom_BSplineCurve)& gc = gds.Value(j + 1);
+                GeomAPI_ExtremaCurveCurve ex(pc, gc);
+                // #636: NbExtrema() can report 1 on parallel curves with Points()/Parameters()
+                // indexing nothing behind it, so IsParallel() has to gate the read, not IsDone()
+                // or NbExtrema() alone. A pair with no real extremum has no contact point to
+                // measure at all: reject the whole network rather than average in an invented
+                // one (see the comment above this function).
+                if (ex.IsParallel() || ex.NbExtrema() < 1) {
+                    if (outStatus) *outStatus = (int32_t)GeomFill_NetworkSurface::ResultStatus::InvalidInput;
+                    return nullptr;
+                }
+                // NearestPoints()/LowerDistanceParameters(), not Points(1, ...)/Parameters(1, ...):
+                // index 1 is not guaranteed to be the globally nearest extremum.
+                gp_Pnt pp, gp;
+                ex.NearestPoints(pp, gp);
+                double pparam, gparam;
+                ex.LowerDistanceParameters(pparam, gparam);
+                ipts.SetValue(j + 1, i + 1, pp);
+                iwts.SetValue(j + 1, i + 1, 1.0);
+                profParam.SetValue(i + 1, j + 1, pparam);
+                guideParam.SetValue(i + 1, j + 1, gparam);
             }
+        }
+
+        // theProfileParameters[i] = mean over guides of guide j's own parameter at its contact
+        // with profile i (locates profile i on the guide skin's domain).
+        NCollection_Array1<double> profileParams(1, profileCount);
+        for (int i = 0; i < profileCount; i++) {
+            double sum = 0.0;
+            for (int j = 0; j < guideCount; j++) sum += guideParam.Value(i + 1, j + 1);
+            profileParams.SetValue(i + 1, sum / guideCount);
+        }
+        // theGuideParameters[j] = mean over profiles of profile i's own parameter at its
+        // contact with guide j (locates guide j on the profile skin's domain).
+        NCollection_Array1<double> guideParams(1, guideCount);
+        for (int j = 0; j < guideCount; j++) {
+            double sum = 0.0;
+            for (int i = 0; i < profileCount; i++) sum += profParam.Value(i + 1, j + 1);
+            guideParams.SetValue(j + 1, sum / profileCount);
         }
 
         GeomFill_NetworkSurface net;

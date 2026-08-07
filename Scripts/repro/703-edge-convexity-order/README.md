@@ -1,12 +1,17 @@
-# #703 — `OCCTEdgeGetConvexity` face1/face2 order dependence
+# #703: `OCCTEdgeGetConvexity` face1/face2 order dependence
 
-Ground truth for the [automated review of PR #720](https://github.com/SecondMouseAU/OCCTSwift/pull/720)
-(the #703 fix). The order-dependence bug itself and the ChFi3d ground-truth scorecard against it
-are in the PR's own verification comment; this directory covers the two findings from that review
-that needed independent measurement rather than code inspection: finding 2/9 (sliver-face/zero-
-centroid instability) and finding 7 (performance).
+Ground-truth measurements for two questions raised while fixing #703, both of which needed a probe
+rather than code inspection: whether a sliver face destabilises a centroid-based convexity formula,
+and what that formula cost. The order-dependence bug itself, and the `ChFi3d` scorecard against it,
+are in PR #720's verification comment.
 
-## Finding 2/9 — sliver-face centroid stability
+Both questions came from PR #720's automated review, but they are recorded here by what they
+measure rather than by that review's finding numbers. Those numbers are not a stable citation: PR
+#717 drew two review passes whose numbering disagreed, and the second retracted five of the first's
+seven findings, so an ordinal can silently come to mean a different finding. The measurements below
+outlive whichever review prompted them.
+
+## Sliver-face centroid stability
 
 `repro_sliver.mm` fuses two 20mm boxes overlapping by a deliberately tiny sliver, the textbook way
 to make `BRepAlgoAPI` emit a genuine sliver face, and inspects every resulting face under area 1.0
@@ -33,9 +38,9 @@ reproduced with a normal boolean operation.
 
 `OCCTFaceGetAreaCentroid` (`OCCTBridge_Properties.mm`) still declines any face under area `1e-9`,
 several orders of magnitude below the smallest sliver measured here, added defensively and for
-free while restructuring for finding 7's fix below, not because this probe found a live bug.
+free while restructuring for the performance fix below, not because this probe found a live bug.
 
-## Finding 7 — redundant `SurfaceProperties` integration
+## The cost of the centroid formula
 
 Before this fix, `OCCTEdgeGetConvexity` called `BRepGProp::SurfaceProperties` on `face1` and
 `face2` directly, once per call. `AAG.buildGraph()` calls it once per **adjacent face pair**, so a

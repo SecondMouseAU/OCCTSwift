@@ -1,0 +1,53 @@
+puts "============================================================"
+puts "OCCT#1418: Modeling Data - AdvApp2Var Jacobi maxima written to the wrong workspace slot"
+puts "============================================================"
+puts ""
+# mma2ce1_ (AdvApp2Var_ApproxF2var.cxx) fills the U Jacobi-maxima workspace slot from the V
+# slot's mma2jmx_ call, so the U truncation error always evaluates to 0. At GeomAbs_C0 the
+# search for the lowest degree that still meets tolerance never sees a nonzero U error and
+# falls back to the floor NDMINU, collapsing a full sphere in U to a straight line across its
+# own longitude (degree 1) while GeomConvert_ApproxSurface still reports IsDone() true and a
+# tolerance-sized MaxError().
+#
+# This is a regression: OCCT 7.5.x wrote the two Jacobi-maxima buffers to distinct slots. It
+# was introduced by 3016a390713d2e893f4bfa797882b9f0266840e1 (0032495, a 2021 UBSan cleanup)
+# renumbering every workspace offset in the function down by one, except this one call.
+#
+# This PR has not yet been assigned an internal bug id. Rename this file to the assigned
+# number at merge time.
+
+pload MODELING
+
+sphere s 10
+approxsurf r s 1.e-3 0 0 8 8 100
+
+decho off
+dlog reset
+dlog on
+
+dump r
+
+set info [dlog get]
+dlog reset
+dlog off
+decho on
+
+regexp {Degrees :([0-9]+) +([0-9]+)} ${info} full udeg vdeg
+
+puts "udeg = ${udeg}"
+puts "vdeg = ${vdeg}"
+
+# Measured against the fix (OCCT#1418): degree 7 in both directions. Stock, before the fix,
+# this collapses to udeg=1 (a straight line across the sphere's full 2*pi of longitude); vdeg
+# is unaffected by this particular defect and is 7 either way.
+if { ${udeg} != 7 } {
+  puts "Error : wrong U degree of the approximated surface"
+}
+if { ${vdeg} != 7 } {
+  puts "Error : wrong V degree of the approximated surface"
+}
+
+donly r
+axo
+fit
+checkview -display r -2d -path ${imagedir}/${test_image}.png

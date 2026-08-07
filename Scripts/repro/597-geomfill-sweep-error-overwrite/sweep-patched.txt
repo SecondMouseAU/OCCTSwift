@@ -1,0 +1,28 @@
+### #597: GeomFill_Sweep.cxx:325 SError = theTol; vs the achieved error
+
+unforced surface             deg=6x4 poles=6x9 knots=2x3
+unforced ErrorOnSurface()    4.32383e-06  (Approx.MaxErrorOnSurf(), stage 1, unaffected by #597)
+
+forced surface (real)        deg=14x14 poles=41x67 knots=4x6
+forced ErrorOnSurface()      2.54714  (stock kernel's SError, should read exactly theTol=1e-4)
+
+### the reconstructed GeomConvert_ApproxSurface call (mirrors lines 296-297)
+HasResult()                  1
+IsDone()                     0
+MaxError()                   2.54714  <-- what SError would report after the fix
+reconstructed surface        deg=14x14 poles=41x67 knots=4x6
+
+### equivalence check: reconstructed call vs the real forced build
+same deg/pole counts         YES, this harness reconstructs the real call
+
+### independent geometric deviation (unforced surface -> forced surface)
+measured (real build)        paramDev=1.77238 projDev=0.353289  (real, in-kernel forced build)
+measured (reconstructed)     paramDev=1.77238 projDev=0.353289  (reconstructed ConvertApprox.Surface())
+
+### summary
+stock SError (reported)      2.54714
+fixed SError (= MaxError())  2.54714
+real deviation (projDev)     0.353289
+real deviation (paramDev)    1.77238
+MaxError() / projDev         7.21
+MaxError() / paramDev        1.437

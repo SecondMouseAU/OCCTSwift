@@ -157,6 +157,15 @@ OCCTWireRef OCCTFaceGetOuterWire(OCCTFaceRef face);
 /// @param face The face to get bounds from
 void OCCTFaceGetBounds(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ);
 
+/// Get the bounding box of a face from its exact geometry, ignoring any triangulation the face
+/// may carry (#733). `OCCTFaceGetBounds` calls `BRepBndLib::Add` with `useTriangulation=true`
+/// (the default), which OCCT's own docs say enlarges the box by the mesh's deflection whenever a
+/// triangulation is present, so its answer silently depends on whether the shape happened to be
+/// meshed before this call, not just on the face's geometry. This variant always passes
+/// `useTriangulation=false`, so the result is deterministic across meshed and unmeshed shapes.
+/// @param face The face to get bounds from
+void OCCTFaceGetBoundsExact(OCCTFaceRef face, double* minX, double* minY, double* minZ, double* maxX, double* maxY, double* maxZ);
+
 /// Check if a face is planar (flat)
 /// @param face The face to check
 /// @return true if the face is planar
@@ -429,7 +438,10 @@ typedef struct {
     double directionX, directionY, directionZ;
     double extentMin;       // along direction from origin (-inf as -DBL_MAX)
     double extentMax;       // +inf as DBL_MAX
-    bool   hasExtent;
+    bool   hasExtent;       // false only when the axis's own shape has no boundable geometry at
+                             // all (an empty/void bounding box); an unbounded-but-real shape still
+                             // reports true, with extentMin/extentMax at the +-DBL_MAX sentinels
+                             // above (#763)
     int32_t kind;
 } OCCTShapeAxis;
 

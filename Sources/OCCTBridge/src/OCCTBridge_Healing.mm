@@ -192,7 +192,7 @@ static OCCTShellOrientationScan occtAnalyzeShellOrientation(const TopoDS_Shape& 
 }
 
 OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
-    OCCTShapeAnalysisResult result = {0, 0, 0, 0, 0, 0, false, false};
+    OCCTShapeAnalysisResult result = {0, 0, 0, 0, 0, false, false};
     if (!shape) return result;
 
     try {
@@ -300,7 +300,7 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance) {
         result.smallEdgeCount = smallEdges;
         result.smallFaceCount = smallFaces;
         result.gapCount = gaps;
-        result.selfIntersectionCount = 0;  // Would require more expensive computation
+        // selfIntersectionCount REMOVED (#726/#763): see OCCTBridge_Healing.h's field comment.
         result.freeEdgeCount = freeEdges;
         result.freeFaceCount = freeFaces;
         result.isValid = true;

@@ -180,7 +180,7 @@ The per-instance design is also strictly stronger on the failure #374 actually r
 
 **Validation:** the "unguarded" variant of #371's confirmation harness (private app per thread/round, no `ocafStoreMutexSim()`) reports 13 races + SIGABRT on stock at 8×30. The mutex version was 0 races across 4 runs (8×30, 8×50, 10×60, 8×40); the per-instance version is 0 races and 0 save/load/verify failures across 8×50, 8×30 and 10×60. Full `Scripts/tsan-stress.sh run` gate (10 scenarios) clean on both, no regression on #341/#344/#349/#353/#371's own scenarios.
 
-See [`Scripts/repro/374-resource-manager-storage-schema-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/374-resource-manager-storage-schema-race) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398) (repro, filed during #371) / [OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399) (fix). Both are still open as of 2026-07-30, and OCCT#1399 still carries the mutex version of part 2; updating it to this design is tracked in #518.
+See [`Scripts/repro/374-resource-manager-storage-schema-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/374-resource-manager-storage-schema-race) for the reproducer and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1398](https://github.com/Open-Cascade-SAS/OCCT/issues/1398) (repro, filed during #371) / [OCCT#1399](https://github.com/Open-Cascade-SAS/OCCT/pull/1399) (fix). Both are still open as of 2026-08-07. OCCT#1399 was force-pushed on 2026-07-30 to match this per-instance design, per maintainer review on [that PR](https://github.com/Open-Cascade-SAS/OCCT/pull/1399#issuecomment-5112586065); #518, which tracked that update, is closed.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -214,13 +214,49 @@ See [`Scripts/repro/484-null-reshape-context/`](https://github.com/SecondMouseAU
 
 2. **A point count below 2 stores out of bounds.** Both classes document `theNbPoints >= 2` and enforce it with `Standard_ConstructionError_Raise_if`, which compiles to nothing under `No_Exception`, how the shipped Release kernel is built (see `0016`'s neighbour issue #487). `GCPnts_QuasiUniformAbscissa`'s Bezier/BSpline branch then allocates `new NCollection_HArray1<double>(1, theNbPoints)`, an empty range for such a count, and the next statement is an unconditional `myParams->SetValue(1, theU1)`. `SetValue`'s own bounds check is a `Raise_if` too, so the store lands out of bounds: uncatchable SIGSEGV, same class as `0001`/#263, `0004`/#310, `0005`/#317 and `0006`/#318.
 
-**Fix:** for the second, an ordinary `if` after each `Raise_if`, leaving the object not done for a count below 2. The `Raise_if` stays, so a build with exceptions enabled throws exactly as before; this only stops the undefined behaviour where the check is compiled out. Applied to both classes, since `GCPnts_UniformAbscissa` had the same missing precondition without the crash (it answered a request for zero points with five). For the first, `Perform` also accepts a point that coincides with the end **in 3D** within the caller's tolerance, not only one close in parameter: the 3D tolerance is threaded in alongside the parametric one, the end point is evaluated once outside the walk, and the distance test sits behind a cheap `aUU2 - aUi < aDelta` gate so it runs on the final step rather than every step. Keeping the exact end parameter is the point: clamping `myNbPoints` to the request, the other obvious fix, would drop it and leave the distribution stopping short of the curve.
+**Fix:** for the second, an ordinary `if` that **replaces** each `Raise_if` (not one added alongside
+it), leaving the object not done for a count below 2 in every build, not only one that defines
+`No_Exception`. Applied to both classes, since `GCPnts_UniformAbscissa` had the same missing
+precondition without the crash (it answered a request for zero points with five). For the first,
+`Perform` also accepts a point that coincides with the end **in 3D** within the caller's tolerance,
+not only one close in parameter: the tolerance is threaded in alongside the parametric one, squared
+once outside the loop, and compared with `SquareDistance()` rather than `Distance()` on every
+candidate step; the end point is evaluated once outside the walk, and the distance test sits behind
+a cheap `aUU2 - aUi < aDelta` gate so it runs on the final step rather than every step. Keeping the
+exact end parameter is the point: clamping `myNbPoints` to the request, the other obvious fix, would
+drop it and leave the distribution stopping short of the curve.
 
 No public API signature changes.
 
+**Revised 2026-08-07 (#755), patch content above updated in place, not a new patch number.**
+Maintainer gkv311 [reviewed the upstream PR](https://github.com/Open-Cascade-SAS/OCCT/pull/1417#issuecomment-3150937)
+with three requests. Two were mechanical (`SquareDistance()`/hoisted tolerance instead of `Distance()`
+in the loop; the `Perform` parameter renamed `theTol3d` to `theTol`, since the same template also
+instantiates on `Adaptor2d_Curve2d`, where "3d" was simply wrong). The third needed a decision, not
+just compliance: he offered two ways to stop duplicating `Standard_ConstructionError_Raise_if`, an
+assert-grade macro meant to compile away under `No_Exception`: (a) replace it with an unconditional
+`throw`, or (b) drop the duplicate and answer not-done unconditionally. We build with
+`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` (`No_Exception` defined), so (a) would start throwing for a
+degenerate count in our own build where it currently cannot, and (b) would not. Measured rather than
+guessed: every one of the 9 bridge call sites that construct either class with a caller-supplied count
+(one of them a shared static helper with 2 further callers, 11 total) already wraps the construction
+in `catch (...)`, and `Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
+contract for exactly this input across every one of those entry points, so both options are
+observably identical for OCCTSwift's own contract. Chose **(b)**: it is the option that does not
+depend on a build flag, and it is what #555 argued for in the first place, a silent not-done rather
+than an exception. Confirmed directly by compiling both variants **without** `No_Exception` and
+constructing each class with a degenerate count: the pre-review patch still throws
+`Standard_ConstructionError` there (exceptions enabled, so the un-replaced `Raise_if` fires);
+after this revision, neither class throws in either build configuration. Re-ran the full
+232/6766-configuration equivalence sweep and the degenerate-count sweep (5 curve types, both
+classes, counts `{0, 1, -3}`) against the revised patch, override-linked with production flags: both
+verdicts unchanged from the numbers below.
+
 **Validation** (fast path, no full rebuild, see the `#0001` entry above for the override-link technique, but compile the two TUs with `-DNDEBUG -DNo_Exception` to match the production build, or the `Raise_if` comes back and the measurement is of a kernel nobody ships): across 17 curve types and counts 2 to 200, 6766 configurations, **232 lines change and they are exactly the 232 that were over-requesting**; every other line is byte-identical, and on the changed lines the last parameter is still exactly the end. Over-request goes to 0, and every degenerate count on every curve returns `IsDone() == false` for both classes. Confirmed against the rebuilt xcframework with no override-linked TUs, matching the override-linked prediction byte for byte. Full `swift test` (4842 tests / 1346 suites) clean.
 
-See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
+See [`Scripts/repro/555-gcpnts-count-contract/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract) for the reproducers and full writeup, and
+[`Scripts/repro/555-gcpnts-count-contract/upstream/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/555-gcpnts-count-contract/upstream)
+for the prepared post-review commit and the drafted reply. Filed upstream as [Open-Cascade-SAS/OCCT#1417](https://github.com/Open-Cascade-SAS/OCCT/pull/1417), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the two touched files are byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -248,6 +284,8 @@ The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles a
 `GeomConvert_ApproxSurface` is not a leaf. `GeomFill_Sweep`, `BRepOffset_Offset`, `GeomLib`, `ShapeCustom_BSplineRestriction`, `ShapeConstruct`, `ShapeUpgrade_UnifySameDomain` and `GeomConvert_1` (twice) all construct it, `ShapeCustom_ConvertToBSpline` reaches it through `ShapeConstruct`, and `GeomPlate_MakeApprox` drives `AdvApp2Var_ApproxAFunc2Var` directly. Most pass C1 or C2, where the collapse cannot happen, but the always-zero interior error affected all of them; and the healing paths reach C0 deliberately: `ShapeConstruct::ConvertSurfaceToBSpline` and `ShapeCustom_BSplineRestriction` both loop the requested continuity down to 0 on failure and then accept the result on `MaxError() <= tol`, and `ShapeCustom_ConvertToBSpline` *starts* at C0 for any offset surface (`ShapeCustom_ConvertToBSpline.cxx:148`) before handing off to the first of those. (`BRepFill_Sweep.cxx:1162` and `BRepFill_Filling.cxx:712` also name the class but are both inside comment blocks, so neither is a live caller; see #573.)
 
 See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
+
+**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism and the drafted upstream reply are in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -533,6 +571,91 @@ the pinned `v2.0.0-kernel.1` binary asset — see `docs/v2.0.0-plan.md`'s releas
 kernel rebuild needs to carry all three, and confirm all three actually reached the binary rather
 than assuming the rebuild picked them up, per `docs/guides/building-occt.md`'s shipping-a-rebuild
 steps.
+
+## 0025-GeomFill_Sweep-report-achieved-conversion-error-597.patch
+
+**Fixes the upstream OCCT defect behind [#597](https://github.com/SecondMouseAU/OCCTSwift/issues/597)**
+(kernel half; the bridge half was investigated and closed as provably empty by PR #751, both
+obvious fixes there broke real tests).
+
+`GeomFill_Sweep::BuildAll` measures the swept surface's real approximation error at
+`GeomFill_Sweep.cxx:286` (`SError = Approx.MaxErrorOnSurf();`). When the caller has requested
+`ForceApproxC1` and the swept surface isn't already C1 in V, it re-approximates through
+`GeomConvert_ApproxSurface(mySurface, theTol, ...)` (`theTol` a literal `1.e-4`) and, on
+`HasResult()`, replaces `mySurface` with the conversion's output, then overwrites the measured
+error with the requested tolerance instead of reading what the conversion achieved:
+
+```cpp
+SError = theTol;   // GeomFill_Sweep.cxx:325
+```
+
+`GeomConvert_ApproxSurface::HasResult()` is documented as true even for a result "not NECESSARILY
+within the required tolerance," and `MaxError()`, which reports what was actually achieved, sits
+unread two lines above. `BRepFill_Sweep`/`BRepFill_PipeShell`/`BRepOffsetAPI_MakePipeShell::ErrorOnSurface()`
+all forward `SError` verbatim, so `BRepOffsetAPI_MakePipeShell::SetForceApproxC1(true)`, a public,
+documented API, hands every caller a number describing the request, not the result.
+
+**Getting a repro to fire needs care.** The branch only runs when the *swept surface itself* fails
+`IsCNv(1)`, and `BRepFill_Sweep` splits its sweep at every spine **vertex**, so a polyline spine
+never reaches it: the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
+[#572](https://github.com/SecondMouseAU/OCCTSwift/issues/572), pinned by
+`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
+degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner inside what
+`BRepFill_Sweep` treats as one edge, swept with a unit circle profile and Frenet trihedron via
+`BRepFill_PipeShell`, matching the bridge's own construction exactly.
+
+**Is `MaxError()` the right quantity? Checked, not assumed.** #597's bridge half died on exactly
+this trap: `GeomPlate_MakeApprox::ApproxError()` measures fidelity to an *intermediate*
+`GeomPlate_Surface`, not the caller's actual input, so gating on it broke 6/6
+`Issue571PlateApproxTests`. Here there is no third object: `GeomConvert_ApproxSurface`'s `Surf`
+argument *is* `mySurface`, the exact surface being replaced. Confirmed by reconstructing the same
+`GeomConvert_ApproxSurface(unforcedSurface, 1e-4, C1, C1, 14, 14, 16, 1)` call from outside the
+kernel (using the surface a separate `ForceApproxC1(false)` build returns, which never reaches this
+branch and is exactly what `mySurface` holds at the real call site): its output has the same
+degree/pole counts as the real forced build's, and deviation from the same unforced-surface baseline
+to each is bit-identical, proving the reconstruction is the real call, not a divergent simulation.
+**Does `MaxError()` actually move?** Patch `0019` (#522) is what makes this possible: before it,
+every interior truncation error was structurally zero, so `MaxError()` could not report a large
+number no matter how bad the fit was. Measured against the currently pinned kernel (all of
+`0010`-`0012`/`0014`-`0021` baked in): `MaxError() = 2.54714`, matching #572's own independent
+measurement of this identical fixture (`2.547`) to the printed precision. It moves.
+
+**Fix:** `SError = ConvertApprox.MaxError();`. One line. `CError`'s four literal `0.` entries a few
+lines above are left untouched: no 2D curve error is available from `GeomConvert_ApproxSurface` at
+this point, and inventing one would be exactly the fabrication [#726](https://github.com/SecondMouseAU/OCCTSwift/issues/726) exists to prevent.
+
+**Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique,
+compiled with `-DNDEBUG -DNo_Exception` to match the production build): the real, in-kernel
+`BRepFill_PipeShell`/`GeomFill_Sweep` object's `ErrorOnSurface()` goes from `0.0001` (exactly
+`theTol`, stock) to `2.54714` (matching the externally-reconstructed prediction exactly) after the
+patch. Every other value the harness prints, the returned surface's degree/pole/knot counts and two
+independent geometric deviations (same-parameter and nearest-point), is byte-identical before and
+after: this patch changes only what the class *reports*, never the surface any caller receives
+(`mySurface` is already `ConvertApprox.Surface()` two statements earlier). Consumer survey: no
+existing bridge site gates on this number. `PipeShellBuilder.errorOnSurface` is info-only (its one
+test asserts `>= 0`), and `OCCTGeomFillSweep`'s own error gate (added in PR #741, the other half of
+#597) never sets `ForceApproxC1` so it never reaches this branch at all. `swift test` is therefore
+unaffected; this is a diagnostic-only fix.
+
+Confirmed the patch applies cleanly (`git apply --check -p1`) to both the pinned `V8_0_1` tag and
+current upstream `master` (`b8f597c6`), byte-identical between the two for the touched file.
+`clang-format --dry-run --Werror` against OCCT's own `.clang-format` reports zero violations.
+
+See [`Scripts/repro/597-geomfill-sweep-error-overwrite/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/597-geomfill-sweep-error-overwrite)
+for the reproducer, fixture derivation and full before/after transcripts. **Filed upstream as a PR
+draft only** (`draft-pr.md` in that directory, **not sent**: this task's constraints forbid writing
+to `Open-Cascade-SAS/OCCT`), per `okf/policies/upstream-occt-style.md` and the precedent of `0018`,
+`0019`, `0021` and `0024`: the fix was ready, so the PR description carries the repro and root cause
+a standalone issue would have.
+
+**Retire** once the bundled OCCT includes this fix.
+
+**Pin consequence**: this is the fourth patch (after `0022`, `0023`, `0024`) carried in the tree but
+outside the pinned `v2.0.0-kernel.1` binary asset. PR #754 (`chore/512-repin-kernel-2`, open at the
+time of writing) re-pins to `v2.0.0-kernel.2`, folding in all fourteen (`0010`-`0012`,
+`0014`-`0024`); once that merges, `0025` becomes the *only* patch left outside the pin, exactly the
+gap `docs/v2.0.0-plan.md`'s RESOLVED block already names by number ahead of time. Watch for it at
+the next re-pin, same as `0022`-`0024`.
 
 # Retired patches
 

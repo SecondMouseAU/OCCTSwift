@@ -68,7 +68,9 @@ public struct AAGNode: Sendable {
     /// Z level if horizontal planar face
     public let zLevel: Double?
 
-    /// Bounding box of the face
+    /// Bounding box of the face's exact geometry (#733). Unlike ``Face/bounds``, this is never
+    /// enlarged by mesh triangulation, so it does not change depending on whether the shape has
+    /// been meshed before ``AAG`` was built from it.
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 }
 
@@ -152,6 +154,14 @@ public final class AAG: @unchecked Sendable {
     /// Adjacency list: for each face index, list of (neighbor index, edge index)
     public private(set) var adjacencyList: [[Int: Int]] = []
 
+    /// The same face occurrences ``nodes`` was built from (``Shape/orientedFaces()``), cached
+    /// once here so a consumer that needs the underlying `Face` (``AAG/detectPockets(tolerance:)``,
+    /// for the floor's own outer wire) does not re-run the traversal `buildGraph()` already paid
+    /// for (#753). Index-for-index aligned with ``nodes``, by construction: both come from this
+    /// one array. Not `Sendable`-relevant beyond what ``nodes``/``edges``/``adjacencyList`` already
+    /// are, since it is written once here, in `buildGraph()`, and never mutated again.
+    private var faceOccurrences: [Face] = []
+
     /// Create an AAG from a shape
     public init(shape: Shape) {
         self.shape = shape
@@ -168,6 +178,9 @@ public final class AAG: @unchecked Sendable {
         // shape whose faces are not shared this is exactly the faces() node set, in the same order.
         let faces = shape.orientedFaces()
         let faceCount = faces.count
+        // Cached for detectPockets() (#753): same array, same traversal, so caching it here
+        // costs nothing this method wasn't already paying and saves a re-traversal per call.
+        faceOccurrences = faces
 
         // Initialize adjacency list
         adjacencyList = Array(repeating: [:], count: faceCount)
@@ -184,7 +197,13 @@ public final class AAG: @unchecked Sendable {
                 isDownward: face.isDownwardFacing(),
                 isVertical: face.isVertical(),
                 zLevel: face.zLevel,
-                bounds: face.bounds
+                // #733: exactBounds, not bounds. AAG's own floor/wall matching (see
+                // detectPockets()'s defaultFloorRestsOnWallTolerance) compares this box against a
+                // 1e-4 tolerance, and `bounds` silently grows by the mesh deflection once anything has
+                // meshed this shape. AAGNode represents the shape's geometry, not its incidental
+                // tessellation state, so its bounds must not move depending on whether the caller
+                // happened to call mesh() first.
+                bounds: face.exactBounds
             )
             nodes.append(node)
         }
@@ -373,7 +392,12 @@ public struct PocketFeature: Sendable {
     /// Bounding box of the pocket
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 
-    /// Whether this is an open pocket (not fully enclosed)
+    /// Whether this is an open pocket (not fully enclosed).
+    ///
+    /// Tests enclosure directly (#735), not wall cardinality: every boundary edge of the floor's
+    /// outer wire must be shared with a wall in ``wallFaceIndices``, or this is `true`. See
+    /// ``AAG/detectPockets(tolerance:)``'s doc comment for the full reasoning and why a bounding-box
+    /// containment check was rejected in favor of this.
     public let isOpen: Bool
 
     /// Approximate depth of the pocket
@@ -385,13 +409,125 @@ public struct PocketFeature: Sendable {
 // MARK: - Feature Recognition Extensions
 
 extension AAG {
+    /// Default tolerance (model units) used to decide whether a candidate floor sits at the
+    /// bottom of one of its candidate walls (#724). Far tighter than any real pocket depth in the
+    /// test suite (millimeters or more), far looser than the ~1e-7 bounding-box noise
+    /// `Face.exactBounds` reports on an exact primitive.
+    ///
+    /// This is a default, not a fixed constant: ``detectPockets(tolerance:)`` and
+    /// ``Shape/detectPocketsAAG(tolerance:)`` both take a caller-supplied `tolerance:` parameter
+    /// with this value as its default (#733), matching every other tolerance in this module
+    /// (`Curve3D`, `Surface`, `Shape`'s own geometry methods, ...) rather than hardcoding one
+    /// millimeter-scale constant for every caller regardless of the model's own units.
+    public static let defaultFloorRestsOnWallTolerance = 1e-4
+
     /// Detect pockets in the shape using AAG analysis
     ///
     /// A pocket is identified by:
     /// 1. An upward-facing horizontal floor face
-    /// 2. Surrounded by vertical wall faces
+    /// 2. Surrounded by vertical wall faces, each resting on that floor (#724)
     /// 3. Connected to walls via concave edges
-    public func detectPockets() -> [PocketFeature] {
+    ///
+    /// ## A wall only floors where it bottoms out (#724)
+    ///
+    /// A blind pocket's floor is not the only upward-facing horizontal planar face touching a
+    /// concave edge to one of its walls: the exterior surface the pocket opens THROUGH, at the
+    /// wall's other end, is upward-facing and horizontal too, and is a false "floor" whenever that
+    /// rim edge classifies concave, which a curved wall's rim can do even for a correctly-open
+    /// pocket, pending #723's replacement of the underlying convexity formula. Requiring the
+    /// candidate wall's own bounding-box minimum Z to match the floor's Z (rather than trusting
+    /// every concave-and-vertical neighbor) tells the two apart without depending on that edge's
+    /// classification at all: a pocket floor is upward-facing, so it is always the LOW end of the
+    /// walls that rise from it, and a wall's high end is where it opens, whether to the exterior,
+    /// to a shallower pocket's floor above it, or to open air; never to a floor of its own.
+    ///
+    /// A single blind cylindrical pocket bored partway into a box is the fixture that first
+    /// surfaced this: the wall's own top rim (mis)classified concave made the box's outer top
+    /// face, sitting at the wall's high end rather than its low end, register as a second pocket
+    /// floor for the very same wall.
+    ///
+    /// ```swift
+    /// let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+    /// let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+    /// let cut  = box.subtracting(tool)!
+    /// print(cut.detectPocketsAAG().count)   // 1, not 2
+    /// ```
+    ///
+    /// This does not depend on which of the wall's two rims classifies concave: a wall whose
+    /// bounding box does not bottom out at a given candidate floor's Z is excluded from that
+    /// floor's walls regardless of why it was a concave neighbor in the first place. It also
+    /// requires nothing about every edge classification in the graph being correct, only that a
+    /// genuine floor is geometrically the low end of its own walls, which is true independent of
+    /// #723.
+    ///
+    /// One known limitation: a filleted floor/wall junction would round the wall's bounding box
+    /// past the floor's own Z by roughly the fillet radius, which could exceed this tolerance. No
+    /// fixture in this codebase exercises that combination yet.
+    ///
+    /// ## Enclosure is tested directly, not by wall count (#735)
+    ///
+    /// `PocketFeature.isOpen` used to be `wallIndices.count < 3`. A wall count is not enclosure: a
+    /// blind cylindrical pocket has exactly **one** wall (the cylinder) and is fully enclosed, so
+    /// it reported `isOpen == true`. Three walls is also the wrong threshold on its own terms — a
+    /// genuinely open three-sided slot and a closed three-walled (e.g. triangular) pocket both have
+    /// `wallIndices.count == 3` and are indistinguishable by counting alone. Measured directly: a
+    /// slot cut through a box's own side face has one floor edge that borders no wall in the set
+    /// (the open side, at 3 walls covering 3 of the floor's 4 boundary edges), while the closed
+    /// triangular pocket's 3 walls cover all 3 of its floor's boundary edges.
+    ///
+    /// The fix tests the definition the field documents: the floor plus its walls form a closed
+    /// loop around the floor's own boundary exactly when every boundary edge of the floor's outer
+    /// wire borders a wall in ``PocketFeature/wallFaceIndices``. Tested **per edge**, not by
+    /// comparing counts (#753): for each edge of the floor's own outer wire, ask which faces
+    /// border it in the shape (``Edge/adjacentFaces(in:)``) and check whether one of them is a
+    /// member of `wallIndices`, by structural identity (`TopoDS_Shape::IsSame`). An inner wire (an
+    /// island inside the pocket, e.g. a boss) never enters this test at all: the loop only ever
+    /// visits the outer wire's own edges, so a boss's wall, which passes every filter above and
+    /// legitimately lands in `wallIndices`, cannot mask a gap in the outer boundary the way it
+    /// could when the old and new formulas both summed a per-face-pair total.
+    ///
+    /// This replaced an earlier version of this same fix that summed `AAGEdge.sharedEdgeCount`
+    /// over `wallIndices` and compared the sum to the outer wire's edge count. Review of #753 found
+    /// two ways that arithmetic could go wrong even though it was already wire-scoped on one side:
+    /// `sharedEdgeCount` is a **total** across the whole face pair, inner wires included, so a boss
+    /// wall's own inner-wire edge was being added to the same sum as the outer boundary's: closed
+    /// three walls plus one boss edge could reach four and look complete while the outer loop
+    /// itself still had a real gap. It is also capped: `OCCTFaceGetSharedEdges`'s fixed buffer
+    /// silently truncates past its slot count, so a floor/wall pair sharing more edges than that
+    /// (plausible after healing splits a boundary into segments) would undercount regardless of
+    /// wire scope. Testing membership per edge instead of comparing sums removes both failure modes
+    /// structurally: the loop never visits an inner-wire edge in the first place, and it never reads
+    /// a total that could be capped.
+    ///
+    /// A second candidate was considered and rejected: whether the pocket's bounding box sits
+    /// strictly inside the parent solid's, in the horizontal axes. It is cheaper, but wrong for a
+    /// pocket that legitimately reaches an outer wall of the part while still being fully enclosed
+    /// on every side that matters (e.g. a pocket machined flush with one face of a plate) — that is
+    /// a statement about *where* the pocket sits, not about whether it is closed, and the two are
+    /// independent. Enclosure is a property of the wall loop, not of the pocket's position in space.
+    ///
+    /// ## The tolerance filter's limitation was measured and did not reproduce (#753 finding 3)
+    ///
+    /// Review raised a plausible-sounding compounding failure: a wall dropped by the `#724`
+    /// tolerance filter above (e.g. a filleted floor/wall junction rounding the wall's low-Z bound
+    /// past `floorZ`) would also drop its edges from the enclosure count, permanently misreporting
+    /// a fully enclosed filleted pocket as open. Measured directly with a filleted floor/wall
+    /// junction (radii 0.5 through 4 on a 10×10×15 pocket): the fillet does not reproduce this,
+    /// because it never reaches the tolerance filter at all. A fillet replaces the sharp floor/wall
+    /// edge with a tangent (`smooth`, not `concave`) transition through the fillet face, so the
+    /// filleted neighbor never appears in `concaveNeighbors(of:)` in the first place:
+    /// `wallIndices` comes back empty and the floor is skipped by the guard below before the
+    /// tolerance filter, or this enclosure test, ever runs. This is a pre-existing limitation of
+    /// pocket *detection* (a fully filleted pocket is not recognized as a pocket at all), unrelated
+    /// to #735/#753's change and not fixed here.
+    ///
+    /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
+    ///   candidate floor's Z to count as resting on it. Defaults to
+    ///   ``defaultFloorRestsOnWallTolerance``. Scale this with the model: the default is tuned for
+    ///   millimeter-scale parts, and a shape modeled in meters or in thousandths of an inch may
+    ///   need a different value (#733). `AAGNode.bounds` itself is unaffected by meshing either
+    ///   way (#733), so widening this is about the model's own units, not about tessellation noise.
+    public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         var pockets: [PocketFeature] = []
 
         // Find all upward-facing horizontal faces as potential floors
@@ -399,15 +535,24 @@ extension AAG {
             node.isUpward && node.isHorizontal && node.isPlanar
         }
 
+        // #735: reindexed against occurrences exactly like `PocketFeature.floorFaceIndex`'s own
+        // doc comment does, so `occFaces[floorIndex]` is the same Face the floor's AAGNode
+        // describes. Cached on the AAG by buildGraph() (#753) rather than recomputed here.
+        let occFaces = faceOccurrences
+
         for (floorIndex, floorNode) in potentialFloors {
             guard let floorZ = floorNode.zLevel else { continue }
 
             // Get concave neighbors (these should be walls)
             let concaveNeighbors = self.concaveNeighbors(of: floorIndex)
 
-            // Filter to vertical faces only
+            // Filter to vertical faces that actually rest on this floor (#724): a wall's low Z
+            // bound must match the floor's own Z, or this floor is really that wall's opening,
+            // not its bottom.
             let wallIndices = concaveNeighbors.filter { neighborIndex in
-                nodes[neighborIndex].isVertical
+                let wall = nodes[neighborIndex]
+                guard wall.isVertical else { return false }
+                return abs(wall.bounds.min.z - floorZ) < tolerance
             }
 
             // Need at least one wall to be a pocket
@@ -429,9 +574,16 @@ extension AAG {
                 maxZ = max(maxZ, wallBounds.max.z)
             }
 
-            // Check if pocket is closed (all walls connected to each other form a loop)
-            // For now, consider it open if it has fewer than 3 walls
-            let isOpen = wallIndices.count < 3
+            // Enclosure, not wall count (#735), tested per edge rather than by comparing counts
+            // (#753): every boundary edge of the floor's own OUTER wire must border one of
+            // wallIndices, or this pocket is open. Folding the "can't measure the boundary" case
+            // into `?? []`/`isEmpty` (review finding 6) makes "no outer wire" and "an outer wire
+            // with zero edges" the same case they already behave as: don't claim an enclosure
+            // that wasn't established, default to open.
+            let floorOuterEdges = occFaces[floorIndex].outerWire?.edges() ?? []
+            let isOpen = floorOuterEdges.isEmpty || floorOuterEdges.contains { boundaryEdge in
+                !isEdgeCoveredByAWall(boundaryEdge, among: wallIndices, in: occFaces)
+            }
 
             let pocket = PocketFeature(
                 floorFaceIndex: floorIndex,
@@ -453,11 +605,93 @@ extension AAG {
         return pockets
     }
 
-    /// Detect holes (through or blind) in the shape
+    /// Whether `edge` borders one of the faces at `wallIndices`, tested by structural identity
+    /// rather than by counting (#753).
     ///
-    /// A hole is identified by:
-    /// 1. A cylindrical or conical face
-    /// 2. With concave edges connecting to other faces
+    /// `edge` is expected to be one of the floor's own outer-wire edges, obtained via
+    /// ``Wire/edges()``, which converts the wire to its own standalone one-off `Shape` to extract
+    /// edges, so `edge.index` names a position in *that* throwaway shape, not in `shape`. This
+    /// deliberately never reads `edge.index`: ``Edge/adjacentFaces(in:)`` looks the edge up in
+    /// `shape` by its underlying geometry and location (`TopoDS_Shape::IsSame`, the same identity
+    /// rule the wire-to-shape conversion preserves), not by index, so which throwaway shape the
+    /// `Edge` was minted from does not matter here.
+    private func isEdgeCoveredByAWall(_ edge: Edge, among wallIndices: [Int], in occFaces: [Face]) -> Bool {
+        guard let (face1, face2) = edge.adjacentFaces(in: shape) else { return false }
+        return wallIndices.contains { wallIndex in
+            let wall = occFaces[wallIndex]
+            return facesAreSame(face1, wall) || (face2.map { facesAreSame($0, wall) } ?? false)
+        }
+    }
+
+    /// `TopoDS_Shape::IsSame` between two faces: same underlying surface and placement,
+    /// orientation ignored.
+    ///
+    /// Needed because ``Edge/adjacentFaces(in:)`` mints fresh `Face` wrappers with no meaningful
+    /// ``Face/index`` (it has no parent shape to index against), so they cannot be compared to
+    /// `occFaces`'s entries by index the way ``PocketFeature/floorFaceIndex`` and
+    /// ``PocketFeature/wallFaceIndices`` are elsewhere in this file. Bridging a `Face` into a
+    /// generic shape-level comparison via `OCCTShapeFromFace` is the same idiom
+    /// ``Edge/pcurveParams(on:)`` already uses to call a shape-level bridge function on a `Face`.
+    private func facesAreSame(_ a: Face, _ b: Face) -> Bool {
+        guard let shapeA = OCCTShapeFromFace(a.handle) else { return false }
+        defer { OCCTShapeRelease(shapeA) }
+        guard let shapeB = OCCTShapeFromFace(b.handle) else { return false }
+        defer { OCCTShapeRelease(shapeB) }
+        return OCCTShapeIsSame(shapeA, shapeB)
+    }
+
+    /// Detect holes (through or blind) in the shape.
+    ///
+    /// ## What "is a hole" means, under `ChFi3d::DefineConnectType` (#747)
+    ///
+    /// The original criterion -- every neighbor connects via a concave edge -- was written
+    /// against a convexity formula (pre-#723) that sometimes misclassified a curved rim as
+    /// concave when it geometrically should not be. Under the correct classifier that
+    /// criterion is unsatisfiable for either ordinary hole shape: a through-hole's wall has
+    /// **zero** concave neighbors (both rims are convex -- the solid occupies 90 degrees
+    /// there, not the 270 that makes an edge concave), and a blind hole's wall has exactly
+    /// **one** out of two (the floor, not the rim where it opens). "All neighbors concave"
+    /// can never hold for either, which is why #747 measured zero holes for both.
+    ///
+    /// A hole is not defined by its neighbors' convexity at all -- that only ever describes
+    /// the rims where the hole *meets other geometry*, and a through-hole has no such junction
+    /// that is concave. What every hole's lateral wall shares, independent of depth, is the
+    /// wall's own intrinsic shape:
+    ///
+    /// 1. **Cylindrical or conical** -- the two developable surface types a drilled or bored
+    ///    feature produces (a conical wall covers a countersink/counterbore transition).
+    /// 2. **Closed in U by its own seam.** The wall wraps all the way around its axis, bounded
+    ///    only by rim(s) in V, not by additional edges along U. A partial revolve -- an edge
+    ///    fillet is the common example -- is bounded by two more edges along U as well, and is
+    ///    not a hole.
+    /// 3. **Material lies radially outside the wall, not inside it.** A hole is a void: the
+    ///    solid occupies the space between the bore and the surrounding stock, so the face's
+    ///    own outward normal (already corrected for ``Face/orientation``, see
+    ///    ``Face/normal(atU:v:)``) points *back toward the axis*. A boss or a standalone solid
+    ///    cylinder is the mirror image of the same topology -- same surface type, same closed-
+    ///    in-U shape, sometimes even the same neighbor-convexity signature (a standalone
+    ///    cylinder's wall has zero concave neighbors too) -- but its material fills the inside,
+    ///    so its normal points *away* from the axis. Nothing about neighbor convexity
+    ///    distinguishes the two; this does, directly, from the wall's own geometry.
+    ///
+    /// This also does not assume the hole's axis is vertical: it reads the wall's actual axis
+    /// (``Face/primaryAxis``) rather than inferring one from a Z-aligned bounding box, which
+    /// the previous aspect-ratio heuristic did implicitly. A pipe's bore is correctly reported
+    /// as a hole by this same rule (material lies radially outside its inner wall), and a
+    /// pipe's outer wall is correctly excluded (material lies radially inside it) -- a case the
+    /// old formula, keyed off a fixed Z axis and a bounding-box aspect ratio, could not
+    /// distinguish from a first-principles derivation.
+    ///
+    /// ```swift
+    /// let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+    /// let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+    /// let blind = box.subtracting(tool)!
+    /// print(blind.buildAAG().detectHoles().count)   // 1, was 0
+    ///
+    /// let tool2 = Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 4, height: 30)!
+    /// let through = box.subtracting(tool2)!
+    /// print(through.buildAAG().detectHoles().count) // 1, was 0
+    /// ```
     ///
     /// - Note: `faceIndex` is an **occurrence** index into ``Shape/orientedFaces()``, not
     ///   ``Shape/faces()`` (#642), matching ``AAGNode/faceIndex``. A hole's face is rarely one
@@ -465,29 +699,52 @@ extension AAG {
     ///   same thing and only the occurrence one is correct here.
     public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)] {
         var holes: [(faceIndex: Int, radius: Double, depth: Double)] = []
+        let faces = shape.orientedFaces()
 
-        // Find cylindrical faces that are holes (all edges are concave)
-        for (index, node) in nodes.enumerated() {
-            // Check if all neighbors are connected via concave edges
-            let allNeighbors = neighbors(of: index)
-            let concaveNeighbors = self.concaveNeighbors(of: index)
+        for index in nodes.indices {
+            guard index < faces.count else { continue }
+            let face = faces[index]
 
-            // If all adjacencies are concave, this might be a hole
-            guard allNeighbors.count == concaveNeighbors.count && allNeighbors.count >= 1 else {
+            // A drilled or bored hole's lateral wall is cylindrical, or conical for a
+            // countersink/counterbore transition (#747).
+            guard face.surfaceType == .cylinder || face.surfaceType == .cone else { continue }
+
+            // Closed in U: the wall must wrap all the way around its own axis. `uvBounds` is
+            // the face's trimmed parameter range (`BRepTools::UVBounds`), and a periodic
+            // cylinder/cone is canonically parameterized over a full 2*pi in U; a partial
+            // revolve (an edge fillet, a half-pipe) is trimmed to less than that.
+            guard let uv = face.uvBounds, uv.uMax - uv.uMin >= 2 * Double.pi - 1e-6 else {
                 continue
             }
 
-            // For now, use bounds to estimate if circular
-            let width = node.bounds.max.x - node.bounds.min.x
-            let height = node.bounds.max.y - node.bounds.min.y
-            let depth = node.bounds.max.z - node.bounds.min.z
+            guard let revolution = face.revolutionProperties else { continue }
+            let axisUnit = simd_normalize(revolution.axis.direction)
 
-            // Check if roughly circular in XY (for vertical holes)
-            let aspectRatio = max(width, height) / min(width, height)
-            if aspectRatio < 1.2 && !node.isPlanar {
-                let radius = (width + height) / 4.0
-                holes.append((faceIndex: index, radius: radius, depth: depth))
+            let uMid = (uv.uMin + uv.uMax) / 2
+            let vMid = (uv.vMin + uv.vMax) / 2
+            guard let midPoint = face.point(atU: uMid, v: vMid),
+                  let midNormal = face.normal(atU: uMid, v: vMid) else {
+                continue
             }
+
+            let offset = midPoint - revolution.axis.origin
+            let radial = offset - simd_dot(offset, axisUnit) * axisUnit
+            let radialLength = simd_length(radial)
+            guard radialLength > 1e-9 else { continue }
+
+            // The material-side test (see doc comment above): a hole's own outward normal
+            // points back toward the axis, opposite the radial direction.
+            guard simd_dot(midNormal, radial / radialLength) < 0 else { continue }
+
+            // Depth along the wall's own axis, not a Z-aligned bounding box: works the same
+            // for a vertical hole as for one bored on any other axis.
+            guard let low = face.point(atU: uMid, v: uv.vMin),
+                  let high = face.point(atU: uMid, v: uv.vMax) else {
+                continue
+            }
+            let depth = abs(simd_dot(high - low, axisUnit))
+
+            holes.append((faceIndex: index, radius: revolution.radius, depth: depth))
         }
 
         return holes
@@ -529,8 +786,11 @@ extension Shape {
     /// let result = box.subtracting(pocket)!
     /// print(result.detectPocketsAAG().count)   // 1
     /// ```
-    public func detectPocketsAAG() -> [PocketFeature] {
+    ///
+    /// - Parameter tolerance: Forwarded to ``AAG/detectPockets(tolerance:)``. See its doc for
+    ///   what it controls and why it defaults the way it does (#733).
+    public func detectPocketsAAG(tolerance: Double = AAG.defaultFloorRestsOnWallTolerance) -> [PocketFeature] {
         let aag = buildAAG()
-        return aag.detectPockets()
+        return aag.detectPockets(tolerance: tolerance)
     }
 }

@@ -1327,7 +1327,13 @@ public static func networkSurface(profiles: [Curve3D], guides: [Curve3D],
     -> (surface: Surface?, status: NetworkSurfaceStatus)
 ```
 
-Curves are converted to non-periodic BSplines and an intersection grid is sampled. This is a lower-level alternative to `gordon(...)` for cases requiring manual control over the network construction.
+Curves are converted to non-periodic BSplines; each profile/guide pair's real contact point and its
+parameter in the *other* family's domain are found via `GeomAPI_ExtremaCurveCurve` and averaged
+across the family, matching what `GeomFill_NetworkSurface::Perform()` requires to align its internal
+profile/guide/reference skins to one knot basis (#689). This is a lower-level alternative to
+`gordon(...)`: it does not reorder a scrambled network, run `gordon`'s reparametrization pass, or
+derive rational contact weights (every contact point is weighted 1.0), so a network `gordon` can
+complete can still decline here.
 
 - **Parameters:** `profiles` — profile curves in U, at least 2; `guides` — guide curves in V, at least 2; `tolerance` — geometric tolerance for closed-seam checks.
 - **Returns:** Tuple of the surface (or `nil`) and a status code.

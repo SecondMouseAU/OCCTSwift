@@ -3488,13 +3488,40 @@ extension Surface {
     }
 
     /// Build a surface with the low-level `GeomFill_NetworkSurface` builder from a
-    /// profile/guide curve network. The curves are converted to non-periodic B-splines,
-    /// an intersection grid is sampled along each profile, and locator parameters are
-    /// uniformly spaced. Returns the surface (nil on failure) and the result status.
+    /// profile/guide curve network. The curves are converted to non-periodic B-splines; each
+    /// profile/guide pair's real contact point and parameter are then found with
+    /// `GeomAPI_ExtremaCurveCurve` (its nearest, not merely its first, extremum) and averaged
+    /// across the family the way `GeomFill_Gordon` does, giving one locator value per profile
+    /// and per guide, each already expressed in the domain the *other* family's skin needs.
+    /// This is the low-level builder: it does not reorder a scrambled network or reparametrize
+    /// curve families onto a common basis the way ``gordon(profiles:guides:tolerance:)`` /
+    /// ``gordonReport(profiles:guides:tolerance:allowApproximateFallback:)`` do, so a network
+    /// those can complete can still come back here as `.knotAlignmentFailed` or similar. A
+    /// profile/guide pair with no real contact point (parallel curves, or an extrema search
+    /// that finds nothing) rejects the whole network as `.invalidInput` rather than
+    /// substituting an unmeasured point. Returns the surface (nil on failure) and the result
+    /// status.
+    ///
+    /// Known limitation ([#748](https://github.com/SecondMouseAU/OCCTSwift/issues/748)): on
+    /// every network tried so far, `.done` can still mean a wrong surface -- the two corners on
+    /// one diagonal come back correct and the other two do not, a `GeomFill_NetworkSurface`
+    /// kernel defect this entry point exposes rather than causes.
+    /// ``gordon(profiles:guides:tolerance:)`` on the same curves is not affected; prefer it
+    /// unless you specifically need this low-level builder's behavior.
     /// - Parameters:
     ///   - profiles: profile curves evaluated in U, at least 2.
     ///   - guides: guide curves evaluated in V, at least 2.
     ///   - tolerance: geometric tolerance for closed-seam checks.
+    ///
+    /// ```swift
+    /// let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)])!
+    /// let p2 = Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)])!
+    /// let g1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)])!
+    /// let g2 = Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)])!
+    /// let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2],
+    ///                                                tolerance: 1e-6)
+    /// if status != .done { print("network builder declined:", status) }
+    /// ```
     public static func networkSurface(profiles: [Curve3D], guides: [Curve3D],
                                       tolerance: Double = 1e-3)
         -> (surface: Surface?, status: NetworkSurfaceStatus) {
