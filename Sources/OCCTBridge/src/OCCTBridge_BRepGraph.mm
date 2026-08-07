@@ -3141,34 +3141,50 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
     }
 }
 
-int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges) {
-    if (!shape || !face1 || !face2 || !outEdges || maxEdges <= 0) return 0;
-    
-    try {
-        // Get edges of both faces
-        TopTools_IndexedMapOfShape edges1, edges2;
-        TopExp::MapShapes(face1->face, TopAbs_EDGE, edges1);
-        TopExp::MapShapes(face2->face, TopAbs_EDGE, edges2);
-        
-        int32_t count = 0;
-        
-        // Find common edges
-        for (int i = 1; i <= edges1.Extent() && count < maxEdges; i++) {
-            const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
-            
-            for (int j = 1; j <= edges2.Extent(); j++) {
-                const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
-                
-                // Compare by IsEqual (same TShape)
-                if (e1.IsSame(e2)) {
+// #761 review: OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount used to carry two
+// independent copies of this nested IsSame-comparison loop -- exactly the shape of bug that let
+// the original 10-cap survive unnoticed (one copy silently disagreeing with another). Now there
+// is exactly one place the face-pair edge identity test lives, so a future change to that test
+// (e.g. tolerance-aware instead of IsSame) cannot be applied to one call and not the other.
+//
+// outEdges == nullptr: counting mode (OCCTFaceGetSharedEdgeCount). Always scans every edge of
+// both faces and returns the TRUE total, uncapped; maxEdges is ignored.
+// outEdges != nullptr: collecting mode (OCCTFaceGetSharedEdges). Stops scanning as soon as count
+// reaches maxEdges, exactly as this loop always has -- OCCTFacesAreAdjacent relies on that early
+// exit for its own maxEdges=1 call, and every other caller passes a fixed-size buffer it must not
+// overrun. The return value in this mode is therefore capped at maxEdges, same as before.
+static int32_t countOrCollectSharedEdges(const TopoDS_Face& face1, const TopoDS_Face& face2,
+                                          OCCTEdgeRef* outEdges, int32_t maxEdges) {
+    TopTools_IndexedMapOfShape edges1, edges2;
+    TopExp::MapShapes(face1, TopAbs_EDGE, edges1);
+    TopExp::MapShapes(face2, TopAbs_EDGE, edges2);
+
+    int32_t count = 0;
+    for (int i = 1; i <= edges1.Extent(); i++) {
+        if (outEdges && count >= maxEdges) break;
+        const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
+
+        for (int j = 1; j <= edges2.Extent(); j++) {
+            const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
+
+            // Compare by IsSame (same TShape + Location, orientation ignored).
+            if (e1.IsSame(e2)) {
+                if (outEdges) {
                     outEdges[count] = new OCCTEdge(e1);
-                    count++;
-                    break;
                 }
+                count++;
+                break;
             }
         }
-        
-        return count;
+    }
+    return count;
+}
+
+int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges) {
+    if (!shape || !face1 || !face2 || !outEdges || maxEdges <= 0) return 0;
+
+    try {
+        return countOrCollectSharedEdges(face1->face, face2->face, outEdges, maxEdges);
     } catch (...) {
         return 0;
     }
@@ -3178,24 +3194,7 @@ int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFa
     if (!shape || !face1 || !face2) return 0;
 
     try {
-        // Same comparison OCCTFaceGetSharedEdges runs, just counting instead of allocating and
-        // writing OCCTEdge wrappers -- see #761 for why AAG.buildGraph() needs this uncapped.
-        TopTools_IndexedMapOfShape edges1, edges2;
-        TopExp::MapShapes(face1->face, TopAbs_EDGE, edges1);
-        TopExp::MapShapes(face2->face, TopAbs_EDGE, edges2);
-
-        int32_t count = 0;
-        for (int i = 1; i <= edges1.Extent(); i++) {
-            const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
-            for (int j = 1; j <= edges2.Extent(); j++) {
-                const TopoDS_Edge& e2 = TopoDS::Edge(edges2(j));
-                if (e1.IsSame(e2)) {
-                    count++;
-                    break;
-                }
-            }
-        }
-        return count;
+        return countOrCollectSharedEdges(face1->face, face2->face, nullptr, 0);
     } catch (...) {
         return 0;
     }

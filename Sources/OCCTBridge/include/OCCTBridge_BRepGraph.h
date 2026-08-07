@@ -48,7 +48,12 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
 /// @return Convexity type (concave, smooth/tangential, or convex)
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2);
 
-/// Get all edges shared between two faces
+/// Get all edges shared between two faces.
+///
+/// Shares its face-pair edge-identity comparison with OCCTFaceGetSharedEdgeCount through one
+/// internal helper (`countOrCollectSharedEdges`, OCCTBridge_BRepGraph.mm) rather than two
+/// independent copies of the same loop -- #761's review: two copies is the shape of bug that let
+/// the original 10-cap survive unnoticed in the first place, since nothing forced them to agree.
 /// @param shape The shape containing the faces
 /// @param face1 First face
 /// @param face2 Second face
@@ -67,9 +72,13 @@ int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRe
 /// reported as 10 (`Scripts/repro/761-aag-brepgraph-adjacency/`). This is the same count-then-fetch
 /// idiom `BRepGraph.swift`'s own `fetchIndices` helper already uses for every `...Count`/
 /// `...Indices` bridge pair: call this first to size the buffer exactly, then call
-/// OCCTFaceGetSharedEdges with that exact count. Same O(e1 * e2) cost as OCCTFaceGetSharedEdges
-/// itself (each face's own edge count, never the whole shape), so sizing correctly costs nothing
-/// beyond running that comparison twice, which #761's own measurement found negligible next to the
+/// OCCTFaceGetSharedEdges with that exact count.
+///
+/// Reads the identical comparison OCCTFaceGetSharedEdges does, through the shared
+/// `countOrCollectSharedEdges` helper both call -- not a second, independently-written copy of the
+/// loop (#761 review). Same O(e1 * e2) cost as OCCTFaceGetSharedEdges itself (each face's own edge
+/// count, never the whole shape), so sizing correctly costs nothing beyond running that one
+/// comparison twice (once per call), which #761's own measurement found negligible next to the
 /// alternative of routing through BRepGraph.sharedEdges(between:and:) instead (a real, measured
 /// performance regression at model scale -- see that repro directory's README for the numbers).
 /// @param shape The shape containing the faces

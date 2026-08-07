@@ -196,7 +196,13 @@ let package = Package(
         .testTarget(name: "OCCTMathTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTMathTests"),
         .testTarget(name: "OCCTMeshTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTMeshTests"),
         .testTarget(name: "OCCTMiscTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTMiscTests"),
-        .testTarget(name: "OCCTModelingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTModelingTests"),
+        // OCCTBridge added alongside OCCTSwift (#761 review) so
+        // Issue761SharedEdgeCountCapTests can call OCCTFaceGetSharedEdges/
+        // OCCTFaceGetSharedEdgeCount directly, to pin the invariant that the two only ever
+        // disagree on count because of the maxEdges buffer, never because of the underlying
+        // face-pair edge comparison -- not observable through AAG's own Swift API, which always
+        // sizes its buffer from the true count now.
+        .testTarget(name: "OCCTModelingTests", dependencies: ["OCCTSwift", "OCCTBridge"], path: "Tests/OCCTModelingTests"),
         .testTarget(name: "OCCTShapeHealingTests", dependencies: ["OCCTSwift"], path: "Tests/OCCTShapeHealingTests"),
         // `Fixtures/` holds .brep files read straight from the source tree via `#filePath`, not
         // through `Bundle.module`, so they are neither build inputs nor resources to copy. Without

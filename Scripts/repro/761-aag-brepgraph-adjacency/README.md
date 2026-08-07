@@ -139,13 +139,36 @@ BRepGraph a win.
 
 Neither consolidation path pays for itself. The bug is real and worth fixing at its root instead:
 a new bridge function, `OCCTFaceGetSharedEdgeCount(shape, face1, face2)` (`OCCTBridge_BRepGraph.h`/
-`.mm`), runs the *same* O(e1 * e2) comparison `OCCTFaceGetSharedEdges` already runs, just counting
-instead of allocating and writing edge wrappers. `AAG.buildGraph()` now calls it first to size its
-buffer exactly, then calls `OCCTFaceGetSharedEdges` with that exact size -- no cap, no BRepGraph
-involved, same asymptotic cost as before (the O(e1 * e2) comparison now runs twice instead of once,
-over each face's own small edge set, never the whole shape). Measured after the fix: `AAG.buildGraph()`
-alone on the 8x8 grid fixture is 10.8-10.9ms, statistically indistinguishable from the 9.5-11.0ms
-range measured before this change.
+`.mm`), returns the true, uncapped count. `AAG.buildGraph()` now calls it first to size its buffer
+exactly, then calls `OCCTFaceGetSharedEdges` with that exact size -- no cap, no BRepGraph involved,
+same asymptotic cost as before (the O(e1 * e2) comparison over each face's own small edge set,
+never the whole shape, now runs twice per pair instead of once). Measured after the fix:
+`AAG.buildGraph()` alone on the 8x8 grid fixture is 10.8-10.9ms, statistically indistinguishable
+from the 9.5-11.0ms range measured before this change.
+
+**Review round (PR #776): the two functions must not carry two independent copies of that
+comparison.** The first version of this fix gave `OCCTFaceGetSharedEdgeCount` its own copy of the
+nested `IsSame` loop, alongside the existing one in `OCCTFaceGetSharedEdges` -- which is precisely
+the shape of bug this whole issue is about: one implementation silently drifting from another that
+answers the same question. Two independent copies of the same face-pair edge comparison is exactly
+what let the original 10-cap bug go unnoticed, since nothing forced the two functions to agree.
+Fixed by factoring the comparison into one internal `static` helper, `countOrCollectSharedEdges`
+(`OCCTBridge_BRepGraph.mm`), that both public functions call: it walks the pair once and either
+counts (uncapped, `outEdges == nullptr`) or collects up to `maxEdges` (the existing
+`OCCTFaceGetSharedEdges` contract, `outEdges != nullptr`), so there is exactly one place the
+`IsSame` identity test lives. A future change to that test (e.g. tolerance-aware instead of exact
+`IsSame`) now cannot be applied to one call and not the other.
+
+Pinned with a dedicated test
+(`Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift`,
+`bridgeFunctionsShareOneComparison`) that calls both bridge functions directly on the same
+top/front pair: `OCCTFaceGetSharedEdgeCount` returns 12, `OCCTFaceGetSharedEdges` with
+`maxEdges: 10` returns 10, and `OCCTFaceGetSharedEdges` with `maxEdges: 12` returns all 12. The two
+disagree on the returned count only because of the buffer, never because of the comparison itself.
+Removal-matrix proof: reintroducing an independent, drifted second copy inside
+`OCCTFaceGetSharedEdgeCount` (capped at an arbitrary 7, simulating exactly the class of bug this
+refactor prevents) makes this test fail (`trueCount → 7 == 12`), along with the two headline tests
+above; restoring the shared helper turns all of them green again.
 
 ## The enclosure test (#735/#753's second half) is a different case, not fixed here
 

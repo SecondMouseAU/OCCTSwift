@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import OCCTBridge
 @testable import OCCTSwift
 
 // #761: investigating whether AAG's hand-rolled pairwise face/edge adjacency
@@ -117,6 +118,50 @@ struct Issue761SharedEdgeCountCapTests {
 
         let graphShared = graph.sharedEdges(between: topNode.index, and: frontNode.index)
         #expect(aagEdge.sharedEdgeCount == graphShared.count)
+    }
+
+    /// The invariant the #776 review asked to pin directly: `OCCTFaceGetSharedEdges` and
+    /// `OCCTFaceGetSharedEdgeCount` now share one internal comparison
+    /// (`countOrCollectSharedEdges`, `OCCTBridge_BRepGraph.mm`) instead of two independently
+    /// written copies, so they must disagree on a count ONLY because of the `maxEdges` buffer the
+    /// collecting call was given, never because the comparison itself differs between the two.
+    /// Calls the bridge functions directly (not through `AAG`, which always sizes its own buffer
+    /// from the true count now, so this specific disagreement is not otherwise observable) with a
+    /// deliberately small `maxEdges: 10` on the same top/front pair that shares 12 edges -- the
+    /// exact shape of the original bug.
+    @Test("OCCTFaceGetSharedEdges and OCCTFaceGetSharedEdgeCount agree, differing only by the buffer")
+    func bridgeFunctionsShareOneComparison() {
+        guard let shape = Self.manySharedEdgesFixture(),
+              let (_, topIndex, frontIndex) = Self.topAndFrontFaces(in: shape) else {
+            Issue.record("could not build the many-shared-edges fixture")
+            return
+        }
+        let occ = shape.orientedFaces()
+        let topFace = occ[topIndex]
+        let frontFace = occ[frontIndex]
+
+        let trueCount = OCCTFaceGetSharedEdgeCount(shape.handle, topFace.handle, frontFace.handle)
+        #expect(trueCount == 12)
+
+        // The collecting call, handed the old hardcoded buffer size, still truncates -- that is
+        // its documented contract (a fixed, caller-allocated buffer), not a regression. The point
+        // is that it truncates at exactly 10, the buffer's own size, and nothing else.
+        var cappedBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: 10)
+        let cappedCount = OCCTFaceGetSharedEdges(shape.handle, topFace.handle, frontFace.handle, &cappedBuffer, 10)
+        #expect(cappedCount == 10)
+        for case let edge? in cappedBuffer {
+            OCCTEdgeRelease(edge)
+        }
+
+        // Sized from the true count, the same collecting call now returns everything, with the
+        // buffer fully populated. This is what AAG.buildGraph() does today.
+        var exactBuffer: [OCCTEdgeRef?] = Array(repeating: nil, count: Int(trueCount))
+        let exactCount = OCCTFaceGetSharedEdges(shape.handle, topFace.handle, frontFace.handle, &exactBuffer, trueCount)
+        #expect(exactCount == trueCount)
+        #expect(exactBuffer.allSatisfy { $0 != nil })
+        for case let edge? in exactBuffer {
+            OCCTEdgeRelease(edge)
+        }
     }
 
     // MARK: - No regression on the ordinary case
