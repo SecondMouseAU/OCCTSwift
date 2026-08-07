@@ -52,3 +52,4 @@ See [`references/`](references/index.md) — OpenCASCADE upstream and licensing 
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)
+- [SemVer is assessed at release, not per PR](policies/semver-at-release.md)
