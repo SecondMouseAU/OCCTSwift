@@ -105,12 +105,33 @@ extension Shape {
     // GeomAbs_C0...C3, so it is parametric continuity. It is now `ParametricContinuity` in
     // Continuity.swift, shared with the other APIs that take a continuity floor. See #398.
 
-    /// Divide a shape at continuity discontinuities
+    /// Divide a shape wherever its geometry drops below the required continuity.
     ///
-    /// - Parameter continuity: Target continuity level
-    /// - Returns: Divided shape, or nil on failure
-    public func divided(at continuity: ParametricContinuity) -> Shape? {
-        guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue) else { return nil }
+    /// Sets `ShapeUpgrade_ShapeDivideContinuity`'s boundary, pcurve AND surface criteria together
+    /// to `continuity`, plus `SetSurfaceSegmentMode(true)` — the usage OCCT's own shape-healing
+    /// guide demonstrates. Until #438 this was one of two public entry points over that same OCCT
+    /// class: ``dividedByContinuity(criterion:tolerance:)`` (now deprecated, forwarding here) set
+    /// only the boundary criterion, leaving pcurve/surface pinned at the class's own C1
+    /// constructor default regardless of the requested continuity — measured
+    /// (`Scripts/repro/cluster-d-continuity`) as a flat result across every criterion on a
+    /// fixture where this method's own three-criteria behaviour varies (nil/4/4/25 faces at
+    /// C0/C1/C2/C3).
+    ///
+    /// ```swift
+    /// let pieces = shape.divided(at: .c2)
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - continuity: Minimum required continuity. `.cn`, `.g1` and `.g2` are accepted in
+    ///     addition to `.c0`...`.c3` (#438 widened this from ``ParametricContinuity``); OCCT's
+    ///     own criterion setters have no case for G1/G2 and would otherwise silently substitute
+    ///     their own C1 default, so those two are decoded ahead of the call instead.
+    ///   - tolerance: Tolerance for the continuity check. Defaults to `1e-7`
+    ///     (`Precision::Confusion()`), OCCT's own default and this method's behavior before #438
+    ///     added the parameter.
+    /// - Returns: Divided shape, or nil if no divisions were needed or on failure.
+    public func divided(at continuity: ContinuityLevel, tolerance: Double = 1e-7) -> Shape? {
+        guard let handle = OCCTShapeDivide(self.handle, continuity.rawValue, tolerance) else { return nil }
         return Shape(handle: handle)
     }
 
@@ -558,16 +579,14 @@ extension Shape {
 
     /// Divide this shape at continuity breaks.
     ///
-    /// Uses ShapeUpgrade_ShapeDivideContinuity to split faces/edges
-    /// at points where the geometry drops below the required continuity.
-    ///
-    /// - Parameters:
-    ///   - criterion: Minimum required continuity level (default: .c1)
-    ///   - tolerance: Tolerance for continuity check (default: 1e-4)
-    /// - Returns: Divided shape, or nil if no divisions needed or on failure
+    /// - Deprecated: Duplicated ``divided(at:tolerance:)`` over the same
+    ///   `ShapeUpgrade_ShapeDivideContinuity`, setting only the boundary criterion where
+    ///   ``divided(at:tolerance:)`` sets boundary, pcurve AND surface criteria together — the
+    ///   usage OCCT's own shape-healing guide demonstrates (#438). Forwards there now; both
+    ///   names run the identical call.
+    @available(*, deprecated, renamed: "divided(at:tolerance:)")
     public func dividedByContinuity(criterion: ContinuityLevel = .c1, tolerance: Double = 1e-4) -> Shape? {
-        guard let ref = OCCTShapeUpgradeDivideContinuity(handle, criterion.rawValue, tolerance) else { return nil }
-        return Shape(handle: ref)
+        divided(at: criterion, tolerance: tolerance)
     }
 
     // MARK: - ShapeFix_FixSmallSolid

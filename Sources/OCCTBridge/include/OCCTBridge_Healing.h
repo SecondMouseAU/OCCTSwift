@@ -251,11 +251,16 @@ OCCTShapeRef OCCTShapePlateCurves(const OCCTWireRef* curves, int32_t curveCount,
 
 // MARK: - Advanced Healing (v0.17.0)
 
-/// Divide a shape at continuity discontinuities
+/// Divide a shape wherever its geometry drops below the required continuity.
+///
+/// The sole entry point behind `Shape.divided(at:tolerance:)` since #438 folded in
+/// `OCCTShapeUpgradeDivideContinuity`, the narrower bridge function that used to sit behind the
+/// now-deprecated `Shape.dividedByContinuity(criterion:tolerance:)`.
 /// @param shape Shape to divide
-/// @param continuity Target continuity (0=C0, 1=C1, 2=C2, 3=C3)
+/// @param continuity Target continuity (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2)
+/// @param tolerance Tolerance for the continuity check
 /// @return Divided shape, or NULL on failure
-OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity);
+OCCTShapeRef OCCTShapeDivide(OCCTShapeRef shape, int32_t continuity, double tolerance);
 
 /// Convert geometry to direct faces (canonical surfaces)
 OCCTShapeRef OCCTShapeDirectFaces(OCCTShapeRef shape);
@@ -694,14 +699,9 @@ int32_t OCCTShapeFixWireVertex(OCCTShapeRef shape, double precision);
 /// @return Divided shape, or NULL on failure
 OCCTShapeRef _Nullable OCCTShapeUpgradeDivideClosed(OCCTShapeRef shape, int32_t nbSplitPoints);
 
-// --- ShapeUpgrade_ShapeDivideContinuity ---
-
-/// Divide a shape at continuity breaks.
-/// @param shape Shape to process
-/// @param boundaryCriterion Minimum continuity level (0=C0, 1=C1, 2=C2, 3=C3, 4=CN, 5=G1, 6=G2)
-/// @param tolerance Tolerance for continuity check
-/// @return Divided shape, or NULL on failure
-OCCTShapeRef _Nullable OCCTShapeUpgradeDivideContinuity(OCCTShapeRef shape, int32_t boundaryCriterion, double tolerance);
+// --- ShapeUpgrade_ShapeDivideContinuity: OCCTShapeDivide (above), the sole entry point since
+// #438 folded in OCCTShapeUpgradeDivideContinuity, which used to sit behind the now-deprecated
+// Shape.dividedByContinuity(criterion:tolerance:).
 
 // --- ShapeFix_FixSmallSolid ---
 
