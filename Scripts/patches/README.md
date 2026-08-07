@@ -537,14 +537,14 @@ steps.
 ## 0025-GeomFill_Sweep-report-achieved-conversion-error-597.patch
 
 **Fixes the upstream OCCT defect behind [#597](https://github.com/SecondMouseAU/OCCTSwift/issues/597)**
-(kernel half — the bridge half was investigated and closed as provably empty by PR #751, both
+(kernel half; the bridge half was investigated and closed as provably empty by PR #751, both
 obvious fixes there broke real tests).
 
 `GeomFill_Sweep::BuildAll` measures the swept surface's real approximation error at
 `GeomFill_Sweep.cxx:286` (`SError = Approx.MaxErrorOnSurf();`). When the caller has requested
 `ForceApproxC1` and the swept surface isn't already C1 in V, it re-approximates through
 `GeomConvert_ApproxSurface(mySurface, theTol, ...)` (`theTol` a literal `1.e-4`) and, on
-`HasResult()`, replaces `mySurface` with the conversion's output — then overwrites the measured
+`HasResult()`, replaces `mySurface` with the conversion's output, then overwrites the measured
 error with the requested tolerance instead of reading what the conversion achieved:
 
 ```cpp
@@ -552,18 +552,18 @@ SError = theTol;   // GeomFill_Sweep.cxx:325
 ```
 
 `GeomConvert_ApproxSurface::HasResult()` is documented as true even for a result "not NECESSARILY
-within the required tolerance," and `MaxError()` — which reports what was actually achieved — sits
+within the required tolerance," and `MaxError()`, which reports what was actually achieved, sits
 unread two lines above. `BRepFill_Sweep`/`BRepFill_PipeShell`/`BRepOffsetAPI_MakePipeShell::ErrorOnSurface()`
-all forward `SError` verbatim, so `BRepOffsetAPI_MakePipeShell::SetForceApproxC1(true)` — a public,
-documented API — hands every caller a number describing the request, not the result.
+all forward `SError` verbatim, so `BRepOffsetAPI_MakePipeShell::SetForceApproxC1(true)`, a public,
+documented API, hands every caller a number describing the request, not the result.
 
 **Getting a repro to fire needs care.** The branch only runs when the *swept surface itself* fails
 `IsCNv(1)`, and `BRepFill_Sweep` splits its sweep at every spine **vertex**, so a polyline spine
-never reaches it — the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
+never reaches it: the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
 [#572](https://github.com/SecondMouseAU/OCCTSwift/issues/572), pinned by
 `Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
-degree-2 B-spline curve with an interior knot of multiplicity 2 — a C0 corner inside what
-`BRepFill_Sweep` treats as one edge — swept with a unit circle profile and Frenet trihedron via
+degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner inside what
+`BRepFill_Sweep` treats as one edge, swept with a unit circle profile and Frenet trihedron via
 `BRepFill_PipeShell`, matching the bridge's own construction exactly.
 
 **Is `MaxError()` the right quantity? Checked, not assumed.** #597's bridge half died on exactly
@@ -573,7 +573,7 @@ this trap: `GeomPlate_MakeApprox::ApproxError()` measures fidelity to an *interm
 argument *is* `mySurface`, the exact surface being replaced. Confirmed by reconstructing the same
 `GeomConvert_ApproxSurface(unforcedSurface, 1e-4, C1, C1, 14, 14, 16, 1)` call from outside the
 kernel (using the surface a separate `ForceApproxC1(false)` build returns, which never reaches this
-branch and is exactly what `mySurface` holds at the real call site) — its output has the same
+branch and is exactly what `mySurface` holds at the real call site): its output has the same
 degree/pole counts as the real forced build's, and deviation from the same unforced-surface baseline
 to each is bit-identical, proving the reconstruction is the real call, not a divergent simulation.
 **Does `MaxError()` actually move?** Patch `0019` (#522) is what makes this possible: before it,
@@ -583,18 +583,18 @@ number no matter how bad the fit was. Measured against the currently pinned kern
 measurement of this identical fixture (`2.547`) to the printed precision. It moves.
 
 **Fix:** `SError = ConvertApprox.MaxError();`. One line. `CError`'s four literal `0.` entries a few
-lines above are left untouched — no 2D curve error is available from `GeomConvert_ApproxSurface` at
+lines above are left untouched: no 2D curve error is available from `GeomConvert_ApproxSurface` at
 this point, and inventing one would be exactly the fabrication [#726](https://github.com/SecondMouseAU/OCCTSwift/issues/726) exists to prevent.
 
 **Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique,
 compiled with `-DNDEBUG -DNo_Exception` to match the production build): the real, in-kernel
 `BRepFill_PipeShell`/`GeomFill_Sweep` object's `ErrorOnSurface()` goes from `0.0001` (exactly
 `theTol`, stock) to `2.54714` (matching the externally-reconstructed prediction exactly) after the
-patch. Every other value the harness prints — the returned surface's degree/pole/knot counts and two
-independent geometric deviations (same-parameter and nearest-point) — is byte-identical before and
+patch. Every other value the harness prints, the returned surface's degree/pole/knot counts and two
+independent geometric deviations (same-parameter and nearest-point), is byte-identical before and
 after: this patch changes only what the class *reports*, never the surface any caller receives
 (`mySurface` is already `ConvertApprox.Surface()` two statements earlier). Consumer survey: no
-existing bridge site gates on this number — `PipeShellBuilder.errorOnSurface` is info-only (its one
+existing bridge site gates on this number. `PipeShellBuilder.errorOnSurface` is info-only (its one
 test asserts `>= 0`), and `OCCTGeomFillSweep`'s own error gate (added in PR #741, the other half of
 #597) never sets `ForceApproxC1` so it never reaches this branch at all. `swift test` is therefore
 unaffected; this is a diagnostic-only fix.
@@ -605,7 +605,7 @@ current upstream `master` (`b8f597c6`), byte-identical between the two for the t
 
 See [`Scripts/repro/597-geomfill-sweep-error-overwrite/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/597-geomfill-sweep-error-overwrite)
 for the reproducer, fixture derivation and full before/after transcripts. **Filed upstream as a PR
-draft only** (`draft-pr.md` in that directory, **not sent** — this task's constraints forbid writing
+draft only** (`draft-pr.md` in that directory, **not sent**: this task's constraints forbid writing
 to `Open-Cascade-SAS/OCCT`), per `okf/policies/upstream-occt-style.md` and the precedent of `0018`,
 `0019`, `0021` and `0024`: the fix was ready, so the PR description carries the repro and root cause
 a standalone issue would have.
@@ -615,7 +615,7 @@ a standalone issue would have.
 **Pin consequence**: this is the fourth patch (after `0022`, `0023`, `0024`) carried in the tree but
 outside the pinned `v2.0.0-kernel.1` binary asset. PR #754 (`chore/512-repin-kernel-2`, open at the
 time of writing) re-pins to `v2.0.0-kernel.2`, folding in all fourteen (`0010`-`0012`,
-`0014`-`0024`) — once that merges, `0025` becomes the *only* patch left outside the pin, exactly the
+`0014`-`0024`); once that merges, `0025` becomes the *only* patch left outside the pin, exactly the
 gap `docs/v2.0.0-plan.md`'s RESOLVED block already names by number ahead of time. Watch for it at
 the next re-pin, same as `0022`-`0024`.
 

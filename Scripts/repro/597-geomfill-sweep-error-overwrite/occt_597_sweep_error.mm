@@ -7,7 +7,7 @@
 //
 //   1. Does the stock kernel really report a hardcoded 1e-4 regardless of the true fit?
 //   2. Does `GeomConvert_ApproxSurface::MaxError()` measure the same quantity, against the
-//      same reference, that `mySurface` is being converted FROM -- or does it measure
+//      same reference, that `mySurface` is being converted FROM, or does it measure
 //      fidelity to some other, wrong object the way GeomPlate_MakeApprox::ApproxError() did
 //      in #571 (measuring against an intermediate GeomPlate_Surface, not the caller's own
 //      input points)?
@@ -15,27 +15,27 @@
 //      workspace-slot bug that used to make interior truncation error structurally zero?
 //
 // Method: build the pipe shell twice, once with ForceApproxC1 off (which never reaches the
-// C1-forcing block at all, so its ErrorOnSurface() is Approx.MaxErrorOnSurf() -- the exact
+// C1-forcing block at all, so its ErrorOnSurface() is Approx.MaxErrorOnSurf(), the exact
 // surface GeomConvert_ApproxSurface is handed as its "Surf" argument once ForceApproxC1 is
 // on) and once with it on. Then reconstruct the SAME GeomConvert_ApproxSurface call the
 // kernel makes internally, from OUTSIDE the kernel, using the unforced result as input and
 // the literal parameters read from GeomFill_Sweep.cxx:290-297 (theTol=1e-4, C1/C1, degU=degV=14,
 // nmax=16, prec=1). Its MaxError() is what SError would report after the fix, and its
-// Surface() should match the real forced-build output bit for bit -- proving the external
+// Surface() should match the real forced-build output bit for bit, proving the external
 // reconstruction is not a divergent simulation but the exact call the kernel makes.
 // Finally, sample both surfaces on a grid and report two independent geometric deviations:
-// paramDev (same normalised parameter on both surfaces -- what an approximator's own error
-// model is about) and projDev (nearest point on the fit to each sampled source point --
+// paramDev (same normalised parameter on both surfaces: what an approximator's own error
+// model is about) and projDev (nearest point on the fit to each sampled source point,
 // independent of parameterisation, so it measures only the shape). This is the "second
 // construction" measure-dont-assume.md asks for before trusting MaxError()'s own report.
 //
 // Getting here is the hard part this file exists to save the next person from redoing:
 // GeomFill_Sweep's myForceApproxC1 branch only fires when the SWEPT surface itself fails
 // IsCNv(1) (not C1 across the spine parameter). BRepFill_Sweep splits its sweep at every
-// spine VERTEX, so a polyline or multi-edge spine never reaches it -- the discontinuity has
+// spine VERTEX, so a polyline or multi-edge spine never reaches it: the discontinuity has
 // to sit INSIDE one edge. The fixture that does this (borrowed from #572, and pinned by
 // Tests/OCCTModelingTests/Issue572SweepApproxTests.swift) is a single-edge spine built as one
-// degree-2 B-spline curve with an interior knot of multiplicity 2 -- a C0 corner in the
+// degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner in the
 // middle of what BRepFill_Sweep treats as a single, unsplit edge.
 //
 // Compile (from the repo root):
@@ -70,7 +70,7 @@
 #include <gp_Pnt.hxx>
 
 // ---------------------------------------------------------------------------
-// Fixture: Issue572SweepApproxTests.cornerSpine() -- a single-edge spine with a C0
+// Fixture: Issue572SweepApproxTests.cornerSpine(), a single-edge spine with a C0
 // corner in the middle (degree 2, interior knot of multiplicity 2), plus a unit circle
 // profile. This is the only OCCTSwift-reachable input that fires GeomFill_Sweep's
 // myForceApproxC1 branch (measured in #572's probe-census.txt).
@@ -104,7 +104,7 @@ static TopoDS_Wire circleWire(const gp_Ax2& ax, double r)
   return mw.Wire();
 }
 
-// The surface carried by the first B-spline face of a shape -- what the bridge's
+// The surface carried by the first B-spline face of a shape: what the bridge's
 // OCCTPipeShellShape hands back and what a caller actually receives.
 static Handle(Geom_Surface) firstBSplineFaceSurface(const TopoDS_Shape& sh)
 {
@@ -141,9 +141,9 @@ static bool buildPipeShell(bool forceApproxC1,
 
 // Two deviation measures between `truth` and `candidate`, both parametrised the same way
 // GeomConvert_ApproxSurface keeps the source's own parameter range:
-//   paramDev: same normalised (u, v) on both surfaces -- what the approximator's internal
+//   paramDev: same normalised (u, v) on both surfaces: what the approximator's internal
 //             error model actually compares against.
-//   projDev:  nearest point on `candidate` to each sampled `truth` point -- independent of
+//   projDev:  nearest point on `candidate` to each sampled `truth` point, independent of
 //             parameterisation, so it measures the shape and nothing else.
 struct Deviation
 {
@@ -218,7 +218,7 @@ int main()
     return 1;
   }
   describeSurface("unforced surface", unforcedSurface);
-  printf("%-28s %.6g  (Approx.MaxErrorOnSurf(), stage 1 -- unaffected by #597)\n\n",
+  printf("%-28s %.6g  (Approx.MaxErrorOnSurf(), stage 1, unaffected by #597)\n\n",
          "unforced ErrorOnSurface()",
          unforcedReportedError);
 
@@ -237,12 +237,12 @@ int main()
     return 1;
   }
   describeSurface("forced surface (real)", forcedSurface);
-  printf("%-28s %.6g  (stock kernel's SError -- should read exactly theTol=1e-4)\n\n",
+  printf("%-28s %.6g  (stock kernel's SError, should read exactly theTol=1e-4)\n\n",
          "forced ErrorOnSurface()",
          forcedReportedErrorStock);
 
   // Reconstruct the SAME GeomConvert_ApproxSurface call GeomFill_Sweep.cxx:296-297 makes,
-  // from outside the kernel, with the unforced surface as its input -- exactly what
+  // from outside the kernel, with the unforced surface as its input, exactly what
   // mySurface holds at that point in the real function.
   const double        theTol   = 1.e-4;
   const GeomAbs_Shape theUCont = GeomAbs_C1, theVCont = GeomAbs_C1;
@@ -277,7 +277,7 @@ int main()
     printf("### equivalence check: reconstructed call vs the real forced build\n");
     printf("%-28s %s\n\n",
            "same deg/pole counts",
-           sameShape ? "YES -- this harness reconstructs the real call" : "NO -- MISMATCH, see below");
+           sameShape ? "YES, this harness reconstructs the real call" : "NO, MISMATCH, see below");
     if (!sameShape)
     {
       describeSurface("  real forced surface", forcedSurface);
