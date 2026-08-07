@@ -117,20 +117,48 @@ across. `BRepOffsetAPI_MakeFilling` reports `IsDone() == true` for a surface tha
 roughly 50x its input's scale, and `G0Error()` alone (0.2) does not communicate how bad the result
 actually is.
 
-**This does not reverse the PR's conclusion that gating `OCCTShapeFillBuildResult` on
-`G0Error() > tolerance` is unsafe; if anything it sharpens why.** The load-bearing evidence for that
-conclusion is independent of this fixture: gating broke 2 of 17 `FillingSupportFaceTests` whose
-surfaces are correct, already-tested, and legitimately exceed the default tolerance by a modest
-factor (not 2000x). This corrected measurement adds a harder case in the same direction: a
-boundary whose fit is genuinely bad (poles 50x outside the input's scale) also exceeds tolerance,
-by three orders of magnitude more than the good-but-demanding test cases do, but there is no single
-threshold on `G0Error()`'s raw value that rejects this case while keeping those two passing: a
-threshold near `tolerance` rejects both, a threshold near this case's `0.2` would accept everything
-in `FillingSupportFaceTests` too. `G0Error()` does not by itself distinguish "correct but
-demanding" from "diverged", which is a stronger and more concerning version of the same
-not-safe-to-gate-on-a-single-number finding, not a different one. Whether a *different* signal
-(e.g. comparing the fitted surface's own scale to its boundary's) could separate the two is outside
-#597's scope and not investigated here.
+**This does not reverse the PR's conclusion that gating `OCCTShapeFillBuildResult` on the caller's
+own requested tolerance is unsafe; that conclusion is unchanged. It does narrow a follow-on claim
+that had not itself been measured.** A draft of this document asserted that no single `G0Error()`
+threshold could separate a genuinely diverged fit like this corrected one from the two
+`FillingSupportFaceTests` that regress when gating on `tolerance`, without ever having measured
+those two tests' own `G0Error()` values. That was an assumption standing in for a measurement, the
+exact failure mode this investigation exists to catch elsewhere. Measured it directly: instrumented
+`OCCTShapeFillBuildResult` and `OCCTFillingBuild` (the two `BRepOffsetAPI_MakeFilling::Build()` call
+sites) with a temporary debug print of `G0Error()`, ran each of the 17 `FillingSupportFaceTests`
+individually (`swift test --filter <name>`) so each printed value maps unambiguously to its test,
+then reverted the instrumentation (no production code changed by this measurement).
+
+Effective tolerance is `1e-4` for all 17 (`FillingParameters`/`FillingSurface`'s shared default; no
+test in the suite overrides it). Every `Build()` call across the suite lands on one of five distinct
+values, since the fixture geometry repeats:
+
+| `G0Error()` | as a multiple of `tolerance` | which calls |
+|---|---|---|
+| `1.332268e-15` | ~0 | the one purely positional (`.g0`) fill |
+| `1.431843e-05` | 0.14x | every plain tangent (`.g1`) fill, 9 calls across 9 tests |
+| `2.768313e-05` | 0.28x | every flat/boundary-only (`.g0`) fill next to a tangent sibling, 4 calls |
+| `5.295031e-04` | **5.3x, exceeds** | the `.g2` (curvature) branch, in both `curvatureContinuityIsAccepted` (the regressing test) and `fillingSurfaceContinuityMappingIsCorrect` (not counted as regressing, because the original gating patch touched only `OCCTShapeFillBuildResult`, not `OCCTFillingBuild`, so this `FillingSurface`-based call was never actually gated in that experiment despite exceeding tolerance by the same margin) |
+| `1.231041e-03` | **12.3x, exceeds** | `internalConstraintIsNotABoundary`'s `withInterior` branch (the other regressing test) |
+
+Six calls produce no `Build()` at all (empty constraint list, a refused nomination, or a refusal
+that poisons the whole `FillingSurface` before it reaches the builder), so they carry no `G0Error()`
+to compare.
+
+**The two regressing values, 5.3x and 12.3x tolerance, sit two to three orders of magnitude below
+the corrected fixture's ~2000x-2260x, not close to it.** This is outcome 2, not outcome 1: a fixed
+absolute threshold placed anywhere in the wide gap between `1.231041e-03` and `0.20369` (for
+example `0.01`) would in fact separate today's two known-good, demanding fills from the one
+genuinely diverged fixture. The honest conclusion is narrower than "no threshold can work": gating
+on the *caller's own requested tolerance* is unsafe and remains proven so by the two real test
+regressions above; a *fixed* absolute threshold is not proven impossible, it is unjustified, since
+nobody has measured what that number should be, over what range of boundaries, at what continuity,
+and picking one now would be inventing a figure with exactly as little basis as the `1e-4` this
+investigation already showed is not a real, enforced promise. That is precisely the failure mode
+[#726](https://github.com/SecondMouseAU/OCCTSwift/issues/726) exists to catch: a fabricated number
+standing in for a measured one. Whether a *different*, principled signal (a fixed threshold at some
+justified value, a check relative to the boundary's own scale, or something else) could safely gate
+this family is a real, open question this PR does not answer.
 
 `occt_597_fill_g0_mechanism.mm` pushes further to show the mechanism cleanly on a hyperbolic-
 paraboloid-ish boundary built directly from degree-3 Bezier control points (not sampled/damped, so
