@@ -14,11 +14,22 @@ import Foundation
 /// unbounded pair, or a bounded pair whose projected ranges overlap, where there is no single
 /// discrete closest point when a whole span is equidistant) never append the matching pair to
 /// `mypoints`. `NbExtrema()` reports 1 (`mySqDist.Length()`), so `Points()` indexes an empty
-/// `NCollection_Sequence`. This project's OCCT is built with `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`
-/// (`No_Exception`), so the bounds check that would normally throw `Standard_OutOfRange` compiles
-/// to nothing, and the out-of-range access is undefined behaviour: measured (via a standalone
-/// ground-truth binary linked directly against `libOCCT-macos.a`) to be a genuine SIGSEGV, not a
-/// C++ exception. A `catch (...)` around the call cannot help: an OS signal never reaches it.
+/// `NCollection_Sequence`.
+///
+/// Which check fails, precisely, because it is not the obvious one. `Extrema_ExtCC::Points()` does
+/// carry `if (N < 1 || N > NbExt()) throw Standard_OutOfRange();`, and that is a RAW throw, not a
+/// `_Raise_if` macro, so `No_Exception` does not remove it. It simply asks the wrong question:
+/// `NbExt()` counts `mySqDist`, and the index is about to be used against `mypoints`. The check
+/// that would have caught it is one level down, in `NCollection_Sequence::Value(const int)`, and
+/// that one IS a `Standard_OutOfRange_Raise_if` macro, which this project's
+/// `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` build compiles to nothing. So the out-of-range read is
+/// undefined behaviour: measured (via a standalone ground-truth binary linked directly against
+/// `libOCCT-macos.a`) to be a genuine SIGSEGV, not a C++ exception. A `catch (...)` around the call
+/// cannot help: an OS signal never reaches it.
+///
+/// That distinction is the whole basis of the kernel fix in #743 / patch `0024`: the repair is not
+/// to restore an exception, it is to make `Points()` bound against the container it actually
+/// indexes.
 ///
 /// Both fixtures below reproduced the crash before the fix (confirmed via the same standalone
 /// ground-truth binary, `GeomAPI_ExtremaCurveCurve` constructed directly): two unbounded parallel
