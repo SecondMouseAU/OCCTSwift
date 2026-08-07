@@ -433,6 +433,107 @@ for the reproducer. Filed upstream as [Open-Cascade-SAS/OCCT#1434](https://githu
 
 **Retire** once the bundled OCCT includes this fix.
 
+## 0024-Extrema_ExtCC-Points-bound-against-mypoints-636.patch
+
+**Fixes the upstream OCCT defect behind [#636](https://github.com/SecondMouseAU/OCCTSwift/issues/636)**,
+already mitigated bridge-side (`OCCTCurve3DExtrema`, `Sources/OCCTBridge/src/OCCTBridge_Curve3D.mm`,
+PR #730): `Curve3D.extrema(with:maxCount:)` SIGSEGV'd, uncatchably, on parallel curves at every
+capacity including its own default, both for unbounded lines and for finite segments whose
+projected ranges overlap.
+
+`Extrema_ExtCC::NbExt()` counts `mySqDist`; `Extrema_ExtCC::Points()` reads a different container,
+`mypoints`, but bounds-checks the request against `NbExt()`. Several branches of
+`PrepareParallelResult` append a distance to `mySqDist` with no matching pair in `mypoints`, because
+in those branches the curves are parallel over a continuous range and there genuinely is no unique
+closest point to report — only a distance. `NbExt()` reports `1` in exactly those cases, so
+`Points(1)` indexes an empty `NCollection_Sequence`. `Points()`'s own bounds check is a raw `throw`,
+not compiled out under `No_Exception` (this project's Release kernel is built with
+`BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`) — but it checks the wrong bound, so it never fires. The check
+that would catch the real problem, `NCollection_Sequence::Value()`'s own `Standard_OutOfRange_Raise_if`,
+*is* built from that macro and *is* compiled to nothing under `No_Exception`; with no guard left,
+indexing an empty sequence walks a null node. Confirmed with a standalone binary linked directly
+against `libOCCT-macos.a`: a genuine SIGSEGV, not a C++ exception a `catch (...)` could absorb.
+`GeomAPI_ExtremaCurveCurve::Points()` (what `OCCTCurve3DExtrema` calls) has the identical shape one
+layer up — its own bounds check is also a `Raise_if` no-op under `No_Exception` — so nothing between
+the bridge and the null-node dereference does anything until this patch.
+
+**Caller survey before choosing a fix shape** (the issue asked for one; two alternatives were
+considered and rejected):
+
+- *Redefine `NbExt()` to count `mypoints` instead of `mySqDist`.* Rejected:
+  `GeomAPI_ExtremaCurveCurve::LowerDistance()` reaches `SquareDistance(myIndex)`, which
+  bounds-checks against `NbExt()` too. Redefining it would make the parallel-distance-only case
+  (which has a perfectly well-defined distance, just no unique point) start refusing
+  `LowerDistance()` as well — measured that this caller currently gets a correct answer in exactly
+  the branches this patch touches, and unifying the counts would have broken it.
+- *Gate `Points()` on `IsParallel()`* (what the bridge does, one layer up, for its own purpose).
+  Traced every branch of `PrepareParallelResult` by hand: `IsParallel()` is true in precisely the
+  branches that leave `mypoints` empty and false in precisely the branches that populate it, no
+  exceptions found — so this is equivalent to the fix actually made, *today*. Chose the
+  container-bound version instead because it is self-defending against the shape of the bug (an
+  index into a container with fewer entries than claimed) rather than relying on a correspondence
+  between two fields that nothing enforces, and because `SquareDistance()` already bounds against
+  the container it reads (`mySqDist`) — `Points()` doing the same against `mypoints` matches an
+  existing pattern in the same file rather than adding a new one.
+
+**Fix:** bounds `Points()` against `mypoints.Length()` instead of `NbExt()`:
+
+```cpp
+void Extrema_ExtCC::Points(const int N, Extrema_POnCurv& P1, Extrema_POnCurv& P2) const
+{
+  if (N < 1 || 2 * N > mypoints.Length())
+  {
+    throw Standard_OutOfRange();
+  }
+  P1 = mypoints.Value(2 * N - 1);
+  P2 = mypoints.Value(2 * N);
+}
+```
+
+Plus a matching `//! Exceptions` doc line on the header declaration, and a **companion, behavior-neutral
+addition** to `Geom2dAPI_ExtremaCurveCurve.hxx`: a one-line `IsParallel()` forwarder, matching the
+3D sibling's own convenience method (`Extrema_ExtCC2d::IsParallel()` was already public and already
+reachable via the existing `Extrema()` accessor, so this closes an ergonomic gap, not a capability
+one). The 2D curve-curve class was measured, not assumed, to be already safe: its own `NbExtrema()`
+correctly reports `0` in every fixture this patch's 3D counterpart makes crash, so `Points()` is
+genuinely unreachable there today, in both bridge call sites that use it
+(`OCCTCurve2DMinDistance`, `OCCTCurve2DAllExtrema` — the latter is the "very likely a 2D sibling"
+follow-up PR #730 flagged but didn't confirm; this patch's repro confirms it is not).
+
+**Validation** (override-link, no full rebuild, see the `#0001` entry above for the technique,
+compiled with `-DNDEBUG -DNo_Exception` to match the production build): four fixtures — finite
+parallel segments with overlapping projected ranges, the same with disjoint ranges, two infinite
+parallel `Geom_Line`s, and finite parallel segments whose projected ranges touch at exactly one
+point. The first two are the issue's own ground truth; the third is PR #730's own regression
+fixture shape; the fourth was added after tracing `PrepareParallelResult`'s line-line branch by
+hand suggested it might be a counter-example to the `IsParallel()`/`mypoints` correspondence above —
+measuring it disproved that (see the repro README's "four fixtures" table). Before the patch, the
+overlapping and infinite cases SIGSEGV (exit 139) through both `GeomAPI_ExtremaCurveCurve::Points()`
+and `Extrema_ExtCC::Points()` directly; after, both throw a catchable `Standard_OutOfRange`. The
+disjoint and touching cases are **byte-identical** before and after, in both the returned points and
+`LowerDistance()`/`Distance()` (which read `mySqDist` and are untouched by this patch, measured
+across all four fixtures rather than assumed). Confirmed the patch applies cleanly (`git apply
+--check`) to both the pinned `V8_0_1` tag and current upstream `master`, byte-identical between the
+two for every touched file, so there is no rebase to do before filing. `clang-format --dry-run
+--Werror` against OCCT's own `.clang-format` reports zero violations on all three changed files.
+
+See [`Scripts/repro/636-extrema-parallel/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/636-extrema-parallel)
+for the reproducer and the full caller survey. **Filed upstream 2026-08-07 as
+[Open-Cascade-SAS/OCCT#1445](https://github.com/Open-Cascade-SAS/OCCT/pull/1445)**, PR only and no
+companion issue, per `okf/policies/upstream-occt-style.md` and the precedent of `0018`, `0019` and
+`0021`: the fix was ready, so the PR description carries the repro and root cause that a standalone
+issue would have. Verified applying cleanly to upstream `master` at `b8f597c6` immediately before
+filing. That directory's `draft-issue.md` is retained as the text to use if the defect ever needs
+reporting ahead of a fix; `draft-pr.md` is what was sent.
+
+**Retire** once the bundled OCCT includes this fix.
+
+**Pin consequence**: this is the third patch (after `0022`, `0023`) carried in the tree but outside
+the pinned `v2.0.0-kernel.1` binary asset — see `docs/v2.0.0-plan.md`'s release watch-out. The next
+kernel rebuild needs to carry all three, and confirm all three actually reached the binary rather
+than assuming the rebuild picked them up, per `docs/guides/building-occt.md`'s shipping-a-rebuild
+steps.
+
 # Retired patches
 
 The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
