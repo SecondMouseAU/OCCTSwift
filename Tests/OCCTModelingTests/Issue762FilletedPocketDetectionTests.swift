@@ -120,6 +120,88 @@ struct Issue762PartialFilletDetectionTests {
     }
 }
 
+@Suite("An L-shaped pocket's reflex corner, partially filleted, is still measured correctly (#762)")
+struct Issue762ReflexCornerPartialFilletTests {
+
+    /// Built specifically to test a removal-matrix conjunction a review of this fix's PR
+    /// raised: a wall reached PAST an already-absorbed junction (where the #724 Z-tolerance
+    /// check is deliberately bypassed) via a `.convex` edge, with no other, more direct route
+    /// from the floor for an earlier BFS visit to have already resolved. `ChFi3d` was
+    /// ground-truthed first (`Scripts/repro/762-filleted-pocket-detection/`, fixture 8): at
+    /// the reflex vertex of an L-shaped pocket's own floor boundary, the two walls meeting
+    /// there DO share a `.convex` vertical edge (the mirror image of a boss's own corner,
+    /// where two base fillets also meet convexly), confirming the hypothesis. Filleting only
+    /// one of those two walls (WallY0) makes its fillet meet the other, unfilleted wall
+    /// (WallX0) via that same `.convex` edge, past the fillet junction.
+    ///
+    /// Measured, though, that WallX0 is ALSO directly reachable from the floor: unlike this
+    /// fix's other guard fixtures, this is not the floor's own polygon giving it a second
+    /// route (WallX0's floor-junction edge is on the OTHER side of the reflex vertex from the
+    /// filleted wall), but `BRepFilletAPI_MakeFillet`'s own corner-blending, needed to keep
+    /// the result watertight where a fillet ends at an unfilleted reflex corner, reshaping
+    /// WallX0's face so the floor borders it directly too. So this fixture, like the
+    /// through-slot fixture (masked by the floor's own direct edge to the same exterior wall
+    /// the fillet also reaches), does not isolate the `.convex` guard specifically; see the PR
+    /// body for the fuller removal-matrix discussion and why every construction tried reduces
+    /// to the same kind of masking. Kept as a permanent test regardless: it is a real
+    /// correctness check on reflex-corner geometry combined with a partial fillet, a
+    /// combination nothing else in this file covers.
+    ///
+    /// A wider tolerance (1e-3, not the default 1e-4) is used deliberately: at the default,
+    /// WallX0's own measured low-Z bound (-0.0001000...22, a `BRepFilletAPI` corner-blending
+    /// artifact) sits within a hair of the tolerance boundary itself, and whether it clears it
+    /// is numerical noise, not a property of this fix. `Issue762FilletedPocketDetectionTests`
+    /// above already covers the default tolerance on every other fixture; this one is about
+    /// the reflex-corner geometry, not about re-proving the default itself.
+    ///
+    /// The L-shape's own floor splits into two separate, coplanar faces (matched by the sharp,
+    /// unfilleted control below), each reporting its own partial wall loop and `isOpen == true`
+    /// since neither alone fully encloses the combined L cavity. That split is pre-existing,
+    /// present identically before and after filleting, and not something this fix changes or
+    /// needs to change.
+    @Test("the sharp L-shaped pocket (control) reports two open, coplanar floor pieces")
+    func sharpLShapedPocketReportsTwoOpenFloors() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let toolA = try #require(Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
+        let toolB = try #require(Shape.box(origin: SIMD3(-6, 0, 0), width: 6, height: 6, depth: 10))
+        let toolL = try #require(toolA.union(toolB))
+        let cut = try #require(box.subtracting(toolL))
+
+        let pockets = cut.detectPocketsAAG()
+        #expect(pockets.count == 2)
+        for pocket in pockets {
+            #expect(pocket.isOpen)
+        }
+    }
+
+    @Test("an L-shaped pocket with one reflex-corner wall filleted is still measured, and stays open")
+    func filletedReflexCornerPocketIsStillMeasured() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let toolA = try #require(Shape.box(origin: SIMD3(-6, -6, 0), width: 12, height: 6, depth: 10))
+        let toolB = try #require(Shape.box(origin: SIMD3(-6, 0, 0), width: 6, height: 6, depth: 10))
+        let toolL = try #require(toolA.union(toolB))
+        let cut = try #require(box.subtracting(toolL))
+
+        // WallY0: the floor/wall junction edge at y=0, z=0, x in [0,6] (bounds the reflex
+        // corner's own material block from below).
+        let wallY0Edges = cut.edges(where: { edge in
+            abs(edge.bounds.min.z) < 1e-6 && abs(edge.bounds.max.z) < 1e-6 &&
+            abs(edge.bounds.min.y) < 1e-6 && abs(edge.bounds.max.y) < 1e-6 &&
+            edge.bounds.min.x > -1e-6 && edge.bounds.max.x > 5.9 && edge.bounds.max.x < 6.1
+        })
+        #expect(wallY0Edges.count == 1)
+        let filleted = try #require(cut.filleted(edges: wallY0Edges, radius: 1.0))
+
+        let pockets = filleted.detectPocketsAAG(tolerance: 1e-3)
+        #expect(pockets.count == 2)
+        let wallCounts = pockets.map { $0.wallFaceIndices.count }.sorted()
+        #expect(wallCounts == [3, 5])
+        for pocket in pockets {
+            #expect(pocket.isOpen)
+        }
+    }
+}
+
 // MARK: - False-positive guards
 
 // #762 named the risk explicitly: "transitive tangency could sweep in faces that are not

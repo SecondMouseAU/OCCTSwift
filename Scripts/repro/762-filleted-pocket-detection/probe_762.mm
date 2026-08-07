@@ -366,6 +366,79 @@ static TopoDS_Shape filletedBoss(double radius) {
     return mkFillet.Shape();
 }
 
+// An L-shaped pocket: two rectangular tools fused into an L, cut into a box's top. The
+// cavity's own floor boundary has a REFLEX vertex at the inner corner of the L (0,0), where a
+// small block of remaining material sticks into the cavity, the mirror image of a boss
+// standing in the corner of a room. At an ORDINARY (convex-from-the-cavity) corner, the two
+// walls meeting there share a CONCAVE vertical edge (measured on the plain rectangular pocket
+// above: fixture 1's edges #17-24). At THIS reflex vertex, the hypothesis under test was that
+// the two walls instead share a CONVEX vertical edge, by the same duality that makes a boss's
+// own corner convex (fixture 6's edges #9/#11/#13/#15: a boss's BASE junction is
+// reentrant/concave, just like a pocket's, but its own CORNER, where two base fillets meet
+// going around the boss, is convex).
+//
+// Filleting ONLY one of the two walls at the reflex corner (WallY0, at y=0, x in [0,6]) and
+// leaving the other (WallX0, at x=0, y in [0,6]) sharp was built to test the specific path a PR
+// #778 removal-matrix review named: floor, to a confirmed-radially-inward fillet (a junction,
+// absorbed), to a face reached by a CONVEX edge from that junction, with the floor having NO
+// other, direct route to that same face (so an earlier BFS visit could not mask the result the
+// way the through-slot fixture's own floor-to-exterior-wall direct edge did).
+//
+// Measured, that second condition does not hold here. The fillet does meet WallX0 via a
+// CONVEX edge (confirming the reflex-corner hypothesis itself), but BRepFilletAPI_MakeFillet's
+// own corner-blending, needed to keep the result watertight where the fillet ends at an
+// unfilleted reflex corner, reshapes WallX0's own face so that the FLOOR also borders it
+// directly (a CONCAVE edge, confirmed via exact bounding boxes on the Swift side, not
+// inferred from face areas alone). So this fixture is masked too, the same way the
+// through-slot fixture was, for a related but distinct reason: there, the floor's own polygon
+// vertex gave it a direct route; here, the fillet operation's own reshaping does. See the PR
+// body for the fuller discussion, including why every construction tried reduces to the same
+// masking, and the geometric argument for why that appears to be structural rather than a
+// series of fixture-building failures. Kept as a permanent regression test regardless, since
+// it is still a real correctness check on reflex-corner and partial-fillet geometry together.
+static TopoDS_Shape lShapedPocketPartiallyFilleted(double radius) {
+    TopoDS_Shape box = centeredBox(20);
+    TopoDS_Shape toolA = BRepPrimAPI_MakeBox(gp_Pnt(-6, -6, 0), 12, 6, 10).Shape();  // x[-6,6] y[-6,0]
+    TopoDS_Shape toolB = BRepPrimAPI_MakeBox(gp_Pnt(-6, 0, 0), 6, 6, 10).Shape();     // x[-6,0] y[0,6]
+    TopoDS_Shape toolL = BRepAlgoAPI_Fuse(toolA, toolB).Shape();
+    TopoDS_Shape cut = BRepAlgoAPI_Cut(box, toolL).Shape();
+
+    // WallY0: the floor/wall junction edge at y=0, z=0, x in [0,6] (bounds the remaining
+    // material block from below). Distinguished from every other z=0 junction edge in this
+    // fixture by its own bounding box (min.y == max.y == 0, and it does not run along x=-6,
+    // x=6, or y=-6).
+    TopoDS_Edge wallY0Edge;
+    bool found = false;
+    TopExp_Explorer exp(cut, TopAbs_EDGE);
+    for (; exp.More(); exp.Next()) {
+        TopoDS_Edge edge = TopoDS::Edge(exp.Current());
+        Bnd_Box bbox;
+        BRepBndLib::Add(edge, bbox);
+        double xmin, ymin, zmin, xmax, ymax, zmax;
+        bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+        if (abs(zmin) < 1e-6 && abs(zmax) < 1e-6 &&
+            abs(ymin) < 1e-6 && abs(ymax) < 1e-6 &&
+            xmin > -1e-6 && xmax > 5.9 && xmax < 6.1) {
+            wallY0Edge = edge;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        cerr << "  !! lShapedPocketPartiallyFilleted: WallY0 edge not found\n";
+        return cut;
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet(cut);
+    mkFillet.Add(radius, wallY0Edge);
+    mkFillet.Build();
+    if (!mkFillet.IsDone()) {
+        cerr << "  !! lShapedPocketPartiallyFilleted: fillet build FAILED\n";
+        return cut;
+    }
+    return mkFillet.Shape();
+}
+
 int main() {
     cout << "#762 ground truth: ChFi3d::DefineConnectType at floor/wall junctions\n";
     cout << "smoothThreshold = 0.01, CorrectPoint = true (matches OCCTEdgeGetConvexity exactly)\n";
@@ -385,6 +458,9 @@ int main() {
     reportJunctions(filletedThroughSlot(1.0), "5. Filleted through-slot (open both ends), radius=1.0");
 
     reportJunctions(filletedBoss(1.0), "6. Filleted boss (convex feature, must NOT be a pocket), radius=1.0");
+
+    reportJunctions(lShapedPocketPartiallyFilleted(1.0),
+                     "8. L-shaped pocket, reflex corner, one of its two walls filleted, radius=1.0");
 
     return 0;
 }

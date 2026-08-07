@@ -704,20 +704,59 @@ extension AAG {
     /// would make every filleted/chamfered wall fail the very check meant to confirm it is
     /// this floor's wall, re-introducing the bug this method exists to fix.
     ///
-    /// ## `.convex` never crosses, and this fixture set cannot independently prove that matters
+    /// ## `.convex` never crosses: load-bearing past a junction, but untested there
     ///
     /// `EdgeConvexity.convex` means the material turns the wrong way for absorption by
     /// definition (interior angle `<180`, "fillet-like, going outward", see the enum's own
-    /// doc comment), so refusing to cross it is correct on its face. Measured directly rather
-    /// than assumed (removal-matrix injection C, PR body): disabling this specific guard alone
-    /// changes the outcome of NONE of this fix's tests, including the ones built to be
-    /// false-positive guards. Every fixture that could plausibly trigger it turns out to be
-    /// screened by a different check first: a direct convex neighbor's own bounding box
-    /// never happens to bottom out at an unrelated floor's Z by coincidence in any fixture
-    /// here, and a convex-connected face reached through an already-absorbed junction is
-    /// already reachable (and already visited) via that junction's own concave/smooth
-    /// neighbors in every measured case. Left in place because it is still definitionally
-    /// correct and cheap, not because a fixture in this PR demonstrates it is load-bearing.
+    /// doc comment), so refusing to cross it is correct on its face. But that is a claim about
+    /// what the guard SHOULD do, not evidence that this codebase has watched it matter, and
+    /// the two are not the same thing (removal-matrix injection C, PR body).
+    ///
+    /// The guard has two call sites with different backstops. For a DIRECT (1-hop) floor
+    /// neighbor, the #724 Z-tolerance check is a second, independent line of defense: even if
+    /// `.convex` were not blocked, a direct neighbor still has to bottom out at the floor's own
+    /// Z to become a wall, and an unrelated convex-connected face never happens to do that by
+    /// coincidence in any fixture measured here. For a face reached PAST an already-absorbed
+    /// junction, `reachedThroughJunction` deliberately bypasses that Z check (see above), so
+    /// `.convex` is the ONLY remaining protection there. Injection C alone (removing the block
+    /// everywhere) came back green on all 19 tests in this PR precisely because every one of
+    /// them exercises the direct-neighbor case, where the Z-check backstop was still catching
+    /// it; none exercised the past-a-junction case in isolation. That is an untested path, not
+    /// a proven-safe one, and the two read identically in a green run.
+    ///
+    /// Two fixtures were built specifically to isolate the past-a-junction case (both
+    /// ground-truthed against `ChFi3d` first, `Scripts/repro/762-filleted-pocket-detection/`,
+    /// fixtures 5 and 8) and both failed to isolate it, for related but distinct reasons: the
+    /// filleted through-slot's open-end exterior wall is ALSO a direct (1-hop) floor neighbor
+    /// (the floor's own polygon reaches the same exterior boundary the fillet does), so the
+    /// #724 Z-check resolves it before the fillet's own convex edge is ever tried. The L-shaped
+    /// pocket's reflex-corner fixture confirmed the hypothesised geometry (a fillet ending at
+    /// an unfilleted reflex corner DOES meet the far wall via `.convex`, the mirror image of
+    /// two boss-corner fillets meeting convexly), but `BRepFilletAPI_MakeFillet`'s own
+    /// corner-blending reshapes the far wall's face so the floor ALSO borders it directly,
+    /// masking the guard the same way, for a different, kernel-side reason.
+    ///
+    /// A pattern emerges from both attempts, general enough to state as geometry rather than
+    /// as "no fixture reached it": a floor's own boundary is a closed loop, and every vertex on
+    /// that loop has exactly two incident edges, both bordering something the floor is directly
+    /// adjacent to elsewhere in the SAME BFS's level-0 frontier (a reentrant floor/wall pairing
+    /// is never itself `.convex`, so nothing here contradicts that). Whatever a junction's own
+    /// convex-edged neighbor turns out to be, tracing it back reaches the same vertex, and the
+    /// floor's OTHER edge at that vertex reaches the same target one BFS level earlier,
+    /// independent of whether `.convex` blocks the junction's own path. This was checked
+    /// directly against a shared, floor-boss-inside-a-pocket configuration too (the boss's wall
+    /// is always additionally reachable via the floor's own inner-wire boundary), not only
+    /// against the two committed fixtures.
+    ///
+    /// This is a real, geometry-grounded argument for why every construction tried reduces to
+    /// the same masking, and it is offered as exactly that: an argument, covering the pocket
+    /// topologies this investigation could construct and reason through, not an exhaustive
+    /// proof over every shape `BRepFilletAPI`/`BRepAlgoAPI` can produce. It has not been
+    /// disproven by a fixture, but it has also not been used to justify DELETING the guard:
+    /// the accurate status is untested-but-plausibly-necessary, and the guard stays in at
+    /// essentially zero cost until a fixture (a face with no other route to the floor at all,
+    /// perhaps from two solids sharing an edge rather than one solid's own corner) settles it
+    /// either way.
     private func wallsAndJunctions(fromFloor floorIndex: Int, floorZ: Double, tolerance: Double)
         -> (walls: [Int], junctions: [Int])
     {

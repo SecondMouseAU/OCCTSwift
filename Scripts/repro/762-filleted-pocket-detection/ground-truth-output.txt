@@ -852,3 +852,120 @@ smoothThreshold = 0.01, CorrectPoint = true (matches OCCTEdgeGetConvexity exactl
       F1: Plane area=42 centroid=(3,3.17207e-17,4.5) radial=N/A
       F2: Plane area=36 centroid=(7.80626e-17,3.70074e-17,8) radial=N/A
   (32 manifold edges total)
+
+=== 8. L-shaped pocket, reflex corner, one of its two walls filleted, radius=1.0 ===
+  edge #1: CONCAVE
+      F1: Plane area=59.7854 centroid=(6,-3.00997,5.01715) radial=N/A
+      F2: Plane area=54 centroid=(3,0,5.5) radial=N/A
+  edge #2: CONCAVE
+      F1: Plane area=59.7854 centroid=(6,-3.00997,5.01715) radial=N/A
+      F2: Cylinder area=9.42478 centroid=(3,-0.36338,0.36338) radial=INWARD (dot=-1.000000)
+  edge #3: CONVEX
+      F1: Plane area=59.7854 centroid=(6,-3.00997,5.01715) radial=N/A
+      F2: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+  edge #4: CONCAVE
+      F1: Plane area=59.7854 centroid=(6,-3.00997,5.01715) radial=N/A
+      F2: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+  edge #5: CONCAVE
+      F1: Plane area=59.7854 centroid=(6,-3.00997,5.01715) radial=N/A
+      F2: Plane area=120 centroid=(3.55271e-16,-6,5) radial=N/A
+  edge #6: TANGENT(smooth)
+      F1: Plane area=54 centroid=(3,0,5.5) radial=N/A
+      F2: Cylinder area=9.42478 centroid=(3,-0.36338,0.36338) radial=INWARD (dot=-1.000000)
+  edge #7: CONVEX
+      F1: Plane area=54 centroid=(3,0,5.5) radial=N/A
+      F2: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+  edge #8: CONVEX
+      F1: Plane area=54 centroid=(3,0,5.5) radial=N/A
+      F2: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+  edge #9: CONVEX
+      F1: Cylinder area=9.42478 centroid=(3,-0.36338,0.36338) radial=INWARD (dot=-1.000000)
+      F2: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+  edge #10: TANGENT(smooth)
+      F1: Cylinder area=9.42478 centroid=(3,-0.36338,0.36338) radial=INWARD (dot=-1.000000)
+      F2: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+  edge #11: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #12: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #13: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #14: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #15: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=120 centroid=(3.55271e-16,-6,5) radial=N/A
+  edge #16: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+  edge #17: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=60 centroid=(-3,6,5) radial=N/A
+  edge #18: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=60 centroid=(-6,3,5) radial=N/A
+  edge #19: CONVEX
+      F1: Plane area=292 centroid=(0.369863,0.369863,10) radial=N/A
+      F2: Plane area=60 centroid=(-6,-3,5) radial=N/A
+  edge #20: CONCAVE
+      F1: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+      F2: Plane area=120 centroid=(3.55271e-16,-6,5) radial=N/A
+  edge #21: CONCAVE
+      F1: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+      F2: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+  edge #22: CONCAVE
+      F1: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+      F2: Plane area=60 centroid=(-6,-3,5) radial=N/A
+  edge #23: TANGENT(smooth)
+      F1: Plane area=66 centroid=(-0.272727,-3.22727,1.2326e-32) radial=N/A
+      F2: Plane area=36 centroid=(-3,3,0) radial=N/A
+  edge #24: CONCAVE
+      F1: Plane area=120 centroid=(3.55271e-16,-6,5) radial=N/A
+      F2: Plane area=60 centroid=(-6,-3,5) radial=N/A
+  edge #25: CONCAVE
+      F1: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+      F2: Plane area=60 centroid=(-3,6,5) radial=N/A
+  edge #26: CONCAVE
+      F1: Plane area=60.2146 centroid=(0,2.98851,4.98298) radial=N/A
+      F2: Plane area=36 centroid=(-3,3,0) radial=N/A
+  edge #27: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+  edge #28: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+  edge #29: CONVEX
+      F1: Plane area=400 centroid=(-10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #30: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #31: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #32: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #33: CONVEX
+      F1: Plane area=400 centroid=(1.33227e-16,-10,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+  edge #34: CONVEX
+      F1: Plane area=400 centroid=(10,-3.10862e-16,-1.38778e-17) radial=N/A
+      F2: Plane area=400 centroid=(-1.38778e-17,1.33227e-16,-10) radial=N/A
+  edge #35: CONCAVE
+      F1: Plane area=60 centroid=(-3,6,5) radial=N/A
+      F2: Plane area=36 centroid=(-3,3,0) radial=N/A
+  edge #36: CONCAVE
+      F1: Plane area=60 centroid=(-3,6,5) radial=N/A
+      F2: Plane area=60 centroid=(-6,3,5) radial=N/A
+  edge #37: TANGENT(smooth)
+      F1: Plane area=60 centroid=(-6,3,5) radial=N/A
+      F2: Plane area=60 centroid=(-6,-3,5) radial=N/A
+  edge #38: CONCAVE
+      F1: Plane area=60 centroid=(-6,3,5) radial=N/A
+      F2: Plane area=36 centroid=(-3,3,0) radial=N/A
+  (38 manifold edges total)
