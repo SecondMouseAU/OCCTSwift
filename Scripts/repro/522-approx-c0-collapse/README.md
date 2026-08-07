@@ -217,3 +217,51 @@ garbage included. Its `maxErrorDescribesTheSharedFit` test used to exclude `.c0`
 the test now checks every request. `Tests/OCCTSurfaceTests/Issue522ApproxC0CollapseTests.swift`
 carries the regression tests for this issue, all four of which fail against an unpatched kernel with
 exactly the numbers tabulated above.
+
+## Upstream provenance (#756)
+
+Maintainer gkv311's review on [OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418)
+attributed the defect to `3016a390713d2e893f4bfa797882b9f0266840e1` (2021-07-28, a UBSan coding-rules
+cleanup) and asked for the 7.5.x behaviour to be confirmed by measurement rather than asserted. Done,
+against a disposable shallow clone of `Open-Cascade-SAS/OCCT` rather than this project's own
+`Libraries/occt-src` (left untouched):
+
+That commit rebases every workspace offset in `mma2ce1_` down by one position (folding the old
+`ipt1` base into a new `wrkar_off` pointer), and every other call site in the same diff moves with
+it, for instance the neighbouring `mmapptt_` calls going from `&wrkar[ipt1]`/`&wrkar[ipt2]` to
+`wrkar_off`/`&wrkar_off[ipt1]`. The two `mma2jmx_` calls should have become `&wrkar_off[ipt4]` (U)
+and `&wrkar_off[ipt5]` (V); the V line moved, the U line kept its old name (`ipt5`), and both writes
+land on the slot V already owns. Confirmed at the release-tag level, not just the commit's own diff:
+
+```
+V7_5_0 (2020-11-02): mma2jmx_(ndjacu, iordru, &wrkar[ipt5]);   mma2jmx_(ndjacv, iordrv, &wrkar[ipt6]);
+V7_6_0 (2021-11-01): mma2jmx_(ndjacu, iordru, &wrkar_off[ipt5]); mma2jmx_(ndjacv, iordrv, &wrkar_off[ipt5]);
+```
+
+`V7_5_0` has two distinct slots; `V7_6_0`, the first release carrying the commit, already collapses
+them to one, and current `master` is unchanged from `V7_6_0` at this site. So OCCT 7.5.x computed
+this correctly, and the regression is confirmed at the shipped 7.6.0 release rather than merely
+attributed to a commit in that range.
+
+The review also supplied a Draw script with its assertion block commented out, asking for the
+`udeg`/`vdeg` == 7 guess to be measured rather than trusted, and for a real `tests/` case. Both are
+done: `Scripts/repro/522-approx-c0-collapse/upstream/tests/bugs/moddata_3/bug1418` is that case,
+staged rather than committed to `Libraries/occt-src`. This project only builds a static library, not
+`DRAWEXE`, so the script itself was not run; the discriminating measurement instead came from this
+directory's own `occt_522_c0_minimal.mm`, reusing the exact `GeomConvert_ApproxSurface` constructor
+call `approxsurf` makes (confirmed against `GeomliteTest_SurfaceCommands.cxx`, including that
+`approxsurf`'s 9-argument form leaves `PrecisCode` at its default of 1, not the 0 this directory's
+existing probes used). Both `PrecisCode` values agree: `udeg=1, vdeg=7` before the fix, `udeg=7,
+vdeg=7` after. The reviewer's guessed 7/7 is correct.
+
+The commented-out assertion block itself does not run as written, for two independent reasons that
+have nothing to do with the degree values: `dumpjson` is not a registered Draw command anywhere in
+this tree, and `Standard_Dump::DumpFieldToName` strips the `my` prefix from `myUDeg`/`myVDeg` but
+does not change case, so the real `DumpJson` keys are `"UDeg"`/`"VDeg"`, not `"udeg"`/`"vdeg"`.
+Either problem alone leaves the Tcl variable unset. The staged test instead captures `dump r`'s
+existing textual output through `dlog` and reads the `Degrees :` line
+`GeomTools_SurfaceSet::PrintSurface` writes for a `Geom_BSplineSurface`, the same idiom
+`tests/bugs/modalg_7/bug23942` already uses for the same purpose. See
+`Scripts/repro/522-approx-c0-collapse/upstream/pr-1418-description.md` (the rewritten PR description,
+leading with the missed decrement) and `.../reply-to-gkv311.md` (the drafted reply) for the full
+writeup.

@@ -249,6 +249,8 @@ The write also overruns: `mma2jmx_` writes `ndjacu + 1 - 2*(IORDRU+1)` doubles a
 
 See [`Scripts/repro/522-approx-c0-collapse/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse) for the reproducers and full writeup. Filed upstream as [Open-Cascade-SAS/OCCT#1418](https://github.com/Open-Cascade-SAS/OCCT/pull/1418), a fix PR with no companion repro issue, per upstream's own guidance on [OCCT#1409](https://github.com/Open-Cascade-SAS/OCCT/issues/1409#issuecomment-5124395058). Based on `b8f597c6`; the touched file is byte-identical between upstream `master` and our `V8_0_0_p1` pin, so the patch is the same change on both.
 
+**Provenance (#756):** this is a regression, not an original defect. `3016a390713d2e893f4bfa797882b9f0266840e1` (2021, a UBSan coding-rules cleanup) renumbered every workspace offset in `mma2ce1_` down by one position and missed exactly one of the two `mma2jmx_` call sites; confirmed at the release-tag level, not just the commit diff, `V7_5_0` writes the U and V Jacobi maxima to two distinct slots and `V7_6_0` (the first release after the commit) already collapses them to one. Full mechanism and the drafted upstream reply are in [`Scripts/repro/522-approx-c0-collapse/README.md`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/522-approx-c0-collapse#upstream-provenance-756).
+
 **Retire** once the bundled OCCT includes this fix.
 
 ## 0020-BRepFeat_MakeCylindricalHole-select-tool-parts-532.patch
