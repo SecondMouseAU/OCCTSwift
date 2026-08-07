@@ -277,24 +277,52 @@ suite into these targets (each `Tests/OCCT<Domain>Tests/`, declared in `Package.
 
 ## Release Process
 
-Each release adds ~100 new operations following this strict order:
+**The rules below live in `okf/policies/`, not here.** This section says what a release involves and
+points at the policy that owns each piece. It does not restate them, because a restated rule is a
+copy with no update path, and the version of this section that stood until 2026-08-08 proved it: it
+told you to put the CHANGELOG entry in the diff, which
+[`changelog-on-merge`](okf/policies/changelog-on-merge.md) forbids.
 
-1. Ground truth C++ test at `/tmp/occt_vXX_test.mm` — compile and run
-2. C bridge declarations + implementations
-3. `swift build` — zero errors
-4. Swift wrappers
-5. `swift build` — zero errors
-6. Tests
-7. `swift test` — all pass
-8. **Update docs — MANDATORY every release (OKF release discipline), even for a one-method change:**
-   - `README.md` (table counts, feature bullets, totals)
-   - `docs/API_REFERENCE.md` (op-count tables + Total + Swift→OCCT mapping rows for the new ops)
-   - `docs/CHANGELOG.md` (the release entry)
-   - any `docs/reference/<Type>.md` page covering a changed type
-   - `///` doc comments with a fenced ```swift``` snippet on every new public API (context7 harvests these)
-9. `git commit`, `git push`, `git tag vX.Y.Z`, `gh release create`
+### What a release is now
 
-> No release ships with stale docs. If an API surface changed, the docs change in the **same** release.
+Not "~100 new operations". That described the wrapping phase, when each release added a slab of
+newly wrapped OCCT surface. v2.0.0 adds almost none: it is a correctness release, built from the
+duplication audit (#377) and the five correctness clusters (#669). Read
+[`docs/v2.0.0-plan.md`](docs/v2.0.0-plan.md) for the actual scope. The operation count is derived,
+not chosen: `python3 Scripts/count-operations.py`.
+
+### The order
+
+1. **Every PR is already merged and its docs already current.** For a repo not yet on stable semver,
+   [`docs-current`](okf/policies/docs-current.md) requires docs to ship in the same PR as the
+   change, so there is no docs sweep at release. If you find yourself writing docs at release time,
+   a PR skipped its own.
+2. **Transcribe the CHANGELOG.** Entries were written in each PR body and transcribed at merge, per
+   [`changelog-on-merge`](okf/policies/changelog-on-merge.md). At release you are checking the
+   `## Unreleased` section is complete, not writing it. `python3 Scripts/check-changelog-transcription.py`
+   audits the branch's merge history for entries that never landed.
+3. **Assemble `docs/SEMVER.md`.** Per [`semver-at-release`](okf/policies/semver-at-release.md), no
+   PR touches that file. It is written once, here, from the `## SemVer impact` statement in every
+   merged PR body. This is the first point the whole set is visible and the version number is a real
+   decision.
+4. **Pin the final kernel.** Re-point `Package.swift`'s `url:`/`checksum:` at the release asset. The
+   pre-release kernels (`v2.0.0-kernel.*`) exist so CI builds what the branch's tests are written
+   against; the release commit replaces them (#512). Check the patch count in `Package.swift`'s
+   comment against `ls Scripts/patches/*.patch | wc -l`: any difference is a patch no CI job has
+   ever exercised.
+5. **Verify.** Full `swift test`, the five gate scripts with their `--self-test`s, and
+   `Scripts/tsan-stress.sh all` if anything touched concurrency.
+6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md and
+   `docs/API_REFERENCE.md`. It is a gate; never hand-edit a total to match.
+7. `git tag vX.Y.Z`, `gh release create`.
+
+### Adding a wrapped operation
+
+The old numbered workflow described this rather than a release, which is why it read as stale: the
+per-operation loop is bridge header, bridge impl, Swift wrapper, test, docs, and it is written up
+properly in [`docs/guides/adding-features.md`](docs/guides/adding-features.md). Ground-truth a new
+OCCT class first with `/ground-truth`, and put the probe under `Scripts/repro/<issue>/` rather than
+`/tmp`, so the evidence survives the session that produced it.
 
 ## Workflow Automations
 
@@ -371,3 +399,9 @@ docs/
 - Wrap **everything** — comprehensive wrapper, leave nothing out
 - Each release should be ~100 new operations
 - Infinite OCCT surfaces must be trimmed before converting to BSpline
+
+**Scope note, 2026-08-08.** The second directive is about **wrapping** releases and is left as the
+user wrote it. It does not describe v2.0.0, which is a correctness release adding almost no
+operations: see [`docs/v2.0.0-plan.md`](docs/v2.0.0-plan.md). Reading it as a target to hit while
+working the correctness clusters would be a misreading, and the stale Release Process section that
+sat above used to reinforce exactly that. Only the user changes this list.
