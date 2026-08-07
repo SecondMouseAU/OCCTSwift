@@ -381,7 +381,12 @@ public struct PocketFeature: Sendable {
     /// Bounding box of the pocket
     public let bounds: (min: SIMD3<Double>, max: SIMD3<Double>)
 
-    /// Whether this is an open pocket (not fully enclosed)
+    /// Whether this is an open pocket (not fully enclosed).
+    ///
+    /// Tests enclosure directly (#735), not wall cardinality: every boundary edge of the floor's
+    /// outer wire must be shared with a wall in ``wallFaceIndices``, or this is `true`. See
+    /// ``AAG/detectPockets(tolerance:)``'s doc comment for the full reasoning and why a bounding-box
+    /// containment check was rejected in favor of this.
     public let isOpen: Bool
 
     /// Approximate depth of the pocket
@@ -448,6 +453,34 @@ extension AAG {
     /// past the floor's own Z by roughly the fillet radius, which could exceed this tolerance. No
     /// fixture in this codebase exercises that combination yet.
     ///
+    /// ## Enclosure is tested directly, not by wall count (#735)
+    ///
+    /// `PocketFeature.isOpen` used to be `wallIndices.count < 3`. A wall count is not enclosure: a
+    /// blind cylindrical pocket has exactly **one** wall (the cylinder) and is fully enclosed, so
+    /// it reported `isOpen == true`. Three walls is also the wrong threshold on its own terms — a
+    /// genuinely open three-sided slot and a closed three-walled (e.g. triangular) pocket both have
+    /// `wallIndices.count == 3` and are indistinguishable by counting alone. Measured directly: a
+    /// slot cut through a box's own side face has one floor edge that borders no wall in the set
+    /// (the open side, at 3 walls covering 3 of the floor's 4 boundary edges), while the closed
+    /// triangular pocket's 3 walls cover all 3 of its floor's boundary edges.
+    ///
+    /// The fix tests the definition the field documents: the floor plus its walls form a closed
+    /// loop around the floor's own boundary exactly when every boundary edge of the floor's outer
+    /// wire is shared with a wall in ``PocketFeature/wallFaceIndices``. This needs nothing beyond
+    /// what `AAG` already computes — `AAGEdge.sharedEdgeCount` for each floor/wall pair, and the
+    /// floor's own outer wire via ``Shape/orientedFaces()``, the same reindexing
+    /// ``PocketFeature/floorFaceIndex``'s own doc comment already documents as correct. An inner
+    /// wire (an island inside the pocket, e.g. a boss) is deliberately not part of this count: the
+    /// question is whether the pocket is closed to the *outside*, which is exactly what the outer
+    /// wire bounds.
+    ///
+    /// A second candidate was considered and rejected: whether the pocket's bounding box sits
+    /// strictly inside the parent solid's, in the horizontal axes. It is cheaper, but wrong for a
+    /// pocket that legitimately reaches an outer wall of the part while still being fully enclosed
+    /// on every side that matters (e.g. a pocket machined flush with one face of a plate) — that is
+    /// a statement about *where* the pocket sits, not about whether it is closed, and the two are
+    /// independent. Enclosure is a property of the wall loop, not of the pocket's position in space.
+    ///
     /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
     ///   candidate floor's Z to count as resting on it. Defaults to
     ///   ``defaultFloorRestsOnWallTolerance``. Scale this with the model: the default is tuned for
@@ -461,6 +494,11 @@ extension AAG {
         let potentialFloors = nodes.enumerated().filter { _, node in
             node.isUpward && node.isHorizontal && node.isPlanar
         }
+
+        // #735: reindexed against occurrences exactly like `PocketFeature.floorFaceIndex`'s own
+        // doc comment does, so `occFaces[floorIndex]` is the same Face the floor's AAGNode
+        // describes. Computed once outside the loop rather than per candidate floor.
+        let occFaces = shape.orientedFaces()
 
         for (floorIndex, floorNode) in potentialFloors {
             guard let floorZ = floorNode.zLevel else { continue }
@@ -496,9 +534,23 @@ extension AAG {
                 maxZ = max(maxZ, wallBounds.max.z)
             }
 
-            // Check if pocket is closed (all walls connected to each other form a loop)
-            // For now, consider it open if it has fewer than 3 walls
-            let isOpen = wallIndices.count < 3
+            // Enclosure, not wall count (#735): closed exactly when every boundary edge of the
+            // floor's own outer wire is shared with a wall in wallIndices. `AAGEdge.sharedEdgeCount`
+            // already partitions the floor's boundary edges by which neighbor they're shared with
+            // (each B-Rep edge borders exactly two faces), so summing it over the selected walls
+            // counts exactly the boundary edges this floor's wall loop accounts for.
+            let floorBoundaryEdgeCount = occFaces[floorIndex].outerWire?.edges().count
+            let coveredEdgeCount = wallIndices.reduce(0) { total, wallIndex in
+                total + (edge(between: floorIndex, and: wallIndex)?.sharedEdgeCount ?? 0)
+            }
+            // If the floor's own boundary can't be measured, don't claim an enclosure that wasn't
+            // established: default to open rather than silently trusting an unmeasured loop.
+            let isOpen: Bool
+            if let floorBoundaryEdgeCount, floorBoundaryEdgeCount > 0 {
+                isOpen = coveredEdgeCount < floorBoundaryEdgeCount
+            } else {
+                isOpen = true
+            }
 
             let pocket = PocketFeature(
                 floorFaceIndex: floorIndex,
