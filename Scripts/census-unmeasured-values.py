@@ -196,13 +196,28 @@ real, observed source of noise in the candidate list, not a hypothetical:
     clause itself has no computed sibling of its own. Sound in the cases this pass measured, but
     read the surrounding branches before trusting a flagged site, not just the flagged line.
   - A LOCAL CONFIG/OPTIONS STRUCT PASSED INTO A CALL IS SYNTACTICALLY IDENTICAL TO A RESULT STRUCT
-    RETURNED FROM ONE. `BRepGraph::ShapesView::Options opts; opts.Parallel = parallel; opts.
-    CreateAutoProduct = false;` is an INPUT the function constructs and hands to `Add()`. Nothing
-    about it is "returned through an API" in #726's sense, but it has the exact same
-    literal-beside-computed-sibling shape a result struct does. This script does not distinguish
-    "local var later passed as an argument" from "local var later returned"; every config-struct
-    site in the first run's 64 candidates (5 of them) needed a human to notice the struct never
-    leaves the function as a return value.
+    RETURNED FROM ONE, and this WAS a blind spot: `BRepGraph::ShapesView::Options opts; opts.
+    Parallel = parallel; opts.CreateAutoProduct = false;` is an INPUT the function constructs and
+    hands to `Add()`, not something "returned through an API" in #726's sense, but it has the exact
+    same literal-beside-computed-sibling shape a result struct does. Every config-struct site in
+    the first run's 64 candidates (5 of them: `BRepGraph::ShapesView::Options` x4,
+    `MathInteg::KronrodConfig` x1) needed a human to notice the struct never leaves the function as
+    a return value. FIXED (#771, prompted during that issue's sub-kind 3 review, folded into the
+    same PR since it was cheap while already in this script): `is_input_only_struct()` excludes a
+    local var that is handed to some call as a bare argument and never surfaces afterward, "surfaces"
+    meaning a bare `return var;`, storage into a container (`push_back`/`emplace_back`/
+    `push_front`/`emplace_front`/`insert`), or a direct `arr[i] = var;` copy into an array/vector
+    element -- any ONE of those three wins over the exclusion, since excluding a real result would
+    make this script blind to exactly the class of defect #771's `hasExtent` itself was
+    (`OCCTShapeAxis a` is built, `collected.push_back(a)`, later copied to an out-param array: the
+    same shape as `opts`, up to which call it is handed to). The three protections are proven
+    individually necessary, not just the rule as a whole, in the self-test removal matrix (see
+    below): removing the `push_back`-family check alone regresses the `ShapeAxis` fixture, removing
+    the bare-`return` check alone regresses a dedicated fixture built to prove it, and same for the
+    array-element check. Measured: 54 candidates in this tree drop to 49, exactly the 5 known sites,
+    nothing else moves. Still not attempted: a config struct that is reassigned to a plain variable
+    (`T copy = opts;`) before that variable is what leaves the function -- not observed in this
+    tree, so not worth the extra tracking it would need.
   - A FIELD ASSIGNED TWO OR MORE DIFFERENT LITERAL VALUES ACROSS DIFFERENT BRANCHES OF THE SAME
     FUNCTION IS THE COMMON, LEGITIMATE CASE, NOT THE RARE ONE, and this script does not
     distinguish it from a field pinned to the SAME literal on every reached path. `result.isValid =
@@ -438,6 +453,56 @@ def is_literal(rhs):
     return bool(LITERAL_RHS.match(rhs.strip().strip('() \t\r\n')))
 
 
+CALL_START = re.compile(r'\b\w+\s*\(')
+STORE_METHOD = ('push_back', 'emplace_back', 'push_front', 'emplace_front', 'insert')
+
+
+def call_arg_lists(body):
+    """Text of every balanced (...) argument list following an identifier, paren-depth matched
+    (the same style catch_spans/conditional_brace_positions already use for braces) so a nested
+    cast or call inside the arguments does not truncate it. `Add(*(const TopoDS_Shape*)shape,
+    opts)` is exactly the shape that needs this: a naive `[^()]*` capture stops at the cast's own
+    `)` and never sees `opts` as part of the outer call's argument list at all."""
+    out = []
+    n = len(body)
+    for m in CALL_START.finditer(body):
+        i, depth, start = m.end(), 1, m.end()
+        while i < n and depth > 0:
+            if body[i] == '(':
+                depth += 1
+            elif body[i] == ')':
+                depth -= 1
+            i += 1
+        out.append(body[start:i - 1])
+    return out
+
+
+def is_input_only_struct(body, var):
+    """True if `var` is a local config/options struct handed to a call as an argument and never
+    surfaces afterward: not returned bare, not stored into a container (push_back/emplace_back/
+    push_front/emplace_front/insert), and not copied into an array/vector element. This is the
+    shape `BRepGraph::ShapesView::Options`/`MathInteg::KronrodConfig` locals have (built, handed to
+    one OCCT call, discarded) versus `OCCTShapeAxis a`'s (built in a loop, `collected.push_back(a)`,
+    later copied to an out-param array) -- syntactically identical "literal beside computed
+    sibling" shapes that this function is what tells apart. Getting this backwards in the unsafe
+    direction -- excluding a real result struct -- would make sub-kind 1 blind to exactly the class
+    of defect #771's hasExtent was, so a var is only ever excluded, never force-included, by this
+    check, and every one of the "protected" shapes below wins over the "excluded" one if both are
+    present."""
+    name = re.escape(var)
+    if re.search(r'\breturn\s+' + name + r'\s*;', body):
+        return False  # returned by value: definitely surfaces
+    if re.search(r'\.\s*(?:' + '|'.join(STORE_METHOD) + r')\s*\(\s*&?\s*' + name + r'\s*\)', body):
+        return False  # stored into a container: survives past this function
+    if re.search(r'\w+\s*\[[^\]]*\]\s*=\s*&?\s*' + name + r'\s*;', body):
+        return False  # copied into an array/vector element: same idea, no container call needed
+    bare = re.compile(r'(?<![.\w])' + name + r'(?![.\w(])')
+    for args in call_arg_lists(body):
+        if bare.search(args):
+            return True  # handed to some other call as a bare argument, and nothing above fired
+    return False
+
+
 def production_candidates(sources):
     """(file, line, function, var, field, rhs) for every literal field with a same-depth,
     non-catch, computed sibling on the same local variable."""
@@ -460,6 +525,8 @@ def production_candidates(sources):
             for var, fmap in fields.items():
                 if len(fmap) < 2:
                     continue
+                if is_input_only_struct(body, var):
+                    continue  # a config/options struct passed as an argument, not a result
                 computed_depths = set()
                 for field, assigns in fmap.items():
                     if any(not lit for lit, _, _, _ in assigns):
@@ -829,6 +896,24 @@ int32_t OCCTFixtureAxes(OCCTShapeRef shape, OCCTFixtureAxis* outAxes, int32_t ma
         return (int32_t)collected.size();
     } catch (...) { return -1; }
 }'''),
+    ('a struct handed to a helper call AND returned by value: the "returned bare" protection has '
+     'to win over the "passed as a bare argument" exclusion, not the other way around', '''
+OCCTFixtureResult OCCTFixtureLogAndReturn(OCCTShapeRef shape) {
+    OCCTFixtureResult result = {};
+    result.count = occtRealCount(shape);
+    result.flagged = false;
+    occtLogResult(result);
+    return result;
+}'''),
+    ('a struct handed to a helper call AND copied directly into an out-param array element (no '
+     'intervening container): the "copied into an array element" protection has to win too', '''
+void OCCTFixtureFillOne(OCCTShapeRef shape, OCCTFixtureResult* outArr) {
+    OCCTFixtureResult result = {};
+    result.count = occtRealCount(shape);
+    result.flagged = false;
+    occtLogResult(result);
+    outArr[0] = result;
+}'''),
 ]
 
 # The other failure mode: a literal reached only under a real, checked condition, with no computed
@@ -874,6 +959,18 @@ OCCTFixtureStyle OCCTFixtureStyleCreate(void) {
     result.r = 0; result.g = 0; result.b = 0;
     result.alpha = 1.0f;
     return result;
+}'''),
+    ('a local config/options struct handed to a call as an argument and discarded, not a returned '
+     'result -- the real BRepGraph::ShapesView::Options / MathInteg::KronrodConfig shape, '
+     'including the nested-cast argument list that defeats a naive [^()]* capture', '''
+void OCCTFixtureAppend(OCCTFixtureRef g, OCCTShapeRef shape, bool parallel) {
+    if (!g || !shape) return;
+    try {
+        OCCTFixtureOptions opts;
+        opts.Parallel = parallel;
+        opts.CreateAutoProduct = false;
+        (void)g->graph.Shapes().Add(*(const TopoDS_Shape*)shape, opts);
+    } catch (...) {}
 }'''),
 ]
 

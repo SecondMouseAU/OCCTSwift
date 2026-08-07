@@ -1,12 +1,20 @@
 # OCCTSwift#771: sub-kind 3 (gate flags that never flip) — census run and triage
 
-`census-unmeasured-values.py --gate-flags` (sub-kind 3, added by this issue) run against
-`refactor/381-pass1b` at `809f148`. **PR #770 (the `hasExtent` fix) is open, not merged, as of this
-run** — `git log --oneline -5 origin/refactor/381-pass1b` shows `809f148` at the tip, and
-`gh pr view 770 --json state,mergedAt` reports `"state":"OPEN","mergedAt":null`. That baseline
-matters for reading the table below: `hasExtent` is expected to still be reported here, because the
-fix for it lives on a sibling, not-yet-merged branch, not because sub-kind 3 failed to notice it was
-already fixed.
+## Baseline
+
+Two baselines matter here, because the branch moved under this work.
+
+Branched from `origin/refactor/381-pass1b` at `809f148`, where PR #770 (the `hasExtent` fix) was
+still open. Sub-kind 3 was built and its first real run against the corpus was taken against that
+pre-#770 tree: 7 candidates, including all three `hasExtent` call sites, exactly what a correct
+detector should report against code that has the defect. **PR #770 merged partway through this
+work** (`ad1078e`, `2026-08-07T17:57:52Z`). `origin/refactor/381-pass1b` was merged into this branch
+afterward to pick up the fix, and every number below the "First run" note is taken **after** that
+merge, against the corpus with `hasExtent` already fixed.
+
+The self-test does not depend on either baseline: every sub-kind 3 fixture is a synthetic
+(header, source) pair, not a read of the live tree, so `hasExtent`'s pre-fix shape stays available
+as a positive case regardless of what the real corpus looks like after #770.
 
 ## What sub-kind 3 detects
 
@@ -41,84 +49,120 @@ Recorded in the script's own `WHAT SUB-KIND 3 STILL CANNOT SEE` section; summari
 
 ## Self-test and removal matrix
 
-22/22 cases pass (10 pre-existing sub-kind 1/2 cases, unchanged, plus 12 new sub-kind 3 cases: 4
-`GATE_MISSED`, 6 `GATE_CLEAN`, 1 `SWIFT_GATE_MISSED`, 1 `SWIFT_GATE_CLEAN`).
+25/25 cases pass: the 10 pre-existing sub-kind 1/2 cases plus 3 new sub-kind 1 cases (see the
+sub-kind 1 improvement below), plus 12 new sub-kind 3 cases (4 `GATE_MISSED`, 6 `GATE_CLEAN`, 1
+`SWIFT_GATE_MISSED`, 1 `SWIFT_GATE_CLEAN`).
 
-Per `okf/policies/prove-the-test-fails.md`, each of the seven mechanisms sub-kind 3 relies on was
-disabled in turn in a working copy of the script, `--self-test` re-run, the case-count drop
-recorded, and the file restored from an untouched backup before the next probe:
+Per `okf/policies/prove-the-test-fails.md`, every mechanism this PR added was disabled in turn in a
+working copy of the script, `--self-test` re-run, the case-count drop recorded, and the file
+restored from an untouched backup before the next probe. Twelve rows, none decorative — every one
+drops the correct-case count and no two rows are redundant:
 
-| Rule disabled | Cases correct | Cases flipped |
-|---|---|---|
-| (baseline) | 22/22 | — |
-| 1. Name-prefix independence (bool-field scan restricted to `has*`) | 19/22 | 3 MISSED cases stop being flagged: the seed shape's non-`has` sibling (field `defined`) plus the two dead-`true` cases, which incidentally also use a non-`has` field name |
-| 2. Dead-after-terminator exclusion | 21/22 | 1: the dead-after-`return` MISSED case stops being flagged (its `true` is wrongly counted as live) |
-| 3. Dead-if-false exclusion | 21/22 | 1: the `if (false)` MISSED case stops being flagged |
-| 4. Pointer/reference parameter binding | 20/22 | 2: both helper-indirection CLEAN cases (pointer, reference) become **wrongly flagged**, since their only `true` assignment is no longer attributed to the struct type |
-| 5. Local value-typed declaration binding | 18/22 | 4: every MISSED case stops being flagged, since none of their local variables bind to a struct type at all any more |
-| 6. Computed-sibling exclusion | 21/22 | 1: the `wasAdjusted`-shaped CLEAN case becomes **wrongly flagged** |
-| 7. Swift computed-property detection | 21/22 | 1: the Swift MISSED case stops being flagged |
+| # | Rule disabled | Cases correct | What flipped |
+|---|---|---|---|
+| — | (baseline) | 25/25 | — |
+| 1 | Sub-kind 3: name-prefix independence (bool-field scan restricted to `has*`) | 22/25 | 3 MISSED cases stop being flagged: the seed shape's non-`has` sibling (field `defined`) plus the two dead-`true` cases, which incidentally also use a non-`has` field name |
+| 2 | Sub-kind 3: dead-after-terminator exclusion | 24/25 | 1: the dead-after-`return` MISSED case stops being flagged |
+| 3 | Sub-kind 3: dead-if-false exclusion | 24/25 | 1: the `if (false)` MISSED case stops being flagged |
+| 4 | Sub-kind 3: pointer/reference parameter binding | 23/25 | 2: both helper-indirection CLEAN cases (pointer, reference) become **wrongly flagged** |
+| 5 | Sub-kind 3: local value-typed declaration binding | 21/25 | 4: every sub-kind 3 MISSED case stops being flagged |
+| 6 | Sub-kind 3: computed-sibling exclusion | 24/25 | 1: the `wasAdjusted`-shaped CLEAN case becomes **wrongly flagged** |
+| 7 | Sub-kind 3: Swift computed-property detection | 24/25 | 1: the Swift MISSED case stops being flagged |
+| 8a | Sub-kind 1: whole `is_input_only_struct` config-struct exclusion | 24/25 | 1: the config/options-struct CLEAN case becomes **wrongly flagged** |
+| 8b | Sub-kind 1: `push_back`-family protection inside that exclusion | 24/25 | 1: the pre-existing `ShapeAxis`-shaped MISSED case **regresses** (the exact seed shape this whole census exists to catch) |
+| 8c | Sub-kind 1: bare-`return` protection inside that exclusion | 24/25 | 1: a dedicated "handed to a call AND returned" MISSED case stops being flagged |
+| 8d | Sub-kind 1: array-element-assignment protection inside that exclusion | 24/25 | 1: a dedicated "handed to a call AND copied into an array element" MISSED case stops being flagged |
+| 8e | Sub-kind 1: `call_arg_lists`'s paren-depth balancing (swapped for a naive `[^()]*` capture) | 24/25 | 1: the config/options-struct CLEAN case becomes **wrongly flagged** again, for a different reason than 8a — the real corpus check confirms this isn't synthetic-only: the naive regex still excludes the one config-struct site with no nested cast (`MathInteg::KronrodConfig`) but wrongly re-includes all four `BRepGraph::ShapesView::Options` sites, each of which passes `opts` behind a `*(const TopoDS_Shape*)shape` cast argument — sub-kind 1's report count moves 49 → 53 |
 
-Every one of the seven rows drops the correct-case count, and no two rows are redundant (each
-targets a distinct case or case-pair). Three sub-kind-3 self-test cases — the two correctly-flipping
-baselines (`hasExtent`-named and non-`has`-named) and the "reachable `true` under a real condition"
-control — are not tied to any single row above; they instead guard the base recognition path itself
-(plain `var.field = true` matching, and the false-condition check not over-firing on a genuine
-condition) and would only fail if that shared foundation broke, which every row implicitly exercises
-by relying on it. This is recorded rather than left implicit, per the #744 lesson that a
-self-test case can look like coverage without a removal proving it is.
+Three sub-kind-3 self-test cases — the two correctly-flipping baselines (`hasExtent`-named and
+non-`has`-named) and the "reachable `true` under a real condition" control — are not tied to any
+single row above; they instead guard the base recognition path itself (plain `var.field = true`
+matching, and the false-condition check not over-firing on a genuine condition) and would only fail
+if that shared foundation broke, which every row implicitly exercises by relying on it. This is
+recorded rather than left implicit: a self-test case can look like coverage without a removal
+proving it (#744), and this review explicitly asked whether any case's rule could be deleted without
+the count dropping. None of the 25 cases has that property: every one either appears as a
+MISSED/FALSE flip in a row above, or is one of these three explicitly-noted controls whose failure
+mode is "the shared foundation broke", not "no rule was ever exercised".
 
-## Candidates found and verdicts
+## Candidates found and verdicts (post-#770-merge baseline)
 
-7 candidates from `--gate-flags` against this baseline. Adjudicated using #763's four verdicts (1.
-not an instance, 2. compute it, 3. make absence representable, 4. remove the field):
+3 candidates from `--gate-flags` against the current baseline. Adjudicated using #763's four
+verdicts (1. not an instance, 2. compute it, 3. make absence representable, 4. remove the field):
 
 | Candidate | Struct.field | Verdict | Evidence |
 |---|---|---|---|
-| `OCCTBridge_Topology.mm:653` `OCCTShapeRevolutionAxes` | `OCCTShapeAxis.hasExtent` | **3 (already in progress)** | The #763 seed instance. Fixed on PR #770 (`chore/763-triage-core`, open against this same base, not merged). Not duplicated here — see baseline note above. |
-| `OCCTBridge_Topology.mm:694` `OCCTShapeSymmetryAxes` | `OCCTShapeAxis.hasExtent` | **3 (already in progress)** | Same field, second call site. Same fix, same PR. |
-| `OCCTBridge_Topology.mm:713` `OCCTShapeSymmetryAxes` | `OCCTShapeAxis.hasExtent` | **3 (already in progress)** | Same field, third call site. Same fix, same PR. |
-| `OCCTBridge_Geom2d.mm:2593` `OCCTBisectorPointOnBisCreate` | `OCCTBisectorPointOnBis.isInfinite` | **4 (remove)** | Verified independently (not just cited from #763's earlier note on the same function): `Bisector_PointOnBis`'s bundled OCCT header (`Bisector_PointOnBis.hxx`) has a real, settable `IsInfinite`/`IsInfinite() const` pair, so the concept is genuine on the OCCT class — but `OCCTBisectorPointOnBisCreate` never constructs a `Bisector_PointOnBis` at all; it echoes 6 raw doubles into a plain C struct with no reference to the OCCT class. Grepped the whole tree: zero Swift call sites for `OCCTBisectorPointOnBisCreate`, zero constructor call sites for the Swift `BisectorPoint` struct it builds for, and `BisectorPoint` has no explicit `public init` (only `public let` fields), so Swift's auto-synthesized memberwise initializer for a `public struct` is `internal`, not `public` — meaning no external consumer of the `OCCTSwift` library could construct one either. Fully orphaned on both sides, matching the #506/PR #547 precedent ("an orphan freezes its contract") for this exact codebase. Removed by this PR (bridge struct + function, Swift struct, both doc references). |
 | `OCCTBridge_Mesh.mm:201` `OCCTMeshParametersDefault` | `OCCTMeshParameters.relative` | **1 (not an instance)** | `OCCTMeshParametersDefault()` is a plain default-value factory for a config/options struct passed as an **argument** to `OCCTShapeCreateMeshWithParams`, not read back as a measurement — the same "local config/options struct" and "plain value-type constructor" exclusions sub-kind 1's own docstring already establishes for `OCCTXCAFPrsStyleCreate`. Confirmed genuinely settable, not stuck: `Sources/OCCTSwift/Mesh.swift`'s `MeshParameters` has a public, mutable `var relative: Bool` that a caller sets directly, and `params.relative = relative` (`Mesh.swift:87`) forwards it into the bridge struct at the real call site. |
 | `OCCTBridge_Mesh.mm:205` `OCCTMeshParametersDefault` | `OCCTMeshParameters.adjustMinSize` | **1 (not an instance)** | Same reasoning; `Mesh.swift:91` (`params.adjustMinSize = adjustMinSize`). |
 | `OCCTBridge_Mesh.mm:206` `OCCTMeshParametersDefault` | `OCCTMeshParameters.allowQualityDecrease` | **1 (not an instance)** | Same reasoning; `Mesh.swift:92` (`params.allowQualityDecrease = allowQualityDecrease`). |
 
-**No new verdict-3/verdict-4 instance beyond the seed.** The one genuine new finding
-(`OCCTBisectorPointOnBis.isInfinite`) turned out to be dead code around an orphaned function rather
-than a stuck gate on a live path — a different root cause than `hasExtent`'s, caught only because
-teaching the detector past the `hasX` name filter (indirection shape 1) surfaced a non-`has`-named
-field the naive pass could never have seen (the naive pass was scoped to `hasX`-declared fields in
-headers to begin with). What the detector would have caught had `hasExtent` not already had an
-open fix in flight: exactly the `GATE_MISSED` self-test shape it does catch, run against real code —
-three literal-`false` call sites, one struct type, zero literal-`true` or computed assignments
-anywhere in the corpus, reported by file and line with no name-prefix filtering required to find it.
+**No verdict-3/verdict-4 instance beyond the seed `hasExtent`, which #770 already fixed.** Before
+the #770 merge, this same run also reported `OCCTShapeAxis.hasExtent` at all three call sites
+(verdict 3, already fixed there) and `OCCTBisectorPointOnBis.isInfinite` (verdict 4, fixed in this
+PR, see below) — 7 candidates total pre-merge, now 3. The `hasExtent` disappearance is the expected,
+correct effect of merging in a fix that shipped on a sibling branch, not something this detector did
+wrong: **not an instance of it undercounting**, it is the census correctly reflecting a corpus that
+changed underneath it.
 
-## Fix implemented
+What the detector would have caught had `hasExtent` not already had a fix in flight: exactly the
+`GATE_MISSED` self-test shape it does catch, run against real code — three literal-`false` call
+sites, one struct type, zero literal-`true` or computed assignments anywhere in the corpus, reported
+by file and line with no name-prefix filtering required to find it. That shape is preserved as a
+synthetic self-test fixture specifically so this detector keeps a real positive case even now that
+the live tree no longer has one.
 
-Removed the orphaned `OCCTBisectorPointOnBis` struct, `OCCTBisectorPointOnBisCreate` bridge
-function, and the Swift `BisectorPoint` struct built for it:
+### `BisectorPoint`/`OCCTBisectorPointOnBis`/`OCCTBisectorPointOnBisCreate` removed (verdict 4)
 
-- `Sources/OCCTBridge/include/OCCTBridge_Geom2d.h`: struct + declaration replaced with a tombstone
-  comment (the `#500`/`#506` idiom already used elsewhere in this header for a prior removal).
-- `Sources/OCCTBridge/src/OCCTBridge_Geom2d.mm`: implementation replaced with a tombstone comment.
-- `Sources/OCCTSwift/BisectorResult.swift`: `BisectorPoint` struct removed (tombstone comment left
-  in its place); `BisectorIntersection` and `bisectorIntersections(a:b:c:d:)`, the live pair in the
-  same file, are untouched.
-- `docs/reference/Shape-Recognition.md`: `BisectorPoint` subsection removed from "Bisector
-  utilities".
-- `docs/API_REFERENCE.md`: "Bisector Intersection" row count corrected from 2 to 1
-  (`bisectorIntersections` only).
+Found against the pre-#770-merge baseline (unaffected by the merge; unrelated file). Verified
+independently before removing (`okf/policies/measure-dont-assume.md`), not just cited from #763's
+earlier one-line note on the same function: read `Bisector_PointOnBis.hxx` from the pinned OCCT
+xcframework headers directly. The OCCT class has a real, settable `IsInfinite`/`IsInfinite() const`
+pair — the concept is genuine — but `OCCTBisectorPointOnBisCreate` never constructs a
+`Bisector_PointOnBis` at all; it echoes 6 raw doubles into a plain C struct with no reference to the
+OCCT class. Grepped the whole tree: zero Swift call sites for the bridge function, zero constructor
+call sites for the Swift `BisectorPoint` struct it built for, and `BisectorPoint` has no explicit
+`public init` (only `public let` fields), so Swift's auto-synthesized memberwise initializer for a
+`public struct` is `internal`, not `public` — no external consumer of `OCCTSwift` could construct
+one either. Fully orphaned on both sides, matching the #506/PR #547 precedent ("an orphan freezes
+its contract") in this same codebase.
+
+Removed: the bridge struct + function (`OCCTBridge_Geom2d.h`/`.mm`, tombstone comments in the
+`#500`/`#506` idiom already used elsewhere in that header), the Swift struct
+(`BisectorResult.swift`), and its two doc references (`docs/reference/Shape-Recognition.md`,
+`docs/API_REFERENCE.md`'s Bisector Intersection row count 2 → 1). `BisectorIntersection`/
+`bisectorIntersections(a:b:c:d:)`, the live pair in the same file, are untouched.
+`Scripts/count-operations.py`'s derived total is unaffected (4306 before and after): `BisectorPoint`
+had no public `func`/computed `var`/`init`/`subscript`, so it was never counted.
 
 **No injection cycle for this fix**, matching PR #770's own precedent for the `selfIntersectionCount`
-removal: it is a field deletion enforced by the compiler (any surviving reference fails to build),
-not a new positive behavioural check to prove wrong-then-right. `Scripts/count-operations.py`'s
-derived total is unaffected (4306 before and after): `BisectorPoint` had no public `func`, computed
-`var`, `init`, or `subscript` to begin with, so it was never counted as an operation.
+removal: it is a field/type deletion enforced by the compiler (any surviving reference fails to
+build), not a new positive behavioural check to prove wrong-then-right.
 
-Verified before removing, not assumed (`okf/policies/measure-dont-assume.md`): read
-`Bisector_PointOnBis.hxx` from the pinned OCCT xcframework headers directly rather than trusting
-#763's PR-770 note that the function "has no IsInfinite parameter" at face value — confirmed the
-class's real constructor list (default, and a 5-arg `Param1/Param2/ParamBis/Distance/Point`
-constructor, neither taking an `Infinite` argument) and that `IsInfinite`/`IsInfinite() const` exist
-as a genuine, separately-set property on the class, which is what makes this a "dead code around a
-real concept" finding rather than a "the concept never existed" one.
+## Bonus finding folded in: sub-kind 1's option-struct false positives
+
+Not part of #771's own ask, but surfaced while adjudicating sub-kind 1's other candidates for
+comparison and cheap enough to fix in the same script, in the same PR. The single largest group of
+noise in sub-kind 1's 54 pre-fix candidates was a local config/options struct built and handed to a
+call as an argument (`opts.Flatten = true;` then `Add(shape, opts)`), which is syntactically
+identical to a real result struct being built up field by field — the script's own docstring had
+already named this exact shape as an unaddressed blind spot, with 5 known sites
+(`BRepGraph::ShapesView::Options` x4, `MathInteg::KronrodConfig` x1).
+
+**Fixed**, `is_input_only_struct()`: a tracked local variable is excluded from sub-kind 1 candidacy
+if it is handed to some call as a bare argument and never surfaces afterward — "surfaces" meaning a
+bare `return var;`, storage into a container (`push_back`/`emplace_back`/`push_front`/
+`emplace_front`/`insert`), or a direct `arr[i] = var;` copy into an array/vector element. Any one of
+those three protections wins over the exclusion. This had to be built carefully rather than
+naively, for two reasons proven by the removal matrix above: (1) the exact seed shape this whole
+census exists to catch, `OCCTShapeAxis a` built in a loop then `collected.push_back(a)`, is *also*
+"handed to a call as a bare argument" (to `push_back`) — a naive version of this rule would have
+made sub-kind 1 blind to the seed defect it was built to find, in the unsafe direction #726
+explicitly warns this whole workstream against; and (2) a naive `[^()]*` argument-list capture
+cannot see an argument sitting behind a nested cast (`Add(*(const TopoDS_Shape*)shape, opts)`), so
+3 of the 5 real sites would have gone unexcluded without a proper paren-depth-matched extractor
+(`call_arg_lists`, reusing the same balanced-walk style `catch_spans`/`conditional_brace_positions`
+already use for braces).
+
+Measured: sub-kind 1's report count on this tree drops from 54 to 49 candidates — exactly the 5
+known sites, confirmed by diffing the full before/after listing rather than just the totals; nothing
+else in the list moved.
