@@ -55,7 +55,9 @@ tables and issue links.
 
 Do not touch `docs/CHANGELOG.md`. If your diff contains it, that is a review finding.
 
-Write it as the finished text, not as notes. The merger transcribes; they do not draft.
+Write it as the finished text, not as notes. The merger transcribes; they do not draft. This
+sentence is the canonical statement of that rule; the PR template points here rather than
+restating it.
 
 ### If you are merging a PR
 
@@ -85,7 +87,7 @@ impossible. That is a real trade and worth stating plainly rather than discoveri
 Three things hold it:
 
 1. `## CHANGELOG entry` is a required heading in
-   [`.github/pull_request_template.md`](../../.github/pull_request_template.md). A PR without one is
+   [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md). A PR without one is
    incomplete, the same as a PR without a test.
 2. The merger's own checklist: the merge is not done until the entry is in the file. Treat a merged
    PR with no entry the way you would treat a merged PR whose tests never ran.
