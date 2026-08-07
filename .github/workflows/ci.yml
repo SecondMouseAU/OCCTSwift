@@ -152,6 +152,20 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/census-unmeasured-values.py --self-test
 
+      # #742's backstop for okf/policies/changelog-on-merge.md. Both invocations run, and the real
+      # one is deliberately NOT --strict yet: measured against this branch it reports 3 merges whose
+      # entries are legitimately absent, so gating today would fail CI for correct behaviour. It
+      # reports, the report is visible in the job log, and #742 records the promotion criterion (a
+      # run of real merges with no false positives). Its --self-test gates from day one, because a
+      # blind detector is the failure this whole family exists to prevent.
+      - name: check-changelog-transcription.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py --self-test
+
+      - name: check-changelog-transcription.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-changelog-transcription.py
+
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
