@@ -136,13 +136,20 @@ else
 fi
 # Whether this occt-master is brand new or reused from an earlier run, always fetch
 # and hard-reset it to the CURRENT origin/master tip before Step 3 looks at it. This
-# is the fix for the bug this comment block opens with: reuse is for the git
-# objects, not for the answer. `reset --hard`, not `checkout -B`: when the local
-# branch already points at the same commit `git fetch` just confirmed as still
-# current (nothing changed upstream since the last run), `checkout -B <br> <ref>`
-# leaves the working tree alone rather than reporting "nothing to do", verified by
-# injecting a local edit into a tracked file and confirming `checkout -B` preserves
-# it while `reset --hard` discards it, matching a stale/corrupted cached checkout.
+# is the fix for the bug this comment block opens with: reuse is for the git objects,
+# not for the answer. Three commands, each doing a job the others do not.
+#
+# The -f on the checkout is load-bearing. A plain `checkout -B` REFUSES when a tracked
+# file carries an uncommitted local edit and the fetched ref also changed that same
+# file: "Your local changes to the following files would be overwritten by checkout".
+# Under `set -euo pipefail` that aborts the script before the reset on the same line
+# can rescue it, and the stale-checkout-after-months case this exists to fix is exactly
+# where both conditions hold at once. Live-reproduced, not taken from the manual.
+#
+# The `reset --hard` covers the other half: when the branch already points at the commit
+# the fetch just confirmed, checkout has nothing to switch to and leaves a dirty tree
+# alone, so the reset is what discards local corruption. The `clean -qfd` removes
+# untracked leftovers an interrupted earlier run may have written.
 (cd "$SCRATCH/occt-master" && git fetch --depth 100 origin master && git checkout -f -B master origin/master && git reset --hard origin/master && git clean -qfd)
 MASTER_SHA="$(git -C "$SCRATCH/occt-master" rev-parse HEAD)"
 MASTER_DATE="$(git -C "$SCRATCH/occt-master" log -1 --format='%ci')"
