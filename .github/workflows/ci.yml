@@ -128,6 +128,21 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/count-operations.py
 
+      # A hand-resolved conflict can leave a marker behind, and this repo sets
+      # merge.conflictStyle=diff3, whose `|||||||` ancestor line is exactly the one a resolver
+      # written for the default two-way style does not think to strip. Five of them reached
+      # docs/CHANGELOG.md on this branch across several merges before a reviewer noticed, because
+      # nothing was looking. grep is the whole check; the point is that something looks at all.
+      - name: no conflict markers in tracked files
+        if: '!cancelled()'
+        run: |
+          if git grep -nE '^(<<<<<<< |\|\|\|\|\|\|\| |>>>>>>> )' -- . ; then
+            echo "::error::merge conflict markers found in tracked files (see matches above)"
+            exit 1
+          fi
+          echo "no conflict markers in tracked files"
+
+
       # #726's census is the one entry here that is NOT a gate, and only its --self-test runs.
       # A gate answers "is the tree clean" and exits 1 when it is not; this answers "which sites
       # need a human to adjudicate" and exits 0 either way, so running it bare would add a step
