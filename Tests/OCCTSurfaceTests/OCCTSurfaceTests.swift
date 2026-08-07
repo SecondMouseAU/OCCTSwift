@@ -6072,6 +6072,15 @@ struct GeomFillGordonReportTests {
         // on `IsParallel()`. This is the regression lock for that guard. It does not
         // reproduce the crash (that would take down the whole test process); it asserts the
         // guarded call keeps returning a real, non-crashing result instead.
+        //
+        // Every pair here is parallel, so this also pins the #726 fix's status for the
+        // fully-degenerate case: reject as `.invalidInput`, not average in a fabricated
+        // point. Measured, not assumed: injecting the pre-fix FirstParameter() fallback here
+        // still lands on `.invalidInput` too, by the accident of every pair collapsing to the
+        // same degenerate value at once and tripping the array's own strictly-increasing
+        // check -- this fixture alone would NOT catch that regression. See
+        // `networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes` below for the fixture
+        // (one bad pair, three good ones) where the two fallbacks disagree with the fix.
         let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
         let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
         // Both "guides" run parallel to the profiles (along X, overlapping their projected
@@ -6080,11 +6089,34 @@ struct GeomFillGordonReportTests {
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 6, 0), SIMD3(10, 6, 0)]))
 
         let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
-        // Not asserting a specific status: the point of this test is that the process is still
-        // running to make the assertion at all. A malformed network failing is expected; a
-        // malformed network crashing the host process is the bug #636's guard prevents.
-        #expect(status != .notStarted)
-        _ = surface
+        #expect(status == .invalidInput)
+        #expect(surface == nil)
+    }
+
+    @Test func networkSurfaceReportsDoneForTheCookbookDomedNetwork() throws {
+        // `docs/guides/cookbook/gordon-surfaces.md`'s "lower-level network builder" section
+        // used to claim `networkSurface` "is enough" to build the same domed 2x2 network its
+        // own opening example builds with `gordon`/`gordonReport` -- a real review finding
+        // (neither this PR's stated verification fixtures nor its permanent tests exercised
+        // that exact curve set, so the claim was accurate by luck, not by anything checked).
+        //
+        // Checking it turned up more than an unverified claim: `networkSurface` does report
+        // `.done` for this network (and for the plain bilinear rectangle in
+        // `networkSurfaceBuildsASimpleBilinearPatch` above), but the resulting surface is
+        // wrong at two of its four corners -- confirmed by comparing against `gordon()` on the
+        // identical curves, which gets all four right. Filed as #748 rather than fixed here:
+        // it is a kernel-level GeomFill_NetworkSurface defect, not a bridge misuse, and out of
+        // scope for this PR's three named fixes. The cookbook section was reworded rather than
+        // demonstrating a build whose interior is subtly wrong; this test locks in only the
+        // narrower, actually-verified claim (`.done`, not full corner fidelity).
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(5, 10, 3), SIMD3(10, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 5, 2), SIMD3(0, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 5, 2), SIMD3(10, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
+        #expect(status == .done)
+        #expect(surface != nil)
     }
 
     @Test func networkSurfaceTooFewCurves() {
@@ -6092,6 +6124,62 @@ struct GeomFillGordonReportTests {
         let (surface, status) = Surface.networkSurface(profiles: [p1], guides: [p1])
         #expect(surface == nil)
         #expect(status == .invalidInput)
+    }
+
+    @Test func networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes() throws {
+        // The review's own scenario: "one degenerate pair inside an otherwise well-formed
+        // grid" (#726). p1/p2 and g1/g2 deliberately don't share one common "profile
+        // direction" / "guide direction" the way a real network normally would, so that
+        // exactly one of the four profile/guide pairs -- p2 x g2, both running along Y at
+        // z=3 -- is parallel while the other three (p1 x g1, p1 x g2, p2 x g1) are ordinary
+        // skew-line pairs with one real, unambiguous extremum each.
+        //
+        // Before this PR, the parallel pair fell back to each curve's own FirstParameter()
+        // and that fabricated point was averaged in with the three real ones -- silently,
+        // with no error, `.done` remained reachable. This network happens to still fail even
+        // under that fallback (see the injection below), but only by accident: swapping the
+        // fallback to each curve's LastParameter() instead -- an equally fabricated, equally
+        // plausible "reasonable default" -- changes the result to `.knotAlignmentFailed`
+        // rather than this test's `.invalidInput`, proving the averaging step itself has no
+        // opinion on whether a fabricated value should be allowed through at all. The fix
+        // rejects before any fallback value, fabricated or not, ever reaches the average.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(-5, 0, 0), SIMD3(5, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, -5, 3), SIMD3(0, 5, 3)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(2, 2, -5), SIMD3(2, 2, 5)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(4, -5, 3), SIMD3(4, 5, 3)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .invalidInput)
+        #expect(surface == nil)
+    }
+
+    @Test func networkSurfaceReportsKnotAlignmentFailedWhenGuidesDoNotSpanProfiles() throws {
+        // Restores the coverage the base commit's `networkSurfaceReportsKnotAlignmentFailedOn-
+        // UnpreparedNetwork` used to give this status, deleted by this PR because its own
+        // precondition (the quarter-cylinder network failing outright) no longer holds. Without
+        // some other test pinning `.knotAlignmentFailed`, a regression in this PR's own
+        // contact-point/averaging logic that silently changed the enum decode, or that made
+        // GeomFill_NetworkSurface's real KnotAlignmentFailed stop propagating through
+        // `outStatus`, would go unnoticed by CI.
+        //
+        // This is a genuinely well-formed network under the FIXED algorithm (no parallel pairs,
+        // every extremum unambiguous) that still can't align: `alignSurfaces` requires the
+        // averaged guide-locator parameters to span the SAME domain as the base profile's own
+        // knot range (and the mirror image for profile-locators against the base guide's own
+        // range) -- see the comment above `OCCTGeomFillNetworkSurface`. Here the guides only
+        // cross the profiles at x=5 and x=15, well short of the profiles' own x=0...20 domain,
+        // so the real, correctly-measured contact parameters ([5, 15]) can never match that
+        // domain. This is a genuine, documented limitation of the low-level builder (it does not
+        // reparametrize the input), not a bug: `gordon`/`gordonReport` handle this same network
+        // by reparametrizing first.
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(20, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(20, 10, 0)]))
+        let g1 = try #require(Curve3D.interpolate(points: [SIMD3(5, 0, 0), SIMD3(5, 10, 0)]))
+        let g2 = try #require(Curve3D.interpolate(points: [SIMD3(15, 0, 0), SIMD3(15, 10, 0)]))
+
+        let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
+        #expect(status == .knotAlignmentFailed)
+        #expect(surface == nil)
     }
 }
 

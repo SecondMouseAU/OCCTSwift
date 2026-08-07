@@ -82,12 +82,19 @@ let r = Surface.gordonReport(profiles: [p1, p2], guides: [g1, g2],
 `networkSurface` exposes OCCT's raw `GeomFill_NetworkSurface` directly and returns its own status,
 rather than `gordon`'s full curve-reordering-and-reparametrization pipeline. It finds each
 profile/guide pair's real contact point and locates it in the *other* family's own parameter domain
-(not a caller-invented fraction), which is enough for it to build the same 2×2 domed network above:
+(not a caller-invented fraction), which is enough for it to report `.done` on the same 2×2 domed
+network above:
 
 ```swift
 let (surface, status) = Surface.networkSurface(profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
 if status != .done { print("network builder declined:", status) }
 ```
+
+**Known limitation ([#748](https://github.com/SecondMouseAU/OCCTSwift/issues/748)):** on every
+network tried so far, including a plain bilinear rectangle with nothing to approximate,
+`networkSurface`'s result is correct at the two corners on one diagonal and wrong at the other two —
+`gordon`/`gordonReport` on the identical curves are not affected. Prefer `gordon`/`gordonReport` for
+anything where the built surface's shape matters, not just whether a status came back `.done`.
 
 It is still the lower-level tool. It does not reorder a scrambled network, does not run `gordon`'s
 non-linear reparametrization pass when curve families disagree on where their shared knots should

@@ -2463,7 +2463,14 @@ OCCTShapeRef _Nullable OCCTGeomFillSweep(OCCTShapeRef pathEdge, OCCTShapeRef sec
         // once that branch fires, the same shape as #522's zero, so reading it would not have
         // helped even from there. Here the number is real and does move, so reject rather than
         // silently hand back a surface that missed the tolerance it was built at.
-        const double tolerance = 1e-4; // GeomFill_Sweep's own SetTolerance default.
+        // A bridge-chosen fit tolerance, not an OCCT default: GeomFill_Sweep::SetTolerance(const
+        // double Tol3d, const double BoundTol = 1.0, const double Tol2d = 1.0e-5, const double
+        // TolAngular = 1.0) has no default for Tol3d at all, and none of its three actual
+        // defaults equals 1e-4. Not caller-configurable today (Shape.geomFillSweep(path:section:)
+        // takes no tolerance parameter, unlike the sibling GeomFill_NetworkSurface/GeomFill_Gordon
+        // entry points in this file); left that way here rather than as a drive-by API change --
+        // see the PR notes for why.
+        const double tolerance = 1e-4;
         GeomFill_Sweep sweep(location);
         sweep.SetTolerance(tolerance);
         sweep.Build(sectionLaw, GeomFill_Location, GeomAbs_C2, 10, 50);
@@ -6660,9 +6667,25 @@ OCCTSurfaceRef OCCTGeomFillGordonReport(const OCCTCurve3DRef* profiles, int32_t 
 // GeomAPI_ExtremaCurveCurve SIGSEGVs on parallel curves at every capacity (#636, a kernel
 // defect one layer under Extrema_ExtCC: NbExtrema() reports 1 but Points()/Parameters() index
 // an empty sequence when IsParallel(), and this Release kernel disables the bounds check that
-// would otherwise throw). Guarded here with the same IsParallel() check #636/PR#730 uses in
-// OCCTBridge_Curve3D.mm, since this is a new call site of the same class, not something that
-// fix (scoped to that file) covers.
+// would otherwise throw). PR #730 proposes the same IsParallel() guard for the OTHER call site
+// of this class (Curve3D.extrema, OCCTBridge_Curve3D.mm), but it has not merged: as this tree
+// stands, that call site has no guard at all and still SIGSEGVs on parallel curves. The
+// IsParallel() check below is this function's own guard, protecting this new call site
+// regardless of whether or when #730 lands.
+//
+// A pair with no real extremum (parallel, or the search otherwise found none) has no contact
+// point to measure. The previous version of this fix substituted each curve's own
+// FirstParameter() and averaged that invented point in with the real ones -- exactly the
+// failure class #726 tracks: a value nobody measured, blended into a result reported .done
+// with no error. Fixed by rejecting the whole network as .invalidInput instead (see below);
+// the caller can already distinguish that from .done, the same as an undersized input.
+// Also fixed in the same pass: Points(1, ...)/Parameters(1, ...) unconditionally read
+// solution index 1, but GeomAPI_ExtremaCurveCurve exposes NearestPoints()/
+// LowerDistanceParameters() precisely because index 1 is not guaranteed to be the globally
+// nearest extremum -- on a curved profile/guide pair the wrong index can feed a real but
+// spurious contact point into the surface build with no error signal. Uses the same pair of
+// accessors already established for this class elsewhere in this file (OCCTSurfaceExtrema,
+// above).
 OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_t profileCount,
                                           const OCCTCurve3DRef* guides, int32_t guideCount,
                                           double tolerance, int32_t* outStatus) {
@@ -6701,21 +6724,23 @@ OCCTSurfaceRef OCCTGeomFillNetworkSurface(const OCCTCurve3DRef* profiles, int32_
             const Handle(Geom_BSplineCurve)& pc = profs.Value(i + 1);
             for (int j = 0; j < guideCount; j++) {
                 const Handle(Geom_BSplineCurve)& gc = gds.Value(j + 1);
-                double pparam = pc->FirstParameter();
-                double gparam = gc->FirstParameter();
-                gp_Pnt pt = pc->Value(pparam);
                 GeomAPI_ExtremaCurveCurve ex(pc, gc);
                 // #636: NbExtrema() can report 1 on parallel curves with Points()/Parameters()
                 // indexing nothing behind it, so IsParallel() has to gate the read, not IsDone()
-                // or NbExtrema() alone. Falls back to each curve's own first parameter: a plain
-                // "no real contact found" placeholder rather than a crash.
-                if (!ex.IsParallel() && ex.NbExtrema() >= 1) {
-                    gp_Pnt pp, gp;
-                    ex.Points(1, pp, gp);
-                    ex.Parameters(1, pparam, gparam);
-                    pt = pp;
+                // or NbExtrema() alone. A pair with no real extremum has no contact point to
+                // measure at all: reject the whole network rather than average in an invented
+                // one (see the comment above this function).
+                if (ex.IsParallel() || ex.NbExtrema() < 1) {
+                    if (outStatus) *outStatus = (int32_t)GeomFill_NetworkSurface::ResultStatus::InvalidInput;
+                    return nullptr;
                 }
-                ipts.SetValue(i + 1, j + 1, pt);
+                // NearestPoints()/LowerDistanceParameters(), not Points(1, ...)/Parameters(1, ...):
+                // index 1 is not guaranteed to be the globally nearest extremum.
+                gp_Pnt pp, gp;
+                ex.NearestPoints(pp, gp);
+                double pparam, gparam;
+                ex.LowerDistanceParameters(pparam, gparam);
+                ipts.SetValue(i + 1, j + 1, pp);
                 iwts.SetValue(i + 1, j + 1, 1.0);
                 profParam.SetValue(i + 1, j + 1, pparam);
                 guideParam.SetValue(i + 1, j + 1, gparam);
