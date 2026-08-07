@@ -1338,8 +1338,7 @@ OCCTVinertGKResult OCCTBRepGPropVinertGK(OCCTShapeRef _Nonnull faceRef,
 
         BRepGProp_VinertGK vgk(bface, loc, tolerance, computeCG, false);
         result.mass = vgk.Mass();
-        result.errorReached = 0.0;  // GetErrorReached is inline-only in OCCT 8.0.0
-        result.absoluteError = 0.0;
+        result.errorReached = vgk.GetErrorReached();
 
         if (computeCG) {
             gp_Pnt cg = vgk.CentreOfMass();

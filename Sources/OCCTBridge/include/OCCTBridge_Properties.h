@@ -499,8 +499,7 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
 // --- BRepGProp_VinertGK ---
 typedef struct {
     double mass;
-    double errorReached;
-    double absoluteError;
+    double errorReached;  // BRepGProp_VinertGK::GetErrorReached() (#732)
     double centerX, centerY, centerZ;
 } OCCTVinertGKResult;
 
