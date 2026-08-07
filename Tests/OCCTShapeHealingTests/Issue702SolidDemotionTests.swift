@@ -237,7 +237,7 @@ struct Issue702SolidDemotion {
     /// guessed total.
     private static func totalProblemsExcludingFreeFace(_ analysis: ShapeAnalysisResult) -> Int {
         analysis.smallEdgeCount + analysis.smallFaceCount + analysis.gapCount +
-            analysis.selfIntersectionCount + analysis.freeEdgeCount +
+            analysis.freeEdgeCount +
             (analysis.hasInvalidTopology ? 1 : 0)
     }
 

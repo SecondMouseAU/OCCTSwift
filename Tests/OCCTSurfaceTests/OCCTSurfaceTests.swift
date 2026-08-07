@@ -5825,6 +5825,25 @@ struct ShapeRevolutionAxesTests {
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)
     }
+
+    // #726/#763: extentMin/extentMax/hasExtent were hardcoded 0/0/false on every call, so
+    // `extent` was `nil` for every axis regardless of input. Fixed by measuring the face's own
+    // bounding box along the axis direction. A cylindrical face's true Z-extent (in whichever
+    // sign OCCT hands back `Axis().Direction()`, not fixed -- see `cylinderOneAxis` above, which
+    // itself accepts either sign) is exactly its bounding box's, since no curvature bulges past
+    // the two flat end circles along the axis. The SPAN (upperBound - lowerBound) is
+    // sign-independent and is what's asserted; `Shape.cylinder`'s own height is the ground truth.
+    @Test("Cylinder's revolution axis reports a real, non-nil extent matching its height")
+    func cylinderRevolutionAxisHasExtent() {
+        guard let cyl = Shape.cylinder(radius: 5, height: 20) else { Issue.record("cylinder nil"); return }
+        let axes = cyl.revolutionAxes()
+        #expect(axes.count == 1)
+        guard let a = axes.first, let extent = a.extent else {
+            Issue.record("expected a non-nil extent on the cylinder's revolution axis")
+            return
+        }
+        #expect(abs((extent.upperBound - extent.lowerBound) - 20) < 1e-6)
+    }
 }
 
 @Suite("v0.137 Surface.torusAxis / revolutionAxis")

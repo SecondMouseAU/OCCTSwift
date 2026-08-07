@@ -23,10 +23,11 @@ typedef struct {
     int32_t smallEdgeCount;        // Number of edges smaller than tolerance
     int32_t smallFaceCount;        // Number of faces smaller than tolerance
     int32_t gapCount;              // Number of gaps between edges/faces
-    int32_t selfIntersectionCount; // Always 0, never computed ("would require more expensive
-                                    // computation", the implementation's own comment). Not a
-                                    // measured value; use OCCTShapeSelfIntersects /
-                                    // OCCTShapeSelfIntersectsBounded instead (#702).
+    // selfIntersectionCount REMOVED (#726/#763): it was always 0, never computed ("would require
+    // more expensive computation", the field's own former comment) -- see OCCTShapeSelfIntersects /
+    // OCCTShapeSelfIntersectsBounded for the real answer (#702 documented the field as honest about
+    // never being computed; #763 removed it, since a field that can never carry information has no
+    // reason to exist).
     int32_t freeEdgeCount;         // Number of free (unconnected) edges, summed across every
                                     // shell of `shape`, via ShapeAnalysis_Shell::CheckOrientedShells
                                     // (#702: this was hardcoded 0 before, since LoadShells() alone

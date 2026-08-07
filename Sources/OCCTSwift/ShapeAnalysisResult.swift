@@ -13,12 +13,6 @@ public struct ShapeAnalysisResult {
     /// Number of gaps between edges/faces
     public let gapCount: Int
 
-    /// Always 0. This has never been computed: the bridge's own comment on the field
-    /// reads "would require more expensive computation", so it is not a measured absence of
-    /// self-intersection, only an unimplemented one. Use ``Shape/isSelfIntersecting(timeout:)``
-    /// for a real answer (#702).
-    public let selfIntersectionCount: Int
-
     /// Number of free (unconnected) edges across every shell of the analyzed shape, via
     /// `ShapeAnalysis_Shell`. Before #702 this was hardcoded to 0 for every shape: the bridge
     /// called `LoadShells()`, which only registers a shell for bookkeeping and runs no edge
@@ -43,13 +37,17 @@ public struct ShapeAnalysisResult {
 
     /// Total number of problems found.
     ///
-    /// Sums each independent defect category once: small edges, small faces, gaps,
-    /// self-intersections (never actually measured, see ``selfIntersectionCount``), free edges,
+    /// Sums each independent defect category once: small edges, small faces, gaps, free edges,
     /// and invalid topology (a flat +1, not a count). ``freeFaceCount`` is deliberately excluded:
     /// see its doc comment for why including it would double-count the same open-shell defect
     /// ``freeEdgeCount`` already reports.
+    ///
+    /// Self-intersections are not part of this total: `analyze(tolerance:)` never measured them
+    /// (a `selfIntersectionCount` field existed through v1.x but was always 0, never computed, and
+    /// was removed in #763 rather than kept as a permanently-zero placeholder). Use
+    /// ``Shape/isSelfIntersecting(timeout:)`` for a real self-intersection check.
     public var totalProblems: Int {
-        smallEdgeCount + smallFaceCount + gapCount + selfIntersectionCount + freeEdgeCount + (hasInvalidTopology ? 1 : 0)
+        smallEdgeCount + smallFaceCount + gapCount + freeEdgeCount + (hasInvalidTopology ? 1 : 0)
     }
 
     /// Whether the shape appears to be healthy (no problems found)

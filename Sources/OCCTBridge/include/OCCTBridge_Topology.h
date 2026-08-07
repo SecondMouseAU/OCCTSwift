@@ -438,7 +438,10 @@ typedef struct {
     double directionX, directionY, directionZ;
     double extentMin;       // along direction from origin (-inf as -DBL_MAX)
     double extentMax;       // +inf as DBL_MAX
-    bool   hasExtent;
+    bool   hasExtent;       // false only when the axis's own shape has no boundable geometry at
+                             // all (an empty/void bounding box); an unbounded-but-real shape still
+                             // reports true, with extentMin/extentMax at the +-DBL_MAX sentinels
+                             // above (#763)
     int32_t kind;
 } OCCTShapeAxis;
 

@@ -101,7 +101,7 @@ struct ShapeAnalysisTests {
         // counts (this shell has at least one free edge), not an independent defect, so including
         // both would double-count one open shell's boundary gap (#717 review, the totalProblems double-count).
         let expectedTotal = analysis.smallEdgeCount + analysis.smallFaceCount +
-                           analysis.gapCount + analysis.selfIntersectionCount +
+                           analysis.gapCount +
                            analysis.freeEdgeCount +
                            (analysis.hasInvalidTopology ? 1 : 0)
         #expect(analysis.totalProblems == expectedTotal)

@@ -19,6 +19,8 @@
 #import "../include/OCCTBridge.h"
 #import "OCCTBridge_Internal.h"
 
+#include <limits>
+
 #include <BRep_Tool.hxx>
 #include <BRep_Builder.hxx>
 #include <BRepAdaptor_Curve.hxx>
@@ -591,6 +593,73 @@ void OCCTMeshRelease(OCCTMeshRef mesh) {
 
 // MARK: - Shape Axis Extraction (v0.137)
 
+// #726/#763: OCCTShapeAxis.extentMin/extentMax/hasExtent were hardcoded 0/0/false on every call
+// (three sites: OCCTShapeRevolutionAxes below and both OCCTShapeAxis constructions inside
+// OCCTShapeSymmetryAxes) since the feature's introduction in v0.137 -- never wired up, though the
+// struct's own field comments already documented the intended contract ("extentMin: along
+// direction from origin (-inf as -DBL_MAX)", "extentMax: +inf as DBL_MAX"). Because
+// ShapeAxis.swift's `self.extent = a.hasExtent ? (...) : nil` already gates that into an Optional,
+// this reads exactly like the #583/#595/#609 "absence made representable" fix on a first look --
+// which is how an earlier census pass (Scripts/repro/726-unmeasured-values/README.md) classified
+// it. It is not: `hasExtent` is `false` on literally every reached path, so `extent` was `nil` for
+// every caller unconditionally, the same defect class as `selfIntersectionCount`, just one layer
+// removed. Fixed here by actually computing it, per the contract the header already promised.
+//
+// Method: BRepBndLib::Add's geometric (not triangulation) bounding box of the shape the axis
+// belongs to (a face for a revolution axis, the whole shape for a symmetry axis), then the 8
+// corners of that box projected onto the axis direction from the axis origin -- min and max of
+// those 8 dot products. This is exact for the cases a bounding box IS tight along the query
+// direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis,
+// both verified directly in OCCTTopologyTests), and a safe enclosing interval otherwise (curved
+// geometry whose true extent is less than its box's). `IsOpen()` (an untrimmed natural-bounds
+// face, or a genuinely infinite shape) reports the axis as extending to +-DBL_MAX rather than
+// treating the box's own infinity sentinel (Precision::Infinite() = 1e100) as if it were a real
+// measured bound; `IsVoid()` (no boundable geometry at all) reports no extent, `hasExtent = false`.
+static void occtComputeAxisExtent(const TopoDS_Shape& forShape, const gp_Pnt& origin,
+                                   const gp_Dir& direction,
+                                   double& outMin, double& outMax, bool& outHasExtent) {
+    outMin = 0.0;
+    outMax = 0.0;
+    outHasExtent = false;
+    if (forShape.IsNull()) return;
+    try {
+        Bnd_Box box;
+        BRepBndLib::Add(forShape, box);
+        if (box.IsVoid()) return;
+        if (box.IsOpen()) {
+            outMin = -std::numeric_limits<double>::max();
+            outMax = std::numeric_limits<double>::max();
+            outHasExtent = true;
+            return;
+        }
+        double xmin, ymin, zmin, xmax, ymax, zmax;
+        box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+        const double ox = origin.X(), oy = origin.Y(), oz = origin.Z();
+        const double dx = direction.X(), dy = direction.Y(), dz = direction.Z();
+        double tMin = std::numeric_limits<double>::infinity();
+        double tMax = -std::numeric_limits<double>::infinity();
+        for (int ix = 0; ix < 2; ix++) {
+            double px = (ix == 0) ? xmin : xmax;
+            for (int iy = 0; iy < 2; iy++) {
+                double py = (iy == 0) ? ymin : ymax;
+                for (int iz = 0; iz < 2; iz++) {
+                    double pz = (iz == 0) ? zmin : zmax;
+                    double t = (px - ox) * dx + (py - oy) * dy + (pz - oz) * dz;
+                    if (t < tMin) tMin = t;
+                    if (t > tMax) tMax = t;
+                }
+            }
+        }
+        outMin = tMin;
+        outMax = tMax;
+        outHasExtent = true;
+    } catch (...) {
+        outMin = 0.0;
+        outMax = 0.0;
+        outHasExtent = false;
+    }
+}
+
 static bool axesCoincide(const OCCTShapeAxis& a, double ox, double oy, double oz,
                           double dx, double dy, double dz, double tol) {
     gp_Dir d1(a.directionX, a.directionY, a.directionZ);
@@ -650,7 +719,7 @@ int32_t OCCTShapeRevolutionAxes(OCCTShapeRef shape, double tolerance,
             OCCTShapeAxis a;
             a.originX = p.X(); a.originY = p.Y(); a.originZ = p.Z();
             a.directionX = d.X(); a.directionY = d.Y(); a.directionZ = d.Z();
-            a.extentMin = 0; a.extentMax = 0; a.hasExtent = false;
+            occtComputeAxisExtent(face, p, d, a.extentMin, a.extentMax, a.hasExtent);
             a.kind = kind;
             collected.push_back(a);
         }
@@ -691,7 +760,9 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
                 OCCTShapeAxis a;
                 a.originX = cm.X(); a.originY = cm.Y(); a.originZ = cm.Z();
                 a.directionX = axes[i].X(); a.directionY = axes[i].Y(); a.directionZ = axes[i].Z();
-                a.extentMin = 0; a.extentMax = 0; a.hasExtent = false; a.kind = 7;
+                occtComputeAxisExtent(shape->shape, cm, gp_Dir(axes[i].X(), axes[i].Y(), axes[i].Z()),
+                                      a.extentMin, a.extentMax, a.hasExtent);
+                a.kind = 7;
                 collected.push_back(a);
             }
         } else if (pp.HasSymmetryAxis()) {
@@ -710,7 +781,10 @@ int32_t OCCTShapeSymmetryAxes(OCCTShapeRef shape, double fractionalTolerance,
             a.directionX = axes[uniqueIdx].X();
             a.directionY = axes[uniqueIdx].Y();
             a.directionZ = axes[uniqueIdx].Z();
-            a.extentMin = 0; a.extentMax = 0; a.hasExtent = false; a.kind = 7;
+            occtComputeAxisExtent(shape->shape, cm,
+                                  gp_Dir(axes[uniqueIdx].X(), axes[uniqueIdx].Y(), axes[uniqueIdx].Z()),
+                                  a.extentMin, a.extentMax, a.hasExtent);
+            a.kind = 7;
             collected.push_back(a);
         }
         int32_t count = std::min((int32_t)collected.size(), maxAxes);

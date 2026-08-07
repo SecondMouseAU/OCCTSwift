@@ -768,18 +768,25 @@ public let direction: SIMD3<Double>
 
 #### `extent`
 
-The optional parametric extent along the axis.
+The optional extent along the axis, measured in real 3D units (not the surface's parametric U/V), as a signed offset from `origin` along `direction`.
 
 ```swift
 public let extent: ClosedRange<Double>?
 ```
 
-`nil` for axes where no extent is computed (most face types). When present, the range describes the axis length limits in the surface's own parameterisation.
+`nil` for `Face.primaryAxis` (never computed there) and for a shape with no boundable geometry at all. For `Shape.revolutionAxes(tolerance:)` and `Shape.symmetryAxes(fractionalTolerance:)`, `extent` is the geometric bounding box of the axis's own shape (the face, for a revolution axis; the whole shape, for a symmetry axis) projected onto the axis direction from `origin` — exact when the box is tight along that direction (a bounded cylindrical/conical face along its own axis, a box along a principal axis), a safe enclosing interval otherwise. An untrimmed/unbounded shape reports `-Double.greatestFiniteMagnitude...Double.greatestFiniteMagnitude` rather than `nil` — `hasExtent` (bridge-side) distinguishes "unbounded but known" from "couldn't measure at all". Before #763 this field was `nil` unconditionally: `hasExtent` was hardcoded `false` on every call.
 
 - **Example:**
   ```swift
+  // Shape.cylinder(radius:height:) bases the cylinder at the origin, so the lateral face's
+  // own axial span is exactly 0...height.
   let ax = Shape.cylinder(radius: 5, height: 20)!.revolutionAxes().first
-  print(ax?.extent as Any)  // nil for revolution axes
+  print(ax?.extent as Any)          // Optional(0.0...20.0) (or -20.0...0.0, axis direction sign varies)
+
+  // symmetryAxes()'s origin is the shape's centre of mass, so a cylinder's axial span is
+  // centred on zero.
+  let sym = Shape.cylinder(radius: 5, height: 20)!.symmetryAxes().first
+  print(sym?.extent as Any)         // Optional(-10.0...10.0)
   ```
 
 ---
