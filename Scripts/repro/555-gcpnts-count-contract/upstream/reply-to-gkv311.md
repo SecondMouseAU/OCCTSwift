@@ -23,6 +23,14 @@ for a count of 1 across every one of those entry points, which is what a silent 
 directly and what a thrown exception produces once our own `catch (...)` converts it, so neither
 option changes an observable answer on our side.
 
+We also checked whether anything in the tree calls the count-based `initialize()` with a count it
+does not pre-validate: grepped `src/` for both classes outside their own `GCPnts` package. Five
+production call sites and one Draw test command construct either class with a count; every one
+either hardcodes it (`N = 40`, `NbOfPnts = 61`, `npt = 4`/`8`) or clamps/rejects it first
+(`std::max(2, aNbPoints)`, `std::max(3, aNbSamplePoints)`, the Draw command's own
+`if (aSrcNbPnts < 2) { ...; return 1; }`). So (a) would not change observed behavior for any caller
+in the tree today either, on top of not changing it for us.
+
 Given that, we preferred (b) over (a) for a reason external to our own build: an explicit
 `if (...) throw ...;` makes every OCCT-internal caller of these two classes' count-based
 `initialize()` newly exception-throwing for a degenerate count, in every build, including ones built

@@ -157,6 +157,11 @@ where it currently cannot. Measured before choosing:
   inside `try { ... } catch (...) { return 0/nullptr/false; }`.
 - `Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
   contract for a count of 1 (and 0, -1, past-ceiling) across every one of those entry points.
+- Nothing in the kernel itself calls the count-based `initialize()` with an unvalidated count either:
+  grepped `Libraries/occt-src/src` for both classes outside their own `GCPnts` package. 5 production
+  call sites and 1 Draw test command all hardcode the count or clamp/reject it first
+  (`std::max(2, aNbPoints)`, `std::max(3, aNbSamplePoints)`, `if (aSrcNbPnts < 2) { ...; return 1;
+  }`, or a literal like `N = 40`).
 
 So an exception and a not-done result produce the identical Swift-visible answer today, through the
 existing `catch (...)`. Chose the not-done option: it does not depend on `No_Exception` being defined
