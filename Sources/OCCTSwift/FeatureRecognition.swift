@@ -520,11 +520,58 @@ extension AAG {
         return pockets
     }
 
-    /// Detect holes (through or blind) in the shape
+    /// Detect holes (through or blind) in the shape.
     ///
-    /// A hole is identified by:
-    /// 1. A cylindrical or conical face
-    /// 2. With concave edges connecting to other faces
+    /// ## What "is a hole" means, under `ChFi3d::DefineConnectType` (#747)
+    ///
+    /// The original criterion -- every neighbor connects via a concave edge -- was written
+    /// against a convexity formula (pre-#723) that sometimes misclassified a curved rim as
+    /// concave when it geometrically should not be. Under the correct classifier that
+    /// criterion is unsatisfiable for either ordinary hole shape: a through-hole's wall has
+    /// **zero** concave neighbors (both rims are convex -- the solid occupies 90 degrees
+    /// there, not the 270 that makes an edge concave), and a blind hole's wall has exactly
+    /// **one** out of two (the floor, not the rim where it opens). "All neighbors concave"
+    /// can never hold for either, which is why #747 measured zero holes for both.
+    ///
+    /// A hole is not defined by its neighbors' convexity at all -- that only ever describes
+    /// the rims where the hole *meets other geometry*, and a through-hole has no such junction
+    /// that is concave. What every hole's lateral wall shares, independent of depth, is the
+    /// wall's own intrinsic shape:
+    ///
+    /// 1. **Cylindrical or conical** -- the two developable surface types a drilled or bored
+    ///    feature produces (a conical wall covers a countersink/counterbore transition).
+    /// 2. **Closed in U by its own seam.** The wall wraps all the way around its axis, bounded
+    ///    only by rim(s) in V, not by additional edges along U. A partial revolve -- an edge
+    ///    fillet is the common example -- is bounded by two more edges along U as well, and is
+    ///    not a hole.
+    /// 3. **Material lies radially outside the wall, not inside it.** A hole is a void: the
+    ///    solid occupies the space between the bore and the surrounding stock, so the face's
+    ///    own outward normal (already corrected for ``Face/orientation``, see
+    ///    ``Face/normal(atU:v:)``) points *back toward the axis*. A boss or a standalone solid
+    ///    cylinder is the mirror image of the same topology -- same surface type, same closed-
+    ///    in-U shape, sometimes even the same neighbor-convexity signature (a standalone
+    ///    cylinder's wall has zero concave neighbors too) -- but its material fills the inside,
+    ///    so its normal points *away* from the axis. Nothing about neighbor convexity
+    ///    distinguishes the two; this does, directly, from the wall's own geometry.
+    ///
+    /// This also does not assume the hole's axis is vertical: it reads the wall's actual axis
+    /// (``Face/primaryAxis``) rather than inferring one from a Z-aligned bounding box, which
+    /// the previous aspect-ratio heuristic did implicitly. A pipe's bore is correctly reported
+    /// as a hole by this same rule (material lies radially outside its inner wall), and a
+    /// pipe's outer wall is correctly excluded (material lies radially inside it) -- a case the
+    /// old formula, keyed off a fixed Z axis and a bounding-box aspect ratio, could not
+    /// distinguish from a first-principles derivation.
+    ///
+    /// ```swift
+    /// let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+    /// let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+    /// let blind = box.subtracting(tool)!
+    /// print(blind.buildAAG().detectHoles().count)   // 1, was 0
+    ///
+    /// let tool2 = Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 4, height: 30)!
+    /// let through = box.subtracting(tool2)!
+    /// print(through.buildAAG().detectHoles().count) // 1, was 0
+    /// ```
     ///
     /// - Note: `faceIndex` is an **occurrence** index into ``Shape/orientedFaces()``, not
     ///   ``Shape/faces()`` (#642), matching ``AAGNode/faceIndex``. A hole's face is rarely one
@@ -532,29 +579,52 @@ extension AAG {
     ///   same thing and only the occurrence one is correct here.
     public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)] {
         var holes: [(faceIndex: Int, radius: Double, depth: Double)] = []
+        let faces = shape.orientedFaces()
 
-        // Find cylindrical faces that are holes (all edges are concave)
-        for (index, node) in nodes.enumerated() {
-            // Check if all neighbors are connected via concave edges
-            let allNeighbors = neighbors(of: index)
-            let concaveNeighbors = self.concaveNeighbors(of: index)
+        for index in nodes.indices {
+            guard index < faces.count else { continue }
+            let face = faces[index]
 
-            // If all adjacencies are concave, this might be a hole
-            guard allNeighbors.count == concaveNeighbors.count && allNeighbors.count >= 1 else {
+            // A drilled or bored hole's lateral wall is cylindrical, or conical for a
+            // countersink/counterbore transition (#747).
+            guard face.surfaceType == .cylinder || face.surfaceType == .cone else { continue }
+
+            // Closed in U: the wall must wrap all the way around its own axis. `uvBounds` is
+            // the face's trimmed parameter range (`BRepTools::UVBounds`), and a periodic
+            // cylinder/cone is canonically parameterized over a full 2*pi in U; a partial
+            // revolve (an edge fillet, a half-pipe) is trimmed to less than that.
+            guard let uv = face.uvBounds, uv.uMax - uv.uMin >= 2 * Double.pi - 1e-6 else {
                 continue
             }
 
-            // For now, use bounds to estimate if circular
-            let width = node.bounds.max.x - node.bounds.min.x
-            let height = node.bounds.max.y - node.bounds.min.y
-            let depth = node.bounds.max.z - node.bounds.min.z
+            guard let revolution = face.revolutionProperties else { continue }
+            let axisUnit = simd_normalize(revolution.axis.direction)
 
-            // Check if roughly circular in XY (for vertical holes)
-            let aspectRatio = max(width, height) / min(width, height)
-            if aspectRatio < 1.2 && !node.isPlanar {
-                let radius = (width + height) / 4.0
-                holes.append((faceIndex: index, radius: radius, depth: depth))
+            let uMid = (uv.uMin + uv.uMax) / 2
+            let vMid = (uv.vMin + uv.vMax) / 2
+            guard let midPoint = face.point(atU: uMid, v: vMid),
+                  let midNormal = face.normal(atU: uMid, v: vMid) else {
+                continue
             }
+
+            let offset = midPoint - revolution.axis.origin
+            let radial = offset - simd_dot(offset, axisUnit) * axisUnit
+            let radialLength = simd_length(radial)
+            guard radialLength > 1e-9 else { continue }
+
+            // The material-side test (see doc comment above): a hole's own outward normal
+            // points back toward the axis, opposite the radial direction.
+            guard simd_dot(midNormal, radial / radialLength) < 0 else { continue }
+
+            // Depth along the wall's own axis, not a Z-aligned bounding box: works the same
+            // for a vertical hole as for one bored on any other axis.
+            guard let low = face.point(atU: uMid, v: uv.vMin),
+                  let high = face.point(atU: uMid, v: uv.vMax) else {
+                continue
+            }
+            let depth = abs(simd_dot(high - low, axisUnit))
+
+            holes.append((faceIndex: index, radius: revolution.radius, depth: depth))
         }
 
         return holes
