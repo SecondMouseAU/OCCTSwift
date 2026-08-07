@@ -11,17 +11,27 @@ import Foundation
 //
 // Fixed by testing the definition the field documents directly: the floor plus its walls
 // form a closed loop around the floor's own boundary exactly when every boundary edge of
-// the floor's outer wire is shared with a wall in `wallFaceIndices`. This is computed from
-// what `AAG` already holds -- `AAGEdge.sharedEdgeCount` for each floor/wall pair (already
-// built by `buildGraph()`), and the floor's own outer wire via `shape.orientedFaces()`, the
-// same reindexing `PocketFeature.floorFaceIndex`'s own doc comment documents as correct.
+// the floor's outer wire borders a wall in `wallFaceIndices`.
+//
+// Review of the first version of this fix (PR #753) found that summing `AAGEdge.
+// sharedEdgeCount` over `wallIndices` and comparing to the outer wire's edge count, wire
+// scoped on one side only, could still misreport a genuinely open pocket as closed: a
+// boss standing on the pocket floor passes every wallIndices filter (vertical, rests on the
+// floor) just like a real wall, and its own inner-wire edge was being added to the same sum
+// as the outer boundary's. The count-based approach was also capped, separately, by
+// `OCCTFaceGetSharedEdges`'s fixed output buffer. Both are fixed by testing membership per
+// edge instead of comparing sums: for each edge of the floor's own outer wire, ask which
+// faces border it in the shape and check whether one of them is a member of `wallIndices`,
+// by structural identity rather than by count. See `Issue753PocketBossWireScopeTests`
+// below for the boss fixture, and `AAG.detectPockets()`'s doc comment in
+// `FeatureRecognition.swift` for the full reasoning, including the tolerance-filter
+// interaction review also raised (measured, did not reproduce).
 //
 // A bounding-box containment check (is the pocket's own bbox strictly inside the parent
 // solid's, in the horizontal axes) was considered and rejected: it is cheaper, but wrong
 // for a pocket that legitimately reaches an outer wall of the part while still being fully
 // enclosed on every side that matters. Enclosure is a property of the wall loop, not of the
-// pocket's position in space. See `AAG.detectPockets()`'s doc comment in
-// `FeatureRecognition.swift` for the full reasoning.
+// pocket's position in space.
 @Suite("PocketFeature.isOpen tests enclosure, not wall count (#735)")
 struct Issue735PocketEnclosureTests {
 
@@ -123,5 +133,146 @@ struct Issue735PocketEnclosureTests {
         guard let pocket = pockets.first else { return }
         #expect(pocket.wallFaceIndices.count == 2)
         #expect(pocket.isOpen)
+    }
+}
+
+// #753: review of the first version of #735's fix (above) found the enclosure test itself was
+// wire-scoped on one side only. `floorBoundaryEdgeCount` counted the floor's OUTER wire, but
+// `coveredEdgeCount` summed `AAGEdge.sharedEdgeCount`, a per-face-pair TOTAL, inner wires
+// included, over every face in `wallFaceIndices`. A boss standing on the pocket floor passes
+// every `wallFaceIndices` filter (vertical, rests on the floor at `floorZ`) exactly like a real
+// wall, so its own inner-wire edge was being added to the same sum as the outer boundary's,
+// which could push the sum up to (or past) the outer wire's edge count even when a real gap
+// remained in the outer loop: #735's own bug re-entering through the wire-scope mismatch.
+//
+// Fixed by testing membership per edge instead of comparing sums: for each edge of the floor's
+// own outer wire, ask which faces border it in the shape (`Edge.adjacentFaces(in:)`) and check
+// whether one of them is a member of `wallFaceIndices`, by structural identity
+// (`TopoDS_Shape::IsSame`) rather than by count. A boss's wall can never contribute to this test
+// at all, since the loop only ever visits the outer wire's own edges.
+@Suite("PocketFeature.isOpen is scoped to the outer wire even with a floor boss (#753)")
+struct Issue753PocketBossWireScopeTests {
+
+    /// The adjudicated worked example, byte for byte: a rectangular pocket open on one side,
+    /// with a cylindrical boss standing on the floor. The boss's wall passes every
+    /// `wallFaceIndices` filter and is counted as a wall (`wallFaceIndices.count == 4`, not 3),
+    /// but the pocket is still open on the side with no wall at all: the boss must not be able
+    /// to mask that gap.
+    ///
+    /// Measured against the sum-based formula this replaces (temporarily reinstated, then
+    /// reverted): with the boss present, `wallFaceIndices.count == 4` and the sum-based
+    /// `coveredEdgeCount` reaches the outer wire's 4 edges (3 real walls + the boss's own
+    /// inner-wire edge), so it reported `isOpen == false`, enclosed, which is wrong. The
+    /// per-edge test in this PR reports `isOpen == true`, correctly, because the boss's wall is
+    /// never checked against the outer wire's edges at all.
+    @Test("an open pocket with a floor boss is still NOT enclosed")
+    func openPocketWithFloorBossIsNotEnclosed() throws {
+        let box = try #require(Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        // Same slot as Issue735PocketEnclosureTests.openThreeWalledSlotIsNotEnclosed: opens
+        // through the box's own x = -10 face, so the floor's fourth boundary edge borders no
+        // wall at all.
+        let tool = try #require(Shape.box(origin: SIMD3(-15, -3, 0), width: 13, height: 6, depth: 10))
+        let cut = try #require(box.subtracting(tool))
+
+        // A boss well inside the slot (x = -6, 4 units from the east wall at x = -2 and 4 units
+        // from the open west boundary at x = -10), standing on the floor at z = 0.
+        let boss = try #require(Shape.cylinder(at: SIMD3(-6, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
+        let bossed = try #require(cut.union(boss))
+
+        let pockets = bossed.detectPocketsAAG()
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        // The boss's own wall is a genuine member of wallFaceIndices (4, not 3): it must be,
+        // for this to be a meaningful test of wire scope rather than of the wall filter.
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(pocket.isOpen)
+    }
+
+    /// The other direction: a boss on the floor of an otherwise fully enclosed pocket must not
+    /// make the pocket look open either. This is not the bug #753 found (that direction is
+    /// already covered above), but it rules out an overcorrection where the fix starts ignoring
+    /// real wall coverage whenever any inner wire is present.
+    @Test("a fully enclosed pocket with a floor boss is still enclosed")
+    func enclosedPocketWithFloorBossIsStillEnclosed() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(pocketTool))
+
+        let boss = try #require(Shape.cylinder(at: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1), radius: 1, height: 5))
+        let bossed = try #require(cut.union(boss))
+
+        let pockets = bossed.detectPocketsAAG()
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 5)
+        #expect(!pocket.isOpen)
+    }
+}
+
+// #753's fix asks, per outer-wire edge, "which faces border this edge in the shape" via
+// `Edge.adjacentFaces(in:)`, and checks BOTH of the two faces it returns against `wallFaceIndices`.
+// The floor is always one of the two (trivially not a member of its own walls), and the
+// documented contract of `adjacentFaces(in:)` makes no promise about which of its two return
+// values that will be. Measured directly (a diagnostic build temporarily printed, per edge,
+// which of face1/face2 matched the floor itself, across every fixture in this file): most
+// fully-enclosed fixtures happen to return the wall as face1 in this build's BOP output, but an
+// off-center pocket in a centered box does not: one of its four boundary edges returns the
+// FLOOR as face1 and the wall as face2. That fixture is used here specifically because it is the
+// one found, of several tried, where checking face1 alone would silently misjudge a real wall as
+// absent.
+@Suite("PocketFeature.isOpen does not depend on Edge.adjacentFaces(in:)'s face order (#753)")
+struct Issue753EdgeFaceOrderIndependenceTests {
+    /// An off-center pocket, fully enclosed by 4 walls. Chosen because at least one of its
+    /// floor's boundary edges returns the floor itself as `adjacentFaces(in:)`'s FIRST face and
+    /// the real wall as the second, unlike the centered square/triangular/cylindrical fixtures
+    /// above, where the wall always comes first. A fix that only checked the first face would
+    /// report this specific pocket as open (that edge looks uncovered) even though every
+    /// boundary edge genuinely borders a wall.
+    @Test("an off-center enclosed pocket is enclosed regardless of which adjacent face comes first")
+    func offCenterPocketIsEnclosedRegardlessOfFaceOrder() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let tool = try #require(Shape.box(origin: SIMD3(-8, -8, 0), width: 6, height: 6, depth: 5))
+        let cut = try #require(box.subtracting(tool))
+
+        let pockets = cut.detectPocketsAAG()
+        #expect(pockets.count == 1)
+        guard let pocket = pockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(!pocket.isOpen)
+    }
+}
+
+// #753 review also raised a compounding failure mode: a wall dropped by the `#724`
+// "rests on the floor" tolerance filter (e.g. a filleted floor/wall junction rounding the
+// wall's low-Z bound past the floor's own Z) would also drop its edges from the enclosure
+// count, permanently misreporting a fully enclosed filleted pocket as open. Measured directly
+// (radii 0.5 through 4 on a 10x10x15 pocket, `Sources/OCCTTest/main.swift` scratch probe,
+// restored before committing): it does not reproduce, for a more fundamental reason than the
+// one hypothesized. A fillet replaces the sharp floor/wall edge with a tangent (`smooth`, not
+// `concave`) transition through the fillet face, so the filleted neighbor never appears in
+// `concaveNeighbors(of:)` at all: `wallFaceIndices` comes back empty and the floor is skipped
+// before the tolerance filter, or the enclosure test, ever runs. This locks in that measured
+// behavior (a fully filleted pocket is not detected as a pocket at all) so a future change to
+// the concavity classification that starts recognizing it does not silently reintroduce the
+// originally-hypothesized failure without a test noticing.
+@Suite("A filleted floor/wall junction is not detected as a pocket at all (#753 finding 3, measured)")
+struct Issue753FilletedJunctionNotDetectedTests {
+    @Test("a filleted floor/wall junction pocket is not recognized as a pocket")
+    func filletedJunctionPocketIsNotDetected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(pocketTool))
+
+        // Confirm the sharp-cornered version is detected and enclosed before filleting it,
+        // so a negative result below is "the fillet removed it," not "the fixture was wrong."
+        let prePockets = cut.detectPocketsAAG()
+        #expect(prePockets.count == 1)
+
+        let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+        #expect(junctionEdges.count == 4)
+        let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))
+
+        let postPockets = filleted.detectPocketsAAG()
+        #expect(postPockets.isEmpty)
     }
 }
