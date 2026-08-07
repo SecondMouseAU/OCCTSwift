@@ -1,0 +1,4 @@
+tol=0.01      approxErr=0.0228438    worstPointDeviation=0.00321252   uP=16   APPROXERR-EXCEEDS (approxErr EXCEEDS tol, worstDev <= tol)
+tol=0.05      approxErr=0.0228438    worstPointDeviation=0.00397374   uP=16   approxErr-ok (approxErr <= tol, worstDev <= tol)
+tol=0.1       approxErr=0.579399     worstPointDeviation=0.0723682    uP=9    APPROXERR-EXCEEDS (approxErr EXCEEDS tol, worstDev <= tol)
+tol=0.0005    approxErr=0.00472588   worstPointDeviation=0.000242141  uP=30   APPROXERR-EXCEEDS (approxErr EXCEEDS tol, worstDev <= tol)

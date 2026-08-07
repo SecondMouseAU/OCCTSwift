@@ -1,0 +1,4 @@
+tol=0.01      approxErr=0.0228438    critErr=0.00484093   uP=16   vP=16   EXCEEDS
+tol=0.05      approxErr=0.0228438    critErr=0.00516913   uP=16   vP=16   within
+tol=0.1       approxErr=0.579399     critErr=0.0981545    uP=9    vP=9    EXCEEDS
+tol=0.0005    approxErr=0.00472588   critErr=0.000293786  uP=30   vP=30   EXCEEDS
