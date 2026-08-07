@@ -40,7 +40,7 @@ Summary (markdown table):
 
 ---
 
-Captured from `swift run -c release AnalyzeSelfIntersectionTiming` on macOS arm64, this branch's
+Captured from `swift run -c release Harnesses 772-self-intersection` on macOS arm64, this branch's
 pinned kernel (v2.0.0-kernel.2, remote binaryTarget since no local Libraries/OCCT.xcframework was
 present in the worktree this was measured from). One representative run of three; see README.md
 "Measured" section for the range across all three and how the decision follows from these numbers.

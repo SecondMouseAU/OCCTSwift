@@ -229,7 +229,7 @@ let package = Package(
         // Source lives under Scripts/repro/censuses/, not Scripts/repro/<cluster-dir>/: a cluster's
         // own repro directory keeps its README and any static cross-check script (neither is Swift
         // source SwiftPM needs to see), so renaming that directory no longer touches the manifest
-        // at all -- the whole point, since #694 was raised because renaming
+        // at all, the whole point, since #694 was raised because renaming
         // Scripts/repro/cluster-a-subshape-enumeration/ broke `swift build`/`swift test`
         // repo-wide with "error: invalid custom path". No `exclude:` is needed here because every
         // file this target's own directory holds is Swift source; a second `exclude:` list to
@@ -243,16 +243,19 @@ let package = Package(
             ]
         ),
 
-        // #772: measure(-dont-assume) harness deciding whether Shape.analyze(tolerance:)
-        // should gain a self-intersection pass. `swift run AnalyzeSelfIntersectionTiming`.
-        // README.md and measured-output.txt are the committed evidence this target produced,
-        // not Swift source, so both need excluding the same way Fixtures/ does above for
-        // OCCTStressTests -- without it SwiftPM reports them as unhandled on every build.
+        // One shared executable target for ad hoc measurement harnesses backing an
+        // issue-specific decision, the timing/perf sibling of Censuses just above and built on
+        // the same #694 reasoning: a manifest path into a per-issue repro directory couples
+        // `swift build` to a directory name that does get renamed, and a second `exclude:` list
+        // per harness is a second thing to maintain. `swift run Harnesses <name>` (or `all`, or
+        // no argument to list); see HarnessRunner.swift for the dispatch logic. Source lives
+        // under Scripts/repro/harnesses/, not Scripts/repro/<issue-dir>/: an issue's own repro
+        // directory keeps only its README and captured output (neither is Swift source SwiftPM
+        // needs to see), so no `exclude:` is needed here at all.
         .executableTarget(
-            name: "AnalyzeSelfIntersectionTiming",
+            name: "Harnesses",
             dependencies: ["OCCTSwift"],
-            path: "Scripts/repro/772-analyze-self-intersection",
-            exclude: ["README.md", "measured-output.txt"],
+            path: "Scripts/repro/harnesses",
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

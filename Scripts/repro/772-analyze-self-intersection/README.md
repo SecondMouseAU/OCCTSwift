@@ -24,8 +24,11 @@ here without a passing "the gate actually flips" test would repeat that exact de
 
 ## Method
 
-`main.swift` (built as the `AnalyzeSelfIntersectionTiming` executable target, see `Package.swift`)
-times `Shape.analyze(tolerance:)` (the existing cheap small-edge/small-face/gap scan) against
+`Scripts/repro/harnesses/AnalyzeSelfIntersectionTiming.swift` (one harness in the shared
+`Harnesses` executable target, see `Package.swift` and `Scripts/repro/harnesses/HarnessRunner.swift`;
+this directory keeps only this README and the captured output, not Swift source, the same
+arrangement #694 established for `Censuses`) times `Shape.analyze(tolerance:)` (the existing
+cheap small-edge/small-face/gap scan) against
 `Shape.isSelfIntersecting(timeout:)` (`BOPAlgo_ArgumentAnalyzer`'s self-interference test, the same
 machinery #319 gave a working cooperative timeout) across four shapes, chosen to span "trivial" to
 "the worst artifact on record for this check":
@@ -48,7 +51,7 @@ machinery #319 gave a working cooperative timeout) across four shapes, chosen to
 Run with:
 
 ```bash
-swift run -c release AnalyzeSelfIntersectionTiming
+swift run -c release Harnesses 772-self-intersection
 ```
 
 (Release build matters here: debug-mode overhead is comparable in magnitude to the cheap scan
