@@ -115,32 +115,46 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
     `hasSomething`" shape (`isValid`, `defined`, `ok`, `found`, ...) the naive pass named as a blind
     spot: any boolean struct field is a candidate gate, whatever it is called.
   - For every function definition in the same corpus, bind local identifiers to a KNOWN struct type
-    by two shapes: a local declaration (`OCCTShapeAxis a;`) and a pointer or reference PARAMETER
-    (`OCCTShapeAxis* outAxes`, `OCCTShapeAxis& a`). The parameter form is what teaches the "flipped
-    through a pointer, reference or helper" shape: a shared helper function is just another function
-    definition in the same corpus, and if its own parameter binds the type, an assignment through it
+    by two shapes: a local declaration, value-typed (`OCCTShapeAxis a;`) OR pointer/reference-typed
+    (`OCCTShapeAxis* p = &a;`), and a pointer or reference PARAMETER (`OCCTShapeAxis* outAxes`,
+    `OCCTShapeAxis& a`). The parameter form is what teaches the "flipped through a pointer,
+    reference or helper" shape: a shared helper function is just another function definition in the
+    same corpus, and if its own parameter binds the type, an assignment through it
     (`outAxes->hasExtent = true;`) is caught exactly like a direct one, with no special-casing for
-    "this is a helper" needed at all.
+    "this is a helper" needed at all. The local-declaration form was value-typed only until #774's
+    third review round: `param_bind` already handled a pointer/reference PARAMETER, but the sibling
+    `local_bind` had no `*`/`&` branch, so a pointer or reference declared INSIDE the function body
+    (`OCCTShapeAxis* p = &a; p->hasExtent = true;`) bound nothing and the flip through `p` was
+    invisible, even though the identical shape through a parameter was already caught. Fixed by
+    giving `local_bind` the same two-branch shape `param_bind` already had (pointer/reference OR
+    plain value), rather than adding it to the list of things this pass cannot see.
   - Within each function, match every `var.field = RHS;`, `var->field = RHS;` and
     `var[idx].field = RHS;` assignment (a strict superset of sub-kind 1's `var.field` pattern) where
     `var` is bound to a struct with `field` in its bool-field set. Classify the RHS `true`, `false`,
     or COMPUTED (anything else: a call, a variable, a member access).
   - A COMPUTED assignment to a field marks that (struct, field) as "not provably stuck" wherever it
-    is found, even if no literal `true` ever appears for it: `OCCTCurve3DValidateRange`'s
+    is REACHABLE, even if no literal `true` ever appears for it: `OCCTCurve3DValidateRange`'s
     `result.wasAdjusted = false;` default next to `result.wasAdjusted = adjusted;` (a real
     `ShapeAnalysis_Curve::ValidateRange` return value) is a legitimate flip through a genuine
     computation, not a fabrication, and this is the sub-kind 3 analogue of sub-kind 1's own
     "computed sibling" reasoning. Without this rule, the algorithm's first real run against this
     tree over-reported by 4 sites: `wasAdjusted` and `OCCTXCAFPrsStyle.isEmpty` (assigned from
     `style.IsEmpty()` at its two real construction sites, hardcoded `false` only at its distinct
-    "build an empty style" factory).
-  - A `true` assignment does not count as reachable evidence if it is textually UNREACHABLE by one
-    of two narrow, decidable checks (this is what teaches the "assigned true only on a path that is
-    itself unreachable" shape): (a) it sits inside an `if (false) { ... }` / `if (0) { ... }` /
-    `while (false) { ... }` block, or (b) it is preceded, within the same brace-delimited straight-
-    line block, by an unconditional `return`/`continue`/`break`/`throw` statement that STARTS its
-    own statement (immediately after a `;`, `{`, `}` or the top of the block): a `return` inside a
-    braceless `if (cond) return x;` guard does NOT count, since it is conditional, not a straight-
+    "build an empty style" factory). The reachability qualifier was added in #774's second review
+    round: the SAME two unreachability checks the `true` branch already applies (below) now also
+    gate this branch, since a computed RHS sitting inside `if (false) { field = someCall(); }` is
+    not "maybe true at runtime" either, it is "never runs at all", and treating it as live evidence
+    would exempt a field that is permanently `false` in the code that actually executes, the
+    identical unreachable-write-masks-a-stuck-gate shape as the `true` branch's own gap, left open
+    one branch over until this fix.
+  - A `true` assignment (and, since the fix above, a COMPUTED one) does not count as reachable
+    evidence if it is textually UNREACHABLE by one of two narrow, decidable checks (this is what
+    teaches the "assigned true only on a path that is itself unreachable" shape): (a) it sits inside
+    an `if (false) { ... }` / `if (0) { ... }` / `while (false) { ... }` block, braced or braceless,
+    or (b) it is preceded, within the same brace-delimited straight-line block, by an unconditional
+    `return`/`continue`/`break`/`throw` statement that STARTS its own statement (immediately after a
+    `;`, `{`, `}` or the top of the block): a `return` inside a braceless `if (cond) return x;`
+    guard does NOT count, since it is conditional, not a straight-
     line exit, and treating it as one produced a real false positive in this tree's own corpus (see
     the removal matrix in the self-test below).
   - A field is reported once it has at least one `false` site and belongs to neither the "true seen"
@@ -826,7 +840,16 @@ def gate_flag_candidates(sources):
     type_alt = '|'.join(re.escape(t) for t in struct_fields)
     param_bind = re.compile(
         r'\b(' + type_alt + r')\s*[\*&]\s*(?:_Nonnull\s+|_Nullable\s+|const\s+)?(\w+)\b')
-    local_bind = re.compile(r'\b(' + type_alt + r')\s+([A-Za-z_]\w*)\s*(?:=|;|\{)')
+    # A local declaration binds either a plain value (`OCCTShapeAxis a;`, needs the `\s+` branch,
+    # since nothing else separates the type from the name) or a pointer/reference
+    # (`OCCTShapeAxis* p = &a;` / `OCCTShapeAxis *p;`, needs the `[\*&]` branch, which absorbs
+    # whitespace on either side of the sigil so both spellings match). Originally value-typed only;
+    # a local pointer/reference bound nothing, so `p->hasExtent = true;` through a local alias was
+    # invisible even though param_bind already handled the identical shape for a parameter
+    # (#774's third review round).
+    local_bind = re.compile(
+        r'\b(' + type_alt + r')(?:\s*[\*&]\s*(?:_Nonnull\s+|_Nullable\s+|const\s+)?|\s+)'
+        r'([A-Za-z_]\w*)\s*(?:=|;|\{)')
 
     false_sites = {}   # (struct, field) -> [(file, line, func, snippet), ...]
     true_seen = set()  # (struct, field) with >=1 reachable literal-true assignment
@@ -863,7 +886,14 @@ def gate_flag_candidates(sources):
                 else:
                     # A computed RHS (a call, a variable, a member access) could evaluate true at
                     # runtime; the census cannot prove otherwise from text alone, so this field is
-                    # not provably stuck. See SUB-KIND 3 ALGORITHM's wasAdjusted/isEmpty note.
+                    # not provably stuck. See SUB-KIND 3 ALGORITHM's wasAdjusted/isEmpty note. But
+                    # that only holds if this assignment is itself reachable: a computed RHS sitting
+                    # in the identical dead code the `true` branch already excludes is not "maybe
+                    # true at runtime" either, it is "never runs at all", the same unreachable-
+                    # write-masks-a-stuck-gate shape, one branch over (#774's second review round).
+                    if is_dead_after_terminator(body, m.start(), segs) or \
+                       any(s <= m.start() < e for s, e in dead_spans):
+                        continue  # unreachable computed assignment: not "maybe true", just dead
                     computed_seen.add((stype, field))
 
     found = []
@@ -1214,6 +1244,22 @@ void occtFixtureDeadIfFalseBraceless(OCCTFixtureDeadIfFalseBraceless* outGate) {
     g.reachable = false;
     if (false) g.reachable = true;
 }'''),
+    ('indirection shape 2d: the only non-literal (computed) assignment is inside dead code. The '
+     'reachability check was wired into the rhs == true branch only, so a computed RHS sitting in '
+     'the same if (false) block was marked "not provably stuck" with no reachability check at all', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureDeadComputed;
+''', '''
+void occtFixtureDeadComputed(OCCTFixtureDeadComputed* outGate) {
+    OCCTFixtureDeadComputed g;
+    g.value = 1.0;
+    g.hasExtent = false;
+    if (false) {
+        g.hasExtent = occtSomeLegacyComputation();
+    }
+}'''),
 ]
 
 GATE_CLEAN = [
@@ -1312,6 +1358,22 @@ OCCTFixtureValidateRange occtFixtureValidateRange(double first) {
     bool adjusted = realValidate(&result.first);
     result.wasAdjusted = adjusted;
     return result;
+}'''),
+    ('indirection shape 5: flipped through a LOCAL pointer variable declared inside the function '
+     'body (OCCTFixtureLocalPointer* p = &a; p->hasExtent = true;), not a parameter. param_bind '
+     'already handled a pointer/reference PARAMETER, but local_bind only matched plain '
+     'value-typed local declarations, so a local alias bound nothing and the flip was invisible', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureLocalPointer;
+''', '''
+void occtFixtureLocalPointer(OCCTFixtureLocalPointer* outGate) {
+    OCCTFixtureLocalPointer a;
+    a.value = 1.0;
+    a.hasExtent = false;
+    OCCTFixtureLocalPointer* p = &a;
+    p->hasExtent = true;
 }'''),
 ]
 
