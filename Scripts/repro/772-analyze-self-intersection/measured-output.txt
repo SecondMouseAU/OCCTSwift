@@ -1,0 +1,46 @@
+#772 timing: Shape.analyze(tolerance:) vs Shape.isSelfIntersecting(timeout:)
+=================================================================
+
+1. Simple box
+  faces=6 edges=12
+  analyze(tolerance:):                 0.000456 s
+  isSelfIntersecting(timeout: 30):     0.000501 s  [clean]
+  overhead (self-intersect / analyze): 1.1x
+
+2. Moderately complex fused/filleted solid
+  faces=16 edges=39
+  analyze(tolerance:):                 0.001267 s
+  isSelfIntersecting(timeout: 30):     0.002379 s  [clean]
+  overhead (self-intersect / analyze): 1.9x
+
+3. Mesh-sewn imported solid (kiha10 body5, #348 fixture)
+  faces=662 edges=1072
+  analyze(tolerance:):                 0.037005 s
+  isSelfIntersecting(timeout: 30):     0.060073 s  [self-intersects]
+  overhead (self-intersect / analyze): 1.6x
+
+4. #319 pathological artifact (dualskin_lateral.15)
+  faces=1 edges=3
+  analyze(tolerance:):                 0.007758 s
+  isSelfIntersecting(timeout: 30):     30.026 s  [self-intersects]
+  overhead (self-intersect / analyze): 3870.2x
+
+4b. Same artifact, isSelfIntersecting(hardTimeout: 5): true wall-clock bound
+  actual wall-clock: 5.010 s (background check left running past the deadline is abandoned, not cancelled)
+
+=================================================================
+Summary (markdown table):
+
+| Shape | Faces | Edges | analyze(tolerance:) | isSelfIntersecting(timeout: 30) | Result | Overhead |
+|---|---|---|---|---|---|---|
+| 1. Simple box | 6 | 12 | 0.000456 s | 0.000501 s | clean | 1.1x |
+| 2. Moderately complex fused/filleted solid | 16 | 39 | 0.001267 s | 0.002379 s | clean | 1.9x |
+| 3. Mesh-sewn imported solid (kiha10 body5, #348 fixture) | 662 | 1072 | 0.037005 s | 0.060073 s | self-intersects | 1.6x |
+| 4. #319 pathological artifact (dualskin_lateral.15) | 1 | 3 | 0.007758 s | 30.026 s | self-intersects | 3870.2x |
+
+---
+
+Captured from `swift run -c release AnalyzeSelfIntersectionTiming` on macOS arm64, this branch's
+pinned kernel (v2.0.0-kernel.2, remote binaryTarget since no local Libraries/OCCT.xcframework was
+present in the worktree this was measured from). One representative run of three; see README.md
+"Measured" section for the range across all three and how the decision follows from these numbers.

@@ -220,34 +220,61 @@ extension Shape {
 
     /// Analyze a shape for problems such as small edges, gaps, and invalid topology.
     ///
-    /// - Note: This never reports self-intersections (the `selfIntersectionCount` field that used
-    ///   to sit here was always 0, never computed, and was removed in #763); use
-    ///   ``isSelfIntersecting(timeout:)`` for a real check. `freeEdgeCount`/`freeFaceCount` were
-    ///   also hardcoded to 0 for every shape before #702; a demoted or otherwise open shell now
-    ///   reports its actual gap correctly. A "clean" result here has never meant "this is a
-    ///   solid": check `shapeType` or ``isValidSolid`` for that.
-    /// - Parameter tolerance: Size threshold for detecting small features
-    /// - Returns: Analysis result with problem counts, or nil on failure
+    /// - Note: This never reports self-intersection unless asked to (the `selfIntersectionCount`
+    ///   field that used to sit here was always 0, never computed, and was removed in #763).
+    ///   `freeEdgeCount`/`freeFaceCount` were also hardcoded to 0 for every shape before #702; a
+    ///   demoted or otherwise open shell now reports its actual gap correctly. A "clean" result
+    ///   here has never meant "this is a solid": check `shapeType` or ``isValidSolid`` for that.
+    ///
+    /// - Parameters:
+    ///   - tolerance: Size threshold for detecting small features.
+    ///   - checkSelfIntersection: If `true`, also runs ``isSelfIntersecting(hardTimeout:)`` and
+    ///     populates ``ShapeAnalysisResult/hasSelfIntersection``. Default `false`, because that
+    ///     check is orders of magnitude more expensive than the rest of this scan and, on
+    ///     pathological input, the gap is not small: measured on the #319 artifact, ~1800x the
+    ///     cost of the rest of the scan combined (16ms vs 30s at the default `hardTimeout`). On
+    ///     ordinary shapes the measured overhead was 1x-3x, cheap enough to opt into whenever a
+    ///     caller actually wants the answer. See `Scripts/repro/772-analyze-self-intersection/`
+    ///     for the full measurement across a spread of shapes, from a primitive to that
+    ///     pathological artifact (#772).
+    ///   - hardTimeout: Only used when `checkSelfIntersection` is `true`; forwarded to
+    ///     ``isSelfIntersecting(hardTimeout:)`` as its true wall-clock deadline. Default 30s.
+    /// - Returns: Analysis result with problem counts, or nil on failure.
     ///
     /// ## Example
     ///
     /// ```swift
     /// let shape = Shape.load(from: stepURL)!
     /// if let analysis = shape.analyze(tolerance: 0.001) {
-    ///     print("Found \(analysis.totalProblems) problems")
+    ///     print("Found \(analysis.totalProblems) problems")   // self-intersection not included
     ///     if analysis.hasInvalidTopology {
     ///         print("Shape has invalid topology!")
     ///     }
     /// }
+    ///
+    /// // Opt into the expensive check when it's actually needed:
+    /// if let analysis = shape.analyze(tolerance: 0.001, checkSelfIntersection: true) {
+    ///     switch analysis.hasSelfIntersection {
+    ///     case .some(true):  print("self-intersects")
+    ///     case .some(false): print("clean")
+    ///     case nil:          print("indeterminate, hardTimeout elapsed first")
+    ///     }
+    /// }
     /// ```
-    public func analyze(tolerance: Double = 1e-6) -> ShapeAnalysisResult? {
+    public func analyze(tolerance: Double = 1e-6, checkSelfIntersection: Bool = false,
+                        hardTimeout: Double = 30) -> ShapeAnalysisResult? {
         let result = OCCTShapeAnalyze(handle, tolerance)
         guard result.isValid else { return nil }
+
+        let hasSelfIntersection: Bool? = checkSelfIntersection
+            ? isSelfIntersecting(hardTimeout: hardTimeout)
+            : nil
 
         return ShapeAnalysisResult(
             smallEdgeCount: Int(result.smallEdgeCount),
             smallFaceCount: Int(result.smallFaceCount),
             gapCount: Int(result.gapCount),
+            hasSelfIntersection: hasSelfIntersection,
             freeEdgeCount: Int(result.freeEdgeCount),
             freeFaceCount: Int(result.freeFaceCount),
             hasInvalidTopology: result.hasInvalidTopology

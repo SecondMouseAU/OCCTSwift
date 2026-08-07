@@ -242,6 +242,21 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
+
+        // #772: measure(-dont-assume) harness deciding whether Shape.analyze(tolerance:)
+        // should gain a self-intersection pass. `swift run AnalyzeSelfIntersectionTiming`.
+        // README.md and measured-output.txt are the committed evidence this target produced,
+        // not Swift source, so both need excluding the same way Fixtures/ does above for
+        // OCCTStressTests -- without it SwiftPM reports them as unhandled on every build.
+        .executableTarget(
+            name: "AnalyzeSelfIntersectionTiming",
+            dependencies: ["OCCTSwift"],
+            path: "Scripts/repro/772-analyze-self-intersection",
+            exclude: ["README.md", "measured-output.txt"],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
     ],
     cxxLanguageStandard: .cxx17
 )

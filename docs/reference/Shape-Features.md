@@ -1545,6 +1545,7 @@ public struct ShapeAnalysisResult {
     public let smallEdgeCount: Int
     public let smallFaceCount: Int
     public let gapCount: Int
+    public let hasSelfIntersection: Bool?
     public let freeEdgeCount: Int
     public let freeFaceCount: Int
     public let hasInvalidTopology: Bool
@@ -1555,10 +1556,25 @@ public struct ShapeAnalysisResult {
 
 `isHealthy` is `true` when `totalProblems == 0 && !hasInvalidTopology`.
 
-- **This never reports self-intersections.** A `selfIntersectionCount` field used to sit here
-  (through v1.x) but was always 0, never computed (the bridge's own comment read "would require
-  more expensive computation"); it was removed in #763 rather than kept as a permanent zero. Use
-  `isSelfIntersecting(timeout:)` for a real answer.
+- **This never reports self-intersection unless asked to.** A `selfIntersectionCount` field used
+  to sit here (through v1.x) but was always 0, never computed (the bridge's own comment read
+  "would require more expensive computation"); it was removed in #763 rather than kept as a
+  permanent zero. Use `hasSelfIntersection`, populated via
+  `analyze(tolerance:checkSelfIntersection:hardTimeout:)`, or `isSelfIntersecting(timeout:)`
+  directly, for a real answer.
+- **`hasSelfIntersection` is `nil` unless `analyze(checkSelfIntersection: true)` was used (#772).**
+  The self-intersection check (`BOPAlgo_ArgumentAnalyzer`'s self-interference test, #319) is
+  orders of magnitude more expensive than the rest of this scan, and on pathological input the
+  gap is not small: measured on the #319 pathological artifact, roughly 1800x-4100x the cost of
+  the rest of the scan combined (a few milliseconds vs 30+ seconds at the default `hardTimeout`).
+  On ordinary shapes, including a real 662-face mesh-sewn import, the measured overhead was
+  1x-3x, cheap enough to opt into freely; see `Scripts/repro/772-analyze-self-intersection/` for
+  the full measurement. `nil` covers two cases the type deliberately does not distinguish: not
+  requested, or requested but indeterminate (the check did not resolve within `hardTimeout`,
+  matching `isSelfIntersecting`'s own `nil` = indeterminate). `nil` is never "clean": only
+  `hasSelfIntersection == false` means that. `totalProblems` adds a flat +1 when
+  `hasSelfIntersection == true`, +0 for `false` or `nil`, so it never reflects self-intersection
+  unless the analysis actually checked for it.
 - **`freeEdgeCount`/`freeFaceCount` were hardcoded to 0 for every shape before #702**: the bridge
   called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping,
   instead of `CheckOrientedShells()`, the call that actually populates the free-edge set. Now
@@ -1580,21 +1596,39 @@ public struct ShapeAnalysisResult {
 
 ---
 
-### `analyze(tolerance:)`
+### `analyze(tolerance:checkSelfIntersection:hardTimeout:)`
 
 Analyzes a shape for problems such as small edges, gaps, and invalid topology.
 
 ```swift
-public func analyze(tolerance: Double = 1e-6) -> ShapeAnalysisResult?
+public func analyze(tolerance: Double = 1e-6, checkSelfIntersection: Bool = false,
+                    hardTimeout: Double = 30) -> ShapeAnalysisResult?
 ```
 
-- **Parameters:** `tolerance` — size threshold for detecting small features.
+- **Parameters:**
+  - `tolerance`: size threshold for detecting small features.
+  - `checkSelfIntersection`: if `true`, also runs `isSelfIntersecting(hardTimeout:)` and
+    populates `ShapeAnalysisResult.hasSelfIntersection`. Default `false` (#772): that check costs
+    1x-3x the rest of this scan on ordinary shapes but roughly 1800x-4100x on pathological input
+    (measured, `Scripts/repro/772-analyze-self-intersection/`), so it stays opt-in rather than
+    silently turning a cheap call into an occasionally unbounded-shaped one.
+  - `hardTimeout`: only used when `checkSelfIntersection` is `true`; forwarded to
+    `isSelfIntersecting(hardTimeout:)` as its true wall-clock deadline. Default 30 seconds.
 - **Returns:** `ShapeAnalysisResult` with problem counts, or `nil` if the analysis itself fails.
-- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`).
+- **OCCT:** `ShapeAnalysis_Shell` + `ShapeAnalysis_CheckSmallFace` + `BRepCheck_Analyzer` (via `OCCTShapeAnalyze`), plus `BOPAlgo_ArgumentAnalyzer` when `checkSelfIntersection` is `true`.
 - **Example:**
   ```swift
   if let a = shape.analyze(tolerance: 0.001) {
-      if !a.isHealthy { print("\(a.totalProblems) problems found") }
+      if !a.isHealthy { print("\(a.totalProblems) problems found") }   // self-intersection not included
+  }
+
+  // Opt into the expensive check when it's actually needed:
+  if let a = shape.analyze(tolerance: 0.001, checkSelfIntersection: true) {
+      switch a.hasSelfIntersection {
+      case .some(true):  print("self-intersects")
+      case .some(false): print("clean")
+      case nil:          print("indeterminate, hardTimeout elapsed first")
+      }
   }
   ```
 
