@@ -406,9 +406,10 @@ Returns up to `maxCount` results. For simple queries where only the minimum dist
 
 - **Parameters:** `other` — the second curve; `maxCount` — output *capacity* (default 20), clamped
   into `0...Sampling.maximumSampleCount` (10,000,000); 0 or less returns empty (#622).
-- **Warning:** SIGSEGVs (uncatchable) on two **parallel** curves, at every capacity including the
-  default — a `GeomAPI_ExtremaCurveCurve` defect unrelated to the count bound (#622).
-- **Returns:** Array of `CurveExtremaResult` values (may be empty if the algorithm finds nothing).
+- **Returns:** Array of `CurveExtremaResult` values. Empty when the curves are parallel: OCCT
+  represents that case as a single unbounded family of equidistant solutions rather than a finite
+  set of point pairs, so there is no `(point1, point2)` pair to report. Also empty if the algorithm
+  finds nothing. Use `minDistance(to:)` for the (well-defined) distance in the parallel case.
 - **OCCT:** `GeomAPI_ExtremaCurveCurve`.
 - **Example:**
   ```swift

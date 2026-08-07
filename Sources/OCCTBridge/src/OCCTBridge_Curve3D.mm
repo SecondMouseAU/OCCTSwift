@@ -1072,6 +1072,11 @@ double OCCTCurve3DMinDistanceToCurve(OCCTCurve3DRef c1, OCCTCurve3DRef c2) {
     try {
         GeomAPI_ExtremaCurveCurve extrema(c1->curve, c2->curve);
         if (extrema.NbExtrema() == 0) return -1.0;
+        // No IsParallel() guard needed here (#636): LowerDistance() only reads
+        // Extrema_ExtCC::mySqDist, which Extrema_ExtCC::PrepareParallelResult populates correctly
+        // even on parallel curves. Only Points()/Parameters() (below, in OCCTCurve3DExtrema) index
+        // the mypoints sequence that is left empty in that case. Measured against two parallel
+        // Geom_Line curves: returns the correct offset distance, no crash.
         return extrema.LowerDistance();
     } catch (...) {
         return -1.0;
@@ -1082,6 +1087,18 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef c1, OCCTCurve3DRef c2, OCCTCurveExtrem
     if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull() || !outExtrema || maxCount <= 0) return 0;
     try {
         GeomAPI_ExtremaCurveCurve extrema(c1->curve, c2->curve);
+        // GeomAPI_ExtremaCurveCurve wraps Extrema_ExtCC (the same class BRepExtrema_ExtCC's
+        // documented parallel-curve crash traces back to, one layer down). On parallel curves,
+        // Extrema_ExtCC::PrepareParallelResult appends a single distance to mySqDist but leaves
+        // mypoints empty; NbExtrema() reports 1 (mySqDist.Length()), so Points() below indexes an
+        // empty NCollection_Sequence. This build's OCCT disables Standard_OutOfRange in Release
+        // (BUILD_RELEASE_DISABLE_EXCEPTIONS), so that indexing is not a caught exception: it is
+        // an OS SIGSEGV, uncatchable by the catch(...) below (#636). Query IsParallel() before
+        // touching any solution, mirroring the guard already in place for the sibling
+        // Extrema_ExtCC/Extrema_ExtCS entry points in this same file (OCCTExtremaExtCC /
+        // OCCTExtremaExtCS). LowerDistance()-only callers (OCCTCurve3DMinDistanceToCurve) are
+        // unaffected: mySqDist is populated correctly even when parallel, only mypoints is not.
+        if (extrema.IsParallel()) return 0;
         int32_t nb = extrema.NbExtrema();
         int32_t count = (nb < maxCount) ? nb : maxCount;
         for (int32_t i = 0; i < count; i++) {
