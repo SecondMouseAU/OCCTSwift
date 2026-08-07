@@ -7,9 +7,11 @@ that external status claims are re-verified, not copied from the issue that stat
 (`feedback-verify-external-status-claims`); this write-up is that verification, not a restatement.
 
 **No upstream action was taken.** Nothing here pushes to, comments on, or modifies any pull request
-or issue in `Open-Cascade-SAS/OCCT`, or any fork of it. `verify.sh` in this directory is read-only
-and reproduces every claim below from the GitHub API and a throwaway local clone; run it to
-re-check any of this after time has passed.
+or issue in `Open-Cascade-SAS/OCCT`, or any fork of it. `verify.sh` in this directory is read-only;
+it reproduces Method 1's PR-state fields (state, merged, mergeable, comment counts, not the CI
+status/check-runs calls) and all of Method 2 below, but not Method 3's file-tree diff or Method 4's
+reproducer/clang-format checks, both of which were done by hand for this write-up and are not
+re-run by the script. Run it to re-check the parts it covers after time has passed.
 
 ## Method
 
