@@ -2,8 +2,8 @@
 
 Scope: `OCCTBridge_Topology.mm` (9), `OCCTBridge_Healing.mm` (9), `OCCTBridge_Properties.mm` (7),
 `OCCTBridge_BRepGraph.mm` (4), `OCCTBridge_Surface.mm` (2), `OCCTBridge_Modeling.mm` (2),
-`OCCTBridge_Spatial.mm` (1), `OCCTBridge_Geom2d.mm` (1), `OCCTBridge_Curve3D.mm` (1). The sibling
-36 (`OCCTBridge_Document.mm`/`OCCTBridge_IO.mm`) are triaged separately on
+`OCCTBridge_Spatial.mm` (1), `OCCTBridge_Geom2d.mm` (1), `OCCTBridge_Curve3D.mm` (1) — 36 lines
+total. The sibling 26 (`OCCTBridge_Document.mm`/`OCCTBridge_IO.mm`) are triaged separately on
 `chore/763-triage-document`.
 
 File:line below is where `python3 Scripts/census-unmeasured-values.py` reported the candidate on
@@ -21,17 +21,24 @@ label turned out to be checking the wrong thing.
 
 ## Verdict counts
 
-| Verdict | Count |
-|---|---|
-| 1. Not an instance | 34 |
-| 2. Compute it | 1 (7 fields, 2 functions — see below) |
-| 3. Make absence representable | 0 |
-| 4. Remove the field | 1 |
+Counted per census *line* (36 total, matching `census-unmeasured-values.py`'s own unit — one line
+per flagged `(function, field)` pair, so `OCCTShapeSymmetryAxes`'s two `OCCTShapeAxis`
+constructions at lines 694/713 share one line each for `extentMin`/`extentMax`/`hasExtent`/`kind`,
+per the script's own (function, field-name) dedup):
 
-35 of 36 lines are verdict 1; two lines carry the two non-1 verdicts. The `hasExtent` finding
-spans 7 of the 36 census lines (both `OCCTShapeRevolutionAxes` and `OCCTShapeSymmetryAxes`'s
-`extentMin`/`extentMax`/`hasExtent`, plus `OCCTShapeSymmetryAxes`'s `kind` which stays verdict 1
-after the fix), counted here as one implementation item.
+| Verdict | Count | Lines |
+|---|---|---|
+| 1. Not an instance | 29 | all except the 7 below |
+| 2. Compute it | 6 | `Topology.mm:653` `extentMin`/`extentMax`/`hasExtent`, `Topology.mm:694` `extentMin`/`extentMax`/`hasExtent` — one implementation (`occtComputeAxisExtent`, see below) covering both call sites |
+| 3. Make absence representable | 0 | — |
+| 4. Remove the field | 1 | `Healing.mm:303` `selfIntersectionCount` |
+
+`Topology.mm:694`'s fourth field, `kind`, stays **verdict 1** even though it sits on the same line
+as three verdict-2 fields — it is a real branch-selected constant (always 7, "symmetry"), not a
+fabricated measurement, and untouched by the extent fix. So of `OCCTShapeSymmetryAxes`'s four
+flagged fields at that line, three are verdict 2 and one is verdict 1; `OCCTShapeRevolutionAxes`'s
+three flagged fields at `:653` are all verdict 2. 29 (verdict 1) + 6 (verdict 2) + 1 (verdict 4) =
+36.
 
 ## Verdict 4: remove `selfIntersectionCount` — IMPLEMENTED
 
