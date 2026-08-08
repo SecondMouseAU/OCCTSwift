@@ -2,6 +2,29 @@ import Testing
 import Foundation
 @testable import OCCTSwift
 
+/// A fillet or chamfer that silently returned an unchanged shape would leave every assertion in
+/// these suites reading the SHARP fixture, which the control tests already prove detects correctly.
+/// The result would be a green test proving nothing, which is #703's exact shape: that fixture's
+/// boolean subtraction returned a perfectly good shape having removed zero volume.
+///
+/// `try #require(...)` only proves the call returned non-nil. This proves it did something: a fillet
+/// or chamfer replaces each target edge with at least one new face, so the face count must rise.
+///
+/// Raised self-reviewing #762 against `Scripts/census-unmeasured-values.py`'s sub-kind 2, which
+/// flagged these tests for pinning counts with no in-test fixture verification (#764).
+private func expectShapeChanged(
+    _ before: Shape,
+    _ after: Shape,
+    _ label: String,
+    sourceLocation: SourceLocation = #_sourceLocation
+) {
+    let b = before.faces().count
+    let a = after.faces().count
+    #expect(a > b, "\(label): face count did not rise (\(b) to \(a)), so the operation added no geometry and this fixture is still the sharp one",
+            sourceLocation: sourceLocation)
+}
+
+
 // #762: a fillet at a pocket's floor/wall junction is tangent to both surfaces
 // (`ChFi3d::DefineConnectType` reports `.smooth` at both new edges, by construction, since a
 // fillet is G1-continuous with both faces it blends), so `concaveNeighbors(of:)` finds
@@ -53,6 +76,7 @@ struct Issue762FilletedPocketDetectionTests {
         let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: radius))
+        expectShapeChanged(cut, filleted, "filleted on cut")
 
         let pockets = filleted.detectPocketsAAG()
         #expect(pockets.count == 1)
@@ -111,6 +135,7 @@ struct Issue762PartialFilletDetectionTests {
         let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
+        expectShapeChanged(cut, filleted, "filleted on cut")
 
         let pockets = filleted.detectPocketsAAG()
         #expect(pockets.count == 1)
@@ -197,6 +222,7 @@ struct Issue762ReflexCornerPartialFilletTests {
         })
         #expect(wallY0Edges.count == 1)
         let filleted = try #require(cut.filleted(edges: wallY0Edges, radius: 1.0))
+        expectShapeChanged(cut, filleted, "filleted on cut")
 
         // Default tolerance: see this test's own doc comment for why WallX0 is correctly
         // absent here (the `.convex` guard, not a numerical near-miss).
@@ -246,6 +272,7 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
         let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: Array(junctionEdges.prefix(2)), radius: 1.0))
+        expectShapeChanged(cut, filleted, "filleted on cut")
 
         // Deliberately smaller than the sharp walls' own measured ~1.5e-7 natural offset, so
         // their direct route fails while the junction route (unconditional past #724's Z
@@ -320,6 +347,7 @@ struct Issue762VerticalCornerBlendNotAWallTests {
         })
         #expect(southEdge.count == 1)
         let filletedSouth = try #require(cut.filleted(edges: southEdge, radius: 3.0))
+        expectShapeChanged(cut, filletedSouth, "filleted on cut")
 
         let cornerEdge = filletedSouth.edges(where: {
             abs($0.bounds.min.x - (-5)) < 1e-3 && abs($0.bounds.max.x - (-5)) < 1e-3 &&
@@ -328,6 +356,7 @@ struct Issue762VerticalCornerBlendNotAWallTests {
         })
         #expect(cornerEdge.count == 1)
         let doubleFillet = try #require(filletedSouth.filleted(edges: cornerEdge, radius: 2.0))
+        expectShapeChanged(filletedSouth, doubleFillet, "filleted on filletedSouth")
 
         let pockets = doubleFillet.detectPocketsAAG()
         #expect(pockets.count == 1)
@@ -389,6 +418,7 @@ struct Issue762FullyRoundedPocketChainingTests {
         })
         #expect(floorEdges.count == 4)
         let filletedFloor = try #require(cut.filleted(edges: floorEdges, radius: 3.0))
+        expectShapeChanged(cut, filletedFloor, "filleted on cut")
 
         let cornerEdges = filletedFloor.edges(where: {
             ($0.bounds.max.z - $0.bounds.min.z) > 1.0 &&
@@ -399,6 +429,7 @@ struct Issue762FullyRoundedPocketChainingTests {
         })
         #expect(cornerEdges.count == 4)
         let doubleRing = try #require(filletedFloor.filleted(edges: cornerEdges, radius: 2.0))
+        expectShapeChanged(filletedFloor, doubleRing, "filleted on filletedFloor")
 
         let pockets = doubleRing.detectPocketsAAG()
         #expect(pockets.count == 1)
@@ -454,6 +485,7 @@ struct Issue762FilletedThroughSlotStaysOpenTests {
         })
         #expect(longEdges.count == 2)
         let filleted = try #require(cut.filleted(edges: longEdges, radius: 1.0))
+        expectShapeChanged(cut, filleted, "filleted on cut")
 
         let pockets = filleted.detectPocketsAAG()
         #expect(pockets.count == 1)
@@ -505,6 +537,7 @@ struct Issue762FilletedBossFalsePositiveTests {
         })
         #expect(baseEdges.count == 4)
         let filletedBoss = try #require(fused.filleted(edges: baseEdges, radius: 1.0))
+        expectShapeChanged(fused, filletedBoss, "filleted on fused")
 
         let pockets = filletedBoss.detectPocketsAAG()
         // Either the boss's fillet is absorbed and the plate's top is reported as an open
@@ -537,6 +570,7 @@ struct Issue762FilletedExternalCornerFalsePositiveTests {
         let topEdges = box.edges(where: { abs($0.bounds.min.z - 10) < 1e-6 && abs($0.bounds.max.z - 10) < 1e-6 })
         #expect(topEdges.count == 4)
         let filletedTop = try #require(box.filleted(edges: topEdges, radius: 2.0))
+        expectShapeChanged(box, filletedTop, "filleted on box")
 
         #expect(filletedTop.detectPocketsAAG().isEmpty)
     }
