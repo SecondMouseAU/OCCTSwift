@@ -610,6 +610,16 @@ class Geom_BSplineSurface;
 // order-1 answer is GeomAbs_G1.
 //
 // Returns a null handle when the approximation cannot be built; callers treat that as failure.
+//
+// #597 investigated whether ApproxError() should also gate acceptance here (GeomPlate_MakeApprox's
+// own doc promises Tol3d only "if possible"). Measured and reverted: ApproxError() is "the
+// distance between the entire target BSpline surface and the entire original [GeomPlate_Surface]",
+// i.e. fidelity to an intermediate object the caller never sees — NOT fidelity to the caller's own
+// input points/curves, which is what every one of the six entry points' own contract (and their
+// existing tests) actually checks. On the #571 fixture ApproxError() exceeds `tolerance` by up to
+// 5.8x while the deviation from the caller's own constraint points stays inside it throughout;
+// gating on ApproxError() would reject results Issue571PlateApproxTests already proves are within
+// the tolerance that matters. See Scripts/repro/597-bridge-modeling-healing-approx-error.
 occ::handle<Geom_BSplineSurface> occtPlateApproxSurface(const occ::handle<GeomPlate_Surface>& plate,
                                                         double tolerance,
                                                         int32_t maxDegree,

@@ -223,3 +223,30 @@ harness's fixtures because the fit there is exact, and filed with the above.
 checked against the released pre-`0019` kernel with `OCCTSWIFT_REMOTE=1`, where exactly the two
 pinning tests fail with the numbers above (0.876114 and 0.103785) and the three deliberate
 non-regression controls pass.
+
+## #597: the wider family, beyond `GeomConvert_ApproxSurface`
+
+Cluster E's own one-line definition (`docs/v2.0.0-plan.md`) is "accept an approximation without
+reading its error", not "constructs `GeomConvert_ApproxSurface`" specifically. The sites above are
+the ones that follow #522's blast radius through that one class. #597 swept the rest of the
+cluster's territory: every OCCT class in `OCCTBridge_Modeling.mm`/`OCCTBridge_Healing.mm` capable of
+reporting a fitting/approximation error, regardless of which approximator it wraps. This is that
+enumeration, extending this artifact per the census-once rule rather than duplicating it in #597's
+own directory:
+
+| site | file | error API | reads it? | verdict |
+|---|---|---|---|---|
+| `occtPlateApproxSurface` (backs `OCCTShapePlatePoints`, `OCCTShapePlateCurves`, +4 more in `OCCTBridge_ProjLib_NLPlate.mm`) | Healing.mm (shared helper in ProjLib_NLPlate.mm) | `GeomPlate_MakeApprox::ApproxError()`/`CriterionError()` | no | investigated, not a fixable defect (measures fidelity to an intermediate object the caller never sees, not the caller's own input) |
+| `OCCTShapeFillBuildResult` (backs `OCCTShapeFill`, `OCCTShapeFillWithSupport`, `OCCTShapeFillConstraints`) | Healing.mm | `BRepOffsetAPI_MakeFilling::G0Error()`/`G1Error()`/`G2Error()` | no | investigated, not a fixable defect (the right metric, but the bridge's `Tol3d` default is routinely and legitimately exceeded by correct fills) |
+| `occtUnifySameDomain` / `OCCTUnifySameDomain` builder | Healing.mm / Modeling.mm | none (`ShapeUpgrade_UnifySameDomain` exposes no error getter at all) | n/a | confirms this artifact's own finding above; nothing to read |
+| `PipeShellBuilder` (`OCCTPipeShell*`) | Modeling.mm | `BRepFill_PipeShell::ErrorOnSurface()` | **yes** | not a defect: deliberate manual-builder design, error is an opt-in accessor |
+| `FillingSurface` (`OCCTFilling*`) | Modeling.mm | `BRepOffsetAPI_MakeFilling::G0Error()`/`G1Error()`/`G2Error()` | **yes** | same as above |
+| `ShapeCustom_BSplineRestriction` (`OCCTShapeBSplineRestrictionAdvanced`) | Healing.mm | `SurfaceError()`/`Curve3dError()`/`Curve2dError()`/`MaxErrors()` | no | self-polices in the kernel: declines a face's conversion rather than ever accepting one out of tolerance |
+| `ShapeCustom_ConvertToBSpline`, `ShapeCustom_ConvertToRevolution` | Healing.mm | none | n/a | not an approximation with a reported error |
+| `BRepFill_NSections`, `BRepOffsetAPI_ThruSections`, `BRepOffsetAPI_MakeOffset(Shape)`, `BRepFill_Evolved` | both | none | n/a | no error-reporting API in OCCT for these |
+| `GeomAPI_PointsToBSpline(Surface)`, `GeomAPI_Interpolate` | Modeling.mm | none | n/a | `#include`d only; no construction site in either file |
+
+Full measurement detail (the actual probes, the reverted-fix confirmation against
+`Issue571PlateApproxTests`/`FillingSupportFaceTests`, and why each verdict above holds) lives at
+[`Scripts/repro/597-bridge-modeling-healing-approx-error/`](../597-bridge-modeling-healing-approx-error/README.md),
+which this table indexes rather than duplicates.
