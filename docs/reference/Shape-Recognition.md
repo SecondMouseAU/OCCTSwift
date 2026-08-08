@@ -186,24 +186,6 @@ public func adjustEndpoints(start: (Double, Double), end: (Double, Double)) -> B
 
 Free-function bisector utilities and their associated value types.
 
-### `BisectorPoint`
-
-Point on a bisector curve with parameter and distance information.
-
-```swift
-public struct BisectorPoint {
-    public let paramOnC1: Double
-    public let paramOnC2: Double
-    public let paramOnBis: Double
-    public let distance: Double
-    public let x: Double
-    public let y: Double
-    public let isInfinite: Bool
-}
-```
-
----
-
 ### `BisectorIntersection`
 
 Result of a bisector-vs-bisector intersection computation.

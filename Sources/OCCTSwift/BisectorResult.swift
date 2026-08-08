@@ -2,16 +2,11 @@ import Foundation
 import simd
 import OCCTBridge
 
-/// Point on a bisector curve with parameter and distance information.
-public struct BisectorPoint {
-    public let paramOnC1: Double
-    public let paramOnC2: Double
-    public let paramOnBis: Double
-    public let distance: Double
-    public let x: Double
-    public let y: Double
-    public let isInfinite: Bool
-}
+// BisectorPoint was declared here: a Swift struct with no public initializer and no constructor
+// call site anywhere in this module, mirroring the orphaned OCCTBisectorPointOnBis/
+// OCCTBisectorPointOnBisCreate bridge pair it was built for (see OCCTBridge_Geom2d.mm's
+// tombstone). Neither this package nor an external consumer could ever have produced one.
+// Removed by #771.
 
 /// Result of bisector intersection computation.
 public struct BisectorIntersection {
