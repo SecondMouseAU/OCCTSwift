@@ -505,9 +505,46 @@ extension AAG {
     /// genuine floor is geometrically the low end of its own walls, which is true independent of
     /// #723.
     ///
-    /// One known limitation: a filleted floor/wall junction would round the wall's bounding box
-    /// past the floor's own Z by roughly the fillet radius, which could exceed this tolerance. No
-    /// fixture in this codebase exercises that combination yet.
+    /// This Z check applies to a DIRECT (1-hop) concave neighbor. A wall reached only after
+    /// absorbing a fillet or chamfer junction (#762, below) skips it deliberately: that wall's
+    /// own bounding box is rounded past the floor's Z by roughly the fillet radius or chamfer
+    /// leg, by construction, so requiring the match there would fail the very walls #762 exists
+    /// to find.
+    ///
+    /// ## A filleted or chamfered junction is absorbed, not reclassified (#762)
+    ///
+    /// A fillet at a floor/wall junction is tangent to both surfaces (`ChFi3d::DefineConnectType`
+    /// reports `.smooth` at both new edges, by construction: a fillet is G1-continuous with
+    /// both faces it blends), so floor-to-fillet and fillet-to-wall both read smooth and the
+    /// floor has **no concave neighbor at all**, so `concaveNeighbors(of:)` alone can never find
+    /// it. `ChFi3d::DefineConnectType` is not wrong here: the concavity moved into the fillet
+    /// FACE's own curvature, not the edges, and reclassifying the edges would be exactly the
+    /// hand-rolled-formula regression #703/#723 already fixed.
+    ///
+    /// A chamfer has the same missing-pocket symptom for a different reason: measured
+    /// (`Scripts/repro/762-filleted-pocket-detection/`), a symmetric chamfer's two new edges
+    /// are both genuinely `.concave` (a 270-degree reentrant corner splits into two
+    /// 225-degree ones, still `>180`), so `concaveNeighbors(of:)` DOES reach the chamfer face
+    /// directly, but the chamfer is planar at an intermediate angle, fails the wall's own
+    /// `isVertical` filter, and the search used to stop there rather than continuing past it to
+    /// the true wall.
+    ///
+    /// `wallsAndJunctions(fromFloor:floorZ:tolerance:)` fixes both by tracing outward from the
+    /// floor through any non-wall face reached via a `.concave` edge (a chamfer, unconditionally)
+    /// or a `.smooth` edge into a face confirmed to curve the right way
+    /// (``isRadiallyInwardFillet(_:)``, a fillet), continuing until it lands on a genuine
+    /// vertical wall. See that method's own doc comment for the full mechanism, the ground truth
+    /// it rests on, and why the `.smooth` gate is necessary (not every tangent neighbor is a
+    /// junction to absorb; see "false-positive guards" there).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
+    /// let cut = box.subtracting(pocketTool)!
+    /// let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+    /// let filleted = cut.filleted(edges: junctionEdges, radius: 1.0)!
+    /// print(filleted.detectPocketsAAG().count)   // 1, was 0
+    /// ```
     ///
     /// ## Enclosure is tested directly, not by wall count (#735)
     ///
@@ -555,20 +592,22 @@ extension AAG {
     /// a statement about *where* the pocket sits, not about whether it is closed, and the two are
     /// independent. Enclosure is a property of the wall loop, not of the pocket's position in space.
     ///
-    /// ## The tolerance filter's limitation was measured and did not reproduce (#753 finding 3)
+    /// ## The tolerance filter's limitation was measured and did not reproduce as hypothesized (#753 finding 3), then fixed for a different reason (#762)
     ///
-    /// Review raised a plausible-sounding compounding failure: a wall dropped by the `#724`
-    /// tolerance filter above (e.g. a filleted floor/wall junction rounding the wall's low-Z bound
-    /// past `floorZ`) would also drop its edges from the enclosure count, permanently misreporting
-    /// a fully enclosed filleted pocket as open. Measured directly with a filleted floor/wall
-    /// junction (radii 0.5 through 4 on a 10×10×15 pocket): the fillet does not reproduce this,
-    /// because it never reaches the tolerance filter at all. A fillet replaces the sharp floor/wall
-    /// edge with a tangent (`smooth`, not `concave`) transition through the fillet face, so the
-    /// filleted neighbor never appears in `concaveNeighbors(of:)` in the first place:
-    /// `wallIndices` comes back empty and the floor is skipped by the guard below before the
-    /// tolerance filter, or this enclosure test, ever runs. This is a pre-existing limitation of
-    /// pocket *detection* (a fully filleted pocket is not recognized as a pocket at all), unrelated
-    /// to #735/#753's change and not fixed here.
+    /// Review of #753 raised a plausible-sounding compounding failure: a wall dropped by the
+    /// `#724` tolerance filter above (e.g. a filleted floor/wall junction rounding the wall's
+    /// low-Z bound past `floorZ`) would also drop its edges from the enclosure count,
+    /// permanently misreporting a fully enclosed filleted pocket as open. Measured directly at
+    /// the time (radii 0.5 through 4 on a 10×10×15 pocket): the fillet did not reproduce that
+    /// specific failure, because a filleted pocket was not detected as a pocket AT ALL:
+    /// `concaveNeighbors(of:)` came back empty (the floor/wall edges are tangent, not concave,
+    /// see "A filleted or chamfered junction is absorbed, not reclassified" above) and the floor
+    /// was skipped before the tolerance filter, or this enclosure test, ever ran. #762 fixed
+    /// that non-detection; this enclosure test's own coverage check is now exercised by a
+    /// filleted pocket for the first time, against `wallIndices` UNION the absorbed junction
+    /// faces rather than `wallIndices` alone (see `detectPockets(tolerance:)`'s use of
+    /// `coveringFaces`), so the compounding failure review originally hypothesized is the thing
+    /// this union specifically forecloses, now that there is a filleted pocket for it to apply to.
     ///
     /// - Parameter tolerance: How close (model units) a wall's own low-Z bound must come to a
     ///   candidate floor's Z to count as resting on it. Defaults to
@@ -592,35 +631,33 @@ extension AAG {
         for (floorIndex, floorNode) in potentialFloors {
             guard let floorZ = floorNode.zLevel else { continue }
 
-            // Get concave neighbors (these should be walls)
-            let concaveNeighbors = self.concaveNeighbors(of: floorIndex)
-
-            // Filter to vertical faces that actually rest on this floor (#724): a wall's low Z
-            // bound must match the floor's own Z, or this floor is really that wall's opening,
-            // not its bottom.
-            let wallIndices = concaveNeighbors.filter { neighborIndex in
-                let wall = nodes[neighborIndex]
-                guard wall.isVertical else { return false }
-                return abs(wall.bounds.min.z - floorZ) < tolerance
-            }
+            // #762: walk concave AND absorbed-fillet/chamfer chains outward from the floor,
+            // not just its direct concave neighbors, so a filleted or chamfered floor/wall
+            // junction is found through the fillet/chamfer face instead of stopping at it. See
+            // this method's own doc comment ("A filleted or chamfered junction is absorbed,
+            // not reclassified") for the full reasoning.
+            let (wallIndices, junctionIndices) = wallsAndJunctions(fromFloor: floorIndex, floorZ: floorZ, tolerance: tolerance)
 
             // Need at least one wall to be a pocket
             guard !wallIndices.isEmpty else { continue }
 
-            // Calculate pocket bounds from floor and walls
+            // Calculate pocket bounds from floor, walls, and any absorbed junction faces
+            // (#762): a fillet/chamfer's own extent reaches slightly past where the trimmed
+            // wall now starts, so omitting it would silently under-report the pocket's bounds
+            // by roughly the fillet radius or chamfer leg.
             var minX = floorNode.bounds.min.x
             var minY = floorNode.bounds.min.y
             var maxX = floorNode.bounds.max.x
             var maxY = floorNode.bounds.max.y
             var maxZ = floorZ
 
-            for wallIndex in wallIndices {
-                let wallBounds = nodes[wallIndex].bounds
-                minX = min(minX, wallBounds.min.x)
-                minY = min(minY, wallBounds.min.y)
-                maxX = max(maxX, wallBounds.max.x)
-                maxY = max(maxY, wallBounds.max.y)
-                maxZ = max(maxZ, wallBounds.max.z)
+            for index in wallIndices + junctionIndices {
+                let faceBounds = nodes[index].bounds
+                minX = min(minX, faceBounds.min.x)
+                minY = min(minY, faceBounds.min.y)
+                maxX = max(maxX, faceBounds.max.x)
+                maxY = max(maxY, faceBounds.max.y)
+                maxZ = max(maxZ, faceBounds.max.z)
             }
 
             // Enclosure, not wall count (#735), tested per edge rather than by comparing counts
@@ -629,9 +666,14 @@ extension AAG {
             // into `?? []`/`isEmpty` (review finding 6) makes "no outer wire" and "an outer wire
             // with zero edges" the same case they already behave as: don't claim an enclosure
             // that wasn't established, default to open.
+            //
+            // #762: a floor's own outer-wire boundary edge borders the ABSORBED junction face
+            // (the fillet or chamfer), not the far wall, whenever one is interposed, so
+            // coverage is tested against walls UNION junctions, not walls alone.
             let floorOuterEdges = occFaces[floorIndex].outerWire?.edges() ?? []
+            let coveringFaces = wallIndices + junctionIndices
             let isOpen = floorOuterEdges.isEmpty || floorOuterEdges.contains { boundaryEdge in
-                !isEdgeCoveredByAWall(boundaryEdge, among: wallIndices, in: occFaces)
+                !isEdgeCoveredByAWall(boundaryEdge, among: coveringFaces, in: occFaces)
             }
 
             let pocket = PocketFeature(
@@ -654,8 +696,404 @@ extension AAG {
         return pockets
     }
 
-    /// Whether `edge` borders one of the faces at `wallIndices`, tested by structural identity
+    /// Finds a floor's walls by tracing concave edges, and any absorbed fillet/chamfer
+    /// junction, outward from it (#762). Returns the true (vertical) walls (what
+    /// ``PocketFeature/wallFaceIndices`` reports, with exactly the same meaning it had before
+    /// this fix), and, separately, every junction face absorbed along the way, which the
+    /// enclosure test in ``detectPockets(tolerance:)`` needs: the floor's own outer-wire
+    /// boundary edges border THOSE, not the far wall, whenever one is interposed.
+    ///
+    /// ## Why a fillet needs a chain, and a chamfer needs a shorter one
+    ///
+    /// Measured (`Scripts/repro/762-filleted-pocket-detection/`, ChFi3d::DefineConnectType
+    /// against a sharp/filleted/chamfered/partially-filleted/open/boss fixture set):
+    ///
+    /// - **A fillet's own two new edges are both `.smooth` (tangent)**, at BOTH ends, by
+    ///   construction: a fillet is G1-continuous with both faces it blends, so there is no
+    ///   local sign left to read at either edge; concave and convex fillets look identical
+    ///   there. The concavity moved into the fillet FACE's own curvature, not the edges.
+    /// - **A chamfer's own two new edges are both `.concave`** (for a pocket's floor/wall
+    ///   junction): a symmetric chamfer replacing a 270-degree reentrant corner leaves two
+    ///   225-degree transitions, still `>180`. `concaveNeighbors(of:)` already reaches a
+    ///   chamfer face directly; the reason `detectPockets` still missed a chamfered pocket
+    ///   before this fix is `wallIndices`' OWN `isVertical` filter, which a 45-degree chamfer
+    ///   face fails; the search just never continued past it to the real wall beyond.
+    ///
+    /// So a chamfer only ever needed the search to continue past a non-wall CONCAVE neighbor;
+    /// a fillet additionally needs `.smooth` edges to be crossable, gated by
+    /// ``isRadiallyInwardFillet(_:)`` since edge convexity alone carries no sign there.
+    ///
+    /// ## The `.smooth` gate: radially inward, not "concave"
+    ///
+    /// A `.smooth` edge is only crossed toward a face that is itself a legitimate
+    /// corner-rounding fillet: cylindrical, conical or spherical, with its own outward normal
+    /// pointing back toward its axis/center (radially inward) rather than away from it. This is
+    /// the identical material-side test ``detectHoles()`` uses (#747/#760) to tell a hole's bore
+    /// from a boss's wall, aimed at a narrower question here (see
+    /// ``isRadiallyInwardFillet(_:)``'s own doc comment for why this does NOT, and does not
+    /// need to, distinguish a pocket's fillet from a boss's).
+    ///
+    /// This specifically refuses to cross a `.smooth` edge into a face that curves the OTHER
+    /// way (radially outward): an ordinary convex/external rounding, e.g. the box's own
+    /// exterior edge filleted, which is not a floor/wall junction to absorb at all, and
+    /// refuses a `.smooth` edge between two faces where neither is such a fillet (an
+    /// unrelated, incidentally-tangent planar pair). Without this gate, unconditionally
+    /// crossing every `.smooth` edge would be exactly the "transitive tangency sweeps in
+    /// faces that are not walls at all" trap #762 itself warns about.
+    ///
+    /// ## Why a chain-discovered wall skips the #724 Z-tolerance check
+    ///
+    /// A direct (1-hop) concave neighbor still has to bottom out at the floor's own Z (#724
+    /// unchanged) to rule out grabbing the wrong (top, opening) end of a wall. A wall reached
+    /// only after absorbing at least one junction face is trusted by the CHAIN's own
+    /// contiguity instead: measured, a filleted or chamfered wall's own remaining planar
+    /// remnant no longer touches the floor's Z at all: it starts roughly a fillet radius or
+    /// chamfer leg distance above it, since the junction face itself is what actually bottoms
+    /// out there. Requiring the Z match on the far side of an already-verified junction chain
+    /// would make every filleted/chamfered wall fail the very check meant to confirm it is
+    /// this floor's wall, re-introducing the bug this method exists to fix.
+    ///
+    /// ## A direct dead end stays revisitable through a later junction
+    ///
+    /// `visited` is marked only once an edge's outcome is decided (wall or junction), not as
+    /// soon as the edge is crossable. Review of an earlier version of this fix found the
+    /// opposite: `visited.insert(neighbor)` fired immediately after the `crossable` check, so a
+    /// face that failed the Z-tolerance check above AS A DIRECT NEIGHBOR (`reachedThroughJunction
+    /// == false`) was marked visited regardless, and a separate edge reaching that same face
+    /// through an already-absorbed junction later in the same search, where the Z check is
+    /// bypassed and WOULD have accepted it, could never run: `guard !visited.contains(neighbor)`
+    /// closed it off first.
+    ///
+    /// Measured, not assumed, that this is reachable on this codebase's own fixtures, not only
+    /// hypothetical: a partially-filleted pocket's two SHARP walls each have their own low-Z
+    /// bound offset from the floor's exact Z by about `1.5e-7` (a `BRepFilletAPI_MakeFillet`
+    /// corner-blending artifact where each meets the adjacent filleted wall's own fillet),
+    /// invisible at the default tolerance but decisive at a smaller one
+    /// (`Issue762DeadEndRevisitableThroughJunctionTests`, `1e-8`): the direct route fails, and
+    /// the fillet's own separate `.concave` edge to the same wall (not `.convex`, so not
+    /// screened by the guard below) is the only thing that finds it. Proved by injection:
+    /// reintroducing the early `visited.insert` and rerunning that exact fixture at that exact
+    /// tolerance drops both sharp walls entirely (`wallFaceIndices.count` 4 to 2, `isOpen`
+    /// false to true); the fix restores both.
+    ///
+    /// A wall and a junction are both true terminal outcomes for the EDGE just crossed, so both
+    /// mark `visited`: a wall stops the chain outright, and a junction is queued into `next`
+    /// exactly once regardless of how many other edges could also reach it. A dead end is not a
+    /// terminal outcome for the FACE, only for that one edge, so it alone is left out of
+    /// `visited` deliberately. This does not risk non-termination: the total work is still
+    /// bounded by this floor's own edge count, since a dead end can be retried at most once per
+    /// incoming edge (not per BFS level), and every retry either terminates (wall or junction,
+    /// marking `visited` and ending the retries) or dead-ends again along that specific edge.
+    ///
+    /// ## `.convex` never crosses: proven load-bearing past a junction, once dead ends could be retried
+    ///
+    /// `EdgeConvexity.convex` means the material turns the wrong way for absorption by
+    /// definition (interior angle `<180`, "fillet-like, going outward", see the enum's own doc
+    /// comment), so refusing to cross it is correct on its face. Two earlier review rounds show
+    /// why that alone was not enough to call it proven, and why the visited-marking fix above
+    /// is what finally let a fixture demonstrate it.
+    ///
+    /// The guard has two call sites with different backstops. For a DIRECT (1-hop) floor
+    /// neighbor, the #724 Z-tolerance check is a second, independent line of defense: even with
+    /// `.convex` unblocked, a direct neighbor still has to bottom out at the floor's own Z to
+    /// become a wall. For a face reached PAST an already-absorbed junction,
+    /// `reachedThroughJunction` deliberately bypasses that Z check, so `.convex` is the ONLY
+    /// remaining protection there. A first removal-matrix pass (injection C, disabling the
+    /// block alone) came back green on every test in the PR at the time, read as proof the
+    /// guard was decorative, and that reading was wrong: it measured only that direct neighbors
+    /// were screened by the Z-check, and no fixture then isolated the past-a-junction path.
+    ///
+    /// A second pass built two fixtures specifically to isolate that path (both ground-truthed
+    /// against `ChFi3d` first, `Scripts/repro/762-filleted-pocket-detection/`, fixtures 5 and
+    /// 8) and both APPEARED to fail to isolate it: the filleted through-slot's open-end
+    /// exterior wall, and the L-shaped pocket's reflex-corner far wall, were each also a direct
+    /// (1-hop) floor neighbor, so the #724 Z-check seemed to resolve them before the fillet's
+    /// own `.convex` edge was ever tried. That conclusion rested on an unexamined assumption:
+    /// that a direct neighbor failing the Z-check was fully resolved, the same assumption the
+    /// visited-marking bug above made in code. It was not examined at the time because the bug
+    /// had not yet been found. Both "masked" fixtures were REJECTING their direct route, not
+    /// accepting it (near-boundary Z-tolerance noise on the through-slot's own construction, and
+    /// exactly on the boundary for the reflex corner's own `BRepFilletAPI` corner-blending
+    /// artifact), and a rejected direct neighbor used to be marked `visited` anyway, permanently
+    /// closing off the very `.convex`-gated path this section is about.
+    ///
+    /// With dead ends left revisitable and `Issue762ReflexCornerPartialFilletTests` restored to
+    /// the default tolerance (rather than widened past the noise, which is what let it clear
+    /// the direct route and mask this entirely), injection C alone now fails on exactly those
+    /// two fixtures: the filleted through-slot's `wallFaceIndices.count` goes 2 to 4 and its
+    /// `isOpen` goes true to false (both exterior walls wrongly absorbed as walls of the
+    /// pocket), and the reflex-corner fixture's `wallCounts` goes `[2, 4]` to `[2, 5]` (WallX0
+    /// wrongly absorbed). `.convex` is not untested any more: it is what stops both, proven by
+    /// the same injection that once read as clearing it.
+    ///
+    /// The earlier "geometric argument" this doc comment used to make (that a floor's own
+    /// polygon vertex always gives it an equally early, non-`.convex` route to whatever a
+    /// junction's `.convex` neighbor could reach, so the guard's own contribution was always
+    /// redundant) is retracted, not merely superseded: it was true of the graph as the CODE
+    /// then implemented it, where a rejected direct neighbor's `visited` marking made that
+    /// route's failure equivalent to its success, both closing off the second route. It was
+    /// never true of the geometry itself, only of a bug that happened to make the two
+    /// indistinguishable in every fixture built to tell them apart.
+    ///
+    /// ## `currentBordersFloorDirectly`: carried by the BFS, not reconstructed from adjacency
+    ///
+    /// A fourth review round found the guard that decides whether a vertical `.smooth` neighbor
+    /// may become a wall, `currentBordersFloorDirectly`, first shipped as
+    /// `adjacencyList[floorIndex][current] != nil`: "does some edge exist between the floor and
+    /// `current`". That is a different, weaker question than "was `current` reached directly
+    /// from the floor". `adjacencyList` is built for every edge regardless of convexity, so a
+    /// junction that only incidentally touches the floor through a non-crossable edge would
+    /// wrongly satisfy it without ever having been reached that way, reintroducing this
+    /// method's own bug for a topology none of the ten ground-truthed fixtures happened to
+    /// exercise. Not hypothetical on this codebase: `BRepFilletAPI_MakeFillet`'s own
+    /// corner-blending is documented, in `Issue762ReflexCornerPartialFilletTests`'s own doc
+    /// comment (re: WallX0), to reshape an unrelated face so the floor borders it directly by
+    /// incident, not by the route actually taken to reach it.
+    ///
+    /// Fixed by carrying the fact instead of reconstructing it: each `frontier` entry pairs a
+    /// node index with whether IT was reached directly from the floor
+    /// (`bordersFloorDirectly`), decided once, at the exact moment it is enqueued
+    /// (`discoveredBordersFloorDirectly`, `current == floorIndex`). This is exact by
+    /// construction, not merely narrower: it cannot be fooled by any incidental edge, since it
+    /// never consults `adjacencyList[floorIndex]` at all.
+    ///
+    /// A dedicated removal-matrix row (injection E) isolates this specific gate: forcing
+    /// `currentBordersFloorDirectly` to its pre-fix effective value of `true` (as if every node
+    /// bordered the floor directly) fails exactly
+    /// `Issue762VerticalCornerBlendNotAWallTests`/`Issue762FullyRoundedPocketChainingTests` and
+    /// no other test in the full `#762`/`#753`/`#735`/`#747` suite. That isolation is the point:
+    /// those same two tests also fail under injection B/D (the Z-tolerance bypass), for a
+    /// different reason (every chain-discovered wall breaks there, not specifically the
+    /// corner-blend misclassification this gate closes), so a row that merely observes them
+    /// failing under an unrelated guard's removal would not have proven this gate does anything.
+    /// This is the third guard on this PR shown to need an isolating row rather than a
+    /// coincidentally-failing one: injection C was first masked by the visited-marking bug
+    /// above, injections B and D backstop each other, and this gate's own first "proof" folded
+    /// into B/D's set instead of exercising itself.
+    ///
+    /// Full removal matrix, A through E, re-run against the grown suite (34 tests) after this
+    /// fix, each row's isolation restated:
+    ///
+    /// | injection | disables | isolates | tests that fail |
+    /// |---|---|---|---|
+    /// | A | the `.smooth`-edge radially-inward gate | whether a fillet is confirmed reentrant before crossing into it | 3: plain-box exterior fillet, both L-shape tests |
+    /// | B | the #724 Z-tolerance bypass for chain-discovered walls | whether a chain-discovered wall is trusted by contiguity instead of its own Z | 12: every fillet/chamfer/chain-discovered-wall test, including both round-4 tests (a different mechanism than E, see above) |
+    /// | C | the `.convex` edge block | whether a reentrant-the-wrong-way edge is refused | 2: filleted through-slot, L-shape reflex corner |
+    /// | D | B and C together | both of the above at once | 12, identical to B's own set (B's breakage dominates) |
+    /// | E | `currentBordersFloorDirectly` (forced `true`) | whether a wall can only be accepted from the floor itself or a junction that borders it directly | 2: exactly the two round-4 tests, and only those |
+    private func wallsAndJunctions(fromFloor floorIndex: Int, floorZ: Double, tolerance: Double)
+        -> (walls: [Int], junctions: [Int])
+    {
+        var walls: [Int] = []
+        var junctions: [Int] = []
+        var visited: Set<Int> = [floorIndex]
+        // Each frontier entry carries whether IT was reached directly from the floor, decided
+        // once, at the moment it was enqueued, rather than re-derived later from adjacency
+        // (#762 review, round 4 finding 1). A first version of this gate asked
+        // `adjacencyList[floorIndex][current] != nil`, "does some edge exist between the floor
+        // and `current`", which is the wrong question: `adjacencyList` is built for every edge
+        // regardless of convexity, so a junction that only incidentally touches the floor
+        // through a non-crossable edge would wrongly satisfy it without ever having been
+        // reached that way. That is not hypothetical on this codebase: `BRepFilletAPI_MakeFillet`'s
+        // own corner-blending is documented (`Issue762ReflexCornerPartialFilletTests`'s own doc
+        // comment, re: WallX0) to reshape an unrelated face so the floor borders it directly by
+        // incident, not by the route the BFS actually took. Carrying the fact the BFS already
+        // knows, instead of reconstructing a weaker version of it, removes that failure mode by
+        // construction rather than narrowing it.
+        var frontier: [(index: Int, bordersFloorDirectly: Bool)] = [(floorIndex, true)]
+
+        while !frontier.isEmpty {
+            var next: [(index: Int, bordersFloorDirectly: Bool)] = []
+            for (current, currentBordersFloorDirectly) in frontier {
+                let reachedThroughJunction = current != floorIndex
+                guard current < adjacencyList.count else { continue }
+                // Whether `current` is itself a confirmed reentrant fillet, i.e. whether we
+                // are CONTINUING an already-verified chain rather than trying to ENTER a new
+                // one. `isRadiallyInwardFillet(current)` is always false for `current ==
+                // floorIndex` (a floor is planar, never a fillet), so this is the entering
+                // case at BFS level 0 by construction, not a separate check.
+                let currentIsConfirmedFillet = isRadiallyInwardFillet(current)
+                // A newly discovered junction's OWN `bordersFloorDirectly` flag: true exactly
+                // when its entering edge (the one just crossed) came from the floor itself,
+                // i.e. `current == floorIndex`. Every node discovered while processing the
+                // floor's own frontier entry gets `true`; every node discovered one level
+                // deeper or beyond gets `false`, uniformly, since by construction none of them
+                // is reached with `current == floorIndex` (#762 review, round 4). "Close enough
+                // to the floor, structurally, for a face it borders to be THIS floor's own
+                // wall" means the floor itself, or a junction whose OWN entering edge came
+                // directly from the floor: exactly the fillet or chamfer built to blend the
+                // floor to its wall, which by construction has exactly two "long"
+                // tangent/concave relationships, to the floor and to that wall, and nothing
+                // else. A junction reached only through ANOTHER junction (a corner blend
+                // continuing the chain, e.g. the torus and second fillet in fixture 9) is not
+                // that specific relationship: it exists to reconcile two OTHER faces, and its
+                // own far neighbor is not automatically this floor's wall just because it is
+                // vertical and radially inward, since a further corner blend can be both of
+                // those too.
+                let discoveredBordersFloorDirectly = !reachedThroughJunction
+                for (neighbor, edgeIndex) in adjacencyList[current] {
+                    guard !visited.contains(neighbor) else { continue }
+                    let edge = edges[edgeIndex]
+                    let crossable: Bool
+                    switch edge.convexity {
+                    case .convex:
+                        crossable = false
+                    case .concave:
+                        crossable = true
+                    case .smooth:
+                        // ENTERING a fillet chain for the first time (`current` is not itself
+                        // one) requires the candidate to be a confirmed reentrant fillet: this
+                        // is the only sign a tangent edge carries (#762 review). CONTINUING an
+                        // already-confirmed chain accepts either the wall the fillet blends
+                        // into (a vertical face, checked below) or another face that
+                        // independently confirms the same reentrant curvature (a further corner
+                        // blend, e.g. a torus or a second fillet, continuing the same physical
+                        // corner). This is deliberately NOT `isRadiallyInwardFillet(edge.face1Index)
+                        // || isRadiallyInwardFillet(edge.face2Index)`: that tests EITHER end of
+                        // the edge, and once `current` is a confirmed fillet it always
+                        // satisfies its own half of that OR, making every `.smooth` edge
+                        // leaving it crossable regardless of what is actually on the far side,
+                        // including an unrelated tangent face. Crossability alone does not
+                        // decide wall vs. junction below; `currentBordersFloorDirectly` does.
+                        if currentIsConfirmedFillet {
+                            crossable = nodes[neighbor].isVertical || isRadiallyInwardFillet(neighbor)
+                        } else {
+                            crossable = isRadiallyInwardFillet(neighbor)
+                        }
+                    }
+                    guard crossable else { continue }
+
+                    // `visited` is only marked once the outcome is decided (#762 review), not
+                    // as soon as the edge is crossable. A DEAD END below (a direct vertical
+                    // neighbor that fails the #724 Z-check) must stay revisitable: the same
+                    // face can also be reached later through a junction, where the Z-check is
+                    // bypassed entirely, and marking it visited here would permanently hide
+                    // that second, accepting route behind the first, rejecting one. Wall and
+                    // junction are both true terminal outcomes for THIS edge (a wall stops the
+                    // chain; a junction is queued exactly once), so both mark visited; dead end
+                    // is not a terminal outcome for the face, only for this particular edge.
+                    let candidate = nodes[neighbor]
+                    guard candidate.isVertical else {
+                        // Not a wall itself: a junction face (fillet, chamfer, or a curved
+                        // corner blend) absorbed into the floor/wall transition. Keep looking
+                        // past it for the true wall.
+                        visited.insert(neighbor)
+                        junctions.append(neighbor)
+                        next.append((neighbor, discoveredBordersFloorDirectly))
+                        continue
+                    }
+                    guard currentBordersFloorDirectly else {
+                        // Vertical, but reached from a junction that does not itself border the
+                        // floor: not this floor's wall (that relationship belongs solely to the
+                        // floor-bordering junction), and not a dead end either, since it may
+                        // still be worth searching past (#762 review, round 4, fixture 9: a
+                        // vertical corner-blend cylinder between a floor-bordering fillet's own
+                        // torus and the genuine wall). Absorbed as a further junction instead of
+                        // a wall, regardless of how the Z-check below would have scored it.
+                        visited.insert(neighbor)
+                        junctions.append(neighbor)
+                        next.append((neighbor, discoveredBordersFloorDirectly))
+                        continue
+                    }
+                    if reachedThroughJunction || abs(candidate.bounds.min.z - floorZ) < tolerance {
+                        visited.insert(neighbor)
+                        walls.append(neighbor)
+                        // A found wall is terminal for this chain: do not look past it.
+                    }
+                    // else: a direct vertical neighbor that does not bottom out at this
+                    // floor's Z is the wrong (opening) end of some other wall (#724), along
+                    // THIS edge specifically: a dead end for this edge, not a wall and not a
+                    // junction to search further from, but deliberately left out of `visited`
+                    // so a different edge reaching the same face through an already-absorbed
+                    // junction still gets a chance to accept it.
+                }
+            }
+            frontier = next
+        }
+        return (walls, junctions)
+    }
+
+    /// Whether `nodeIndex`'s face is a cylindrical, conical or spherical fillet curving INTO
+    /// the material it borders (#762): its own outward normal, sampled at its own UV
+    /// mid-parameter, points back toward its axis (or, for a sphere, its center) rather than
+    /// away from it.
+    ///
+    /// This is the identical material-side test ``detectHoles()`` uses (#747/#760) to tell a
+    /// hole's bore from a boss's or a standalone cylinder's own wall, aimed at a narrower
+    /// question: not "is this whole face a hole," but "is this specific transition face a
+    /// rounded-INTO junction," the shape any corner-rounding fillet has, whether it is
+    /// rounding a pocket's own concave floor/wall corner or a boss's convex base.
+    ///
+    /// Ground-truthed (`Scripts/repro/762-filleted-pocket-detection/`) that a pocket's fillet
+    /// AND a boss's base fillet give the IDENTICAL radially-inward signature: both are
+    /// reentrant (material-wraps-270-degrees) corners at the sharp-edge level, and a fillet's
+    /// curvature sign reflects only whether it rounds INTO a reentrant corner (either case) or
+    /// OFF an external one (the box's own exterior edge, radially outward). This test
+    /// deliberately does NOT, and structurally cannot, distinguish a pocket's fillet from a
+    /// boss's: that distinction already exists, unchanged, in ``PocketFeature/isOpen``'s
+    /// outer-wire-scoped enclosure test (#753). A boss's wall was already a legitimate (if
+    /// unenclosing) member of `wallFaceIndices` before this fix, for a floor boss standing
+    /// inside a real pocket, and it stays exactly as legitimate, and exactly as correctly
+    /// `isOpen`, when its own base is filleted.
+    private func isRadiallyInwardFillet(_ nodeIndex: Int) -> Bool {
+        guard nodeIndex < faceOccurrences.count else { return false }
+        let face = faceOccurrences[nodeIndex]
+        guard let revolution = face.revolutionProperties,
+              let uv = face.uvBounds else { return false }
+        return AAG.isMaterialRadiallyInward(of: face, revolution: revolution, uv: uv, allowSphere: true)
+    }
+
+    /// Whether a face's own outward normal, sampled at its own UV mid-parameter, points back
+    /// toward its axis (or, when `allowSphere` is true and the face is a sphere, its center)
+    /// rather than away from it: the material-side test shared by ``detectHoles()`` (#747/#760,
+    /// which tells a hole's bore from a boss's or a standalone cylinder's own wall) and
+    /// ``isRadiallyInwardFillet(_:)`` (#762, which asks the identical question of a fillet
+    /// junction). Factored into one place after review found the two had drifted into
+    /// near-duplicates differing only in sphere handling: `detectHoles()` never needs it
+    /// (already gated to `.cylinder`/`.cone` before it gets here), a fillet junction can
+    /// legitimately be spherical (a corner blend). #723 and #747 both already fixed this exact
+    /// test once, on the OTHER copy that existed at the time; a second copy is a second chance
+    /// to miss the next one.
+    ///
+    /// `revolution` and `uv` are taken as parameters rather than recomputed here because both
+    /// callers already have them (`detectHoles()` needs `revolution.axis`/`.radius` and `uv`'s
+    /// own `vMin`/`vMax` afterward regardless; `isRadiallyInwardFillet(_:)` needs them to even
+    /// know whether to call this at all), so recomputing would be the same duplication moved
+    /// one call frame over rather than removed.
+    private static func isMaterialRadiallyInward(
+        of face: Face,
+        revolution: Face.RevolutionProperties,
+        uv: (uMin: Double, uMax: Double, vMin: Double, vMax: Double),
+        allowSphere: Bool
+    ) -> Bool {
+        let uMid = (uv.uMin + uv.uMax) / 2
+        let vMid = (uv.vMin + uv.vMax) / 2
+        guard let midPoint = face.point(atU: uMid, v: vMid),
+              let midNormal = face.normal(atU: uMid, v: vMid) else { return false }
+
+        let offset = midPoint - revolution.axis.origin
+        let radial: SIMD3<Double>
+        if allowSphere, face.surfaceType == .sphere {
+            // A sphere has no intrinsic axis direction (primaryAxis still reports one, but
+            // it is not a property of the surface); radially-from-center is the only
+            // meaningful test.
+            radial = offset
+        } else {
+            let axisUnit = simd_normalize(revolution.axis.direction)
+            radial = offset - simd_dot(offset, axisUnit) * axisUnit
+        }
+        let radialLength = simd_length(radial)
+        guard radialLength > 1e-9 else { return false }
+        return simd_dot(midNormal, radial / radialLength) < 0
+    }
+
+    /// Whether `edge` borders one of the faces at `coveringFaces`, tested by structural identity
     /// rather than by counting (#753).
+    ///
+    /// `coveringFaces` is walls UNION absorbed junction faces (#762), not walls alone: a
+    /// floor's own outer-wire boundary edge borders the fillet or chamfer interposed at a
+    /// junction, not the far wall, whenever one is interposed, so testing against walls only
+    /// would misreport every filleted/chamfered pocket as open even though it is enclosed.
     ///
     /// `edge` is expected to be one of the floor's own outer-wire edges, obtained via
     /// ``Wire/edges()``, which converts the wire to its own standalone one-off `Shape` to extract
@@ -664,11 +1102,11 @@ extension AAG {
     /// `shape` by its underlying geometry and location (`TopoDS_Shape::IsSame`, the same identity
     /// rule the wire-to-shape conversion preserves), not by index, so which throwaway shape the
     /// `Edge` was minted from does not matter here.
-    private func isEdgeCoveredByAWall(_ edge: Edge, among wallIndices: [Int], in occFaces: [Face]) -> Bool {
+    private func isEdgeCoveredByAWall(_ edge: Edge, among coveringFaces: [Int], in occFaces: [Face]) -> Bool {
         guard let (face1, face2) = edge.adjacentFaces(in: shape) else { return false }
-        return wallIndices.contains { wallIndex in
-            let wall = occFaces[wallIndex]
-            return facesAreSame(face1, wall) || (face2.map { facesAreSame($0, wall) } ?? false)
+        return coveringFaces.contains { coveringIndex in
+            let covering = occFaces[coveringIndex]
+            return facesAreSame(face1, covering) || (face2.map { facesAreSame($0, covering) } ?? false)
         }
     }
 
@@ -769,24 +1207,20 @@ extension AAG {
             guard let revolution = face.revolutionProperties else { continue }
             let axisUnit = simd_normalize(revolution.axis.direction)
 
-            let uMid = (uv.uMin + uv.uMax) / 2
-            let vMid = (uv.vMin + uv.vMax) / 2
-            guard let midPoint = face.point(atU: uMid, v: vMid),
-                  let midNormal = face.normal(atU: uMid, v: vMid) else {
+            // The material-side test (see isMaterialRadiallyInward's own doc comment, shared
+            // with isRadiallyInwardFillet(_:), #762): a hole's own outward normal points back
+            // toward the axis, opposite the radial direction. `allowSphere: false` is inert
+            // here in practice (this function is already gated to `.cylinder`/`.cone` above,
+            // so the surface-type check the sphere branch guards never fires either way) but
+            // states plainly that a sphere reaching here would use the axis-projection branch,
+            // not the from-center one a spherical fillet junction needs.
+            guard AAG.isMaterialRadiallyInward(of: face, revolution: revolution, uv: uv, allowSphere: false) else {
                 continue
             }
 
-            let offset = midPoint - revolution.axis.origin
-            let radial = offset - simd_dot(offset, axisUnit) * axisUnit
-            let radialLength = simd_length(radial)
-            guard radialLength > 1e-9 else { continue }
-
-            // The material-side test (see doc comment above): a hole's own outward normal
-            // points back toward the axis, opposite the radial direction.
-            guard simd_dot(midNormal, radial / radialLength) < 0 else { continue }
-
             // Depth along the wall's own axis, not a Z-aligned bounding box: works the same
             // for a vertical hole as for one bored on any other axis.
+            let uMid = (uv.uMin + uv.uMax) / 2
             guard let low = face.point(atU: uMid, v: uv.vMin),
                   let high = face.point(atU: uMid, v: uv.vMax) else {
                 continue

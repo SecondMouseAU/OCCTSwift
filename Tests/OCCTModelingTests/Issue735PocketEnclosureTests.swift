@@ -246,25 +246,43 @@ struct Issue753EdgeFaceOrderIndependenceTests {
 // "rests on the floor" tolerance filter (e.g. a filleted floor/wall junction rounding the
 // wall's low-Z bound past the floor's own Z) would also drop its edges from the enclosure
 // count, permanently misreporting a fully enclosed filleted pocket as open. Measured directly
-// (radii 0.5 through 4 on a 10x10x15 pocket, `Sources/OCCTTest/main.swift` scratch probe,
-// restored before committing): it does not reproduce, for a more fundamental reason than the
-// one hypothesized. A fillet replaces the sharp floor/wall edge with a tangent (`smooth`, not
-// `concave`) transition through the fillet face, so the filleted neighbor never appears in
-// `concaveNeighbors(of:)` at all: `wallFaceIndices` comes back empty and the floor is skipped
-// before the tolerance filter, or the enclosure test, ever runs. This locks in that measured
-// behavior (a fully filleted pocket is not detected as a pocket at all) so a future change to
-// the concavity classification that starts recognizing it does not silently reintroduce the
-// originally-hypothesized failure without a test noticing.
-@Suite("A filleted floor/wall junction is not detected as a pocket at all (#753 finding 3, measured)")
-struct Issue753FilletedJunctionNotDetectedTests {
-    @Test("a filleted floor/wall junction pocket is not recognized as a pocket")
-    func filletedJunctionPocketIsNotDetected() throws {
+// at the time (radii 0.5 through 4 on a 10x10x15 pocket, `Sources/OCCTTest/main.swift` scratch
+// probe, restored before committing): it did not reproduce, for a more fundamental reason than
+// the one hypothesized. A fillet replaces the sharp floor/wall edge with a tangent (`smooth`,
+// not `concave`) transition through the fillet face, so the filleted neighbor never appeared in
+// `concaveNeighbors(of:)` at all: `wallFaceIndices` came back empty and the floor was skipped
+// before the tolerance filter, or the enclosure test, ever ran.
+//
+// That was a real, measured gap, not a false alarm, and #762 was filed to close it: nearly
+// every real machined pocket has a filleted floor/wall junction (an endmill cannot cut a sharp
+// internal corner), so a recognizer that only sees sharp pockets has the detection ratio
+// backwards for its actual input domain. This suite USED TO pin the negative result as a
+// characterization test, specifically so a future change to edge convexity classification that
+// started recognizing a filleted junction would not silently reintroduce the
+// originally-hypothesized #753 finding-3 failure without a test noticing. #762 IS that future
+// change: `AAG.wallsAndJunctions(fromFloor:floorZ:tolerance:)` (`FeatureRecognition.swift`)
+// traces concave edges and confirmed-radially-inward-fillet `.smooth` edges outward from the
+// floor, absorbing the fillet face, so the junction is now found THROUGH it rather than
+// reclassifying `ChFi3d::DefineConnectType`'s own correct `.smooth` verdict at the edge itself.
+//
+// Per this repo's own instruction for exactly this situation ("that test must invert when you
+// fix this"), the negative assertion below is now positive, and this suite is retitled to
+// describe what it proves today rather than what it used to pin. See
+// `Tests/OCCTModelingTests/Issue762FilletedPocketDetectionTests.swift` for the fuller fixture
+// set (several radii, chamfer, partial fillet, and the false-positive guards) this single case
+// is now a subset of; kept here, inverted rather than deleted, because it is literally the
+// fixture #753 finding 3 and #762 both name.
+@Suite("A filleted floor/wall junction IS detected as an enclosed pocket (#753 finding 3 inverted by #762)")
+struct Issue753FilletedJunctionDetectedTests {
+    @Test("a filleted floor/wall junction pocket IS recognized as an enclosed pocket")
+    func filletedJunctionPocketIsDetected() throws {
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let pocketTool = try #require(Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         let cut = try #require(box.subtracting(pocketTool))
 
         // Confirm the sharp-cornered version is detected and enclosed before filleting it,
-        // so a negative result below is "the fillet removed it," not "the fixture was wrong."
+        // so the positive result below is "the fillet is now seen through," not "the fixture
+        // was never a pocket to begin with."
         let prePockets = cut.detectPocketsAAG()
         #expect(prePockets.count == 1)
 
@@ -273,6 +291,9 @@ struct Issue753FilletedJunctionNotDetectedTests {
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))
 
         let postPockets = filleted.detectPocketsAAG()
-        #expect(postPockets.isEmpty)
+        #expect(postPockets.count == 1)
+        guard let pocket = postPockets.first else { return }
+        #expect(pocket.wallFaceIndices.count == 4)
+        #expect(!pocket.isOpen)
     }
 }
