@@ -3163,20 +3163,10 @@ OCCTCurve2DRef OCCTConvertCircleToBSpline2D(double cx, double cy, double radius,
     if (!occtValidCircleRadius(radius)) return nullptr;
     try {
         gp_Circ2d circle(gp_Ax2d(gp_Pnt2d(cx, cy), gp_Dir2d(1, 0)), radius);
+        // Convert_CircleToBSplineCurve is a Convert_ConicToBSplineCurve subclass (#791), so it can
+        // share the same array-building helper its Ellipse/Hyperbola/Parabola siblings already use.
         Convert_CircleToBSplineCurve conv(circle, u1, u2);
-        int np = conv.NbPoles(), nk = conv.NbKnots(), deg = conv.Degree();
-
-        TColgp_Array1OfPnt2d poles(1, np);
-        TColStd_Array1OfReal weights(1, np), knots(1, nk);
-        TColStd_Array1OfInteger mults(1, nk);
-        for (int i = 1; i <= np; i++) { poles(i) = conv.Pole(i); weights(i) = conv.Weight(i); }
-        for (int i = 1; i <= nk; i++) { knots(i) = conv.Knot(i); mults(i) = conv.Multiplicity(i); }
-
-        Handle(Geom2d_BSplineCurve) bsc = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg);
-        if (bsc.IsNull()) return nullptr;
-        OCCTCurve2D* result = new OCCTCurve2D();
-        result->curve = bsc;
-        return result;
+        return buildCurve2DFromConic(conv);
     } catch (...) { return nullptr; }
 }
 
