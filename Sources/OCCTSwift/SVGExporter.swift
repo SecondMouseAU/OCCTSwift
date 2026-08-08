@@ -42,7 +42,7 @@ extension Exporter {
     }
 }
 
-public final class SVGWriter: @unchecked Sendable {
+public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
     /// Explicit viewBox override. When nil, the writer computes the viewBox
     /// from the staged content's bounding box at `write(to:)` time.
     public var viewBox: (min: SIMD2<Double>, size: SIMD2<Double>)?
@@ -100,21 +100,7 @@ public final class SVGWriter: @unchecked Sendable {
     public func collectFromDrawing(_ drawing: Drawing,
                                     translate: SIMD2<Double> = .zero,
                                     scale: Double = 1.0) {
-        collectProjectedEdges(drawing.visibleEdges, layer: "VISIBLE",
-                               translate: translate, scale: scale)
-        collectProjectedEdges(drawing.hiddenEdges, layer: "HIDDEN",
-                               translate: translate, scale: scale)
-        collectProjectedEdges(drawing.outlineEdges, layer: "OUTLINE",
-                               translate: translate, scale: scale)
-        let ops = primitiveOps()
-        for a in drawing.annotations {
-            let t = (translate == .zero && scale == 1.0) ? a : a.transformed(translate: translate, scale: scale)
-            emitAnnotation(t, into: ops)
-        }
-        for d in drawing.dimensions {
-            let t = (translate == .zero && scale == 1.0) ? d : d.transformed(translate: translate, scale: scale)
-            emitDimension(t, into: ops)
-        }
+        collectDrawing(drawing, translate: translate, scale: scale, into: self)
     }
 
     public func collectFromDrawing(_ transformed: TransformedDrawing) {
@@ -123,42 +109,16 @@ public final class SVGWriter: @unchecked Sendable {
                             scale: transformed.scale)
     }
 
-    private func collectProjectedEdges(_ compound: Shape?, layer: String,
-                                        translate: SIMD2<Double>, scale: Double) {
-        guard let compound else { return }
-        let polys = compound.allEdgePolylines(deflection: deflection)
-        func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
-        for poly in polys {
-            guard poly.count >= 2 else { continue }
-            let points2D = poly.map { t(SIMD2($0.x, $0.y)) }
-            if points2D.count == 2 {
-                addLine(from: points2D[0], to: points2D[1], layer: layer)
-            } else {
-                addPolyline(points2D, closed: false, layer: layer)
-            }
-        }
-    }
-
-    private func primitiveOps() -> DrawingPrimitiveOps {
-        DrawingPrimitiveOps(
-            addLine:     { [weak self] a, b, layer in self?.addLine(from: a, to: b, layer: layer) },
-            addPolyline: { [weak self] pts, closed, layer in self?.addPolyline(pts, closed: closed, layer: layer) },
-            addCircle:   { [weak self] c, r, layer in self?.addCircle(centre: c, radius: r, layer: layer) },
-            addArc:      { [weak self] c, r, sDeg, eDeg, layer in self?.addArc(centre: c, radius: r, startAngleDeg: sDeg, endAngleDeg: eDeg, layer: layer) },
-            addText:     { [weak self] txt, pos, h, rot, layer in self?.addText(txt, at: pos, height: h, rotationDeg: rot, layer: layer) }
-        )
-    }
-
     // MARK: - SVG serialization
 
     public func write(to url: URL) throws {
         let vb = viewBox ?? computedViewBox()
         var s = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         s += "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" "
-        s += "viewBox=\"\(fmt(vb.min.x)) \(fmt(vb.min.y)) \(fmt(vb.size.x)) \(fmt(vb.size.y))\" "
-        s += "width=\"\(fmt(vb.size.x))mm\" height=\"\(fmt(vb.size.y))mm\">\n"
+        s += "viewBox=\"\(formatMM(vb.min.x)) \(formatMM(vb.min.y)) \(formatMM(vb.size.x)) \(formatMM(vb.size.y))\" "
+        s += "width=\"\(formatMM(vb.size.x))mm\" height=\"\(formatMM(vb.size.y))mm\">\n"
         // Flip Y so drawing-space mathematical Y (up) maps to SVG screen Y (down).
-        s += "<g transform=\"translate(0,\(fmt(vb.min.y + vb.size.y))) scale(1,-1)\">\n"
+        s += "<g transform=\"translate(0,\(formatMM(vb.min.y + vb.size.y))) scale(1,-1)\">\n"
 
         let layerOrder = ["VISIBLE", "OUTLINE", "BORDER", "TITLE",
                            "HIDDEN", "CENTER", "DIMENSION", "HATCH", "TEXT"]
@@ -166,9 +126,9 @@ public final class SVGWriter: @unchecked Sendable {
             let chunks = emitLayerGeometry(layer: layer)
                         + emitLayerText(layer: layer)
             if !chunks.isEmpty {
-                let strokeWidth = SVGWriter.strokeWidth(for: layer)
+                let strokeWidth = strokeWidthMM(for: layer)
                 let dash = SVGWriter.dashPattern(for: layer)
-                var groupAttrs = "stroke=\"black\" stroke-width=\"\(fmt(strokeWidth))\" fill=\"none\""
+                var groupAttrs = "stroke=\"black\" stroke-width=\"\(formatMM(strokeWidth))\" fill=\"none\""
                 if !dash.isEmpty { groupAttrs += " stroke-dasharray=\"\(dash)\"" }
                 s += "<g id=\"\(layer)\" \(groupAttrs)>\n\(chunks)</g>\n"
             }
@@ -208,10 +168,10 @@ public final class SVGWriter: @unchecked Sendable {
     private func emitLayerGeometry(layer: String) -> String {
         var s = ""
         for l in lines where l.layer == layer {
-            s += "<line x1=\"\(fmt(l.a.x))\" y1=\"\(fmt(l.a.y))\" x2=\"\(fmt(l.b.x))\" y2=\"\(fmt(l.b.y))\"/>\n"
+            s += "<line x1=\"\(formatMM(l.a.x))\" y1=\"\(formatMM(l.a.y))\" x2=\"\(formatMM(l.b.x))\" y2=\"\(formatMM(l.b.y))\"/>\n"
         }
         for p in polylines where p.layer == layer {
-            let pts = p.points.map { "\(fmt($0.x)),\(fmt($0.y))" }.joined(separator: " ")
+            let pts = p.points.map { "\(formatMM($0.x)),\(formatMM($0.y))" }.joined(separator: " ")
             if p.closed {
                 s += "<polygon points=\"\(pts)\"/>\n"
             } else {
@@ -219,7 +179,7 @@ public final class SVGWriter: @unchecked Sendable {
             }
         }
         for c in circles where c.layer == layer {
-            s += "<circle cx=\"\(fmt(c.centre.x))\" cy=\"\(fmt(c.centre.y))\" r=\"\(fmt(c.radius))\"/>\n"
+            s += "<circle cx=\"\(formatMM(c.centre.x))\" cy=\"\(formatMM(c.centre.y))\" r=\"\(formatMM(c.radius))\"/>\n"
         }
         for a in arcs where a.layer == layer {
             s += svgArcPath(centre: a.centre, radius: a.radius,
@@ -232,11 +192,11 @@ public final class SVGWriter: @unchecked Sendable {
         var s = ""
         for t in texts where t.layer == layer {
             // Counter-flip the group's Y-flip so text reads right-side up.
-            let rot = fmt(-t.rotationDeg)
-            let x = fmt(t.position.x), y = fmt(t.position.y)
+            let rot = formatMM(-t.rotationDeg)
+            let x = formatMM(t.position.x), y = formatMM(t.position.y)
             let escaped = SVGWriter.escapeXML(t.text)
             s += "<text x=\"\(x)\" y=\"\(y)\" font-family=\"Helvetica\" "
-            s += "font-size=\"\(fmt(t.height))\" "
+            s += "font-size=\"\(formatMM(t.height))\" "
             s += "transform=\"matrix(1,0,0,-1,0,0) translate(\(x),-\(y)) rotate(\(rot)) translate(-\(x),\(y))\" "
             s += "fill=\"black\" stroke=\"none\">\(escaped)</text>\n"
         }
@@ -255,16 +215,7 @@ public final class SVGWriter: @unchecked Sendable {
         // screen-Y. SVG's "positive angle" is CW in screen-Y; setting sweep
         // to `span > 0 ? 1 : 0` gives the expected visual result.
         let sweep = span > 0 ? 1 : 0
-        return "<path d=\"M \(fmt(start.x)) \(fmt(start.y)) A \(fmt(radius)) \(fmt(radius)) 0 \(largeArc) \(sweep) \(fmt(end.x)) \(fmt(end.y))\"/>\n"
-    }
-
-    private static func strokeWidth(for layer: String) -> Double {
-        switch layer {
-        case "VISIBLE", "OUTLINE", "BORDER", "TITLE":  return 0.5
-        case "HIDDEN", "CENTER", "DIMENSION", "TEXT":   return 0.25
-        case "HATCH":                                    return 0.18
-        default:                                         return 0.25
-        }
+        return "<path d=\"M \(formatMM(start.x)) \(formatMM(start.y)) A \(formatMM(radius)) \(formatMM(radius)) 0 \(largeArc) \(sweep) \(formatMM(end.x)) \(formatMM(end.y))\"/>\n"
     }
 
     private static func dashPattern(for layer: String) -> String {
@@ -284,6 +235,3 @@ public final class SVGWriter: @unchecked Sendable {
     }
 }
 
-private func fmt(_ v: Double) -> String {
-    String(format: "%.4f", v)
-}

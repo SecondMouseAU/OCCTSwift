@@ -62,7 +62,7 @@ extension Exporter {
     }
 }
 
-public final class PDFWriter: @unchecked Sendable {
+public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     public let pageSize: SIMD2<Double>
     public let deflection: Double
 
@@ -117,54 +117,13 @@ public final class PDFWriter: @unchecked Sendable {
     public func collectFromDrawing(_ drawing: Drawing,
                                     translate: SIMD2<Double> = .zero,
                                     scale: Double = 1.0) {
-        collectProjectedEdges(drawing.visibleEdges, layer: "VISIBLE",
-                               translate: translate, scale: scale)
-        collectProjectedEdges(drawing.hiddenEdges, layer: "HIDDEN",
-                               translate: translate, scale: scale)
-        collectProjectedEdges(drawing.outlineEdges, layer: "OUTLINE",
-                               translate: translate, scale: scale)
-        let ops = primitiveOps()
-        for a in drawing.annotations {
-            let t = (translate == .zero && scale == 1.0) ? a : a.transformed(translate: translate, scale: scale)
-            emitAnnotation(t, into: ops)
-        }
-        for d in drawing.dimensions {
-            let t = (translate == .zero && scale == 1.0) ? d : d.transformed(translate: translate, scale: scale)
-            emitDimension(t, into: ops)
-        }
+        collectDrawing(drawing, translate: translate, scale: scale, into: self)
     }
 
     public func collectFromDrawing(_ transformed: TransformedDrawing) {
         collectFromDrawing(transformed.source,
                             translate: transformed.translate,
                             scale: transformed.scale)
-    }
-
-    private func collectProjectedEdges(_ compound: Shape?, layer: String,
-                                        translate: SIMD2<Double>, scale: Double) {
-        guard let compound else { return }
-        let polys = compound.allEdgePolylines(deflection: deflection)
-        func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
-        for poly in polys {
-            guard poly.count >= 2 else { continue }
-            let points2D = poly.map { t(SIMD2($0.x, $0.y)) }
-            if points2D.count == 2 {
-                addLine(from: points2D[0], to: points2D[1], layer: layer)
-            } else {
-                addPolyline(points2D, closed: false, layer: layer)
-            }
-        }
-    }
-
-    /// Ops closure bundle for shared annotation/dimension dispatchers.
-    private func primitiveOps() -> DrawingPrimitiveOps {
-        DrawingPrimitiveOps(
-            addLine:     { [weak self] a, b, layer in self?.addLine(from: a, to: b, layer: layer) },
-            addPolyline: { [weak self] pts, closed, layer in self?.addPolyline(pts, closed: closed, layer: layer) },
-            addCircle:   { [weak self] c, r, layer in self?.addCircle(centre: c, radius: r, layer: layer) },
-            addArc:      { [weak self] c, r, sDeg, eDeg, layer in self?.addArc(centre: c, radius: r, startAngleDeg: sDeg, endAngleDeg: eDeg, layer: layer) },
-            addText:     { [weak self] txt, pos, h, rot, layer in self?.addText(txt, at: pos, height: h, rotationDeg: rot, layer: layer) }
-        )
     }
 
     // MARK: - PDF 1.4 serialization
@@ -191,7 +150,7 @@ public final class PDFWriter: @unchecked Sendable {
         addObject(2, body: "<< /Type /Pages /Kids [3 0 R] /Count 1 >>")
         addObject(3, body: """
             << /Type /Page /Parent 2 0 R \
-            /MediaBox [0 0 \(fmt(pageSize.x)) \(fmt(pageSize.y))] \
+            /MediaBox [0 0 \(formatMM(pageSize.x)) \(formatMM(pageSize.y))] \
             /Contents 4 0 R \
             /Resources << /Font << /F1 5 0 R >> >> >>
             """.replacingOccurrences(of: "\n", with: ""))
@@ -229,7 +188,7 @@ public final class PDFWriter: @unchecked Sendable {
         // CTM: map mm → pts so all geometry/line widths/text heights stay in mm.
         let mmToPt = 72.0 / 25.4
         s += "q\n"
-        s += "\(fmt(mmToPt)) 0 0 \(fmt(mmToPt)) 0 0 cm\n"
+        s += "\(formatMM(mmToPt)) 0 0 \(formatMM(mmToPt)) 0 0 cm\n"
         s += "0 0 0 RG\n"
 
         // Group entities by layer so we can set linewidth + dash once per group.
@@ -265,18 +224,9 @@ public final class PDFWriter: @unchecked Sendable {
     }
 
     private static func stylePreamble(for layer: String) -> String {
-        let w = strokeWidth(for: layer)
+        let w = strokeWidthMM(for: layer)
         let dash = dashPattern(for: layer)
-        return "\(fmt(w)) w\n\(dash) d\n"
-    }
-
-    private static func strokeWidth(for layer: String) -> Double {
-        switch layer {
-        case "VISIBLE", "OUTLINE", "BORDER", "TITLE":  return 0.5
-        case "HIDDEN", "CENTER", "DIMENSION", "TEXT":   return 0.25
-        case "HATCH":                                    return 0.18
-        default:                                         return 0.25
-        }
+        return "\(formatMM(w)) w\n\(dash) d\n"
     }
 
     private static func dashPattern(for layer: String) -> String {
@@ -291,13 +241,13 @@ public final class PDFWriter: @unchecked Sendable {
     private func emitLayerGeometry(layer: String) -> String {
         var s = ""
         for l in lines where l.layer == layer {
-            s += "\(fmt(l.a.x)) \(fmt(l.a.y)) m \(fmt(l.b.x)) \(fmt(l.b.y)) l S\n"
+            s += "\(formatMM(l.a.x)) \(formatMM(l.a.y)) m \(formatMM(l.b.x)) \(formatMM(l.b.y)) l S\n"
         }
         for p in polylines where p.layer == layer {
             guard let first = p.points.first else { continue }
-            s += "\(fmt(first.x)) \(fmt(first.y)) m\n"
+            s += "\(formatMM(first.x)) \(formatMM(first.y)) m\n"
             for pt in p.points.dropFirst() {
-                s += "\(fmt(pt.x)) \(fmt(pt.y)) l\n"
+                s += "\(formatMM(pt.x)) \(formatMM(pt.y)) l\n"
             }
             if p.closed { s += "h " }
             s += "S\n"
@@ -319,8 +269,8 @@ public final class PDFWriter: @unchecked Sendable {
             let rad = t.rotationDeg * .pi / 180
             let cosR = cos(rad), sinR = sin(rad)
             let pdfString = PDFWriter.escapeString(t.text)
-            s += "BT\n/F1 \(fmt(t.height)) Tf\n"
-            s += "\(fmt(cosR)) \(fmt(sinR)) \(fmt(-sinR)) \(fmt(cosR)) \(fmt(t.position.x)) \(fmt(t.position.y)) Tm\n"
+            s += "BT\n/F1 \(formatMM(t.height)) Tf\n"
+            s += "\(formatMM(cosR)) \(formatMM(sinR)) \(formatMM(-sinR)) \(formatMM(cosR)) \(formatMM(t.position.x)) \(formatMM(t.position.y)) Tm\n"
             s += "(\(pdfString)) Tj\nET\n"
         }
         return s
@@ -332,11 +282,11 @@ public final class PDFWriter: @unchecked Sendable {
     private static func circlePath(centre: SIMD2<Double>, radius: Double) -> String {
         let k = 0.5522847498 * radius
         let cx = centre.x, cy = centre.y
-        var s = "\(fmt(cx + radius)) \(fmt(cy)) m\n"
-        s += "\(fmt(cx + radius)) \(fmt(cy + k)) \(fmt(cx + k)) \(fmt(cy + radius)) \(fmt(cx)) \(fmt(cy + radius)) c\n"
-        s += "\(fmt(cx - k)) \(fmt(cy + radius)) \(fmt(cx - radius)) \(fmt(cy + k)) \(fmt(cx - radius)) \(fmt(cy)) c\n"
-        s += "\(fmt(cx - radius)) \(fmt(cy - k)) \(fmt(cx - k)) \(fmt(cy - radius)) \(fmt(cx)) \(fmt(cy - radius)) c\n"
-        s += "\(fmt(cx + k)) \(fmt(cy - radius)) \(fmt(cx + radius)) \(fmt(cy - k)) \(fmt(cx + radius)) \(fmt(cy)) c\n"
+        var s = "\(formatMM(cx + radius)) \(formatMM(cy)) m\n"
+        s += "\(formatMM(cx + radius)) \(formatMM(cy + k)) \(formatMM(cx + k)) \(formatMM(cy + radius)) \(formatMM(cx)) \(formatMM(cy + radius)) c\n"
+        s += "\(formatMM(cx - k)) \(formatMM(cy + radius)) \(formatMM(cx - radius)) \(formatMM(cy + k)) \(formatMM(cx - radius)) \(formatMM(cy)) c\n"
+        s += "\(formatMM(cx - radius)) \(formatMM(cy - k)) \(formatMM(cx - k)) \(formatMM(cy - radius)) \(formatMM(cx)) \(formatMM(cy - radius)) c\n"
+        s += "\(formatMM(cx + k)) \(formatMM(cy - radius)) \(formatMM(cx + radius)) \(formatMM(cy - k)) \(formatMM(cx + radius)) \(formatMM(cy)) c\n"
         s += "h S\n"
         return s
     }
@@ -357,7 +307,7 @@ public final class PDFWriter: @unchecked Sendable {
         var current = a0
         let startX = centre.x + radius * cos(current)
         let startY = centre.y + radius * sin(current)
-        s += "\(fmt(startX)) \(fmt(startY)) m\n"
+        s += "\(formatMM(startX)) \(formatMM(startY)) m\n"
         for _ in 0..<chunkCount {
             let next = current + chunkAngle
             let halfAngle = chunkAngle / 2
@@ -369,7 +319,7 @@ public final class PDFWriter: @unchecked Sendable {
             let t3 = SIMD2(-sin(next),    cos(next))    * radius * kappa * direction
             let p1 = p0 + t0
             let p2 = p3 - t3
-            s += "\(fmt(p1.x)) \(fmt(p1.y)) \(fmt(p2.x)) \(fmt(p2.y)) \(fmt(p3.x)) \(fmt(p3.y)) c\n"
+            s += "\(formatMM(p1.x)) \(formatMM(p1.y)) \(formatMM(p2.x)) \(formatMM(p2.y)) \(formatMM(p3.x)) \(formatMM(p3.y)) c\n"
             current = next
         }
         s += "S\n"
@@ -390,8 +340,4 @@ public final class PDFWriter: @unchecked Sendable {
         }
         return out
     }
-}
-
-private func fmt(_ v: Double) -> String {
-    String(format: "%.4f", v)
 }

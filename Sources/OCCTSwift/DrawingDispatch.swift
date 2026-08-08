@@ -1,19 +1,34 @@
 import Foundation
 import simd
 
-// MARK: - Shared annotation + dimension dispatch (#85, v0.150)
+// MARK: - Shared annotation + dimension dispatch (#85, v0.150; unified onto DXF, #795)
 //
-// DXFWriter has its own inline dispatch for every annotation and dimension
-// case (v0.148 and earlier). To avoid triplicating that logic across the
-// PDFWriter and SVGWriter added in v0.150, the dispatch is lifted here as
-// free functions that take a `DrawingPrimitiveOps` closure bundle. Any
-// writer implementing the five 2D primitives (addLine, addPolyline,
-// addCircle, addArc, addText) gets full annotation + dimension rendering
-// for free.
+// DXFWriter used to carry its own inline dispatch for every annotation and dimension
+// case (v0.148 and earlier), duplicated instead of shared when PDFWriter/SVGWriter were
+// added in v0.150 out of caution — DXF's test coverage was load-bearing and a refactor
+// risked regressions with no user-visible benefit (the original rationale for keeping it
+// separate, recorded below until #795). The dispatch lives here as free functions that
+// take a `DrawingPrimitiveOps` closure bundle; any writer implementing the five 2D
+// primitives (addLine, addPolyline, addCircle, addArc, addText) gets full annotation +
+// dimension rendering for free.
 //
-// DXFWriter continues to use its own inline logic — not because it couldn't
-// be ported, but because its test coverage is load-bearing and a refactor
-// would risk regressions with no user-visible benefit.
+// #795 found that DXFWriter's inline copy had drifted into being the SAME logic, not a
+// different one: `formatTolerance`/`TolerancedLabel` were byte-for-byte identical to this
+// file's own (private) copies, and DXF's `emitLinear`/`emitRadial`/`emitDiameter`/
+// `emitAngular`/`emitOrdinate`/`collectAnnotations`/`emitBalloon`/`emitCuttingPlaneLine`/
+// `emitHatch` were the identical logic as this file's `emitDimension`/`emitAnnotation`
+// family, just calling `self.addLine(from:to:layer:)` etc. directly instead of through an
+// `ops` closure bundle — DXFWriter already implements the same five primitives PDF/SVG do,
+// so the "different intermediate representation" concern that justified keeping DXF
+// separate never actually applied. Golden-output tests
+// (`Tests/OCCTIOTests/OCCTIOTests.swift`, `ExporterDrawingCollectionGoldenTests`) proved
+// the unification byte-identical before it was made permanent.
+//
+// `DrawingPrimitiveSink` is the shared conformance: any writer holding the five staging
+// methods gets `primitiveOps()` for free. `collectFromDrawing` stays an explicit `public`
+// declaration on each writer (so it keeps documenting and dispatching exactly where it
+// always did) but its body is one call into this file's shared `collectDrawing(...)`,
+// removing the need for each writer to hand-roll its own copy of the collection loop.
 
 internal struct DrawingPrimitiveOps {
     let addLine: (SIMD2<Double>, SIMD2<Double>, String) -> Void
@@ -21,6 +36,110 @@ internal struct DrawingPrimitiveOps {
     let addCircle: (SIMD2<Double>, Double, String) -> Void
     let addArc: (SIMD2<Double>, Double, Double, Double, String) -> Void
     let addText: (String, SIMD2<Double>, Double, Double, String) -> Void
+}
+
+/// A writer that can stage the five 2D drawing primitives PDF, SVG and DXF all
+/// understand. Conforming gets `primitiveOps()` via the default implementation below —
+/// each writer keeps its own explicit `public func collectFromDrawing` (so the public
+/// declaration a consumer sees, and `docs/reference/Export-Vector.md` documents, still
+/// lives in `PDFExporter.swift`/`SVGExporter.swift`/`DXFExporter.swift` exactly as before),
+/// but its BODY is one call into this file's shared `collectDrawing(...)`. #795.
+internal protocol DrawingPrimitiveSink: AnyObject {
+    var deflection: Double { get }
+    func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String)
+    func addPolyline(_ points: [SIMD2<Double>], closed: Bool, layer: String)
+    func addCircle(centre: SIMD2<Double>, radius: Double, layer: String)
+    func addArc(centre: SIMD2<Double>, radius: Double,
+                startAngleDeg: Double, endAngleDeg: Double, layer: String)
+    func addText(_ text: String, at position: SIMD2<Double>,
+                 height: Double, rotationDeg: Double, layer: String)
+}
+
+extension DrawingPrimitiveSink {
+    /// Ops closure bundle wrapping this sink's own staging methods, for the shared
+    /// annotation/dimension dispatchers below.
+    func primitiveOps() -> DrawingPrimitiveOps {
+        DrawingPrimitiveOps(
+            addLine:     { [weak self] a, b, layer in self?.addLine(from: a, to: b, layer: layer) },
+            addPolyline: { [weak self] pts, closed, layer in self?.addPolyline(pts, closed: closed, layer: layer) },
+            addCircle:   { [weak self] c, r, layer in self?.addCircle(centre: c, radius: r, layer: layer) },
+            addArc:      { [weak self] c, r, sDeg, eDeg, layer in self?.addArc(centre: c, radius: r, startAngleDeg: sDeg, endAngleDeg: eDeg, layer: layer) },
+            addText:     { [weak self] txt, pos, h, rot, layer in self?.addText(txt, at: pos, height: h, rotationDeg: rot, layer: layer) }
+        )
+    }
+}
+
+/// Stage every edge/annotation/dimension from `drawing` onto `sink`, optionally translated
+/// and uniformly scaled — the shared collection pipeline every 2D exporter (PDF, SVG, DXF)
+/// uses. Each writer's own `public func collectFromDrawing` is a one-line call into this;
+/// kept as a free function (not a `DrawingPrimitiveSink` default method) precisely so each
+/// writer keeps an explicit `public` declaration of its own — an `internal` protocol's
+/// extension methods are not reliably part of a conforming `public` type's visible API
+/// from outside the module, and `docs/reference/Export-Vector.md` documents this method
+/// once per writer, resolved by which `.swift` file declares it. #795.
+internal func collectDrawing(_ drawing: Drawing,
+                              translate: SIMD2<Double>,
+                              scale: Double,
+                              into sink: DrawingPrimitiveSink) {
+    let ops = sink.primitiveOps()
+    collectProjectedEdges(drawing.visibleEdges, layer: "VISIBLE",
+                           translate: translate, scale: scale,
+                           deflection: sink.deflection, into: ops)
+    collectProjectedEdges(drawing.hiddenEdges, layer: "HIDDEN",
+                           translate: translate, scale: scale,
+                           deflection: sink.deflection, into: ops)
+    collectProjectedEdges(drawing.outlineEdges, layer: "OUTLINE",
+                           translate: translate, scale: scale,
+                           deflection: sink.deflection, into: ops)
+    for a in drawing.annotations {
+        let t = (translate == .zero && scale == 1.0) ? a : a.transformed(translate: translate, scale: scale)
+        emitAnnotation(t, into: ops)
+    }
+    for d in drawing.dimensions {
+        let t = (translate == .zero && scale == 1.0) ? d : d.transformed(translate: translate, scale: scale)
+        emitDimension(t, into: ops)
+    }
+}
+
+/// Tessellate `compound`'s edges (via `allEdgePolylines`) and stage each resulting
+/// polyline as a line (2-point case) or polyline, translated/scaled, on `layer`. Shared by
+/// every `collectDrawing` call for the visible/hidden/outline edge passes — previously
+/// three (PDF/SVG/DXF) independently hand-written copies of the identical loop. #795.
+private func collectProjectedEdges(_ compound: Shape?, layer: String,
+                                    translate: SIMD2<Double>, scale: Double,
+                                    deflection: Double, into ops: DrawingPrimitiveOps) {
+    guard let compound else { return }
+    let polys = compound.allEdgePolylines(deflection: deflection)
+    func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
+    for poly in polys {
+        guard poly.count >= 2 else { continue }
+        let points2D = poly.map { t(SIMD2($0.x, $0.y)) }
+        if points2D.count == 2 {
+            ops.addLine(points2D[0], points2D[1], layer)
+        } else {
+            ops.addPolyline(points2D, false, layer)
+        }
+    }
+}
+
+/// Per-layer stroke weight (mm) per ISO 128-20, shared by PDF and SVG — the two formats
+/// whose stroke widths are specified in the same physical unit their content streams are
+/// scaled to (PDF's CTM maps mm -> pt before any `w` operator; SVG's viewBox is 1:1 with
+/// the staged mm coordinates). DXF has no equivalent concept (colour + linetype per layer,
+/// no per-entity line weight), so it is not part of this table. #795.
+internal func strokeWidthMM(for layer: String) -> Double {
+    switch layer {
+    case "VISIBLE", "OUTLINE", "BORDER", "TITLE":  return 0.5
+    case "HIDDEN", "CENTER", "DIMENSION", "TEXT":   return 0.25
+    case "HATCH":                                    return 0.18
+    default:                                         return 0.25
+    }
+}
+
+/// Shared PDF/SVG coordinate/length formatting (4 decimal places). DXF formats numbers
+/// separately (`%.6f`, via its own `pair(_:_:)` helper) so is not part of this. #795.
+internal func formatMM(_ v: Double) -> String {
+    String(format: "%.4f", v)
 }
 
 // MARK: - Annotation dispatch
