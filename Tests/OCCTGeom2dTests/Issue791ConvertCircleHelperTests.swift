@@ -9,9 +9,13 @@ import Foundation
 /// inherits `Convert_ConicToBSplineCurve` publicly, and every accessor `buildCurve2DFromConic`
 /// calls (`NbPoles`/`NbKnots`/`Degree`/`Pole`/`Weight`/`Knot`/`Multiplicity`) is declared on that
 /// base class, confirmed by reading the bundled
-/// `Convert_CircleToBSplineCurve.hxx`/`Convert_ConicToBSplineCurve.hxx` headers directly (the OCCT
-/// refman is not indexed in `context` for this repo; `okf/policies/context-first.md` names the
-/// bundled headers as the fallback), not assumed from the issue body. So the fix is a drop-in
+/// `Convert_CircleToBSplineCurve.hxx`/`Convert_ConicToBSplineCurve.hxx` headers directly, not
+/// assumed from the issue body. The `occt-refman` package states the same relationship in prose,
+/// `Convert_ConicToBSplineCurve` describing itself as the "Root class for algorithms which convert
+/// a conic curve into a BSpline curve (CircleToBSplineCurve, ...)", and it was unreachable only
+/// because this session's `context` connection had dropped, not because the package is missing.
+/// `okf/policies/context-first.md` puts refman first and the bundled headers second; both agree
+/// here. Note refman renders the inheritance itself as a PNG, so the prose is what carries it. So the fix is a drop-in
 /// call: `return buildCurve2DFromConic(conv);`.
 ///
 /// These tests prove the consolidation changed nothing observable, two ways:

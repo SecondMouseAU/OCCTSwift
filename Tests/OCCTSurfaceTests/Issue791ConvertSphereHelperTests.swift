@@ -11,8 +11,9 @@ import Foundation
 /// `UMultiplicity`/`VMultiplicity`/`UDegree`/`VDegree`/`IsUPeriodic`/`IsVPeriodic`) is declared on
 /// that base class, confirmed by reading the bundled
 /// `Convert_SphereToBSplineSurface.hxx`/`Convert_ElementarySurfaceToBSplineSurface.hxx` headers
-/// directly (the OCCT refman is not indexed in `context` for this repo; `okf/policies/context-first.md`
-/// names the bundled headers as the fallback), not assumed from the issue body. So the fix is a
+/// directly, not assumed from the issue body. `occt-refman` carries the same fact and was
+/// unreachable only because this session's `context` connection had dropped, not because the
+/// package is missing; `okf/policies/context-first.md` puts refman first and the headers second. So the fix is a
 /// drop-in call: `return buildSurfaceFromElementary(conv);`.
 ///
 /// These tests prove the consolidation changed nothing observable, two ways:
