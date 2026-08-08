@@ -141,7 +141,7 @@ case nil:          print("indeterminate or not requested")
 ### `ShapeAnalysisResult.selfIntersectionCount` removed; `ShapeAxis.extent` now computed for `revolutionAxes()`/`symmetryAxes()` (#763)
 
 `ShapeAnalysisResult.selfIntersectionCount` is removed. It was always `0`, never computed (the
-bridge's own comment admitted "would require more expensive computation") — use
+bridge's own comment admitted "would require more expensive computation"). Use
 `Shape.isSelfIntersecting(timeout:)` for a real self-intersection check.
 
 `ShapeAxis.extent` (from `Shape.revolutionAxes(tolerance:)` and
@@ -155,7 +155,7 @@ let axis = Shape.cylinder(radius: 5, height: 20)!.revolutionAxes().first
 axis?.extent  // nil, always, regardless of the cylinder's actual height
 
 // After: a real measured extent
-axis?.extent  // Optional(0.0...20.0) (or -20.0...0.0 — axis direction sign varies)
+axis?.extent  // Optional(0.0...20.0), or -20.0...0.0 since the axis direction sign varies
 ```
 
 - Pinned `v2.0.0-kernel.3`, adding patch `0025` (`GeomFill_Sweep` conversion error, #597) and the
@@ -165,17 +165,17 @@ axis?.extent  // Optional(0.0...20.0) (or -20.0...0.0 — axis direction sign va
 
 `Document.shapeColor(_:type:)` previously always reported `alpha == 1.0` regardless of what was
 actually stored, because the bridge read a shape's color through `XCAFDoc_ColorTool`'s RGB-only
-`GetColor` overload. It now reads the RGBA overload and reports the real value — for example, a
+`GetColor` overload. It now reads the RGBA overload and reports the real value, for example a
 STEP import with a transparent surface style. `Document.setShapeColor(_:color:type:)` previously
 silently dropped `color.alpha` on write; it is now stored and round-trips through `shapeColor`.
 
 ### `AAG.detectHoles()` no longer reports zero holes for an ordinary blind or through cylindrical hole (#747)
 
-`detectHoles()` required every neighbor of a candidate face to connect via a concave edge — a
+`detectHoles()` required every neighbor of a candidate face to connect via a concave edge, a
 criterion written against the convexity formula #723 replaced, and unsatisfiable under the correct
 one for both a through-hole (zero concave neighbors) and a blind hole (one out of two). Replaced
 with a criterion built from the wall's own geometry: cylindrical or conical, closed in U by its own
-seam, and with material lying radially outside the wall rather than inside it — which also
+seam, and with material lying radially outside the wall rather than inside it, which also
 correctly excludes a boss or standalone cylinder (topologically identical to a hole in every way
 neighbor convexity can see) and correctly finds a hole bored on any axis, not only a vertical one.
 
