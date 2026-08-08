@@ -1824,7 +1824,7 @@ struct RevolutionFormTests {
         // Create two cylinders fused together as base shape
         let c1 = Shape.cylinder(radius: 2, height: 5)!
         let c2 = Shape.cylinder(at: SIMD2(0, 0), bottomZ: 5, radius: 1, height: 3)!
-        guard let s = c1.union( c2) else { return }
+        guard let s = c1.union(c2) else { return }
         // Create a wire profile (a line segment) for the rib
         guard let wire = Wire.line(from: SIMD3(-2, 0, 5), to: SIMD3(-1, 0, 8)) else { return }
         let result = s.addingRevolutionForm(
@@ -2165,7 +2165,7 @@ struct CurveOnSurfaceCheckTests {
     func fusedConsistency() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union( sphere)
+        let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {
             let check = fused.curveOnSurfaceCheck
@@ -5741,7 +5741,7 @@ struct ShapeRevolutionAxesTests {
     func coaxialDedup() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
               let torus = Shape.torus(majorRadius: 10, minorRadius: 2),
-              let combined = cyl.union( torus) else { Issue.record("union nil"); return }
+              let combined = cyl.union(torus) else { Issue.record("union nil"); return }
         let axes = combined.revolutionAxes()
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)

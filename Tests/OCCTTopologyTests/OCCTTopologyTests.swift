@@ -1612,7 +1612,7 @@ struct EdgeConnectTests {
     func fusedConnectivity() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union( sphere)
+        let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {
             let connected = fused.connectedEdges
@@ -1832,7 +1832,7 @@ struct EdgeConcavityTests {
         // A union of two overlapping boxes creates concave edges at the join
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union( box2) {
+        if let fused = box1.union(box2) {
             let concaveCount = fused.edgeConcavityCount(Shape.EdgeConcavity.concave)
             // Fused shape may have concave edges where boxes overlap
             #expect(concaveCount != nil)
@@ -1898,7 +1898,7 @@ struct ShapeCheckTests {
     func booleanResultValid() throws {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union( box2) {
+        if let fused = box1.union(box2) {
             #expect(fused.isValid)
         }
     }

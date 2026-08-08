@@ -211,22 +211,64 @@ public enum RunoutStyle: Sendable, Hashable {
 /// uses to build an external thread.
 ///
 /// For a thread on a plain coaxial cylinder (the overwhelmingly common case) both modes now
-/// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257) — there is no
-/// longer a reason to choose between them. The boolean cut path remains only for the cases the direct
-/// build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted and
-/// unreliable**. A third mode, `.boolean`, which forced the cut path even where direct worked, was
-/// deprecated in v1.8.1 and removed in v2.0.0 (#254, #784).
+/// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257), so there is
+/// no longer a reason to choose between them. The boolean cut path remains only for the cases the
+/// direct build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted
+/// and unreliable**. A third case, `.boolean`, which forced the cut path even where direct worked,
+/// was deprecated in v1.8.1 and its *case* removed in v2.0.0 (#254, #784).
+///
+/// - Important: This type shipped `Codable` in v1.8.1 with three cases, so a value persisted by a
+///   host app while `.boolean` still existed decodes correctly today: `init(from:)` recognises the
+///   legacy `"boolean"` key and maps it to ``direct``, matching what every buildable thread already
+///   resolved `.boolean` to before the case was removed. `.boolean` cannot be *encoded* again (the
+///   case no longer exists to construct), so this is one-directional, decode-only compatibility,
+///   not a live third case. #784's own migration guide names this as the one removal in that PR
+///   that is a persisted-data concern rather than a source-compatibility one.
 public enum ThreadBuild: Sendable, Hashable, Codable {
     /// Smooth, boolean-free direct rod build (#213; multi-start #257) for single- and multi-start
     /// threads on a plain coaxial cylinder; the boolean cut path otherwise (non-cylinder / rounded /
     /// tapered). The recommended default. The earlier crest-overshoot concern (#222) was shown by
-    /// #232 to be a `Bnd_Box` control-hull over-report, not real geometry — the direct crest is
+    /// #232 to be a `Bnd_Box` control-hull over-report, not real geometry: the direct crest is
     /// in-envelope.
     case auto
     /// Prefer the smooth direct build, falling back to the boolean cut only when the direct build is
     /// unavailable (non-cylinder target, rounded/tapered form, or a construction failure). For a
     /// coaxial cylinder this is identical to ``auto``.
     case direct
+
+    /// Matches the case names Swift's synthesized `Codable` used for this enum's three cases before
+    /// v2.0.0 (`{"auto":{}}`, `{"direct":{}}`, `{"boolean":{}}`), plus the retired `boolean` key kept
+    /// here for decoding only.
+    private enum CodingKeys: String, CodingKey {
+        case auto, direct, boolean
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.boolean) {
+            // Every buildable thread already resolved `.boolean` to `.direct` before the case was
+            // removed (see the doc comment above), so this is not a guess at the closest surviving
+            // case: it is the value this decode would have produced under the last release that
+            // still had `.boolean`.
+            self = .direct
+        } else if container.contains(.auto) {
+            self = .auto
+        } else if container.contains(.direct) {
+            self = .direct
+        } else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "ThreadBuild: expected one of \"auto\", \"direct\" or the retired \"boolean\""))
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .auto: try container.encode([String: Int](), forKey: .auto)
+        case .direct: try container.encode([String: Int](), forKey: .direct)
+        }
+    }
 }
 
 public struct ThreadSpec: Sendable, Hashable, Codable {

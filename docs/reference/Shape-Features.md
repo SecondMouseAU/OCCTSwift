@@ -1021,9 +1021,9 @@ public var vertexCount: Int { get }
 ```
 
 - **OCCT:** `TopExp::MapShapes(TopAbs_VERTEX)` (via `OCCTShapeGetVertexCount`).
-- **Deprecated alias:** [`Shape.nbVertices`](Document-Completions.md#shapenbvertices-deprecated-651)
-  was a second spelling of this question, backed by a bare `TopExp_Explorer` occurrence count (48 on
-  an 8-vertex box) instead of this deduplicated one. It now forwards here (#651).
+- **Former second spelling:** `Shape.nbVertices` asked this same question, backed by a bare
+  `TopExp_Explorer` occurrence count (48 on an 8-vertex box) instead of this deduplicated one;
+  deprecated as a forward here in #651 and removed at v2.0.0 (#784).
 
 ---
 
@@ -1785,10 +1785,10 @@ relying on OCCT's own throw being caught (#437). Curve constraints have no such 
 `GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
-> this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
-> `.c1` and `.c2` spellings remain as deprecated aliases of `.g0`, `.g1` and `.g2`. No raw
-> value moved, so behaviour is unchanged. Not to be confused with `ParametricContinuity`
-> (C0/C1/C2/C3), which is a different contract: see `docs/reference/Shape-Healing.md`.
+> this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
+> `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
+> removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
+> a different contract: see `docs/reference/Shape-Healing.md`.
 
 ---
 

@@ -795,9 +795,8 @@ is nearest to that end, and that is the answer. Agrees exactly with
 until #615 this one reported an extremum instead, so the two disagreed about which point is nearest
 and about whether there was one.
 
-Replaces `parameterAtPoint(_:)` and
-[`closestParameter(to:)`](Curve3D-Construction.md#nearestparameterto), both deprecated: they ran
-the identical projection and disagreed about how to report its absence (#500).
+Replaced `parameterAtPoint(_:)` and `closestParameter(to:)`, both deprecated and removed at v2.0.0
+(#784): they ran the identical projection and disagreed about how to report its absence (#500).
 
 ---
 
@@ -835,8 +834,8 @@ it reports none where these four answer with an end — a point past the end of 
 nearest point but no perpendicular foot. Before #615 all five agreed only because the other four
 were asking the extrema question too, and so were wrong.
 
-Replaces `parameterAtPoint(_:)`, deprecated: it reported the no-projection case as the curve's
-own `firstParameter`.
+Replaced `parameterAtPoint(_:)`, deprecated and removed at v2.0.0 (#784): it reported the
+no-projection case as the curve's own `firstParameter`.
 
 ---
 

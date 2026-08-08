@@ -1368,63 +1368,12 @@ public var orientationValue: Int
 
 ---
 
-### `Shape.nbEdges`: deprecated (#651)
-
-The number of edges in this shape. **Deprecated:** this is [`edgeCount`](Edge.md#edgecount)
-under a second name, and used to return a different, wrong number: a bare `TopExp_Explorer`
-occurrence count (24 on a 12-edge box, one visit per adjacent face) rather than the distinct count
-this very page always documented. Forwards to `edgeCount` now.
-
-```swift
-@available(*, deprecated, renamed: "edgeCount")
-public var nbEdges: Int
-```
-
-- **OCCT:** `edgeCount`, i.e. `TopExp::MapShapes` over `TopAbs_EDGE`.
-- **Example:**
-  ```swift
-  print(box.nbEdges) // 12, same as box.edgeCount
-  ```
-
----
-
-### `Shape.nbFaces`: deprecated (#651)
-
-The number of faces in this shape. **Deprecated:** this is [`faceCount`](Selection.md#shapefacecount)
-under a second name. It agreed with `faceCount` on a plain box (no face is shared within one solid,
-so occurrence and distinct counts coincide) but not on a shape with a shared face, where it read 12
-against `faceCount`'s 11. Forwards to `faceCount` now.
-
-```swift
-@available(*, deprecated, renamed: "faceCount")
-public var nbFaces: Int
-```
-
-- **OCCT:** `faceCount`, i.e. `TopExp::MapShapes` over `TopAbs_FACE`.
-- **Example:**
-  ```swift
-  print(box.nbFaces) // 6, same as box.faceCount
-  ```
-
----
-
-### `Shape.nbVertices`: deprecated (#651)
-
-The number of vertices in this shape. **Deprecated:** this is [`vertexCount`](Shape-Features.md#vertexcount)
-under a second name, and used to return a different, wrong number: a bare `TopExp_Explorer`
-occurrence count (48 on an 8-vertex box, one visit per incident edge) rather than the distinct
-count this very page always documented. Forwards to `vertexCount` now.
-
-```swift
-@available(*, deprecated, renamed: "vertexCount")
-public var nbVertices: Int
-```
-
-- **OCCT:** `vertexCount`, i.e. `TopExp::MapShapes` over `TopAbs_VERTEX`.
-- **Example:**
-  ```swift
-  print(box.nbVertices) // 8, same as box.vertexCount
-  ```
+`Shape.nbEdges`, `Shape.nbFaces` and `Shape.nbVertices` (#651) counted bare `TopExp_Explorer`
+occurrences (24/6/48 on a 12-edge/6-face/8-vertex box; `nbFaces` agreed with `faceCount` only on a
+shape with no shared face), against this page's own documentation of the distinct count. Deprecated
+as forwards to [`edgeCount`](Edge.md#edgecount), [`faceCount`](Selection.md#shapefacecount) and
+[`vertexCount`](Shape-Features.md#vertexcount), and removed at v2.0.0 (#784). Use those three
+directly.
 
 ---
 

@@ -82,13 +82,19 @@ struct PathParsingContractTests {
         #expect(OSDPath.isValid(""))
         #expect(OSDPath.isValid("/home/üser/mødel.step"))
     }
-
-    /// Degenerate input still parses to a definite (possibly empty) answer rather than crashing
-    /// or throwing.
-    @Test func degenerateInputsParseCleanly() {
-        for path in ["", "/", ".", "/home/user/"] {
-            #expect(OSDPath.name(path) != nil, "name failed for \"\(path)\"")
-            #expect(OSDPath.fileExtension(path) != nil, "extension failed for \"\(path)\"")
-        }
-    }
 }
+
+// Removed `degenerateInputsParseCleanly()`: its only assertions were `OSDPath.name(path) != nil`
+// and `OSDPath.fileExtension(path) != nil` for four degenerate paths, with no evidence the
+// assertion was ever proven able to fail. Checked directly rather than assumed: the bridge
+// (`OCCTBridge_IO.mm`'s `osdPathComponent`) returns `nullptr` only when constructing `OSD_Path`
+// or reading `.Name()`/`.Extension()` throws, caught by `catch (...)`. Probed both functions
+// against every degenerate/adversarial input reachable from a Swift `String` (empty, "/", ".",
+// a trailing slash, thousands of slashes, embedded NUL, control characters, non-ASCII, a 100k
+// character string) and none returned `nil`; `nonASCIIPathSurvivesParsing` above already pins one
+// of those non-nil results. `OSD_Path`'s own header documents a `ConstructionError` "when the path
+// is either null" — unreachable from this API, since Swift's `String`-to-C-string bridging never
+// produces a null pointer — "or contains characters not in range of ' '...'~'", which the measured
+// behavior does not honour for this constructor overload on this platform. With no input found
+// that reaches the bridge's `catch` block, the assertion could not be shown to test anything, so
+// it is removed rather than left as an unproven claim (okf/policies/prove-the-test-fails.md).

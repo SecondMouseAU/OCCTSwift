@@ -5958,7 +5958,7 @@ struct IntegrationAssemblyInterferenceTests {
         // Step 7: Move housing to interfere (full cylinder, not hollow)
         if let interferingHousing = housing.translated(by: SIMD3(0.0, 0.0, 40.0)) {
             // Step 8-9: Compute interference volume
-            if let interference = shaft.intersection( interferingHousing) {
+            if let interference = shaft.intersection(interferingHousing) {
                 if let vol = interference.volume {
                     #expect(vol > 0)
                 }
@@ -6016,7 +6016,7 @@ struct IntegrationProfileContouringTests {
         }
 
         // Union boss with base (cylinder is centered at origin, extends upward)
-        guard let combined = base.union( boss) else {
+        guard let combined = base.union(boss) else {
             #expect(Bool(false), "Failed to union base + boss")
             return
         }

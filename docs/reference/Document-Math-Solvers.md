@@ -115,18 +115,16 @@ public static func ellipse(
 
 ---
 
-### Deprecated: `Conic2D.fromCircle` / `fromLine` / `fromEllipse`
-
-The three original spellings return a non-optional `Conic2D`, so their only way to report a
-degenerate input is the all-zero struct, which describes no conic. They remain, deprecated,
-forwarding to the factories above and returning all zeros where those return `nil`.
+`Conic2D.fromCircle`/`fromLine`/`fromEllipse`, the original spellings returning a non-optional
+`Conic2D` (their only way to report a degenerate input was an all-zero struct describing no conic),
+were deprecated in favour of the factories above and removed at v2.0.0 (#784):
 
 ```swift
-// before
+// before (removed)
 let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
                             majorRadius: 5, minorRadius: 3)
 
-// after
+// now
 if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
                            majorRadius: 5, minorRadius: 3) { … }
 ```
