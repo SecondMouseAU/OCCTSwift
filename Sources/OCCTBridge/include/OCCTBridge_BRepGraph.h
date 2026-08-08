@@ -48,17 +48,77 @@ int32_t OCCTEdgeGetAdjacentFaces(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceR
 /// @return Convexity type (concave, smooth/tangential, or convex)
 OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2);
 
-/// Get all edges shared between two faces
+/// Get all edges shared between two faces.
+///
+/// Shares its face-pair edge-identity comparison with OCCTFaceGetSharedEdgeCount through one
+/// internal helper (`countOrCollectSharedEdges`, OCCTBridge_BRepGraph.mm) rather than two
+/// independent copies of the same loop -- #761's review: two copies is the shape of bug that let
+/// the original 10-cap survive unnoticed in the first place, since nothing forced them to agree.
 /// @param shape The shape containing the faces
 /// @param face1 First face
-/// @param face2 Second face  
+/// @param face2 Second face
 /// @param outEdges Output array for shared edges (caller allocates)
 /// @param maxEdges Maximum number of edges to return
-/// @return Number of shared edges found
+/// @return Number of shared edges found, truncated at maxEdges if the true count is larger. Call
+///   OCCTFaceGetSharedEdgeCount first to size outEdges exactly and avoid truncation (#761).
 int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges);
 
+/// The true number of edges shared between two faces, with no cap.
+///
+/// `AAG.buildGraph()` (`FeatureRecognition.swift`) used to call `OCCTFaceGetSharedEdges` directly
+/// with a hardcoded `maxEdges: 10`, so `AAGEdge.sharedEdgeCount` silently truncated at 10 on any
+/// face pair sharing more edges -- plausible after healing splits a boundary into segments, and
+/// reproduced directly: an 11-notch synthetic fixture measured 12 shared edges between two faces,
+/// reported as 10 (`Scripts/repro/761-aag-brepgraph-adjacency/`). This is the same count-then-fetch
+/// idiom `BRepGraph.swift`'s own `fetchIndices` helper already uses for every `...Count`/
+/// `...Indices` bridge pair: call this first to size the buffer exactly, then call
+/// OCCTFaceGetSharedEdges with that exact count.
+///
+/// Reads the identical comparison OCCTFaceGetSharedEdges does, through the shared
+/// `countOrCollectSharedEdges` helper both call -- not a second, independently-written copy of the
+/// loop (#761 review). Same O(e1 * e2) cost as OCCTFaceGetSharedEdges itself (each face's own edge
+/// count, never the whole shape), so sizing correctly costs nothing beyond running that one
+/// comparison twice (once per call), which #761's own measurement found negligible next to the
+/// alternative of routing through BRepGraph.sharedEdges(between:and:) instead (a real, measured
+/// performance regression at model scale -- see that repro directory's README for the numbers).
+/// @param shape The shape containing the faces
+/// @param face1 First face
+/// @param face2 Second face
+/// @return Number of shared edges, uncapped.
+int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
+
+/// True number of edges shared by two faces, optionally also handing back the first of them, from a
+/// SINGLE walk of the pair.
+///
+/// `buildGraph()` used to ask three separate questions per adjacent pair, each rebuilding both
+/// faces' edge maps: `OCCTFacesAreAdjacent` (is there one), `OCCTFaceGetSharedEdgeCount` (how many),
+/// and `OCCTFaceGetSharedEdges(maxEdges: 1)` (give me one, to ask about convexity). Calls one and
+/// three were literally redundant. This answers all three at once: a non-zero return IS adjacency,
+/// and `outFirstEdge` is the edge convexity gets asked about (#783).
+///
+/// - Parameters:
+///   - outFirstEdge: optional. When non-null, receives the first shared edge, or `nullptr` if the
+///     faces share none. **The caller owns it and must `OCCTEdgeRelease` it** when the return is
+///     greater than zero.
+/// - Returns: the true shared-edge count, never truncated.
+int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2,
+                                     OCCTEdgeRef* _Nullable outFirstEdge);
+
 /// Check if two faces are adjacent (share at least one edge)
-bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
+/// - Warning: **Deprecated (#783).** `AAG.buildGraph()` was its only caller and no longer needs it:
+///   it wants the true shared-edge count and one edge anyway, and `OCCTFaceGetSharedEdgeSummary`
+///   answers adjacency as a side effect of producing both. Nothing in this repo calls this now, so
+///   what remains is a second way to ask a question one function already answers, kept alive only
+///   by its own declaration. That is the #506 shape, where an orphan freezes a contract nobody
+///   exercises.
+///
+///   It is deprecated rather than deleted because `OCCTBridge.xcframework` ships this symbol, so
+///   removing it outright breaks a consumer with no warning first. Migrate to
+///   `OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0`, and note that doing so costs a
+///   full walk of the pair where this stopped at the first shared edge: for a caller who genuinely
+///   wants only adjacency and never the count, say so on #783 before this is removed.
+bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2)
+    __attribute__((deprecated("Use OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0; a non-zero shared-edge count is adjacency (#783).")));
 
 /// Get the dihedral angle between two adjacent faces at their shared edge
 /// @param edge The shared edge
