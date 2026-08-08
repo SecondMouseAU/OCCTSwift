@@ -3619,35 +3619,18 @@ void OCCTElSLibD1OnSphere(double u, double v,
 #include <Convert_SphereToBSplineSurface.hxx>
 #include <Convert_ElementarySurfaceToBSplineSurface.hxx>
 
+// buildSurfaceFromElementary (defined below, shared with Cylinder/Cone/Torus) takes any
+// Convert_ElementarySurfaceToBSplineSurface subclass by base-class reference.
+// Convert_SphereToBSplineSurface is one such subclass (#791), so it can call the same helper;
+// forward-declared here since the helper's definition follows this function in the file.
+static OCCTSurfaceRef buildSurfaceFromElementary(const Convert_ElementarySurfaceToBSplineSurface& conv);
+
 OCCTSurfaceRef OCCTConvertSphereToBSplineSurface(double ox, double oy, double oz,
                                                    double nx, double ny, double nz, double radius) {
     try {
         gp_Sphere sphere(gp_Ax3(gp_Pnt(ox,oy,oz), gp_Dir(nx,ny,nz)), radius);
         Convert_SphereToBSplineSurface conv(sphere);
-        int nup = conv.NbUPoles(), nvp = conv.NbVPoles();
-        int nuk = conv.NbUKnots(), nvk = conv.NbVKnots();
-        int udeg = conv.UDegree(), vdeg = conv.VDegree();
-
-        TColgp_Array2OfPnt poles(1, nup, 1, nvp);
-        TColStd_Array2OfReal weights(1, nup, 1, nvp);
-        for (int i = 1; i <= nup; i++)
-            for (int j = 1; j <= nvp; j++) {
-                poles(i,j) = conv.Pole(i,j);
-                weights(i,j) = conv.Weight(i,j);
-            }
-
-        TColStd_Array1OfReal uknots(1, nuk), vknots(1, nvk);
-        TColStd_Array1OfInteger umults(1, nuk), vmults(1, nvk);
-        for (int i = 1; i <= nuk; i++) { uknots(i) = conv.UKnot(i); umults(i) = conv.UMultiplicity(i); }
-        for (int i = 1; i <= nvk; i++) { vknots(i) = conv.VKnot(i); vmults(i) = conv.VMultiplicity(i); }
-
-        Handle(Geom_BSplineSurface) bss = new Geom_BSplineSurface(
-            poles, weights, uknots, vknots, umults, vmults, udeg, vdeg,
-            conv.IsUPeriodic(), conv.IsVPeriodic());
-        if (bss.IsNull()) return nullptr;
-        OCCTSurface* result = new OCCTSurface();
-        result->surface = bss;
-        return result;
+        return buildSurfaceFromElementary(conv);
     } catch (...) { return nullptr; }
 }
 
