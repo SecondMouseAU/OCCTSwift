@@ -56,6 +56,46 @@ The pattern is one thing. In each case a value that could have been observed was
 from something adjacent to it, and the computation was wrong in a way that produced a plausible
 number rather than an obvious error.
 
+## The adjacent number reads as the one you need
+
+Every failure in the "Why" section above is a value computed from something next to the value
+wanted. That is the whole mechanism, and naming it is more useful than the instances, because the
+wrong number is always plausible: it has the right type, the right order of magnitude, and it came
+from a real measurement of a real thing.
+
+More instances, all 2026-08-07:
+
+- **A benchmark of the wrong function.** `#772`'s timing table justified an opt-in default by
+  measuring `isSelfIntersecting(timeout:)`. The parameter that shipped called
+  `isSelfIntersecting(hardTimeout:)`, a different mechanism with a `deepCopy()`, a background
+  dispatch, and an inner call passing `0` as its bound. Re-measured, the conclusion held but for a
+  different reason, and the mechanism was swapped.
+- **A neighbouring fixture's figures.** `#597`'s claim that no threshold could separate a diverged
+  fit from a healthy one cited numbers belonging to a different fixture. The two regressing tests'
+  own values were never taken, and when taken they sat three orders of magnitude away, which
+  narrowed the conclusion from impossible to unjustified.
+- **A census keyed on one spelling.** My own stray-modification check reported a file as unowned
+  because it matched `diff --git` headers, and one of fifteen patches is a bare unified diff. Ten
+  seconds of parser, a false alarm about a kernel about to be published.
+
+The tell is that you did not take the measurement, you took **a** measurement. Ask what exactly was
+measured, of what exactly, and whether that is the thing the claim is about.
+
+## An argument that explains everything may be describing a defect
+
+The hardest case, because it does not feel like an assumption. You measure, you find a consistent
+pattern, and you write a correct-looking explanation of it. The explanation is of the bug.
+
+`#762` spent a round establishing that a guard could not matter. Two fixtures were built to isolate
+it and both were masked; a geometric argument was written for why every construction reduces to the
+same masking; it was scoped honestly as an argument rather than a proof, and it explained all seven
+fixtures. It was describing a `visited`-marking bug two functions away. Fixing that made the guard's
+removal fail immediately, and the argument was retracted in the source rather than deleted.
+
+The tell, in hindsight: it was an argument for why **a piece of code could never matter**. Treat
+that with the suspicion "this test cannot fail" deserves. Code that cannot matter should be
+deletable, so if you are not willing to delete it, the argument is weaker than it reads.
+
 ## How to apply
 
 ### Measuring
