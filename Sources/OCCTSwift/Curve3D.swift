@@ -1423,12 +1423,6 @@ extension Curve3D {
         /// was not `.c2`.
         public var isC2: Bool? { holds(.c2) }
 
-        /// The effective analysis order as a raw `GeomAbs_Shape` ordinal. Former spelling of
-        /// ``order``.
-        ///
-        /// Named as though it reported a measurement; it never did. See ``order``.
-        @available(*, deprecated, renamed: "order")
-        public var status: Int { Int(order.rawValue) }
     }
 
     /// Analyze continuity between this curve at parameter `u1` and another curve at `u2`.
@@ -1456,19 +1450,6 @@ extension Curve3D {
         continuityAnalysis(with: other, u1: u1, u2: u2, rawOrder: order.rawValue)
     }
 
-    /// Analyze continuity, with the order given as a raw `GeomAbs_Shape` ordinal.
-    ///
-    /// The untyped spelling is what let a caller pass `5`, `-1` or a raw value borrowed from an
-    /// unrelated continuity enum and be clamped without saying so. Pass a ``ContinuityClass``;
-    /// ``ContinuityAnalysis/order`` then reports where a saturated request landed.
-    @available(*, deprecated, message: "Pass a ContinuityClass (.c0/.g1/.c1/.g2/.c2) instead of a raw GeomAbs_Shape ordinal.")
-    public func continuityWith(_ other: Curve3D, u1: Double, u2: Double,
-                               order: Int) -> ContinuityAnalysis? {
-        continuityAnalysis(with: other, u1: u1, u2: u2, rawOrder: Int32(clamping: order))
-    }
-
-    // Both overloads land here, and neither reproduces the saturation rule: the bridge's
-    // occtGeomAbsFromAnalysisOrder owns it and reports the order it settled on.
     private func continuityAnalysis(with other: Curve3D, u1: Double, u2: Double,
                                     rawOrder: Int32) -> ContinuityAnalysis? {
         var outEffectiveOrder: Int32 = 0
@@ -2254,16 +2235,6 @@ extension Curve3D {
             return nil
         }
         return parameter
-    }
-
-    /// Find the parameter of the closest point on this curve to a given point.
-    @available(*, deprecated, message: """
-        No Double can signal failure here: every value is a legitimate parameter on some curve, \
-        and this used to return 0, which is not even in the domain of a curve trimmed to, say, \
-        [3, 8]. Use nearestParameter(to:), which returns an Optional.
-        """)
-    public func closestParameter(to point: SIMD3<Double>) -> Double {
-        nearestParameter(to: point) ?? .nan
     }
 
     /// Split this curve at C1 discontinuities.
@@ -3296,23 +3267,6 @@ extension Curve3D {
 
 extension Curve3D {
 
-    /// Evaluate curve at multiple parameters (batch D0).
-    @available(*, deprecated, renamed: "evaluateGrid(_:)",
-               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
-    public func gridEvalD0(params: [Double]) -> [SIMD3<Double>] {
-        evaluateGrid(params)
-    }
-
-    /// Evaluate curve at multiple parameters (batch D1).
-    @available(*, deprecated,
-               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
-    public func gridEvalD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
-        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
-    }
-}
-
-extension Curve3D {
-
     /// Evaluate the curve point at parameter u.
     public func evalD0(at u: Double) -> SIMD3<Double> {
         var x = 0.0, y = 0.0, z = 0.0
@@ -3347,27 +3301,6 @@ extension Curve3D {
         return (SIMD3(px, py, pz), SIMD3(d1x, d1y, d1z), SIMD3(d2x, d2y, d2z), SIMD3(d3x, d3y, d3z))
     }
 
-    /// Evaluate curve points at multiple parameters (batch D0).
-    ///
-    /// - Note: #486. This used to call `Geom_Curve::EvalD0` once per parameter, bypassing the
-    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
-    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
-    @available(*, deprecated, renamed: "evaluateGrid(_:)",
-               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
-    public func evalBatchD0(params: [Double]) -> [SIMD3<Double>] {
-        evaluateGrid(params)
-    }
-
-    /// Evaluate curve points and first derivatives at multiple parameters (batch D1).
-    ///
-    /// - Note: #486. This used to call `Geom_Curve::EvalD1` once per parameter, bypassing the
-    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
-    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
-    @available(*, deprecated,
-               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
-    public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)] {
-        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
-    }
 }
 
 extension Curve3D {
@@ -3375,16 +3308,6 @@ extension Curve3D {
     /// The geometric curve type (0=Line, 1=Circle, 2=Ellipse, 3=Hyperbola, 4=Parabola, 5=BezierCurve, 6=BSplineCurve, 7=OtherCurve).
     public var curveType: Int {
         Int(OCCTCurve3DCurveType(handle))
-    }
-
-    /// Find parameter on curve nearest to a 3D point.
-    @available(*, deprecated, message: """
-        No Double can signal failure here: every value is a legitimate parameter on some curve, \
-        and this used to return the curve's firstParameter, right or maximally wrong depending \
-        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
-        """)
-    public func parameterAtPoint(_ point: SIMD3<Double>) -> Double {
-        nearestParameter(to: point) ?? .nan
     }
 }
 
@@ -3571,26 +3494,6 @@ extension Curve3D {
 }
 
 extension Curve3D {
-
-    /// The curvature of the curve at a parameter value.
-    ///
-    /// Not merely equivalent to ``Curve3D/curvature(at:)`` — since #494 gave the two the same
-    /// resolution it *is* the same call, and measured over the same curves the two never disagreed
-    /// on any row, degenerate ones included. So this spelling forwards rather than duplicating, and
-    /// the bridge function behind it is gone (#595).
-    ///
-    /// - Parameter u: Curve parameter.
-    /// - Returns: Curvature (1/radius), `nil` where the curve has no defined tangent, and
-    ///   `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
-    ///
-    /// ```swift
-    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
-    /// let k = circle.curvature(at: 0)   // 0.2, i.e. 1/5
-    /// ```
-    @available(*, deprecated, renamed: "curvature(at:)")
-    public func localCurvature(at u: Double) -> Double? {
-        curvature(at: u)
-    }
 
     /// The unit tangent direction at a parameter value.
     ///

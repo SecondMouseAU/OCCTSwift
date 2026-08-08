@@ -34,35 +34,12 @@ fileprivate func pad(_ s: String, _ width: Int) -> String {
     s.count >= width ? s : s + String(repeating: " ", count: width - s.count)
 }
 
-// #651 deprecated `nbEdges`/`nbFaces`/`nbVertices`, which now forward to
-// `edgeCount`/`faceCount`/`vertexCount`. The census still measures them deliberately: its job is to
-// record what the public API does, and a deprecated spelling is public API until it is removed.
-//
-// They are grouped into one function because a deprecated context does not warn about the
-// deprecated things it calls. Read inline instead, they put 38 deprecation warnings into every
-// `swift build` in the repo, since this target is wired into the root manifest and builds on every
-// push (#694). Grouped, the cost is one warning at the single call site below, which is the honest
-// residue: the census really does use a deprecated API on purpose.
-//
-// When the deprecation cycle removes the three properties this stops compiling, which is the right
-// prompt to drop these rows rather than silently losing them.
-@available(*, deprecated, message: "Measures #651's deprecated counters deliberately.")
-fileprivate func clusterARecordDeprecatedCounterRows(
-    into rows: inout [ClusterARow], box: Shape, compoundA: Shape, compoundB: Shape
-) {
-    rows.append(ClusterARow(
-        family: "vertex", entryPoint: "nbVertices (#651: fixed, now forwards to vertexCount)",
-        plainBox: "\(box.nbVertices)", orderA: "\(compoundA.nbVertices)", orderB: "\(compoundB.nbVertices)",
-        note: "deprecated, renamed: \"vertexCount\"; was occurrence (48/96/96) before #651"))
-    rows.append(ClusterARow(
-        family: "edge", entryPoint: "nbEdges (#651: fixed, now forwards to edgeCount)",
-        plainBox: "\(box.nbEdges)", orderA: "\(compoundA.nbEdges)", orderB: "\(compoundB.nbEdges)",
-        note: "deprecated, renamed: \"edgeCount\"; was occurrence (24/48/48) before #651"))
-    rows.append(ClusterARow(
-        family: "face", entryPoint: "nbFaces (#651: fixed, now forwards to faceCount)",
-        plainBox: "\(box.nbFaces)", orderA: "\(compoundA.nbFaces)", orderB: "\(compoundB.nbFaces)",
-        note: "deprecated, renamed: \"faceCount\"; was occurrence (6/12/12) before #651, agreeing with faceCount on a plain box only because no face is shared there"))
-}
+// #651 deprecated `nbEdges`/`nbFaces`/`nbVertices`, which forwarded to
+// `edgeCount`/`faceCount`/`vertexCount`; #784 removed all three at v2.0.0. This is that exact
+// prompt, anticipated in this comment's own prior form: "when the deprecation cycle removes the
+// three properties this stops compiling, which is the right prompt to drop these rows rather than
+// silently losing them." Dropped rather than ported, since there is no live entry point left to
+// measure: `edgeCount`/`faceCount`/`vertexCount` themselves are already recorded below.
 
 enum ClusterA {
     static func run() {
@@ -136,7 +113,6 @@ enum ClusterA {
         record("face", "subShapeCount(ofType: .face) (dedup canonical)",
                plainBox: box.subShapeCount(ofType: .face), orderA: compoundA.subShapeCount(ofType: .face),
                orderB: compoundB.subShapeCount(ofType: .face))
-        clusterARecordDeprecatedCounterRows(into: &rows, box: box, compoundA: compoundA, compoundB: compoundB)
         record("face", "contents.faces (ShapeAnalysis_ShapeContents, occurrence)",
                plainBox: box.contents.faces, orderA: compoundA.contents.faces, orderB: compoundB.contents.faces)
         record("face", "contentsExtended().nbFaces (occurrence)",

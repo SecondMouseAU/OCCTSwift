@@ -54,28 +54,4 @@ struct Issue562Curve2DKnotSplitDuplicateTests {
             #expect(indices?.last == splits, "last index at \(splits) splits")
         }
     }
-
-    /// The deprecated pair now forwards, so it inherits the fix rather than being the only spelling
-    /// that had it. Absolute expectations, not agreement with the canonical call, which cannot
-    /// disagree with itself any more.
-    @Test("The deprecated pair forwards and inherits the untruncated count")
-    @available(*, deprecated, message: "exercises the deprecated v0.105 spellings on purpose")
-    func deprecatedPairForwards() throws {
-        let curve = try #require(denselyKinkedCurve(degree: 3, interiorKnots: 300))
-        #expect(curve.bsplineKnotSplits(continuity: .c1) == 302)
-        let values = curve.bsplineKnotSplitValues(continuity: .c1)
-        #expect(values.count == 302)
-        #expect(values.last == 302)
-    }
-
-    /// Both spellings' non-BSpline answers are preserved by the forwarding: `nil` from the
-    /// canonical call, `0`/`[]` from the deprecated pair. A line is not a BSpline.
-    @Test("A non-BSpline curve keeps each spelling's own empty answer")
-    @available(*, deprecated, message: "exercises the deprecated v0.105 spellings on purpose")
-    func nonBSplineAnswers() throws {
-        let line = try #require(Curve2D.line(through: .zero, direction: SIMD2(1, 0)))
-        #expect(line.splitIndicesAtDiscontinuities(continuity: .c1) == nil)
-        #expect(line.bsplineKnotSplits(continuity: .c1) == 0)
-        #expect(line.bsplineKnotSplitValues(continuity: .c1).isEmpty)
-    }
 }

@@ -90,45 +90,6 @@ public struct Conic2D: Sendable {
                         d: coeffs[3], e: coeffs[4], f: coeffs[5])
     }
 
-    /// Create from a 2D circle.
-    ///
-    /// Returns an all-zero `Conic2D` when the circle is degenerate, which no real conic ever is.
-    /// Use ``circle(center:direction:radius:)``, which returns `nil` instead.
-    @available(*, deprecated, renamed: "circle(center:direction:radius:)")
-    public static func fromCircle(
-        center: SIMD2<Double>, direction: SIMD2<Double>, radius: Double
-    ) -> Conic2D {
-        circle(center: center, direction: direction, radius: radius) ?? .degenerate
-    }
-
-    /// Create from a 2D line.
-    ///
-    /// Returns an all-zero `Conic2D` when the direction is degenerate, which no real conic ever
-    /// is. Use ``line(point:direction:)``, which returns `nil` instead.
-    @available(*, deprecated, renamed: "line(point:direction:)")
-    public static func fromLine(
-        point: SIMD2<Double>, direction: SIMD2<Double>
-    ) -> Conic2D {
-        line(point: point, direction: direction) ?? .degenerate
-    }
-
-    /// Create from a 2D ellipse.
-    ///
-    /// Returns an all-zero `Conic2D` when the ellipse is degenerate, which no real conic ever is.
-    /// Use ``ellipse(center:direction:majorRadius:minorRadius:)``, which returns `nil` instead.
-    @available(*, deprecated, renamed: "ellipse(center:direction:majorRadius:minorRadius:)")
-    public static func fromEllipse(
-        center: SIMD2<Double>, direction: SIMD2<Double>,
-        majorRadius: Double, minorRadius: Double
-    ) -> Conic2D {
-        ellipse(center: center, direction: direction,
-                majorRadius: majorRadius, minorRadius: minorRadius) ?? .degenerate
-    }
-
-    /// The all-zero coefficients the deprecated `from*` spellings return on failure. The equation
-    /// `0 = 0` holds at every point of the plane, so this describes no conic at all.
-    private static let degenerate = Conic2D(a: 0, b: 0, c: 0, d: 0, e: 0, f: 0)
-
     /// Intersect a 2D line with a 2D circle.
     ///
     /// - Parameter radius: circle radius. Must be greater than zero; a radius of zero is a

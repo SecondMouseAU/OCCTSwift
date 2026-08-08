@@ -515,9 +515,9 @@ answered `nil` where `projectPoint` answered `8` at distance `92`. `Optional` re
 `Double` can carry a failure signal — every value is a legitimate parameter on some curve — not
 because a point can fail to have a nearest one.
 
-`closestParameter(to:)` is the deprecated spelling of this method. It returns `.nan` where this one
-returns `nil`; before #500 it returned `0`, which is not even inside the domain of a curve trimmed
-to `[3, 8]`.
+`closestParameter(to:)` was the deprecated spelling of this method, returning `.nan` where this
+one returns `nil` (before #500 it returned `0`, which is not even inside the domain of a curve
+trimmed to `[3, 8]`); removed at v2.0.0 (#784).
 
 ---
 

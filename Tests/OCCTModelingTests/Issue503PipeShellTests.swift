@@ -119,24 +119,6 @@ struct Issue503PipeShellTests {
         }
     }
 
-    @Test("the deprecated transition spelling forwards with its mode intact")
-    @available(*, deprecated, message: "Exercises the deprecated `pipeShellWithTransition` on purpose.")
-    func deprecatedTransitionSpellingForwards() {
-        guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3) else {
-            Issue.record("Could not build the fixtures"); return
-        }
-        let old = Self.fingerprint(
-            Shape.pipeShellWithTransition(spine: spine, profile: profile,
-                                          mode: .fixed(binormal: SIMD3(0, 0, 1))))
-        let new = Self.fingerprint(
-            Shape.pipeShell(spine: spine, profile: profile,
-                            mode: .fixed(binormal: SIMD3(0, 0, 1))))
-        #expect(old != nil)
-        if let old, let new {
-            #expect(old.volume.isApproximatelyEqual(to: new.volume, tolerance: 1e-9))
-        }
-    }
-
     @Test("a mode whose own argument is unusable returns nil instead of another mode's solid")
     func unusableModeArgumentFails() {
         guard let spine = Self.curvedSpine(), let profile = Wire.rectangle(width: 5, height: 3),

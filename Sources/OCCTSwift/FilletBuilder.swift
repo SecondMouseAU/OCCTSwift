@@ -325,25 +325,6 @@ extension FilletBuilder {
         OCCTFilletBuilderSetLaw(handle, Int32(contour), edge.handle, law.handle)
     }
 
-    /// The `Shape`-typed spelling of ``FilletBuilder/getBounds(contour:edge:)``.
-    ///
-    /// `BRepFilletAPI_MakeFillet::GetBounds` takes a `TopoDS_Edge`, so a `Shape` only ever reached
-    /// it through a downcast, and every caller holding an `Edge` (the type `addEdge`, `removeEdge`,
-    /// `setRadius` and `contour(for:)` all take) had to convert it and back again (#505).
-    @available(*, deprecated, message: "Pass the Edge itself. Convert a Shape with Edge(_:) if that is what you hold.")
-    public func getBounds(contour: Int, edge: Shape) -> (first: Double, last: Double)? {
-        guard let edge = Edge(edge) else { return nil }
-        return getBounds(contour: contour, edge: edge)
-    }
-
-    /// The `Shape`-typed spelling of ``FilletBuilder/getLaw(contour:edge:)``, deprecated for the same
-    /// reason as the `Shape`-typed `getBounds` above it.
-    @available(*, deprecated, message: "Pass the Edge itself. Convert a Shape with Edge(_:) if that is what you hold.")
-    public func getLaw(contour: Int, edge: Shape) -> LawFunction? {
-        guard let edge = Edge(edge) else { return nil }
-        return getLaw(contour: contour, edge: edge)
-    }
-
     /// Get shapes generated from an input shape by the fillet operation.
     /// The fillet must be built first.
     /// - Parameter shape: The input shape (typically an edge)

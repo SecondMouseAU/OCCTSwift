@@ -3150,9 +3150,8 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
 // outEdges == nullptr: counting mode (OCCTFaceGetSharedEdgeCount). Always scans every edge of
 // both faces and returns the TRUE total, uncapped; maxEdges is ignored.
 // outEdges != nullptr: collecting mode (OCCTFaceGetSharedEdges). Stops scanning as soon as count
-// reaches maxEdges, exactly as this loop always has -- OCCTFacesAreAdjacent relies on that early
-// exit for its own maxEdges=1 call, and every other caller passes a fixed-size buffer it must not
-// overrun. The return value in this mode is therefore capped at maxEdges, same as before.
+// reaches maxEdges, exactly as this loop always has: every caller passes a fixed-size buffer it
+// must not overrun. The return value in this mode is therefore capped at maxEdges, same as before.
 /// Walks a face pair's shared edges exactly once. Returns the TRUE total; writes at most
 /// `maxEdges` of them to `outEdges` and reports how many through `outWritten`.
 ///
@@ -3229,19 +3228,6 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCT
         if (outFirstEdge) *outFirstEdge = nullptr;
         return 0;
     }
-}
-
-bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2) {
-    if (!shape || !face1 || !face2) return false;
-    
-    OCCTEdgeRef edges[1];
-    int32_t count = OCCTFaceGetSharedEdges(shape, face1, face2, edges, 1);
-    
-    if (count > 0) {
-        OCCTEdgeRelease(edges[0]);
-        return true;
-    }
-    return false;
 }
 
 double OCCTEdgeGetDihedralAngle(OCCTEdgeRef edge, OCCTFaceRef face1, OCCTFaceRef face2, double parameter) {
@@ -3443,11 +3429,6 @@ bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef graph, int32_t domain, int32_t kin
             : BRepGraph_ItemUID::Node(kindFromInt(kind), (size_t)counter);
         return graph->graph.UIDs().Has(uid);
     } catch (...) { return false; }
-}
-
-uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef graph) {
-    if (!graph) return 0;
-    try { return graph->graph.UIDs().Generation(); } catch (...) { return 0; }
 }
 
 uint64_t OCCTBRepGraphInstanceID(OCCTBRepGraphRef graph) {

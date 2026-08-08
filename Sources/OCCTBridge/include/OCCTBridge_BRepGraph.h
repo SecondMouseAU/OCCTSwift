@@ -104,22 +104,6 @@ int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFa
 int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2,
                                      OCCTEdgeRef* _Nullable outFirstEdge);
 
-/// Check if two faces are adjacent (share at least one edge)
-/// - Warning: **Deprecated (#783).** `AAG.buildGraph()` was its only caller and no longer needs it:
-///   it wants the true shared-edge count and one edge anyway, and `OCCTFaceGetSharedEdgeSummary`
-///   answers adjacency as a side effect of producing both. Nothing in this repo calls this now, so
-///   what remains is a second way to ask a question one function already answers, kept alive only
-///   by its own declaration. That is the #506 shape, where an orphan freezes a contract nobody
-///   exercises.
-///
-///   It is deprecated rather than deleted because `OCCTBridge.xcframework` ships this symbol, so
-///   removing it outright breaks a consumer with no warning first. Migrate to
-///   `OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0`, and note that doing so costs a
-///   full walk of the pair where this stopped at the first shared edge: for a caller who genuinely
-///   wants only adjacency and never the count, say so on #783 before this is removed.
-bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2)
-    __attribute__((deprecated("Use OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0; a non-zero shared-edge count is adjacency (#783).")));
-
 /// Get the dihedral angle between two adjacent faces at their shared edge
 /// @param edge The shared edge
 /// @param face1 First face
@@ -1206,14 +1190,6 @@ bool OCCTBRepGraphItemFromUID(OCCTBRepGraphRef _Nonnull graph,
 /// True if an item UID (domain, kind, counter) exists in this graph generation.
 bool OCCTBRepGraphHasItemUID(OCCTBRepGraphRef _Nonnull graph,
                               int32_t domain, int32_t kind, uint32_t counter);
-
-/// Return the current graph generation counter.
-///
-/// NOTE: always 1 in practice. OCCT advances it only from BRepGraph::Clear(); this bridge
-/// calls Clear() exactly once, when it builds a graph (#303), and never rebuilds one, so the
-/// counter lands at 1 and is identical for every graph. It cannot distinguish two graphs — use
-/// OCCTBRepGraphInstanceID for that. See issues #295 and #303.
-uint32_t OCCTBRepGraphGeneration(OCCTBRepGraphRef _Nonnull graph);
 
 /// Return this graph's instance id — unique among every graph this process creates, and
 /// distinct (with overwhelming probability) from ids minted by any other process.

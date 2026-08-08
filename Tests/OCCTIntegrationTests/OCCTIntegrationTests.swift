@@ -89,7 +89,7 @@ struct IntegrationMountingBracketTests {
         #expect(wallRaw.isValid)
 
         // Step 3: Union base + wall
-        guard let bracket = basePlate.union(with: wallRaw) else {
+        guard let bracket = basePlate.union(wallRaw) else {
             #expect(Bool(false), "Failed to union base + wall")
             return
         }
@@ -284,7 +284,7 @@ struct IntegrationDegenerateResilienceTests {
 
     @Test func selfUnion() {
         if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let result = box.union(with: box) {
+            if let result = box.union(box) {
                 #expect(result.isValid)
                 if let vol = result.volume, let origVol = box.volume {
                     #expect(abs(vol - origVol) / origVol < 0.01)
@@ -476,7 +476,7 @@ struct IntegrationBottleProfileTests {
         }
 
         // Union body + cap
-        guard let bottle = body.union(with: positionedCap) else {
+        guard let bottle = body.union(positionedCap) else {
             #expect(Bool(false), "Failed to union body + cap")
             return
         }
@@ -561,7 +561,7 @@ struct IntegrationToleranceCascadeTests {
         #expect(vol2 > 0)
 
         // Union should succeed for adjacent boxes
-        if let combined = box1.union(with: box2) {
+        if let combined = box1.union(box2) {
             #expect(combined.isValid)
             if let combinedVol = combined.volume {
                 #expect(abs(combinedVol - (vol1 + vol2)) < 1.0,
@@ -579,7 +579,7 @@ struct IntegrationToleranceCascadeTests {
         let vol4 = box4.volume ?? 0
 
         // Union with tiny gap should still succeed
-        if let gappedUnion = box3.union(with: box4) {
+        if let gappedUnion = box3.union(box4) {
             #expect(gappedUnion.isValid)
             if let gVol = gappedUnion.volume {
                 // Volume should be approximately sum (gap is negligible)

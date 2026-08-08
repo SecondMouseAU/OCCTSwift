@@ -1021,9 +1021,9 @@ public var vertexCount: Int { get }
 ```
 
 - **OCCT:** `TopExp::MapShapes(TopAbs_VERTEX)` (via `OCCTShapeGetVertexCount`).
-- **Deprecated alias:** [`Shape.nbVertices`](Document-Completions.md#shapenbvertices-deprecated-651)
-  was a second spelling of this question, backed by a bare `TopExp_Explorer` occurrence count (48 on
-  an 8-vertex box) instead of this deduplicated one. It now forwards here (#651).
+- **Former second spelling:** `Shape.nbVertices` asked this same question, backed by a bare
+  `TopExp_Explorer` occurrence count (48 on an 8-vertex box) instead of this deduplicated one;
+  deprecated as a forward here in #651 and removed at v2.0.0 (#784).
 
 ---
 
@@ -1315,29 +1315,12 @@ used to be split across three other spellings.
 
 ---
 
-### `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)` (deprecated)
-
-**Deprecated since #503.** Use
+`Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, deprecated since #503 and
+removed at v2.0.0 (#784), accepted a full `PipeSweepMode` but reached a bridge function that could
+only express `.frenet` and `.correctedFrenet`; `.fixed(binormal:)` and `.auxiliary(spine:)` were
+swept as Frenet, a different solid from the one requested, returned as a success. Use
 [`pipeShell(spine:profile:mode:transition:...)`](#shapepipeshellspineprofilemodetransitionwithcontactwithcorrectionsolid),
-which takes the same `transition:` argument.
-
-This spelling accepted a full `PipeSweepMode` but reached a bridge function that could only
-express `.frenet` and `.correctedFrenet`. `.fixed(binormal:)` and `.auxiliary(spine:)` were swept
-as Frenet: a different solid from the one requested, returned as a success. It now forwards to
-`pipeShell` and honours every mode.
-
-```swift
-@available(*, deprecated, renamed: "pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)")
-public static func pipeShellWithTransition(
-    spine: Wire,
-    profile: Wire,
-    mode: PipeSweepMode = .frenet,
-    transition: PipeTransitionMode = .transformed,
-    solid: Bool = true
-) -> Shape?
-```
-
-- **OCCT:** `BRepOffsetAPI_MakePipeShell` (via `OCCTShapeCreatePipeShellMultiSection`).
+which takes the same `transition:` argument and honours every mode.
 
 ---
 
@@ -1802,10 +1785,10 @@ relying on OCCT's own throw being caught (#437). Curve constraints have no such 
 `GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
-> this same vocabulary and are now deprecated typealiases of `SurfaceContinuity`. The `.c0`,
-> `.c1` and `.c2` spellings remain as deprecated aliases of `.g0`, `.g1` and `.g2`. No raw
-> value moved, so behaviour is unchanged. Not to be confused with `ParametricContinuity`
-> (C0/C1/C2/C3), which is a different contract: see `docs/reference/Shape-Healing.md`.
+> this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
+> `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
+> removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
+> a different contract: see `docs/reference/Shape-Healing.md`.
 
 ---
 

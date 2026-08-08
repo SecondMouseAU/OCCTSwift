@@ -1399,21 +1399,6 @@ extension Curve2D {
         return Curve2D(handle: h)
     }
 
-    /// Deprecated spelling of `approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)`.
-    ///
-    /// Per `docs/SEMVER.md`, renaming a public method is a MAJOR-triggering breaking change; this
-    /// alias keeps existing call sites source-compatible (with a compiler warning steering them
-    /// to the clearer name) rather than forcing that bump immediately. Byte-for-byte identical
-    /// behavior — same bridge call, same defaults, forwards directly.
-    @available(*, deprecated, renamed: "approximatedInRange(first:last:toleranceU:toleranceV:maxDegree:maxSegments:)")
-    public func approximated(
-        first: Double, last: Double,
-        toleranceU: Double = 1e-6, toleranceV: Double = 1e-6,
-        maxDegree: Int = 8, maxSegments: Int = 100
-    ) -> Curve2D? {
-        approximatedInRange(first: first, last: last, toleranceU: toleranceU, toleranceV: toleranceV,
-                             maxDegree: maxDegree, maxSegments: maxSegments)
-    }
 }
 
 // ============================================================================
@@ -3414,22 +3399,6 @@ extension Curve2D {
 }
 
 extension Curve2D {
-    /// Get number of knot splits for a 2D BSpline curve at given continuity.
-    @available(*, deprecated,
-               message: "Use splitIndicesAtDiscontinuities(continuity:)?.count, the same analyzer under one spelling (#562)")
-    public func bsplineKnotSplits(continuity: ParametricContinuity) -> Int {
-        splitIndicesAtDiscontinuities(continuity: continuity)?.count ?? 0
-    }
-
-    /// Get knot split indices for a 2D BSpline curve at given continuity.
-    @available(*, deprecated,
-               message: "Use splitIndicesAtDiscontinuities(continuity:), which returns these same indices as [Int] and nil rather than [] for a non-BSpline curve (#562)")
-    public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> [Int32] {
-        splitIndicesAtDiscontinuities(continuity: continuity)?.map(Int32.init) ?? []
-    }
-}
-
-extension Curve2D {
     /// Measured global continuity of the 2D curve, as a raw `GeomAbs_Shape` ordinal.
     ///
     /// The ordinals are `GeomAbs_Shape`'s own declared order — `0=C0, 1=G1, 2=C1, 3=G2,
@@ -3540,23 +3509,6 @@ extension Curve2D {
 
 extension Curve2D {
 
-    /// Evaluate 2D curve at multiple parameters (batch D0).
-    @available(*, deprecated, renamed: "evaluateGrid(_:)",
-               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
-    public func gridEvalD0(params: [Double]) -> [SIMD2<Double>] {
-        evaluateGrid(params)
-    }
-
-    /// Evaluate 2D curve at multiple parameters (batch D1).
-    @available(*, deprecated,
-               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
-    public func gridEvalD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
-        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
-    }
-}
-
-extension Curve2D {
-
     /// Evaluate the 2D curve point at parameter u.
     public func evalD0(at u: Double) -> SIMD2<Double> {
         var x = 0.0, y = 0.0
@@ -3578,27 +3530,6 @@ extension Curve2D {
         return (SIMD2(px, py), SIMD2(d1x, d1y), SIMD2(d2x, d2y))
     }
 
-    /// Evaluate 2D curve points at multiple parameters (batch D0).
-    ///
-    /// - Note: #486. This used to call `Geom2d_Curve::EvalD0` once per parameter, bypassing the
-    ///   batch evaluator ``evaluateGrid(_:)`` was already using. It now forwards there, so
-    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
-    @available(*, deprecated, renamed: "evaluateGrid(_:)",
-               message: "Use evaluateGrid(_:): same OCCT batch evaluator, one spelling (#486)")
-    public func evalBatchD0(params: [Double]) -> [SIMD2<Double>] {
-        evaluateGrid(params)
-    }
-
-    /// Evaluate 2D curve points and first derivatives at multiple parameters (batch D1).
-    ///
-    /// - Note: #486. This used to call `Geom2d_Curve::EvalD1` once per parameter, bypassing the
-    ///   batch evaluator ``evaluateGridD1(_:)`` was already using. It now forwards there, so
-    ///   results can differ from the old per-point loop by ~1e-13 on a BSpline.
-    @available(*, deprecated,
-               message: "Use evaluateGridD1(_:): same OCCT batch evaluator, one spelling; its tuple labels the derivative `tangent` (#486)")
-    public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)] {
-        evaluateGridD1(params).map { (point: $0.point, d1: $0.tangent) }
-    }
 }
 
 extension Curve2D {
@@ -3606,16 +3537,6 @@ extension Curve2D {
     /// The geometric curve type.
     public var curveType: Int {
         Int(OCCTCurve2DCurveType(handle))
-    }
-
-    /// Find parameter on 2D curve nearest to a 2D point.
-    @available(*, deprecated, message: """
-        No Double can signal failure here: every value is a legitimate parameter on some curve, \
-        and this used to return the curve's firstParameter, right or maximally wrong depending \
-        only on which end the point fell off. Use nearestParameter(to:), which returns an Optional.
-        """)
-    public func parameterAtPoint(_ point: SIMD2<Double>) -> Double {
-        nearestParameter(to: point) ?? .nan
     }
 }
 

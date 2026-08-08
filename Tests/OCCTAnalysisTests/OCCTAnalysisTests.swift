@@ -5958,7 +5958,7 @@ struct IntegrationAssemblyInterferenceTests {
         // Step 7: Move housing to interfere (full cylinder, not hollow)
         if let interferingHousing = housing.translated(by: SIMD3(0.0, 0.0, 40.0)) {
             // Step 8-9: Compute interference volume
-            if let interference = shaft.intersection(with: interferingHousing) {
+            if let interference = shaft.intersection(interferingHousing) {
                 if let vol = interference.volume {
                     #expect(vol > 0)
                 }
@@ -6016,7 +6016,7 @@ struct IntegrationProfileContouringTests {
         }
 
         // Union boss with base (cylinder is centered at origin, extends upward)
-        guard let combined = base.union(with: boss) else {
+        guard let combined = base.union(boss) else {
             #expect(Bool(false), "Failed to union base + boss")
             return
         }
@@ -6912,22 +6912,5 @@ struct Issue595CurvatureDefinednessTests {
         let cuspWire = try #require(Wire.wireFromEdges([cuspEdge]))
         #expect(cuspWire.curvature(at: 0) == nil,
                 "the first derivative is null at the cusp, and the formula divides by it")
-    }
-
-    // MARK: the deprecated duplicate
-
-    /// Since #494 gave the two spellings the same resolution they were the same call, so #595
-    /// deprecated this one onto `curvature(at:)` and deleted `OCCTCurve3DLocalCurvature`. The shim
-    /// has to keep answering what it always did.
-    @Test("The deprecated localCurvature spelling forwards to curvature(at:)")
-    @available(*, deprecated, message: "exercises the deprecated v0.117 spelling on purpose")
-    func deprecatedLocalCurvatureForwards() throws {
-        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
-        let k = try #require(circle.localCurvature(at: 0))
-        #expect(abs(k - 0.2) < 1e-12)
-        #expect(circle.localCurvature(at: 0) == circle.curvature(at: 0))
-
-        let dead = try #require(Self.deadCurve())
-        #expect(dead.localCurvature(at: 0.5) == nil)
     }
 }

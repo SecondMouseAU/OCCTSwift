@@ -2957,10 +2957,9 @@ struct BRepOffsetOffsetFaceTests {
 
 // MARK: - BOPAlgo_RemoveFeatures
 
-// These used to call removeFeatures(faces:), which drove BOPAlgo_RemoveFeatures directly. It is now
-// a deprecated forwarder to defeature(faces:), the same algorithm through BRepAlgoAPI_Defeaturing,
-// so they call the survivor. Issue536DefeaturingSpellingsTests holds the forwarder itself to
-// account. #536
+// These used to call removeFeatures(faces:), which drove BOPAlgo_RemoveFeatures directly. #536
+// found it identical to defeature(faces:) (the same algorithm through BRepAlgoAPI_Defeaturing one
+// layer up), deprecated it as a forwarder, and removeFeatures(faces:) was removed at v2.0.0 (#784).
 @Suite("BOPAlgo RemoveFeatures")
 struct BOPAlgoRemoveFeaturesTests {
     @Test("Remove fillet from box")

@@ -577,18 +577,6 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Divide this shape at continuity breaks.
-    ///
-    /// - Deprecated: Duplicated ``divided(at:tolerance:)`` over the same
-    ///   `ShapeUpgrade_ShapeDivideContinuity`, setting only the boundary criterion where
-    ///   ``divided(at:tolerance:)`` sets boundary, pcurve AND surface criteria together — the
-    ///   usage OCCT's own shape-healing guide demonstrates (#438). Forwards there now; both
-    ///   names run the identical call.
-    @available(*, deprecated, renamed: "divided(at:tolerance:)")
-    public func dividedByContinuity(criterion: ContinuityLevel = .c1, tolerance: Double = 1e-4) -> Shape? {
-        divided(at: criterion, tolerance: tolerance)
-    }
-
     // MARK: - ShapeFix_FixSmallSolid
 
     /// Remove small solids from this shape based on volume threshold.
@@ -1197,37 +1185,6 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Restrict BSpline degree and segments, taking the continuities as raw integers.
-    ///
-    /// The integers are now read as ``ParametricContinuity`` raw values (0=C0, 1=C1, 2=C2, 3=C3),
-    /// the same vocabulary
-    /// ``Shape/bsplineRestriction(tol3d:tol2d:maxDegree:maxSegments:continuity3d:continuity2d:degreePriority:rational:)``
-    /// has always used for the identical operation. They used to be read as `GeomAbs_Shape`
-    /// ordinals, where `1` meant G1 and `2` meant C1 — so the same number requested a different
-    /// continuity depending on which of the two entry points received it, and four of the seven
-    /// values that reading advertised (G1, G2, C3, CN) fail the whole call. Passing `2` now asks
-    /// for C2, as it reads. #490.
-    @available(*, deprecated, message: "Pass a ParametricContinuity. These integers are now read as ParametricContinuity raw values (2 = .c2), not GeomAbs_Shape ordinals (where 2 meant C1). See #490.")
-    public static func bsplineRestrictionAdvanced(_ shape: Shape,
-                                                    approxSurface: Bool = true,
-                                                    approxCurve3d: Bool = true,
-                                                    approxCurve2d: Bool = true,
-                                                    tol3d: Double = 0.01,
-                                                    tol2d: Double = 0.01,
-                                                    continuity3d: Int,
-                                                    continuity2d: Int,
-                                                    maxDegree: Int = 5,
-                                                    maxSegments: Int = 20,
-                                                    priorityDegree: Bool = true,
-                                                    convertRational: Bool = false) -> Shape? {
-        guard let ref = OCCTShapeBSplineRestrictionAdvanced(shape.handle,
-                                                              approxSurface, approxCurve3d, approxCurve2d,
-                                                              tol3d, tol2d,
-                                                              Int32(continuity3d), Int32(continuity2d),
-                                                              Int32(maxDegree), Int32(maxSegments),
-                                                              priorityDegree, convertRational) else { return nil }
-        return Shape(handle: ref)
-    }
 
     /// Convert surfaces to BSpline with per-type control.
     public static func convertToBSplineAdvanced(_ shape: Shape,

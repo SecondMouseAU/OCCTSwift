@@ -1489,28 +1489,6 @@ struct Curve2DApproximatedOverloadParityTests {
         #expect(ranged != nil)
     }
 
-    @available(*, deprecated, message: "Exercises the deprecated `approximated(first:last:...)` shim on purpose.")
-    @Test("Deprecated approximated(first:last:...) spelling still forwards to approximatedInRange")
-    func deprecatedShimForwardsToApproximatedInRange() {
-        // #407 renamed this overload; the retired spelling survives as a `@available(*,
-        // deprecated, renamed:)` shim per docs/SEMVER.md (a renamed method is a MAJOR-triggering
-        // breaking change, and the shim avoids forcing that immediately). Confirms the shim isn't
-        // just present but behaviorally identical to the method it forwards to.
-        let circle = Curve2D.circle(center: .zero, radius: 10)!
-        let d = circle.domain
-
-        let viaOldName = circle.approximated(first: d.lowerBound, last: d.upperBound,
-                                              toleranceU: 1e-6, toleranceV: 1e-6)
-        let viaNewName = circle.approximatedInRange(first: d.lowerBound, last: d.upperBound,
-                                                     toleranceU: 1e-6, toleranceV: 1e-6)
-        #expect(viaOldName != nil)
-        #expect(viaNewName != nil)
-        if let viaOldName, let viaNewName {
-            #expect(viaOldName.degree == viaNewName.degree)
-            #expect(viaOldName.poleCount == viaNewName.poleCount)
-        }
-    }
-
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
     /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
     /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
@@ -3425,63 +3403,11 @@ struct Curve2DEvalTests {
         }
     }
 
-    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD0` on purpose.")
-    @Test func batchD0() {
-        if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2, Double.pi]
-            let pts = curve.evalBatchD0(params: params)
-            #expect(pts.count == 3)
-            // At pi, should be (-5, 0)
-            #expect(abs(pts[2].x + 5.0) < 1e-4)
-            #expect(abs(pts[2].y) < 1e-4)
-        }
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated `evalBatchD1` on purpose.")
-    @Test func batchD1() {
-        if let curve = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2]
-            let results = curve.evalBatchD1(params: params)
-            #expect(results.count == 2)
-        }
-    }
 }
 
-@Suite("GridEval 2D Curve v0.111")
-struct GridEvalCurve2DTests {
-    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
-    @Test func gridEvalD0Circle() {
-        if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2, Double.pi, 3 * Double.pi / 2]
-            let pts = circle.gridEvalD0(params: params)
-            #expect(pts.count == 4)
-            // At u=0, point should be at (5, 0)
-            #expect(abs(pts[0].x - 5.0) < 1e-4)
-            #expect(abs(pts[0].y) < 1e-4)
-            // At u=pi/2, point should be at (0, 5)
-            #expect(abs(pts[1].x) < 1e-4)
-            #expect(abs(pts[1].y - 5.0) < 1e-4)
-        }
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
-    @Test func gridEvalD1Circle() {
-        if let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5) {
-            let params = [0.0, Double.pi / 2]
-            let results = circle.gridEvalD1(params: params)
-            #expect(results.count == 2)
-            // At u=0, tangent should be (0, 5) for CCW circle
-            #expect(abs(results[0].d1.x) < 1e-4)
-            #expect(abs(results[0].d1.y - 5.0) < 1e-4)
-        }
-    }
-}
-
-/// #486: `Curve2D` mirrored `Curve3D`'s three batch-evaluation generations exactly:
-/// `evaluateGrid`/`evaluateGridD1` (v0.28.0, `Geom2dGridEval_Curve`), `evalBatchD0`/`D1`
-/// (v0.110.0, a per-point `Geom2d_Curve::EvalD0`/`EvalD1` loop, and defined in the *Curve3D*
-/// bridge file) and `gridEvalD0`/`D1` (v0.111.0, the same `Geom2dGridEval_Curve` calls again).
-/// The two later bridge generations are gone and the later spellings forward to the first.
+/// #486 unified `Curve2D`'s three batch-evaluation spellings (`evaluateGrid`/`evaluateGridD1`,
+/// v0.28.0's `Geom2dGridEval_Curve`; the v0.110.0 `evalBatchD0`/`D1`; and the v0.111.0
+/// `gridEvalD0`/`D1`) onto the first. The two forwarding spellings were removed at v2.0.0 (#784).
 @Suite("Issue 486: Curve2D batch-eval spellings agree")
 struct Issue486Curve2DBatchTests {
 
@@ -3489,58 +3415,6 @@ struct Issue486Curve2DBatchTests {
         Curve2D.interpolate(through: [
             SIMD2(0, 0), SIMD2(2, 3), SIMD2(5, 5), SIMD2(8, 3), SIMD2(10, 0)
         ])
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
-    @Test("evaluateGrid, evalBatchD0 and gridEvalD0 return the same points")
-    func d0SpellingsAgree() {
-        guard let curve = bspline() else { return }
-        let domain = curve.domain
-        let params = (0..<7).map {
-            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 6.0
-        }
-
-        let canonical = curve.evaluateGrid(params)
-        let batch = curve.evalBatchD0(params: params)
-        let grid = curve.gridEvalD0(params: params)
-        #expect(canonical.count == params.count)
-        #expect(batch.count == params.count)
-        #expect(grid.count == params.count)
-        guard canonical.count == params.count else { return }
-
-        for i in 0..<params.count {
-            // point(at:) is the independent per-point evaluator, so this also pins the ordering.
-            #expect(simd_length(canonical[i] - curve.point(at: params[i])) < 1e-6)
-            #expect(simd_length(batch[i] - canonical[i]) < 1e-9)
-            #expect(simd_length(grid[i] - canonical[i]) < 1e-9)
-        }
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated spellings on purpose.")
-    @Test("evaluateGridD1, evalBatchD1 and gridEvalD1 return the same points and derivatives")
-    func d1SpellingsAgree() {
-        guard let curve = bspline() else { return }
-        let domain = curve.domain
-        let params = (0..<5).map {
-            domain.lowerBound + (domain.upperBound - domain.lowerBound) * Double($0) / 4.0
-        }
-
-        let canonical = curve.evaluateGridD1(params)
-        let batch = curve.evalBatchD1(params: params)
-        let grid = curve.gridEvalD1(params: params)
-        #expect(canonical.count == params.count)
-        #expect(batch.count == params.count)
-        #expect(grid.count == params.count)
-        guard canonical.count == params.count else { return }
-
-        for i in 0..<params.count {
-            #expect(simd_length(batch[i].point - canonical[i].point) < 1e-9)
-            #expect(simd_length(batch[i].d1 - canonical[i].tangent) < 1e-9)
-            #expect(simd_length(grid[i].point - canonical[i].point) < 1e-9)
-            #expect(simd_length(grid[i].d1 - canonical[i].tangent) < 1e-9)
-            // Non-degenerate derivative, so an all-zeroes buffer would not pass.
-            #expect(simd_length(canonical[i].tangent) > 1e-6)
-        }
     }
 
     @Test("empty parameters give an empty result, not one padded with zeroes")
@@ -4764,37 +4638,6 @@ struct Curve2DProjectionParityTests {
         #expect(nearest?.distance == 0)
         #expect(start.distance(to: Self.segment) == 0)
         #expect(Self.segment.nearestParameter(to: SIMD2(0, 0)) == 0)
-    }
-
-    /// The fifth entry point, which #413 missed. `parameterAtPoint(_:)` answered a no-projection
-    /// with `firstParameter`: right by luck when the point fell off the start, and the far end of
-    /// the curve when it fell off the finish. Neither was distinguishable from a real result, so
-    /// the scalar spelling became optional.
-    ///
-    /// Since #615 there is no reachable `.nan` case left on a real curve — a point past the end is
-    /// nearest to that end, so it gets a real parameter — and `firstParameter` is now right for the
-    /// point that fell off the start for the *right* reason. The spelling stays deprecated because
-    /// no `Double` can carry a failure signal, not because this input has no answer.
-    @Test("The deprecated scalar spelling agrees with the optional one")
-    @available(*, deprecated, message: "exercises the deprecated parameterAtPoint on purpose")
-    func deprecatedScalarSpellingAgrees() throws {
-        // A domain that does not start at 0, so `firstParameter` is visibly not a default.
-        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
-        let trimmed = try #require(line.trimmed(from: 3, to: 8))
-        #expect(trimmed.domain == 3...8)
-
-        // Fell off the far end: `firstParameter` (3) was the worst answer available; the end is 8.
-        #expect(trimmed.nearestParameter(to: SIMD2(100, 0)) == 8)
-        #expect(trimmed.parameterAtPoint(SIMD2(100, 0)) == 8)
-
-        // Fell off the start: 3 all along, now because it is the nearest point rather than because
-        // it is the first parameter.
-        #expect(trimmed.nearestParameter(to: SIMD2(0, 0)) == 3)
-        #expect(trimmed.parameterAtPoint(SIMD2(0, 0)) == 3)
-
-        // A real projection still returns the real parameter through both spellings.
-        #expect(trimmed.nearestParameter(to: SIMD2(5, 2)) == 5)
-        #expect(trimmed.parameterAtPoint(SIMD2(5, 2)) == 5)
     }
 }
 

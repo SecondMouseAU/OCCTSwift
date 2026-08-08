@@ -1029,17 +1029,22 @@ Identity here is the graph object, not the geometry: two graphs built from the s
 
 ---
 
-### `generation` *(deprecated)*
+### `generation` *(removed in v2.0.0)*
 
-**Always 1.** Deprecated in v1.12.0; value changed from 0 to 1 in v1.12.2.
+Removed by [#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784), along with the
+`OCCTBRepGraphGeneration` bridge function behind it. Deprecated in v1.12.0.
 
-```swift
-@available(*, deprecated)
-public var generation: UInt32 { get }
-```
+**Use `instanceID`** to compare graph identity. Nothing else is needed: `node(forUID:)` already
+rejects a UID minted by another graph on its own.
 
-OCCT advances this only from `BRepGraph::Clear()`. Since v1.12.2 ([#303](https://github.com/SecondMouseAU/OCCTSwift/issues/303)) OCCTSwift calls `Clear()` exactly once, when it builds a graph, and never rebuilds an existing one — so the counter lands at 1 and stays there. It is the same 1 for every graph, so it still cannot tell two graphs apart or detect a stale cache. Nothing replaces it — `node(forUID:)` rejects a UID from another graph on its own, and `instanceID` compares graph identity directly.
+It was always `1`. OCCT advances the counter only from `BRepGraph::Clear()`, and since v1.12.2
+([#303](https://github.com/SecondMouseAU/OCCTSwift/issues/303)) OCCTSwift calls `Clear()` exactly
+once, when it builds a graph, and never rebuilds an existing one. So it landed at 1, stayed there,
+and read the same for every graph, which is why it could tell neither two graphs apart nor a stale
+cache.
 
-Earlier revisions of this page suggested comparing a cached `storedOwnGen` against `generation` to detect a stale mesh. That recipe never worked and has been removed: `storedOwnGen` is a per-entity mesh field (`FaceMeshEntry::MeshGeneration`), not this counter, so the two were never comparable ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
+Earlier revisions of this page suggested comparing a cached `storedOwnGen` against `generation` to
+detect a stale mesh. That recipe never worked: `storedOwnGen` is a per-entity mesh field
+(`FaceMeshEntry::MeshGeneration`), not this counter, so the two were never comparable
+([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
 
-- **OCCT:** `BRepGraph` generation field (via `OCCTBRepGraphGeneration`).

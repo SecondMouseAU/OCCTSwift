@@ -2200,32 +2200,17 @@ public enum ContinuityLevel: Int32, Sendable, CaseIterable {
 > compile error for a wrong answer.
 >
 > Used by `divided(at:tolerance:)` alone since #438 folded the narrower
-> `dividedByContinuity(criterion:tolerance:)` (now deprecated) into it.
+> `dividedByContinuity(criterion:tolerance:)` (deprecated, removed at v2.0.0, #784) into it.
 
----
-
-### `dividedByContinuity(criterion:tolerance:)` *(deprecated)*
-
-Deprecated in favour of
-[`divided(at:tolerance:)`](Shape-Healing.md#dividedattolerance), which it now forwards to.
+`dividedByContinuity(criterion:tolerance:)` duplicated `divided(at:tolerance:)` over the same
+`ShapeUpgrade_ShapeDivideContinuity`, setting only the boundary criterion where
+`divided(at:tolerance:)` sets boundary, pcurve AND surface criteria together, the usage OCCT's own
+shape-healing guide demonstrates (#438). Deprecated as a forward to `divided(at:tolerance:)`,
+it was removed at v2.0.0 (#784):
 
 ```swift
-@available(*, deprecated, renamed: "divided(at:tolerance:)")
-public func dividedByContinuity(criterion: ContinuityLevel = .c1, tolerance: Double = 1e-4) -> Shape?
+shape.divided(at: .c1, tolerance: 1e-4)   // was: shape.dividedByContinuity(criterion: .c1, tolerance: 1e-4)
 ```
-
-This duplicated `divided(at:tolerance:)` over the same `ShapeUpgrade_ShapeDivideContinuity`,
-setting only the boundary criterion where `divided(at:tolerance:)` sets boundary, pcurve AND
-surface criteria together — the usage OCCT's own shape-healing guide demonstrates (#438). Both
-names now run the identical call; the two former bridge functions (`OCCTShapeDivide`,
-`OCCTShapeUpgradeDivideContinuity`) are now one (`OCCTShapeDivide`, which picked up a `tolerance`
-parameter).
-
-- **OCCT:** `ShapeUpgrade_ShapeDivideContinuity` (via `OCCTShapeDivide`).
-- **Example:**
-  ```swift
-  shape.divided(at: .c1, tolerance: 1e-4)   // was: shape.dividedByContinuity(criterion: .c1, tolerance: 1e-4)
-  ```
 
 ---
 

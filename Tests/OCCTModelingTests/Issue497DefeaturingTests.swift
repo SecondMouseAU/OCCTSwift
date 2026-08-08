@@ -71,40 +71,11 @@ struct Issue497DefeaturingTests {
         }
     }
 
-    // MARK: - The tolerance that never was
-
-    /// `BRepAlgoAPI_Defeaturing::Build` forwards the input shape, the faces, the history flag and
-    /// the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else — the fuzzy value from
-    /// `BOPAlgo_Options` is stored and never read. A value of 10.0 on a 20mm box would visibly
-    /// wreck any BOP that honoured it (a `BRepAlgoAPI_Cut` control at these magnitudes returns an
-    /// empty or negative-volume shape); here it must change nothing at all.
-    @available(*, deprecated, message: "exercises the deprecated tolerance overload on purpose")
-    @Test("tolerance is inert at every magnitude")
-    func toleranceIsInert() {
-        guard let (filleted, filletIndices) = Self.filletedBox(),
-              let target = filletIndices.first else {
-            #expect(Bool(false), "fixture: filleted box with fillet faces")
-            return
-        }
-        let face = filleted.subShapes(ofType: .face)[target]
-
-        guard let baseline = filleted.defeature(faces: [face]), let baseVolume = baseline.volume else {
-            #expect(Bool(false), "defeaturing a fillet face should succeed on this fixture")
-            return
-        }
-        let baseFaceCount = baseline.faces().count
-
-        for tolerance in [0.0, 1e-7, 0.01, 1.0, 10.0, 100.0] {
-            let result = filleted.defeature(faces: [face], tolerance: tolerance)
-            #expect(result != nil, "tolerance \(tolerance) changed whether defeaturing succeeded")
-            if let r = result {
-                if let v = r.volume {
-                    #expect(abs(v - baseVolume) < 1e-9, "tolerance \(tolerance) changed the volume")
-                }
-                #expect(r.faces().count == baseFaceCount, "tolerance \(tolerance) changed the face count")
-            }
-        }
-    }
+    // `BRepAlgoAPI_Defeaturing::Build` forwards the input shape, the faces, the history flag and
+    // the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else. The fuzzy value from
+    // `BOPAlgo_Options` is stored and never read. `defeature(faces:tolerance:)`, the overload that
+    // accepted and ignored it, was removed at v2.0.0 (#784); `defeature(faces:)` never had one to
+    // ignore.
 
     // MARK: - Preconditions, now shared
 

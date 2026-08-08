@@ -1027,28 +1027,15 @@ public func subtractedWithHistory(_ tool: Shape, tolerance: Double = 0) -> Boole
 
 ---
 
-### `defeature(faces:tolerance:)` — deprecated
-
-Removes specified faces from the shape (defeaturing), ignoring `tolerance`.
-
-```swift
-@available(*, deprecated, message: "tolerance is ignored — BRepAlgoAPI_Defeaturing has no fuzzy value. Use defeature(faces:).")
-public func defeature(faces: [Shape], tolerance: Double) -> Shape?
-```
-
-- **Parameters:** `faces` — the face shapes to remove. `tolerance` — ignored, kept so existing call
-  sites still compile.
-- **Returns:** The defeatured `Shape`, or `nil` on failure. Identical to
-  [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces) at every tolerance.
-- **OCCT:** `BRepAlgoAPI_Defeaturing`.
-
-`BRepAlgoAPI_Defeaturing::Build` hands the input shape, the faces to remove, the history flag and
-the parallel flag to the `BOPAlgo_RemoveFeatures` that does the work, and nothing else; the fuzzy
-value inherited from `BOPAlgo_Options` is stored and never read, as its own header states ("the
-other options of the base class are not supported here and will have no effect"). Measured across
+`defeature(faces:tolerance:)`, the overload whose `tolerance` parameter
+`BRepAlgoAPI_Defeaturing::Build` never read (it forwards the input shape, the faces, the history
+flag and the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else. `BOPAlgo_Options`'
+inherited fuzzy value is stored and never read, as its own header states outright: "the other
+options of the base class are not supported here and will have no effect"; measured across
 tolerances from `1e-7` to `100` against a `BRepAlgoAPI_Cut` control in
-[`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert)
-(#497). Use `defeature(faces:)`.
+[`Scripts/repro/497-defeaturing-fuzzy-inert/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/497-defeaturing-fuzzy-inert),
+#497), was deprecated and removed at v2.0.0 (#784). Use
+[`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces).
 
 ---
 

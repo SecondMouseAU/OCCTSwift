@@ -2,47 +2,6 @@ import Foundation
 import simd
 import OCCTBridge
 
-/// Deprecated spelling of ``OSDPath``.
-///
-/// This used to wrap `TDocStd_PathParser`, OCAF's internal path splitter, while ``OSDPath``
-/// wrapped `OSD_Path`: two OCCT classes answering the same questions in different string
-/// formats behind identically-named methods. Every method here now forwards to ``OSDPath``,
-/// which both settles the format and fixes four cases `TDocStd_PathParser::Parse()` got wrong:
-/// it left *both* name and directory empty for a path with no extension, threw (surfacing as
-/// `nil`) for a dotfile inside a directory, read a dot in a *directory* name as the start of the
-/// file's extension, and mangled non-ASCII paths.
-///
-/// ```swift
-/// // Before: "step", "/home/user", nil, "a"
-/// // Now:    ".step", "/home/user/", ".config", "model"
-/// OSDPath.fileExtension("/home/user/model.step")   // ".step"
-/// OSDPath.folder("/home/user/model.step")          // "/home/user/"
-/// OSDPath.fileExtension("/home/user/.config")      // ".config"
-/// OSDPath.name("/home/a.b/model")                  // "model"
-/// ```
-public enum PathParser {
-
-    /// Parse a file path and return the directory.
-    @available(*, deprecated, renamed: "OSDPath.folder(_:)",
-               message: "Forwards to OSDPath.folder(_:), which keeps the trailing separator (\"/home/user/\", not \"/home/user\") and returns a directory for extension-less paths instead of an empty string.")
-    public static func trek(_ path: String) -> String? {
-        OSDPath.folder(path)
-    }
-
-    /// Parse a file path and return the filename (without directory or extension).
-    @available(*, deprecated, renamed: "OSDPath.name(_:)")
-    public static func name(_ path: String) -> String? {
-        OSDPath.name(path)
-    }
-
-    /// Parse a file path and return the file extension.
-    @available(*, deprecated, renamed: "OSDPath.fileExtension(_:)",
-               message: "Forwards to OSDPath.fileExtension(_:), which includes the leading dot (\".step\", not \"step\").")
-    public static func fileExtension(_ path: String) -> String? {
-        OSDPath.fileExtension(path)
-    }
-}
-
 /// File path parsing and manipulation utilities, wrapping OCCT's `OSD_Path`.
 ///
 /// The single path-parsing surface in OCCTSwift since #499. The `TDocStd_PathParser`-backed

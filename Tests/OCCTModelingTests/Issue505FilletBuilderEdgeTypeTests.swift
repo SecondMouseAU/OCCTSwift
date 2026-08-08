@@ -177,25 +177,4 @@ struct Issue505FilletBuilderEdgeTypeTests {
         #expect(built.first <= simulated.first)
         #expect(built.last >= simulated.last)
     }
-
-    /// The deprecated `Shape`-typed spellings route through the `Edge` ones, so they agree with them,
-    /// and a `Shape` that is not an edge is `nil` rather than a downcast throw swallowed by the
-    /// bridge.
-    @Test("The deprecated Shape spellings agree with the Edge ones")
-    @available(*, deprecated, message: "exercises the deprecated spellings on purpose")
-    func deprecatedShapeSpellingsAgree() throws {
-        let (builder, edge, box) = try Self.builtEvolvingContour()
-        let edgeShape = try #require(Shape.fromEdge(edge))
-
-        let viaEdge = try #require(builder.getBounds(contour: 1, edge: edge))
-        let viaShape = try #require(builder.getBounds(contour: 1, edge: edgeShape))
-        #expect(viaEdge == viaShape)
-
-        let lawViaShape = try #require(builder.getLaw(contour: 1, edge: edgeShape))
-        #expect(abs(lawViaShape.value(at: viaEdge.first) - 0.5) < 1e-9)
-
-        // The box itself is a solid, not an edge.
-        #expect(builder.getBounds(contour: 1, edge: box) == nil)
-        #expect(builder.getLaw(contour: 1, edge: box) == nil)
-    }
 }

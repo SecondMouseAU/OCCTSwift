@@ -442,17 +442,10 @@ To attempt a constraint speculatively and carry on regardless, use
 [`add(edge:continuity:)`](#addedgecontinuity), which derives the continuity reference from the edge
 itself and so has nothing to refuse.
 
-### `FillingContinuity`
-
-> **Deprecated in #398.** `FillingContinuity` was one of three copies of the same geometric
-> constraint-order vocabulary and is now a typealias of
-> [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`). The
-> `.c0` / `.c1` / `.c2` spellings still resolve, as deprecated aliases. No raw value moved.
-
-```swift
-@available(*, deprecated, renamed: "SurfaceContinuity")
-public typealias FillingContinuity = SurfaceContinuity
-```
+`FillingContinuity` was one of three copies of the same geometric constraint-order vocabulary,
+deprecated in #398 as a typealias of
+[`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (`.g0` / `.g1` / `.g2`, no raw value
+moved), and removed at v2.0.0 (#784). Use `SurfaceContinuity` directly.
 
 ---
 

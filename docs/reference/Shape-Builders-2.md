@@ -231,31 +231,18 @@ public func transferParameterFromFace(_ param: Double, face: Shape) -> Double
 
 ## BOPAlgo\_RemoveFeatures
 
-### `removeFeatures(faces:)` — deprecated (#536)
-
-Remove features (faces) from a solid shape, healing the result. **Deprecated:** this is
-[`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces) under a second name.
-`BRepAlgoAPI_Defeaturing`, which
-`defeature(faces:)` drives, is an API wrapper over `BOPAlgo_RemoveFeatures`: its `Build()` hands the
-shape, the faces, the history flag and the parallel flag to a `BOPAlgo_RemoveFeatures` member and
-returns that member's result, and both spellings took the same defaults for the two forwarded flags.
-Measured identical, BREP byte for byte, on every case including the refusals — see
-[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify).
-It now forwards; nothing about the result changes when you switch.
+`removeFeatures(faces:)` was [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces)
+under a second name: `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API
+wrapper over `BOPAlgo_RemoveFeatures`, and both spellings drove one algorithm object with identical
+defaults, measured byte-for-byte identical on every case including the refusals (see
+[`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify)).
+Deprecated as a forward to `defeature(faces:)` in #536, `removeFeatures(faces:)` was removed at
+v2.0.0 (#784); use `defeature(faces:)`.
 
 ```swift
-@available(*, deprecated, renamed: "defeature(faces:)")
-public func removeFeatures(faces: [Shape]) -> Shape?
+let faces = solid.subShapes(ofType: .face)
+if let cleaned = solid.defeature(faces: [faces[2]]) { }
 ```
-
-- **Parameters:** `faces` — array of face shapes to remove (e.g. fillets, boss faces, holes).
-- **Returns:** Healed shape with features removed, or `nil` on failure.
-- **OCCT:** `BRepAlgoAPI_Defeaturing`, which forwards to `BOPAlgo_RemoveFeatures`
-- **Example:**
-  ```swift
-  let faces = solid.subShapes(ofType: .face)
-  if let cleaned = solid.defeature(faces: [faces[2]]) { }
-  ```
 
 ---
 

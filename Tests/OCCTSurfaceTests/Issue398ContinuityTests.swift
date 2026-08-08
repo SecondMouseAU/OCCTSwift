@@ -49,8 +49,9 @@ struct Issue398ContinuityTests {
         // Deliberately NOT folded into either shared *request* enum: this one is a result type
         // whose raw values are GeomAbs_Shape's own ordinals, not a 0/1/2 order at all. #485
         // renamed it from Surface.Continuity to the top-level ContinuityClass and extended it
-        // to Curve3D/Curve2D, which had no typed form; the raw values did not move. See
-        // Issue485SurfaceContinuityTests for the deprecated spelling and the measured values.
+        // to Curve3D/Curve2D, which had no typed form; the raw values did not move. The former
+        // Surface.Continuity alias was removed at v2.0.0 (#784); see Issue485SurfaceContinuityTests
+        // for the measured values.
         #expect(ContinuityClass.c0.rawValue == 0)
         #expect(ContinuityClass.g1.rawValue == 1)
         #expect(ContinuityClass.c1.rawValue == 2)
@@ -58,23 +59,6 @@ struct Issue398ContinuityTests {
         #expect(ContinuityClass.c2.rawValue == 4)
         #expect(ContinuityClass.c3.rawValue == 5)
         #expect(ContinuityClass.cN.rawValue == 6)
-    }
-
-    // MARK: - Source compatibility
-
-    @available(*, deprecated, message: "exercises the deprecated spellings on purpose")
-    @Test("Retired names and spellings still resolve to the same values")
-    func retiredSpellingsStillResolve() {
-        #expect(FillingContinuity.g0 == SurfaceContinuity.g0)
-        #expect(PlateConstraintOrder.g1 == SurfaceContinuity.g1)
-        #expect(SurfaceContinuity.c0 == SurfaceContinuity.g0)
-        #expect(SurfaceContinuity.c1 == SurfaceContinuity.g1)
-        #expect(SurfaceContinuity.c2 == SurfaceContinuity.g2)
-
-        #expect(GeometricContinuity.c2 == ParametricContinuity.c2)
-        #expect(ApproxContinuity.c3 == ParametricContinuity.c3)
-        #expect(Shape.BSplineContinuity.c1 == ParametricContinuity.c1)
-        #expect(Curve3D.ContinuityOrder.c0 == ParametricContinuity.c0)
     }
 
     // MARK: - Orders OCCT will not accept

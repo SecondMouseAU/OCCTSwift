@@ -115,18 +115,16 @@ public static func ellipse(
 
 ---
 
-### Deprecated: `Conic2D.fromCircle` / `fromLine` / `fromEllipse`
-
-The three original spellings return a non-optional `Conic2D`, so their only way to report a
-degenerate input is the all-zero struct, which describes no conic. They remain, deprecated,
-forwarding to the factories above and returning all zeros where those return `nil`.
+`Conic2D.fromCircle`/`fromLine`/`fromEllipse`, the original spellings returning a non-optional
+`Conic2D` (their only way to report a degenerate input was an all-zero struct describing no conic),
+were deprecated in favour of the factories above and removed at v2.0.0 (#784):
 
 ```swift
-// before
+// before (removed)
 let e = Conic2D.fromEllipse(center: .zero, direction: SIMD2(1, 0),
                             majorRadius: 5, minorRadius: 3)
 
-// after
+// now
 if let e = Conic2D.ellipse(center: .zero, direction: SIMD2(1, 0),
                            majorRadius: 5, minorRadius: 3) { … }
 ```
@@ -1337,34 +1335,29 @@ public func faceLPropTangentU(u: Double, v: Double) -> SIMD3<Double>?
 
 ---
 
-## GridEval Extensions, deprecated (#486)
+## GridEval Extensions, removed at v2.0.0 (#784)
 
-These six methods were a third spelling of batch evaluation, over a third generation of bridge
-functions (`OCCTGridEvalCurveD0`/`D1`, `OCCTGridEvalCurve2dD0`/`D1`, `OCCTGridEvalSurfaceD0`/`D1`)
-that called exactly the same OCCT evaluators as the v0.28.0/v0.29.0 ones already did. Worse, the
-Surface pair wrote the *opposite* UV layout from `OCCTSurfaceEvaluateGrid` while both header
-comments described their own layout as "row-major".
+`Curve3D`/`Curve2D`/`Surface` each carried a third spelling of batch evaluation
+(`gridEvalD0`/`D1`, deprecated by #486 in favour of `evaluateGrid`/`evaluateGridD1`), over a third
+generation of bridge functions (`OCCTGridEvalCurveD0`/`D1`, `OCCTGridEvalCurve2dD0`/`D1`,
+`OCCTGridEvalSurfaceD0`/`D1`) that called exactly the same OCCT evaluators as the v0.28.0/v0.29.0
+ones already did. Worse, the Surface pair wrote the *opposite* UV layout from
+`OCCTSurfaceEvaluateGrid` while both header comments described their own layout as "row-major".
 
-**#486 removed that bridge generation** and deprecated these methods; each one now forwards to its
-canonical sibling. Two behaviour changes came with it: a failed evaluation returns an empty array
-instead of an array of zeroes, and the surface flat arrays are documented as U-major
-(`result[u * vParams.count + v]`) rather than as ambiguously "row-major".
-
-| Deprecated | Use instead |
-|---|---|
-| `Curve3D.gridEvalD0(params:)` | [`Curve3D.evaluateGrid(_:)`](Curve3D-Analysis.md) |
-| `Curve3D.gridEvalD1(params:)` | `Curve3D.evaluateGridD1(_:)` (labels the derivative `tangent`) |
-| `Curve2D.gridEvalD0(params:)` | `Curve2D.evaluateGrid(_:)` |
-| `Curve2D.gridEvalD1(params:)` | `Curve2D.evaluateGridD1(_:)` (labels the derivative `tangent`) |
-| `Surface.gridEvalD0(uParams:vParams:)` | [`Surface.evaluateGrid(uParameters:vParameters:)`](Surface-Analysis.md#evaluategriduparametersvparameters), returns a `SurfaceGrid` indexed `.at(u:v:)` |
-| `Surface.gridEvalD1(uParams:vParams:)` | [`Surface.evaluateGridD1(uParameters:vParameters:)`](Surface-Analysis.md#evaluategridd1uparametersvparameters), returns a `SurfaceGridD1` indexed `.at(u:v:)` |
+#486 removed that bridge generation and pointed the six deprecated methods at their canonical
+sibling; #784 removed the six methods themselves. Use
+[`Curve3D.evaluateGrid(_:)`](Curve3D-Analysis.md)/`evaluateGridD1(_:)`,
+`Curve2D.evaluateGrid(_:)`/`evaluateGridD1(_:)` (both label the derivative `tangent`, not `d1`), or
+[`Surface.evaluateGrid(uParameters:vParameters:)`](Surface-Analysis.md#evaluategriduparametersvparameters)/[`evaluateGridD1(uParameters:vParameters:)`](Surface-Analysis.md#evaluategridd1uparametersvparameters),
+which return a `SurfaceGrid`/`SurfaceGridD1` indexed `.at(u:v:)` instead of a flat array whose
+major order the caller had to know:
 
 ```swift
-// Before
+// Before (removed)
 let pts = mySurface.gridEvalD0(uParams: us, vParams: vs)
 let p = pts[u * vs.count + v]
 
-// After
+// Now
 let grid = mySurface.evaluateGrid(uParameters: us, vParameters: vs)
 let p = grid.at(u: u, v: v)
 ```
@@ -1427,21 +1420,12 @@ public func evalD3(at u: Double) -> (point: SIMD3<Double>, d1: SIMD3<Double>, d2
 
 ---
 
-### `Curve3D.evalBatchD0(params:)` / `evalBatchD1(params:)`, deprecated (#486)
-
-```swift
-public func evalBatchD0(params: [Double]) -> [SIMD3<Double>]
-public func evalBatchD1(params: [Double]) -> [(point: SIMD3<Double>, d1: SIMD3<Double>)]
-```
-
-Use `Curve3D.evaluateGrid(_:)` / `evaluateGridD1(_:)`. These two called `Geom_Curve::EvalD0` /
-`EvalD1` once per parameter through `OCCTCurve3DEvalBatchD0`/`D1`, bypassing the batch
-`GeomGridEval_Curve` evaluator that `evaluateGrid` had already been using since v0.29.0. #486
-removed those bridge functions and pointed these methods at the batch path, so results can differ
-from the old per-point loop by ~1e-13 on a BSpline. `evaluateGridD1` labels the derivative
-`tangent`, not `d1`.
-
-- **OCCT:** `GeomGridEval_Curve::EvaluateGrid` / `EvaluateGridD1` via `OCCTCurve3DEvaluateGrid`/`D1`.
+`Curve3D.evalBatchD0(params:)`/`evalBatchD1(params:)`, deprecated by #486 in favour of
+`Curve3D.evaluateGrid(_:)`/`evaluateGridD1(_:)`, were removed at v2.0.0 (#784). They had called
+`Geom_Curve::EvalD0`/`EvalD1` once per parameter, bypassing the batch `GeomGridEval_Curve`
+evaluator `evaluateGrid` had already been using since v0.29.0; #486 pointed them at the batch path
+instead (results can differ from the old per-point loop by ~1e-13 on a BSpline), and `evaluateGridD1`
+labels the derivative `tangent`, not `d1`.
 
 ---
 
@@ -1485,19 +1469,8 @@ public func evalD2(at u: Double) -> (point: SIMD2<Double>, d1: SIMD2<Double>, d2
 
 ---
 
-### `Curve2D.evalBatchD0(params:)` / `evalBatchD1(params:)`, deprecated (#486)
-
-```swift
-public func evalBatchD0(params: [Double]) -> [SIMD2<Double>]
-public func evalBatchD1(params: [Double]) -> [(point: SIMD2<Double>, d1: SIMD2<Double>)]
-```
-
-Use `Curve2D.evaluateGrid(_:)` / `evaluateGridD1(_:)`. Same story as the 3D pair above: a per-point
-`Geom2d_Curve::EvalD0`/`EvalD1` loop through `OCCTCurve2DEvalBatchD0`/`D1` (defined, oddly, in the
-*Curve3D* bridge file) that duplicated v0.28.0's already-batched `evaluateGrid`. #486 removed those
-bridge functions and pointed these methods at the batch path.
-
-- **OCCT:** `Geom2dGridEval_Curve::EvaluateGrid` / `EvaluateGridD1` via `OCCTCurve2DEvaluateGrid`/`D1`.
+`Curve2D.evalBatchD0(params:)`/`evalBatchD1(params:)` were the 2D counterpart, same story as the 3D
+pair above, and were also removed at v2.0.0 (#784). Use `Curve2D.evaluateGrid(_:)`/`evaluateGridD1(_:)`.
 
 ---
 

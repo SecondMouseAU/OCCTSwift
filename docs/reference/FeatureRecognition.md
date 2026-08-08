@@ -29,7 +29,7 @@ Maps to `OCCTEdgeConvexity` from the bridge. The classification is computed by `
 
 Before #723 this used each face's own GLOBAL area centroid (`BRepGProp::SurfaceProperties`) as a stand-in for "which side is material": whether a point deep inside one face fell on the material or void side of the other face's tangent plane, averaged over both faces for the same order-independence `ChFi3d` now gives natively. That formula (#703, replacing an even earlier one, the sign of `(tangent × n1) · n2`, that silently depended on argument order) drifted with face proportions: a through-hole rim could classify concave or convex purely as a function of plate thickness, since a cylindrical wall's centroid moves as the wall gets taller while the rim geometry itself never changes.
 
-`OCCTEdgeGetConvexity` (like `OCCTFacesAreAdjacent`) has no notion of which solid `face1`/`face2` belong to; it is `AAG.buildGraph()` that restricts which pairs reach it to occurrences sharing a solid (#699). Called directly on two faces from different solids the result is not meaningful for either, see `AAG`, below.
+`OCCTEdgeGetConvexity` (like `OCCTFaceGetSharedEdgeSummary`) has no notion of which solid `face1`/`face2` belong to; it is `AAG.buildGraph()` that restricts which pairs reach it to occurrences sharing a solid (#699). Called directly on two faces from different solids the result is not meaningful for either, see `AAG`, below.
 
 - `concave` — the two face normals "open inward"; typical of pocket walls meeting a floor.
 - `smooth` — faces are tangent (within ~0.5°); typical of filleted edges.
@@ -90,7 +90,7 @@ A face shared by two solids in a compound is two nodes, one per owning solid, ea
 
 ### Adjacency is scoped to one solid (#699)
 
-Two occurrences that share a B-Rep edge but belong to different solids in a compound are adjacent *in the compound* and not adjacent in *either* solid: a floor face's candidate walls are the faces bounding the same body, not any face anywhere in the compound that happens to touch the same edge locus. Neither `OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` has any notion of solid membership on their own (both compare two `TopoDS_Face` values purely on their own edge geometry), so `AAG.buildGraph()` restricts which pairs it hands to them: only occurrences it can establish share a solid are compared at all.
+Two occurrences that share a B-Rep edge but belong to different solids in a compound are adjacent *in the compound* and not adjacent in *either* solid: a floor face's candidate walls are the faces bounding the same body, not any face anywhere in the compound that happens to touch the same edge locus. Neither `OCCTFaceGetSharedEdgeSummary` nor `OCCTEdgeGetConvexity` has any notion of solid membership on their own (both compare two `TopoDS_Face` values purely on their own edge geometry), so `AAG.buildGraph()` restricts which pairs it hands to them: only occurrences it can establish share a solid are compared at all.
 
 Solid membership per occurrence is derived from the shape's own traversal order rather than a new bridge entry point: `orientedFaces()`'s underlying `TopExp_Explorer` walk visits every occurrence under one top-level solid contiguously before moving to the next, in the same first-encountered order `Shape.solids` itself enumerates solids in, so the flat occurrence list partitions into contiguous runs sized by each solid's own face-occurrence count. On a shape with zero or one solid, including every single-solid shape, there is no cross-solid pair to restrict, so nothing changes: this is a compound-only concern.
 
@@ -102,7 +102,7 @@ let halves = box.split(atPlane: SIMD3(4, 0, 0), normal: SIMD3(1, 0, 0))!
 let orderA = Shape.compound(halves)!
 let orderB = Shape.compound(halves.reversed())!
 
-// Order-independent: cross-solid pairs never reach OCCTFacesAreAdjacent at all.
+// Order-independent: cross-solid pairs never reach the shared-edge probe at all.
 print(orderA.detectPocketsAAG().count == orderB.detectPocketsAAG().count)   // true
 ```
 
@@ -114,7 +114,7 @@ Constructs the AAG by traversing all face-occurrence pairs in the shape.
 public init(shape: Shape)
 ```
 
-Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), tests adjacency via `OCCTFacesAreAdjacent` (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`), retrieves shared edges via `OCCTFaceGetSharedEdges`, and classifies each shared edge via `OCCTEdgeGetConvexity` (`ChFi3d::DefineConnectType`, #723). Unlike the #703/#720 centroid formula this replaced, `ChFi3d::DefineConnectType` needs no per-face integration, since it samples the local dihedral directly, so there is nothing to precompute or cache before the pairwise loop.
+Calls `buildGraph()` which reads `shape.orientedFaces()`, iterates all `(i, j)` occurrence pairs (skipping any pair that is the two sides of one shared face, and any pair `AAG` can establish belongs to two different solids, #699), asks `OCCTFaceGetSharedEdgeSummary` for the pair's true shared-edge count and its first shared edge in one walk (backed by `TopExp::MapShapes` + `TopoDS_Edge::IsSame`; a non-zero count *is* adjacency, [#783](https://github.com/SecondMouseAU/OCCTSwift/issues/783)), and classifies each shared edge via `OCCTEdgeGetConvexity` (`ChFi3d::DefineConnectType`, #723). Unlike the #703/#720 centroid formula this replaced, `ChFi3d::DefineConnectType` needs no per-face integration, since it samples the local dihedral directly, so there is nothing to precompute or cache before the pairwise loop.
 
 - **Parameters:** `shape` — the solid to analyse. Works best on closed solids.
 - **OCCT:** `TopExp::MapShapes` / `TopoDS_Edge::IsSame` (adjacency); `ChFi3d::DefineConnectType` (convexity).

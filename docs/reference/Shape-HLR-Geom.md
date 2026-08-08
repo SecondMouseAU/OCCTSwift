@@ -1018,17 +1018,10 @@ public func biTgteBlend(edgeIndices: [Int], radius: Double, tolerance: Double = 
 
 ## GeomConvert_ApproxCurve/Surface
 
-### `ApproxContinuity`
-
-> **Deprecated in #398.** `ApproxContinuity` was one of several copies of the same continuity-floor
-> vocabulary and is now a typealias of
-> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) (`.c0` ... `.c3`). No raw
-> value moved.
-
-```swift
-@available(*, deprecated, renamed: "ParametricContinuity")
-public typealias ApproxContinuity = ParametricContinuity
-```
+`ApproxContinuity` was one of several copies of the same continuity-floor vocabulary, deprecated in
+#398 as a typealias of [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity)
+(`.c0` ... `.c3`, no raw value moved), and removed at v2.0.0 (#784). Use `ParametricContinuity`
+directly.
 
 ---
 

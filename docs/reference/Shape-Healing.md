@@ -49,7 +49,8 @@ public enum ParametricContinuity: Int32, Sendable, CaseIterable {
 > vectors), not the geometric G0/G1/G2 constraint order of
 > [`SurfaceContinuity`](Shape-Features.md#surfacecontinuity) (parallel tangent directions).
 > `GeometricContinuity`, `ApproxContinuity`, `Shape.BSplineContinuity` and
-> `Curve3D.ContinuityOrder` are now deprecated typealiases of it. No raw value moved.
+> `Curve3D.ContinuityOrder` were deprecated typealiases of it (no raw value moved), removed at
+> v2.0.0 (#784).
 
 ---
 
@@ -1547,17 +1548,8 @@ Returns the intersection geometry (edges/wires) where the two shapes meet. Usefu
 
 ---
 
-### `section(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "section(_:)",
-           message: "Use section(_:) to match subtracting(_:) and Set convention")
-public func section(with other: Shape) -> Shape?
-```
-
-Deprecated alias for `section(_:)`. Use `section(_:)` instead.
-
----
+`section(with:)`, the deprecated `with:`-labelled alias, was removed at v2.0.0 (#784); use
+`section(_:)`.
 
 ## Boolean Pre-Validation
 

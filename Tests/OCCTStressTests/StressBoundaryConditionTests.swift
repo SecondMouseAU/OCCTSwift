@@ -152,7 +152,7 @@ struct StressCoincidentGeometryTests {
     @Test func identicalBoxUnion() {
         let b1 = standardBox()
         let b2 = standardBox()
-        let result = b1.union(with: b2)
+        let result = b1.union(b2)
         if let r = result {
             #expect(r.isValid)
         }
@@ -170,7 +170,7 @@ struct StressCoincidentGeometryTests {
     @Test func identicalBoxIntersect() {
         let b1 = standardBox()
         let b2 = standardBox()
-        let result = b1.intersection(with: b2)
+        let result = b1.intersection(b2)
         if let r = result {
             #expect(r.isValid)
             if let vol = r.volume, let origVol = b1.volume {
@@ -182,7 +182,7 @@ struct StressCoincidentGeometryTests {
     @Test func touchingFaceUnion() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
-        let result = b1.union(with: b2)
+        let result = b1.union(b2)
         if let r = result { #expect(r.isValid) }
     }
 
@@ -201,9 +201,9 @@ struct StressCoincidentGeometryTests {
     @Test func overlappingBoxes() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)!
-        let uni = b1.union(with: b2)
+        let uni = b1.union(b2)
         let sub = b1.subtracting(b2)
-        let intr = b1.intersection(with: b2)
+        let intr = b1.intersection(b2)
         if let u = uni { #expect(u.isValid) }
         if let s = sub { #expect(s.isValid) }
         if let i = intr { #expect(i.isValid) }
@@ -352,7 +352,7 @@ struct StressNearDegenerateTests {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         // Gap of 1e-6 between boxes
         let b2 = Shape.box(origin: SIMD3(10.000001, 0, 0), width: 10, height: 10, depth: 10)!
-        let result = b1.union(with: b2)
+        let result = b1.union(b2)
         if let r = result { _ = r.isValid }
     }
 

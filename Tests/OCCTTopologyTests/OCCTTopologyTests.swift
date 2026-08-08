@@ -1191,7 +1191,7 @@ struct ShapeSectionTests {
     func sectionTwoBoxes() {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(5, 5, 0))
-        let result = box1.section(with: box2!)
+        let result = box1.section(box2!)
         #expect(result != nil)
     }
 
@@ -1199,7 +1199,7 @@ struct ShapeSectionTests {
     func sectionBoxCylinder() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let cyl = Shape.cylinder(radius: 3, height: 20)!
-        let result = box.section(with: cyl)
+        let result = box.section(cyl)
         #expect(result != nil)
     }
 
@@ -1207,7 +1207,7 @@ struct ShapeSectionTests {
     func sectionNoIntersection() {
         let box1 = Shape.box(width: 5, height: 5, depth: 5)!
         let box2 = Shape.box(width: 5, height: 5, depth: 5)!.translated(by: SIMD3(100, 100, 100))
-        let result = box1.section(with: box2!)
+        let result = box1.section(box2!)
         // Non-intersecting shapes may return empty compound or nil
         _ = result
     }
@@ -1217,7 +1217,7 @@ struct ShapeSectionTests {
         let sphere = Shape.sphere(radius: 5)!
         // Create a thin box as a plane-like shape
         let plane = Shape.box(width: 20, height: 20, depth: 0.001)!
-        let result = sphere.section(with: plane)
+        let result = sphere.section(plane)
         #expect(result != nil)
     }
 }
@@ -1612,7 +1612,7 @@ struct EdgeConnectTests {
     func fusedConnectivity() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union(with: sphere)
+        let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {
             let connected = fused.connectedEdges
@@ -1832,7 +1832,7 @@ struct EdgeConcavityTests {
         // A union of two overlapping boxes creates concave edges at the join
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 0), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union(with: box2) {
+        if let fused = box1.union(box2) {
             let concaveCount = fused.edgeConcavityCount(Shape.EdgeConcavity.concave)
             // Fused shape may have concave edges where boxes overlap
             #expect(concaveCount != nil)
@@ -1898,7 +1898,7 @@ struct ShapeCheckTests {
     func booleanResultValid() throws {
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10)!
-        if let fused = box1.union(with: box2) {
+        if let fused = box1.union(box2) {
             #expect(fused.isValid)
         }
     }
@@ -4427,20 +4427,6 @@ struct BRepLibExtendedTests {
         }
     }
 
-    /// `buildCurves3dAll` is now a deprecated forwarder onto `buildCurves3d`; the two used to wrap
-    /// separate, byte-identical C entry points. Its behaviour on a pcurve-only edge is covered by
-    /// ``BuildCurves3dTests``; this is the "the old name still works" guard. #498.
-    @Test("Build curves 3D all, the deprecated spelling")
-    @available(*, deprecated, message: "exercises the deprecated buildCurves3dAll on purpose")
-    func buildCurves3dAllDeprecatedSpelling() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("could not build a box")
-            return
-        }
-        #expect(box.buildCurves3dAll(tolerance: 1e-5))
-        #expect(box.buildCurves3dAll())
-    }
-
     @Test("Same parameter all")
     func sameParameterAll() {
         let box = Shape.box(width: 10, height: 10, depth: 10)
@@ -4513,20 +4499,6 @@ struct ShapeQueriesV123Tests {
         }
     }
 
-    // Deprecated spellings of edgeCount/faceCount/vertexCount (#651); the annotation below is the
-    // project's own convention for a test that exercises a deprecated API on purpose. Coverage of
-    // the actual occurrence-vs-distinct contract these forward to lives in
-    // Issue651DeprecatedCounterTests.
-    @available(*, deprecated, message: "exercises the deprecated spelling on purpose")
-    @Test("Shape nbEdges, nbFaces, nbVertices")
-    func shapeSubShapeCounts() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            #expect(b.nbEdges == b.edgeCount)
-            #expect(b.nbFaces == b.faceCount)
-            #expect(b.nbVertices == b.vertexCount)
-        }
-    }
 }
 
 @Suite("WireAnalyzer v124")

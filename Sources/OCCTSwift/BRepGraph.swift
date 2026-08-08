@@ -2172,11 +2172,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// OCCTSwift recorded provenance. An unstamped UID resolves in no graph.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofNodeKind:index:).")
-        public init(kind: Int, counter: UInt32) {
-            self.init(kind: kind, counter: counter, graphID: 0)
-        }
-
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
@@ -2221,11 +2216,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
 
-        @available(*, deprecated, message: "A hand-built GraphRefUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.uid(ofRefKind:index:).")
-        public init(kind: Int, counter: UInt32) {
-            self.init(kind: kind, counter: counter, graphID: 0)
-        }
-
         internal init(kind: Int, counter: UInt32, graphID: UInt64) {
             self.kind = kind
             self.counter = counter
@@ -2263,11 +2253,6 @@ public final class BRepGraph: @unchecked Sendable {
         /// The instance that minted this UID — its ``BRepGraph/instanceID``. `0` means
         /// unstamped, which resolves in no graph. See ``GraphUID/graphID``.
         public let graphID: UInt64
-
-        @available(*, deprecated, message: "A hand-built GraphItemUID has no provenance (graphID 0) and resolves in no graph. Mint one with BRepGraph.itemUID(ofNodeKind:index:).")
-        public init(domain: Int, kind: Int, counter: UInt32) {
-            self.init(domain: domain, kind: kind, counter: counter, graphID: 0)
-        }
 
         internal init(domain: Int, kind: Int, counter: UInt32, graphID: UInt64) {
             self.domain = domain
@@ -2402,20 +2387,4 @@ public final class BRepGraph: @unchecked Sendable {
         OCCTBRepGraphInstanceID(handle)
     }
 
-    /// The graph generation counter — **always 1**.
-    ///
-    /// OCCT advances this only from `BRepGraph::Clear()`. OCCTSwift calls `Clear()` exactly once,
-    /// when it builds the graph (#303), and never rebuilds an existing one — so the counter lands
-    /// at 1 and stays there. It is the same 1 for every graph, so it still cannot tell two graphs
-    /// apart or detect a stale cache. Nothing replaces it: ``node(forUID:)`` already rejects a UID
-    /// from another graph, and ``instanceID`` compares graph identity directly (#295).
-    @available(*, deprecated, message: "Always 1 — OCCTSwift clears a graph once at build and never rebuilds it, so this counter never advances past 1 and is identical for every graph. node(forUID:) rejects foreign UIDs on its own; use instanceID to compare graph identity.")
-    public var generation: UInt32 {
-        OCCTBRepGraphGeneration(handle)
-    }
 }
-
-/// `BRepGraph`'s prior name (#333). `TopologyGraph` read as too close to the `TopoDS_*` family on a
-/// skim without signaling that this type specifically wraps the BRepGraph durable-identity engine.
-@available(*, deprecated, renamed: "BRepGraph")
-public typealias TopologyGraph = BRepGraph

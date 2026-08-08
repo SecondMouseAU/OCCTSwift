@@ -413,24 +413,6 @@ extension Shape {
     ///   - transition: How to handle transitions at spine corners
     ///   - solid: If true, create a solid; if false, create a shell
     /// - Returns: Swept shape, or nil on failure
-    @available(*, deprecated,
-        renamed: "pipeShell(spine:profile:mode:transition:withContact:withCorrection:solid:)",
-        message: """
-            This spelling took a PipeSweepMode but could only express .frenet and \
-            .correctedFrenet: .fixed(binormal:) and .auxiliary(spine:) were silently swept \
-            as Frenet, returning a different solid from the one asked for. pipeShell now \
-            takes the same transition: argument and honours every mode (#503).
-            """)
-    public static func pipeShellWithTransition(
-        spine: Wire,
-        profile: Wire,
-        mode: PipeSweepMode = .frenet,
-        transition: PipeTransitionMode = .transformed,
-        solid: Bool = true
-    ) -> Shape? {
-        pipeShell(spine: spine, profile: profile, mode: mode, transition: transition, solid: solid)
-    }
-
     // MARK: - Variable-Section Sweep (v0.21.0)
 
     /// Create a pipe shell with a law function controlling cross-section scaling.
@@ -1074,9 +1056,6 @@ extension Shape {
         return Shape(handle: h)
     }
 
-    @available(*, deprecated, renamed: "section(_:)",
-               message: "Use section(_:) to match subtracting(_:) and Set convention")
-    public func section(with other: Shape) -> Shape? { section(other) }
     /// Check whether this shape is valid for boolean operations.
     ///
     /// - Returns: true if the shape is suitable for boolean operations
@@ -2218,34 +2197,6 @@ extension Shape {
 
     // MARK: - BOPAlgo_RemoveFeatures
 
-    /// Remove features (faces) from a solid shape.
-    ///
-    /// Deprecated: this is ``defeature(faces:)`` under a second name, and always was.
-    /// `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API wrapper over
-    /// `BOPAlgo_RemoveFeatures`: its `Build()` hands the shape, the faces, the history flag and the
-    /// parallel flag to a `BOPAlgo_RemoveFeatures` member and takes that member's result. The two
-    /// spellings therefore drove one algorithm object, one of them through an extra layer, and the
-    /// defaults they inherited for those forwarded flags are the same.
-    ///
-    /// Measured rather than argued, over every face of a filleted box, a through hole, a boss, a
-    /// two-hole solid, and the requests that fail (no faces, a face from another shape, an input
-    /// that is not a solid): identical results, BREP byte for byte, in every case — see
-    /// `Scripts/repro/536-defeature-removefeatures-unify/`. Nothing about the result changes when
-    /// you switch.
-    ///
-    /// ```swift
-    /// let old = shape.removeFeatures(faces: filletFaces)
-    /// let new = shape.defeature(faces: filletFaces)   // the same shape, exactly
-    /// ```
-    ///
-    /// - Parameter faces: Array of face shapes to remove
-    /// - Returns: Shape with features removed, or nil on failure
-    @available(*, deprecated, renamed: "defeature(faces:)",
-               message: "the same BRepAlgoAPI_Defeaturing operation one OCCT layer down. Use defeature(faces:).")
-    public func removeFeatures(faces: [Shape]) -> Shape? {
-        defeature(faces: faces)
-    }
-
     // MARK: - BOPAlgo_Section
 
     /// Compute section (intersection curves/vertices) between this shape and tools.
@@ -2957,32 +2908,6 @@ extension Shape {
                                      hasDeleted: hasDel, hasModified: hasMod, hasGenerated: hasGen)
     }
 
-    /// Remove faces from a shape, ignoring `tolerance` (defeaturing).
-    ///
-    /// `BRepAlgoAPI_Defeaturing` has no fuzzy tolerance to set. Its `Build()` hands the input
-    /// shape, the faces to remove, the history flag and the parallel flag to the
-    /// `BOPAlgo_RemoveFeatures` that does the work, and nothing else — the fuzzy value inherited
-    /// from `BOPAlgo_Options` is stored and never read, which its own header states outright
-    /// ("the other options of the base class are not supported here and will have no effect").
-    /// So this has always returned exactly what `defeature(faces:)` returns, at every tolerance.
-    ///
-    /// Call ``defeature(faces:)`` instead. Nothing about the result changes.
-    ///
-    /// ```swift
-    /// // Before: the tolerance argument was silently discarded.
-    /// let old = shape.defeature(faces: filletFaces, tolerance: 0.01)
-    /// // After: same shape, no false promise.
-    /// let new = shape.defeature(faces: filletFaces)
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - faces: The faces to remove, as shapes belonging to this shape.
-    ///   - tolerance: Ignored. Kept so existing call sites still compile.
-    /// - Returns: The defeatured shape, or `nil` on failure.
-    @available(*, deprecated, message: "tolerance is ignored — BRepAlgoAPI_Defeaturing has no fuzzy value. Use defeature(faces:).")
-    public func defeature(faces: [Shape], tolerance: Double) -> Shape? {
-        defeature(faces: faces)
-    }
 }
 
 extension Shape {

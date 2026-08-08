@@ -69,36 +69,14 @@ struct Issue562SurfaceKnotSplitDuplicateTests {
         #expect(both.uSplitCount > 2)
     }
 
-    /// The deprecated trio forwards. Absolute expectations against the knot table, since agreement
-    /// with the canonical call is no longer independent evidence.
-    @Test("The deprecated trio forwards to the canonical call")
-    @available(*, deprecated, message: "exercises the deprecated v0.105 spellings on purpose")
-    func deprecatedTrioForwards() throws {
-        let surface = try #require(bsplineSphere())
-        let uKnots = surface.bsplineUKnots()
-        let vKnots = surface.bsplineVKnots()
-
-        #expect(surface.bsplineKnotSplitsU(continuity: .c0) == 2)
-        #expect(surface.bsplineKnotSplitsV(continuity: .c0) == 2)
-
-        let (u, v) = surface.bsplineKnotSplitValues(continuity: .c3)
-        #expect(u == Array(1...Int32(uKnots.count)))
-        #expect(v == Array(1...Int32(vKnots.count)))
-    }
-
-    /// A plane is not a BSpline surface, so every spelling reports nothing rather than crashing on
-    /// the buffers it was about to size from a count it never got.
+    /// A plane is not a BSpline surface, so `knotSplitting()` reports nothing rather than crashing
+    /// on the buffers it was about to size from a count it never got.
     @Test("A non-BSpline surface reports no splits at all")
-    @available(*, deprecated, message: "exercises the deprecated v0.105 spellings on purpose")
     func nonBSplineSurface() throws {
         let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         let result = plane.knotSplitting()
         #expect(result.uSplitCount == 0)
         #expect(result.uSplitIndices.isEmpty)
         #expect(result.vSplitIndices.isEmpty)
-        #expect(plane.bsplineKnotSplitsU(continuity: .c1) == 0)
-        let (u, v) = plane.bsplineKnotSplitValues(continuity: .c1)
-        #expect(u.isEmpty)
-        #expect(v.isEmpty)
     }
 }
