@@ -129,6 +129,125 @@ def subject(sha, cwd=None):
     return (git(["log", "-1", "--format=%s", sha], cwd=cwd) or "").strip()
 
 
+PR_NUM = re.compile(r"Merge pull request #(\d+)\b|\(#(\d+)\)\s*$")
+
+# The heading a PR body uses for its entry, per okf/policies/changelog-on-merge.md.
+BODY_HEADING = re.compile(r"^##\s+CHANGELOG entry\s*$", re.M)
+
+
+def pr_number(subj):
+    """The PR a landing came from, from either merge shape. None if neither matches."""
+    m = PR_NUM.search(subj or "")
+    if not m:
+        return None
+    return m.group(1) or m.group(2)
+
+
+def gh_pr_body(number):
+    """The PR's body text, or None if it cannot be read.
+
+    Returns None rather than raising for every failure mode a caller might hit offline: no `gh` on
+    PATH, no auth, a deleted PR, a rate limit. The caller degrades to the commit-only answer, which
+    is what CI gets.
+    """
+    try:
+        out = subprocess.run(["gh", "pr", "view", str(number), "--json", "body", "--jq", ".body"],
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout if out.returncode == 0 and out.stdout.strip() else None
+
+
+def body_entry(body):
+    """The `## CHANGELOG entry` section of a PR body, stripped, or None if absent."""
+    if not body:
+        return None
+    m = BODY_HEADING.search(body)
+    if not m:
+        return None
+    rest = body[m.end():]
+    nxt = re.search(r"^##\s+\S", rest, re.M)
+    section = rest[:nxt.start()] if nxt else rest
+    section = "\n".join(l for l in section.split("\n") if not l.strip().startswith("```"))
+    return section.strip() or None
+
+
+# A section that says, in words, that no entry is needed. The template asks for this rather than an
+# empty section, so "None, <reason>" is a correct answer and must not read as a missing entry.
+DECLARED_NONE = re.compile(r"^\s*(?:no entry|none)\b", re.I | re.M)
+
+
+def declares_none(entry):
+    """Does this section say there is deliberately no entry?
+
+    Only the section's own prose counts. HTML comments are template boilerplate and several of them
+    contain the word "none" while the author's answer sits below, so they are stripped first.
+    """
+    if not entry:
+        return False
+    prose = re.sub(r"<!--.*?-->", "", entry, flags=re.S).strip()
+    return bool(prose) and bool(DECLARED_NONE.search(prose))
+
+
+def entry_is_present(entry, changelog_text):
+    """Is this PR-body entry actually in the CHANGELOG, however it got there?
+
+    Matches on the entry's own first substantive line, which is its `### ...` heading for the usual
+    shape and its first `- ` bullet otherwise. Comparing whole blocks would fail on any reflow, and
+    reflow during transcription is normal and harmless.
+    """
+    if not entry:
+        return False
+    prose = re.sub(r"<!--.*?-->", "", entry, flags=re.S)
+    for line in prose.split("\n"):
+        t = line.strip()
+        if t.startswith("###") or t.startswith("- "):
+            return t in changelog_text
+    # No heading and no bullet: the author wrote the entry as prose. Match its longest line, which
+    # is the most distinctive thing available and survives the surrounding text being reflowed.
+    candidates = [l.strip() for l in prose.split("\n") if len(l.strip()) > 40]
+    if not candidates:
+        return False
+    return max(candidates, key=len) in changelog_text
+
+
+def classify_untranscribed(untranscribed, changelog_text, lookup=gh_pr_body):
+    """Split commit-only flags into three real outcomes (#788).
+
+    The commit-level check asks whether the MERGE COMMIT wrote the entry. That is the right question
+    at merge time and unanswerable afterwards, so a correct entry transcribed later still reports as
+    missing forever. This asks the question a reader actually has: is the entry there?
+
+      late    the PR body has an entry and the CHANGELOG contains it. Transcribed, just not by the
+              merge. Nothing to do.
+      missing the PR body has an entry and the CHANGELOG does not. The real defect.
+      absent  the PR body has no entry section at all. A different failure: the PR skipped it.
+      declared_none
+              the section says, in words, that no entry is needed. A correct answer, not a defect.
+      unknown the body could not be read. Degrades to the commit-only answer.
+    """
+    out = {"late": [], "missing": [], "absent": [], "declared_none": [], "unknown": []}
+    for sha, subj in untranscribed:
+        num = pr_number(subj)
+        if num is None:
+            out["unknown"].append((sha, subj, "no PR number in the subject"))
+            continue
+        body = lookup(num)
+        if body is None:
+            out["unknown"].append((sha, subj, f"could not read PR #{num}"))
+            continue
+        entry = body_entry(body)
+        if entry is None:
+            out["absent"].append((sha, subj, num))
+        elif declares_none(entry):
+            out["declared_none"].append((sha, subj, num))
+        elif entry_is_present(entry, changelog_text):
+            out["late"].append((sha, subj, num))
+        else:
+            out["missing"].append((sha, subj, num))
+    return out
+
+
 def audit(since, cwd=None):
     """Return (untranscribed, opted_out_list, clean_count).
 
@@ -297,6 +416,66 @@ SELF_TEST_EXPECTED = {
 }
 
 
+def _verify_cases():
+    """#788's three outcomes, against a stub PR lookup so this runs offline.
+
+    Every branch of classify_untranscribed() is exercised, including the two that decide nothing
+    (no PR number in the subject, body unreadable), because those are the paths that silently
+    downgrade a real defect to "unverified" if they widen by accident.
+    """
+    bodies = {
+        "10": "## What\ntext\n\n## CHANGELOG entry\n\n### Widget rotation is no longer inverted (#10)\n\nBody.\n\n## SemVer impact\nNONE",
+        "11": "## What\ntext\n\n## CHANGELOG entry\n\n### Gizmo count was off by one (#11)\n\nBody.\n",
+        "12": "## What\nno entry section here at all\n\n## Checklist\n- [x] done",
+        "13": "## CHANGELOG entry\n\n```\n- A bullet-shaped entry (#13)\n```\n",
+        "14": "## CHANGELOG entry\n\n<!-- boilerplate mentioning none -->\n\nNo entry. Process change only.\n",
+        "15": "## CHANGELOG entry\n\nA prose entry with no heading and no bullet, long enough to be distinctive (#15).\n",
+        "16": "## CHANGELOG entry\n\nA prose entry that was never transcribed into the file at all (#16).\n",
+        # The template's own guidance starts a line with "None", which is exactly the shape that
+        # makes declares_none() fire on boilerplate instead of on the author's answer.
+        "17": ("## CHANGELOG entry\n\n<!--\nNone, <reason> if this warrants no entry.\n-->\n\n"
+               "### A real entry sitting under None-shaped boilerplate (#17)\n"),
+    }
+    changelog = ("# Changelog\n\n## Unreleased\n\n"
+                 "### Widget rotation is no longer inverted (#10)\n\nBody.\n\n"
+                 "- A bullet-shaped entry (#13)\n\n"
+                 "A prose entry with no heading and no bullet, long enough to be distinctive (#15).\n\n"
+                 "### A real entry sitting under None-shaped boilerplate (#17)\n")
+    rows = [
+        ("aaa1111", "Merge pull request #10 from x/late"),
+        ("bbb2222", "Merge pull request #11 from x/missing"),
+        ("ccc3333", "Merge pull request #12 from x/absent"),
+        ("ddd4444", "Merge pull request #13 from x/bullet"),
+        ("eee5555", "a subject with no PR number"),
+        ("fff6666", "Merge pull request #99 from x/unreadable"),
+        ("ggg7777", "Merge pull request #14 from x/declared-none"),
+        ("hhh8888", "Merge pull request #15 from x/prose-present"),
+        ("iii9999", "Merge pull request #16 from x/prose-missing"),
+        ("jjj0000", "Merge pull request #17 from x/none-shaped-boilerplate"),
+    ]
+    b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
+    late = {s for s, _, _ in b["late"]}
+    missing = {s for s, _, _ in b["missing"]}
+    absent = {s for s, _, _ in b["absent"]}
+    unknown = {s for s, _, _ in b["unknown"]}
+    dnone = {s for s, _, _ in b["declared_none"]}
+    return [
+        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000"}),
+        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999"}),
+        ("#788: a PR body with no entry section classifies as absent", absent == {"ccc3333"}),
+        ("#788: a subject with no PR number is unverified, not silently clean", "eee5555" in unknown),
+        ("#788: an unreadable body is unverified, not silently clean", "fff6666" in unknown),
+        ("#788: a bullet-shaped entry is matched, not only a ### heading", "ddd4444" in late),
+        ("#788: a section saying None by design is not reported as missing", dnone == {"ggg7777"}),
+        ("#788: a prose entry with no heading is found in the file", "hhh8888" in late),
+        ("#788: a prose entry absent from the file is still MISSING", "iii9999" in missing),
+        ("#788: None-shaped template boilerplate does not mask a real entry", "jjj0000" in late),
+        ("#788: no landing lands in two buckets at once",
+         not (late & missing) and not (late & absent) and not (missing & absent)
+         and not (dnone & (late | missing | absent))),
+    ]
+
+
 def self_test():
     import tempfile
 
@@ -333,7 +512,7 @@ def self_test():
         ("a later branch's entry is not credited to an earlier merge", "Merge h" in got_reported),
         ("the later merge that owns that entry is itself clean", "Merge i" not in got_reported),
         ("default_since() resolves without error", default_ok),
-    ]
+    ] + _verify_cases()
     ok = sum(1 for _, passed in cases if passed)
     for label, passed in cases:
         if not passed:
@@ -348,6 +527,9 @@ def main():
     ap.add_argument("--since", metavar="REF", help="audit landings after REF (default: where the policy landed)")
     ap.add_argument("--strict", action="store_true",
                     help="exit 1 on any untranscribed merge instead of only reporting")
+    ap.add_argument("--verify-transcribed", action="store_true",
+                    help="for each flagged merge, read its PR body and say whether the entry is "
+                         "actually in the CHANGELOG (needs `gh`; not run in CI)")
     ap.add_argument("--self-test", action="store_true",
                     help="prove the detector catches each shape, against real git fixtures")
     args = ap.parse_args()
@@ -376,14 +558,47 @@ def main():
         for sha, subj, reason in opts:
             print(f"  {sha[:8]}  {subj}\n            reason: {reason}")
 
-    if untranscribed:
+    if untranscribed and not args.verify_transcribed:
         print("\nNo CHANGELOG entry landed for these merges:")
         for sha, subj in untranscribed:
             print(f"  {sha[:8]}  {subj}")
         print("\nEither transcribe the entry from the PR body into docs/CHANGELOG.md, or record why "
               "there is none with a `No-Changelog: <reason>` trailer on the merge commit.")
         print("See okf/policies/changelog-on-merge.md.")
+        print("\nRe-run with --verify-transcribed to separate entries that were transcribed late "
+              "from ones that are genuinely absent (#788).")
         if args.strict:
+            return 1
+
+    if untranscribed and args.verify_transcribed:
+        with open(CHANGELOG, encoding="utf-8") as fh:
+            changelog_text = fh.read()
+        buckets = classify_untranscribed(untranscribed, changelog_text)
+        print("\nVerified against each PR body (#788):")
+        print(f"  transcribed late, nothing to do:  {len(buckets['late'])}")
+        print(f"  entry in the PR body, NOT in the CHANGELOG:  {len(buckets['missing'])}")
+        print(f"  PR body has no entry section at all:  {len(buckets['absent'])}")
+        print(f"  PR body says None, by design:  {len(buckets['declared_none'])}")
+        print(f"  could not verify:  {len(buckets['unknown'])}")
+
+        if buckets["missing"]:
+            print("\nMISSING. The PR body has an entry and the CHANGELOG does not:")
+            for sha, subj, num in buckets["missing"]:
+                print(f"  {sha[:8]}  #{num}  {subj}")
+        if buckets["absent"]:
+            print("\nNo entry section in the PR body. The PR skipped it, which the template asks "
+                  "for even when the answer is None:")
+            for sha, subj, num in buckets["absent"]:
+                print(f"  {sha[:8]}  #{num}  {subj}")
+        if buckets["unknown"]:
+            print("\nUnverified, falling back to the commit-only answer:")
+            for sha, subj, why in buckets["unknown"]:
+                print(f"  {sha[:8]}  {subj}\n            {why}")
+        if buckets["late"]:
+            print(f"\n{len(buckets['late'])} transcribed late. Correct in the file, not written by "
+                  "the merge, and not fixable retroactively: the commit-level check asks what the "
+                  "merge did.")
+        if args.strict and (buckets["missing"] or buckets["absent"]):
             return 1
 
     return 0
