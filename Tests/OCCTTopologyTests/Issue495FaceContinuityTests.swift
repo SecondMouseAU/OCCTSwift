@@ -102,14 +102,4 @@ struct Issue495FaceContinuityTests {
         let vertex = try #require(box.subShapes(ofType: .vertex).first)
         #expect(Shape.continuityClassOfFaces(edge: triple.0, face1: vertex, face2: triple.2) == nil)
     }
-
-    @Test("the deprecated Int spelling returns the same ordinal")
-    @available(*, deprecated, message: "exercises the deprecated Int-returning spelling on purpose")
-    func deprecatedIntSpellingAgrees() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let (edge, f1, f2) = try #require(sharedEdgeTriples(in: box).first)
-        let raw = Shape.continuityOfFaces(edge: edge, face1: f1, face2: f2)
-        let typed = Shape.continuityClassOfFaces(edge: edge, face1: f1, face2: f2)
-        #expect(Int32(raw) == typed?.rawValue)
-    }
 }

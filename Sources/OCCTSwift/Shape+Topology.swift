@@ -2814,35 +2814,6 @@ extension Shape {
             OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))
     }
 
-    /// The continuity across an edge, as a raw `GeomAbs_Shape` ordinal (-1 on failure).
-    ///
-    /// This spelling's doc comment claimed `5=CN` for years. It is wrong twice over: CN is
-    /// ordinal 6, and 5 (C3) is a value `BRepLib::ContinuityOfFaces` cannot return at all. The
-    /// function itself was always right — it casts the enum straight through — so a caller who
-    /// matched `5` for "smooth" never matched anything, and one who received `6` had no
-    /// documented meaning for it. ``continuityClassOfFaces(edge:face1:face2:tolerance:)`` returns
-    /// the same measurement as a ``ContinuityClass``, where the ordinals cannot be misread. #495.
-    @available(*, deprecated, renamed: "continuityClassOfFaces(edge:face1:face2:tolerance:)")
-    public static func continuityOfFaces(edge: Shape, face1: Shape, face2: Shape,
-                                          tolerance: Double = 1e-6) -> Int {
-        Int(OCCTBRepLibContinuityOfFaces(edge.handle, face1.handle, face2.handle, tolerance))
-    }
-
-    /// Build 3D curves for all edges in a shape.
-    ///
-    /// This was a second wrapper over a second C entry point whose body was byte-identical to the
-    /// one behind ``buildCurves3d(tolerance:)`` — the same `BRepLib::BuildCurves3d` overload with
-    /// the same two arguments, re-wrapped eight releases later under a new name. Because nothing
-    /// connected them, the two defaults drifted 100x apart: on a pcurve-only edge on a cylinder,
-    /// `buildCurves3d()` and `buildCurves3dAll()` produced curves 2.6e-6 apart and edges whose
-    /// tolerance differed by the same 100x. Both names now run the same call with the same default.
-    /// #498.
-    @available(*, deprecated, renamed: "buildCurves3d(tolerance:)")
-    @discardableResult
-    public func buildCurves3dAll(tolerance: Double = 1e-5) -> Bool {
-        buildCurves3d(tolerance: tolerance)
-    }
-
     /// Same-parameter all edges in a shape.
     public func sameParameterAll(tolerance: Double = 1e-5, forced: Bool = false) {
         OCCTBRepLibSameParameterAll(handle, tolerance, forced)
@@ -2884,58 +2855,4 @@ extension Shape {
         Int(OCCTShapeOrientationValue(handle))
     }
 
-    /// Deprecated: this is ``edgeCount`` under a second name, and used to return a different,
-    /// wrong number.
-    ///
-    /// `nbEdges` counted bare `TopExp_Explorer` occurrences: 24 on a 12-edge box, since every
-    /// edge is walked once per adjacent face. This project's own reference docs always documented
-    /// the *distinct* count instead (`box.nbEdges // 12`), so the contract and the implementation
-    /// disagreed from the day this property shipped. Forwards to ``edgeCount`` now, which already
-    /// carried the value these docs described (#651).
-    ///
-    /// ```swift
-    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.nbEdges == box.edgeCount   // true, 12 either way
-    /// ```
-    @available(*, deprecated, renamed: "edgeCount",
-               message: "nbEdges counted TopExp_Explorer occurrences (24 on a 12-edge box) while the reference docs always documented the distinct count (12). Forwards to edgeCount, which returns the documented value.")
-    public var nbEdges: Int {
-        edgeCount
-    }
-
-    /// Deprecated: this is ``faceCount`` under a second name, and used to return a different,
-    /// wrong number on any shape that shares a face.
-    ///
-    /// `nbFaces` counted bare `TopExp_Explorer` occurrences. A plain box has no shared face, so
-    /// `nbFaces` and `faceCount` agreed there (6 either way) and the divergence stayed hidden;
-    /// on a shape with a shared face (a two-solid split compound) they read 12 against 11.
-    /// Forwards to ``faceCount`` now, matching this project's reference docs (#651).
-    ///
-    /// ```swift
-    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.nbFaces == box.faceCount   // true, 6 either way
-    /// ```
-    @available(*, deprecated, renamed: "faceCount",
-               message: "nbFaces counted TopExp_Explorer occurrences, which agrees with faceCount on a plain box (6) but not on a shape that shares a face (12 against 11 on a two-solid split compound). Forwards to faceCount.")
-    public var nbFaces: Int {
-        faceCount
-    }
-
-    /// Deprecated: this is ``vertexCount`` under a second name, and used to return a different,
-    /// wrong number.
-    ///
-    /// `nbVertices` counted bare `TopExp_Explorer` occurrences: 48 on an 8-vertex box, since every
-    /// vertex is walked once per incident edge. This project's own reference docs always
-    /// documented the *distinct* count instead (`box.nbVertices // 8`). Forwards to
-    /// ``vertexCount`` now, which already carried the value these docs described (#651).
-    ///
-    /// ```swift
-    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
-    /// box.nbVertices == box.vertexCount   // true, 8 either way
-    /// ```
-    @available(*, deprecated, renamed: "vertexCount",
-               message: "nbVertices counted TopExp_Explorer occurrences (48 on an 8-vertex box) while the reference docs always documented the distinct count (8). Forwards to vertexCount, which returns the documented value.")
-    public var nbVertices: Int {
-        vertexCount
-    }
 }

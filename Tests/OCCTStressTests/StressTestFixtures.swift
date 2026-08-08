@@ -49,7 +49,7 @@ func drilledPlate() -> Shape {
 func standardCompound() -> Shape {
     let box = standardBox()
     let cyl = standardCylinder()
-    return box.union(with: cyl) ?? box
+    return box.union( cyl) ?? box
 }
 
 // MARK: - Wire Fixtures

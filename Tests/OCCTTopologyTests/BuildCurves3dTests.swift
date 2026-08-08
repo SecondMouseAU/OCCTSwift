@@ -61,35 +61,6 @@ struct BuildCurves3dTests {
         }
     }
 
-    /// `buildCurves3dAll` was a second wrapper over the identical C entry point, and the two
-    /// defaults had drifted 100x apart. It now forwards, so omitting the argument on either name
-    /// must produce the same edge.
-    @Test("buildCurves3dAll agrees with buildCurves3d when neither is given a tolerance")
-    @available(*, deprecated, message: "exercises the deprecated buildCurves3dAll on purpose")
-    func deprecatedForwarderAgrees() {
-        guard let viaBuildCurves3d = helicalPCurveOnlyEdge(),
-              let viaBuildCurves3dAll = helicalPCurveOnlyEdge()
-        else {
-            Issue.record("could not build a pcurve-only edge on a cylinder")
-            return
-        }
-        #expect(viaBuildCurves3d.buildCurves3d())
-        #expect(viaBuildCurves3dAll.buildCurves3dAll())
-
-        #expect(viaBuildCurves3d.edgeTolerance == viaBuildCurves3dAll.edgeTolerance)
-
-        if let a = viaBuildCurves3d.extractEdgeCurve3D(), let b = viaBuildCurves3dAll.extractEdgeCurve3D() {
-            #expect(a.first == b.first)
-            #expect(a.last == b.last)
-            for i in 0...8 {
-                let t = a.first + (a.last - a.first) * Double(i) / 8.0
-                #expect(simd_distance(a.curve.point(at: t), b.curve.point(at: t)) < 1e-12)
-            }
-        } else {
-            Issue.record("both calls should have produced a 3D curve")
-        }
-    }
-
     /// A tighter tolerance buys a closer curve, which is the whole reason the parameter exists.
     /// Measured in the repro: 1e-5 deviates by 2.6e-6 from the exact helix, 1e-7 by 9.0e-8.
     @Test("A tighter tolerance produces a curve closer to the exact helix")

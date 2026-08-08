@@ -1824,7 +1824,7 @@ struct RevolutionFormTests {
         // Create two cylinders fused together as base shape
         let c1 = Shape.cylinder(radius: 2, height: 5)!
         let c2 = Shape.cylinder(at: SIMD2(0, 0), bottomZ: 5, radius: 1, height: 3)!
-        guard let s = c1.union(with: c2) else { return }
+        guard let s = c1.union( c2) else { return }
         // Create a wire profile (a line segment) for the rib
         guard let wire = Wire.line(from: SIMD3(-2, 0, 5), to: SIMD3(-1, 0, 8)) else { return }
         let result = s.addingRevolutionForm(
@@ -1877,19 +1877,6 @@ struct PipeShellTransitionTests {
         let result = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .roundCorner, solid: true
-        )
-        #expect(result != nil)
-    }
-
-    @Test("Pipe transition with corrected Frenet mode")
-    @available(*, deprecated, message: "Exercises the deprecated `pipeShellWithTransition` on purpose.")
-    func pipeCorrectedFrenetTransition() {
-        // Simple straight spine — Frenet and CorrectedFrenet should behave the same
-        guard let spine = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10)) else { return }
-        let profile = Wire.rectangle(width: 2, height: 3)!
-        let result = Shape.pipeShellWithTransition(
-            spine: spine, profile: profile,
-            mode: .correctedFrenet, transition: .transformed, solid: true
         )
         #expect(result != nil)
     }
@@ -2178,7 +2165,7 @@ struct CurveOnSurfaceCheckTests {
     func fusedConsistency() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let sphere = Shape.sphere(radius: 7)!
-        let fused = box.union(with: sphere)
+        let fused = box.union( sphere)
         #expect(fused != nil)
         if let fused {
             let check = fused.curveOnSurfaceCheck
@@ -3934,57 +3921,16 @@ struct SurfaceEvalTests {
     }
 }
 
-@Suite("GridEval Surface v0.111")
-struct GridEvalSurfaceTests {
-    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD0` on purpose.")
-    @Test func gridEvalD0Sphere() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let faces = sphere.subShapes(ofType: .face)
-            if faces.count > 0 {
-                if let surf = faces[0].extractFaceSurface() {
-                    let uParams = [0.0, Double.pi / 4, Double.pi / 2]
-                    let vParams = [0.0, Double.pi / 4]
-                    let pts = surf.gridEvalD0(uParams: uParams, vParams: vParams)
-                    #expect(pts.count == 6) // 3 * 2
-                    if pts.count > 0 {
-                        let dist = sqrt(pts[0].x * pts[0].x + pts[0].y * pts[0].y + pts[0].z * pts[0].z)
-                        #expect(abs(dist - 5.0) < 1.0)
-                    }
-                }
-            }
-        }
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated `gridEvalD1` on purpose.")
-    @Test func gridEvalD1Sphere() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let faces = sphere.subShapes(ofType: .face)
-            if faces.count > 0 {
-                if let surf = faces[0].extractFaceSurface() {
-                    let uParams = [0.0, Double.pi / 4]
-                    let vParams = [Double.pi / 4]
-                    let results = surf.gridEvalD1(uParams: uParams, vParams: vParams)
-                    #expect(results.count == 2) // 2 * 1
-                    if results.count > 0 {
-                        // D1U should be non-zero
-                        let d1uLen = sqrt(results[0].d1u.x * results[0].d1u.x + results[0].d1u.y * results[0].d1u.y + results[0].d1u.z * results[0].d1u.z)
-                        #expect(d1uLen > 0.01)
-                    }
-                }
-            }
-        }
-    }
-}
 
 /// #486: the batch grid-evaluation family had three generations per type and the two Surface
 /// spellings wrote opposite UV layouts, `OCCTSurfaceEvaluateGrid` v-major and
 /// `OCCTGridEvalSurfaceD0` u-major, both header comments calling their own layout "row-major".
 ///
-/// The pre-existing tests could not have caught it: `GridEvalSurfaceTests` above uses asymmetric
-/// grids but only asserts counts and rough magnitudes, never a specific `(u, v)` against an
-/// independent evaluator, the check `evalGridAsymmetricMatchesDirectEvaluation` had done for
-/// `evaluateGrid` since #404. These pin the layout on every surviving surface entry point and on
-/// the deprecated flat-array spellings' documented index formula.
+/// The pre-existing tests could not have caught it: the since-removed `gridEvalD0`/`gridEvalD1`
+/// coverage used asymmetric grids but only asserted counts and rough magnitudes, never a specific
+/// `(u, v)` against an independent evaluator, the check `evalGridAsymmetricMatchesDirectEvaluation`
+/// had done for `evaluateGrid` since #404. These pin the layout on every surviving surface entry
+/// point.
 @Suite("Issue 486: surface grid layout")
 struct Issue486SurfaceGridTests {
 
@@ -4048,31 +3994,6 @@ struct Issue486SurfaceGridTests {
         for iu in 0..<uCount {
             for iv in 0..<vCount {
                 #expect(simd_length(mesh.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-6)
-            }
-        }
-    }
-
-    /// The deprecated spellings return a flat array, and their doc comments now name the index
-    /// formula (`result[u * vParams.count + v]`) that `OCCTGridEvalSurfaceD0` never stated.
-    @available(*, deprecated, message: "Exercises the deprecated flat-array spellings on purpose.")
-    @Test("deprecated gridEvalD0/gridEvalD1 are U-major, matching their documented index formula")
-    func deprecatedFlatSpellingsAreUMajor() {
-        guard let sphere = Surface.sphere(center: .zero, radius: 5) else { return }
-        let u = Self.uParams, v = Self.vParams
-        let flat0 = sphere.gridEvalD0(uParams: u, vParams: v)
-        let flat1 = sphere.gridEvalD1(uParams: u, vParams: v)
-        let grid = sphere.evaluateGrid(uParameters: u, vParameters: v)
-        #expect(flat0.count == u.count * v.count)
-        #expect(flat1.count == u.count * v.count)
-        guard flat0.count == u.count * v.count, flat1.count == u.count * v.count, !grid.isEmpty else { return }
-
-        for iu in 0..<u.count {
-            for iv in 0..<v.count {
-                let flatIdx = iu * v.count + iv
-                let expected = sphere.point(atU: u[iu], v: v[iv])
-                #expect(simd_length(flat0[flatIdx] - expected) < 1e-6)
-                #expect(simd_length(flat1[flatIdx].point - expected) < 1e-6)
-                #expect(simd_length(flat0[flatIdx] - grid.at(u: iu, v: iv)) < 1e-9)
             }
         }
     }
@@ -5820,7 +5741,7 @@ struct ShapeRevolutionAxesTests {
     func coaxialDedup() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
               let torus = Shape.torus(majorRadius: 10, minorRadius: 2),
-              let combined = cyl.union(with: torus) else { Issue.record("union nil"); return }
+              let combined = cyl.union( torus) else { Issue.record("union nil"); return }
         let axes = combined.revolutionAxes()
         // Both share the Z axis at the origin → dedup to 1.
         #expect(axes.count == 1)

@@ -111,33 +111,6 @@ fileprivate func clusterDRecordBSplineRestrictionConvergence() {
                [12, 20, 20, 26], rows)
 }
 
-/// #438 deprecated `Shape.dividedByContinuity(criterion:tolerance:)` in favour of
-/// `Shape.divided(at:tolerance:)`, which it now forwards to. The census still measures it
-/// deliberately: pinning that the forward actually passes `criterion`/`tolerance` through
-/// unchanged, which a future edit to either method could still break even though both now share
-/// one implementation.
-///
-/// Grouped into its own function for the same reason as `clusterARecordDeprecatedCounterRows`
-/// (`ClusterA.swift`): a deprecated context does not warn about the deprecated things it calls, so
-/// the cost becomes one warning at this single definition instead of one per call site.
-@available(*, deprecated, message: "Measures dividedByContinuity's forwarding contract deliberately (#438).")
-fileprivate func clusterDRecordDivideForwarding(fixture: () -> Shape?) {
-    var rows: [[String]] = []
-    for level in Shape.ContinuityLevel.allCases {
-        let viaDivided = fixture()?.divided(at: level, tolerance: 1e-4)
-        let viaDeprecated = fixture()?.dividedByContinuity(criterion: level, tolerance: 1e-4)
-        rows.append([
-            "\(level)",
-            viaDivided.map { "\($0.faceCount) faces" } ?? "nil",
-            viaDeprecated.map { "\($0.faceCount) faces" } ?? "nil",
-            (viaDivided?.faceCount == viaDeprecated?.faceCount) ? "forwards correctly" : "DIVERGED",
-        ])
-    }
-    printTable("2g. dividedByContinuity(criterion:tolerance:) (deprecated) forwards to divided(at:tolerance:)",
-               ["level", "divided(at:)", "dividedByContinuity (deprecated)", "verdict"],
-               [8, 22, 34, 20], rows)
-}
-
 /// `occtGeomAbsFromAnalysisOrder` saturates at `GeomAbs_C2` (raw 4): `.c3` and `.cN`, both real
 /// `ContinuityClass` cases, decode to the same effective order as `.c2`. Measured via the typed
 /// `continuityWith(order:)` overload across every `ContinuityClass` case, not just the five the
@@ -384,12 +357,8 @@ enum ClusterD {
                        ["level", "divided(at:) result"], [8, 30], divideRows)
             totalMeasured += 1
 
-            // 2g. dividedByContinuity(criterion:tolerance:) (deprecated by #438) forwards to
-            // divided(at:tolerance:) -- pins that the forward actually passes criterion/tolerance
-            // through unchanged, which a future edit to either method could still break even
-            // though both now share one implementation.
-            clusterDRecordDivideForwarding(fixture: kinkedSurfaceShape)
-            totalMeasured += 1
+            // 2g. dividedByContinuity(criterion:tolerance:), the #438 deprecation this row used to
+            // measure the forwarding of, was removed at v2.0.0 (#784).
         }
 
         // MARK: 3. SurfaceContinuity family: filling (decodes through occtGeomAbsFromSurfaceContinuity)

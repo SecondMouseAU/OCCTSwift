@@ -535,10 +535,6 @@ public final class Shape: @unchecked Sendable {
         return Shape(handle: handle)
     }
 
-    @available(*, deprecated, renamed: "union(_:)",
-               message: "Use union(_:) to match subtracting(_:) and Set.union(_:)")
-    public func union(with other: Shape) -> Shape? { union(other) }
-
     /// Subtract another shape from this one.
     ///
     /// - Parameters:
@@ -577,10 +573,6 @@ public final class Shape: @unchecked Sendable {
         guard let handle = OCCTShapeIntersectEx(self.handle, other.handle, fuzzyValue, glue.rawValue, timeout) else { return nil }
         return Shape(handle: handle)
     }
-
-    @available(*, deprecated, renamed: "intersection(_:)",
-               message: "Use intersection(_:) to match subtracting(_:) and Set.intersection(_:)")
-    public func intersection(with other: Shape) -> Shape? { intersection(other) }
 
     // MARK: - Modifications
 

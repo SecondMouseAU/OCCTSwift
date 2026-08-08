@@ -1547,17 +1547,8 @@ Returns the intersection geometry (edges/wires) where the two shapes meet. Usefu
 
 ---
 
-### `section(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "section(_:)",
-           message: "Use section(_:) to match subtracting(_:) and Set convention")
-public func section(with other: Shape) -> Shape?
-```
-
-Deprecated alias for `section(_:)`. Use `section(_:)` instead.
-
----
+`section(with:)`, the deprecated `with:`-labelled alias, was removed at v2.0.0 (#784); use
+`section(_:)`.
 
 ## Boolean Pre-Validation
 

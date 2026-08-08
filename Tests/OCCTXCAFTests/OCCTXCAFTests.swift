@@ -3825,29 +3825,6 @@ struct TDFChildIDIteratorTests {
     }
 }
 
-/// `PathParser` stopped wrapping `TDocStd_PathParser` in #499 and now forwards to `OSDPath`.
-/// These pin the forwarding; the shared contract itself lives in `PathParsingContractTests`
-/// (`OCCTFoundationTests`).
-@Suite("TDocStd PathParser Tests")
-struct TDocStdPathParserTests {
-
-    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
-    @Test func parsePath() {
-        #expect(PathParser.trek("/home/user/docs/model.step") == "/home/user/docs/")
-    }
-
-    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
-    @Test func parseName() {
-        #expect(PathParser.name("model.step") == "model")
-    }
-
-    /// The forwarded extension keeps its leading dot; this used to assert `"step"`.
-    @available(*, deprecated, message: "Exercises the deprecated PathParser forwarders on purpose.")
-    @Test func parseExtension() {
-        #expect(PathParser.fileExtension("model.step") == ".step")
-    }
-}
-
 @Suite("TFunction DriverTable Tests")
 struct TFunctionDriverTableTests {
 

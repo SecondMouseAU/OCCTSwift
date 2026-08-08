@@ -248,8 +248,9 @@ Uses `GeomProjLib::ProjectOnPlane`. The result is a 3D curve lying in the target
 
 Evaluate a curve at many parameter values in a single bridge call, using OCCT's batch
 `GeomGridEval_Curve` evaluator rather than one `D0`/`D1` call per parameter. These two are the
-canonical batch spellings; `evalBatchD0`/`D1` and `gridEvalD0`/`D1` are deprecated aliases that
-forward here ([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
+canonical batch spellings; `evalBatchD0`/`D1` and `gridEvalD0`/`D1` forwarded here as deprecated
+aliases ([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)) and were removed at v2.0.0
+([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)).
 
 ---
 

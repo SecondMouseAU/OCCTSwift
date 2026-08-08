@@ -12,11 +12,11 @@ import Testing
 //
 // Fixed by widening `divided(at:)` to `divided(at:tolerance:)`, taking `ContinuityLevel` (the
 // strict superset only `dividedByContinuity` used to reach) and a `tolerance` parameter, and
-// deprecating `dividedByContinuity(criterion:tolerance:)` as a forward to it. These tests pin two
-// independent things: that the unified bridge call still varies with continuity (the actual fix,
-// against numbers measured from the corrected implementation, not merely "the two agree" — which
-// would be true by construction once one forwards to the other and would prove nothing about
-// whether the fix itself is correct), and that the deprecated spelling's forward is intact.
+// deprecating `dividedByContinuity(criterion:tolerance:)` as a forward to it (removed at v2.0.0,
+// #784). This pins the actual fix: the unified bridge call still varies with continuity, against
+// numbers measured from the corrected implementation, not merely "the two agree" — which would be
+// true by construction once one forwarded to the other and would prove nothing about whether the
+// fix itself is correct.
 @Suite("Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class")
 struct Issue438DivideContinuityUnificationTests {
 
@@ -74,24 +74,5 @@ struct Issue438DivideContinuityUnificationTests {
         let atC1 = try #require(kinkedSurfaceFace()?.divided(at: .c1, tolerance: 1e-4))
         let atC3 = try #require(kinkedSurfaceFace()?.divided(at: .c3, tolerance: 1e-4))
         #expect(atC1.faceCount != atC3.faceCount)
-    }
-
-    // MARK: - The deprecated spelling forwards correctly
-
-    @Test("dividedByContinuity(criterion:tolerance:) (deprecated) matches divided(at:tolerance:) at every level",
-          arguments: Shape.ContinuityLevel.allCases)
-    @available(*, deprecated, message: "exercises the deprecated dividedByContinuity on purpose")
-    func dividedByContinuityForwardsToDivided(level: Shape.ContinuityLevel) throws {
-        let viaDivided = kinkedSurfaceFace()?.divided(at: level, tolerance: 1e-4)
-        let viaDeprecated = kinkedSurfaceFace()?.dividedByContinuity(criterion: level, tolerance: 1e-4)
-        #expect(viaDivided?.faceCount == viaDeprecated?.faceCount)
-    }
-
-    @Test("dividedByContinuity's default tolerance still forwards (no default drift)")
-    @available(*, deprecated, message: "exercises the deprecated dividedByContinuity on purpose")
-    func dividedByContinuityDefaultToleranceForwards() throws {
-        let viaDivided = kinkedSurfaceFace()?.divided(at: .c3, tolerance: 1e-4)
-        let viaDeprecatedDefault = kinkedSurfaceFace()?.dividedByContinuity(criterion: .c3)
-        #expect(viaDivided?.faceCount == viaDeprecatedDefault?.faceCount)
     }
 }

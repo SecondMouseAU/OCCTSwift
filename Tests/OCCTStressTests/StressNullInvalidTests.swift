@@ -50,7 +50,7 @@ struct StressNilPropagationTests {
 
     @Test func unionWithSelf() {
         let box = standardBox()
-        let result = box.union(with: box)
+        let result = box.union( box)
         if let r = result {
             #expect(r.isValid)
             if let vol = r.volume, let origVol = box.volume {
@@ -72,7 +72,7 @@ struct StressNilPropagationTests {
     @Test func intersectDisjoint() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
-        let result = b1.intersection(with: b2)
+        let result = b1.intersection( b2)
         // Disjoint shapes — should produce empty or nil
         if let r = result {
             if let vol = r.volume { #expect(vol < 0.001) }
@@ -264,7 +264,7 @@ struct StressInvalidParameterTests {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(width: 10, height: 10, depth: 10)!
         // Same position — union should produce roughly same volume
-        let result = b1.union(with: b2)
+        let result = b1.union( b2)
         if let r = result { #expect(r.isValid) }
     }
 
@@ -297,7 +297,7 @@ struct StressPostOperationStateTests {
     @Test func shapeReusedAfterBoolean() {
         let box = standardBox()
         let sphere = standardSphere()
-        let r1 = box.union(with: sphere)
+        let r1 = box.union( sphere)
         // Original shapes should still be usable
         let v1 = box.volume
         let v2 = sphere.volume
@@ -359,7 +359,7 @@ struct StressUnusualInputTests {
         guard let w1 = Wire.rectangle(width: 10, height: 10),
               let w2 = Wire.rectangle(width: 5, height: 5),
               let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2) else { return }
-        let result = s1.union(with: s2)
+        let result = s1.union( s2)
         // May fail for non-solid inputs — should not crash
         if let r = result { _ = r.isValid }
     }

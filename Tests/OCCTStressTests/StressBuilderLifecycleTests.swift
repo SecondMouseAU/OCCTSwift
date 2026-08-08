@@ -342,7 +342,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
     @Test func normalCycle() {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
-        guard let fused = b1.union(with: b2) else { return }
+        guard let fused = b1.union( b2) else { return }
         let unifier = UnifySameDomainBuilder(shape: fused)
         unifier.build()
         if let result = unifier.shape {

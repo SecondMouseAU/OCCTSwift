@@ -142,24 +142,4 @@ struct Issue495CurveAnalysisOrderTests {
             #expect(a.measured == [.c0, .c1, .c2])
         }
     }
-
-    @Test("the deprecated Int spelling decodes to the same analysis")
-    @available(*, deprecated, message: "exercises the deprecated Int order on purpose")
-    func deprecatedIntOverloadAgrees() throws {
-        let pair = try #require(sharpCorner())
-        let typed = try #require(analyse(pair, .c1))
-        let raw = try #require(pair.0.continuityWith(pair.1, u1: pair.0.domain.upperBound,
-                                                     u2: pair.1.domain.lowerBound, order: 2))
-        #expect(raw.order == typed.order)
-        #expect(raw.measured == typed.measured)
-        #expect(raw.flags == typed.flags)
-
-        // Out-of-range integers saturate in the bridge, and `order` says where they landed.
-        let clamped = try #require(pair.0.continuityWith(pair.1, u1: pair.0.domain.upperBound,
-                                                         u2: pair.1.domain.lowerBound, order: 99))
-        #expect(clamped.order == .c2)
-        let negative = try #require(pair.0.continuityWith(pair.1, u1: pair.0.domain.upperBound,
-                                                          u2: pair.1.domain.lowerBound, order: -3))
-        #expect(negative.order == .c0)
-    }
 }

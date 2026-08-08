@@ -49,7 +49,7 @@ struct StressBooleanChainTests {
         guard var shape = Shape.box(width: 5, height: 5, depth: 5) else { return }
         for i in 0..<50 {
             if let box = Shape.box(origin: SIMD3(Double(i) * 5, 0, 0), width: 5, height: 5, depth: 5),
-               let result = shape.union(with: box) {
+               let result = shape.union( box) {
                 shape = result
             }
         }
@@ -63,7 +63,7 @@ struct StressBooleanChainTests {
         for i in 0..<50 {
             let size = 100.0 - Double(i) * 0.5
             if let box = Shape.box(width: size, height: size, depth: size),
-               let result = shape.intersection(with: box) {
+               let result = shape.intersection( box) {
                 shape = result
             }
         }
@@ -76,9 +76,9 @@ struct StressBooleanChainTests {
             let small = Shape.box(origin: SIMD3(Double(i % 5) * 8, Double(i / 5) * 8, 0),
                                   width: 6, height: 6, depth: 6)!
             switch i % 3 {
-            case 0: if let r = shape.union(with: small) { shape = r }
+            case 0: if let r = shape.union( small) { shape = r }
             case 1: if let r = shape.subtracting(small) { shape = r }
-            default: if let r = shape.intersection(with: small) { shape = r }
+            default: if let r = shape.intersection( small) { shape = r }
             }
         }
         #expect(shape.isValid)

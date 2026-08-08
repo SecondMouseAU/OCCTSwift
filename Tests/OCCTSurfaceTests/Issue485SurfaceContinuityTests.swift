@@ -139,21 +139,6 @@ struct Issue485SurfaceContinuityTests {
 
     // MARK: - Source compatibility
 
-    @available(*, deprecated, message: "exercises the deprecated spelling on purpose")
-    @Test("Surface.Continuity still resolves, to the same raw values")
-    func surfaceContinuityAliasStillResolves() {
-        // PR#436 pinned these ordinals on the nested enum. Folding it into the shared
-        // ContinuityClass is a rename, so every one of them must still hold.
-        #expect(Surface.Continuity.c0.rawValue == 0)
-        #expect(Surface.Continuity.g1.rawValue == 1)
-        #expect(Surface.Continuity.c1.rawValue == 2)
-        #expect(Surface.Continuity.g2.rawValue == 3)
-        #expect(Surface.Continuity.c2.rawValue == 4)
-        #expect(Surface.Continuity.c3.rawValue == 5)
-        #expect(Surface.Continuity.cN.rawValue == 6)
-        #expect(Surface.Continuity.self == ContinuityClass.self)
-    }
-
     @Test("The result vocabulary stays distinct from the two request vocabularies")
     func resultVocabularyStaysDistinct() {
         // #398's load-bearing property: a measured class must never silently substitute for a

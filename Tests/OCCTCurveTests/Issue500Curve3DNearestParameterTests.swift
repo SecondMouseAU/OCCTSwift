@@ -59,30 +59,6 @@ struct Issue500Curve3DNearestParameterTests {
         #expect(circle.nearestParameter(to: SIMD3(3, 4, 0)) != nil)   // on the circle: fine
     }
 
-    /// Both deprecated spellings route through the one implementation, so they agree with each
-    /// other and with `nearestParameter(to:)`. Since #615 there is no reachable `.nan` case left on
-    /// a real curve: `nil` now means "no curve", not "no extremum". The spellings stay deprecated
-    /// for the reason they always were — no `Double` can carry a failure signal, because every value
-    /// is a legitimate parameter on some curve.
-    @Test("The two deprecated spellings agree with each other and with nearestParameter")
-    @available(*, deprecated, message: "exercises the deprecated spellings on purpose")
-    func deprecatedSpellingsAgree() throws {
-        let curve = try #require(Self.trimmedSegment())
-
-        for p in [SIMD3<Double>(5, 2, 0), SIMD3(100, 0, 0), SIMD3(0, 0, 0)] {
-            let nearest = try #require(curve.nearestParameter(to: p), "\(p)")
-            #expect(curve.parameterAtPoint(p) == nearest, "\(p)")
-            #expect(curve.closestParameter(to: p) == nearest, "\(p)")
-        }
-
-        // Before #500: parameterAtPoint returned 3 (firstParameter) and closestParameter returned
-        // 0 — a value not even inside this curve's [3, 8] domain — for the two points above that
-        // have no perpendicular foot. Both now report the end those points fell off.
-        #expect(curve.parameterAtPoint(SIMD3(5, 2, 0)) == 5)
-        #expect(curve.parameterAtPoint(SIMD3(100, 0, 0)) == 8)
-        #expect(curve.closestParameter(to: SIMD3(0, 0, 0)) == 3)
-    }
-
     /// `projectPoint(_:precision:)` reaches the answer by a different route — `ShapeAnalysis_Curve`
     /// is in its candidate set and not in this one — but since #615 it is the same answer. The two
     /// used to differ on both questions a projection asks: #539 converted `projectPoint` and left

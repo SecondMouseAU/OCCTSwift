@@ -51,23 +51,4 @@ struct Issue480Curve2DKnotSplitContinuityTests {
         #expect(defaulted.map { curve.bsplineKnot(index: $0) } == [0, 2, 5])
         #expect(curve.splitIndicesAtDiscontinuities(continuity: .c0) == [1, 6])
     }
-
-    /// #562 forwarded the v0.105 spellings onto `splitIndicesAtDiscontinuities`, which is exactly
-    /// what makes "the two agree" stop being evidence: one implementation cannot disagree with
-    /// itself. The expectations here are the literal knot indices of the fixture instead, so a
-    /// defect that moved both spellings together would still be caught.
-    @Test("The deprecated v0.105 count/values spellings still report the fixture's own knots")
-    @available(*, deprecated, message: "exercises the deprecated v0.105 spellings on purpose")
-    func alternateSpellingsAgree() throws {
-        let curve = try #require(bsplineCurve(degree: 3, interiorKnots: 4))
-        // Knot table is 0...5, so 1-based indices run 1...6, and a cubic with simple interior
-        // knots is already C2 there: only .c3 reaches past the two bracketing knots.
-        for continuity: ParametricContinuity in [.c0, .c1, .c2] {
-            #expect(curve.bsplineKnotSplits(continuity: continuity) == 2, "count at \(continuity)")
-            #expect(curve.bsplineKnotSplitValues(continuity: continuity) == [1, 6],
-                    "values at \(continuity)")
-        }
-        #expect(curve.bsplineKnotSplits(continuity: .c3) == 6)
-        #expect(curve.bsplineKnotSplitValues(continuity: .c3) == [1, 2, 3, 4, 5, 6])
-    }
 }

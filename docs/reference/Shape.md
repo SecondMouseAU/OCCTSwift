@@ -782,18 +782,7 @@ Also available as the `+` operator.
   // Glue: stacked blocks sharing a face
   let stacked = lower.union(upper, glue: .shift)
   ```
-- **Note:** The deprecated `union(with:)` overload is available for compatibility; prefer `union(_:)`.
-
----
-
-### `union(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "union(_:)", ...)
-public func union(with other: Shape) -> Shape? { union(other) }
-```
-
-Renamed to `union(_:)`. Use `union(_:fuzzyValue:glue:timeout:)` instead.
+- **Note:** `union(with:)`, the deprecated `with:`-labelled overload, was removed at v2.0.0 (#784); use `union(_:)`.
 
 ---
 
@@ -847,18 +836,7 @@ Also available as the `&` operator.
   ```swift
   let common = box.intersection(cyl)  // or: box & cyl
   ```
-- **Note:** The deprecated `intersection(with:)` overload is available for compatibility; prefer `intersection(_:)`.
-
----
-
-### `intersection(with:)` *(deprecated)*
-
-```swift
-@available(*, deprecated, renamed: "intersection(_:)", ...)
-public func intersection(with other: Shape) -> Shape? { intersection(other) }
-```
-
-Renamed to `intersection(_:)`. Use `intersection(_:fuzzyValue:glue:timeout:)` instead.
+- **Note:** `intersection(with:)`, the deprecated `with:`-labelled overload, was removed at v2.0.0 (#784); use `intersection(_:)`.
 
 ---
 

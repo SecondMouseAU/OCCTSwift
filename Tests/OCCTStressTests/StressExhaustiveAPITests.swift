@@ -53,7 +53,7 @@ struct StressShapeFactoryTests {
 struct StressShapeBooleanTests {
 
     @Test func union() {
-        let result = standardBox().union(with: standardSphere())
+        let result = standardBox().union( standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 
@@ -63,12 +63,12 @@ struct StressShapeBooleanTests {
     }
 
     @Test func intersect() {
-        let result = standardBox().intersection(with: standardSphere())
+        let result = standardBox().intersection( standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 
     @Test func section() {
-        let result = standardBox().section(with: standardSphere())
+        let result = standardBox().section(standardSphere())
         if let r = result { #expect(r.isValid) }
     }
 

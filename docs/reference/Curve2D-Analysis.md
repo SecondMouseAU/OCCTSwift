@@ -437,9 +437,9 @@ public func evaluateGrid(_ parameters: [Double]) -> [SIMD2<Double>]
 ```
 
 Uses OCCT's optimised grid evaluator; faster than calling `point(at:)` repeatedly for dense
-sampling. This is the canonical batch spelling; `evalBatchD0(params:)` and `gridEvalD0(params:)` are
-deprecated aliases that forward here
-([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486)).
+sampling. This is the canonical batch spelling; `evalBatchD0(params:)` and `gridEvalD0(params:)`
+forwarded here as deprecated aliases ([#486](https://github.com/SecondMouseAU/OCCTSwift/issues/486))
+and were removed at v2.0.0 ([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)).
 
 - **Parameters:** `parameters` — array of parameter values.
 - **Returns:** Array of 2D points corresponding to each parameter; empty if `parameters` is empty.

@@ -210,11 +210,12 @@ public enum RunoutStyle: Sendable, Hashable {
 /// Which construction path ``Shape/threadedShaft(axisOrigin:axisDirection:spec:length:starts:runout:build:)``
 /// uses to build an external thread.
 ///
-/// For a thread on a plain coaxial cylinder (the overwhelmingly common case) all surviving modes now
+/// For a thread on a plain coaxial cylinder (the overwhelmingly common case) both modes now
 /// produce the same smooth, BRepCheck-valid **direct** build (#213, multi-start #257) — there is no
 /// longer a reason to choose between them. The boolean cut path remains only for the cases the direct
 /// build cannot handle (non-cylinder targets, rounded/tapered forms), where it is **faceted and
-/// unreliable** — see ``boolean`` and #254.
+/// unreliable**. A third mode, `.boolean`, which forced the cut path even where direct worked, was
+/// deprecated in v1.8.1 and removed in v2.0.0 (#254, #784).
 public enum ThreadBuild: Sendable, Hashable, Codable {
     /// Smooth, boolean-free direct rod build (#213; multi-start #257) for single- and multi-start
     /// threads on a plain coaxial cylinder; the boolean cut path otherwise (non-cylinder / rounded /
@@ -226,14 +227,6 @@ public enum ThreadBuild: Sendable, Hashable, Codable {
     /// unavailable (non-cylinder target, rounded/tapered form, or a construction failure). For a
     /// coaxial cylinder this is identical to ``auto``.
     case direct
-    /// **Deprecated (#254).** Formerly forced the boolean cut path to clamp a supposed crest
-    /// overshoot — but #232 established that overshoot was only a `Bnd_Box` over-report, so the
-    /// direct build was correct all along. The forced cut path produces a *faceted, frequently
-    /// disconnected* thread (a helical scatter of rectangular notches rather than a continuous
-    /// groove) and offers no envelope advantage. Now treated exactly like ``auto`` — single-start
-    /// coaxial cylinders get the smooth direct build. Use ``auto`` or ``direct``.
-    @available(*, deprecated, message: "Use .auto or .direct — .boolean no longer differs for buildable threads and its forced cut path is faceted/unreliable (#254/#232).")
-    case boolean
 }
 
 public struct ThreadSpec: Sendable, Hashable, Codable {
@@ -490,9 +483,8 @@ extension Shape {
     ///
     /// - Parameter build: chooses the construction path. `.auto` (default) and `.direct` use the
     ///   smooth, boolean-free direct build for single- and multi-start coaxial cylinders, falling
-    ///   back to the faceted cut path only for non-cylinder / rounded / tapered cases. `.boolean` is
-    ///   **deprecated** (#254): it formerly forced the cut path, which produces a faceted, frequently
-    ///   disconnected thread; it is now treated like `.auto`. See ``ThreadBuild``.
+    ///   back to the faceted cut path only for non-cylinder / rounded / tapered cases. See
+    ///   ``ThreadBuild``.
     public func threadedShaft(axisOrigin: SIMD3<Double>,
                                axisDirection: SIMD3<Double>,
                                spec: ThreadSpec,
@@ -503,9 +495,9 @@ extension Shape {
         let len = length ?? (2 * spec.nominalDiameter)
         // Coaxial cylinders take the smooth direct build, regardless of `build` (#254): the cut path's
         // only historical advantage — an "in-envelope" crest — was disproved by #232, and it otherwise
-        // yields a faceted/disconnected thread. `.boolean` is deprecated and handled identically to
-        // `.auto`/`.direct`. The direct build now also covers multi-start threads (#257); it returns
-        // nil for the cases it can't do (rounded forms, non-cylinder, taper) → faceted cut fallback.
+        // yields a faceted/disconnected thread. The direct build now also covers multi-start threads
+        // (#257); it returns nil for the cases it can't do (rounded forms, non-cylinder, taper) →
+        // faceted cut fallback.
         if starts >= 1,
            let direct = buildThreadedRodDirect(axisOrigin: axisOrigin, axisDirection: axisDirection,
                                                spec: spec, length: len, starts: starts) {

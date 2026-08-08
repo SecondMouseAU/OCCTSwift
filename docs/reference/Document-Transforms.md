@@ -981,27 +981,11 @@ guaranteed to agree with their counterparts for the same curve at the same param
 they asked at a hardcoded `1e-10` resolution against the canonical family's `Precision::Confusion()`
 (`1e-7`), and the two disagreed near a degeneracy.
 
-There were four. `localCurvature(at:)` is **deprecated** as of #595 and forwards to
-`curvature(at:)`: once #494 gave the two the same resolution they were the same call line for line,
-and measured over the same curves — degenerate rows included — they never disagreed on any row. The
-bridge function behind it, `OCCTCurve3DLocalCurvature`, is deleted.
-
-### `Curve3D.localCurvature(at:)` (deprecated)
-
-Curvature of the curve at a parameter value.
-
-```swift
-@available(*, deprecated, renamed: "curvature(at:)")
-public func localCurvature(at u: Double) -> Double?
-```
-
-- **Parameters:** `u` — curve parameter.
-- **Returns:** Whatever `curvature(at:)` returns: the curvature (1/radius), `nil` where the tangent
-  is undefined (`0` until #595, which is also every straight curve's real curvature), and
-  `Double.greatestFiniteMagnitude` at a cusp, where OCCT reports curvature as infinite.
-- **Use instead:** `Curve3D.curvature(at:)`.
-
----
+There were originally four. `localCurvature(at:)` was deprecated as of #595 in favour of
+`curvature(at:)` — once #494 gave the two the same resolution they were the same call line for
+line, and measured over the same curves, degenerate rows included, they never disagreed on any row
+— and removed at v2.0.0 (#784). The bridge function behind it, `OCCTCurve3DLocalCurvature`, was
+already deleted at #595.
 
 ### `Curve3D.localTangent(at:)`
 

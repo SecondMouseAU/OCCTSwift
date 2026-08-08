@@ -797,26 +797,6 @@ struct ShapeUpgradeDivideClosedTests {
     }
 }
 
-@Suite("ShapeUpgrade DivideContinuity Tests")
-struct ShapeUpgradeDivideContinuityTests {
-    /// Exercises the deprecated spelling on purpose, so the annotation goes on the test rather
-    /// than leaving one warning per call site. Same convention as
-    /// `Issue438DivideContinuityUnificationTests` and `ClusterD.swift`'s forwarding record, which
-    /// #438 established when it deprecated this method: the whole point of that convention is that
-    /// a deliberate exercise costs one warning at its definition, not noise at every use.
-    @Test("Divide box by continuity")
-    @available(*, deprecated, message: "exercises the deprecated dividedByContinuity on purpose")
-    func divideBoxContinuity() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        // Box has C0 at edges, so dividing by C1 should not change it
-        let result = box.dividedByContinuity(criterion: .c1)
-        // May return nil if no divisions needed
-        if let r = result {
-            #expect(r.isValid)
-        }
-    }
-}
-
 @Suite("ShapeFix FixSmallSolid Tests")
 struct ShapeFixSmallSolidTests {
     @Test("Remove small solids by volume")

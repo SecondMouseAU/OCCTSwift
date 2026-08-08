@@ -1147,7 +1147,7 @@ struct PolyHLRTests {
         // Two overlapping boxes — should produce hidden edges
         let box1 = Shape.box(width: 10, height: 10, depth: 10)!
         let box2 = Shape.box(width: 5, height: 5, depth: 20)!
-        let fused = box1.union(with: box2)!
+        let fused = box1.union( box2)!
         let drawing = Drawing.projectFast(fused, direction: SIMD3(0, 1, 0))
         #expect(drawing != nil)
     }

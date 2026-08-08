@@ -129,13 +129,6 @@ public final class Surface: @unchecked Sendable {
         SurfaceType(rawValue: OCCTSurfaceGetType(handle)) ?? .other
     }
 
-    /// Former name for ``ContinuityClass``, when this result vocabulary was nested here and
-    /// the sibling `Curve3D`/`Curve2D` properties had no typed form at all (#485).
-    ///
-    /// Kept as an alias: the raw values are unchanged, so this is a rename only.
-    @available(*, deprecated, renamed: "ContinuityClass")
-    public typealias Continuity = ContinuityClass
-
     /// Measured overall continuity of the surface.
     ///
     /// ```swift
@@ -2028,12 +2021,6 @@ extension Surface {
         /// was not `.c2`.
         public var isC2: Bool? { holds(.c2) }
 
-        /// The effective analysis order as a raw `GeomAbs_Shape` ordinal. Former spelling of
-        /// ``order``.
-        ///
-        /// Named as though it reported a measurement; it never did. See ``order``.
-        @available(*, deprecated, renamed: "order")
-        public var status: Int { Int(order.rawValue) }
     }
 
     /// Analyze continuity between this surface at (u1, v1) and another surface at (u2, v2).
@@ -2061,20 +2048,6 @@ extension Surface {
         continuityAnalysis(with: other, u1: u1, v1: v1, u2: u2, v2: v2, rawOrder: order.rawValue)
     }
 
-    /// Analyze continuity, with the order given as a raw `GeomAbs_Shape` ordinal.
-    ///
-    /// The untyped spelling is what let a caller pass `5`, `-1` or a raw value borrowed from an
-    /// unrelated continuity enum and be clamped without saying so. Pass a ``ContinuityClass``;
-    /// ``ContinuityAnalysis/order`` then reports where a saturated request landed.
-    @available(*, deprecated, message: "Pass a ContinuityClass (.c0/.g1/.c1/.g2/.c2) instead of a raw GeomAbs_Shape ordinal.")
-    public func continuityWith(_ other: Surface, u1: Double, v1: Double, u2: Double, v2: Double,
-                               order: Int) -> ContinuityAnalysis? {
-        continuityAnalysis(with: other, u1: u1, v1: v1, u2: u2, v2: v2,
-                           rawOrder: Int32(clamping: order))
-    }
-
-    // Both overloads land here, and neither reproduces the saturation rule: the bridge's
-    // occtGeomAbsFromAnalysisOrder owns it and reports the order it settled on.
     private func continuityAnalysis(with other: Surface, u1: Double, v1: Double,
                                     u2: Double, v2: Double, rawOrder: Int32) -> ContinuityAnalysis? {
         var outEffectiveOrder: Int32 = 0
@@ -3982,44 +3955,6 @@ extension Surface {
     }
 }
 
-// MARK: - Knot splitting, the v0.105.0 spellings (deprecated, #562)
-
-// These five entry points were added over `GeomConvert_BSplineSurfaceKnotSplitting` and
-// `Geom2dConvert_BSplineCurveKnotSplitting` three releases after `Surface.knotSplitting` and
-// `Curve2D.splitIndicesAtDiscontinuities` already wrapped those same two analyzers. Nothing
-// reconciled them, so the same question had two spellings that could not be asked to differ:
-// both of these take one continuity for both parametric directions where the surface's canonical
-// call takes one per direction, and neither reaches a knot the canonical call cannot.
-//
-// Each now forwards to its canonical sibling. Their own five bridge functions are gone.
-// `continuity` is the same derivative-order ContinuityRange throughout: a knot splits only when
-// `degree - multiplicity < continuity`, so the meaningful range is 0...degree and it saturates
-// there (#480).
-
-extension Surface {
-    /// Get number of U-direction knot splits for a BSpline surface at given continuity.
-    @available(*, deprecated,
-               message: "Use knotSplitting(uContinuity:vContinuity:).uSplitCount, which asks the same analyzer once instead of three times and can ask U and V different questions (#562)")
-    public func bsplineKnotSplitsU(continuity: ParametricContinuity) -> Int {
-        knotSplitting(uContinuity: continuity, vContinuity: continuity).uSplitCount
-    }
-
-    /// Get number of V-direction knot splits for a BSpline surface at given continuity.
-    @available(*, deprecated,
-               message: "Use knotSplitting(uContinuity:vContinuity:).vSplitCount, which asks the same analyzer once instead of three times and can ask U and V different questions (#562)")
-    public func bsplineKnotSplitsV(continuity: ParametricContinuity) -> Int {
-        knotSplitting(uContinuity: continuity, vContinuity: continuity).vSplitCount
-    }
-
-    /// Get U and V knot split index arrays.
-    @available(*, deprecated,
-               message: "Use knotSplitting(uContinuity:vContinuity:), whose uSplitIndices/vSplitIndices are these same indices and which also gives you the parameters they resolve to (#562)")
-    public func bsplineKnotSplitValues(continuity: ParametricContinuity) -> (uSplits: [Int32], vSplits: [Int32]) {
-        let result = knotSplitting(uContinuity: continuity, vContinuity: continuity)
-        return (result.uSplitIndices.map(Int32.init), result.vSplitIndices.map(Int32.init))
-    }
-}
-
 extension Surface {
     /// Create a conical surface from axis (center+normal), semi-angle, and reference radius.
     public static func gcConicalSurface(center: SIMD3<Double>, normal: SIMD3<Double>,
@@ -4291,41 +4226,6 @@ extension Surface {
     public func copy() -> Surface? {
         guard let ref = OCCTSurfaceCopy(handle) else { return nil }
         return Surface(handle: ref)
-    }
-}
-
-// MARK: - GridEval Extensions (v0.111.0)
-//
-// #486: these six methods were a third Swift spelling of batch evaluation, over a third
-// generation of bridge functions (OCCTGridEvalCurveD0/D1, OCCTGridEvalCurve2dD0/D1,
-// OCCTGridEvalSurfaceD0/D1) that called the same OCCT evaluators as the v0.28.0/v0.29.0 ones.
-// Those bridge functions are gone; each method below now forwards to its canonical sibling,
-// which is the spelling to use. The Surface pair matters most, because the flat arrays these
-// return say nothing about whether u or v runs fastest, and OCCTGridEvalSurfaceD0 disagreed
-// with OCCTSurfaceEvaluateGrid about exactly that.
-
-extension Surface {
-
-    /// Evaluate surface at a grid of (u, v) parameters (batch D0).
-    ///
-    /// - Returns: A flat array, **U-major**: `result[u * vParams.count + v]`. Empty if either
-    ///   input is empty or the evaluation fails (it used to return a grid of zeroes instead).
-    @available(*, deprecated,
-               message: "Use evaluateGrid(uParameters:vParameters:), which returns a SurfaceGrid indexed .at(u:v:) instead of a flat array whose major order you have to know (#486)")
-    public func gridEvalD0(uParams: [Double], vParams: [Double]) -> [SIMD3<Double>] {
-        let grid = evaluateGrid(uParameters: uParams, vParameters: vParams)
-        return (0..<grid.uCount).flatMap { u in (0..<grid.vCount).map { v in grid.at(u: u, v: v) } }
-    }
-
-    /// Evaluate surface and its first partial derivatives at a grid of (u, v) parameters (batch D1).
-    ///
-    /// - Returns: A flat array, **U-major**: `result[u * vParams.count + v]`. Empty if either
-    ///   input is empty or the evaluation fails (it used to return a grid of zeroes instead).
-    @available(*, deprecated,
-               message: "Use evaluateGridD1(uParameters:vParameters:), which returns a SurfaceGridD1 indexed .at(u:v:) instead of a flat array whose major order you have to know (#486)")
-    public func gridEvalD1(uParams: [Double], vParams: [Double]) -> [(point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)] {
-        let grid = evaluateGridD1(uParameters: uParams, vParameters: vParams)
-        return (0..<grid.uCount).flatMap { u in (0..<grid.vCount).map { v in grid.at(u: u, v: v) } }
     }
 }
 
