@@ -105,12 +105,20 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCT
                                      OCCTEdgeRef* _Nullable outFirstEdge);
 
 /// Check if two faces are adjacent (share at least one edge)
-/// - Note: `AAG.buildGraph()` no longer calls this. It needs the true shared-edge count and one
-///   edge anyway, and `OCCTFaceGetSharedEdgeSummary` answers adjacency as a side effect of both
-///   (#783). This is kept because it is cheaper for a caller who wants ONLY adjacency: it stops at
-///   the first shared edge, where the summary must walk the pair to total them. It shares the same
-///   comparison through `OCCTFaceGetSharedEdges`, so it cannot drift from it (#761).
-bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
+/// - Warning: **Deprecated (#783).** `AAG.buildGraph()` was its only caller and no longer needs it:
+///   it wants the true shared-edge count and one edge anyway, and `OCCTFaceGetSharedEdgeSummary`
+///   answers adjacency as a side effect of producing both. Nothing in this repo calls this now, so
+///   what remains is a second way to ask a question one function already answers, kept alive only
+///   by its own declaration. That is the #506 shape, where an orphan freezes a contract nobody
+///   exercises.
+///
+///   It is deprecated rather than deleted because `OCCTBridge.xcframework` ships this symbol, so
+///   removing it outright breaks a consumer with no warning first. Migrate to
+///   `OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0`, and note that doing so costs a
+///   full walk of the pair where this stopped at the first shared edge: for a caller who genuinely
+///   wants only adjacency and never the count, say so on #783 before this is removed.
+bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2)
+    __attribute__((deprecated("Use OCCTFaceGetSharedEdgeSummary(shape, face1, face2, NULL) > 0; a non-zero shared-edge count is adjacency (#783).")));
 
 /// Get the dihedral angle between two adjacent faces at their shared edge
 /// @param edge The shared edge
