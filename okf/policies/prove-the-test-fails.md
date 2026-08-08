@@ -51,6 +51,51 @@ Both versions looked exactly like coverage. Only removing the guard and watching
 pass revealed they were not, and a third pass found the guard itself had an adjacent hole where a
 closing `*/` shared a line with real code (#680).
 
+## A green removal row is ambiguous, not reassuring
+
+Removing a guard and seeing nothing fail has two explanations, and the count alone cannot tell them
+apart: the guard does nothing, or **something else is standing in front of it**. Three instances in
+one day, 2026-08-07:
+
+- **A guard masked by a different bug.** `#762`'s `.convex` block came back green under removal, was
+  called decorative, and a geometric argument was written for why it could never matter. Fixing an
+  unrelated defect two functions away, a `visited` marking that fired before the wall/junction
+  decision, made the same removal fail two tests. The argument had been describing the bug.
+- **Two guards backstopping each other.** In the same walk, removing the Z-tolerance bypass and
+  removing the `.convex` block each hid the other's effect, so neither injection isolated anything,
+  and nor did removing both together.
+- **A row exercising one of two mechanisms.** `#771`'s row 5 used only value-typed fixtures, so
+  "disable local binding" and "disable value-typed binding" were the same experiment. The row was
+  green for a reason unrelated to its label.
+
+So state, per row, **which mechanism it isolates and how you know**. Disjointness is the usual
+evidence: `#762`'s injection E fails exactly two tests of 34, and those two also fail under an
+unrelated row, so only the disjointness distinguishes isolation from coincidence.
+
+A row that adds nothing is worth keeping if it is labelled as adding nothing. `#762`'s row D
+produces the same failure set as row B and says so, which answers a real question rather than
+padding the table.
+
+## A matrix proves guards, not fixtures
+
+These are different claims and it is easy to offer the first as evidence for the second. I did, on
+2026-08-07, and the injection corrected me within the hour.
+
+A removal matrix modifies the **source**. A fixture that has stopped meaning its name is a property
+of the **test**, and a matrix cannot see it: with a dud fixture, the affected rows simply fail fewer
+tests, which shows up as a changed count nobody is comparing rather than as a failure.
+
+Measured, in `#762`'s own suite: replacing one `filleted(...)` with the unfilleted shape, so the
+fillet silently does nothing, left **all 15 tests passing**. A no-op fillet leaves the sharp pocket,
+and the sharp pocket is the control fixture that reports the same one pocket, four walls, not open.
+Every assertion downstream was reading a fixture that had stopped meaning its name, in a suite
+written specifically to avoid that.
+
+So a test whose subject is an operation needs an assertion that **the operation did something**,
+separate from any guard the matrix covers. `try #require(op())` proves non-nil, not non-trivial. A
+cheap structural delta works: `#762` asserts the face count rose, since a fillet or chamfer replaces
+each target edge with at least one new face.
+
 ## How to apply
 
 For a test: break the code it covers, run it, see red, restore, see green.
