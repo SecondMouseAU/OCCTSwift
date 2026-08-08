@@ -8,7 +8,7 @@ links). All six are already fixed on this branch. This script is not a re-check 
 the derived, re-runnable artifact the issue asks for, to look for OTHERS the same way a human
 reading a diff (not a subsystem) would not.
 
-WHAT SHAPE THE SIX ACTUALLY SHARE (measured, not assumed -- see the PR/issue bodies, not the
+WHAT SHAPE THE SIX ACTUALLY SHARE (measured, not assumed; see the PR/issue bodies, not the
 one-line summaries in #784's own issue text):
 
   - #761 / PR #779 (bridge): `OCCTFaceGetSharedEdgeCount` and `OCCTFaceGetSharedEdges`
@@ -21,11 +21,11 @@ one-line summaries in #784's own issue text):
     identical minus the field the bug was in.
   - PR #778 (Swift app layer): `isRadiallyInwardFillet` (`FeatureRecognition.swift`) reimplemented
     a radial-inward test that used to sit INLINE inside `detectHoles()`, down to the `1e-9` guard.
-    Not two top-level functions to start with -- one side was a block inside a much bigger
+    Not two top-level functions to start with: one side was a block inside a much bigger
     function. Fixed by factoring both into `AAG.isMaterialRadiallyInward`.
   - #777 (Swift app layer, NOT textually similar): `PocketFeature.isOpen`'s edge-to-face incidence
     reaches `Edge.adjacentFaces(in:)`, which rebuilds a whole-shape map from scratch every call;
-    `BRepGraph`'s equivalent is indexed. Same QUESTION, different ALGORITHM -- there is no shared
+    `BRepGraph`'s equivalent is indexed. Same QUESTION, different ALGORITHM: there is no shared
     token sequence to find, only a shared shape of behaviour. #761's own adjudication (below)
     is the reason this is not simply "the same fix again": AAG's occurrence model and
     `BRepGraph`'s `IsSame`-keyed node model answer genuinely different questions once cross-solid
@@ -34,7 +34,7 @@ one-line summaries in #784's own issue text):
     `census-unmeasured-values.py`'s `gate_flag_candidates` was duplicated **between two branches of
     the same function** (the `true` branch and the computed branch), not between two functions.
   - PR #773 (tooling, not app/bridge): `HarnessRunner.swift` duplicated `CensusRunner.swift`'s
-    `main()`/`printUsage()` nearly line for line -- two whole files in `Scripts/repro/`, outside
+    `main()`/`printUsage()` nearly line for line, two whole files in `Scripts/repro/`, outside
     the OCCT wrapper surface these audit passes exist to cover.
 
 So the six are not one shape, they are three, two instances each:
@@ -42,7 +42,7 @@ So the six are not one shape, they are three, two instances each:
   A. Two ENTRY POINTS (bridge C functions or Swift API functions/methods), each a real,
      independently-discoverable unit, sharing a near-identical body. (#761, PR #768 in the bridge;
      PR #778 once its inline half is recognised as "a block inside a function" rather than "not a
-     function" -- see below.)
+     function"; see below.)
   B. The same QUESTION answered by two different ALGORITHMS with no shared text. (#777.) Not
      findable by comparing token sequences; would need call-graph/semantic reasoning this script
      does not attempt. Named here so its absence from the findings below reads as a scope
@@ -58,17 +58,19 @@ This script targets shape A, which is also the shape `docs/v2.0.0-plan.md`'s cen
 compares every function body (`Sources/OCCTBridge/src/*.mm`) or every func body
 (`Sources/OCCTSwift/*.swift`) against every other one, using a k-token shingle fingerprint
 (a MOSS-style clone detector, chosen because the failure mode this repo keeps hitting is literal
-copy-paste, not renamed-but-equivalent logic -- every one of #761/#768/#778's own PR bodies uses
+copy-paste, not renamed-but-equivalent logic: every one of #761/#768/#778's own PR bodies uses
 the words "copy-paste" or "reimplemented", not "coincidentally similar").
 
 ALGORITHM
 
-  1. Extract every function/method body (`c_functions()`/`swift_functions()` below -- a
+  1. Extract every function/method body (`c_functions()`/`swift_functions()` below, a
      deliberate, self-contained copy of the same brace-walk approach
      `census-unmeasured-values.py`'s `c_functions`/`swift_functions` already use, itself following
      `check-null-handle-guards.py`/`derive-swift-file-split.py`. Each script in this family carries
-     its own copy rather than sharing a module; this one is not an exception to that, and doing
-     the opposite here of all places would be its own small joke).
+     its own copy rather than sharing a module ACROSS scripts; within this one script the two
+     extractors now share their own brace-matching walk and the two `*_units()` builders share
+     their own iterate/strip/extract/tokenize/construct sequence; see "PARSER CORRECTNESS" below
+     for why that stopped being optional).
   2. Tokenize each body (identifiers, digit runs, and single punctuation/operator characters).
   3. Take a **shingle**: every consecutive run of `shingle_k` tokens, as one comparable unit.
      A body's shingle SET stands in for "the distinctive things this body says", any k tokens at a
@@ -76,22 +78,65 @@ ALGORITHM
   4. Compute each shingle's DOCUMENT FREQUENCY (how many distinct functions contain it) and drop
      any shingle whose frequency is at or above `boilerplate_min_count` (or, if that is not given,
      `boilerplate_ratio` of the corpus). This is the step that keeps the bridge's own necessarily
-     repetitive C-wrapper preamble -- the null-check, the try/catch scaffold -- from registering as
+     repetitive C-wrapper preamble (the null-check, the try/catch scaffold) from registering as
      "duplication": it is shared by dozens of functions, not two.
   5. Two functions are a candidate pair if their surviving (non-boilerplate) shingle sets overlap
      by at least `min_shared` shingles, expressed as CONTAINMENT (`shared / min(|A|, |B|)`, not
      Jaccard `shared / |A union B|`): containment is what lets a small, fully-duplicated helper
-     register even when embedded inside a much larger caller (the PR #778 shape -- the small
+     register even when embedded inside a much larger caller (the PR #778 shape: the small
      side's total size is the denominator, so the big side's own bulk of unrelated tokens does not
      dilute the score the way a union-based Jaccard would).
   6. A pair where one function's name appears as a token in the other's body is DELEGATION
-     (A calls B), not duplication, and is excluded -- this is what the fixed shape of #761/PR #768
+     (A calls B), not duplication, and is excluded: this is what the fixed shape of #761/PR #768
      now looks like (`OCCTFaceGetSharedEdges` calling `countOrCollectSharedEdges`), and re-flagging
      the fix as if it were the bug would be exactly the kind of false positive that makes a
      detector's output worthless.
 
+PARSER CORRECTNESS (PR #797 review round): four confirmed bugs, all in the direction that matters
+most for a script whose whole claim is "the tree is clean of shape A": UNDER-reporting, which a
+clean run cannot be told apart from. Each was reproduced against the unfixed code before being
+fixed, and each now has a dedicated `--self-test` fixture proving it stays fixed:
+
+  1. `swift_functions()`'s old signature-matching regex used a non-nesting `[^)]*` for the
+     parameter list, so a closure-typed default parameter value (`handler: () -> Void = { }`) hid
+     the real body: the regex stopped at the closure's OWN inner `)`, then the return-type scan
+     ran straight into the closure literal's `{ }` and took THAT as the function's body. Measured:
+     `func f(handler: () -> Void = { }) { real(); code() }` extracted the closure's empty body
+     instead of the real one, so any duplicate logic inside the real body was invisible to the
+     whole detector. Fixed by walking the parameter list with paren-depth tracking
+     (`_swift_signature_end()`) instead of a single non-nesting regex.
+  2. `strip_comments()` had no case for single-quoted C/C++ char literals, so a char literal
+     containing a double quote (`'"'`) was misread as OPENING a double-quoted string; the scan
+     then ran to the next literal `"` it could find, which could be arbitrarily far away, leaving
+     every real comment in between un-blanked. The un-stripped comment prose then got tokenized as
+     code, diluting a real duplicate pair's shingle overlap below `containment_threshold`.
+  3. The same missing case meant a `{`/`}` inside a char literal (`'{'`, common in
+     delimiter/format-char comparisons) was left in the output text verbatim, where
+     `c_functions()`'s depth-counting walk counted it as a real brace. Measured: one extra
+     phantom-open brace was enough for a function's own true closing brace to leave the walk at
+     depth 1, not 0, so the walk ran straight through to end of file, swallowing the NEXT
+     function's entire definition (name included) into the first function's "body".
+  4. The delegation exclusion (`name in token_sets[...]`) matched a function's name anywhere it
+     appeared as a token in the other body, including inside a string literal: an `NSLog`/assert
+     message naming a sibling function was enough to make a genuine duplicate look like
+     delegation and get silently dropped.
+
+Bugs 2-4 share one root cause and one fix: `strip_comments()` used to copy a double-quoted
+string's content through unchanged (kept only so a `//`/`/*` inside it would not be misread as a
+comment start) and had no handling for single-quoted char literals at all. It now BLANKS the
+content of both (not just the boundaries), which closes bug 2 (nothing inside a literal can start
+a false string scan since char literals are now recognized), bug 3 (no brace/paren inside a
+literal ever reaches a depth-counting walk), and bug 4 (a name quoted in a log string is blanked
+before tokenization, so it cannot match `token_sets[...]`) all at once; see `strip_comments()`'s
+own docstring for the full mechanism.
+
+**Whether fixing the parser moved the candidate counts is answered in `README.md`, not left
+unchecked**: a parser fix that surfaces previously-hidden units changes what the detector can
+find, and every one of those is a new candidate needing the same adjudication as the rest, not an
+assumed-clean delta.
+
 WHY A SCRIPT, NOT A LIST IN AN ISSUE (`docs/v2.0.0-plan.md`'s census-once rule): every hand-built
-census in this repo's history has been wrong -- #558 said 14 sites, measured 28; #571 said 3,
+census in this repo's history has been wrong: #558 said 14 sites, measured 28; #571 said 3,
 measured 6; #583 said five, measured six; #595 said six, measured nine; #640 said 13, measured 20.
 Never wrong in the safe direction. A re-runnable derivation does not go stale the way a list in an
 issue body does, and it can be pointed at a future population (Pass 2a onward, #382-#392) with the
@@ -101,21 +146,21 @@ WHAT THIS DOES NOT FIND, ON PURPOSE (read this before trusting a zero):
 
   - Shape B above: two different algorithms answering the same question (#777). No shared text,
     nothing for a shingle to match.
-  - Shape C above: duplication between two branches of ONE function (PR #774) -- this script only
+  - Shape C above: duplication between two branches of ONE function (PR #774). This script only
     ever compares two DIFFERENT extracted units against each other, never a function against
-    itself. And duplication in `Scripts/` dev tooling (PR #773) -- out of population by design,
+    itself. And duplication in `Scripts/` dev tooling (PR #773), out of population by design;
     see "Scope" below.
   - A function whose distinctive (non-boilerplate) shingle count is below `min_distinctive`: too
     short to compare meaningfully, and comparing it anyway is exactly how two unrelated one-liners
     (`return NULL;`-shaped bodies) end up "duplicating" each other by coincidence.
   - A generic Swift function (`func foo<T>(...)`) or a computed property (`var x: Bool { ... }`)
-    as its OWN comparable unit -- `swift_functions()` matches `func` only. Either still appears as
+    as its OWN comparable unit: `swift_functions()` matches `func` only. Either still appears as
     part of whichever enclosing function's body contains it (so an inline block the shape of
     PR #778's is still caught, just not addressable on its own), but a top-level computed property
     is invisible as a unit. Named, not silently absent: the census this repo keeps re-deriving
     wrong is exactly the kind that should say what it did not check.
 
-SCOPE: `Sources/OCCTBridge/src/*.mm` and `Sources/OCCTSwift/*.swift` only -- the population Passes
+SCOPE: `Sources/OCCTBridge/src/*.mm` and `Sources/OCCTSwift/*.swift` only: the population Passes
 1a/1b and the deferred 2a-5d actually audit. `Scripts/` (PR #773/#774's own population) is
 deliberately excluded: it is dev tooling, not the OCCT wrapper surface this programme's rescan is
 for, and both of its known instances were found by ordinary code review, not a missing detector.
@@ -140,7 +185,7 @@ SWIFT_SRC_DIR = os.path.join("Sources", "OCCTSwift")
 # Defaults, chosen by running against the real corpus and reading candidates at successively
 # tighter settings until what remained was almost entirely genuine (measure-dont-assume: these are
 # not guessed). A looser pass (min_distinctive=10, min_shared=6, shingle_k=9, containment>=0.6)
-# reports 3219 of the bridge's 4152 units as pairs -- almost entirely the bridge's OWN deliberate
+# reports 3219 of the bridge's 4152 units as pairs, almost entirely the bridge's OWN deliberate
 # structural mirrors: `Geom_Curve`/`Geom2d_Curve` (Curve3D vs Curve2D), `gp_Ax1`/`gp_Ax2` siblings,
 # and (on the Swift side) already-deduplicated forwarding shims like `gridEvalD0`/`gridEvalD1`
 # (#486). At these tighter settings the bridge run drops to 38 candidates and the Swift run to 21,
@@ -166,6 +211,32 @@ CONTAINMENT_THRESHOLD = 0.85
 
 
 def strip_comments(text):
+    """Blank comments AND the contents of string/char literals, leaving newlines in place so
+    downstream line-number arithmetic (`stripped.count("\\n", 0, start)`) stays correct.
+
+    Literal contents are blanked, not merely protected, per #797 review: two failure modes, one
+    fix. Before this fix, a double-quoted string's contents were copied through unchanged (kept
+    only to stop `//`/`/*` inside it being misread as a comment start), and single-quoted char
+    literals had no handling at all:
+
+      - A char literal containing a double quote (`'"'`) was misread as OPENING a double-quoted
+        string, and the scan then swallowed everything up to the next literal `"` it found,
+        including real comment markers, which is why the swallowed span's prose leaked into
+        whatever function body it fell inside, corrupting that function's token stream.
+      - A `{`/`}` (or `(`/`)`) inside a string or char literal was left in the output text
+        verbatim, where a LATER character-by-character depth walk (`c_functions()`'s brace
+        matcher, `swift_functions()`'s parameter-list scanner) would count it as a REAL brace/paren
+        and corrupt its depth count, silently extending an extracted function body past its true
+        end, in one measured case swallowing the next function's entire definition whole.
+      - A function's own name quoted inside a log/assert string (e.g. an `NSLog` message naming a
+        sibling function) was tokenized as a real token, so the delegation exclusion
+        (`compute()`'s `name in token_sets[...]`) mistook a genuine duplicate for delegation and
+        silently dropped it.
+
+    Blanking a literal's content (not just its boundary) closes all three at once: nothing inside
+    a literal can be misread as a comment marker, a brace/paren, or a name, by any scan running on
+    this function's output.
+    """
     out, i, n = [], 0, len(text)
     while i < n:
         if text.startswith("//", i):
@@ -178,18 +249,45 @@ def strip_comments(text):
             j = n if j < 0 else j + 2
             out.append("".join(c if c == "\n" else " " for c in text[i:j]))
             i = j
-        elif text[i] == '"':
+        elif text[i] == '"' or text[i] == "'":
+            quote = text[i]
             j = i + 1
-            while j < n and text[j] != '"':
+            while j < n and text[j] != quote:
                 if text[j] == "\\":
                     j += 1
                 j += 1
-            out.append(text[i : j + 1])
-            i = j + 1
+            j = min(j + 1, n)
+            out.append("".join(c if c == "\n" else " " for c in text[i:j]))
+            i = j
         else:
             out.append(text[i])
             i += 1
     return "".join(out)
+
+
+def _brace_match(text, open_index):
+    """Index of the `}` matching the `{` at `open_index` (or the last index of `text`, if the
+    input is unterminated). Depth-counting only: callers pass already-`strip_comments`-ed text,
+    so a brace inside a string/char literal cannot reach here (#797 review: it used to, and threw
+    this exact walk off).
+
+    Shared by `c_functions()` and `swift_functions()` (#797 review): the two used to carry an
+    identical copy of this loop. A bug fix to the walk (the literal-blanking fix above is exactly
+    such a fix) had to be applied twice by hand in the same file, the copy-paste-with-drift shape
+    this script exists to catch, found inside the detector itself.
+    """
+    depth = 0
+    i = open_index
+    n = len(text)
+    while i < n:
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return n - 1 if n else 0
 
 
 C_FUNC = re.compile(r"^(?:static\s+)?[A-Za-z_][\w:<>,\s\*&]*?\b(\w+)\s*\(([^;{]*?)\)\s*\{", re.M | re.S)
@@ -202,47 +300,77 @@ def c_functions(text):
         name = m.group(1)
         if name in NOT_A_FUNCTION:
             continue
-        start = i = m.end() - 1
-        depth = 0
-        while i < len(text):
-            if text[i] == "{":
-                depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    break
-            i += 1
-        yield name, start, i
+        start = m.end() - 1
+        yield name, start, _brace_match(text, start)
 
 
-SWIFT_FUNC = re.compile(r"func\s+(\w+)\s*\([^)]*\)(?:\s*(?:async|throws|rethrows))*\s*(?:->\s*[^\{]+?)?\{")
+SWIFT_FUNC_START = re.compile(r"func\s+(\w+)\s*\(")
+
+
+def _swift_signature_end(text, paren_open):
+    """Index of the `{` that opens a Swift function's body, given the index of its parameter
+    list's opening `(`. Returns None if the signature never reaches a body (e.g. a protocol
+    requirement with no `{`, or malformed/truncated input).
+
+    Walks the parameter list by PAREN DEPTH rather than a single `[^)]*` regex (#797 review): a
+    closure-typed default parameter value (`handler: () -> Void = { }`) has its own nested
+    `()`, and a non-nesting regex stops at that inner `)` instead of the parameter list's own
+    closing one. Measured before fixing: `func f(handler: () -> Void = { }) { real(); code() }`
+    had its real two-statement body replaced by the closure literal's own empty `{ }`, silently
+    hiding whatever duplicate logic was in the real body from the entire detector: a false
+    negative, not a crash, so nothing in a report said this happened.
+
+    Only paren depth is tracked while inside the parameter list; braces inside a default closure's
+    OWN body (`{ print(1) }`) do not need separate handling, since they never change whether the
+    outer parameter list's own parens are balanced. Text is expected to already be
+    `strip_comments`-ed, so a `)` inside a string/char literal default value cannot reach here
+    either.
+    """
+    n = len(text)
+    i = paren_open
+    depth = 0
+    while i < n:
+        c = text[i]
+        if c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                i += 1
+                break
+        i += 1
+    else:
+        return None
+    while i < n and text[i] != "{":
+        i += 1
+    return i if i < n else None
 
 
 def swift_functions(text):
     """(name, start, end) for every Swift `func` definition, body inclusive of braces."""
-    for m in SWIFT_FUNC.finditer(text):
+    for m in SWIFT_FUNC_START.finditer(text):
         name = m.group(1)
-        start = i = m.end() - 1
-        depth = 0
-        while i < len(text):
-            if text[i] == "{":
-                depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    break
-            i += 1
-        yield name, start, i
+        start = _swift_signature_end(text, m.end() - 1)
+        if start is None:
+            continue
+        yield name, start, _brace_match(text, start)
+
+
+def _read_all(paths):
+    """(path, text) for every path, each file closed explicitly rather than left to refcounting."""
+    result = []
+    for p in paths:
+        with open(p, errors="ignore") as f:
+            result.append((p, f.read()))
+    return result
 
 
 def bridge_sources():
-    paths = sorted(glob.glob(os.path.join(BRIDGE_SRC_DIR, "*.mm")))
-    return [(p, open(p, errors="ignore").read()) for p in paths]
+    return _read_all(sorted(glob.glob(os.path.join(BRIDGE_SRC_DIR, "*.mm"))))
 
 
 def swift_sources():
-    paths = sorted(glob.glob(os.path.join(SWIFT_SRC_DIR, "*.swift")))
-    return [(p, open(p, errors="ignore").read()) for p in paths]
+    return _read_all(sorted(glob.glob(os.path.join(SWIFT_SRC_DIR, "*.swift"))))
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +379,7 @@ def swift_sources():
 
 TOKEN = re.compile(r"[A-Za-z_]\w*|\d+|\S")
 # An OCCT class name (`Module_Class`, e.g. `XCAFDoc_ColorTool`) or a bridge entry point
-# (`OCCT...`) mentioned in a body -- printed alongside a finding as supporting evidence for
+# (`OCCT...`) mentioned in a body, printed alongside a finding as supporting evidence for
 # "wrap the same OCCT class/call twice", never used to gate detection itself (that would make
 # this a grep with extra steps, exactly what the census-once rule is against).
 RELATED_CALL = re.compile(r"\b(?:OCCT[A-Za-z0-9_]+|[A-Z][A-Za-z0-9]*_[A-Za-z][A-Za-z0-9]*)\b")
@@ -270,35 +398,38 @@ def shingles(tokens, k):
 Unit = collections.namedtuple("Unit", "name kind file line tokens related")
 
 
-def bridge_units(sources):
+def _units_from_sources(sources, extractor, kind_of):
+    """Shared iterate/strip/extract/tokenize/construct sequence for `bridge_units()`/
+    `swift_units()` (#797 review): the two used to duplicate this sequence verbatim, differing
+    only in which extractor function is called and how `kind` is computed: exactly the
+    copy-paste-with-drift pattern this script exists to catch, found inside the detector itself.
+
+    `extractor` is `c_functions` or `swift_functions`; `kind_of(name)` computes the per-unit
+    `kind` label from the matched name (`"entry"`/`"helper"` for the bridge, a constant `"func"`
+    for Swift).
+    """
     units = []
     for path, text in sources:
         stripped = strip_comments(text)
-        for name, start, end in c_functions(stripped):
+        for name, start, end in extractor(stripped):
             body = stripped[start : end + 1]
             line = stripped.count("\n", 0, start) + 1
-            kind = "entry" if name.startswith("OCCT") else "helper"
             units.append(
-                Unit(name, kind, os.path.basename(path), line, tokenize(body), set(RELATED_CALL.findall(body)))
+                Unit(name, kind_of(name), os.path.basename(path), line, tokenize(body), set(RELATED_CALL.findall(body)))
             )
     return units
+
+
+def bridge_units(sources):
+    return _units_from_sources(sources, c_functions, lambda name: "entry" if name.startswith("OCCT") else "helper")
 
 
 def swift_units(sources):
-    units = []
-    for path, text in sources:
-        stripped = strip_comments(text)
-        for name, start, end in swift_functions(stripped):
-            body = stripped[start : end + 1]
-            line = stripped.count("\n", 0, start) + 1
-            units.append(
-                Unit(name, "func", os.path.basename(path), line, tokenize(body), set(RELATED_CALL.findall(body)))
-            )
-    return units
+    return _units_from_sources(sources, swift_functions, lambda _name: "func")
 
 
 # ---------------------------------------------------------------------------
-# The detector itself. Pure function over an in-memory unit list -- no file I/O -- so
+# The detector itself. Pure function over an in-memory unit list (no file I/O), so
 # `--self-test` runs the identical logic `report()` runs, on synthetic fixtures, the same
 # separation `derive-bridge-header-split.py`'s `compute()`/`derive()` split uses.
 # ---------------------------------------------------------------------------
@@ -320,7 +451,7 @@ def compute(
 
     `boilerplate_min_count` is an absolute document-frequency cutoff (the default, see the module
     docstring for why an absolute count is right here). `boilerplate_ratio`, when given, overrides
-    it with `max(2, int(total * ratio))` instead -- useful if this is ever pointed at a corpus so
+    it with `max(2, int(total * ratio))` instead, useful if this is ever pointed at a corpus so
     different in size from this one that a fixed count stops making sense; not used by the current
     defaults or by `--self-test`.
     """
@@ -387,7 +518,7 @@ def compute(
 # cutoff or a minimum-shingle-count guard tuned for a ~700-function corpus without either
 # threshold degenerating (e.g. `boilerplate_min_count` computed from a ratio rounds to 2 on a
 # 2-function fixture, which excludes a genuine duplicate's own shared shingles as if they were
-# boilerplate -- every function pair looks "boilerplate" when there are only two of them).
+# boilerplate: every function pair looks "boilerplate" when there are only two of them).
 # `boilerplate_min_count=3` specifically requires THREE OR MORE functions to agree before
 # something counts as boilerplate, which is what lets the boilerplate fixture below (4 functions)
 # and the duplicate fixtures (2 functions each) coexist as distinguishable mechanisms.
@@ -519,6 +650,92 @@ void OCCTDocumentSetShapeColorRGBAFixture(OCCTDocumentRef doc, OCCTShapeRef shap
 }
 """,
     ),
+    (
+        # #797 review, finding 2. Measured against the unfixed code: the char literal `'"'`'s own
+        # embedded `"` was misread as opening a real string, and since no OTHER `"` character
+        # exists anywhere in this fixture, the (buggy) scan never found a closing one, so both
+        # comments below stayed un-blanked and their prose leaked into A's own token stream,
+        # diluting containment from what would otherwise be a near-total match (B's real logic is
+        # identical to A's) down to 0.4375, below TEST_KW's 0.5 threshold: NOT REPORTED. After the
+        # fix (char literals recognized and blanked), both comments blank out as intended and this
+        # flags again.
+        "a char literal containing a double quote used to swallow real comments as fake string content",
+        """
+int32_t OCCTQuoteCheckAFixture(OCCTShapeRef shape) {
+    char c = '"';
+    int32_t x1 = 111;
+    // this sentence should have been a blanked comment but the false string never closes so it leaks
+    int32_t x2 = 222;
+    // a second leaked sentence sitting right before the next real statement in this function body
+    int32_t x3 = 333;
+    return x1;
+}
+
+int32_t OCCTQuoteCheckBFixture(OCCTShapeRef shape) {
+    int32_t x1 = 111;
+    int32_t x2 = 222;
+    int32_t x3 = 333;
+    return x1;
+}
+""",
+    ),
+    (
+        # #797 review, finding 3. Same root cause as finding 2 (no char-literal handling in
+        # strip_comments), a different symptom: the `{` inside `'{'` was left in the output text
+        # and counted as a real opening brace by c_functions()'s depth walk. Measured against the
+        # unfixed code: A's own true closing brace only brought depth back to 1 (one extra phantom
+        # open from the literal), so the walk ran past A's real end all the way to end of file,
+        # swallowing B's entire definition, INCLUDING the token "OCCTBraceCharBFixture", into
+        # what c_functions() reported as A's own body. That made the (otherwise-correct) delegation
+        # exclusion fire on a name that was never really called, only accidentally engulfed by the
+        # corrupted extraction: NOT REPORTED. After the fix, the literal is blanked before any
+        # brace-counting walk ever sees it, A's real end is found correctly, and this flags.
+        "a brace inside a char literal used to corrupt the brace-depth walk and swallow the next function whole",
+        """
+int32_t OCCTBraceCharAFixture(char delim) {
+    if (delim == '{') {
+        int32_t total = 0;
+        total += 111; total += 222; total += 333; total += 444; total += 555;
+        total -= 111; total -= 222; total -= 333; total -= 444; total -= 555;
+        return total;
+    }
+    return -1;
+}
+
+int32_t OCCTBraceCharBFixture(char delim) {
+    int32_t total = 0;
+    total += 111; total += 222; total += 333; total += 444; total += 555;
+    total -= 111; total -= 222; total -= 333; total -= 444; total -= 555;
+    return total;
+}
+""",
+    ),
+    (
+        # #797 review, finding 4. Isolated from findings 2/3: no char literal anywhere here, just
+        # a name quoted inside an ordinary NSLog string. Measured against the unfixed code: the
+        # string's content was copied through unchanged, so tokenize() produced a real
+        # "OCCTLoggedDuplicateBFixture" token from inside the log message, which made the
+        # delegation exclusion treat a genuine near-total duplicate as if A called B: NOT REPORTED.
+        # After the fix, the string's content is blanked before tokenization, the name never
+        # becomes a token, and this flags.
+        "a sibling's name quoted inside a log string used to be mistaken for a real call (delegation exclusion)",
+        """
+int32_t OCCTLoggedDuplicateAFixture(OCCTShapeRef shape) {
+    NSLog(@"about to run the same logic as OCCTLoggedDuplicateBFixture here");
+    int32_t total = 0;
+    total += 111; total += 222; total += 333; total += 444; total += 555;
+    total -= 111; total -= 222; total -= 333; total -= 444; total -= 555;
+    return total;
+}
+
+int32_t OCCTLoggedDuplicateBFixture(OCCTShapeRef shape) {
+    int32_t total = 0;
+    total += 111; total += 222; total += 333; total += 444; total += 555;
+    total -= 111; total -= 222; total -= 333; total -= 444; total -= 555;
+    return total;
+}
+""",
+    ),
 ]
 
 BRIDGE_CLEAN = [
@@ -595,7 +812,7 @@ OCCTShapeRef OCCTFnTinyTwoFixture(OCCTShapeRef shape) { return nullptr; }
     (
         # Isolates min_shared from min_distinctive: the small function clears min_distinctive on
         # its own (4 total shingles, >= the min_distinctive=3 floor) but only 2 of those 4 overlap
-        # the big, otherwise-unrelated function -- containment 2/4=0.5 already clears
+        # the big, otherwise-unrelated function: containment 2/4=0.5 already clears
         # containment_threshold=0.5, so only min_shared=3 (2 < 3) keeps this clean. Engineered by
         # measurement (Scripts/repro/784-duplication-rescan/README.md's tuning trace), not guessed:
         # a shorter or longer shared run either drops below threshold or clears min_shared too.
@@ -652,6 +869,33 @@ public func detectHolesFixture() -> [Int] {
 }
 """,
     ),
+    (
+        # #797 review, finding 1. Measured against the unfixed code: the old `[^)]*` parameter-list
+        # regex stopped at the FIRST `)` it saw, which is the closure type's own empty `()`, not the
+        # signature's real closing paren; the return-type scan then ran straight into the closure
+        # LITERAL's `{ }` and took that as the function's body. Both functions below extracted as
+        # a bare `{ }` (2 tokens each, well under min_distinctive), so a genuine, substantial
+        # duplicate body was completely invisible: NOT REPORTED. After the fix (paren-depth
+        # tracking through the parameter list), the real bodies are extracted and this flags.
+        "a closure-typed default parameter value used to hijack the real function body",
+        """
+func onCompleteAFixture(handler: () -> Void = { }) -> Int {
+    var total = 0
+    for i in 0..<5 { total += i * 2; total -= i }
+    for j in 0..<5 { total += j * 3; total -= j }
+    total += 100
+    return total
+}
+
+func onCompleteBFixture(handler: () -> Void = { }) -> Int {
+    var total = 0
+    for i in 0..<5 { total += i * 2; total -= i }
+    for j in 0..<5 { total += j * 3; total -= j }
+    total += 100
+    return total
+}
+""",
+    ),
 ]
 
 SWIFT_CLEAN = [
@@ -681,7 +925,7 @@ public func boundingBoxVolumeFixture() -> Double {
         # `threadedRodSolid` and its nested `camEdge`/`camWire`/`circleWire`/`arcW`/`shoulderFaces`/
         # `cylinderLateral`, plus five more files' `outer`/`read`-shaped local-helper pairs). A
         # nested func's body is a literal substring of its enclosing func's body, so containment is
-        # near 1.0 by construction -- not evidence of independent duplication, evidence of Swift
+        # near 1.0 by construction: not evidence of independent duplication, evidence of Swift
         # syntax. This is reliably rescued (not just usually): the nested func's own `func <name>(`
         # declaration line always puts its name in the enclosing body's own token set, so the name
         # check fires on every such pair with no exceptions found in the real corpus.
