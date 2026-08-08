@@ -132,8 +132,8 @@ let points = curve.drawAdaptive(curvatureDeflection: 0.1)
 ### GLTF Export
 
 ```swift
-try Exporter.writeGLTF(shape: model, to: gltfURL)
-try Exporter.writeGLB(shape: model, to: glbURL)
+try Exporter.writeGLTF(shape: model, to: gltfURL, binary: false)   // text glTF (.gltf)
+try Exporter.writeGLTF(shape: model, to: glbURL)                   // binary glTF (.glb), the default
 ```
 
 ## Architecture

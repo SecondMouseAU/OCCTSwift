@@ -893,7 +893,7 @@ public func createDimension(on shapeLabel: Int64,
 ```
 
 - **Parameters:**
-  - `shapeLabel` — label ID of the shape to annotate (from `Document.labelForShape(_:)` or equivalent).
+  - `shapeLabel`: label ID of the shape to annotate (from `Document.namingFindLabel(shape:)?.labelId`, or from wherever the shape's label ID was captured when it was imported or added).
   - `type` — the dimension sub-type (e.g. `.sizeDiameter`, `.locationLinearDistance`).
   - `value` — nominal measured value in model units.
   - `lowerTolerance` — lower tolerance; omit or pass `0` to leave unset.

@@ -1551,13 +1551,13 @@ public func mergedMeshNodes(from shape: Shape,
                               mergeTolerance: Double = 0.0) -> MergedMeshData?
 ```
 
-- **Parameters:** `shape` — a shape that has been triangulated (e.g., via `Mesh.from(shape:)`); `smoothAngle` — normal-smoothing angle threshold in radians; `mergeTolerance` — distance threshold for merging nodes (0 = positional identity only).
+- **Parameters:** `shape`: a shape that has been triangulated (e.g., via `Shape.mesh(linearDeflection:angularDeflection:)`); `smoothAngle`: normal-smoothing angle threshold in radians; `mergeTolerance`: distance threshold for merging nodes (0 = positional identity only).
 - **Returns:** `MergedMeshData` with interleaved vertex, normal, and index arrays, or `nil` if the shape has no triangulation or the output would exceed 1 000 000 vertices / 3 000 000 indices.
 - **OCCT:** `BRep_Builder` face iteration + `Poly_Triangulation` via `OCCTPolyMergeNodes`.
 - **Example:**
   ```swift
-  let shape = Shape.box(dx: 10, dy: 10, dz: 10)!
-  _ = Mesh.from(shape: shape, deflection: 0.1)
+  let shape = Shape.box(width: 10, height: 10, depth: 10)!
+  _ = shape.mesh(linearDeflection: 0.1)
   if let mesh = mergedMeshNodes(from: shape, smoothAngle: .pi / 6) {
       // Upload mesh.vertices and mesh.indices to a Metal vertex buffer
       print(mesh.vertexCount, mesh.triangleCount)

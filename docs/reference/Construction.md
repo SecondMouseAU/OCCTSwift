@@ -1170,7 +1170,7 @@ Computes the 3D section edges via `sectionWithPlane`, then projects each sample 
   if let drawing = box.section2D(planeOrigin: SIMD3(0, 0, 25),
                                   planeNormal: SIMD3(0, 0, 1)) {
       // drawing.visibleEdges contains the 50×50 square contour at Z=25
-      let dxf = Exporter.exportDXF(drawing: drawing)
+      try Exporter.writeDXF(drawing: drawing, to: dxfURL)
   }
   ```
 

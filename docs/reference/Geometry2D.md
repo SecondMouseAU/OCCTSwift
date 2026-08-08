@@ -244,7 +244,7 @@ Two sentinels have been retired from this one method. It first returned the brid
 - **Example:**
   ```swift
   if let p = Point2D(x: 5.0, y: 5.0),
-     let arc = Curve2D.arc(center: SIMD2(0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
+     let arc = Curve2D.arcOfCircle(center: SIMD2(0, 0), radius: 3, startAngle: 0, endAngle: .pi) {
       let d = p.distance(to: arc)  // distance to nearest point on arc
   }
   ```

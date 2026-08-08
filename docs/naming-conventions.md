@@ -17,7 +17,7 @@ OCCT organizes classes by toolkit and module prefix:
 | `BRepAlgoAPI_Fuse` | `Shape.union(with:)` |
 | `BRepFilletAPI_MakeFillet` | `Shape.filleted(radius:)` |
 | `BRepOffsetAPI_MakeThickSolid` | `Shape.shelled(thickness:)` |
-| `GeomAPI_Interpolate` | `Curve3D.interpolated(through:)` |
+| `GeomAPI_Interpolate` | `Curve3D.interpolate(points:)` |
 | `BRepBuilderAPI_MakeWire` | `Wire(...)` |
 | `Geom_BSplineCurve` | `Curve3D` |
 | `Geom_BSplineSurface` | `Surface` |

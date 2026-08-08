@@ -468,7 +468,13 @@ Each `Curve2DHatchSegment` is a line segment clipped to lie inside the boundary 
 - **OCCT:** `Geom2dHatch_Hatcher` + `Geom2dHatch_Intersector`.
 - **Example:**
   ```swift
-  let boundary = [Curve2D.rectangle(center: .zero, width: 10, height: 8)!]
+  // A rectangle boundary is 4 segments; there is no single Curve2D rectangle factory.
+  let boundary = [
+      Curve2D.segment(from: SIMD2(-5, -4), to: SIMD2(5, -4))!,
+      Curve2D.segment(from: SIMD2(5, -4), to: SIMD2(5, 4))!,
+      Curve2D.segment(from: SIMD2(5, 4), to: SIMD2(-5, 4))!,
+      Curve2D.segment(from: SIMD2(-5, 4), to: SIMD2(-5, -4))!
+  ]
   let hatches = Curve2DGcc.hatch(
       boundaries: boundary,
       direction: SIMD2(1, 1) / sqrt(2),

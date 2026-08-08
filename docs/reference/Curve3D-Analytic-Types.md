@@ -75,16 +75,11 @@ public var degree: Int { get }
 
 ## BSpline Knot Splitting (v0.40.0)
 
-### `ContinuityOrder`
+### `ContinuityOrder` *(removed in v2.0.0)*
 
-> **Deprecated in #398.** `ContinuityOrder` was one of several copies of the same
-> continuity-floor vocabulary and is now a typealias of
-> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity).
-
-```swift
-@available(*, deprecated, renamed: "ParametricContinuity")
-public typealias ContinuityOrder = ParametricContinuity
-```
+Renamed to `ParametricContinuity` in #398; the compatibility typealias itself was removed at
+v2.0.0 ([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use
+[`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) directly.
 
 The old enum stopped at `.c2`, which made **every order it could express a no-op** for the
 query it exists to answer: `GeomConvert_BSplineCurveKnotSplitting` splits where

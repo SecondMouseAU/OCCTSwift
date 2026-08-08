@@ -28,7 +28,7 @@ Iterator over triangulated faces of a meshed `Shape`.
 public final class MeshFaceIterator: @unchecked Sendable
 ```
 
-The shape must already be meshed (e.g. via `Mesh.fromShape(_:deflection:angle:)`) before creating this iterator.
+The shape must already be meshed (e.g. via `Shape.mesh(linearDeflection:angularDeflection:)`) before creating this iterator.
 
 - **OCCT:** `RWMesh_FaceIterator`.
 
@@ -48,7 +48,7 @@ public init?(shape: Shape)
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
-  _ = Mesh.fromShape(box, deflection: 0.1, angle: 0.5)
+  _ = box.mesh(linearDeflection: 0.1, angularDeflection: 0.5)
   if let iter = MeshFaceIterator(shape: box) {
       while iter.hasMore {
           print("triangles:", iter.triangleCount)

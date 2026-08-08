@@ -2302,7 +2302,7 @@ public func filletSurfaces(edges: [Shape], radius: Double) -> FilletSurfaceResul
 - **Parameters:** `edges` — edges to fillet. `radius` — fillet radius.
 - **Returns:** `FilletSurfaceResult` with NURBS fillet surfaces and support faces, or `nil` on total failure. `status == 1` with an empty `surfaces` array also maps to `nil`.
 - **OCCT:** `FilletSurf_Builder`
-- **Note:** Returns raw surface geometry only — does not produce a new solid. Use `Shape.fillet(edges:radius:)` to produce a filleted solid.
+- **Note:** Returns raw surface geometry only; does not produce a new solid. Use `Shape.filleted(edges:radius:)` to produce a filleted solid.
 - **Example:**
   ```swift
   if let r = solid.filletSurfaces(edges: [e1, e2], radius: 1.0) {
