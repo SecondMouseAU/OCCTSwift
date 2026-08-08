@@ -15,6 +15,205 @@ All notable changes to OCCTSwift.
 
 ## Unreleased
 
+<!--
+TRANSCRIPTION NOTE, written while preparing v2.0.0.
+
+`Scripts/check-changelog-transcription.py` reports 31 merge commits in this branch's history that
+did not themselves touch this file. Ten of them had a `## CHANGELOG entry` in their PR body that was
+never copied across at merge time, which is my omission, not the authors'. Those ten are transcribed
+above, plus one for #757, which merged with no `## CHANGELOG entry` section at all.
+
+**Late transcription does not clear the audit and cannot.** The check asks whether the MERGE COMMIT
+changed this file, which is the right question at merge time and unanswerable afterwards without
+rewriting history. Expect it to keep reporting 31.
+
+Six of those merges are entry-less by design, with the reason in each PR body rather than in the
+`No-Changelog:` trailer the policy asks for, because that policy landed after several of them:
+
+  #751  investigation only, no functional change
+  #758  provenance for an already-shipped patch, plus unpushed upstream artifacts
+  #759  revises a carried patch before its kernel rebuild ships; 0 of 13,532 configurations differ
+  #782  contributor documentation
+  #785  contributor documentation
+  #787  merge of already-released main content
+
+The remaining flagged merges predate the policy entirely, when entries were written in the diff.
+
+Teaching the audit to read PR bodies, so a transcribed-late entry can clear its flag, is worth doing
+and is filed as #788 rather than bent around this window.
+-->
+
+- `AAG`'s `sharedEdgeCount` is no longer silently capped at 10 by the bridge's fixed edge buffer,
+  which made a floor/wall pair sharing more than ten boundary segments under-report. (#761)
+
+### `detectPocketsAAG()` now finds a pocket whose floor/wall junction is filleted or chamfered (#762)
+
+A fillet at a pocket's floor/wall junction is tangent to both surfaces (`ChFi3d::DefineConnectType`
+reports `.smooth` at both new edges by construction), so `concaveNeighbors(of:)` found nothing
+and the pocket was invisible. A chamfer's two new edges classify `.concave` correctly, but the
+chamfer face is planar at an intermediate angle and fails the wall's own `isVertical` filter,
+so the search never continued past it. Since nearly every real machined pocket has a filleted
+floor/wall junction, this was non-detection of the pockets anyone would actually cut, not an
+edge case.
+
+Fixed by tracing outward from the floor through any absorbed junction face, a chamfer via its
+own correct `.concave` classification, a fillet via a new radially-inward curvature test, until
+a genuine wall is reached. Ground-truthed against `ChFi3d::DefineConnectType` directly first
+(`Scripts/repro/762-filleted-pocket-detection/`), including false-positive guards for a
+filleted through-slot (must stay open), a filleted boss (must never report a false *enclosed*
+pocket), and a plain box with its own exterior edges filleted (must report no pocket at all).
+
+```swift
+let box = Shape.box(width: 20, height: 20, depth: 20)!
+let pocketTool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
+let cut = box.subtracting(pocketTool)!
+let junctionEdges = cut.edges(where: { abs($0.bounds.min.z) < 1e-6 && abs($0.bounds.max.z) < 1e-6 })
+let filleted = cut.filleted(edges: junctionEdges, radius: 1.0)!
+print(filleted.detectPocketsAAG().count)   // 1, was 0
+```
+
+`detectHoles()` was checked against the same blindness and found unaffected (see above); no
+change made there.
+
+### Carried patch `0020` (#532, `BRepFeat_MakeCylindricalHole` tool part selection) is now filed upstream as OCCT#1447
+
+Re-verified the defect directly against current upstream `master` before filing: the four affected
+call sites, the two correct callers in the same builder, and the second, unfixed defect in the same
+heuristic are all unchanged from the `V8_0_0_p1`-based measurement this patch was originally built
+against, and the touched file is byte-identical between `master` and our pin. Confirmed by compiling
+`BRepFeat_MakeCylindricalHole.cxx` from `master` as an override translation unit, once unmodified
+and once patched, and running the existing reproducer against both: every "before" and "after"
+figure in the original writeup reproduces exactly, including the oversized-radius status change.
+Filed as [Open-Cascade-SAS/OCCT#1447](https://github.com/Open-Cascade-SAS/OCCT/pull/1447), PR only
+per `okf/policies/upstream-occt-style.md`. No change to OCCTSwift's own behavior or public API.
+
+### Dead `BisectorPoint`/`OCCTBisectorPointOnBis` bisector-point value type removed (#771)
+
+`BisectorPoint` (Swift), and the `OCCTBisectorPointOnBis` bridge struct and
+`OCCTBisectorPointOnBisCreate` function it wrapped, are removed. Found while teaching
+`Scripts/census-unmeasured-values.py` a third sub-kind (a boolean gate flag assigned `false`
+somewhere and `true` nowhere): `OCCTBisectorPointOnBisCreate` never called into OCCT's
+`Bisector_PointOnBis` and had no Swift call site, and `BisectorPoint` had no public initializer and
+no constructor call site anywhere in the package. Both sides were fully dead code, not a stuck gate
+on a live path. `BisectorIntersection` and `bisectorIntersections(a:b:c:d:)`, the live bisector API
+in the same file, are unaffected.
+
+```swift
+// Before: an unconstructable public type (no public init, no factory anywhere)
+// public struct BisectorPoint { ... } // removed
+
+// After: use bisectorIntersections(a:b:c:d:) for bisector work; there is nothing to migrate a
+// BisectorPoint value to, since nothing could ever have produced one.
+```
+
+### `Shape.analyze(tolerance:)` can now check self-intersection (opt-in) (#772)
+
+`analyze(tolerance:selfIntersectionTimeout:)` gains one new parameter, `selfIntersectionTimeout:
+Double? = nil`. `nil` (the default) skips the self-intersection check entirely; a non-`nil` value
+opts in, forwarded as the `timeout:` to `isSelfIntersecting(timeout:)` (the same
+`BOPAlgo_ArgumentAnalyzer` check `isSelfIntersecting` uses), and populates the new
+`ShapeAnalysisResult.hasSelfIntersection: Bool?` field: `nil` when not requested, or requested but
+indeterminate; `true`/`false` when the check resolved. `totalProblems` adds a flat +1 when
+`hasSelfIntersection == true`, matching how `hasInvalidTopology` is counted.
+
+Passing a non-`nil` `selfIntersectionTimeout` makes this call **block the calling thread** for up
+to that many seconds (more, if OCCT never reaches a checkpoint to poll); do not pass it from a
+UI/main thread without accepting that stall.
+
+Measured before deciding (`Scripts/repro/772-analyze-self-intersection/`): the check costs 1x-2x
+the rest of `analyze()`'s scan on ordinary shapes but ~3500x-4200x on a known pathological
+artifact (a few ms vs 30+ seconds), so it defaults off rather than running unconditionally.
+
+```swift
+// Default stays cheap; self-intersection is not reported unless asked for.
+let analysis = shape.analyze(tolerance: 0.001)
+print(analysis?.hasSelfIntersection)   // nil
+
+// Opt into the expensive, thread-blocking check when it's actually needed.
+let checked = shape.analyze(tolerance: 0.001, selfIntersectionTimeout: 30)
+switch checked?.hasSelfIntersection {
+case .some(true):  print("self-intersects")
+case .some(false): print("clean")
+case nil:          print("indeterminate or not requested")
+}
+```
+
+### `ShapeAnalysisResult.selfIntersectionCount` removed; `ShapeAxis.extent` now computed for `revolutionAxes()`/`symmetryAxes()` (#763)
+
+`ShapeAnalysisResult.selfIntersectionCount` is removed. It was always `0`, never computed (the
+bridge's own comment admitted "would require more expensive computation"). Use
+`Shape.isSelfIntersecting(timeout:)` for a real self-intersection check.
+
+`ShapeAxis.extent` (from `Shape.revolutionAxes(tolerance:)` and
+`Shape.symmetryAxes(fractionalTolerance:)`) is now genuinely computed rather than always `nil`: it
+reports the axis's own shape's bounding box projected onto the axis direction, in real 3D units.
+`Face.primaryAxis` is unaffected and still never populates `extent`.
+
+```swift
+// Before: always nil
+let axis = Shape.cylinder(radius: 5, height: 20)!.revolutionAxes().first
+axis?.extent  // nil, always, regardless of the cylinder's actual height
+
+// After: a real measured extent
+axis?.extent  // Optional(0.0...20.0), or -20.0...0.0 since the axis direction sign varies
+```
+
+- Pinned `v2.0.0-kernel.3`, adding patch `0025` (`GeomFill_Sweep` conversion error, #597) and the
+  revised `0018` (`GCPnts`, #555) after upstream review. (#512)
+
+### `Document.shapeColor`/`setShapeColor` now round-trip alpha correctly (#763)
+
+`Document.shapeColor(_:type:)` previously always reported `alpha == 1.0` regardless of what was
+actually stored, because the bridge read a shape's color through `XCAFDoc_ColorTool`'s RGB-only
+`GetColor` overload. It now reads the RGBA overload and reports the real value, for example a
+STEP import with a transparent surface style. `Document.setShapeColor(_:color:type:)` previously
+silently dropped `color.alpha` on write; it is now stored and round-trips through `shapeColor`.
+
+### `AAG.detectHoles()` no longer reports zero holes for an ordinary blind or through cylindrical hole (#747)
+
+`detectHoles()` required every neighbor of a candidate face to connect via a concave edge, a
+criterion written against the convexity formula #723 replaced, and unsatisfiable under the correct
+one for both a through-hole (zero concave neighbors) and a blind hole (one out of two). Replaced
+with a criterion built from the wall's own geometry: cylindrical or conical, closed in U by its own
+seam, and with material lying radially outside the wall rather than inside it, which also
+correctly excludes a boss or standalone cylinder (topologically identical to a hole in every way
+neighbor convexity can see) and correctly finds a hole bored on any axis, not only a vertical one.
+
+```swift
+let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+let cut  = box.subtracting(tool)!
+print(cut.buildAAG().detectHoles().count)   // 1, was 0
+```
+
+### `PocketFeature.isOpen` tests enclosure per edge, not by wall count or by summing shared-edge counts (#735)
+
+`isOpen` was `wallIndices.count < 3`, a proxy that does not mean enclosure: a blind cylindrical
+pocket has exactly one wall and is fully enclosed, so it reported `isOpen == true`, and a genuinely
+open three-sided slot and a closed three-walled pocket both have exactly 3 walls and were
+indistinguishable by counting alone.
+
+Fixed to test enclosure directly and per edge: for each edge of the floor's own outer wire, ask
+which faces border it in the shape and check whether one of them is a member of
+`wallFaceIndices`, by structural identity rather than by summing a shared-edge count. This closes
+two review findings on an earlier version of the fix that compared counts instead: a boss standing
+on the pocket floor could mask a genuine gap in the outer wall loop (the count included the boss's
+own inner-wire edge alongside the outer boundary's), and the underlying shared-edge count is
+separately capped by a fixed-size bridge buffer. Neither can occur with the per-edge test, since it
+never sums a total and never visits an inner-wire edge.
+
+### `GeomFill_Sweep` reports the achieved conversion error, not the tolerance that was requested (#597)
+
+Carried kernel patch `0025`. When `BRepOffsetAPI_MakePipeShell` and its callers force C1 continuity
+and the swept surface is not already C1 in V, `GeomFill_Sweep::BuildAll` re-approximates through
+`GeomConvert_ApproxSurface` and then overwrote the measured surface error with the tolerance the
+caller asked for. Every consumer of `ErrorOnSurface()` on that path was therefore reading its own
+request back. Measured on a helical sweep: 0.0001 reported against a real 2.54714.
+
+Diagnostic only. The returned geometry is byte-identical before and after, confirmed by
+override-linking the patched translation unit against the pinned archive, and no bridge site gates
+on the value today.
+
 ### `kernel-integration.yml` no longer discards a successful 79-minute build on timeout (#727)
 
 The workflow's trigger paths (`Scripts/patches/**`, `Scripts/build-occt.sh`) and its xcframework
