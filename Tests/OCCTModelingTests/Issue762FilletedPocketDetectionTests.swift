@@ -265,9 +265,27 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
 // made no distinction between ENTERING a floor's own fillet and CONTINUING past it into a
 // further corner blend: once `current` was confirmed, every vertical `.smooth` neighbor
 // looked eligible to become the wall, including a corner-blend face that is itself another
-// junction, not the wall at all. These two suites are the guards against that, each proven to
-// matter by actually forcing `currentBordersFloorDirectly` true (its pre-fix effective value)
-// and re-running (see the PR body's removal-matrix update).
+// junction, not the wall at all. These two suites are the guards against that.
+//
+// A fourth review round found the first fix's own gate, `currentBordersFloorDirectly`, asked
+// the wrong question: `adjacencyList[floorIndex][current] != nil`, "does some edge exist
+// between the floor and `current`", not "was `current` reached directly from the floor". Since
+// `adjacencyList` is built for every edge regardless of convexity, a junction that only
+// incidentally touches the floor through a non-crossable edge (measured possible on this
+// codebase: `BRepFilletAPI_MakeFillet`'s own corner-blending, see
+// `Issue762ReflexCornerPartialFilletTests`'s own doc comment re: WallX0) could satisfy it
+// without ever having been reached that way. Fixed by carrying the fact the BFS already knows
+// instead of reconstructing it: each `frontier` entry now pairs a node index with whether IT
+// was reached directly from the floor, decided once at the moment it was enqueued.
+//
+// Proved to matter by a dedicated removal-matrix row, injection E (see
+// `wallsAndJunctions(fromFloor:floorZ:tolerance:)`'s own doc comment and the PR body's
+// "Update 4" section): forcing `currentBordersFloorDirectly` to its pre-fix effective value of
+// `true` fails exactly these two tests and no others in the full `Issue762|Issue753|Issue735|
+// Issue747` suite, which is what makes this row an isolation of THIS specific gate rather than
+// a row that happens to also break under a different guard's removal (injections B and D, which
+// these two tests ALSO fail under, exercise the separate Z-tolerance-bypass mechanism, not this
+// one).
 
 @Suite("A vertical corner-blend fillet is a junction, not a wall (#762 review round 4)")
 struct Issue762VerticalCornerBlendNotAWallTests {

@@ -785,17 +785,77 @@ extension AAG {
     /// route's failure equivalent to its success, both closing off the second route. It was
     /// never true of the geometry itself, only of a bug that happened to make the two
     /// indistinguishable in every fixture built to tell them apart.
+    ///
+    /// ## `currentBordersFloorDirectly`: carried by the BFS, not reconstructed from adjacency
+    ///
+    /// A fourth review round found the guard that decides whether a vertical `.smooth` neighbor
+    /// may become a wall, `currentBordersFloorDirectly`, first shipped as
+    /// `adjacencyList[floorIndex][current] != nil`: "does some edge exist between the floor and
+    /// `current`". That is a different, weaker question than "was `current` reached directly
+    /// from the floor". `adjacencyList` is built for every edge regardless of convexity, so a
+    /// junction that only incidentally touches the floor through a non-crossable edge would
+    /// wrongly satisfy it without ever having been reached that way, reintroducing this
+    /// method's own bug for a topology none of the ten ground-truthed fixtures happened to
+    /// exercise. Not hypothetical on this codebase: `BRepFilletAPI_MakeFillet`'s own
+    /// corner-blending is documented, in `Issue762ReflexCornerPartialFilletTests`'s own doc
+    /// comment (re: WallX0), to reshape an unrelated face so the floor borders it directly by
+    /// incident, not by the route actually taken to reach it.
+    ///
+    /// Fixed by carrying the fact instead of reconstructing it: each `frontier` entry pairs a
+    /// node index with whether IT was reached directly from the floor
+    /// (`bordersFloorDirectly`), decided once, at the exact moment it is enqueued
+    /// (`discoveredBordersFloorDirectly`, `current == floorIndex`). This is exact by
+    /// construction, not merely narrower: it cannot be fooled by any incidental edge, since it
+    /// never consults `adjacencyList[floorIndex]` at all.
+    ///
+    /// A dedicated removal-matrix row (injection E) isolates this specific gate: forcing
+    /// `currentBordersFloorDirectly` to its pre-fix effective value of `true` (as if every node
+    /// bordered the floor directly) fails exactly
+    /// `Issue762VerticalCornerBlendNotAWallTests`/`Issue762FullyRoundedPocketChainingTests` and
+    /// no other test in the full `#762`/`#753`/`#735`/`#747` suite. That isolation is the point:
+    /// those same two tests also fail under injection B/D (the Z-tolerance bypass), for a
+    /// different reason (every chain-discovered wall breaks there, not specifically the
+    /// corner-blend misclassification this gate closes), so a row that merely observes them
+    /// failing under an unrelated guard's removal would not have proven this gate does anything.
+    /// This is the third guard on this PR shown to need an isolating row rather than a
+    /// coincidentally-failing one: injection C was first masked by the visited-marking bug
+    /// above, injections B and D backstop each other, and this gate's own first "proof" folded
+    /// into B/D's set instead of exercising itself.
+    ///
+    /// Full removal matrix, A through E, re-run against the grown suite (34 tests) after this
+    /// fix, each row's isolation restated:
+    ///
+    /// | injection | disables | isolates | tests that fail |
+    /// |---|---|---|---|
+    /// | A | the `.smooth`-edge radially-inward gate | whether a fillet is confirmed reentrant before crossing into it | 3: plain-box exterior fillet, both L-shape tests |
+    /// | B | the #724 Z-tolerance bypass for chain-discovered walls | whether a chain-discovered wall is trusted by contiguity instead of its own Z | 12: every fillet/chamfer/chain-discovered-wall test, including both round-4 tests (a different mechanism than E, see above) |
+    /// | C | the `.convex` edge block | whether a reentrant-the-wrong-way edge is refused | 2: filleted through-slot, L-shape reflex corner |
+    /// | D | B and C together | both of the above at once | 12, identical to B's own set (B's breakage dominates) |
+    /// | E | `currentBordersFloorDirectly` (forced `true`) | whether a wall can only be accepted from the floor itself or a junction that borders it directly | 2: exactly the two round-4 tests, and only those |
     private func wallsAndJunctions(fromFloor floorIndex: Int, floorZ: Double, tolerance: Double)
         -> (walls: [Int], junctions: [Int])
     {
         var walls: [Int] = []
         var junctions: [Int] = []
         var visited: Set<Int> = [floorIndex]
-        var frontier = [floorIndex]
+        // Each frontier entry carries whether IT was reached directly from the floor, decided
+        // once, at the moment it was enqueued, rather than re-derived later from adjacency
+        // (#762 review, round 4 finding 1). A first version of this gate asked
+        // `adjacencyList[floorIndex][current] != nil`, "does some edge exist between the floor
+        // and `current`", which is the wrong question: `adjacencyList` is built for every edge
+        // regardless of convexity, so a junction that only incidentally touches the floor
+        // through a non-crossable edge would wrongly satisfy it without ever having been
+        // reached that way. That is not hypothetical on this codebase: `BRepFilletAPI_MakeFillet`'s
+        // own corner-blending is documented (`Issue762ReflexCornerPartialFilletTests`'s own doc
+        // comment, re: WallX0) to reshape an unrelated face so the floor borders it directly by
+        // incident, not by the route the BFS actually took. Carrying the fact the BFS already
+        // knows, instead of reconstructing a weaker version of it, removes that failure mode by
+        // construction rather than narrowing it.
+        var frontier: [(index: Int, bordersFloorDirectly: Bool)] = [(floorIndex, true)]
 
         while !frontier.isEmpty {
-            var next: [Int] = []
-            for current in frontier {
+            var next: [(index: Int, bordersFloorDirectly: Bool)] = []
+            for (current, currentBordersFloorDirectly) in frontier {
                 let reachedThroughJunction = current != floorIndex
                 guard current < adjacencyList.count else { continue }
                 // Whether `current` is itself a confirmed reentrant fillet, i.e. whether we
@@ -804,19 +864,24 @@ extension AAG {
                 // floorIndex` (a floor is planar, never a fillet), so this is the entering
                 // case at BFS level 0 by construction, not a separate check.
                 let currentIsConfirmedFillet = isRadiallyInwardFillet(current)
-                // Whether `current` is close enough to the floor, structurally, for a face it
-                // borders to be THIS floor's own wall (#762 review, round 4). "Close enough"
-                // means the floor itself, or a junction whose OWN entering edge came directly
-                // from the floor: exactly the fillet or chamfer built to blend the floor to its
-                // wall, which by construction has exactly two "long" tangent/concave
-                // relationships, to the floor and to that wall, and nothing else. A junction
-                // reached only through ANOTHER junction (a corner blend continuing the chain,
-                // e.g. the torus and second fillet in fixture 2 below) is not that specific
-                // relationship: it exists to reconcile two OTHER faces, and its own far
-                // neighbor is not automatically this floor's wall just because it is vertical
-                // and radially inward, since a further corner blend can be both of those too.
-                let currentBordersFloorDirectly = !reachedThroughJunction
-                    || (floorIndex < adjacencyList.count && adjacencyList[floorIndex][current] != nil)
+                // A newly discovered junction's OWN `bordersFloorDirectly` flag: true exactly
+                // when its entering edge (the one just crossed) came from the floor itself,
+                // i.e. `current == floorIndex`. Every node discovered while processing the
+                // floor's own frontier entry gets `true`; every node discovered one level
+                // deeper or beyond gets `false`, uniformly, since by construction none of them
+                // is reached with `current == floorIndex` (#762 review, round 4). "Close enough
+                // to the floor, structurally, for a face it borders to be THIS floor's own
+                // wall" means the floor itself, or a junction whose OWN entering edge came
+                // directly from the floor: exactly the fillet or chamfer built to blend the
+                // floor to its wall, which by construction has exactly two "long"
+                // tangent/concave relationships, to the floor and to that wall, and nothing
+                // else. A junction reached only through ANOTHER junction (a corner blend
+                // continuing the chain, e.g. the torus and second fillet in fixture 9) is not
+                // that specific relationship: it exists to reconcile two OTHER faces, and its
+                // own far neighbor is not automatically this floor's wall just because it is
+                // vertical and radially inward, since a further corner blend can be both of
+                // those too.
+                let discoveredBordersFloorDirectly = !reachedThroughJunction
                 for (neighbor, edgeIndex) in adjacencyList[current] {
                     guard !visited.contains(neighbor) else { continue }
                     let edge = edges[edgeIndex]
@@ -865,20 +930,20 @@ extension AAG {
                         // past it for the true wall.
                         visited.insert(neighbor)
                         junctions.append(neighbor)
-                        next.append(neighbor)
+                        next.append((neighbor, discoveredBordersFloorDirectly))
                         continue
                     }
                     guard currentBordersFloorDirectly else {
                         // Vertical, but reached from a junction that does not itself border the
                         // floor: not this floor's wall (that relationship belongs solely to the
                         // floor-bordering junction), and not a dead end either, since it may
-                        // still be worth searching past (#762 review, round 4, fixture 2: a
+                        // still be worth searching past (#762 review, round 4, fixture 9: a
                         // vertical corner-blend cylinder between a floor-bordering fillet's own
                         // torus and the genuine wall). Absorbed as a further junction instead of
                         // a wall, regardless of how the Z-check below would have scored it.
                         visited.insert(neighbor)
                         junctions.append(neighbor)
-                        next.append(neighbor)
+                        next.append((neighbor, discoveredBordersFloorDirectly))
                         continue
                     }
                     if reachedThroughJunction || abs(candidate.bounds.min.z - floorZ) < tolerance {

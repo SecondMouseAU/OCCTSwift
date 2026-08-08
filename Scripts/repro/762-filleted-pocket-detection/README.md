@@ -298,24 +298,68 @@ gate either: `visited` already bounds the total work to this floor's own face co
 how many junction faces a chain absorbs (see "A direct dead end stays revisitable" above for the
 matching argument about the dead-end case).
 
+## `currentBordersFloorDirectly` reconstructed a fact the BFS already knew, and got it wrong
+
+A fourth review round found two problems with the fix above, both confirmed and both fixed.
+
+**Finding 1: the gate asked the wrong question.** `currentBordersFloorDirectly` first shipped as
+`adjacencyList[floorIndex][current] != nil`: "does some edge exist between the floor and
+`current`". That is not "was `current` reached directly from the floor". `adjacencyList` is built
+for every edge regardless of convexity, so a junction that only incidentally touches the floor
+through a non-crossable edge would satisfy the check without ever having been reached that way,
+reopening this method's own bug for a topology none of the ten ground-truthed fixtures happens to
+exercise. Not hypothetical here: `BRepFilletAPI_MakeFillet`'s own corner-blending is documented, in
+`Issue762ReflexCornerPartialFilletTests`'s own doc comment (re: WallX0), to reshape an unrelated
+face so the floor borders it directly by incident, not by the route actually taken to reach it.
+
+Fixed by carrying the fact instead of reconstructing it. The BFS frontier changed from a plain
+`[Int]` to `[(index: Int, bordersFloorDirectly: Bool)]`: each entry pairs a node with whether IT
+was reached directly from the floor, decided once, at the moment it is enqueued (`current ==
+floorIndex` at that moment). This never consults `adjacencyList[floorIndex]` at all, so it cannot
+be fooled by an incidental edge, by construction rather than by a narrower heuristic.
+
+**Finding 2: no removal-matrix row actually isolated this gate.** The two round-4 tests fold into
+injection B/D's failure set (the Z-tolerance-bypass mechanism), which is a real but DIFFERENT way
+to break them, not evidence about `currentBordersFloorDirectly` itself. A test comment pointed at
+"the PR body's removal-matrix update" for proof that was not there: the third guard on this PR
+believed proven by a row that was actually exercising something else (after injection C being
+masked by the `visited` bug, and injections B/D backstopping each other).
+
+Fixed with a dedicated injection E: force `currentBordersFloorDirectly` to its pre-fix effective
+value of `true` (as if every node bordered the floor directly), and confirm the failure set is
+disjoint from every other injection's own. Measured: exactly
+`Issue762VerticalCornerBlendNotAWallTests`/`Issue762FullyRoundedPocketChainingTests` fail, and no
+other test in the full `#762`/`#753`/`#735`/`#747` suite (34 tests) does. That disjointness is
+what makes E an isolation rather than a coincidence: those same two tests ALSO fail under B/D, for
+the unrelated Z-tolerance reason, so a row that merely observed them failing there would prove
+nothing about this specific gate.
+
 ## Removal matrix, final
 
-| injection | what was disabled | tests that failed |
-|---|---|---|
-| A | `.smooth`-edge radially-inward gate, unconditionally crossable | 3: plain-box exterior fillet, both L-shape tests (sharp and filleted) |
-| B | Z-tolerance bypass for chain-discovered walls | 12: all 4 fillet-radius cases, chamfer, partial-fillet, filleted through-slot, inverted `Issue753FilletedJunctionDetectedTests`, L-shape reflex corner, the dead-end test, the fixture-9 corner-blend test, and the fixture-10 ring test |
-| C | `.convex` edge block, alone | **2**: filleted through-slot, L-shape reflex corner (see table above) |
-| D | B and C together | 12, identical to B's own set |
+| injection | what it disables | what it isolates | tests that failed |
+|---|---|---|---|
+| A | `.smooth`-edge radially-inward gate, unconditionally crossable | whether a fillet is confirmed reentrant before crossing into it | 3: plain-box exterior fillet, both L-shape tests (sharp and filleted) |
+| B | Z-tolerance bypass for chain-discovered walls | whether a chain-discovered wall is trusted by contiguity instead of its own Z | 12: all 4 fillet-radius cases, chamfer, partial-fillet, filleted through-slot, inverted `Issue753FilletedJunctionDetectedTests`, L-shape reflex corner, the dead-end test, the fixture-9 corner-blend test, and the fixture-10 ring test |
+| C | `.convex` edge block, alone | whether a reentrant-the-wrong-way edge is refused | **2**: filleted through-slot, L-shape reflex corner (see table above) |
+| D | B and C together | both of the above at once | 12, identical to B's own set (B's breakage dominates) |
+| E | `currentBordersFloorDirectly`, forced `true` | whether a wall can only be accepted from the floor itself or a junction that borders it directly | **2**: exactly the fixture-9 and fixture-10 round-4 tests, and only those |
 
-Re-run in full after the `currentBordersFloorDirectly` fix, since crossability rules changed what
-each injection reaches: the failure sets above are unchanged in shape from the pre-round-4 matrix
-plus exactly the two new round-4 tests, both folding into B/D's set (their own mechanism is a
-fillet chain, so removing the Z-tolerance bypass breaks them the same way as every other
-chain-discovered wall), and neither appearing under A or C, confirming the new gate is independent
-of those two guards rather than overlapping or subsuming them. `Issue762FilletedPocketDetectionTests.swift`
-carries 15 `@Test` functions after this round (13 before), and all four injections were re-run
-against the full `Issue762|Issue753|Issue735|Issue747` filter (34 tests), confirming no other,
-unrelated test picked up a new failure under any of the four.
+Each row's "isolates" column states, and its own measurement confirms, that disabling exactly that
+mechanism (and nothing upstream or downstream of it) produces its own failure set: A and C fail
+disjoint, narrow sets that neither B/D nor E also produce; B and D collapse to the same set because
+B's breakage is a superset of what C alone can add; E's set is a strict subset of B/D's own
+(reached by both mechanisms) but distinguishable from it, since E fails ONLY those two tests while
+B/D fails twelve, proving E is doing its own, narrower job rather than merely restating B's.
+
+Re-run in full after both fixes above, since crossability rules changed what each injection
+reaches: the failure sets for A through D are unchanged in shape from the pre-round-4 matrix plus
+exactly the two new round-4 tests folding into B/D (their own mechanism is a fillet chain, so
+removing the Z-tolerance bypass breaks them the same way as every other chain-discovered wall).
+`Issue762FilletedPocketDetectionTests.swift`
+carries 15 `@Test` functions (unchanged this round; no new fixture was added, only the injection
+that isolates the existing gate), and all five injections (A through E) were re-run against the
+full `Issue762|Issue753|Issue735|Issue747` filter (34 tests), confirming no other, unrelated test
+picked up a new failure under any of the five.
 
 ## The radial material-side test was duplicated, now shared
 
