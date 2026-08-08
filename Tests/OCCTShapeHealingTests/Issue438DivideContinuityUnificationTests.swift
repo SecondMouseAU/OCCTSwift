@@ -14,7 +14,7 @@ import Testing
 // strict superset only `dividedByContinuity` used to reach) and a `tolerance` parameter, and
 // deprecating `dividedByContinuity(criterion:tolerance:)` as a forward to it (removed at v2.0.0,
 // #784). This pins the actual fix: the unified bridge call still varies with continuity, against
-// numbers measured from the corrected implementation, not merely "the two agree" — which would be
+// numbers measured from the corrected implementation, not merely "the two agree", which would be
 // true by construction once one forwarded to the other and would prove nothing about whether the
 // fix itself is correct.
 @Suite("Issue #438: divided(at:) and dividedByContinuity unified over one OCCT class")

@@ -1029,7 +1029,7 @@ public func subtractedWithHistory(_ tool: Shape, tolerance: Double = 0) -> Boole
 
 `defeature(faces:tolerance:)`, the overload whose `tolerance` parameter
 `BRepAlgoAPI_Defeaturing::Build` never read (it forwards the input shape, the faces, the history
-flag and the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else — `BOPAlgo_Options`'
+flag and the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else. `BOPAlgo_Options`'
 inherited fuzzy value is stored and never read, as its own header states outright: "the other
 options of the base class are not supported here and will have no effect"; measured across
 tolerances from `1e-7` to `100` against a `BRepAlgoAPI_Cut` control in

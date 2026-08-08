@@ -982,9 +982,9 @@ they asked at a hardcoded `1e-10` resolution against the canonical family's `Pre
 (`1e-7`), and the two disagreed near a degeneracy.
 
 There were originally four. `localCurvature(at:)` was deprecated as of #595 in favour of
-`curvature(at:)` — once #494 gave the two the same resolution they were the same call line for
-line, and measured over the same curves, degenerate rows included, they never disagreed on any row
-— and removed at v2.0.0 (#784). The bridge function behind it, `OCCTCurve3DLocalCurvature`, was
+`curvature(at:)` (once #494 gave the two the same resolution they were the same call line for
+line, and measured over the same curves, degenerate rows included, they never disagreed on any row)
+and removed at v2.0.0 (#784). The bridge function behind it, `OCCTCurve3DLocalCurvature`, was
 already deleted at #595.
 
 ### `Curve3D.localTangent(at:)`

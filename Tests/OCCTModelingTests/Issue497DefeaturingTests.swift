@@ -72,7 +72,7 @@ struct Issue497DefeaturingTests {
     }
 
     // `BRepAlgoAPI_Defeaturing::Build` forwards the input shape, the faces, the history flag and
-    // the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else — the fuzzy value from
+    // the parallel flag to `BOPAlgo_RemoveFeatures`, and nothing else. The fuzzy value from
     // `BOPAlgo_Options` is stored and never read. `defeature(faces:tolerance:)`, the overload that
     // accepted and ignored it, was removed at v2.0.0 (#784); `defeature(faces:)` never had one to
     // ignore.

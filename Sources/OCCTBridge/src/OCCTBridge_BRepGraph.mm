@@ -3150,7 +3150,7 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
 // outEdges == nullptr: counting mode (OCCTFaceGetSharedEdgeCount). Always scans every edge of
 // both faces and returns the TRUE total, uncapped; maxEdges is ignored.
 // outEdges != nullptr: collecting mode (OCCTFaceGetSharedEdges). Stops scanning as soon as count
-// reaches maxEdges, exactly as this loop always has -- every caller passes a fixed-size buffer it
+// reaches maxEdges, exactly as this loop always has: every caller passes a fixed-size buffer it
 // must not overrun. The return value in this mode is therefore capped at maxEdges, same as before.
 /// Walks a face pair's shared edges exactly once. Returns the TRUE total; writes at most
 /// `maxEdges` of them to `outEdges` and reports how many through `outWritten`.

@@ -465,7 +465,7 @@ public static func continuityClassOfFaces(edge: Shape, face1: Shape, face2: Shap
   ```
 
 `continuityOfFaces(edge:face1:face2:tolerance:) -> Int`, the raw-ordinal spelling that reported the
-same measurement (its doc comment claimed `5=CN`, wrong twice over — CN is ordinal 6, and 5/C3 is a
+same measurement (its doc comment claimed `5=CN`, wrong twice over: CN is ordinal 6, and 5/C3 is a
 value the function could not return, #495), and `buildCurves3dAll(tolerance:)`, a byte-identical
 second wrapper over `BRepLib::BuildCurves3d` whose default had drifted 100x from `buildCurves3d`'s
 own (#498), were both deprecated in favour of the methods above and removed at v2.0.0 (#784).

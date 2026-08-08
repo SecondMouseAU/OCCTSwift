@@ -39,7 +39,7 @@ fileprivate func pad(_ s: String, _ width: Int) -> String {
 // prompt, anticipated in this comment's own prior form: "when the deprecation cycle removes the
 // three properties this stops compiling, which is the right prompt to drop these rows rather than
 // silently losing them." Dropped rather than ported, since there is no live entry point left to
-// measure — `edgeCount`/`faceCount`/`vertexCount` themselves are already recorded below.
+// measure: `edgeCount`/`faceCount`/`vertexCount` themselves are already recorded below.
 
 enum ClusterA {
     static func run() {

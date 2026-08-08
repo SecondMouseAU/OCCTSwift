@@ -1317,7 +1317,7 @@ used to be split across three other spellings.
 
 `Shape.pipeShellWithTransition(spine:profile:mode:transition:solid:)`, deprecated since #503 and
 removed at v2.0.0 (#784), accepted a full `PipeSweepMode` but reached a bridge function that could
-only express `.frenet` and `.correctedFrenet` — `.fixed(binormal:)` and `.auxiliary(spine:)` were
+only express `.frenet` and `.correctedFrenet`; `.fixed(binormal:)` and `.auxiliary(spine:)` were
 swept as Frenet, a different solid from the one requested, returned as a success. Use
 [`pipeShell(spine:profile:mode:transition:...)`](#shapepipeshellspineprofilemodetransitionwithcontactwithcorrectionsolid),
 which takes the same `transition:` argument and honours every mode.

@@ -2204,7 +2204,7 @@ public enum ContinuityLevel: Int32, Sendable, CaseIterable {
 
 `dividedByContinuity(criterion:tolerance:)` duplicated `divided(at:tolerance:)` over the same
 `ShapeUpgrade_ShapeDivideContinuity`, setting only the boundary criterion where
-`divided(at:tolerance:)` sets boundary, pcurve AND surface criteria together — the usage OCCT's own
+`divided(at:tolerance:)` sets boundary, pcurve AND surface criteria together, the usage OCCT's own
 shape-healing guide demonstrates (#438). Deprecated as a forward to `divided(at:tolerance:)`,
 it was removed at v2.0.0 (#784):
 

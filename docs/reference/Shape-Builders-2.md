@@ -232,7 +232,7 @@ public func transferParameterFromFace(_ param: Double, face: Shape) -> Double
 ## BOPAlgo\_RemoveFeatures
 
 `removeFeatures(faces:)` was [`defeature(faces:)`](Document-Transforms.md#shapedefeaturefaces)
-under a second name — `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API
+under a second name: `BRepAlgoAPI_Defeaturing`, which `defeature(faces:)` drives, is an API
 wrapper over `BOPAlgo_RemoveFeatures`, and both spellings drove one algorithm object with identical
 defaults, measured byte-for-byte identical on every case including the refusals (see
 [`Scripts/repro/536-defeature-removefeatures-unify/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/536-defeature-removefeatures-unify)).
