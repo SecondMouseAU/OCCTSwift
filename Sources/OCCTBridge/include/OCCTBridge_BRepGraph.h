@@ -87,6 +87,23 @@ int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRe
 /// @return Number of shared edges, uncapped.
 int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
 
+/// True number of edges shared by two faces, optionally also handing back the first of them, from a
+/// SINGLE walk of the pair.
+///
+/// `buildGraph()` used to ask three separate questions per adjacent pair, each rebuilding both
+/// faces' edge maps: `OCCTFacesAreAdjacent` (is there one), `OCCTFaceGetSharedEdgeCount` (how many),
+/// and `OCCTFaceGetSharedEdges(maxEdges: 1)` (give me one, to ask about convexity). Calls one and
+/// three were literally redundant. This answers all three at once: a non-zero return IS adjacency,
+/// and `outFirstEdge` is the edge convexity gets asked about (#783).
+///
+/// - Parameters:
+///   - outFirstEdge: optional. When non-null, receives the first shared edge, or `nullptr` if the
+///     faces share none. **The caller owns it and must `OCCTEdgeRelease` it** when the return is
+///     greater than zero.
+/// - Returns: the true shared-edge count, never truncated.
+int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2,
+                                     OCCTEdgeRef* _Nullable outFirstEdge);
+
 /// Check if two faces are adjacent (share at least one edge)
 bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
 

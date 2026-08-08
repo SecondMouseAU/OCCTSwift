@@ -281,52 +281,29 @@ public final class AAG: @unchecked Sendable {
                 // solid), in which case every pair is compared exactly as before #699.
                 if let groups, groups[i] != groups[j] { continue }
 
-                // Check if adjacent
-                if OCCTFacesAreAdjacent(shape.handle, face1.handle, face2.handle) {
-                    // #761: size the buffer from the TRUE count first, rather than a fixed 10.
-                    // The old fixed size silently truncated `AAGEdge.sharedEdgeCount` whenever a
-                    // face pair shared more than 10 edges -- measured directly (a synthetic
-                    // 11-notch fixture shares 12 edges between two faces; the old code reported
-                    // 10). This costs the same O(e1 * e2) comparison OCCTFaceGetSharedEdges itself
-                    // runs, twice instead of once, over each face's own (small) edge set -- never
-                    // the whole shape, so it does not scale with face/edge count the way routing
-                    // through BRepGraph.sharedEdges(between:and:) would have (measured separately,
-                    // see Scripts/repro/761-aag-brepgraph-adjacency/README.md: a naive per-pair
-                    // swap onto BRepGraph was 2-8x slower and getting worse with model size, since
-                    // that primitive scans every edge in the whole graph, not just these two
-                    // faces' own).
-                    let trueCount = Int(OCCTFaceGetSharedEdgeCount(shape.handle, face1.handle, face2.handle))
+                // #783: ONE bridge call per pair, not three. This used to ask
+                // OCCTFacesAreAdjacent (is there a shared edge), then
+                // OCCTFaceGetSharedEdgeCount (how many), then OCCTFaceGetSharedEdges(maxEdges: 1)
+                // (give me one, for convexity) -- each rebuilding both faces' TopExp edge maps,
+                // and the first and third literally redundant since the third always re-finds the
+                // edge the first proved exists. A non-zero count IS adjacency.
+                //
+                // #761: the count is the TRUE count. The old code sized a fixed 10-slot buffer and
+                // reported whatever fit, so a pair sharing more than ten edges silently
+                // under-reported -- measured directly, a synthetic 11-notch fixture shares 12 and
+                // the old code said 10.
+                var firstShared: OCCTEdgeRef?
+                let trueCount = Int(OCCTFaceGetSharedEdgeSummary(
+                    shape.handle, face1.handle, face2.handle, &firstShared))
+                if trueCount > 0 {
                     var convexity: EdgeConvexity = .smooth
-                    if trueCount > 0 {
-                        // Fetch exactly ONE edge, not `trueCount` of them (#779 review). Only
-                        // sharedEdges[0] is ever read, for convexity; the count itself comes from
-                        // OCCTFaceGetSharedEdgeCount above. Sizing this array by trueCount would
-                        // heap-allocate an OCCTEdge wrapper per shared segment and release all but
-                        // the first immediately below, which the old code did too but bounded at
-                        // 10. Removing the cap without this would have traded a fixed waste for an
-                        // unbounded one, worst exactly where this PR's own fixture aims: a healed
-                        // or notched pair sharing hundreds of segments.
-                        var sharedEdges: [OCCTEdgeRef?] = Array(repeating: nil, count: 1)
-                        let fetchedCount = OCCTFaceGetSharedEdges(
-                            shape.handle, face1.handle, face2.handle,
-                            &sharedEdges, 1
+                    if let firstEdge = firstShared {
+                        let occtConvexity = OCCTEdgeGetConvexity(
+                            shape.handle, firstEdge,
+                            face1.handle, face2.handle
                         )
-
-                        // Get convexity from first shared edge
-                        if fetchedCount > 0, let firstEdge = sharedEdges[0] {
-                            let occtConvexity = OCCTEdgeGetConvexity(
-                                shape.handle, firstEdge,
-                                face1.handle, face2.handle
-                            )
-                            convexity = EdgeConvexity(fromOCCT: occtConvexity)
-                        }
-
-                        // Release edges
-                        for k in 0..<Int(fetchedCount) {
-                            if let edge = sharedEdges[k] {
-                                OCCTEdgeRelease(edge)
-                            }
-                        }
+                        convexity = EdgeConvexity(fromOCCT: occtConvexity)
+                        OCCTEdgeRelease(firstEdge)
                     }
 
                     let edgeIndex = edges.count

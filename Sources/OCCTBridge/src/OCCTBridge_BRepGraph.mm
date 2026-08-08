@@ -3153,15 +3153,28 @@ OCCTEdgeConvexity OCCTEdgeGetConvexity(OCCTShapeRef shape, OCCTEdgeRef edge, OCC
 // reaches maxEdges, exactly as this loop always has -- OCCTFacesAreAdjacent relies on that early
 // exit for its own maxEdges=1 call, and every other caller passes a fixed-size buffer it must not
 // overrun. The return value in this mode is therefore capped at maxEdges, same as before.
+/// Walks a face pair's shared edges exactly once. Returns the TRUE total; writes at most
+/// `maxEdges` of them to `outEdges` and reports how many through `outWritten`.
+///
+/// The total and the written count are separate because callers want different things from the same
+/// scan and used to make separate calls to get them (#783): `buildGraph()` needs the true count for
+/// `AAGEdge.sharedEdgeCount` AND one edge to ask about convexity, while `OCCTFaceGetSharedEdges`'s
+/// own callers need only what fits their fixed buffer, and must release exactly what was written.
+/// One comparison in one place, because two copies of it silently disagreeing is what let the
+/// 10-edge cap survive (#761).
 static int32_t countOrCollectSharedEdges(const TopoDS_Face& face1, const TopoDS_Face& face2,
-                                          OCCTEdgeRef* outEdges, int32_t maxEdges) {
+                                          OCCTEdgeRef* outEdges, int32_t maxEdges,
+                                          int32_t* outWritten = nullptr) {
     TopTools_IndexedMapOfShape edges1, edges2;
     TopExp::MapShapes(face1, TopAbs_EDGE, edges1);
     TopExp::MapShapes(face2, TopAbs_EDGE, edges2);
 
-    int32_t count = 0;
+    int32_t total = 0;
+    int32_t written = 0;
     for (int i = 1; i <= edges1.Extent(); i++) {
-        if (outEdges && count >= maxEdges) break;
+        // Stop early only when the caller wants nothing beyond a full buffer. A caller asking for
+        // the total (outWritten non-null) needs the whole walk.
+        if (outEdges && !outWritten && written >= maxEdges) break;
         const TopoDS_Edge& e1 = TopoDS::Edge(edges1(i));
 
         for (int j = 1; j <= edges2.Extent(); j++) {
@@ -3169,15 +3182,17 @@ static int32_t countOrCollectSharedEdges(const TopoDS_Face& face1, const TopoDS_
 
             // Compare by IsSame (same TShape + Location, orientation ignored).
             if (e1.IsSame(e2)) {
-                if (outEdges) {
-                    outEdges[count] = new OCCTEdge(e1);
+                if (outEdges && written < maxEdges) {
+                    outEdges[written] = new OCCTEdge(e1);
+                    written++;
                 }
-                count++;
+                total++;
                 break;
             }
         }
     }
-    return count;
+    if (outWritten) *outWritten = written;
+    return outEdges && !outWritten ? written : total;
 }
 
 int32_t OCCTFaceGetSharedEdges(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2, OCCTEdgeRef* outEdges, int32_t maxEdges) {
@@ -3196,6 +3211,22 @@ int32_t OCCTFaceGetSharedEdgeCount(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFa
     try {
         return countOrCollectSharedEdges(face1->face, face2->face, nullptr, 0);
     } catch (...) {
+        return 0;
+    }
+}
+
+int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2,
+                                     OCCTEdgeRef* outFirstEdge) {
+    if (outFirstEdge) *outFirstEdge = nullptr;
+    if (!shape || !face1 || !face2) return 0;
+
+    try {
+        int32_t written = 0;
+        int32_t total = countOrCollectSharedEdges(face1->face, face2->face,
+                                                  outFirstEdge, outFirstEdge ? 1 : 0, &written);
+        return total;
+    } catch (...) {
+        if (outFirstEdge) *outFirstEdge = nullptr;
         return 0;
     }
 }
