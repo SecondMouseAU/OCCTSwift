@@ -127,7 +127,15 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
     (`OCCTShapeAxis* p = &a; p->hasExtent = true;`) bound nothing and the flip through `p` was
     invisible, even though the identical shape through a parameter was already caught. Fixed by
     giving `local_bind` the same two-branch shape `param_bind` already had (pointer/reference OR
-    plain value), rather than adding it to the list of things this pass cannot see.
+    plain value), rather than adding it to the list of things this pass cannot see. `local_bind`
+    was also single-declarator-only until #774's fifth review round: `local_declarator_bindings`
+    (its replacement) additionally splits a MULTI-DECLARATOR statement
+    (`OCCTShapeAxis *p, *q;`, or the mixed `OCCTShapeAxis a, *p;`) into its comma-separated pieces,
+    since the single-declarator form required its terminator immediately after the first name and
+    a comma sharing the statement with a second declarator failed that check for every declarator
+    in the statement, not just the one after the comma; low-severity in this tree (the bridge's own
+    style is one declarator per line) but fixed on the reviewer's own framing: a style choice is not
+    a safety argument.
   - Within each function, match every `var.field = RHS;`, `var->field = RHS;` and
     `var[idx].field = RHS;` assignment (a strict superset of sub-kind 1's `var.field` pattern) where
     `var` is bound to a struct with `field` in its bool-field set. Classify the RHS `true`, `false`,
@@ -147,16 +155,28 @@ field true", it is "does ANYTHING, anywhere in the bridge, set it true".
     would exempt a field that is permanently `false` in the code that actually executes, the
     identical unreachable-write-masks-a-stuck-gate shape as the `true` branch's own gap, left open
     one branch over until this fix.
-  - A `true` assignment (and, since the fix above, a COMPUTED one) does not count as reachable
-    evidence if it is textually UNREACHABLE by one of two narrow, decidable checks (this is what
-    teaches the "assigned true only on a path that is itself unreachable" shape): (a) it sits inside
-    an `if (false) { ... }` / `if (0) { ... }` / `while (false) { ... }` block, braced or braceless,
-    or (b) it is preceded, within the same brace-delimited straight-line block, by an unconditional
-    `return`/`continue`/`break`/`throw` statement that STARTS its own statement (immediately after a
-    `;`, `{`, `}` or the top of the block): a `return` inside a braceless `if (cond) return x;`
-    guard does NOT count, since it is conditional, not a straight-
+  - A `true` assignment, a computed assignment, AND (since #774's fifth review round) a `false`
+    assignment all route through the SAME `is_dead_assignment(body, pos, segs, dead_spans)` check
+    for whether the assignment is textually UNREACHABLE by one of two narrow, decidable checks
+    (this is what teaches the "assigned true only on a path that is itself unreachable" shape):
+    (a) it sits inside an `if (false) { ... }` / `if (0) { ... }` / `while (false) { ... }` block,
+    braced or braceless, or (b) it is preceded, within the same brace-delimited straight-line
+    block, by an unconditional `return`/`continue`/`break`/`throw` statement that STARTS its own
+    statement (immediately after a `;`, `{`, `}` or the top of the block): a `return` inside a
+    braceless `if (cond) return x;` guard does NOT count, since it is conditional, not a straight-
     line exit, and treating it as one produced a real false positive in this tree's own corpus (see
-    the removal matrix in the self-test below).
+    the removal matrix in the self-test below). All three call sites share this one function rather
+    than each running its own copy of the same two checks: the duplication IS how #774's own bug
+    came to exist. The check was added to the `true` branch in the second review round, not
+    mirrored to the computed branch until the fourth, and not mirrored to the `false` branch until
+    the fifth, three chances for the same omission because there were three places to make it.
+  - A `false` write inside dead code is not evidence the field is stuck on any live path either
+    (fifth review round, alongside the shared-helper factoring above): a field whose EVERY `false`
+    write is dead gets no entry in `false_sites` at all, which is what makes it drop out of the
+    report entirely rather than being reported with an empty or a dead site, since the dict is
+    built by appending live sites one at a time, and a field with zero live appends never acquires
+    a key. A field with a MIX of dead and live `false` writes still gets reported, and only from
+    the live site, for the same reason.
   - A field is reported once it has at least one `false` site and belongs to neither the "true seen"
     nor the "computed seen" set.
 
@@ -821,11 +841,53 @@ def false_condition_spans(body):
     return spans
 
 
+def is_dead_assignment(body, pos, segs, dead_spans):
+    """True if the assignment at `pos` is unreachable: dead code after an unconditional
+    return/continue/break/throw (`is_dead_after_terminator`), or inside a literal always-false
+    conditional (`dead_spans`, from `false_condition_spans`). `gate_flag_candidates` calls this
+    ONE function from all three of its ASSIGN_ANY branches (`true`, `false`, computed), rather than
+    each branch running its own copy of the same two checks. That is not tidiness: the duplication
+    is how #774's own bug came to exist. The check was added to the `true` branch in round two;
+    nobody mirrored it to the computed branch until round four, and nobody mirrored it to the
+    `false` branch until round five, three chances for the same omission because there were three
+    places to make it. Routing every branch through one function does not make a future branch
+    remember to call it, but it does mean a branch that DOES call it gets the real, current check,
+    and a reviewer looking for "does this branch handle dead code" has exactly one implementation to
+    read, not three copies that can individually drift."""
+    return is_dead_after_terminator(body, pos, segs) or any(s <= pos < e for s, e in dead_spans)
+
+
 # A strict superset of sub-kind 1's FIELD_ASSIGN: also matches pointer indirection (`var->field =`)
 # and an array/pointer out-param element (`var[idx].field =`), the "flipped through a pointer,
 # reference or helper" shape.
 ASSIGN_ANY = re.compile(
     r'\b([A-Za-z_]\w*)(?:\s*\[[^\]]*\])?\s*(?:\.|->)\s*([A-Za-z_]\w*)\s*=\s*([^=][^;]*);')
+
+
+def local_declarator_bindings(type_alt, body):
+    """{name: struct_type} for every local variable bound by a declaration statement, including a
+    MULTI-DECLARATOR one (`OCCTShapeAxis *p, *q;`, or the mixed `OCCTShapeAxis a, *p;`), each
+    comma-separated declarator optionally carrying its own `*`/`&`. A single-declarator regex
+    (`\\b(TYPE)\\s+(name)\\s*(?:=|;|\\{)`, this function's predecessor through two review rounds)
+    requires the terminator right after the first name, so a second declarator sharing the same
+    type never bound at all: nothing about `p` in `TYPE *p, *q;` looks different from `TYPE *p;` up
+    to the point the terminator check fails on the comma. Low-severity in this tree today (the
+    bridge's own style is one declarator per line), fixed anyway rather than left as a documented
+    gap, per #774's fifth review round: "the bridge's current style is the only reason it has not
+    bitten" is a description of luck, not of safety."""
+    decl_list = re.compile(
+        r'\b(' + type_alt + r')(?:\s*[\*&]\s*(?:_Nonnull\s+|_Nullable\s+|const\s+)?|\s+)'
+        r'([A-Za-z_]\w*(?:\s*=\s*[^,;]*)?(?:\s*,\s*[\*&]?\s*[A-Za-z_]\w*(?:\s*=\s*[^,;]*)?)*)\s*;')
+    declarator = re.compile(
+        r'^[\*&\s]*(?:_Nonnull\s+|_Nullable\s+|const\s+)?([A-Za-z_]\w*)$')
+    bindings = {}
+    for m in decl_list.finditer(body):
+        stype, decls = m.group(1), m.group(2)
+        for decl in decls.split(','):
+            dm = declarator.match(decl.split('=')[0].strip())
+            if dm:
+                bindings[dm.group(1)] = stype
+    return bindings
 
 
 def gate_flag_candidates(sources):
@@ -840,20 +902,10 @@ def gate_flag_candidates(sources):
     type_alt = '|'.join(re.escape(t) for t in struct_fields)
     param_bind = re.compile(
         r'\b(' + type_alt + r')\s*[\*&]\s*(?:_Nonnull\s+|_Nullable\s+|const\s+)?(\w+)\b')
-    # A local declaration binds either a plain value (`OCCTShapeAxis a;`, needs the `\s+` branch,
-    # since nothing else separates the type from the name) or a pointer/reference
-    # (`OCCTShapeAxis* p = &a;` / `OCCTShapeAxis *p;`, needs the `[\*&]` branch, which absorbs
-    # whitespace on either side of the sigil so both spellings match). Originally value-typed only;
-    # a local pointer/reference bound nothing, so `p->hasExtent = true;` through a local alias was
-    # invisible even though param_bind already handled the identical shape for a parameter
-    # (#774's third review round).
-    local_bind = re.compile(
-        r'\b(' + type_alt + r')(?:\s*[\*&]\s*(?:_Nonnull\s+|_Nullable\s+|const\s+)?|\s+)'
-        r'([A-Za-z_]\w*)\s*(?:=|;|\{)')
 
     false_sites = {}   # (struct, field) -> [(file, line, func, snippet), ...]
     true_seen = set()  # (struct, field) with >=1 reachable literal-true assignment
-    computed_seen = set()  # (struct, field) with >=1 non-literal assignment anywhere
+    computed_seen = set()  # (struct, field) with >=1 reachable non-literal assignment
     for path, raw in sources:
         text = strip_comments(raw)
         lines = raw.splitlines()
@@ -864,8 +916,7 @@ def gate_flag_candidates(sources):
             bindings = {}
             for m in param_bind.finditer(params):
                 bindings[m.group(2)] = m.group(1)
-            for m in local_bind.finditer(body):
-                bindings[m.group(2)] = m.group(1)
+            bindings.update(local_declarator_bindings(type_alt, body))
             if not bindings:
                 continue
             for m in ASSIGN_ANY.finditer(body):
@@ -874,11 +925,20 @@ def gate_flag_candidates(sources):
                 if not stype or field not in struct_fields.get(stype, ()):
                     continue
                 if rhs == 'true':
-                    if is_dead_after_terminator(body, m.start(), segs) or \
-                       any(s <= m.start() < e for s, e in dead_spans):
+                    if is_dead_assignment(body, m.start(), segs, dead_spans):
                         continue  # unreachable true: does not count as a real flip
                     true_seen.add((stype, field))
                 elif rhs == 'false':
+                    # A `false` written only in dead code is not evidence the field is stuck on any
+                    # live path either (#774's fifth review round): skip it here, the same way an
+                    # unreachable `true`/computed write is skipped below, so the sites this function
+                    # goes on to report are the live ones. A field whose EVERY `false` write is dead
+                    # never gets an entry in false_sites at all, which is what makes it drop out of
+                    # the report entirely rather than being reported with an empty site list: this
+                    # dict is built by appending live sites one at a time, so a field with zero live
+                    # appends simply never acquires a key.
+                    if is_dead_assignment(body, m.start(), segs, dead_spans):
+                        continue
                     line = text.count('\n', 0, bs + m.start()) + 1
                     false_sites.setdefault((stype, field), []).append(
                         (os.path.basename(path), line, name,
@@ -891,8 +951,7 @@ def gate_flag_candidates(sources):
                     # in the identical dead code the `true` branch already excludes is not "maybe
                     # true at runtime" either, it is "never runs at all", the same unreachable-
                     # write-masks-a-stuck-gate shape, one branch over (#774's second review round).
-                    if is_dead_after_terminator(body, m.start(), segs) or \
-                       any(s <= m.start() < e for s, e in dead_spans):
+                    if is_dead_assignment(body, m.start(), segs, dead_spans):
                         continue  # unreachable computed assignment: not "maybe true", just dead
                     computed_seen.add((stype, field))
 
@@ -1260,6 +1319,38 @@ void occtFixtureDeadComputed(OCCTFixtureDeadComputed* outGate) {
         g.hasExtent = occtSomeLegacyComputation();
     }
 }'''),
+    ('indirection shape 2e: one dead false write AND one live false write for the same field, no '
+     'true or computed anywhere. Must still flag, and from the LIVE site: a false written only in '
+     'dead code is not evidence of anything, but a false written on a real path still is, and a '
+     'field with a mix of both must not have the live evidence swallowed by the dead site', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureDeadAndLiveFalse;
+''', '''
+void occtFixtureDeadAndLiveFalse(OCCTFixtureDeadAndLiveFalse* outGate) {
+    OCCTFixtureDeadAndLiveFalse g;
+    g.value = 1.0;
+    if (false) {
+        g.hasExtent = false;
+    }
+    g.hasExtent = false;
+}'''),
+    ('indirection shape 7: a MULTI-DECLARATOR local statement with NO pointer/reference sigil at '
+     'all (OCCTFixtureMultiDeclaratorPlain unused, a;), value-typed on both names, isolating the '
+     'multi-declarator gap from the separate pointer-in-locals gap: the first declarator alone '
+     'failing its terminator check (a comma follows it, not =/;/{) already loses every later '
+     'declarator in the same statement, with no `*`/`&` involved anywhere', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureMultiDeclaratorPlain;
+''', '''
+void occtFixtureMultiDeclaratorPlain(OCCTFixtureMultiDeclaratorPlain* outGate) {
+    OCCTFixtureMultiDeclaratorPlain unused, a;
+    a.value = 1.0;
+    a.hasExtent = false;
+}'''),
 ]
 
 GATE_CLEAN = [
@@ -1373,6 +1464,39 @@ void occtFixtureLocalPointer(OCCTFixtureLocalPointer* outGate) {
     a.value = 1.0;
     a.hasExtent = false;
     OCCTFixtureLocalPointer* p = &a;
+    p->hasExtent = true;
+}'''),
+    ('every literal false write for this field is inside dead code, and nothing else assigns it '
+     'anywhere: the field must drop out of the report entirely rather than being reported with an '
+     'empty (or the dead) site, since a false written only in dead code is not evidence the field '
+     'is stuck on any live path', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureDeadFalseOnly;
+''', '''
+void occtFixtureDeadFalseOnly(OCCTFixtureDeadFalseOnly* outGate) {
+    OCCTFixtureDeadFalseOnly g;
+    g.value = 1.0;
+    if (false) {
+        g.hasExtent = false;
+    }
+}'''),
+    ('indirection shape 6: the multi-declarator gap AND the pointer-in-locals gap together, the '
+     'exact shape the review reported (OCCTFixtureMultiDeclarator *p, *q;, both pointer-typed, '
+     'sharing one type name and one terminating semicolon). Shape 7 below isolates the '
+     'multi-declarator mechanism on its own; this one is kept as the close-to-the-report case', '''
+typedef struct {
+    double value;
+    bool hasExtent;
+} OCCTFixtureMultiDeclarator;
+''', '''
+void occtFixtureMultiDeclarator(OCCTFixtureMultiDeclarator* outGate) {
+    OCCTFixtureMultiDeclarator a;
+    a.value = 1.0;
+    a.hasExtent = false;
+    OCCTFixtureMultiDeclarator *p, *q;
+    p = &a;
     p->hasExtent = true;
 }'''),
 ]

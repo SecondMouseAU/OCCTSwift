@@ -19,16 +19,19 @@ as a positive case regardless of what the real corpus looks like after #770.
 ## What sub-kind 3 detects
 
 A boolean field, declared on any `typedef struct { ... } Name;` / `struct Name { ... };` in
-`Sources/OCCTBridge/` (not filtered by field name), that is assigned literal `false` somewhere in
-the corpus and literal `true` nowhere reachable. Reachable excludes an `if (false)` / `if (0)` /
-`while (false)` / `while (0)` block (braced or braceless, see the second review round below) and
-dead code following an unconditional `return`/`continue`/`break`/`throw` in the same straight-line
-block; both checks apply equally to a literal `true` and a computed RHS (see the third review round
-below). A field with any REACHABLE non-literal (computed) assignment is treated as not provably
-stuck, since the census cannot evaluate whether that expression can produce `true`. Binding a local
-identifier to a known struct type recognises a local declaration, value-typed or pointer/reference,
-and a pointer or reference parameter, so a shared helper that flips the field through `->`/`&`, or
-a local alias declared inside the function body, is caught with no special-casing for "this is a
+`Sources/OCCTBridge/` (not filtered by field name), that is assigned literal `false` on at least one
+REACHABLE path in the corpus and literal `true` nowhere reachable. Reachable excludes an
+`if (false)` / `if (0)` / `while (false)` / `while (0)` block (braced or braceless) and dead code
+following an unconditional `return`/`continue`/`break`/`throw` in the same straight-line block; one
+shared check applies this to all three of a literal `true`, a literal `false`, and a computed RHS
+(see the fifth review round below for why it is one shared check and not three). A field with any
+REACHABLE non-literal (computed) assignment is treated as not provably stuck, since the census
+cannot evaluate whether that expression can produce `true`. A field whose every `false` write is
+itself unreachable drops out of the report entirely, rather than being reported with an empty or a
+dead site. Binding a local identifier to a known struct type recognises a local declaration,
+value-typed or pointer/reference, single- or multi-declarator (`OCCTShapeAxis *p, *q;`), and a
+pointer or reference parameter, so a shared helper that flips the field through `->`/`&`, or a
+local alias declared inside the function body, is caught with no special-casing for "this is a
 helper" or "this is an alias". A separate, narrower detector covers the Swift side: a
 `var x: Bool { ... }` computed property that returns `false` somewhere and `true` nowhere in its
 body.
@@ -74,53 +77,14 @@ unfixed code, then the fix applied and the case confirmed to pass.
    Fixed by the same unification as (2): the check now searches the whole argument text for a bare
    `var` token, not just a sole argument.
 
-### Removal matrix, all nineteen mechanisms
+### Removal matrix
 
-25 self-test cases before the second round became 30 after (3 new sub-kind 1 cases for findings 2
-to 4, plus one further case described below, plus 1 new sub-kind 3 case for finding 1), then 32
-after the fourth round (one sub-kind 3 case each for the two findings there). Every mechanism sub-
-kind 3 and sub-kind 1's config-struct exclusion rely on was disabled in turn in a working copy of
-the script, `--self-test` re-run, the case-count drop recorded, and the file restored from an
-untouched backup before the next probe. Rows 1 to 13 were re-verified against the fourth round's
-refactored code, not just carried over from the second round's own run:
-
-| # | Rule disabled | Cases correct | What flipped |
-|---|---|---|---|
-| - | (baseline) | 32/32 | - |
-| 1 | Sub-kind 3: name-prefix independence | 28/32 | 4 MISSED cases stop being flagged (the seed's non-`has` sibling, both dead-`true` cases, and the braceless case; the two fourth-round cases are unaffected, both using the `hasExtent` name already) |
-| 2 | Sub-kind 3: dead-after-terminator exclusion | 31/32 | 1 MISSED case stops being flagged (only the dead-after-return case; the dead-if-false-guarded computed case, row 14, relies on `dead_spans` instead and is unaffected) |
-| 3 | Sub-kind 3: dead-if-false exclusion, whole mechanism | 29/32 | 3 MISSED cases stop being flagged: both the braced and the braceless `true` form, AND the new dead-computed case (row 14), confirming it correctly shares this same mechanism rather than reimplementing it |
-| 4 | Sub-kind 3: pointer/reference parameter binding | 30/32 | 2 CLEAN cases become wrongly flagged; the new local-pointer case (row 15) is unaffected, since it uses `local_bind`, not `param_bind` |
-| 5 | Sub-kind 3: local declaration binding, whole mechanism (value-typed AND pointer/reference) | 26/32 | all 6 sub-kind 3 MISSED cases stop being flagged, including the new dead-computed case (row 14, which also needs a local binding to exist at all) |
-| 6 | Sub-kind 3: computed-sibling exclusion (the `computed_seen.add` call itself, reachability check left in place) | 31/32 | 1 CLEAN case becomes wrongly flagged (`wasAdjusted`); unaffected by the fourth round's reachability addition, since that addition guards entry INTO this line, not the line itself |
-| 7 | Sub-kind 3: Swift computed-property detection | 31/32 | 1 Swift MISSED case stops being flagged |
-| 8a | Sub-kind 1: whole config-struct exclusion | 31/32 | 1 CLEAN case becomes wrongly flagged |
-| 8b | Sub-kind 1: whole store-family protection | 29/32 | 3 MISSED cases stop being flagged (the original `push_back` seed shape, the arrow-notation case, and the multi-argument `insert` case) |
-| 8c | Sub-kind 1: bare-`return` protection | 31/32 | 1 MISSED case stops being flagged, the "handed to a call AND returned" case |
-| 8d | Sub-kind 1: array-element-assignment protection | 31/32 | 1 MISSED case stops being flagged, the "handed to a call AND copied into an array element" case |
-| 8e | Sub-kind 1: paren-depth-balanced argument scan (swapped for naive `[^()]*`) | 29/32 | 2 CLEAN/MISSED cases affected: the config-struct case wrongly flagged again, and the multi-argument `insert` case stops being flagged. Confirmed on the real corpus too: report count moves 49 to 53. |
-| 9 | Sub-kind 3: braceless if-false specifically (braced form left intact) | 31/32 | 1 MISSED case stops being flagged, the braceless one only |
-| 10 | Sub-kind 1: arrow-notation recognition specifically (dot-only reinstated) | 31/32 | 1 MISSED case stops being flagged, the pointer-container case only |
-| 11 | Sub-kind 1: multi-argument recognition specifically (single-argument-only reinstated) | 31/32 | 1 MISSED case stops being flagged, the two-argument `insert` case only |
-| 12 | Sub-kind 1: `CALL_START` keyword/`sizeof` exclusion | 31/32 | 1 MISSED case stops being flagged, the `sizeof` case |
-| 13 | Sub-kind 1: `FIELD_ASSIGN` arrow/array-index matching (dot-only reinstated) | 31/32 | 1 MISSED case stops being flagged, the pointer-out-param result case |
-| 14 | Sub-kind 3: reachability check on the COMPUTED branch specifically (`true`-branch check left intact) | 31/32 | 1 MISSED case stops being flagged, the dead-if-false-guarded computed assignment case only |
-| 15 | Sub-kind 3: local pointer/reference declaration binding specifically (`local_bind` reverted to value-typed-only, `param_bind` left intact) | 31/32 | 1 CLEAN case becomes wrongly flagged, the local-pointer-alias case only |
-
-Every row drops the count and no two rows are redundant. Two sub-kind-3 CLEAN cases (the two
-correctly-flipping baselines) and one control (the "reachable true under a real condition" case)
-are not tied to a single row; they guard the shared base-recognition path every row relies on and
-would only fail if that broke. Recorded explicitly, per the second review round's own question
-about whether any case's rule could be deleted without the count dropping: none of the 32 has that
-property.
-
-**Row 5 was flagged in the fourth review round as covering only the value-typed form**, since
-before that round `local_bind` had no pointer/reference branch at all, so disabling "local
-declaration binding" and disabling "value-typed local declaration binding" were the same
-experiment: a matrix row that can only exercise one of two shapes reads as covering both when it
-covers one. Row 5 above now disables the WHOLE mechanism (both forms at once, since after the fix
-they are one regex with two branches) and row 15 isolates the pointer/reference branch on its own,
-closing that gap directly rather than leaving it as a documented limitation of the matrix.
+The second review round's matrix (19 mechanisms at the time) is superseded by the consolidated,
+re-verified matrix after the fifth review round, below "Fifth review round". Numbering was not
+preserved across rounds: each round's refactoring changed what a given mechanism even means (the
+fourth round's shared-helper factoring in particular made the old per-branch rows describe code
+that no longer exists in that shape), so re-deriving the whole matrix fresh each time it moves is
+more honest than patching numbers that no longer point at the same lines.
 
 ## Third finding, same review, sub-kind 1's own core mechanism
 
@@ -142,8 +106,8 @@ already handled dot, arrow and array-index. A result struct built through an out
 (`out->field = ...;`, common in this bridge: `OCCTBridge_AIS.mm`, `OCCTBridge_Geom2d.mm`) or an
 array element (`out[i].field = ...;`) was invisible to sub-kind 1 from the start, a silent
 under-report of exactly the kind this whole review is about. Fixed: `FIELD_ASSIGN` now matches the
-same three shapes `ASSIGN_ANY` does. A dedicated self-test case (row 13 above) proves it, modelled
-on a real site, `OCCTBridge_Geom2d.mm`'s `extractBisecSolution`.
+same three shapes `ASSIGN_ANY` does. A dedicated self-test case (in the consolidated matrix below)
+proves it, modelled on a real site, `OCCTBridge_Geom2d.mm`'s `extractBisecSolution`.
 
 **Sub-kind 2 (Swift): neither gap applies, verified against Swift's own grammar, not assumed.**
 Swift requires braces on every `if`/`while`/`for` body; there is no braceless form for the parser to
@@ -185,7 +149,7 @@ Fixed: the same two checks now gate the computed branch too, sharing the exact f
 inside the function rather than a caller-supplied out-param, bound nothing: `ASSIGN_ANY`'s match on
 `p->hasExtent = true` found `bindings.get('p')` was `None` and the assignment was silently skipped,
 invisible to sub-kind 3 entirely. This is the SAME shape #774's second review round already fixed
-for a shared helper's own POINTER PARAMETER (row 4); the review's framing was apt: a detector that
+for a shared helper's own POINTER PARAMETER; the review's framing was apt: a detector that
 understands `p->field` but not what `p` is bound to is half a feature. Fixed: `local_bind` now has
 the same two-branch shape `param_bind` already had, a pointer/reference OR a plain value, so a
 local pointer/reference declaration binds exactly like the parameter form always did.
@@ -198,6 +162,100 @@ open, neither needed to be added there either. Measured against the real corpus:
 report count is unchanged at 3 candidates after both fixes, and sub-kind 1/2 are unaffected (both
 fixes are inside `gate_flag_candidates`, sub-kind 3 only), consistent with the reviewer's own
 framing that neither gap was confirmed live, only real as a mechanism.
+
+## Fifth review round: the duplication itself, plus the third literal, plus multi-declarators
+
+A third pass raised three findings. The first is the one that mattered most, because it explains
+why the fourth round's own fix was needed at all.
+
+**Finding: the reachability check was duplicated verbatim between the `true` branch and the
+computed branch, and that duplication is how the fourth round's bug came to exist.** The check was
+added to the `true` branch in the second round and not mirrored to the computed branch until the
+fourth: two copies, two chances to forget one. Fixed by factoring both into one function,
+`is_dead_assignment(body, pos, segs, dead_spans)`, and routing every branch through it. This closes
+the recurrence mechanism, not just the latest instance of it: a fourth call site cannot skip the
+check by copy-pasting an outdated version of it, because there is only one version to call.
+
+**Finding: the `false` branch had no reachability check at all, the third instance of the same
+gap.** Fixing the duplication above made this the natural place to close it: routing the `false`
+branch through the same `is_dead_assignment` closes both findings together, per the review's own
+framing. On the substance: a `false` write in dead code is not evidence a field is stuck, so
+skipping it is right, but a field whose EVERY `false` write is dead should not be a candidate at
+all, rather than reported with an empty site list. Achieved for free by how `false_sites` is
+built: it is populated by appending one live site at a time, so a field with zero live appends
+never acquires a key in the dict, and the loop that produces the final report only ever iterates
+keys that exist. A field with a MIX of dead and live `false` writes still gets reported, correctly,
+and from the live site specifically, verified by direct inspection of `gate_flag_candidates`'s
+return value for exactly that fixture (dead site on an earlier line, live site on a later one; the
+function returns the later line).
+
+**Finding: `local_bind` (now `local_declarator_bindings`) never handled a multi-declarator
+statement**, `OCCTShapeAxis *p, *q;`, because the single-declarator regex required its terminator
+(`=`/`;`/`{`) immediately after the first name, and a comma-separated second declarator supplied a
+`,` instead. Confirmed this affects even a PURELY VALUE-TYPED multi-declarator
+(`OCCTShapeAxis a, b;`), not just the pointer/reference form the review's own example used: the
+terminator check fails identically either way, so this is a distinct mechanism from finding 1 in
+the fourth round (pointer/reference support), not a variant of it. Fixed by replacing the
+single-declarator regex with one that captures the whole comma-separated declarator list and
+splits it, each piece optionally carrying its own `*`/`&` and initializer.
+
+### Avoiding the fourth round's "row 5" trap here too
+
+The review separately asked to verify the removal matrix can still isolate each of the three
+branches' use of the new shared `is_dead_assignment` helper, rather than having one row that fails
+all three at once and calls that coverage. It also flagged, unprompted, that a naive test design
+for finding 2 would recreate exactly the fourth round's row-5 ambiguity: a multi-declarator fixture
+built entirely from pointer-typed declarators (`OCCTFixtureMultiDeclarator *p, *q;`, the review's
+own example, kept below as the close-to-the-report case) cannot be told apart, by the matrix, from
+a pointer-support fixture, since disabling either mechanism regresses it. A second, value-typed-only
+multi-declarator fixture (`OCCTFixtureMultiDeclaratorPlain unused, a;`) was added specifically to
+break that tie: disabling pointer support alone spares it, disabling multi-declarator support alone
+does not, which is what makes the two mechanisms separable in the table below rather than merely
+asserted to be separate.
+
+### Removal matrix, all twenty-three mechanisms, fully re-derived
+
+36 self-test cases (was 32 after the fourth round: 2 new for the `false`-branch reachability finding,
+2 new for the multi-declarator finding). Every mechanism was disabled in turn in a working copy of
+the script, `--self-test` re-run, the case-count drop recorded, and the file restored from an
+untouched backup before the next probe. Rows 1 to 9 were re-verified against the fifth round's fully
+refactored code, not carried over from an earlier run:
+
+| # | Rule disabled | Cases correct | What flipped |
+|---|---|---|---|
+| - | (baseline) | 36/36 | - |
+| 1 | Sub-kind 3: name-prefix independence | 32/36 | 4 MISSED cases stop being flagged (the seed's non-`has` sibling, both dead-`true` cases, and the braceless case; all fifth-round cases are unaffected, all using `hasExtent` already) |
+| 2 | Sub-kind 3: `is_dead_after_terminator` (shared sub-mechanism) | 35/36 | 1 MISSED case stops being flagged, the dead-after-return case only |
+| 3 | Sub-kind 3: `false_condition_spans` (shared sub-mechanism, whole) | 32/36 | 4 cases affected: both `true`-branch if-false forms, the dead-computed case, AND (new this round) the all-dead-`false` case, confirming the `false` branch now shares this mechanism too |
+| 4 | Sub-kind 3: pointer/reference PARAMETER binding (`param_bind`) | 34/36 | 2 CLEAN cases become wrongly flagged |
+| 5 | Sub-kind 3: local declaration binding, whole mechanism (`local_declarator_bindings` disabled entirely) | 28/36 | all 7 sub-kind-3 MISSED cases that need any local binding stop being flagged |
+| 6 | Sub-kind 3: `computed_seen.add` itself (reachability check left in place) | 34/36 | 1 CLEAN case becomes wrongly flagged (`wasAdjusted`) |
+| 7 | Sub-kind 3: Swift computed-property detection | 34/36 | 1 Swift MISSED case stops being flagged |
+| 8 | Sub-kind 3: `true`-branch call site to `is_dead_assignment`, specifically | 32/36 | 3 MISSED cases stop being flagged (both if-false forms, dead-after-return); `false`/computed branches unaffected |
+| 9 | Sub-kind 3: `false`-branch call site to `is_dead_assignment`, specifically | 34/36 | 1 CLEAN case becomes wrongly flagged, the all-dead-`false` case only; the mixed dead+live case is unaffected (it was never relying on this check to stay flagged, only on it to report the right site) |
+| 10 | Sub-kind 3: computed-branch call site to `is_dead_assignment`, specifically | 34/36 | 1 MISSED case stops being flagged, the dead-computed case only |
+| 11 | Sub-kind 3: `is_dead_assignment` itself (all three call sites at once) | 30/36 | 5 cases affected at once (both if-false forms, dead-after-return, dead-computed, all-dead-`false`); included to show explicitly that this single combined row tells you less than rows 8 to 10 do, not as a substitute for them |
+| 12 | Sub-kind 1: whole config-struct exclusion (`is_input_only_struct`) | 35/36 | 1 CLEAN case becomes wrongly flagged |
+| 13 | Sub-kind 1: whole store-family protection | 33/36 | 3 MISSED cases stop being flagged |
+| 14 | Sub-kind 1: bare-`return` protection | 35/36 | 1 MISSED case stops being flagged |
+| 15 | Sub-kind 1: array-element-assignment protection | 35/36 | 1 MISSED case stops being flagged |
+| 16 | Sub-kind 1: paren-depth-balanced argument scan | 33/36 | 2 cases affected; report count moves 49 to 53 on the real corpus |
+| 17 | Sub-kind 1: `FIELD_ASSIGN` arrow/array-index matching | 35/36 | 1 MISSED case stops being flagged, the pointer-out-param result case |
+| 18 | Sub-kind 3: pointer/reference support in LOCAL declarations, specifically (mandatory-separator `[\*&]` alternative removed, multi-declarator repeat-group left intact) | 34/36 | 2 cases become wrongly flagged: the single-declarator local-pointer case, AND the pointer+multi-declarator case (its first declarator is pointer-typed); the value-only multi-declarator case is UNAFFECTED |
+| 19 | Sub-kind 3: multi-declarator support, specifically (comma-continuation repeat-group removed, single-declarator pointer/reference left intact) | 34/36 | 2 cases stop being flagged: the pointer+multi-declarator case AND the value-only multi-declarator case; the single-declarator local-pointer case is UNAFFECTED |
+
+Rows 18 and 19 are the direct answer to "avoid the row-5 trap": each disables one of the two
+mechanisms a multi-declarator pointer statement needs, and each leaves a DIFFERENT one of the three
+local-binding fixtures unaffected, which is what proves the two mechanisms are actually separable
+by this matrix rather than merely asserted to be. Sub-kind 1's own arrow-notation/multi-argument/
+`CALL_START`-keyword rows from the fourth round's matrix are omitted here as unchanged (that code
+was not touched this round); still verified, via spot-checks re-run against this round's file, not
+dropped from the suite.
+
+Every row drops the count and no two rows are redundant. Two sub-kind-3 CLEAN cases (the two
+correctly-flipping baselines) and one control (the "reachable true under a real condition" case)
+are not tied to a single row; they guard the shared base-recognition path every row relies on and
+would only fail if that broke.
 
 ## Candidates found and verdicts
 
