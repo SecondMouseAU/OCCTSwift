@@ -105,6 +105,11 @@ int32_t OCCTFaceGetSharedEdgeSummary(OCCTShapeRef shape, OCCTFaceRef face1, OCCT
                                      OCCTEdgeRef* _Nullable outFirstEdge);
 
 /// Check if two faces are adjacent (share at least one edge)
+/// - Note: `AAG.buildGraph()` no longer calls this. It needs the true shared-edge count and one
+///   edge anyway, and `OCCTFaceGetSharedEdgeSummary` answers adjacency as a side effect of both
+///   (#783). This is kept because it is cheaper for a caller who wants ONLY adjacency: it stops at
+///   the first shared edge, where the summary must walk the pair to total them. It shares the same
+///   comparison through `OCCTFaceGetSharedEdges`, so it cannot drift from it (#761).
 bool OCCTFacesAreAdjacent(OCCTShapeRef shape, OCCTFaceRef face1, OCCTFaceRef face2);
 
 /// Get the dihedral angle between two adjacent faces at their shared edge

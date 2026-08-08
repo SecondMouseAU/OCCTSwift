@@ -104,7 +104,7 @@ public struct AAGEdge: Sendable {
 /// Two occurrences sharing a B-Rep edge but belonging to different solids in a compound are
 /// adjacent *in the compound* and not adjacent in *either* solid: a floor face's candidate walls
 /// are the faces bounding the same body, not any face anywhere in the compound that happens to
-/// touch the same edge locus. Neither `OCCTFacesAreAdjacent` nor `OCCTEdgeGetConvexity` has any
+/// touch the same edge locus. Neither `OCCTFaceGetSharedEdgeSummary` nor `OCCTEdgeGetConvexity` has any
 /// notion of solid membership on their own, so `buildGraph()` restricts which occurrence pairs it
 /// hands to them, using `Shape.solids` and `orientedFaces()`'s own traversal order rather than a
 /// new bridge entry point (see `AAG.solidGroups(occurrenceCount:in:)`'s doc comment for the derivation). On a
@@ -146,7 +146,7 @@ public struct AAGEdge: Sendable {
 ///
 /// `BRepGraph` (`BRepGraph.swift`) answers the same two raw questions this type does --
 /// `adjacentFaces(of:)`/`sharedEdges(between:and:)` look like a ready-made replacement for the
-/// pairwise `OCCTFacesAreAdjacent`/`OCCTFaceGetSharedEdges` calls `buildGraph()` makes below.
+/// pairwise `OCCTFaceGetSharedEdgeSummary` call `buildGraph()` makes below.
 /// Measured (`Scripts/repro/761-aag-brepgraph-adjacency/`), not assumed, they are not
 /// interchangeable, for two independent reasons:
 ///
@@ -254,7 +254,8 @@ public final class AAG: @unchecked Sendable {
         }
 
         // #699: which solid each occurrence belongs to, so the pairwise loop below never asks
-        // OCCTFacesAreAdjacent/OCCTEdgeGetConvexity about two faces from different solids. Neither
+        // OCCTFaceGetSharedEdgeSummary/OCCTEdgeGetConvexity about two faces from different solids.
+        // Neither
         // bridge function has any notion of solid membership -- both compare face1/face2 purely on
         // their own edge geometry, ignoring the `shape` argument beyond a null check -- so on a
         // vertical cut, the two top-face halves (which border each other along the cut line) and
@@ -270,8 +271,8 @@ public final class AAG: @unchecked Sendable {
 
                 // The two occurrences of one shared face are not neighbors of each other: they
                 // are the same face, so every one of their boundary edges is "shared" with
-                // itself. Without this guard OCCTFacesAreAdjacent (which compares edge sets by
-                // IsSame, ignoring orientation) reports a self-loop for every shared face.
+                // itself. Without this guard the shared-edge comparison (which matches by IsSame,
+                // ignoring orientation) reports a self-loop for every shared face.
                 guard face1.index != face2.index else { continue }
 
                 // #699: two occurrences in different solids are adjacent in the compound and not
