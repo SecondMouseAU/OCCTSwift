@@ -409,6 +409,7 @@ class Report:
         self.stale = []          # (path, line, kind, type_or_None, member, resolved_by)
         self.historical = []     # (path, line, text): acknowledged, not failing
         self.unresolved = []     # (path, line, member): no owning type could be pinned
+        self.seen = set()        # every member name a doc reference resolved to, for --coverage
 
 
 def doc_type_exists(t, live_types):
@@ -587,6 +588,12 @@ def _resolve_context(context_stack, path):
 def _check_and_record(cls, resolved_type, path, lineno, historical, rep, live_types, live_members,
                        live_free, fallback_types=None):
     rep.checked += 1
+    # Record the name regardless of outcome: --coverage asks whether docs MENTION a symbol, which a
+    # stale reference still does. Coverage and staleness are separate questions and a symbol can
+    # fail one while passing the other.
+    _mentioned = cls[2] if cls[0] == 'dotted' else cls[1]
+    if _mentioned:
+        rep.seen.add(_mentioned)
     kind = cls[0]
     if kind == 'dotted':
         # Strict: the page states the owning type itself, so this is exactly the shape #802 warns
@@ -637,6 +644,51 @@ def _check_and_record(cls, resolved_type, path, lineno, historical, rep, live_ty
             rep.historical.append((path, lineno, label))
             return
         rep.stale.append((path, lineno, 'heading', resolved_type, member, 'bare_member'))
+
+
+def coverage(live_members, seen):
+    """Which live public members are named nowhere in docs/ (#802 item 5).
+
+    The INVERSE of what this script normally asks. The gate walks docs and checks each reference
+    resolves; this walks the source and checks each member is referenced. A clean gate run says
+    nothing about coverage, which is why the two are separate modes rather than one number.
+
+    Excluded, deliberately:
+      - `_`-prefixed names, conventionally private-by-convention even when `public`.
+      - PascalCase members, which are nested TYPES rather than functions or properties.
+      - anything under a `CodingKeys` type, a `Codable` implementation detail no consumer calls.
+
+    Measured this way the answer is roughly a quarter of the surface. Measured with an ad hoc regex
+    over `Type.member` and `member(` it comes out around 25% higher, because a member documented as
+    a bare heading or in running prose is invisible to that shape. That wrong number was produced
+    once, believed, and nearly acted on, which is why this lives in the script that already parses
+    docs correctly instead of being re-derived per investigation.
+    """
+    missing = {}
+    total = 0
+    for owner, members in live_members.items():
+        if 'CodingKeys' in owner:
+            continue
+        for member in members:
+            if member.startswith('_') or member[:1].isupper():
+                continue
+            total += 1
+            if member not in seen:
+                missing.setdefault(owner, []).append(member)
+    return total, {k: sorted(v) for k, v in missing.items()}
+
+
+def print_coverage(total, missing):
+    n = sum(len(v) for v in missing.values())
+    print(f"live public members      : {total}")
+    print(f"named nowhere in docs/   : {n}  ({100 * n / max(total, 1):.1f}%)")
+    print(f"types with a gap         : {len(missing)}")
+    if not missing:
+        return
+    print("\nlargest gaps:")
+    for owner, members in sorted(missing.items(), key=lambda kv: -len(kv[1]))[:20]:
+        print(f"  {owner:<38} {len(members):>4}  {', '.join(members[:3])}"
+              + (" ..." if len(members) > 3 else ""))
 
 
 def in_scope_doc_paths():
@@ -808,8 +860,52 @@ def self_test():
             print(f'  FAIL  {name}')
             print(f'          expected {want_key}={expect_count}')
             print(f'          got      stale={got["stale"]} historical={got["historical"]}')
-    print(f'\nself-test: {len(SELF_TEST_CASES) - failures} passed, {failures} failed')
+    failures += _coverage_self_test()
+    print(f'\nself-test: {len(SELF_TEST_CASES) + _COVERAGE_CASES - failures} passed, {failures} failed')
     return failures
+
+
+_COVERAGE_CASES = 4
+
+
+def _coverage_self_test():
+    """Prove --coverage distinguishes documented from undocumented, and honours its exclusions.
+
+    Worth its own cases rather than trusting the shared fixtures: coverage reads `rep.seen`, which
+    the staleness path populates as a side effect, so a change that stopped recording it would leave
+    every staleness case passing while coverage silently reported the whole surface as undocumented.
+    """
+    src = {'S.swift': (
+        'public struct Widget {\n'
+        '    public func documented() {}\n'
+        '    public func undocumented() {}\n'
+        '    public func _hidden() {}\n'
+        '    public var Nested: Int { 0 }\n'
+        '}\n'
+        'public struct WidgetCodingKeys {\n'
+        '    public var excluded: Int { 0 }\n'
+        '}\n')}
+    docs = {'d.md': '# Widget\n\n### `Widget.documented()`\n\nText.\n'}
+    live_types, live_members, live_free, conf = extract_source_symbols(src)
+    resolve_conformances(live_members, conf)
+    rep = Report()
+    for path in sorted(docs):
+        scan_doc_file(path, docs[path], live_types, live_members, live_free, rep)
+    total, missing = coverage(live_members, rep.seen)
+    flat = {m for v in missing.values() for m in v}
+
+    checks = [
+        ('coverage: a documented member is not reported missing', 'documented' not in flat),
+        ('coverage: an undocumented member IS reported missing', 'undocumented' in flat),
+        ('coverage: an underscore-prefixed member is excluded', '_hidden' not in flat),
+        ('coverage: a CodingKeys member is excluded', 'excluded' not in flat),
+    ]
+    bad = 0
+    for label, ok in checks:
+        print(f'  {"PASS" if ok else "FAIL"}  {label}')
+        if not ok:
+            bad += 1
+    return bad
 
 
 def main():
@@ -817,6 +913,9 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--self-test', action='store_true',
                     help='run the removal-matrix battery instead of scanning the tree')
+    ap.add_argument('--coverage', action='store_true',
+                    help='inverse mode: which live public members are named nowhere in docs/. '
+                         'Reports only, never fails.')
     ap.add_argument('--verbose', action='store_true',
                     help='also list acknowledged-historical and unresolved-context entries')
     ap.add_argument('--quiet', action='store_true', help='exit status only')
@@ -837,6 +936,13 @@ def main():
         with open(path, encoding='utf-8') as fh:
             text = fh.read()
         scan_doc_file(path, text, live_types, live_members, live_free, rep)
+
+    if args.coverage:
+        total, missing = coverage(live_members, rep.seen)
+        print_coverage(total, missing)
+        # Never fails. Coverage is a backlog to work through, not a property of a correct tree, and
+        # a gate that fails on it would fail every build until the backlog is empty.
+        return 0
 
     unresolved_grew = len(rep.unresolved) > EXPECTED_UNRESOLVED
     if not args.quiet:
