@@ -37,6 +37,31 @@ afterwards without rewriting history. Expect it to keep reporting 37; read
 - `AAG`'s `sharedEdgeCount` is no longer silently capped at 10 by the bridge's fixed edge buffer,
   which made a floor/wall pair sharing more than ten boundary segments under-report. (#761)
 
+### Every public member is now documented, and the census that measures that is fixed (#802)
+
+`docs/reference/` gained 1,249 sections and extended 208 more across 61 pages, taking
+`check-docs-existence.py --coverage` from 509 public members named nowhere in `docs/` to 0, against
+5,974 public members.
+
+The census itself was wrong in two ways, which is why the reported gap was 1,487 rather than 509.
+It counted `private`/`internal` members, because it built on an extractor that is deliberately
+access-blind (correct for the staleness gate, wrong for a census of what consumers need), so it
+demanded reference pages for ~300 implementation helpers. And it counted only headings, so a field
+documented as a table row read as undocumented, which is what produced 584 empty anchor headings
+beside tables that already explained every field. Access is now resolved per member, honouring the
+rules that are not readable off the declaration line: an enum case takes its enum's access, an
+unmarked member of a `public extension` is public while the same member in a bare extension is
+internal, a nested type in a `public extension` keeps its `public let` fields public, and no member
+is more visible than the type holding it. Any backtick-quoted identifier now counts as "named".
+Twelve new self-test rows, each proven load-bearing by injection.
+
+Also corrected while assembling it: `ThreadBuild.boolean` was still shown as a live enum case and
+described as behaving like `.auto`, when it was removed at v2.0.0 and a legacy `"boolean"` JSON key
+decodes to `.direct`; 745 headings that jumped two or more levels were re-levelled; and
+`docs/occtswift-wrapping-gaps.md` and `docs/integration-tests.md` both claimed 3,333 operations
+across 1,112 headers, unchanged since 2026-04-13, against a derived 4,256 across 1,166.
+
+
 ### PDF/SVG/DXF exporters share one drawing-collection pipeline instead of three independent copies (#795)
 
 `PDFExporter.swift`, `SVGExporter.swift` and `DXFExporter.swift` now route their edge, annotation
