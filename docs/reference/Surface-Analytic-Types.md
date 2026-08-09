@@ -128,6 +128,7 @@ The origin is the plane's location point (`gp_Pln::Location`). The normal is the
 
 ---
 
+---
 ## Geom_SphericalSurface Properties (v0.108.0)
 
 ### `sphereProperties`
@@ -343,6 +344,9 @@ Meaningful only when the surface wraps a `Geom_ToroidalSurface`. Members return 
 
 ---
 
+```swift
+```
+---
 ### `TorusProperties.majorRadius`
 
 The major radius of the torus (distance from the torus centre to the tube centre).
@@ -570,6 +574,7 @@ On `Geom_CylindricalSurface`, U is the angular parameter; a U iso-curve is a lin
 
 ---
 
+---
 ## Geom_ConicalSurface Properties (v0.108.0)
 
 ### `coneProperties`

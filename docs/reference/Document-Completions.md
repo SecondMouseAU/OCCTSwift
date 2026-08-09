@@ -582,6 +582,31 @@ public func generatedShapes(of initial: Shape) -> [Shape]
 
 ---
 
+### `Shape.History.hasGenerated`
+
+Whether any generations have been recorded (via `addGenerated(initial:generated:)`).
+
+```swift
+public var hasGenerated: Bool { get }
+```
+
+- **OCCT:** `BRepTools_History::HasGenerated` (via `OCCTHistoryHasGenerated`).
+
+---
+
+### `Shape.History.hasRemoved`
+
+Whether any removals have been recorded (via `remove(_:)`).
+
+```swift
+public var hasRemoved: Bool { get }
+```
+
+- **OCCT:** `BRepTools_History::HasRemoved` (via `OCCTHistoryHasRemoved`).
+
+---
+
+---
 ## SewingBuilder Extended
 
 Extensions on `SewingBuilder` added in v0.122.0.
@@ -969,6 +994,20 @@ public enum PipeShellStatus: Int32, Sendable {
     case impossibleContact = 3
 }
 ```
+
+Case meanings, from `BRepBuilderAPI_PipeError`:
+
+### `PipeShellStatus.notOk`
+
+The pipe was not built, for a reason other than the two specific cases below.
+
+### `PipeShellStatus.planeNotIntersectGuide`
+
+A section-defining plane does not intersect the guide curve.
+
+### `PipeShellStatus.impossibleContact`
+
+The requested contact condition between the profile and a guide or auxiliary spine could not be satisfied.
 
 ---
 
@@ -1972,9 +2011,21 @@ public enum ChamferMode: Int32, Sendable {
 }
 ```
 
-- `classic` — standard equal-distance chamfer.
-- `constThroat` — constant throat width.
-- `constThroatWithPenetration` — constant throat with surface penetration.
+Case meanings, from `ChFiDS_ChamfMode`:
+
+---
+
+#### `ChamferBuilder.ChamferMode.classic`
+
+Chamfer with a constant distance from the spine to one of the two surfaces.
+
+#### `ChamferBuilder.ChamferMode.constThroat`
+
+Symmetric chamfer with a constant throat: the section is an isosceles triangle whose height is the throat.
+
+#### `ChamferBuilder.ChamferMode.constThroatWithPenetration`
+
+Chamfer with a constant throat whose section is a right triangle: the first surface (carrying the chamfer's top edge) is virtually offset into the solid, the apex sits on that offset surface's intersection with the second surface, the right angle is at the chamfer's top, and the leg from apex to top (the throat) has constant length.
 
 ---
 
@@ -2038,6 +2089,9 @@ public func simulatedSurfaceCount(contour: Int) -> Int
 
 A fine-grained builder for intersecting shapes, planes, and surfaces. Wraps `BRepAlgoAPI_Section` with explicit argument-setting and PCurve controls. Added in v0.128.0.
 
+```swift
+```
+---
 ### `SectionBuilder.init()`
 
 Create an empty section builder (arguments set via `init1`/`init2`).

@@ -178,6 +178,10 @@ public struct AutoCentrelineResult: Sendable {
 - `added` — the `.centreline` annotations appended to the drawing.
 - `skipped` — axes that projected to a point in the view (i.e. the axis is parallel to the view direction) and were therefore omitted.
 
+*(Per-field anchor below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Drawing.AutoCentrelineResult.skipped`
+
 ---
 
 ### `Drawing.addAutoCentrelines(from:viewDirection:overshoot:tolerance:bounds:)`
@@ -236,6 +240,12 @@ public struct AutoCentermarkResult: Sendable {
 
 ---
 
+#### `AutoCentermarkResult.skipped`
+
+Circular edges that project edge-on (circle plane parallel to view direction) and were therefore omitted.
+
+---
+
 ### `Drawing.addAutoCentermarks(from:viewDirection:extent:minRadius:bounds:)`
 
 Walks the shape's circular edges, projects each circle's centre into the view plane, and adds a `.centermark` annotation for each circle visible face-on.
@@ -287,6 +297,19 @@ public struct ArcSegment: Sendable, Hashable {
     public let endAngle: Double      // radians
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `centre` | 2D arc centre |
+| `radius` | Arc radius |
+| `startAngle` | Start angle in radians |
+| `endAngle` | End angle in radians |
+
+---
+
+#### `DrawingAnnotation.ArcSegment.endAngle`
+
+End angle in radians.
 
 Returned by `cosmeticThreadEndView(centre:majorDiameter:pitch:)`.
 
@@ -441,6 +464,20 @@ public enum SurfaceFinishSymbol: String, Sendable, Hashable, Codable {
 
 ---
 
+### `SurfaceFinishSymbol.any`
+
+Any manufacturing method permitted; renders as a basic check-mark V.
+
+### `SurfaceFinishSymbol.machiningRequired`
+
+Machining required; V with a horizontal bar across the top.
+
+### `SurfaceFinishSymbol.machiningProhibited`
+
+Machining prohibited; V with a circle in the apex.
+
+---
+
 ## GDTSymbol
 
 ISO 1101 geometric characteristic symbol, matching `Document.GeomToleranceType` raw values for round-tripping XDE data into drawings.
@@ -454,6 +491,68 @@ public enum GDTSymbol: String, Sendable, Hashable, Codable {
     case circularRunout, totalRunout
 }
 ```
+
+Case meanings, per ISO 1101 / ASME Y14.5 (also matching `Document.GeomToleranceType`'s raw values, which mirror OCCT's `XCAFDimTolObjects_GeomToleranceType`):
+
+### `GDTSymbol.straightness`
+
+Form tolerance: a line element must lie within a specified straightness zone.
+
+### `GDTSymbol.flatness`
+
+Form tolerance: a surface must lie within a specified flatness zone.
+
+### `GDTSymbol.circularity`
+
+Form tolerance (also called roundness): a circular cross-section must lie within a specified annular zone.
+
+### `GDTSymbol.cylindricity`
+
+Form tolerance: a cylindrical surface's roundness, straightness and taper together must lie within a specified zone.
+
+### `GDTSymbol.profileOfLine`
+
+Profile tolerance: a 2D line profile must lie within a zone around the true (nominal) profile.
+
+### `GDTSymbol.profileOfSurface`
+
+Profile tolerance: a surface must lie within a zone around the true (nominal) profile.
+
+### `GDTSymbol.perpendicularity`
+
+Orientation tolerance: a feature must lie within a specified zone at 90 degrees to a datum.
+
+### `GDTSymbol.parallelism`
+
+Orientation tolerance: a feature must lie within a specified zone parallel to a datum.
+
+### `GDTSymbol.angularity`
+
+Orientation tolerance: a feature must lie within a specified zone at a stated angle (other than 90 degrees) to a datum.
+
+### `GDTSymbol.position`
+
+Location tolerance: a feature's true position must lie within a specified zone relative to one or more datums.
+
+### `GDTSymbol.concentricity`
+
+Location tolerance: the median points of a feature of revolution must lie within a specified spherical zone centered on a datum axis or point.
+
+### `GDTSymbol.symmetry`
+
+Location tolerance: a feature's own median points must lie within a specified zone symmetric about a datum plane or axis.
+
+### `GDTSymbol.coaxiality`
+
+Location tolerance: a feature's derived axis must lie within a specified cylindrical zone coaxial with a datum axis. Distinct from `concentricity` above, which constrains median points rather than a derived axis.
+
+### `GDTSymbol.circularRunout`
+
+Runout tolerance: a single circular cross-section's surface variation, measured as the part rotates about a datum axis, must stay within a specified zone.
+
+### `GDTSymbol.totalRunout`
+
+Runout tolerance: the entire surface's variation, measured as the part rotates about a datum axis, must stay within a specified zone.
 
 ### `GDTSymbol.glyph`
 
@@ -651,6 +750,12 @@ public struct AutoDimensionResult: Sendable {
 
 - `added` — the `DrawingDimension` values appended to the drawing.
 - `skipped` — human-readable reasons for features that were not dimensioned; useful for debugging missing hole dimensions.
+
+---
+
+#### `Drawing.AutoDimensionResult.skipped`
+
+Human-readable reasons for edges/features that were not dimensioned, e.g. a circle below `minRadius` or outside `bounds`.
 
 ---
 

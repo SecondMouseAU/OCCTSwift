@@ -32,6 +32,17 @@ All three axes are stored explicitly to avoid handedness surprises when flanges 
 
 ---
 
+### `Flange.uAxis`
+
+Local U axis of the profile plane, in world space.
+
+### `Flange.vAxis`
+
+Local V axis of the profile plane, in world space; derived as `cross(normal, uAxis)` when not given explicitly at init.
+
+```swift
+```
+---
 ### `Flange.init(id:profile:origin:normal:uAxis:vAxis:)`
 
 Constructs a positioned flange from a 2D profile and world-space axes.
@@ -88,6 +99,12 @@ public enum BendDirection: Sendable, Equatable {
 
 ---
 
+### `SheetMetal.BendDirection.convex`
+
+The metal folds back on the opposite side (reflex dihedral > 180°).
+
+---
+
 ## SheetMetal.Bend
 
 A bend between two flanges, with inside/outside radius, optional angle, material thickness override, and direction control.
@@ -109,6 +126,28 @@ public struct Bend: Sendable {
 - `outsideRadius` — convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
 - `materialThicknessAtBend` — material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
 - `direction` — explicit override; defaults to `.auto`.
+
+---
+
+### `Bend.fromFlangeID`
+
+ID of the flange the bend originates from (matches a `Flange.id`).
+
+### `Bend.toFlangeID`
+
+ID of the flange the bend connects to (matches a `Flange.id`).
+
+### `Bend.insideRadius`
+
+Concave (inner) bend radius. `0` for a sharp inside corner.
+
+### `Bend.outsideRadius`
+
+Convex (outer) bend radius; defaults to `insideRadius + thickness` when `nil`.
+
+### `Bend.materialThicknessAtBend`
+
+Material thickness through the bend zone; defaults to the builder's global `thickness`. Set to a fraction for etched/thinned bend lines.
 
 ---
 
@@ -202,18 +241,68 @@ public enum BuildError: Error, CustomStringConvertible {
 
 | Case | Meaning |
 |------|---------|
-| `.invalidThickness` | `thickness` ≤ 0. |
+| `.invalidThickness` | `thickness` <= 0. |
 | `.noFlanges` | `flanges` array is empty. |
 | `.duplicateFlangeID` | Two flanges share the same `id`. |
 | `.unknownFlangeID` | A `Bend` references a flange `id` not in `flanges`. |
 | `.invalidFlangeProfile` | Flange profile has fewer than 3 points. |
 | `.flangeExtrusionFailed` | `Shape.extrude` returned `nil` for this flange. |
 | `.unionFailed` | Boolean union of extruded pieces failed. |
-| `.parallelFlangesHaveNoSeam` | The two flanges are parallel — their normals cross-product is zero, so there is no seam line. |
+| `.parallelFlangesHaveNoSeam` | The two flanges are parallel: their normals' cross-product is zero, so there is no seam line. |
 | `.noSeamEdgeFound` | Union succeeded but no shared seam edge was found between the two flanges' matched-extent pieces. |
 | `.filletFailed` | `Shape.filleted(edges:radius:)` returned `nil` for the seam edge(s). |
-| `.seamsDoNotOverlap` | The two flanges' seam-direction extents have no overlap — they cannot meet. |
+| `.seamsDoNotOverlap` | The two flanges' seam-direction extents have no overlap: they cannot meet. |
 | `.nonRectangularStepFlange` | A stepped-seam bend targets a non-rectangular flange profile; v0.153 split logic requires rectangles. |
+
+---
+
+### `BuildError.invalidThickness`
+
+`thickness` is `<= 0`.
+
+### `BuildError.noFlanges`
+
+The `flanges` array is empty.
+
+### `BuildError.duplicateFlangeID`
+
+Two flanges share the same `id`.
+
+### `BuildError.unknownFlangeID`
+
+A `Bend` references a flange `id` that is not in `flanges`.
+
+### `BuildError.invalidFlangeProfile`
+
+A flange profile has fewer than 3 points.
+
+### `BuildError.flangeExtrusionFailed`
+
+`Shape.extrude` returned `nil` for this flange.
+
+### `BuildError.unionFailed`
+
+The boolean union of extruded pieces failed.
+
+### `BuildError.parallelFlangesHaveNoSeam`
+
+The two flanges are parallel: their normals' cross-product is zero, so there is no seam line.
+
+### `BuildError.noSeamEdgeFound`
+
+Union succeeded but no shared seam edge was found between the two flanges' matched-extent pieces.
+
+### `BuildError.filletFailed`
+
+`Shape.filleted(edges:radius:)` returned `nil` for the seam edge(s).
+
+### `BuildError.seamsDoNotOverlap`
+
+The two flanges' seam-direction extents have no overlap; they cannot meet.
+
+### `BuildError.nonRectangularStepFlange`
+
+A stepped-seam bend targets a non-rectangular flange profile; v0.153 split logic requires rectangles.
 
 ---
 
@@ -233,6 +322,17 @@ The builder validates inputs, optionally splits flanges at stepped-seam intersec
 
 ---
 
+### `Builder.thickness`
+
+Uniform sheet thickness in model units, set at `init` and used for every flange's extrusion length and every bend's default outside radius.
+
+- **OCCT:** Internally delegates to `BRepPrimAPI_MakePrism` (via `Shape.extrude`), `BRepAlgoAPI_Fuse` (via `Shape.union`), and `BRepFilletAPI_MakeFillet` (via `Shape.filleted`).
+
+### Private and `fileprivate` implementation helpers
+
+Not part of the public API; documented for completeness since they carry the actual geometry logic behind `build(flanges:bends:)`'s five steps above.
+
+---
 ### `Builder.init(thickness:)`
 
 Creates a builder for sheet metal of the given uniform thickness.
@@ -417,6 +517,12 @@ public struct PlacedView: Sendable {
 - `drawing` — the original unannotated `Drawing`. Mutate this (add dimensions, centrelines) before calling `render(into:)`.
 - `offset` — translation applied to the drawing's coordinate system: `apply(p) = scale * p + offset`.
 - `scale` — uniform scale factor. Computed as `min(caller's scale, fit-to-cell scale)` so no view overflows its cell.
+
+---
+
+### `StandardLayout.PlacedView.drawing`
+
+The original unannotated `Drawing`, mutable before calling `render(into:)`.
 
 ---
 

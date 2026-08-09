@@ -741,6 +741,14 @@ Gluing speeds up booleans when arguments share coincident faces. Only use when f
 
 ---
 
+| Case | OCCT | Meaning |
+|---|---|---|
+| `.off` | OCCT default | No gluing; the full intersection is computed. |
+| `.shift` | `BOPAlgo_GlueShift` | Arguments may share coincident faces but are otherwise disjoint. |
+| `.full` | `BOPAlgo_GlueFull` | Every argument is known to share coincident faces. Fastest and strictest. |
+
+---
+
 ### `defaultBooleanTimeout`
 
 Default wall-clock timeout for boolean operations, in seconds.

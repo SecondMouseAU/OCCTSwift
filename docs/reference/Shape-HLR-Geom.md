@@ -37,6 +37,22 @@ public enum HLREdgeCategory: Int32, Sendable {
 
 Used with `hlrEdges(direction:category:)` and `hlrPolyEdges(direction:category:deflection:)` to select which edge class to extract. `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are available for exact HLR only.
 
+| Case | Edge class |
+|---|---|
+| `.visibleSharp` | Visible C0-continuity (sharp) edges. |
+| `.visibleSmooth` | Visible G1-continuity (smooth) edges. |
+| `.visibleSewn` | Visible CN-continuity (sewn) edges. |
+| `.visibleOutline` | Visible silhouette/outline edges. |
+| `.visibleIso` | Visible isoparameter lines (exact HLR only). |
+| `.visibleOutline3d` | Visible outline edges in 3D (exact HLR only). |
+| `.hiddenSharp` | Hidden C0-continuity (sharp) edges. |
+| `.hiddenSmooth` | Hidden G1-continuity (smooth) edges. |
+| `.hiddenSewn` | Hidden CN-continuity (sewn) edges. |
+| `.hiddenOutline` | Hidden silhouette/outline edges. |
+| `.hiddenIso` | Hidden isoparameter lines (exact HLR only). |
+
+#### `HLREdgeCategory.hiddenIso`
+
 ---
 
 ### `HLREdgeType`
@@ -54,7 +70,29 @@ public enum HLREdgeType: Int32, Sendable {
 }
 ```
 
-Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)` and the `reflectLinesFiltered` family.
+Used with `hlrCompoundOfEdges(direction:edgeType:visible:in3d:)` and the `reflectLinesFiltered` family. Case meanings, from `HLRBRep_TypeOfResultingEdge`:
+
+---
+
+#### `HLREdgeType.isoLine`
+
+An isoparametric line.
+
+#### `HLREdgeType.outLine`
+
+An outline (silhouette) edge.
+
+#### `HLREdgeType.rg1Line`
+
+A smooth edge of G1 continuity between two surfaces.
+
+#### `HLREdgeType.rgNLine`
+
+A sewn edge of CN continuity on one surface.
+
+#### `HLREdgeType.sharp`
+
+A sharp edge, of C0 continuity.
 
 ---
 
@@ -190,6 +228,13 @@ public struct EdgeFaceTransitionResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `transition` | Cumulated `TopAbs_Orientation` code (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL) across all supplied faces. |
+| `boundaryTransition` | Cumulated `TopAbs_Orientation` code for the boundary transition across all supplied faces. |
+
+#### `Shape.EdgeFaceTransitionResult.boundaryTransition`
+
 ---
 
 ### `FaceInterference`
@@ -211,6 +256,14 @@ public struct FaceInterference: Sendable {
                 tolerance: Double)
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `transition` | `TopAbs_Orientation` code for how the edge crosses this face at the interference point. |
+| `boundaryTransition` | `TopAbs_Orientation` code for how the edge crosses this face's boundary. |
+| `tolerance` | Geometric tolerance for this face's contribution to the interference test. |
+
+#### `Shape.FaceInterference.tolerance`
 
 ---
 
@@ -276,6 +329,20 @@ public struct Bounds: Sendable {
     public let tolEnd: Float
 }
 ```
+
+---
+
+#### `Interval.Bounds.end`
+
+The interval's end parameter.
+
+#### `Interval.Bounds.tolStart`
+
+Tolerance at the start parameter.
+
+#### `Interval.Bounds.tolEnd`
+
+Tolerance at the end parameter.
 
 ---
 
@@ -464,6 +531,12 @@ A sorted sequence of non-overlapping `Intrv_Interval` objects supporting set-the
 public final class IntervalSet: @unchecked Sendable
 ```
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTIntrvIntervalsRef` this wrapper owns; released in `deinit`. |
+
+#### `IntervalSet.handle`
+
 ---
 
 ### `IntervalSet.init(start:end:)`
@@ -597,6 +670,14 @@ public struct Hit {
     public let w: Double                         // parameter on the curve/line
 }
 ```
+
+---
+
+| Field | Meaning |
+|---|---|
+| `x`, `y`, `z` | The 3D intersection point. |
+| `u`, `v` | UV parameters of that point on the intersected face's surface. |
+| `w` | Parameter of that point along the intersecting line or curve. |
 
 ---
 
@@ -956,6 +1037,14 @@ public struct ValidateEdgeResult {
     public let tolerance: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `isWithinTolerance` | `true` if the maximum deviation between the 3D curve and the curve-on-surface is within `tolerance`. |
+| `maxDistance` | Maximum measured deviation between the 3D curve and the curve-on-surface. |
+| `tolerance` | The tolerance value the check was run against. |
+
+#### `ValidateEdgeResult.tolerance`
 
 ---
 
@@ -1384,6 +1473,12 @@ public final class GeomPoint3D: @unchecked Sendable
 
 Useful when you need OCCT's geometry-level point entity (rather than a raw `SIMD3<Double>`) for operations that take `Handle(Geom_Point)` arguments.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomPoint3DRef` this wrapper owns; released in `deinit`. Public (unlike most wrapper handles) so other bridge-adjacent APIs can pass it through directly. |
+
+#### `GeomPoint3D.handle`
+
 ---
 
 ### `GeomPoint3D.init(x:y:z:)`
@@ -1419,6 +1514,10 @@ public var z: Double { get }
 ```
 
 - **OCCT:** `Geom_CartesianPoint::X`, `Y`, `Z`.
+
+---
+
+#### `GeomPoint3D.z`
 
 ---
 
@@ -1580,6 +1679,12 @@ A Handle-managed 3D vector with arbitrary magnitude, wrapping `Geom_VectorWithMa
 ```swift
 public final class GeomVector3D: @unchecked Sendable
 ```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomVector3DRef` this wrapper owns; released in `deinit`. |
+
+#### `GeomVector3D.handle`
 
 ---
 

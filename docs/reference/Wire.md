@@ -35,8 +35,9 @@ Inverse of `Shape.fromWire(_:)`. Use when you have a wire-typed `Shape` (e.g. fr
   }
   ```
 
----
+*(Internal, not public API: `Wire.handle` is an `internal let handle: OCCTWireRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ## 2D Profiles (for Extrusion/Sweep)
 
 ### `Wire.rectangle(width:height:)`
@@ -1083,6 +1084,40 @@ Converts to `Shape` via `Shape.fromWire(_:)`, then returns `shape.bounds`. Retur
 ---
 
 ## Wire Topology Analysis
+
+### `WireAnalysis`
+
+Result of `analyze(tolerance:)` below: a wire-topology health report backed by `ShapeAnalysis_Wire`.
+
+```swift
+public struct WireAnalysis: Sendable {
+    public var isClosed: Bool
+    public var hasSmallEdges: Bool
+    public var hasGaps: Bool
+    public var hasSelfIntersection: Bool
+    public var isOrdered: Bool
+    public var minGap: Double
+    public var maxGap: Double
+    public var edgeCount: Int
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `isClosed` | Whether the wire forms a closed loop (`ShapeAnalysis_Wire::CheckClosed`). |
+| `hasSmallEdges` | Whether the wire has small/degenerate edges (`CheckSmall`). |
+| `hasGaps` | Whether there are 3D gaps between consecutive edges (`CheckGaps3d`). |
+| `hasSelfIntersection` | Whether the wire self-intersects (`CheckSelfIntersection`). |
+| `isOrdered` | Whether edges are in connected order (`CheckOrder`). |
+| `minGap` | Minimum 3D gap distance between consecutive edges (`MinDistance3d`). |
+| `maxGap` | Maximum 3D gap distance between consecutive edges (`MaxDistance3d`). |
+| `edgeCount` | Number of edges in the wire. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `WireAnalysis.minGap`
+
+---
 
 ### `analyze(tolerance:)`
 

@@ -322,6 +322,12 @@ public struct CircleProperties: Sendable, Hashable {
 
 ---
 
+#### `Edge.CircleProperties.endAngle`
+
+End of the parameter range in radians; `2π` for a full circle.
+
+---
+
 ### `Edge.circleProperties`
 
 Circle or arc properties if this edge's underlying curve is a circle. Returns `nil` for lines, ellipses, B-splines, etc.

@@ -608,6 +608,16 @@ public enum PipeShellTransition: Int32, Sendable {
 
 - **OCCT:** `BRepFill_TransitionStyle`
 
+| Case | Meaning |
+|---|---|
+| `modified` | The two swept faces are extended/trimmed to meet exactly at the transition (the default OCCT behaviour). |
+| `right` | A sharp, square ("right-angle") corner is built at the transition. |
+| `round` | A rounded (filleted) corner is built at the transition. |
+
+#### `PipeShellTransition.round`
+
+A rounded (filleted) corner at the transition between spine segments.
+
 ---
 
 ### `PipeShellBuilder.init?(spine:)`
@@ -1107,6 +1117,17 @@ public enum UnicodeFormat: Int32, Sendable {
 ```
 
 - **OCCT:** `Resource_Unicode::SetFormat` format constants
+
+| Case | Meaning |
+|------|---------|
+| `sjis` | Shift-JIS multi-byte encoding (Japanese). |
+| `euc` | Extended Unix Code multi-byte encoding (CJK). |
+| `gb` | GB (GB2312-family) multi-byte encoding (Simplified Chinese). |
+| `ansi` | Single-byte ANSI/Western encoding; also the fallback `UnicodeUtils.format` returns when the underlying raw value doesn't decode. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `UnicodeFormat.sjis`
 
 ---
 

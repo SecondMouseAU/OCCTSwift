@@ -113,6 +113,15 @@ public struct SplitResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `first` | Curve segment before the split parameter. |
+| `second` | Curve segment after the split parameter. |
+
+#### `Curve3D.SplitResult.first`
+
+Curve segment before the split parameter.
+
 ---
 
 ### `splitAt(parameter:)`
@@ -573,3 +582,5 @@ Each input curve is converted to BSpline form before joining. Curves must connec
       #expect(joined.totalArcLength > c1.totalArcLength)
   }
   ```
+
+---

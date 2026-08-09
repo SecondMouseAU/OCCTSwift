@@ -29,7 +29,7 @@ public func threadedShaft(axisOrigin: SIMD3<Double>,
                            build: ThreadBuild = .auto) -> Shape?
 ```
 
-When `self` is a plain cylinder coaxial with the axis (the common case), this builds the threaded rod **directly with no boolean** for every build mode (`.boolean` is deprecated and treated as `.auto` since #254): the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. **Multi-start** threads (`starts > 1`) build directly too (#257): N teeth tile the turn at lead = N·pitch, sampled per pitch so the loft stays in-envelope, giving a continuous interleaved multi-helix. Any unthreaded margin is closed by pure sewing (per-start shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, rounded/tapered forms, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
+When `self` is a plain cylinder coaxial with the axis (the common case), this builds the threaded rod **directly with no boolean** for every build mode (`.boolean`, deprecated in #254, was removed as a case in v2.0.0): the thread's true cross-section (a "cam": root arc → flank → crest arc → flank) is lofted at closely-spaced z-slices rotated by the helix (`ruled=false`), giving a smooth, BRepCheck-valid solid of a handful of B-spline faces. **Multi-start** threads (`starts > 1`) build directly too (#257): N teeth tile the turn at lead = N·pitch, sampled per pitch so the loft stays in-envelope, giving a continuous interleaved multi-helix. Any unthreaded margin is closed by pure sewing (per-start shoulder + cylinder + end disk). Because the boolean engine is never invoked, the result is orientation-robust and valid where a cut-the-cutter approach is faceted or fails. For non-cylinder targets, rounded/tapered forms, or when the direct build fails, the method falls back to the boolean cut path (`applyThreadCut`).
 
 - **Parameters:**
   - `axisOrigin` — a point on the shaft axis (typically the centre of the bottom face).
@@ -38,7 +38,7 @@ When `self` is a plain cylinder coaxial with the axis (the common case), this bu
   - `length` — threaded length in mm (default: `2 * spec.nominalDiameter`).
   - `starts` — number of thread starts (1 for standard fasteners; >1 for lead screws). Multi-start forces the boolean cut path.
   - `runout` — thread termination style at each end (see `RunoutStyle`).
-  - `build` — construction path selector; `.auto` (default) and `.direct` use the smooth direct build for single-start coaxial cylinders. `.boolean` is **deprecated** (#254) and now behaves like `.auto`. See `ThreadBuild`.
+  - `build` — construction path selector; `.auto` (default) and `.direct` use the smooth direct build for single-start coaxial cylinders. `.boolean` was **removed** as a case in v2.0.0, having been deprecated in #254; a legacy `"boolean"` JSON key still decodes, resolving to `.direct`. See `ThreadBuild`.
 - **Returns:** Threaded shape, or `nil` on sweep / boolean failure. Use `boundingBoxOptimal()` (not `bounds`) to measure the true crest radius — the BSpline pole hull overshoots by ~13–21%.
 - **OCCT:** Pure-Swift direct path: `Shape.loft`, `Wire.arc`, `Wire.interpolate`, `Wire.join`, `Shape.face(from:)`, `Shape.sew`, `Shape.solidFromShell` — no boolean. Fallback cut path: `OCCTShapeBuildThreadCutter` (bridge: analytic helicoid cutter), `Shape.screwSweptThreadCutter`, `Shape.subtracting`.
 - **Example:**
@@ -136,6 +136,43 @@ The entry point for threading a cylinder with a custom tooth shape (worm, screw 
 
 ---
 
+## Threaded features: internal build strategy (not public API)
+
+`threadedShaft`, `threadedHole` and `threadedRod` above are the whole public surface; the four
+functions on this page are `private`/`fileprivate` implementation behind them, documented here
+because `Shape` is the package's most-read type and this is the mechanism `ThreadBuild.auto`/
+`.direct` (see `ThreadBuild` below) actually selects between.
+
+OCCT ships no "thread feature" primitive, so this package builds one two ways, tried in order:
+
+1. **Direct build (#213), no boolean.** When the target is a plain cylinder coaxial with the axis
+   (the common case for an external thread), the thread's true cross-section, a "cam": root arc,
+   flank spiral, crest arc, flank spiral, is lofted (`ruled=false`) at z-slices rotated by the
+   helix, giving a handful of B-spline faces rather than hundreds of facets. Any unthreaded margin
+   is closed by pure sewing (shoulder face + plain cylinder + end disk). Because the boolean engine
+   is never invoked, the result is orientation-robust and `BRepCheck`-valid where the cut path
+   below is faceted or fails outright. This also covers multi-start threads (#257): `N` teeth tile
+   the turn at lead `= N * pitch`.
+2. **Boolean cut fallback.** For non-cylinder targets, internal threads (`threadedHole` always uses
+   this path), rounded or tapered forms, or whenever the direct build above declines: a V-groove
+   cutter is swept along the helix and subtracted from the blank. The cutter itself has two
+   variants (see `screwSweptThreadCutter` below); a sound cut is verified geometrically (stays
+   within the blank's optimal bounding box, removes some but not most of the volume) rather than by
+   trusting `BRepCheck`, since a long faceted thread can trip a benign facet self-intersection while
+   still being dimensionally correct and STEP-exportable (#193).
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+---
 ## ThreadSpec
 
 Full specification of a thread's form, diameter, pitch, and handedness. `Sendable`, `Hashable`, `Codable`.
@@ -143,6 +180,21 @@ Full specification of a thread's form, diameter, pitch, and handedness. `Sendabl
 ```swift
 public struct ThreadSpec: Sendable, Hashable, Codable
 ```
+
+The six stored properties below are set once, at construction, by whichever `init` was used; every other member on this page (`profile`, `cutDepth`, `taperRatio`, ...) is a computed property derived from them.
+
+| Property | Type | Meaning |
+|---|---|---|
+| `form` | `ThreadForm` | Which standard thread geometry this spec describes. |
+| `nominalDiameter` | `Double` | Outer (crest) diameter in mm. |
+| `pitch` | `Double` | Axial advance per revolution in mm. |
+| `leftHanded` | `Bool` | `true` for a left-hand helix. |
+| `customProfile` | `ThreadProfile?` | Cross-section for `form == .custom`; ignored for every other form. Set via the custom initializer. |
+| `customCutDepth` | `Double?` | Overrides the form's default radial depth (mm). Required for `.custom`; optional elsewhere. |
+
+### `ThreadSpec.customCutDepth`
+
+---
 
 ### `ThreadSpec.init(form:nominalDiameter:pitch:leftHanded:customProfile:customCutDepth:)`
 
@@ -318,6 +370,37 @@ public var minorDiameter: Double { get }
 
 ---
 
+### Designation Parsing Internals
+
+`ThreadSpec.parse(_:)` above dispatches to seven `private static` helpers, one per designation family. None of these is part of the public API: they exist only to keep `parse(_:)` itself short, but each is a real declaration in the source, documented here for completeness.
+
+```swift
+```
+---
+
+```swift
+```
+---
+
+```swift
+```
+---
+
+```swift
+```
+---
+
+```swift
+```
+---
+
+```swift
+```
+---
+
+```swift
+```
+---
 ## ThreadProfile
 
 A thread's tooth cross-section over one pitch, normalised. `Sendable`, `Hashable`, `Codable`.
@@ -341,6 +424,12 @@ public struct Vertex: Sendable, Hashable, Codable {
     public init(axial: Double, depth: Double)
 }
 ```
+
+---
+
+#### `ThreadProfile.Vertex.axial`
+
+Position along one pitch, `0...1`. Vertices are ordered by increasing `axial`; the profile is periodic (`first.axial == 0`, `last.axial == 1`) so consecutive teeth tile.
 
 ---
 
@@ -402,6 +491,14 @@ public struct Segment: Sendable, Hashable {
     public let a: Vertex, b: Vertex, kind: SegmentKind
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `a` | Vertex at the start of the segment (lower `axial`). |
+| `b` | Vertex at the end of the segment (higher `axial`). |
+| `kind` | Geometric classification: `.flat`, `.wall`, or `.flank` (see `SegmentKind` above). |
+
+#### `ThreadProfile.Segment.a`
 
 ---
 
@@ -531,6 +628,16 @@ Small crest/root lands are kept so the smooth direct build can attach a crest fl
 
 ---
 
+```swift
+```
+- **OCCT:** Pure-Swift.
+---
+
+```swift
+```
+- **Parameters:**
+- **OCCT:** Pure-Swift.
+---
 ## Enums
 
 ### `ThreadForm`
@@ -574,6 +681,12 @@ public enum ThreadForm: String, Sendable, Codable, CaseIterable {
 
 ---
 
+#### `ThreadForm.custom`
+
+Arbitrary cross-section, supplied via `ThreadSpec.customProfile`.
+
+---
+
 ### `ThreadBuild`
 
 Construction path selector for `Shape.threadedShaft`. `Sendable`, `Hashable`, `Codable`.
@@ -582,7 +695,6 @@ Construction path selector for `Shape.threadedShaft`. `Sendable`, `Hashable`, `C
 public enum ThreadBuild: Sendable, Hashable, Codable {
     case auto
     case direct
-    case boolean
 }
 ```
 
@@ -590,7 +702,20 @@ public enum ThreadBuild: Sendable, Hashable, Codable {
 |---|---|
 | `.auto` | Smooth boolean-free direct build for single- and multi-start coaxial cylinders (#213/#257); falls back to the boolean cut otherwise (non-cylinder / rounded / tapered). The recommended default. |
 | `.direct` | Prefer the smooth direct build; fall back to the boolean cut when unavailable (non-cylinder, rounded/tapered form, construction failure). Identical to `.auto` for coaxial cylinders. |
-| `.boolean` | **Deprecated (#254).** Formerly forced the boolean cut path; now treated exactly like `.auto` (single-start coaxial cylinders take the smooth direct build). Its forced cut path produced a *faceted, frequently disconnected* thread and offered no envelope advantage. Use `.auto` or `.direct`. |
+| `.boolean` | Removed as a case in v2.0.0 (deprecated in #254; formerly forced the boolean cut path). Decoding still accepts the legacy `"boolean"` JSON key and resolves it to `.direct`. |
+
+- **Note (#222 / #232 / #254):** the direct build's crest sits **at** the nominal major radius — the earlier "overshoot" report was a `Bnd_Box` control-hull artifact. Measure the true crest with `boundingBoxOptimal()` or mesh vertices (both read nominal); `bounds` over-reads by ~13–21% on the B-spline helicoid. There is no longer a reason to force the cut path for an "exact outer diameter".
+- **Multi-start (#257):** single- and multi-start threads on a coaxial cylinder both build via the smooth direct path. The faceted cut path now only handles non-cylinder targets, rounded forms (knuckle / rounded Whitworth), and tapered pipe forms (NPT/BSPT).
+
+---
+
+#### `ThreadBuild.auto`
+
+The recommended default: a smooth, boolean-free direct build for single- and multi-start threads on a plain coaxial cylinder, falling back to the boolean cut path otherwise (non-cylinder target, rounded or tapered form).
+
+#### `ThreadBuild.direct`
+
+Prefers the smooth direct build, falling back to the boolean cut path only when the direct build is unavailable (non-cylinder target, rounded/tapered form, or a construction failure). Identical to `.auto` for a coaxial cylinder.
 
 - **Note (#222 / #232 / #254):** the direct build's crest sits **at** the nominal major radius — the earlier "overshoot" report was a `Bnd_Box` control-hull artifact. Measure the true crest with `boundingBoxOptimal()` or mesh vertices (both read nominal); `bounds` over-reads by ~13–21% on the B-spline helicoid. There is no longer a reason to force the cut path for an "exact outer diameter".
 - **Multi-start (#257):** single- and multi-start threads on a coaxial cylinder both build via the smooth direct path. The faceted cut path now only handles non-cylinder targets, rounded forms (knuckle / rounded Whitworth), and tapered pipe forms (NPT/BSPT).
@@ -614,6 +739,10 @@ public enum RunoutStyle: Sendable, Hashable {
 | `.none` | Hard-stop at each end (no runout). Cheap and exact but manufacturing-unrealistic. Default. |
 | `.filleted(radius:)` | Fillet the last turns' worth of helix into the underlying surface — a post-boolean/sew fillet pass of the given radius. |
 | `.tapered(turns:)` | Taper the V-profile to zero depth over the last `turns` revolutions using a law-scaled sweep. Currently falls back to `.filleted(radius: spec.pitch * 0.5)` while law-scaling is not yet wrapped (#67). |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `tapered`
 
 - **OCCT:** `.filleted` delegates to `Shape.filleted(radius:)` (bridge: `BRepFilletAPI_MakeFillet`). `.tapered` is a planned law-scaled pipe-shell extension (issue #67); currently approximated by `.filleted`.
 - **Example:**

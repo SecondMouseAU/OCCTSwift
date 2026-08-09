@@ -175,8 +175,9 @@ public var bounds: (min: SIMD3<Double>, max: SIMD3<Double>) { get }
   // bb.min and bb.max define the face's extents
   ```
 
----
+*(Internal, not public API. `Face` stores its bridge pointer as `internal let handle: OCCTFaceRef` (Swift default access), released by the OCCT bridge; see [Memory Management](../architecture/overview.md#occt-handles). `exactBounds` (`internal var`) is the counterpart to `bounds` above, computed from the face's exact geometry only via `OCCTFaceGetBoundsExact`, ignoring any triangulation the shape may carry (#733). Used internally by `AAG`'s floor/wall matching, not exposed publicly. `boundsVia(_:)` (`private func`) is the shared implementation `bounds` and `exactBounds` both call into, parameterized by which bridge function to invoke, so the six-out-parameter unpacking dance lives in one place.)*
 
+---
 ### `isPlanar`
 
 Whether the face's underlying surface is a plane.
@@ -317,6 +318,26 @@ public enum SurfaceType: Int32, Sendable {
 
 Corresponds to OCCT's `GeomAbs_SurfaceType` enumeration, mapped via `BRepAdaptor_Surface::GetType()`.
 
+`Surface` (`Surface.swift`) declares its own byte-for-byte identical `SurfaceType` enum for the same `GeomAbs_SurfaceType` mapping (its `surfaceKind` uses `OCCTSurfaceGetType` where `Face.surfaceType` below uses `OCCTFaceGetSurfaceType`): two independent declarations of the same classification, not one shared type.
+
+| Case | `GeomAbs_SurfaceType` | Meaning |
+|------|------------------------|---------|
+| `plane` | `GeomAbs_Plane` | Flat plane. |
+| `cylinder` | `GeomAbs_Cylinder` | Cylindrical surface. |
+| `cone` | `GeomAbs_Cone` | Conical surface. |
+| `sphere` | `GeomAbs_Sphere` | Spherical surface. |
+| `torus` | `GeomAbs_Torus` | Toroidal surface. |
+| `bezierSurface` | `GeomAbs_BezierSurface` | `Geom_BezierSurface`, a single Bezier patch. |
+| `bsplineSurface` | `GeomAbs_BSplineSurface` | `Geom_BSplineSurface`, a general B-spline surface. |
+| `surfaceOfRevolution` | `GeomAbs_SurfaceOfRevolution` | `Geom_SurfaceOfRevolution`, a curve swept about an axis. |
+| `surfaceOfExtrusion` | `GeomAbs_SurfaceOfExtrusion` | `Geom_SurfaceOfLinearExtrusion`, a curve swept along a linear direction. |
+| `offsetSurface` | `GeomAbs_OffsetSurface` | `Geom_OffsetSurface`, a constant-distance offset of a basis surface. |
+| `other` | (anything else) | Fallback for a surface type this classification doesn't otherwise name, and the value used when the underlying bridge call fails to determine a type. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each. Given both `Face.SurfaceType` and `Surface.SurfaceType` declare identical case sets independently, each case is anchored under both.)*
+
+#### `Surface.SurfaceType.surfaceOfRevolution`
+
 ---
 
 ### `PrincipalCurvatures`
@@ -337,6 +358,24 @@ public struct PrincipalCurvatures: Sendable {
 
 ---
 
+#### `PrincipalCurvatures.kMin`
+
+Minimum principal curvature (reciprocal of the maximum principal radius).
+
+#### `PrincipalCurvatures.kMax`
+
+Maximum principal curvature (reciprocal of the minimum principal radius).
+
+#### `PrincipalCurvatures.dirMin`
+
+Unit direction vector of the minimum-curvature principal line on the surface.
+
+#### `PrincipalCurvatures.dirMax`
+
+Unit direction vector of the maximum-curvature principal line on the surface, perpendicular to `dirMin`.
+
+---
+
 ### `SurfaceProjection`
 
 Result of projecting a 3D point onto the face's surface.
@@ -353,6 +392,16 @@ public struct SurfaceProjection: Sendable {
 - `point` — closest 3D point on the surface.
 - `u`, `v` — UV parameters of that point.
 - `distance` — Euclidean distance from the query point to `point`.
+
+---
+
+#### `Face.SurfaceProjection.u`
+
+U parameter of the closest point.
+
+#### `Face.SurfaceProjection.v`
+
+V parameter of the closest point.
 
 ---
 

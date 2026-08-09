@@ -97,8 +97,9 @@ The `origin` is the **bottom-right** corner of the table; the table expands upwa
   // topRight.y is the Y coordinate above which the next annotation can be placed
   ```
 
----
+*(Internal, not public API: `renderRow(textsIn:widths:leftX:baselineY:into:)` is a `private func` on `BillOfMaterials`: the shared row-drawing helper `render(into:at:rowHeight:columnWidths:)` above calls once for the header row and once per item row, writing each column's text at its cell's left edge.)*
 
+---
 ## BillOfMaterials.Item
 
 A single row in the bill of materials. All fields except `number`, `description`, and `quantity` are optional.
@@ -304,13 +305,20 @@ public struct RayHit: Sendable {
 }
 ```
 
-- `point` — 3D world-space intersection point on the surface.
-- `normal` — unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point.
-- `faceIndex` — 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`.
-- `distance` — signed ray parameter (distance from origin along the ray direction).
-- `uv` — UV surface parameters at the intersection point.
-- `normalDefined` — whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which
-  is otherwise indistinguishable from a real upward normal (added by #529).
+| Field | Meaning |
+|---|---|
+| `point` | 3D world-space intersection point on the surface. |
+| `normal` | Unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point. |
+| `faceIndex` | 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`. |
+| `distance` | Signed ray parameter (distance from origin along the ray direction). |
+| `uv` | UV surface parameters at the intersection point. |
+| `normalDefined` | Whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which is otherwise indistinguishable from a real upward normal (added by #529). |
+
+---
+
+### `RayHit.normalDefined`
+
+Whether `normal` is the surface's own normal, or the `(0, 0, 1)` fallback.
 
 ---
 
@@ -459,8 +467,9 @@ public final class Selector: @unchecked Sendable
 
 Internally wraps an `OCCTHeadlessSelector` — a subclass of OCCT's `SelectMgr_ViewerSelector` — paired with a `SelectMgr_SelectionManager`. Shapes are decomposed into `SelectMgr_Selection` sensitive primitives by `StdSelect_BRepSelectionTool`.
 
----
+*(Internal, not public API: `Selector.handle` is an `internal let handle: OCCTSelectorRef` wrapping the underlying bridge object, released in `deinit`. See [Memory Management](../architecture/overview.md#occt-handles).)*
 
+---
 ### `Selector.init()`
 
 Creates an empty `Selector` with no registered shapes.
@@ -539,6 +548,10 @@ public struct PickResult: Sendable {
   `face(at:)` or `subShape(type:index:)`; `-1` when the whole shape is selected (mode 0). This was
   1-based with `0` as that sentinel until #541, which named the sub-shape before the one hit and
   made the sentinel indistinguishable from a hit on sub-shape 0.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+### `Selector.PickResult.subShapeType`
 
 ---
 

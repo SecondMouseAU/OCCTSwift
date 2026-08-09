@@ -31,9 +31,15 @@ public enum PDFError: Error, LocalizedError {
 }
 ```
 
-- `writeFailed(String)` — `Data.write(to:)` failed; the associated string is the underlying
-  error description.
-- `drawingEmpty` — the `PDFWriter` had no staged entities when `write(to:)` was called.
+| Case / property | Meaning |
+|---|---|
+| `writeFailed(String)` | `Data.write(to:)` failed; the associated string is the underlying error description. |
+| `drawingEmpty` | The `PDFWriter` had no staged entities when `write(to:)` was called. |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `errorDescription`
 
 ---
 
@@ -385,6 +391,16 @@ public enum SVGError: Error, LocalizedError {
 
 ---
 
+### `SVGError.writeFailed`
+
+`String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description.
+
+### `SVGError.errorDescription`
+
+`LocalizedError` conformance: formats `.writeFailed`'s associated message as `"SVG write failed: <message>"`.
+
+---
+
 ## Exporter — SVG
 
 Two static methods on `Exporter` (defined as an extension in `SVGExporter.swift`).
@@ -678,10 +694,15 @@ public enum DXFError: Error, LocalizedError {
 }
 ```
 
-- `writeFailed(String)` — `String.write(to:atomically:encoding:)` failed; the associated string
-  is the underlying error description.
-- `drawingEmpty` — the projection passed to `Exporter.writeDXF(shape:to:viewDirection:)` failed
-  (returned `nil` from `Drawing.project`).
+| Case / property | Meaning |
+|---|---|
+| `writeFailed(String)` | `String.write(to:atomically:encoding:)` failed; the associated string is the underlying error description. |
+| `drawingEmpty` | The projection passed to `Exporter.writeDXF(shape:to:viewDirection:)` failed (returned `nil` from `Drawing.project`). |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for either case. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `errorDescription`
 
 ---
 
@@ -980,6 +1001,17 @@ public enum Format: Int32, Sendable {
     case bgra   = 8
 }
 ```
+
+| Case | Layout |
+|---|---|
+| `.gray` | 1 byte per pixel, single grayscale channel. |
+| `.alpha` | 1 byte per pixel, single alpha channel. |
+| `.rgb` | 3 bytes per pixel, red-green-blue byte order. |
+| `.bgr` | 3 bytes per pixel, blue-green-red byte order (the common byte order for uncompressed Windows bitmaps). |
+| `.rgb32` | 4 bytes per pixel, red-green-blue plus one padding/reserved byte. |
+| `.bgr32` | 4 bytes per pixel, blue-green-red plus one padding/reserved byte. |
+| `.rgba` | 4 bytes per pixel, red-green-blue-alpha byte order. |
+| `.bgra` | 4 bytes per pixel, blue-green-red-alpha byte order. |
 
 ### `PixMap.Format.bytesPerPixel`
 

@@ -42,6 +42,20 @@ public static let topOSD: Int32      // -4 — 2D overlay for annotations and UI
 
 ---
 
+### `ZLayerSettings.bottomOSD`
+
+Id `-5`, the 2D underlay layer drawn behind everything.
+
+### `ZLayerSettings.topOSD`
+
+Id `-4`, the 2D overlay layer for annotations and UI.
+
+### `ZLayerSettings.topmost`
+
+Id `-3`, a 3D overlay layer with its own independent depth buffer.
+
+---
+
 ### `PolygonOffsetMode`
 
 Controls which primitive types receive the polygon-offset (depth bias).
@@ -55,6 +69,18 @@ public enum PolygonOffsetMode: Int32, Sendable {
     case all = 7      // all types
 }
 ```
+
+- **OCCT:** `Aspect_PolygonOffsetMode`.
+
+---
+
+#### `PolygonOffsetMode.off`
+
+No polygon offset is applied to any primitive type.
+
+#### `PolygonOffsetMode.all`
+
+The polygon offset applies to fill, line and point primitives together (the bitwise union of the other three cases).
 
 - **OCCT:** `Aspect_PolygonOffsetMode`.
 
@@ -74,6 +100,14 @@ public struct PolygonOffset: Sendable {
 ```
 
 Maps to Metal's `setDepthBias(depthBias:slopeScale:clamp:)`: `factor` → `slopeScale`, `units` → `depthBias`.
+
+| Field | Meaning |
+|---|---|
+| `mode` | Which primitive types receive the offset (`PolygonOffsetMode`). |
+| `factor` | Slope-scale term, maps to Metal's `slopeScale`. |
+| `units` | Constant depth-bias term, maps to Metal's `depthBias`. |
+
+#### `PolygonOffset.units`
 
 ---
 
@@ -95,6 +129,9 @@ public init()
 
 ---
 
+```swift
+```
+---
 ## Depth
 
 ### `depthTestEnabled`
@@ -340,6 +377,9 @@ On Apple Silicon, the equation maps directly to `[[clip_distance]]` in a Metal v
 
 ---
 
+```swift
+```
+---
 ### `ClipState`
 
 Result of probing a point or bounding box against a clip plane (or chain).
@@ -353,6 +393,16 @@ public enum ClipState: Int32, Sendable {
 ```
 
 - **OCCT:** `Graphic3d_ClipState` (`Graphic3d_ClipState_Out`, `Graphic3d_ClipState_In`, `Graphic3d_ClipState_On`).
+
+| Case | Meaning |
+|------|---------|
+| `out` | Fully outside the clipping region, should be discarded. |
+| `in` | Fully inside the clipping region, not clipped. |
+| `on` | On the boundary, or partially clipped. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `ClipPlane.ClipState.out`
 
 ---
 
@@ -370,6 +420,58 @@ public enum HatchStyle: Int32, Sendable {
     case horizontalWide = 11, verticalWide = 12
 }
 ```
+
+Case meanings, from `Aspect_HatchStyle` (`Wide` corresponds to OCCT's `_SPARSE` suffix: more widely spaced lines, not thicker ones):
+
+---
+
+#### `HatchStyle.gridDiagonal`
+
+A crossed diagonal grid: lines at +45 and -45 degrees crossing each other (`Aspect_HS_GRID_DIAGONAL`, OCCT's `TEL_HS_CROSS`).
+
+#### `HatchStyle.gridDiagonalWide`
+
+`gridDiagonal` with more widely spaced lines.
+
+#### `HatchStyle.grid`
+
+An orthogonal grid: horizontal and vertical lines crossing each other (`Aspect_HS_GRID`).
+
+#### `HatchStyle.gridWide`
+
+`grid` with more widely spaced lines.
+
+#### `HatchStyle.diagonal45`
+
+Parallel lines at +45 degrees.
+
+#### `HatchStyle.diagonal135`
+
+Parallel lines at +135 degrees (perpendicular to `diagonal45`).
+
+#### `HatchStyle.horizontal`
+
+Parallel horizontal lines.
+
+#### `HatchStyle.vertical`
+
+Parallel vertical lines.
+
+#### `HatchStyle.diagonal45Wide`
+
+`diagonal45` with more widely spaced lines.
+
+#### `HatchStyle.diagonal135Wide`
+
+`diagonal135` with more widely spaced lines.
+
+#### `HatchStyle.horizontalWide`
+
+`horizontal` with more widely spaced lines.
+
+#### `HatchStyle.verticalWide`
+
+`vertical` with more widely spaced lines.
 
 - **OCCT:** `Aspect_HatchStyle`.
 
@@ -624,6 +726,7 @@ public var chainLength: Int { get }
 
 ---
 
+---
 ### `ProjectionType`
 
 The camera projection mode.
@@ -634,6 +737,18 @@ public enum ProjectionType: Int32, Sendable {
     case orthographic = 1
 }
 ```
+
+- **OCCT:** `Graphic3d_Camera::Projection_Perspective` / `Projection_Orthographic`.
+
+---
+
+#### `Camera.ProjectionType.perspective`
+
+Objects farther from the camera appear smaller (standard vanishing-point projection).
+
+#### `Camera.ProjectionType.orthographic`
+
+No perspective foreshortening; parallel lines in world space stay parallel in the projection.
 
 - **OCCT:** `Graphic3d_Camera::Projection_Perspective` / `Projection_Orthographic`.
 
@@ -939,6 +1054,12 @@ Segment `i` spans `vertices[segmentStarts[i] ..< segmentStarts[i+1]]` (the array
 
 ---
 
+#### `EdgeMeshData.segmentStarts`
+
+Start index, into `vertices`, of each edge's polyline; one entry per edge plus a trailing sentinel equal to `vertices.count`.
+
+---
+
 ### `Shape.shadedMesh(deflection:)`
 
 Extracts a triangulated shaded mesh from the shape.
@@ -1044,6 +1165,26 @@ public enum FontAspect: Int32, Sendable {
     public var name: String { get }   // human-readable string via OCCT
 }
 ```
+
+- **OCCT:** `Font_FontAspect`.
+
+---
+
+#### `FontAspect.regular`
+
+Regular weight, no italic.
+
+#### `FontAspect.bold`
+
+Bold weight, no italic.
+
+#### `FontAspect.italic`
+
+Regular weight, italic.
+
+#### `FontAspect.boldItalic`
+
+Bold weight and italic together.
 
 - **OCCT:** `Font_FontAspect`.
 

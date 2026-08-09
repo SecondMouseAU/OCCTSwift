@@ -201,6 +201,40 @@ public struct BisectorIntersection {
 
 ---
 
+#### `BisectorIntersection.x`
+
+X coordinate of the intersection point.
+
+```swift
+public let x: Double
+```
+
+#### `BisectorIntersection.y`
+
+Y coordinate of the intersection point.
+
+```swift
+public let y: Double
+```
+
+#### `BisectorIntersection.paramOnFirst`
+
+Parameter of the intersection point along the bisector of `(a, b)` (`IntRes2d_IntersectionPoint::ParamOnFirst()`).
+
+```swift
+public let paramOnFirst: Double
+```
+
+#### `BisectorIntersection.paramOnSecond`
+
+Parameter of the intersection point along the bisector of `(c, d)` (`IntRes2d_IntersectionPoint::ParamOnSecond()`).
+
+```swift
+public let paramOnSecond: Double
+```
+
+---
+
 ### `bisectorIntersections(a:b:c:d:)`
 
 Computes intersections between the perpendicular bisectors of two point pairs.
@@ -620,6 +654,15 @@ public struct SameParameterResult: Sendable {
 
 `toleranceReached` is the maximum distance between the 3D curve and the surface-evaluated 2D curve.
 
+| Field | Meaning |
+|---|---|
+| `isSameParameter` | `true` if the curves already share the same parameterisation within `tolerance` |
+| `toleranceReached` | Maximum distance between the 3D curve and the surface-evaluated 2D curve |
+
+#### `SameParameterResult.toleranceReached`
+
+Maximum distance actually measured between the 3D curve and the surface-evaluated 2D curve.
+
 ---
 
 ### `Curve3D.checkSameParameter(curve2D:surface:tolerance:)`
@@ -840,6 +883,24 @@ public struct SplitResult: Sendable {
 
 ---
 
+### `Surface.SplitResult`
+
+Split-count result shared by `splitSurfaceByContinuity(criterion:tolerance:)`, `splitByAngle(_:)`
+and `splitByArea(parts:intoSquares:)` below.
+
+```swift
+public struct SplitResult: Sendable {
+    public let uSplitCount: Int
+    public let vSplitCount: Int
+}
+```
+
+- `uSplitCount`/`vSplitCount`: number of splits introduced in each parametric direction.
+
+#### `SplitResult.vSplitCount`
+
+---
+
 ### `Surface.splitSurfaceByContinuity(criterion:tolerance:)`
 
 Splits this surface at continuity breaks.
@@ -912,6 +973,10 @@ public struct CurveToAnalyticalResult: Sendable {
 `newFirst`/`newLast` are expressed in the **recognised** curve's own parameterisation, not the
 input's: a BSpline circle examined over `[π/2, 3π/2]` reports a range starting at 0 on the
 `Geom_Circle` it returns.
+
+---
+
+#### `CurveToAnalyticalResult.newLast`
 
 ---
 

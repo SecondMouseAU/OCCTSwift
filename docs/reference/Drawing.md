@@ -25,6 +25,7 @@ Obtain a `Drawing` by calling one of the static factory methods (`project(_:dire
 
 ---
 
+---
 ### Enumerations
 
 ### `Drawing.ProjectionType`
@@ -38,8 +39,17 @@ public enum ProjectionType: UInt32 {
 }
 ```
 
-- `.orthographic` — parallel-line projection (engineering drawings).
-- `.perspective` — converging-line projection.
+| Case | Meaning |
+|---|---|
+| `orthographic` | Parallel-line projection (engineering drawings) |
+| `perspective` | Converging-line projection |
+
+---
+
+#### `Drawing.ProjectionType.perspective`
+
+Converging-line projection.
+
 - **OCCT:** Passed as `OCCTProjectionType` to `HLRAlgo_Projector` construction inside `OCCTDrawingCreate`.
 
 ---
@@ -59,6 +69,22 @@ public enum EdgeType: UInt32 {
 - `.visible` — sharp and smooth edges not obscured by other geometry (`VCompound` + `Rg1LineVCompound`).
 - `.hidden` — edges behind other geometry (`HCompound` + `Rg1LineHCompound`).
 - `.outline` — silhouette / outline edges (`OutLineVCompound` / `OutLineHCompound`).
+- **OCCT:** `HLRBRep_HLRToShape` / `HLRBRep_PolyHLRToShape` compound accessors, selected via `OCCTEdgeType` in `OCCTDrawingGetEdges`.
+
+---
+
+#### `Drawing.EdgeType.visible`
+
+Sharp and smooth edges not obscured by other geometry (`VCompound` + `Rg1LineVCompound`).
+
+#### `Drawing.EdgeType.hidden`
+
+Edges behind other geometry (`HCompound` + `Rg1LineHCompound`).
+
+#### `Drawing.EdgeType.outline`
+
+Silhouette (outline) edges (`OutLineVCompound` / `OutLineHCompound`).
+
 - **OCCT:** `HLRBRep_HLRToShape` / `HLRBRep_PolyHLRToShape` compound accessors, selected via `OCCTEdgeType` in `OCCTDrawingGetEdges`.
 
 ---
@@ -770,6 +796,18 @@ case projectionFailed
 
 ---
 
+### `DrawingError.errorDescription`
+
+`LocalizedError` conformance: a human-readable message for the current case.
+
+```swift
+public var errorDescription: String? { get }
+```
+
+- **Returns:** `"Failed to create 2D projection"` for `.projectionFailed` (the only case).
+
+---
+
 ## PaperSize
 
 ISO 5457 paper size enumeration.
@@ -824,6 +862,17 @@ public enum Orientation: String, Sendable, Hashable {
 }
 ```
 
+Not to be confused with `Shape.Orientation` (forward/reversed B-Rep topology orientation, declared in `Shape+Topology.swift`): this is a distinct, top-level enum for sheet layout only.
+
+| Case | Meaning |
+|---|---|
+| `landscape` | Sheet wider than tall (the default; see `PaperSize.dimensions`) |
+| `portrait` | Sheet taller than wide (`PaperSize.size(in:)` swaps X and Y) |
+
+### `Orientation.portrait`
+
+Sheet taller than wide; `PaperSize.size(in:)` swaps X and Y to produce it.
+
 ---
 
 ## ProjectionAngle
@@ -838,6 +887,15 @@ public enum ProjectionAngle: String, Sendable, Hashable {
 ```
 
 Used by `Sheet` and rendered by `ProjectionSymbol.render(_:at:into:)`.
+
+| Case | Meaning |
+|---|---|
+| `first` | First-angle projection (ISO / Europe): the top view is placed below the front view. |
+| `third` | Third-angle projection (ANSI / USA): the top view is placed above the front view. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `third`
 
 ---
 
@@ -903,6 +961,12 @@ All stored as `var` so they can be mutated after construction.
 | `material` | `String?` | optional |
 | `weight` | `String?` | optional |
 | `scale` | `String?` | optional |
+
+---
+
+### `TitleBlock.language`
+
+The language the drawing is authored in, an ISO 7200 optional field.
 
 ---
 
@@ -1063,6 +1127,9 @@ Writes to layers `"BORDER"`, `"CENTER"`, `"TITLE"`, and `"TEXT"`. Outer sheet ed
 
 ---
 
+```swift
+```
+---
 ## ProjectionSymbol
 
 Namespace for rendering ISO 5456-2 first/third-angle projection symbols into a `DXFWriter`.
@@ -1115,6 +1182,42 @@ public enum DrawingLineWidth: Double, Sendable, Hashable, CaseIterable {
 ```
 
 Only these values are recognised by ISO-compliant DXF/SVG readers. The geometric series increments by ≈ 1.4× per tier.
+
+### `DrawingLineWidth.w013`
+
+0.13 mm.
+
+### `DrawingLineWidth.w018`
+
+0.18 mm.
+
+### `DrawingLineWidth.w025`
+
+0.25 mm; the ISO-standard thin weight (see `thin` below).
+
+### `DrawingLineWidth.w035`
+
+0.35 mm.
+
+### `DrawingLineWidth.w050`
+
+0.50 mm; the ISO-standard thick weight (see `thick` below).
+
+### `DrawingLineWidth.w070`
+
+0.70 mm.
+
+### `DrawingLineWidth.w100`
+
+1.00 mm.
+
+### `DrawingLineWidth.w140`
+
+1.40 mm.
+
+### `DrawingLineWidth.w200`
+
+2.00 mm.
 
 ### `DrawingLineWidth.thin`
 
@@ -1196,6 +1299,22 @@ public enum DrawingTextHeight: Double, Sendable, Hashable, CaseIterable {
 
 Each tier is ≈ 1.4× the previous, matching the ISO geometric series.
 
+| Case | Text height (mm) |
+|---|---|
+| `h25` | 2.5 |
+| `h35` | 3.5 |
+| `h50` | 5.0 |
+| `h70` | 7.0 |
+| `h100` | 10.0 |
+| `h140` | 14.0 |
+| `h200` | 20.0 |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+### `h200`
+
+---
+
 ### `DrawingTextHeight.recommended(forPaper:)`
 
 Returns the recommended dimension-text height for a given ISO 5457 paper size.
@@ -1243,6 +1362,22 @@ public enum DrawingArrowStyle: String, Sendable, Hashable, Codable {
 }
 ```
 
+### `DrawingArrowStyle.filledClosed`
+
+A solid, filled triangular arrowhead; the ISO 128-21 default.
+
+### `DrawingArrowStyle.openClosed90`
+
+A stroked (unfilled) triangular arrowhead with a 90 degree included angle.
+
+### `DrawingArrowStyle.openClosed30`
+
+A stroked (unfilled) triangular arrowhead with a narrow 30 degree included angle.
+
+### `DrawingArrowStyle.tick`
+
+A 45 degree tick mark; architectural convention, not an ISO 128-21 default.
+
 ### `DrawingArrowStyle.length(forLineWidth:)`
 
 Recommended arrow length in mm for a given dimension line width.
@@ -1274,6 +1409,19 @@ public enum DrawingScale: Sendable, Hashable {
     case custom(Double)     // any ratio
 }
 ```
+
+| Case | Ratio | Meaning |
+|---|---|---|
+| `one` | 1:1 | Full scale |
+| `reduction(N)` | 1:N, N > 1 | Drawing smaller than the model |
+| `enlargement(N)` | N:1, N > 1 | Drawing larger than the model |
+| `custom(f)` | `f`:1 | Any other ratio, e.g. a non-ISO-preferred value |
+
+### `DrawingScale.custom(_:)`
+
+Any other scale ratio not covered by `.one`, `.reduction`, or `.enlargement`.
+
+---
 
 ### `DrawingScale.factor`
 
@@ -1346,6 +1494,14 @@ public enum DeflectionType: Int32, Sendable {
 ```
 
 - `.relative` — chordal deviation is expressed as a fraction of the bounding-box diagonal.
+- `.absolute` — chordal deviation is a fixed distance in model units.
+
+---
+
+#### `DisplayDrawer.DeflectionType.relative`
+
+Chordal deviation is expressed as a fraction of the bounding-box diagonal.
+
 - `.absolute` — chordal deviation is a fixed distance in model units.
 
 ---

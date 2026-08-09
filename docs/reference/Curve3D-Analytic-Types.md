@@ -528,6 +528,9 @@ Meaningful only when the curve wraps a `Geom_Hyperbola`. Accessing members on a 
 
 ---
 
+```swift
+```
+---
 ### `HyperbolaProperties.majorRadius`
 
 The major radius (real semi-axis).

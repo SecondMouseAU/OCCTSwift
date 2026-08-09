@@ -428,6 +428,16 @@ Used by `shapeType`, `subShapeCount(ofType:)`, `subShape(type:index:)`, and `sub
 
 ---
 
+#### `ShapeType.compSolid`
+
+A composite solid (`TopAbs_COMPSOLID`): several solids sharing faces, treated as one connected block.
+
+#### `ShapeType.unknown`
+
+No recognised topological type; matches no `TopAbs_ShapeEnum` value.
+
+---
+
 ### `shapeType`
 
 The topological type of this shape.
@@ -488,6 +498,29 @@ Backed by `BOPAlgo_ArgumentAnalyzer`'s self-interference test. Expensive (second
 
 ---
 
+### `isSelfIntersecting(hardTimeout:)`
+
+Checks whether the shape has overlapping or interfering sub-faces, with a true hard wall-clock deadline (#319): unlike `isSelfIntersecting(timeout:)`, this returns at `hardTimeout` even if OCCT never reaches a checkpoint to poll.
+
+```swift
+public func isSelfIntersecting(hardTimeout: Double) -> Bool?
+```
+
+Runs the check on a detached background thread against a `deepCopy()` of this shape (independent geometry) and waits on the calling thread with a real deadline. If the deadline passes first, this returns `nil` immediately and the background computation is abandoned, not cancelled: it keeps running orphaned on its own thread until it eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee).
+
+- **Parameters:** `hardTimeout`: seconds to wait before giving up and returning `nil`.
+- **Returns:** `true`/`false` if the check completed in time; `nil` if the deadline passed first (indeterminate, the background check may still be running).
+- **OCCT:** `BOPAlgo_ArgumentAnalyzer` (via `OCCTShapeSelfIntersectsBounded`), on a background `DispatchQueue`.
+- **Example:**
+  ```swift
+  switch solid.isSelfIntersecting(hardTimeout: 5) {
+  case .some(true):  print("self-intersects")
+  case .some(false): print("clean")
+  case .none:        print("deadline hit, treat as unknown, not clean")
+  }
+  ```
+
+---
 ### `ImportError`
 
 Error type for failed STEP/IGES/BREP imports.
@@ -502,6 +535,14 @@ public enum ImportError: Error, LocalizedError {
 
 - `importFailed` — carries a human-readable message describing why the import failed.
 - `cancelled` — the import was cancelled via `ImportProgress.shouldCancel()`.
+
+| Case / Property | Meaning |
+|---|---|
+| `.importFailed(_:)` | The import failed; the associated string is a human-readable reason. |
+| `.cancelled` | The import was cancelled via `ImportProgress.shouldCancel()`. |
+| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, or a fixed string for `.cancelled`. |
+
+#### `ImportError.errorDescription`
 
 ---
 
@@ -523,11 +564,42 @@ public struct ImportResult: Sendable {
     public let sewingApplied: Bool
     public let solidCreated: Bool
     public let healingApplied: Bool
+    public let solidsCreated: Int
     public var summary: String { get }
 }
 ```
 
 `summary` returns a human-readable description such as `"Shell → Solid (processing: sewing, solid creation)"`.
+
+---
+
+#### `ImportResult.originalType`
+
+The shape type as read from the STEP file, before any processing.
+
+#### `ImportResult.resultType`
+
+The shape type after processing.
+
+#### `ImportResult.sewingApplied`
+
+`true` if sewing was applied to connect disconnected faces.
+
+#### `ImportResult.solidCreated`
+
+`true` if a solid was created from a shell.
+
+#### `ImportResult.healingApplied`
+
+`true` if shape healing was applied.
+
+#### `ImportResult.solidsCreated`
+
+How many shells were turned into solids. `> 1` means the file held several bodies and `shape` is a compound of that many solids. Before v1.11.3 every body after the first was silently discarded, so this count is the fact that was quietly wrong: a truncated import still returned a perfectly valid solid (#302).
+
+#### `ImportResult.summary`
+
+Human-readable description such as `"Shell -> Solid (processing: sewing, solid creation)"`.
 
 ---
 
@@ -1077,6 +1149,10 @@ public enum PipeSweepMode: Sendable {
 
 ---
 
+#### `auxiliary`
+
+---
+
 ### `PipeTransitionMode`
 
 Transition behaviour at spine discontinuities.
@@ -1088,6 +1164,18 @@ public enum PipeTransitionMode: Int32, Sendable {
     case roundCorner = 2
 }
 ```
+
+Case meanings, from `BRepBuilderAPI_TransitionMode` (via `BRepOffsetAPI_MakePipeShell::SetTransitionMode`):
+
+- `.transformed`: the pipe is "transformed" at each spine fracture; may self-intersect.
+
+#### `PipeTransitionMode.rightCorner`
+
+The two pipe segments meeting at a spine fracture are extended and intersected, forming a sharp corner. Valid only when that intersection is connected and planar; a non-linear spine near the fracture, or a profile set with a scaling law, can violate this.
+
+#### `PipeTransitionMode.roundCorner`
+
+The corner is filled by rotating the profile around an axis through the fracture point, derived from the cross product of the two adjacent segments' tangent directions. Reliable only when the profile is strictly orthogonal to the spine (`withCorrection: true`).
 
 ---
 
@@ -1137,6 +1225,20 @@ public struct FilletResult: Sendable {
   `overwrittenDuplicateIndices`: 0-based edge indices whose radius a *later* entry in the same
   request overwrote. Empty for every `WithReport` sibling except `blendedEdgesWithReport(_:)`, the
   one entry point whose per-edge radius array can name the same edge twice.
+- **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
+  nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
+  during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
+  0`, populated by `Add()` and not `Build()`, is the only signal OCCT itself exposes, so this reports
+  *which* edges were declined, not *why*. Both lists mirror the caller's request rather than
+  deduplicating it: an edge requested three times, and declined, is reported three times in
+  `declinedEdgeIndices`; an edge requested three times whose radius is overwritten twice is reported
+  twice in `overwrittenDuplicateIndices` -- the count matches how many entries of the request were
+  refused or discarded, not how many distinct edges were involved. Use `Set(...)` on either field
+  for distinct edges.
+
+---
+
+#### `Shape.FilletResult.overwrittenDuplicateIndices`
 - **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
   nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
   during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
@@ -1579,6 +1681,22 @@ public struct ShapeAnalysisResult {
   closure requirement of its own and can report zero free edges accurately while still not being a
   solid. Check `shapeType` or `isValidSolid` for that.
 
+| field | meaning |
+|---|---|
+| `smallEdgeCount` | Number of edges smaller than the scan's `tolerance`. |
+| `smallFaceCount` | Number of faces smaller than the scan's `tolerance`. |
+| `gapCount` | Number of gaps found between edges/faces. |
+| `hasSelfIntersection` | `true`/`false` when `selfIntersectionTimeout` was passed and resolved; `nil` when not asked, or asked but indeterminate. `nil` is never "clean". |
+| `freeEdgeCount` | Free (unconnected) edges across every shell, via `ShapeAnalysis_Shell::CheckOrientedShells`. |
+| `freeFaceCount` | Shells found to have at least one free edge; a derived summary of `freeEdgeCount`, not an independent defect. |
+| `hasInvalidTopology` | Whether `BRepCheck_Analyzer` found the topology invalid. |
+| `totalProblems` | `smallEdgeCount + smallFaceCount + gapCount + freeEdgeCount`, plus +1 for invalid topology, plus +1 only when `hasSelfIntersection == true`. |
+| `isHealthy` | `true` when `totalProblems == 0 && !hasInvalidTopology`. Says nothing about self-intersection unless it was actually checked. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `isHealthy`
+
 ---
 
 ### `analyze(tolerance:selfIntersectionTimeout:)`
@@ -1777,12 +1895,11 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
 }
 ```
 
-Not every API accepts every order. A bare point carries no curvature to match, so
-`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
-point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
-before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
-relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
-`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
+| Case | Meaning |
+|---|---|
+| `.g0` | Positional continuity: the surface passes through the constraint. |
+| `.g1` | Tangent continuity: the surface is tangent along the constraint. |
+| `.g2` | Curvature continuity: the surface matches curvature along the constraint. Rejected for a bare point constraint (see below). |
 
 > **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
 > this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
@@ -1792,6 +1909,22 @@ relying on OCCT's own throw being caught (#437). Curve constraints have no such 
 
 ---
 
+#### `SurfaceContinuity.g2`
+
+```swift
+```
+Not every API accepts every order. A bare point carries no curvature to match, so
+`GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the
+point half of `Shape.plateSurface(pointConstraints:curveConstraints:)` reject `.g2` in Swift
+before building any constraint, so a point given `.g2` returns `nil` deliberately rather than by
+relying on OCCT's own throw being caught (#437). Curve constraints have no such restriction:
+`GeomPlate_CurveConstraint` accepts order 2 directly, so `.g2` is fine for a curve.
+> **Renamed in #398.** `PlateConstraintOrder` and `FillingContinuity` were separate copies of
+> this same vocabulary, deprecated as typealiases of `SurfaceContinuity`; the `.c0`, `.c1` and
+> `.c2` spellings were deprecated aliases of `.g0`, `.g1` and `.g2`. No raw value moved. All were
+> removed at v2.0.0 (#784). Not to be confused with `ParametricContinuity` (C0/C1/C2/C3), which is
+> a different contract: see `docs/reference/Shape-Healing.md`.
+---
 ### `FillingParameters`
 
 Parameters for N-sided surface filling.
@@ -1808,8 +1941,18 @@ public struct FillingParameters {
 }
 ```
 
----
+| field | meaning |
+|---|---|
+| `continuity` | Surface continuity at the fill's boundaries (default `.g1`). |
+| `tolerance` | Surface tolerance for the fit (default `1e-4`). |
+| `maxDegree` | Maximum surface degree the filler may use (default `8`). |
+| `maxSegments` | Maximum number of segments the filler may use (default `9`). |
 
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `tolerance`
+
+---
 ## Variable Radius Fillet (v0.14.0)
 
 ### `filletedVariable(edgeIndex:radiusProfile:)`
@@ -2060,6 +2203,15 @@ public struct FillConstraint {
 
 - **`support`** — the face to be continuous with, used or the fill fails. If the named face carries no pcurve for `edge` it cannot serve as the reference, and the whole fill returns `nil` rather than quietly substituting a different surface. `nil` instead accepts whichever surface the edge itself resolves. (A *planar* face works even with no pcurve stored: `BRep_Tool::CurveOnSurface` projects onto a plane on the fly.)
 - **`isBoundary`** — `true` bounds the resulting face; `false` makes it an internal constraint the surface passes through without being edged by it.
+
+> **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
+> `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.
+> So `.g2` maps to `GeomAbs_C1` (ordinal 2), not `GeomAbs_G2` (ordinal 3) — the latter always
+> throws, despite OCCT's own header docs naming it as the curvature-continuity value.
+
+---
+
+#### `isBoundary`
 
 > **Continuity mapping.** `BRepFill_Filling` forwards the `GeomAbs_Shape` value to
 > `GeomPlate_CurveConstraint` as an integer *plate order* and rejects anything outside `[-1, 2]`.

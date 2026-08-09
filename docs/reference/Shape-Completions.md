@@ -245,6 +245,10 @@ public static func evolved(spineFace: Shape, profileWire: Shape,
 
 Traces the ancestry of edges in an offset wire back to the original face edges. Wraps `BRepFill_OffsetAncestors`.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTOffsetAncestorsRef` this wrapper owns; released in `deinit`. |
+
 ### `OffsetAncestors.create(face:offset:joinType:)`
 
 Creates an offset-ancestors tracker for a face offset by the given distance.
@@ -401,11 +405,21 @@ public struct VinertGKResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `errorReached` | Actual relative error the Gauss-Kronrod integration achieved, for comparison against the requested `tolerance`. |
+
+#### `Shape.VinertGKResult.errorReached`
+
 ---
 
 ## GeomFill_Profiler
 
 `CurveProfiler` homogenizes a set of `Curve3D` values into a single compatible BSpline representation, which is a prerequisite for multi-section surface operations. Wraps `GeomFill_Profiler`.
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTGeomFillProfilerRef` this wrapper owns; released in `deinit`. |
 
 ### `CurveProfiler.create()`
 
@@ -712,6 +726,10 @@ public func evaluate(at param: Double) -> (tangent: SIMD3<Double>, normal: SIMD3
 
 `GuideTrihedronPlan` computes a planar guide trihedron for sweep operations, keeping the profile in planes normal to the guide. Wraps `GeomFill_GuideTrihedronPlan`.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTGuideTrihedronPlanRef` this wrapper owns; released in `deinit`. |
+
 ### `GuideTrihedronPlan.create(guideCurve:)`
 
 Creates a planar guide trihedron law from a guide curve.
@@ -794,6 +812,18 @@ public struct SectionPlacementResult {
     public let isDone: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `parameterOnPath` | Parameter on the sweep path where the section was placed. |
+| `parameterOnSection` | Parameter on the section curve itself corresponding to that placement point. |
+| `distance` | Distance between the path point and the section curve at the placement. |
+| `angle` | Draft angle actually achieved at the placement. |
+| `isDone` | `true` if `GeomFill_SectionPlacement::Perform` succeeded. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `parameterOnSection`
 
 ---
 
@@ -1005,6 +1035,13 @@ public struct BooleanHistoryResult: Sendable {
     public let hasGenerated: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `hasDeleted` | `true` if the operation deleted at least one sub-shape from the input with no surviving descendant. |
+| `hasGenerated` | `true` if the operation generated at least one new sub-shape with no ancestor in the input. |
+
+#### `Shape.BooleanHistoryResult.hasGenerated`
 
 ---
 
@@ -1925,3 +1962,19 @@ public static func setUVPoints(edge: Shape, face: Shape,
   let ok = Shape.setUVPoints(edge: e, face: f,
                               first: SIMD2(0, 0), last: SIMD2(1, 0))
   ```
+
+---
+
+## Bnd_OBB
+
+`OBB` wraps OCCT's `Bnd_OBB`: an oriented (rotated) bounding box, as opposed to the axis-aligned
+box `Shape.bounds` returns. Construct directly from a center, local axes, and half-sizes, or via
+`OBB.fromShape(_:)`.
+
+```swift
+public final class OBB: @unchecked Sendable
+```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTOBBRef` this wrapper owns; released in `deinit`. |

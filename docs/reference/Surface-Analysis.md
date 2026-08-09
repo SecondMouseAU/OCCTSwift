@@ -81,8 +81,25 @@ public struct PrincipalCurvatures: Sendable {
 }
 ```
 
-- `kMin` / `kMax` — minimum and maximum principal curvatures.
-- `dirMin` / `dirMax` — corresponding principal curvature directions in 3D.
+Same shape as `Face.PrincipalCurvatures` (`docs/reference/Face.md`), since a face's curvature query delegates to its underlying surface.
+
+---
+
+#### `Surface.PrincipalCurvatures.kMin`
+
+Minimum principal curvature (reciprocal of the maximum principal radius).
+
+#### `Surface.PrincipalCurvatures.kMax`
+
+Maximum principal curvature (reciprocal of the minimum principal radius).
+
+#### `Surface.PrincipalCurvatures.dirMin`
+
+Unit direction vector of the minimum-curvature principal line, in 3D.
+
+#### `Surface.PrincipalCurvatures.dirMax`
+
+Unit direction vector of the maximum-curvature principal line, in 3D, perpendicular to `dirMin`.
 
 ---
 
@@ -146,6 +163,19 @@ public struct ContinuityAnalysis: Sendable {
 - `holds(_:)` returns `nil` for a class outside `measured`, which is what separates "does not hold" from "never asked". Prefer it to `flags`.
 
 > Before #495 the `is*` helpers were non-optional and read straight off the bitmask, so a class the order never computed answered `true` from an uninitialised member — a 90° crease analysed at `.c0` reported `isC2 == true`, with `c2Angle == 0.0` alongside it.
+
+---
+
+Each `is*` helper is `holds(_:)` for one class, so each is `Bool?`: `nil` means `order` never
+measured that class, not that it fails.
+
+| Property | Measured by |
+|---|---|
+| `isC0` | every order. |
+| `isG1` | `.g1` and `.g2`. |
+| `isC1` | `.c1` and `.c2`. |
+| `isG2` | `.g2` only. |
+| `isC2` | `.c2` only. |
 
 ---
 
@@ -273,6 +303,10 @@ public struct SurfaceExtremaResult {
 - `point1` / `point2` — nearest points on the first and second surface respectively.
 - `uv1` / `uv2` — UV parameters on each surface at the nearest point.
 
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Surface.SurfaceExtremaResult.uv2`
+
 ---
 
 ### `extrema(to:uvBounds1:uvBounds2:)`
@@ -304,6 +338,33 @@ When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)` 
 
 ---
 
+### `Surface.ExtremaPointOnSurface`
+
+One point-to-surface extremum result, returned by `extremaPSPoint(point:index:)` (1-based index;
+`extremaPS(point:)` returns only the count via `PointSurfaceExtrema`).
+
+```swift
+public struct ExtremaPointOnSurface: Sendable {
+    public let squareDistance: Double
+    public let point: SIMD3<Double>
+    public let u: Double
+    public let v: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `squareDistance` | Squared distance between the query point and this extremum point. |
+| `point` | The 3D point on the surface at this extremum. |
+| `u` | Surface U parameter at this extremum. |
+| `v` | Surface V parameter at this extremum. |
+
+#### `Surface.ExtremaPointOnSurface.v`
+
+Surface V parameter at this extremum.
+
+---
+
 ## ShapeAnalysis\_Surface Expansion (v0.49.0)
 
 UV parameter recovery via `ShapeAnalysis_Surface::ValueOfUV` and `NextValueOfUV`.
@@ -323,6 +384,10 @@ public struct UVProjection: Sendable {
 
 - `uv` — surface UV parameters at the closest surface point.
 - `gap` — distance between the input 3D point and the surface evaluated at `uv`. A nonzero gap means the input point was not exactly on the surface.
+
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Surface.UVProjection.uv`
 
 ---
 
@@ -391,6 +456,39 @@ public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6)
 ```
 
 - **OCCT:** `ShapeAnalysis_Surface::UVFromIso`.
+
+---
+
+### `Surface.Singularity`
+
+Detail of a surface singularity: a degenerate iso-line collapsing to a pole, e.g. the apex of a
+cone or a pole of a sphere. Returned by `singularity(_:precision:)`.
+
+```swift
+public struct Singularity: Sendable {
+    public let point: SIMD3<Double>
+    public let firstUV: SIMD2<Double>
+    public let lastUV: SIMD2<Double>
+    public let firstParameter: Double
+    public let lastParameter: Double
+    public let isUIso: Bool
+    public let precision: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `point` | The 3D pole point. |
+| `firstUV` | First 2D `(u, v)` point of the degenerate iso-line. |
+| `lastUV` | Last 2D `(u, v)` point of the degenerate iso-line. |
+| `firstParameter` | Parameter at the first point along the iso-line. |
+| `lastParameter` | Parameter at the last point along the iso-line. |
+| `isUIso` | `true` if the degenerate iso-line is a U-iso curve; `false` if it is a V-iso curve. |
+| `precision` | The precision at which the singularity was detected. |
+
+#### `Surface.Singularity.precision`
+
+The precision at which the singularity was detected.
 
 ---
 
@@ -468,6 +566,16 @@ public struct SurfaceProjection: Sendable {
 
 - `u` / `v` — surface UV parameters at the closest point.
 - `distance` — 3D distance from the input point to the surface.
+
+---
+
+#### `Surface.SurfaceProjection.u`
+
+U parameter at the closest point.
+
+#### `Surface.SurfaceProjection.v`
+
+V parameter at the closest point.
 
 ---
 
@@ -660,9 +768,17 @@ public struct CurveSurfaceIntersection: Sendable {
 }
 ```
 
-- `point` — 3D coordinates of the intersection.
-- `surfaceUV` — surface UV parameters at the intersection.
-- `curveParameter` — parameter along the curve at the intersection.
+| Field | Meaning |
+|---|---|
+| `point` | 3D coordinates of the intersection. |
+| `surfaceUV` | Surface UV parameters at the intersection. |
+| `curveParameter` | Parameter along the curve at the intersection. |
+
+---
+
+#### `CurveSurfaceIntersection.curveParameter`
+
+Parameter along the curve at the intersection.
 
 ---
 

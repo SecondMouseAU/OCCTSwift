@@ -37,6 +37,20 @@ Before #723 this used each face's own GLOBAL area centroid (`BRepGProp::SurfaceP
 
 ---
 
+### `EdgeConvexity.concave`
+
+Interior dihedral angle greater than 180 degrees: the two face normals "open inward," typical of a pocket wall meeting its floor.
+
+### `EdgeConvexity.smooth`
+
+Faces are tangent, dihedral angle within about 0.5 degrees of 180: typical of a filleted edge.
+
+### `EdgeConvexity.convex`
+
+Interior dihedral angle less than 180 degrees: the two face normals "open outward," typical of an external edge.
+
+---
+
 ## AAGNode
 
 A node in the Attributed Adjacency Graph, representing a single B-Rep face **occurrence** (#642).
@@ -65,6 +79,12 @@ Before #642, `AAG.buildGraph()` read `Shape.faces()`, the deduplicated enumerati
 
 ---
 
+### `AAGNode.isDownward`
+
+Whether the face's normal points downward.
+
+---
+
 ## AAGEdge
 
 An edge in the Attributed Adjacency Graph, representing the adjacency relationship between two faces that share at least one B-Rep edge.
@@ -79,6 +99,12 @@ public struct AAGEdge: Sendable {
 ```
 
 `convexity` is taken from the first shared edge between the two faces. `sharedEdgeCount` is the total number of B-Rep edges shared by the pair, uncapped: before v2.0.0 (#761) it silently capped at 10 (`OCCTFaceGetSharedEdges`'s buffer was sized by a hardcoded caller argument, not the true count, confirmed wrong on a synthetic fixture at 12 real shared edges, reported as 10); a new `OCCTFaceGetSharedEdgeCount` now sizes the buffer exactly before it is filled.
+
+- `face1Index` / `face2Index`: occurrence indices (into `Shape.orientedFaces()`) of the two adjacent faces.
+- `convexity`: convexity classification of the (first) shared edge.
+- `sharedEdgeCount`: total number of B-Rep edges shared by the pair.
+
+### `sharedEdgeCount`
 
 ---
 
@@ -239,6 +265,37 @@ public func convexNeighbors(of faceIndex: Int) -> [Int]
 
 ---
 
+#### Private implementation helpers
+
+Not part of the public API; documented for completeness since they carry the actual graph-build and pocket/wall analysis behind `init(shape:)` and `detectPockets(tolerance:)`.
+
+```swift
+```
+- **Example:**
+  ```swift
+  ```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+
+```swift
+```
+---
 ## PocketFeature
 
 A recognized pocket feature detected from the AAG.
@@ -531,6 +588,16 @@ public struct MedialAxisNode: Sendable {
 
 ---
 
+### `MedialAxisNode.isPending`
+
+`true` if the node has only one linked arc, i.e. a skeleton endpoint. Wraps `MAT_Node::PendingNode`.
+
+### `MedialAxisNode.isOnBoundary`
+
+`true` if the node lies on the shape boundary. Wraps `MAT_Node::OnBasicElt`.
+
+---
+
 ## MedialAxisArc
 
 An arc in the medial axis graph, connecting two nodes along a bisector curve.
@@ -550,6 +617,10 @@ public struct MedialAxisArc: Sendable {
 - `geomIndex` — geometry index referencing the bisector curve in the `BRepMAT2d_BisectingLocus`.
 - `firstNodeIndex` / `secondNodeIndex` — 1-based indices of the endpoint nodes.
 - `firstElementIndex` / `secondElementIndex` — 1-based indices of the boundary elements (input edges) the arc bisects.
+
+---
+
+### `secondElementIndex`
 
 ---
 

@@ -156,6 +156,7 @@ Pure-Swift: returns `SIMD2(x, y)`. Identical to `coords`.
 
 ---
 
+---
 ### Mutation
 
 ---
@@ -411,8 +412,11 @@ public func transformed(by transform: Transform2D) -> Point2D?
 
 A 2D geometric transformation backed by `Geom2d_Transformation`. Supports translation, rotation, uniform scaling, point/axis mirroring, composition, inversion, and power operations.
 
----
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTTransform2DRef` this wrapper owns. |
 
+---
 ### Factory Methods
 
 ---
@@ -829,6 +833,10 @@ public enum Kind: Int32, Sendable, Hashable {
 
 ---
 
+#### `ShapeAxis.Kind.symmetry`
+
+---
+
 ### Initializer
 
 ---
@@ -1057,6 +1065,7 @@ The returned vector is always of unit length (normalised by `gp_Dir2d`).
 
 ---
 
+---
 ### Operations
 
 ---

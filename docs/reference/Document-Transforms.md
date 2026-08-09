@@ -57,6 +57,26 @@ public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 
 ---
 
+### `CoordinateSystem3D.isDirect`
+
+Whether this coordinate system is right-handed (direct).
+
+```swift
+public let isDirect: Bool
+```
+
+Computed by both initializers from the supplied direction(s) and stored on the value; `false` means
+the system is left-handed (indirect).
+
+- **OCCT:** `gp_Ax3::Direct()`.
+- **Example:**
+  ```swift
+  let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0))
+  print(cs.isDirect)   // true
+  ```
+
+---
+
 ### `CoordinateSystem3D.angle(to:)`
 
 Angle in radians between this and another coordinate system.
@@ -929,6 +949,48 @@ public enum OCCTLengthUnit: Int32, Sendable {
 }
 ```
 
+Case meanings, from `UnitsMethods_LengthUnit`:
+
+#### `OCCTLengthUnit.inch`
+
+The inch (25.4 mm).
+
+#### `OCCTLengthUnit.millimeter`
+
+The millimetre.
+
+#### `OCCTLengthUnit.foot`
+
+The foot (12 inches, 304.8 mm).
+
+#### `OCCTLengthUnit.mile`
+
+The (statute) mile (5280 feet).
+
+#### `OCCTLengthUnit.meter`
+
+The metre.
+
+#### `OCCTLengthUnit.kilometer`
+
+The kilometre.
+
+#### `OCCTLengthUnit.mil`
+
+The thousandth of an inch (0.0254 mm), also called "thou".
+
+#### `OCCTLengthUnit.micron`
+
+The micrometre (1e-6 metre).
+
+#### `OCCTLengthUnit.centimeter`
+
+The centimetre.
+
+#### `OCCTLengthUnit.microinch`
+
+The millionth of an inch (1e-6 inch).
+
 ---
 
 ### `UnitsConversion.lengthFactor(igesUnit:)`
@@ -1056,6 +1118,15 @@ public struct LocalCurvatures: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `gaussian` | Gaussian curvature (product of the two principal curvatures) at the point. |
+| `mean` | Mean curvature (average of the two principal curvatures) at the point. |
+| `maxCurvature` | The larger of the two principal curvatures at the point. |
+| `minCurvature` | The smaller of the two principal curvatures at the point. |
+
+#### `Surface.LocalCurvatures.minCurvature`
+
 ---
 
 ### `Surface.localCurvatures(u:v:)`
@@ -1085,6 +1156,16 @@ public struct CurvatureDirections: Sendable {
     public let minDirection: SIMD3<Double>
 }
 ```
+
+---
+
+#### `Surface.CurvatureDirections.maxDirection`
+
+Unit tangent direction of maximum principal curvature at the surface point.
+
+#### `Surface.CurvatureDirections.minDirection`
+
+Unit tangent direction of minimum principal curvature at the surface point; perpendicular to `maxDirection`.
 
 ---
 
@@ -1124,6 +1205,17 @@ public struct Line2DResult: Sendable {
 }
 ```
 
+| field | meaning |
+|---|---|
+| `locationX` | X coordinate of the projected line's location point, in the target surface's parameter space. |
+| `locationY` | Y coordinate of the projected line's location point. |
+| `directionX` | X component of the projected line's (unit) direction, in parameter space. |
+| `directionY` | Y component of the projected line's (unit) direction. |
+
+*(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `directionY`
+
 ---
 
 ### `ProjLib.Circle2DResult`
@@ -1137,6 +1229,13 @@ public struct Circle2DResult: Sendable {
     public let radius: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `centerX` | U coordinate of the projected circle's center in the target surface's parameter space. |
+| `centerY` | V coordinate of the projected circle's center in the target surface's parameter space. |
+
+#### `ProjLib.Circle2DResult.centerY`
 
 ---
 
@@ -1234,6 +1333,15 @@ public struct DetailedOBB: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `zDirection` | Unit vector for the box's local Z axis. |
+| `xHalfSize` | Half-extent of the box along `xDirection`. |
+| `yHalfSize` | Half-extent of the box along `yDirection`. |
+| `zHalfSize` | Half-extent of the box along `zDirection`. |
+
+#### `Shape.DetailedOBB.zHalfSize`
+
 ---
 
 ### `Shape.orientedBoundingBoxDetailed(optimal:)`
@@ -1270,6 +1378,13 @@ public struct OrientedBoundingBox: Sendable {
 ```
 
 - **OCCT:** populated from `Bnd_OBB` (via `BRepBndLib::AddOBB`).
+
+---
+
+#### `zDirection`
+
+Unit Z-axis direction of the box frame, alongside `xDirection`/`yDirection`; see the field comments
+in the struct above.
 
 ---
 
@@ -1329,6 +1444,16 @@ public enum ToleranceMode: Int32, Sendable {
     case minimum = -1
 }
 ```
+
+| case | meaning |
+|---|---|
+| `.average` | Average tolerance over the queried sub-shapes. |
+| `.maximum` | Largest tolerance among the queried sub-shapes. |
+| `.minimum` | Smallest tolerance among the queried sub-shapes. |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `minimum`
 
 ---
 
@@ -1545,6 +1670,12 @@ public struct Matrix3x4: Sendable {
     public let values: [Double] // [a11,a12,a13,a14, a21,a22,a23,a24, a31,a32,a33,a34]
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `values` | The 12 matrix elements, row-major: rotation/scale in the first 3 columns of each row, translation in the 4th. |
+
+#### `TransformUtils.Matrix3x4.values`
 
 ---
 

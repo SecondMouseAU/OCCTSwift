@@ -17,6 +17,18 @@ A `Curve3D` is a parametric 3D curve — the Swift analog of OCCT's `Geom_Curve`
 
 ## Properties
 
+### `handle`
+
+*(internal, not part of the public API)*: the opaque `OCCTCurve3DRef` this `Curve3D` wraps.
+
+```swift
+internal let handle: OCCTCurve3DRef
+```
+
+Every static factory and instance method on `Curve3D` ultimately passes this handle to the matching `OCCTCurve3D...` bridge function; `deinit` releases it. Not accessible outside the module.
+
+---
+
 ### `domain`
 
 The parametric domain `[first, last]` of the curve.
@@ -128,6 +140,11 @@ Convenience for `point(at: domain.upperBound)`.
 
 ---
 
+## Continuity Analysis (internal helper)
+
+```swift
+```
+---
 ## Evaluation
 
 ### `point(at:)`

@@ -14,7 +14,7 @@ formats (STL, OBJ, PLY). Obtain one by calling `Shape.mesh(linearDeflection:)` o
 
 ## Topics
 
-- [Initializers](#initializers) · [Mesh Data](#mesh-data) · [Statistics](#statistics) · [Triangle Access with Face Info](#triangle-access-with-face-info) · [Mesh to Shape Conversion](#mesh-to-shape-conversion) · [Mesh Boolean Operations](#mesh-boolean-operations) · [SceneKit Integration](#scenekit-integration) · [Metal Integration](#metal-integration) · [RealityKit Integration](#realitykit-integration)
+- [Initializers](#initializers) · [Mesh Data](#mesh-data) · [Statistics](#statistics) · [Triangle Access with Face Info](#triangle-access-with-face-info) · [Mesh to Shape Conversion](#mesh-to-shape-conversion) · [Mesh Boolean Operations](#mesh-boolean-operations) · [SceneKit Integration](#scenekit-integration) · [Metal Integration](#metal-integration) · [RealityKit Integration](#realitykit-integration) · [Supporting Types](#supporting-types)
 
 ---
 
@@ -59,6 +59,9 @@ by averaging the face normals of adjacent triangles (smooth shading).
 
 ---
 
+```swift
+```
+---
 ## Mesh Data
 
 ### `vertexCount`
@@ -645,6 +648,27 @@ needed.
 
 ---
 
+#### `MeshParameters.allowQualityDecrease`
+
+Allow replacing an existing finer triangulation with a coarser one.
+
+- **OCCT:** `IMeshTools_Parameters` + `BRepMesh_IncrementalMesh`.
+- **Example:**
+  ```swift
+  var params = MeshParameters.default
+  params.deflection = 0.05   // fine mesh
+  params.inParallel = true
+  let mesh = shape.mesh(parameters: params)
+  ```
+- **Note:** `allowQualityDecrease` (added in issue #211): when re-meshing an already-tessellated
+  shape at a different deflection, OCCT keeps the existing mesh if it's "good enough" unless this
+  is `true`. Set it when the new deflection must actually take effect.
+
+---
+
+```swift
+```
+---
 ### `Triangle`
 
 A mesh triangle with B-Rep face association and per-triangle normal.
@@ -675,3 +699,27 @@ position in a `TopExp_Explorer` walk instead, which on a two-solid split compoun
   - `v1`, `v2`, `v3` — vertex indices into `Mesh.vertices`.
   - `faceIndex` — source B-Rep face index; −1 if unknown.
   - `normal` — per-triangle surface normal (computed from the cross product of two edges).
+
+---
+
+### `Polygon2D`
+
+A wrapper around `Poly_Polygon2D`: a standalone 2D polygon (sequence of 2D nodes with a deflection value), independent of `Mesh`'s own triangulation. Used for pcurve tessellation data attached to an edge, separately from the 3D triangle mesh above.
+
+```swift
+public final class Polygon2D: @unchecked Sendable
+```
+
+```swift
+```
+---
+### `PolygonOnTriangulation`
+
+A wrapper around `Poly_PolygonOnTriangulation`: a polygon defined as a sequence of node indices into a shared `Triangulation`, rather than owning its own point positions.
+
+```swift
+public final class PolygonOnTriangulation: @unchecked Sendable
+```
+
+```swift
+```

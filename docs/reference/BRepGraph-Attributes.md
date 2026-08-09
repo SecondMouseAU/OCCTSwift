@@ -28,6 +28,28 @@ public enum AttrValue: Codable, Hashable, Sendable {
 }
 ```
 
+### `AttrValue.bool`
+
+Wraps a `Bool` attribute value.
+
+### `AttrValue.int`
+
+Wraps an `Int` attribute value.
+
+### `AttrValue.double`
+
+Wraps a `Double` attribute value.
+
+### `AttrValue.ints`
+
+Wraps an `[Int]` attribute value, e.g. a mesh-region triangle index set.
+
+### `AttrValue.doubles`
+
+Wraps a `[Double]` attribute value, e.g. fitted-surface parameters.
+
+---
+
 ### `AttrValue.boolValue`
 
 Convenience unwrap — returns the wrapped `Bool`, or `nil` on type mismatch.
@@ -243,6 +265,7 @@ public func encode(to encoder: Encoder) throws
 ```
 
 ---
+
 
 ## GraphSnapshot
 
@@ -565,6 +588,18 @@ Typical use: picking one of two halves after an edge or face split.
 
 ---
 
+## `NodeRef.sentinel`
+
+A sentinel `NodeRef` for recording pure creations that have no meaningful ancestor.
+
+```swift
+public static let sentinel = BRepGraph.NodeRef(kind: .solid, index: -1)
+```
+
+Matches OCCT's default-constructed `BRepGraph_NodeId` (kind `.solid`, index `-1`). `isValid` is `false` on the sentinel.
+
+---
+
 ## NodeRef.sentinel
 
 A sentinel `NodeRef` for recording pure creations that have no meaningful ancestor.
@@ -680,6 +715,20 @@ Recipes are evaluated lazily — `resolve` performs the full lookup on every cal
 
 ---
 
+## `BRepGraph`
+
+Private storage and resolution helpers
+
+Not public API; documented here for anyone reading the source. `BRepGraph` itself is fully
+documented on the main **BRepGraph** page; these are the private/internal pieces behind the
+`resolve(_:)` overloads above and the pattern this whole file uses for adjacency queries.
+
+### `handle`
+
+The internal opaque `OCCTBRepGraphRef` bridge handle every method above calls through. See
+[Memory Management](../architecture/overview.md#occt-handles).
+
+---
 ## currentForms on BRepGraph
 
 ### `BRepGraph.currentForms(of:)`

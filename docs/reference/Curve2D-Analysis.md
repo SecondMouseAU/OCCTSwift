@@ -184,6 +184,16 @@ public enum Curve2DSpecialPointType: Int32, Sendable {
 }
 ```
 
+| Case | Value | Meaning |
+|---|---|---|
+| `inflection` | 0 | Curvature changes sign at this parameter (a zero-crossing). |
+| `minCurvature` | 1 | Local minimum of curvature magnitude. |
+| `maxCurvature` | 2 | Local maximum of curvature magnitude. |
+
+#### `Curve2DSpecialPointType.maxCurvature`
+
+Local maximum of curvature magnitude.
+
 ---
 
 ### `Curve2DSpecialPoint`
@@ -247,6 +257,10 @@ public struct Curve2DIntersection: Sendable {
 - `point` — 2D intersection coordinate.
 - `parameter1` / `parameter2` — parameters on the first and second curves at the intersection.
 
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Curve2DIntersection.parameter2`
+
 ---
 
 ### `Curve2DProjection`
@@ -280,6 +294,24 @@ public struct Curve2DExtremaResult: Sendable {
     public let distance:      Double
 }
 ```
+
+---
+
+#### `Curve2DExtremaResult.pointOnCurve1`
+
+The extremal point on the first curve.
+
+#### `Curve2DExtremaResult.pointOnCurve2`
+
+The extremal point on the second curve.
+
+#### `Curve2DExtremaResult.parameter1`
+
+Parameter on the first curve at the extremal point.
+
+#### `Curve2DExtremaResult.parameter2`
+
+Parameter on the second curve at the extremal point.
 
 ---
 
@@ -502,6 +534,10 @@ public struct Extrema2DResult: Sendable {
 - `param1` / `param2` — parameters on the first and second elements.
 - `point1` / `point2` — closest points on each element.
 
+*(Per-field anchors below, for cross-reference; the list above has the actual meaning of each.)*
+
+#### `Extrema2DResult.point2`
+
 ---
 
 ### `Extrema2d.distanceBetweenLines(line1Point:line1Dir:line2Point:line2Dir:tolerance:)`
@@ -655,6 +691,16 @@ public enum CurInfType: Int32, Sendable {
     case inflection       = 2
 }
 ```
+
+| Case | Meaning |
+|------|---------|
+| `curvatureMinimum` | A local minimum of curvature (same feature `curvatureExtrema()` reports). |
+| `curvatureMaximum` | A local maximum of curvature. |
+| `inflection` | An inflection point (curvature crosses zero, same feature `inflectionPoints()` reports). |
+
+*(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
+
+#### `CurInfType.inflection`
 
 ---
 
@@ -1113,6 +1159,19 @@ public struct LocalExtrema2dResult: Sendable {
 - `point1`/`point2` — closest points on each curve.
 - `param1`/`param2` — parameters at those points.
 
+| Field | Meaning |
+|---|---|
+| `isDone` | `true` if a local extremum was found near the seed parameters. |
+| `squareDistance` | Squared distance at the local extremum. |
+| `point1` | Closest point on `self`, the curve `locateExtremaCC` was called on. |
+| `param1` | Parameter on `self` at `point1`. |
+| `point2` | Closest point on `other`, the curve passed to `locateExtremaCC`. |
+| `param2` | Parameter on `other` at `point2`. |
+
+#### `Curve2D.LocalExtrema2dResult.param2`
+
+Parameter on `other` at `point2`.
+
 ---
 
 ### `locateExtremaCC(range1:other:range2:seedU:seedV:)`
@@ -1375,6 +1434,20 @@ public enum FairCurveCode: Int32, Sendable {
     case nullHeight       = 3
 }
 ```
+
+Case meanings, from `FairCurve_AnalysisCode`:
+
+#### `FairCurveCode.notConverged`
+
+The algorithm did not converge; the result's quality is not certain, and computation should be resumed before using the curve.
+
+#### `FairCurveCode.infiniteSliding`
+
+Sliding is infinite, so computation stopped. Resolve by using an imposed sliding value instead.
+
+#### `FairCurveCode.nullHeight`
+
+No matter is left at one of the curve's ends, so computation stopped. Resolve by increasing or decreasing the slope value.
 
 ---
 
