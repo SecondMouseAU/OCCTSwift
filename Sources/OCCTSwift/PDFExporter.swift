@@ -71,6 +71,8 @@ public final class PDFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
     private var arcs: [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] = []
     private var texts: [(position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double, layer: String)] = []
+    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(pageSize: SIMD2<Double> = SIMD2(841, 595), deflection: Double = 0.1) {
         self.pageSize = pageSize

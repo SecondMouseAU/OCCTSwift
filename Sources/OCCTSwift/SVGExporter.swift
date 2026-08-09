@@ -53,6 +53,8 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
     private var arcs: [(centre: SIMD2<Double>, radius: Double, startDeg: Double, endDeg: Double, layer: String)] = []
     private var texts: [(position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double, layer: String)] = []
+    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(viewBox: (min: SIMD2<Double>, size: SIMD2<Double>)? = nil,
                  deflection: Double = 0.1) {
@@ -194,10 +196,14 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink {
             // Counter-flip the group's Y-flip so text reads right-side up.
             let rot = formatMM(-t.rotationDeg)
             let x = formatMM(t.position.x), y = formatMM(t.position.y)
+            // Negate the NUMBER, then format -- not the other way around. Prefixing a literal
+            // "-" onto an already-formatted string doubles up for a negative coordinate
+            // (e.g. y = -10 would print "--10.0000", which is not a valid SVG number: #800 review).
+            let negX = formatMM(-t.position.x), negY = formatMM(-t.position.y)
             let escaped = SVGWriter.escapeXML(t.text)
             s += "<text x=\"\(x)\" y=\"\(y)\" font-family=\"Helvetica\" "
             s += "font-size=\"\(formatMM(t.height))\" "
-            s += "transform=\"matrix(1,0,0,-1,0,0) translate(\(x),-\(y)) rotate(\(rot)) translate(-\(x),\(y))\" "
+            s += "transform=\"matrix(1,0,0,-1,0,0) translate(\(x),\(negY)) rotate(\(rot)) translate(\(negX),\(y))\" "
             s += "fill=\"black\" stroke=\"none\">\(escaped)</text>\n"
         }
         return s

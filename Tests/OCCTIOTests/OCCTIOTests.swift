@@ -2795,41 +2795,40 @@ private let golden795SVG = #"""
 <line x1="20.0000" y1="-2.5000" x2="20.0000" y2="5.5000"/>
 <line x1="20.0000" y1="5.5000" x2="18.5000" y2="2.3000"/>
 <line x1="20.0000" y1="5.5000" x2="21.5000" y2="2.3000"/>
-<text x="0.0000" y="-10.0000" font-family="Helvetica" font-size="4.0000" transform="matrix(1,0,0,-1,0,0) translate(0.0000,--10.0000) rotate(-0.0000) translate(-0.0000,-10.0000)" fill="black" stroke="none">PART-001</text>
+<text x="0.0000" y="-10.0000" font-family="Helvetica" font-size="4.0000" transform="matrix(1,0,0,-1,0,0) translate(0.0000,10.0000) rotate(-0.0000) translate(-0.0000,-10.0000)" fill="black" stroke="none">PART-001</text>
 <text x="20.0000" y="39.5000" font-family="Helvetica" font-size="5.0000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,-39.5000) rotate(-0.0000) translate(-20.0000,39.5000)" fill="black" stroke="none">A</text>
 <text x="20.0000" y="9.5000" font-family="Helvetica" font-size="5.0000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,-9.5000) rotate(-0.0000) translate(-20.0000,9.5000)" fill="black" stroke="none">A</text>
 <text x="45.0000" y="20.0000" font-family="Helvetica" font-size="4.5000" transform="matrix(1,0,0,-1,0,0) translate(45.0000,-20.0000) rotate(-0.0000) translate(-45.0000,20.0000)" fill="black" stroke="none">1</text>
-<text x="-8.0000" y="5.0000" font-family="Helvetica" font-size="4.5000" transform="matrix(1,0,0,-1,0,0) translate(-8.0000,-5.0000) rotate(-0.0000) translate(--8.0000,5.0000)" fill="black" stroke="none">2</text>
-<text x="20.0000" y="-6.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--6.0000) rotate(-0.0000) translate(-20.0000,-6.0000)" fill="black" stroke="none">40.00</text>
-<text x="20.0000" y="-12.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--12.0000) rotate(-0.0000) translate(-20.0000,-12.0000)" fill="black" stroke="none">40.00 ±0.050</text>
-<text x="20.0000" y="-18.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--18.0000) rotate(-0.0000) translate(-20.0000,-18.0000)" fill="black" stroke="none">40.00</text>
-<text x="20.0000" y="-16.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--16.0000) rotate(-0.0000) translate(-20.0000,-16.0000)" fill="black" stroke="none">+0.100</text>
-<text x="20.0000" y="-20.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--20.0000) rotate(-0.0000) translate(-20.0000,-20.0000)" fill="black" stroke="none">-0.050</text>
-<text x="20.0000" y="-24.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--24.0000) rotate(-0.0000) translate(-20.0000,-24.0000)" fill="black" stroke="none">40.00</text>
-<text x="20.0000" y="-22.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--22.0000) rotate(-0.0000) translate(-20.0000,-22.0000)" fill="black" stroke="none">+0.100</text>
-<text x="20.0000" y="-26.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--26.0000) rotate(-0.0000) translate(-20.0000,-26.0000)" fill="black" stroke="none">0</text>
-<text x="20.0000" y="-30.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--30.0000) rotate(-0.0000) translate(-20.0000,-30.0000)" fill="black" stroke="none">40.00</text>
-<text x="20.0000" y="-28.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--28.0000) rotate(-0.0000) translate(-20.0000,-28.0000)" fill="black" stroke="none">0</text>
-<text x="20.0000" y="-32.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--32.0000) rotate(-0.0000) translate(-20.0000,-32.0000)" fill="black" stroke="none">-0.100</text>
-<text x="20.0000" y="-36.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--36.0000) rotate(-0.0000) translate(-20.0000,-36.0000)" fill="black" stroke="none">40.00 H7</text>
-<text x="20.0000" y="-42.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--42.0000) rotate(-0.0000) translate(-20.0000,-42.0000)" fill="black" stroke="none">40.00</text>
-<text x="20.0000" y="-40.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--40.0000) rotate(-0.0000) translate(-20.0000,-40.0000)" fill="black" stroke="none">20.050</text>
-<text x="20.0000" y="-44.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,--44.0000) rotate(-0.0000) translate(-20.0000,-44.0000)" fill="black" stroke="none">19.950</text>
+<text x="-8.0000" y="5.0000" font-family="Helvetica" font-size="4.5000" transform="matrix(1,0,0,-1,0,0) translate(-8.0000,-5.0000) rotate(-0.0000) translate(8.0000,5.0000)" fill="black" stroke="none">2</text>
+<text x="20.0000" y="-6.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,6.0000) rotate(-0.0000) translate(-20.0000,-6.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-12.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,12.0000) rotate(-0.0000) translate(-20.0000,-12.0000)" fill="black" stroke="none">40.00 ±0.050</text>
+<text x="20.0000" y="-18.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,18.0000) rotate(-0.0000) translate(-20.0000,-18.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-16.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,16.0000) rotate(-0.0000) translate(-20.0000,-16.0000)" fill="black" stroke="none">+0.100</text>
+<text x="20.0000" y="-20.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,20.0000) rotate(-0.0000) translate(-20.0000,-20.0000)" fill="black" stroke="none">-0.050</text>
+<text x="20.0000" y="-24.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,24.0000) rotate(-0.0000) translate(-20.0000,-24.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-22.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,22.0000) rotate(-0.0000) translate(-20.0000,-22.0000)" fill="black" stroke="none">+0.100</text>
+<text x="20.0000" y="-26.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,26.0000) rotate(-0.0000) translate(-20.0000,-26.0000)" fill="black" stroke="none">0</text>
+<text x="20.0000" y="-30.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,30.0000) rotate(-0.0000) translate(-20.0000,-30.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-28.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,28.0000) rotate(-0.0000) translate(-20.0000,-28.0000)" fill="black" stroke="none">0</text>
+<text x="20.0000" y="-32.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,32.0000) rotate(-0.0000) translate(-20.0000,-32.0000)" fill="black" stroke="none">-0.100</text>
+<text x="20.0000" y="-36.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,36.0000) rotate(-0.0000) translate(-20.0000,-36.0000)" fill="black" stroke="none">40.00 H7</text>
+<text x="20.0000" y="-42.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(20.0000,42.0000) rotate(-0.0000) translate(-20.0000,-42.0000)" fill="black" stroke="none">40.00</text>
+<text x="20.0000" y="-40.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,40.0000) rotate(-0.0000) translate(-20.0000,-40.0000)" fill="black" stroke="none">20.050</text>
+<text x="20.0000" y="-44.0000" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(20.0000,44.0000) rotate(-0.0000) translate(-20.0000,-44.0000)" fill="black" stroke="none">19.950</text>
 <text x="35.5885" y="21.5000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(35.5885,-21.5000) rotate(-0.0000) translate(-35.5885,21.5000)" fill="black" stroke="none">R8.00 ±0.020</text>
 <text x="25.0000" y="21.1603" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(25.0000,-21.1603) rotate(-0.0000) translate(-25.0000,21.1603)" fill="black" stroke="none">⌀10.00</text>
 <text x="12.7279" y="12.7279" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(12.7279,-12.7279) rotate(-0.0000) translate(-12.7279,12.7279)" fill="black" stroke="none">90.0°</text>
 <text x="14.1421" y="14.1421" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(14.1421,-14.1421) rotate(-0.0000) translate(-14.1421,14.1421)" fill="black" stroke="none">+0.500</text>
 <text x="11.3137" y="11.3137" font-family="Helvetica" font-size="1.9250" transform="matrix(1,0,0,-1,0,0) translate(11.3137,-11.3137) rotate(-0.0000) translate(-11.3137,11.3137)" fill="black" stroke="none">-0.500</text>
-<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,--5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
-<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(--5.0000,25.0000)" fill="black" stroke="none">25.00</text>
-<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,--5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
-<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(--5.0000,25.0000)" fill="black" stroke="none">25.00</text>
+<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
+<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(5.0000,25.0000)" fill="black" stroke="none">25.00</text>
+<text x="40.0000" y="-5.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(40.0000,5.0000) rotate(-90.0000) translate(-40.0000,-5.0000)" fill="black" stroke="none">40.00</text>
+<text x="-5.0000" y="25.0000" font-family="Helvetica" font-size="3.5000" transform="matrix(1,0,0,-1,0,0) translate(-5.0000,-25.0000) rotate(-0.0000) translate(5.0000,25.0000)" fill="black" stroke="none">25.00</text>
 </g>
 </g>
 </svg>
 
 """#
-
 private let golden795DXF = #"""
 0
 SECTION
@@ -4626,5 +4625,119 @@ struct ExporterDrawingCollectionGoldenTests {
         #expect(pdf.entityCounts.texts == svg.entityCounts.texts)
         #expect(pdf.entityCounts.texts == dxf.entityCounts.texts)
         #expect(pdf.entityCounts.texts == 3)  // main + upper + lower
+    }
+}
+
+// MARK: - #800 review: no writer emits a malformed double-sign numeric token
+//
+// A golden test pins BYTES, not correctness -- a golden regenerated from a still-broken
+// implementation is indistinguishable from one refreshed to hide a regression until the
+// bytes are read by eye. `emitLayerText` (SVGExporter.swift) used to build its
+// counter-rotation transform by string-concatenating a literal "-" in front of an
+// already-formatted coordinate instead of negating the number first, so a negative x or y
+// produced an invalid double-minus SVG number token (e.g. `translate(0.0000,--10.0000)`
+// for y = -10). That bug predated this PR but the golden fixture above captured it as
+// "correct" until now. These tests assert the property directly, so a future
+// regeneration that reintroduces the bug fails here regardless of what the golden bytes say.
+
+private func xmlAttributeValues(in content: String) -> [String] {
+    // Manual scan rather than a text-content regex: attribute values are always inside a
+    // `="..."` pair, which structurally excludes a `<text>`/`<title>` element's own inner
+    // text content (arbitrary user-supplied labels, which legitimately might contain "--").
+    var values: [String] = []
+    var searchStart = content.startIndex
+    while let eq = content.range(of: "=\"", range: searchStart..<content.endIndex) {
+        let valueStart = eq.upperBound
+        guard let closeQuote = content.range(of: "\"", range: valueStart..<content.endIndex) else { break }
+        values.append(String(content[valueStart..<closeQuote.lowerBound]))
+        searchStart = closeQuote.upperBound
+    }
+    return values
+}
+
+private func pdfContentStreamNonTextTokens(_ content: String) -> String {
+    // Strip every `(...)` string literal (the payload of a `Tj` text-show operator, the
+    // only place arbitrary label text appears) before scanning; everything left is PDF
+    // operators and the numbers this writer formats itself.
+    var stripped = ""
+    var depth = 0
+    for ch in content {
+        if ch == "(" { depth += 1; continue }
+        if ch == ")" { depth -= 1; continue }
+        if depth == 0 { stripped.append(ch) }
+    }
+    return stripped
+}
+
+private func dxfNonTextValues(_ content: String) -> [String] {
+    // DXF alternates group-code/value line pairs; group code 1 is the TEXT entity's own
+    // string payload (arbitrary label text), every other code's value is this writer's own
+    // formatted number or a fixed enum-ish string (layer/linetype/style names).
+    let lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    var values: [String] = []
+    var i = 0
+    while i + 1 < lines.count {
+        if lines[i] != "1" { values.append(lines[i + 1]) }
+        i += 2
+    }
+    return values
+}
+
+@Suite("#800 review: no writer emits a malformed double-sign numeric token")
+struct DoubleMinusRegressionTests {
+    @Test("SVGWriter's counter-rotation transform never doubles a minus sign for a negative text position")
+    func svgTextTransformNegativePosition() throws {
+        let writer = SVGWriter()
+        writer.addText("label", at: SIMD2(-8, -10), height: 3.5, rotationDeg: 0, layer: "TEXT")
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_negative_text_\(UUID()).svg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        #expect(content.contains("<text"), "expected a <text> element to have been written")
+        for value in xmlAttributeValues(in: content) {
+            #expect(!value.contains("--"),
+                    "malformed double-sign numeric attribute value: \"\(value)\" in \(content)")
+        }
+    }
+
+    @Test("No XML attribute value in SVGWriter's golden-drawing output contains a double minus sign")
+    func svgGoldenHasNoDoubleMinus() throws {
+        let writer = SVGWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_svg_golden_scan_\(UUID()).svg")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let offenders = xmlAttributeValues(in: content).filter { $0.contains("--") }
+        #expect(offenders.isEmpty, "malformed double-sign attribute value(s): \(offenders)")
+    }
+
+    @Test("No numeric operand in PDFWriter's content stream contains a double minus sign")
+    func pdfGoldenHasNoDoubleMinus() throws {
+        let writer = PDFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_pdf_golden_scan_\(UUID()).pdf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let data = try Data(contentsOf: url)
+        let content = String(data: data, encoding: .isoLatin1) ?? ""
+        let nonText = pdfContentStreamNonTextTokens(content)
+        #expect(!nonText.contains("--"), "malformed double-sign numeric token found outside text payloads")
+    }
+
+    @Test("No numeric value in DXFWriter's golden-drawing output contains a double minus sign")
+    func dxfGoldenHasNoDoubleMinus() throws {
+        let writer = DXFWriter()
+        writer.collectFromDrawing(makeGolden795Drawing())
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("800_dxf_golden_scan_\(UUID()).dxf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writer.write(to: url)
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let offenders = dxfNonTextValues(content).filter { $0.contains("--") }
+        #expect(offenders.isEmpty, "malformed double-sign value(s): \(offenders)")
     }
 }

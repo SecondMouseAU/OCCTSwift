@@ -46,6 +46,12 @@ internal struct DrawingPrimitiveOps {
 /// but its BODY is one call into this file's shared `collectDrawing(...)`. #795.
 internal protocol DrawingPrimitiveSink: AnyObject {
     var deflection: Double { get }
+    /// Backing storage for `primitiveOps()`'s cache. `nil` until first use; each writer
+    /// declares this as a plain stored `var` starting `nil`. #800 review: without this, every
+    /// call to `addDimension`/`collectFromDrawing` allocated a fresh 5-closure
+    /// `DrawingPrimitiveOps`, which matters for `addDimension`'s documented loop-of-many-calls
+    /// use case (composing a DXF from dimension values without going through a `Drawing`).
+    var cachedPrimitiveOps: DrawingPrimitiveOps? { get set }
     func addLine(from a: SIMD2<Double>, to b: SIMD2<Double>, layer: String)
     func addPolyline(_ points: [SIMD2<Double>], closed: Bool, layer: String)
     func addCircle(centre: SIMD2<Double>, radius: Double, layer: String)
@@ -57,15 +63,19 @@ internal protocol DrawingPrimitiveSink: AnyObject {
 
 extension DrawingPrimitiveSink {
     /// Ops closure bundle wrapping this sink's own staging methods, for the shared
-    /// annotation/dimension dispatchers below.
+    /// annotation/dimension dispatchers below. Built once per instance and cached rather
+    /// than reallocated on every call (#800 review).
     func primitiveOps() -> DrawingPrimitiveOps {
-        DrawingPrimitiveOps(
+        if let cached = cachedPrimitiveOps { return cached }
+        let built = DrawingPrimitiveOps(
             addLine:     { [weak self] a, b, layer in self?.addLine(from: a, to: b, layer: layer) },
             addPolyline: { [weak self] pts, closed, layer in self?.addPolyline(pts, closed: closed, layer: layer) },
             addCircle:   { [weak self] c, r, layer in self?.addCircle(centre: c, radius: r, layer: layer) },
             addArc:      { [weak self] c, r, sDeg, eDeg, layer in self?.addArc(centre: c, radius: r, startAngleDeg: sDeg, endAngleDeg: eDeg, layer: layer) },
             addText:     { [weak self] txt, pos, h, rot, layer in self?.addText(txt, at: pos, height: h, rotationDeg: rot, layer: layer) }
         )
+        cachedPrimitiveOps = built
+        return built
     }
 }
 
@@ -81,16 +91,21 @@ internal func collectDrawing(_ drawing: Drawing,
                               translate: SIMD2<Double>,
                               scale: Double,
                               into sink: DrawingPrimitiveSink) {
-    let ops = sink.primitiveOps()
+    // Edges are the highest-volume primitive stream (one call per tessellated segment), so
+    // they go straight to `sink`'s own methods -- no closure indirection. #800 review.
     collectProjectedEdges(drawing.visibleEdges, layer: "VISIBLE",
                            translate: translate, scale: scale,
-                           deflection: sink.deflection, into: ops)
+                           deflection: sink.deflection, into: sink)
     collectProjectedEdges(drawing.hiddenEdges, layer: "HIDDEN",
                            translate: translate, scale: scale,
-                           deflection: sink.deflection, into: ops)
+                           deflection: sink.deflection, into: sink)
     collectProjectedEdges(drawing.outlineEdges, layer: "OUTLINE",
                            translate: translate, scale: scale,
-                           deflection: sink.deflection, into: ops)
+                           deflection: sink.deflection, into: sink)
+    // Annotations/dimensions are comparatively low-volume and their dispatchers need to stay
+    // format-agnostic (shared with `addDimension`'s single-value entry point), so they go
+    // through the (now-cached) closure bundle.
+    let ops = sink.primitiveOps()
     for a in drawing.annotations {
         let t = (translate == .zero && scale == 1.0) ? a : a.transformed(translate: translate, scale: scale)
         emitAnnotation(t, into: ops)
@@ -102,12 +117,15 @@ internal func collectDrawing(_ drawing: Drawing,
 }
 
 /// Tessellate `compound`'s edges (via `allEdgePolylines`) and stage each resulting
-/// polyline as a line (2-point case) or polyline, translated/scaled, on `layer`. Shared by
-/// every `collectDrawing` call for the visible/hidden/outline edge passes — previously
-/// three (PDF/SVG/DXF) independently hand-written copies of the identical loop. #795.
+/// polyline as a line (2-point case) or polyline, translated/scaled, on `layer`, calling
+/// `sink`'s own `addLine`/`addPolyline` directly (no `DrawingPrimitiveOps` closure
+/// indirection: this runs once per tessellated segment, the highest-volume primitive stream
+/// in a drawing, #800 review). Shared by every `collectDrawing` call for the
+/// visible/hidden/outline edge passes — previously three (PDF/SVG/DXF) independently
+/// hand-written copies of the identical loop. #795.
 private func collectProjectedEdges(_ compound: Shape?, layer: String,
                                     translate: SIMD2<Double>, scale: Double,
-                                    deflection: Double, into ops: DrawingPrimitiveOps) {
+                                    deflection: Double, into sink: DrawingPrimitiveSink) {
     guard let compound else { return }
     let polys = compound.allEdgePolylines(deflection: deflection)
     func t(_ p: SIMD2<Double>) -> SIMD2<Double> { scale * p + translate }
@@ -115,9 +133,9 @@ private func collectProjectedEdges(_ compound: Shape?, layer: String,
         guard poly.count >= 2 else { continue }
         let points2D = poly.map { t(SIMD2($0.x, $0.y)) }
         if points2D.count == 2 {
-            ops.addLine(points2D[0], points2D[1], layer)
+            sink.addLine(from: points2D[0], to: points2D[1], layer: layer)
         } else {
-            ops.addPolyline(points2D, false, layer)
+            sink.addPolyline(points2D, closed: false, layer: layer)
         }
     }
 }

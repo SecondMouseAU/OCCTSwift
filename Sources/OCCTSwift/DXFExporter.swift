@@ -63,6 +63,8 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink {
     private var circles: [(centre: SIMD2<Double>, radius: Double, layer: String)] = []
     private var arcs: [(centre: SIMD2<Double>, radius: Double, startAngleDeg: Double, endAngleDeg: Double, layer: String)] = []
     private var texts: [(position: SIMD2<Double>, text: String, height: Double, rotationDeg: Double, layer: String)] = []
+    /// `DrawingPrimitiveSink.primitiveOps()`'s cache -- see `DrawingDispatch.swift`. #800.
+    internal var cachedPrimitiveOps: DrawingPrimitiveOps?
 
     public init(deflection: Double = 0.1) {
         self.deflection = deflection
