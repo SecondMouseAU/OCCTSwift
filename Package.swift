@@ -36,18 +36,45 @@ let occtTarget: Target = useLocalBinary
     // OCCT V8_0_1 + the fifteen carried patches listed below.
     //
     // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The eleven that
-    // survive are 0010 (Intf_Interference O(1) tangent-zone lookup + checkpointed breaker, #319),
-    // 0011 (XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override, #341/#363), 0012
-    // (XCAFApp_Application::GetApplication/TDocStd_Application::Resources lazy-init races +
-    // CDF_Directory/Resource_Manager/CDF_Application map synchronization, #344), 0014
-    // (PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex, #349), 0015
-    // (CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes, #353), 0016
-    // (Resource_Manager::Debug atomic + Storage_Schema::ICurrentData per-instance, #374), 0017
-    // (null ReShape context in ComposeShell/WireDivide, #484), 0018 (GCPnts degenerate count +
-    // duplicate end point, #555), 0019 (AdvApp2Var Jacobi maxima workspace slot, #522), 0020
-    // (BRepFeat_MakeCylindricalHole tool-part selection, #532), and 0021 (CPnts adaptive
-    // arc-length integration, #603).
+    // their writeups kept in Scripts/patches/README.md under "Retired patches"). The fifteen that
+    // survive, all present in Scripts/patches/, are:
+    //
+    //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
+    //   0011  XCAFDoc_ShapeTool::OwnAutoNamingScope per-instance override             #341/#363
+    //   0012  GetApplication/Resources lazy-init races + CDF_Directory/Resource_Manager
+    //         /CDF_Application map synchronization                                         #344
+    //   0014  PCDM_StorageDriver/PCDM_Reader driver-instance reentrancy mutex              #349
+    //   0015  CDM_Application::myMetaDataLookUpTable + CDM_MetaData field mutexes          #353
+    //   0016  Resource_Manager::Debug atomic + Storage_Schema per-instance scratch    #374/#518
+    //   0017  null ReShape context in ComposeShell/WireDivide                              #484
+    //   0018  GCPnts degenerate count + duplicate end point                                #555
+    //   0019  AdvApp2Var Jacobi maxima workspace slot                                      #522
+    //   0020  BRepFeat_MakeCylindricalHole tool-part selection                             #532
+    //   0021  CPnts adaptive arc-length integration                                        #603
+    //   0022  ChFi2d_Builder::AddChamfer connexion error check                             #705
+    //   0023  GeomTools_Curve2dSet/SurfaceSet null-handle guard                            #643
+    //   0024  Extrema_ExtCC::Points bound against mypoints                                 #636
+    //   0025  GeomFill_Sweep reports the achieved conversion error                         #597
+    //
+    // This list said "fifteen" above a list of eleven until the release check ran, which is the
+    // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
+    // while the enumeration next to it did not.
+    //
+    // ALL FIFTEEN ARE VERIFIED PRESENT IN THE PINNED ASSET, measured rather than assumed:
+    //
+    //   - Eight (0010, 0011, 0012, 0014, 0015, 0016, 0021, 0024) touch a shipped .hxx. Every line
+    //     each patch adds to a header was matched, line for line, against the header inside the
+    //     downloaded asset: 17 headers, 178 added lines, 0 mismatches.
+    //   - Five (0017, 0019, 0020, 0022, 0025) are .cxx-only and carry their own Swift regression
+    //     suites (Issue484*, Issue522*, Issue532*, Issue568*, and the #597 case in
+    //     OCCTSurfaceTests). ci.yml's build-and-test resolves this asset, not a local build, so a
+    //     green run is behavioural proof those five reached the binary.
+    //   - Two (0018, 0023) are exercised by NO test, and cannot be: the bridge stops the defect
+    //     before OCCT sees it. Sampling.requested(_:atLeast: 2) rejects the point count 0018
+    //     guards against, and OCCTGeomToolsCurve2dSetWrite/SurfaceSetWrite null-check every array
+    //     element before Add(). Both are carried for upstream, deliberately unreachable here.
+    //     They are the only two patches in the tree with no CI coverage of any kind, which is
+    //     worth knowing before trusting "the fix is in the kernel" about either.
     //
     // Pinned to the v2.0.0-kernel.3 PRE-RELEASE: upstream V8_0_1 plus the fifteen patches listed
     // above. This is a kernel-only pre-release, not a library release, and it exists so ci.yml
@@ -63,6 +90,21 @@ let occtTarget: Target = useLocalBinary
     // pre-release afterwards: every commit in the v2.0.0 window pins it, so deleting it takes its
     // asset with it and makes those commits unbuildable from a clean checkout, which breaks
     // git bisect and any historical re-measurement.
+    //
+    // SEQUENCING, and why this still says kernel.3 after the release check ran. SwiftPM resolves
+    // `url:` at build time, so the moment this points at a v2.0.0 asset that has not been uploaded
+    // yet, every CI run on the branch fails to resolve, and a wrong checksum is not the only way
+    // that happens: a correct checksum against a 404 fails just the same, which is how the
+    // kernel.3 asset was published under the wrong filename and passed a checksum check while
+    // resolving to nothing. So the URL swap belongs in the same commit as the tag, in this order:
+    //
+    //   1. gh release create v2.0.0 ... and upload OCCT.xcframework.zip to it
+    //   2. confirm the uploaded asset RESOLVES (curl -fsIL the download URL), not merely that its
+    //      checksum matches
+    //   3. change `url:` below to .../download/v2.0.0/OCCT.xcframework.zip
+    //
+    // `checksum:` does NOT change: the v2.0.0 asset is the identical file. Verified by downloading
+    // the pinned kernel.3 asset and hashing it, which reproduces the value below exactly.
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
