@@ -18,33 +18,358 @@ All notable changes to OCCTSwift.
 <!--
 TRANSCRIPTION NOTE, written while preparing v2.0.0.
 
-`Scripts/check-changelog-transcription.py` reports 31 merge commits in this branch's history that
-did not themselves touch this file. Ten of them had a `## CHANGELOG entry` in their PR body that was
-never copied across at merge time, which is my omission, not the authors'. Those ten are transcribed
-above, plus one for #757, which merged with no `## CHANGELOG entry` section at all.
+`Scripts/check-changelog-transcription.py` reports 37 merge commits in this branch's history that
+did not themselves touch this file. Every one has now been checked against its PR body with
+`--verify-transcribed` (#788), and the backlog is closed:
 
-**Late transcription does not clear the audit and cannot.** The check asks whether the MERGE COMMIT
-changed this file, which is the right question at merge time and unanswerable afterwards without
-rewriting history. Expect it to keep reporting 31.
+  23  entry transcribed late, present above, nothing left to do
+  13  PR body says None by design, with its reason there rather than in a `No-Changelog:` trailer,
+      because that policy landed after several of them
+   1  #757, which merged with no `## CHANGELOG entry` section at all
+   0  entry in a PR body and not in this file
 
-Six of those merges are entry-less by design, with the reason in each PR body rather than in the
-`No-Changelog:` trailer the policy asks for, because that policy landed after several of them:
-
-  #751  investigation only, no functional change
-  #758  provenance for an already-shipped patch, plus unpushed upstream artifacts
-  #759  revises a carried patch before its kernel rebuild ships; 0 of 13,532 configurations differ
-  #782  contributor documentation
-  #785  contributor documentation
-  #787  merge of already-released main content
-
-The remaining flagged merges predate the policy entirely, when entries were written in the diff.
-
-Teaching the audit to read PR bodies, so a transcribed-late entry can clear its flag, is worth doing
-and is filed as #788 rather than bent around this window.
+**Late transcription does not clear the plain audit and cannot.** The bare run asks whether the
+MERGE COMMIT changed this file, which is the right question at merge time and unanswerable
+afterwards without rewriting history. Expect it to keep reporting 37; read
+`--verify-transcribed` for whether anything is actually missing.
 -->
 
 - `AAG`'s `sharedEdgeCount` is no longer silently capped at 10 by the bridge's fixed edge buffer,
   which made a floor/wall pair sharing more than ten boundary segments under-report. (#761)
+
+### PDF/SVG/DXF exporters share one drawing-collection pipeline instead of three independent copies (#795)
+
+`PDFExporter.swift`, `SVGExporter.swift` and `DXFExporter.swift` now route their edge, annotation
+and dimension collection through one shared implementation in `DrawingDispatch.swift`
+(`DrawingPrimitiveSink`, `collectDrawing`, `collectProjectedEdges`, `strokeWidthMM`, `formatMM`),
+instead of each independently hand-rolling its own copy. `DXFExporter.swift`'s own
+`formatTolerance`/`TolerancedLabel` and its separate dimension/annotation dispatch pipeline
+(`emitLinear`/`emitRadial`/`emitDiameter`/`emitAngular`/`emitOrdinate`,
+`collectAnnotations`/`emitBalloon`/`emitCuttingPlaneLine`/`emitHatch`) are removed in favour of
+the same shared dispatcher PDF/SVG already used, closing the gap where a tolerance-formatting fix
+made to the shared file could previously miss DXF entirely. No public API signature changed and
+output is byte-identical, verified by golden-output tests over every annotation and tolerance
+case. Internal only.
+
+### A new gate checks that every symbol `docs/` documents as current API still exists in `Sources/OCCTSwift` (#802)
+
+`Scripts/check-docs-existence.py` closes a gap none of the existing gates covered: during #798,
+two reference pages showed a live-looking signature for a symbol the same PR had deleted, caught
+only by a reviewer reading closely. The new gate checks every symbol `docs/**/*.md` and
+`README.md` document against `Sources/OCCTSwift`, keyed on the exact (owning type, member name)
+pair so a rename cannot collide with a same-named live symbol elsewhere (`Shape.nbEdges`, removed,
+vs. `ShapeContentsExtended.nbEdges`, live and unrelated). Wired into `ci.yml`'s `gate-scripts` job
+and the optional pre-commit hook alongside the other five gates.
+
+Fixed 18 stale references it found: three sections (`Curve3D.ContinuityOrder`,
+`Shape.BSplineContinuity`, `Surface.Continuity`) still described a removed typealias as a live
+deprecated alias; `Document-OCAF-Attributes.md`'s whole `TDocStd_PathParser` section documented a
+type #784 removed outright (now points at `OSDPath`); a cookbook guide still called `generation`
+merely deprecated rather than removed; and 13 pages (headings and code snippets both) named a
+method that never existed under that name, unrelated to #784: `Curve3D.helix`, `Shape.fillet`,
+`Shape.pipe`, `Mesh.fromShape`/`Mesh.from`, `Curve2D.rectangle`/`Curve2D.arc`,
+`Shape.makeFace`/`makePolygon`, and `Exporter.writeGLB`/`exportDXF`.
+
+Also corrected `docs/reference/FeatureRecognition.md`'s `detectPocketsAAG()` and `detectHoles()`
+sections, both of which still described their pre-#762/#747 criteria in full rather than the
+current mechanism.
+
+### 61 deprecated symbols plus one bridge deprecation, adjudicated and removed (#784)
+
+Every `@available(*, deprecated)` symbol in `Sources/OCCTSwift` (61) and the one
+`__attribute__((deprecated))` bridge symbol (`OCCTFacesAreAdjacent`) were adjudicated one at a time
+and removed. None had a live caller anywhere in `Sources/OCCTSwift` or `Sources/OCCTBridge`,
+measured via `swift build --build-tests`'s own deprecation warnings, all 45 of which landed in
+`Tests/` or `Scripts/repro/censuses/`, none in `Sources/`. See the SemVer impact section below for
+the full list of removed symbols and their replacements, and
+[`Scripts/repro/784-deprecations/adjudication.md`](https://github.com/SecondMouseAU/OCCTSwift/blob/main/Scripts/repro/784-deprecations/adjudication.md)
+for the row-by-row evidence.
+
+Investigated `OCCTFacesAreAdjacent` specifically for the "replacement is worse" case: its
+replacement, adopted by its only caller since #783, costs a full walk of the face pair where the
+original stopped at the first shared edge, but that caller already needs the full walk for other
+reasons, so the cost is paid regardless of which function is called, and no other caller wanting
+pure adjacency exists. Removed under the same `OCCTBridge`-orphan precedent as #506/#651.
+
+`Tests/OCCTThreadTests/Issue254BuildModesTests.swift` (#254) is kept, not deleted, and its surviving
+test renamed to `autoMatchesDirect()`. Its old `allModesAreDirect()` asserted three things: that a
+direct build is a smooth low-face helix (`fDirect < 40`, against the faceted cut's roughly 893
+faces), that `.auto` resolves to `.direct` for a single start (`fAuto == fDirect`), and that the now
+-removed `.boolean` matched `.direct` too (`fBool == fDirect`). Only the third concerned the removed
+case; the first two are the substance of #254 and were about surviving API. Deleting the whole file,
+as this PR first did, would have dropped coverage nothing else in the tree provides:
+`Issue189ThreadGuardTests.swift`, the only other file mentioning `ThreadBuild`, covers thread
+building and worm-pitch rejection, not this equivalence. The `.boolean` shaft, its helper, the third
+expectation, and the `.boolean`-only `booleanIsInEnvelope()` test (whose remaining claim, that the
+direct build's crest is in-envelope, is already covered by `Issue222EnvelopeTests.swift`) are
+removed; the two surviving assertions are not.
+
+`README.md`/`docs/API_REFERENCE.md` totals re-derived via `count-operations.py --fix`
+(4,306 to 4,254): not every removed symbol counted as a wrapped operation under that script's rule
+(typealiases and an enum case do not).
+
+### #784 duplication rescan: a committed census artifact, six issues filed, no source changes
+
+Added `Scripts/repro/784-duplication-rescan/detect-duplicate-logic.py`, a re-runnable k-token-shingle
+clone detector over the bridge's C functions and the Swift API's `func`s, built to answer whether
+Pass 1a/1b (#380/#381) missed more of the duplication shape six accidentally-found instances
+revealed on 2026-08-07. It found 38 bridge and 21 Swift candidate pairs at its tuned thresholds; 6
+issues (#791-#796) were filed from what measured as genuine, none fixed in this PR. No public API
+changed.
+
+### `OCCTConvertSphereToBSplineSurface`/`OCCTConvertCircleToBSpline2D` now share their siblings' array-building helper (#791)
+
+Internal-only bridge refactor, found by the #784 duplication rescan (PR #797).
+`OCCTConvertSphereToBSplineSurface` and `OCCTConvertCircleToBSpline2D` each reimplemented the
+pole/weight/knot-array-building sequence a shared helper (`buildSurfaceFromElementary`/
+`buildCurve2DFromConic`) already provides and their Cylinder/Cone/Torus and
+Ellipse/Hyperbola/Parabola siblings already call, because both entry points predate the helpers'
+extraction. `Convert_SphereToBSplineSurface`/`Convert_CircleToBSplineCurve` both genuinely inherit
+the base class each helper is typed on (verified against the bundled OCCT headers), so both are
+now drop-in calls to the shared helper. Same signature, same OCCT calls, same output for every
+input tested (exact-equality baseline captured from the pre-change implementation, plus a
+geometric-invariant check independent of the implementation), non-breaking.
+
+### Kernel pin moved to `v2.0.0-kernel.2`, carrying all fourteen patches (#512)
+
+- Pinned `v2.0.0-kernel.2`, which carries all fourteen patches in `Scripts/patches/`. The previous
+  pin held eleven, leaving the `ChFi2d_Builder::AddChamfer` (#705), `GeomTools` null-handle (#643)
+  and `Extrema_ExtCC` bounds (#636) fixes untested by any CI job. (#512)
+
+### `detectPocketsAAG()` no longer double-counts a single pocket's floor; its floor/wall match survives meshing and is now caller-configurable (#724, #733)
+
+A single blind cylindrical pocket reported two pockets instead of one:
+
+```swift
+let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+let cut  = box.subtracting(tool)!
+print(cut.detectPocketsAAG().count)   // was 2, now 1
+```
+
+Ground truth for this solid, from OCCT's own classifier `ChFi3d::DefineConnectType`: 13 convex
+edges, 1 concave (the bore's floor meeting its cylindrical wall), 1 tangential (the cylinder's own
+seam). One concave edge joining a wall to a floor is one pocket.
+
+This was a grouping defect, not a classification one, and is independent of #703 (the
+face1/face2 order fix) and of #723 (the separate replacement of `OCCTEdgeGetConvexity`'s formula
+with `ChFi3d::DefineConnectType`): `AAG.detectPockets()` selected a floor candidate on
+`isUpward && isHorizontal && isPlanar` plus at least one concave, vertical neighbor, with no check
+that the neighbor was actually resting on that floor rather than merely touching it somewhere along
+its height. A curved wall's rim, where it meets the exterior surface it opens through, can classify
+concave under the convexity formula even after #703's fix, since that fix addressed a
+planar/planar order-dependence and left a planar/cylindrical pair's classification unchanged. The
+box's own top face satisfies the floor predicate exactly as well as the real floor does, and once
+its rim edge to the bore's wall is (wrongly) concave, it is indistinguishable from a second,
+shallower floor sharing the same wall.
+
+**Fixed**: a wall only counts toward a given floor candidate if the wall's own bounding-box minimum
+Z matches that floor's Z, within a tolerance (`AAG.defaultFloorRestsOnWallTolerance`, 1e-4) far
+tighter than any real pocket depth and far looser than bounding-box noise on an exact primitive. A
+pocket floor is upward-facing, so it is always the low end of the walls that rise from it; a wall's
+high end is where it opens, whether to the exterior, to a shallower pocket's floor, or to open air,
+never to a floor of its own. This holds regardless of whether the wall's rim classified concave for
+a legitimate reason or a wrong one, so the fix does not depend on #723 and did not need revisiting
+when it landed.
+
+**Two further fixes, both from this PR's own review:**
+
+- The Z-match compared against `Face.bounds`, which `BRepBndLib::Add` enlarges by the mesh's
+  deflection once a shape has been meshed. Measured on the fixture above: at the mesh library's own
+  default deflection (0.1), a meshed shape's wall bound drifted ~290x past the tolerance, and every
+  deflection tried (0.001-5.0) exceeded it, dropping the pocket outright once the shape had been
+  meshed at all before calling `detectPocketsAAG()`. A planar-walled pocket never drifted (a plane
+  triangulates without curvature error), which is why the fix above's own fixtures didn't catch it.
+  Fixed with a new internal `Face.exactBounds` (backed by a new bridge entry point,
+  `OCCTFaceGetBoundsExact`, `BRepBndLib::Add(..., useTriangulation: false)`), used only inside `AAG`;
+  `Face.bounds` itself is unchanged for every other caller.
+- The tolerance was a hardcoded `private static let`, the only non-configurable tolerance anywhere
+  in this module (every other tolerance, 296 of them, is a caller-supplied parameter with a
+  default). Promoted to a `tolerance:` parameter on both `AAG.detectPockets(tolerance:)` and
+  `Shape.detectPocketsAAG(tolerance:)`, defaulting to the same 1e-4
+  (`AAG.defaultFloorRestsOnWallTolerance`, now public). Existing call sites are unaffected.
+
+**Migration note**: `detectPocketsAAG()`/`AAG.detectPockets()` can now report fewer pockets, and a
+`PocketFeature.wallFaceIndices` can now be shorter, for any shape where a wall's rim classified
+concave without the wall actually bottoming out at that candidate floor. A genuine multi-wall
+pocket, where every wall shares the same floor Z, is unaffected: measured on the existing
+square-pocket fixtures (`Issue703EdgeConvexityOrderTests`, `Shape.detectPocketsAAG()`'s own doc
+example), the pocket count and each wall count are unchanged, meshed or not. One known limitation,
+not exercised by any fixture in this codebase: a filleted floor/wall junction would round the wall's
+bounding box past the floor's own Z by roughly the fillet radius, which could exceed the default
+tolerance; pass a larger `tolerance:` for that case.
+
+Tests: `Tests/OCCTModelingTests/Issue724PocketGroupingFloorTests.swift`,
+`Tests/OCCTModelingTests/Issue733MeshTriangulationBoundsTests.swift` (both new).
+
+### `Surface.joinBezierPatches` rejects rational patches instead of silently dropping their weights (#725)
+
+`GeomConvert_CompBezierSurfacesToBSplineSurface` has no rational path: its own precondition against
+rational input is a `Standard_NotImplemented_Raise_if` that this project's Release kernel compiles
+out via `No_Exception`, so a rational Bezier patch used to convert to the *polynomial* surface
+through the same control net and report success. Measured on a rational quarter-cylinder patch: a
+0.606602 radius error reported as `IsDone() == true`. `joinBezierPatches` now rejects any patch that
+is rational in either direction before constructing the converter, using the same
+`IsURational() || IsVRational()` predicate the compiled-out guard used. Weights are never clamped or
+silently dropped.
+
+### `Shape.geomFillSweep` rejects a fit that misses its own tolerance instead of reporting it as done (#597)
+
+`GeomFill_Sweep::Build`'s general path always fits the swept surface with an internal approximation
+and records the achieved deviation in `ErrorOnSurface()`; `IsDone()` alone says only that some
+surface was produced, not that it met the tolerance the fit was built at. `geomFillSweep` used to
+accept whatever `Build()` returned without ever reading that number. Measured: a rapidly oscillating
+spine can report `IsDone() == true` with `ErrorOnSurface() == 13.0`, five orders of magnitude past
+the 1e-4 tolerance the fit was built at. Now rejects a fit whose reported error exceeds that
+tolerance. Two upstream kernel sites the wider issue also names (`GeomFill_Sweep.cxx`'s
+`ForceApproxC1` branch, `ShapeUpgrade_UnifySameDomain.cxx`) are not reachable from this bridge file
+and remain open; see #597 for the measurement.
+
+### `Surface.networkSurface` now succeeds on well-formed curve networks (#689)
+
+`networkSurface` used to fail every network tried, including the simplest possible 2x2 bilinear
+patch of straight lines, a network with nothing to approximate at all. The cause was not the
+intersection grid: it was that the locator parameters handed to the underlying
+`GeomFill_NetworkSurface` builder were a caller-invented `[0,1]` fraction rather than each curve's
+own raw parameter in the other family's domain, which the builder requires to match before it will
+align its internal profile, guide, and reference skins to one knot basis. Fixed by finding each
+profile/guide pair's real contact point and parameter via `GeomAPI_ExtremaCurveCurve` (the same
+class `GeomFill_Gordon`'s own internal network preparation uses) and averaging across the family.
+`networkSurface` now builds well-formed networks, including a network of genuinely rational
+profile curves, matching their reference geometry to within floating-point precision; it does not
+replicate `GeomFill_Gordon`'s full curve-reordering and reparametrization pipeline, so a scrambled
+or genuinely misaligned network can still decline. This new call site of `GeomAPI_ExtremaCurveCurve`
+is guarded against the parallel-curve SIGSEGV #636 found in the same class, since that fix (PR #730)
+is scoped to a different file and does not cover it.
+
+**Review-response follow-up (same PR, second pass):** the contact-point loop above picked
+`GeomAPI_ExtremaCurveCurve`'s solution index 1 unconditionally instead of its nearest extremum, and
+substituted a fabricated placeholder point (each curve's own `FirstParameter()`) for a
+parallel/no-extremum pair, silently averaging it into an otherwise-real result. Both fixed: the
+nearest-extremum accessors are used instead of index 1, and a pair with no real contact now rejects
+the whole network as `.invalidInput` rather than fabricating one. Separately, verifying a docs claim
+about this same function surfaced a distinct, unrelated kernel defect in `GeomFill_NetworkSurface`
+itself (two of four corners of the built surface can be wrong even when `.done` is reported); filed
+as #748, not fixed in this PR.
+
+### `Shape.divided(at:)` and `dividedByContinuity(criterion:tolerance:)` unified onto one entry point (#438)
+
+`Shape` exposed `ShapeUpgrade_ShapeDivideContinuity` through two public entry points that set
+different criteria on the same builder: `divided(at:)` set boundary, pcurve AND surface criteria
+together, matching OCCT's own shape-healing guide; `dividedByContinuity(criterion:tolerance:)` set
+only the boundary criterion, leaving pcurve/surface pinned at the class's own C1 default regardless
+of the requested continuity. Measured (`Scripts/repro/cluster-d-continuity`) as a flat result
+across every criterion on a fixture where `divided(at:)`'s own behaviour varies (nil/4/4/25 faces
+at C0/C1/C2/C3).
+
+`divided(at:)` is now `divided(at:tolerance:)`, taking `ContinuityLevel` (the strict superset
+`dividedByContinuity` alone used to reach) and a `tolerance` parameter (default `1e-7`, matching
+this method's prior implicit behavior). `dividedByContinuity(criterion:tolerance:)` is deprecated
+and forwards to it. One behaviour change for existing `dividedByContinuity` callers: `.c0` now
+returns `nil` rather than a spurious non-nil result, matching `divided(at:)`'s own `.c0` answer,
+because the pcurve/surface criteria are now genuinely applied instead of silently ignored.
+
+### `Shape.vinertGK(...)` reports a real integration error; `VinertGKResult.absoluteError` removed (#732)
+
+`OCCTBRepGPropVinertGK` hardcoded `result.errorReached` to `0.0` on every call. The comment
+explaining it ("GetErrorReached is inline-only in OCCT 8.0.0") had the conclusion backwards: an
+inline accessor is callable precisely because the compiler emits its body into the caller, which is
+why `nm` finds no exported symbol for it. Fixed by calling `BRepGProp_VinertGK::GetErrorReached()`
+directly; measured on a radius-10 sphere, it now tracks the requested tolerance across six orders
+of magnitude (8.09e-4 at `1e-3`, down to 1.14e-9 at `1e-9`) instead of reporting 0 at every one.
+
+`VinertGKResult.absoluteError` is removed rather than given a second real value.
+`BRepGProp_VinertGK` does declare a second accessor, `GetAbsolutError()`, but it has no definition
+anywhere in the OCCT 8.0.1 sources: calling it fails at link time (`symbol(s) not found`, confirmed
+by compiling against it). Deriving one from `errorReached * mass` recovers the source's internal
+absolute value in the common case, but not in OCCT's own near-zero-mass branch, where the
+un-normalized value is kept as-is rather than divided, so that derivation would go quietly wrong
+exactly where a caller most needs a reliable number.
+
+`errorReached` itself is also documented more precisely now: it is a relative fraction of `mass`
+only when `|mass|` clears an internal floor; below it, OCCT returns the undivided residual as-is
+instead, with nothing in the return value distinguishing which happened. See the doc comment on
+`VinertGKResult` and the review response below for the full investigation.
+
+### `Curve3D.extrema(with:)` no longer crashes the process on parallel curves (#636)
+
+Found while building a fixture for #622: a parallel-curve fixture for `extrema(with:)` crashed the
+process outright, unrelated to the count bound #622 was about. `CLAUDE.md`'s Known OCCT Bugs
+already documents the topological sibling (`BRepExtrema_ExtCC` crashes on parallel edges, guarded
+with `isParallel`); `OCCTCurve3DExtrema` (`OCCTBridge_Curve3D.mm`), reached from the Swift API by a
+different bridge path through `GeomAPI_ExtremaCurveCurve`, had no equivalent guard.
+
+**Root cause, confirmed against the pinned `V8_0_1` source before touching anything**:
+`GeomAPI_ExtremaCurveCurve` wraps `Extrema_ExtCC`. On parallel curves,
+`Extrema_ExtCC::PrepareParallelResult` reports exactly one "extremum" by appending a distance to
+its private `mySqDist` sequence, but several of its branches (an unbounded pair, or a bounded pair
+whose projected ranges overlap, where a whole span is equidistant rather than one discrete closest
+point) never append the matching pair to `mypoints`. `NbExtrema()` reports 1
+(`mySqDist.Length()`), so `Points()` indexes an empty `NCollection_Sequence`. This project's OCCT
+is built with `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON` (`No_Exception`), so the bounds check that
+would normally throw `Standard_OutOfRange` compiles to nothing: the out-of-range access is
+undefined behaviour, confirmed via a standalone binary linked directly against `libOCCT-macos.a` to
+be a genuine SIGSEGV, not a C++ exception. A `catch (...)` around the call cannot help: an OS
+signal never reaches it.
+
+**Measured against two fixtures**, both crashing before the fix and both built from real `Curve3D`
+factory methods: two unbounded parallel `Geom_Line`s (`Curve3D.line(through:direction:)`), and two
+*bounded* parallel segments with overlapping projected ranges (`Curve3D.segment(from:to:)`, the
+exact fixture shape `Issue622AllocationBoundsTests` deliberately avoided making parallel, per its
+own comment).
+
+**Fixed**: `OCCTCurve3DExtrema` now queries `IsParallel()` and returns empty before touching any
+solution, mirroring the guard already in place for the sibling `Extrema_ExtCC`/`Extrema_ExtCS`
+entry points in the same file (`OCCTExtremaExtCC`/`OCCTExtremaExtCS`). `OCCTCurve3DMinDistanceToCurve`
+(`Curve3D.minDistance(to:)`), which shares the same `GeomAPI_ExtremaCurveCurve` construction, needed
+no change: it only calls `LowerDistance()`, which reads `mySqDist`, populated correctly in every
+parallel branch, and never touches the empty `mypoints`. Measured, not assumed: it already
+reported the correct offset distance for both parallel fixtures before this fix.
+
+Audited the rest of the bridge for the same shape (every `GeomAPI_ExtremaCurveCurve`,
+`Extrema_ExtCC`/`Extrema_ExtCS`, and `BRepExtrema_ExtCC` call site): `OCCTCurve3DExtrema` was the
+only unguarded one. `OCCTBridge_Geom2d.mm`'s `OCCTCurve2DAllExtrema` (`Geom2dAPI_ExtremaCurveCurve`)
+has the identical unguarded `.Points()` call and is very likely the 2D sibling of this same defect,
+but that file is outside this PR's scope; noted here as a follow-up rather than fixed.
+
+`Issue636ExtremaParallelCurvesTests` (`Tests/OCCTCurveTests`), 4 tests. Since this is an uncatchable
+OS-signal crash, an in-process test cannot observe "before" without taking the whole test runner
+down with it: the defect and the fix were instead proven out-of-process first, via a temporary
+probe in `Sources/OCCTTest/main.swift` (restored byte-identical afterward) run as
+`swift run OCCTTest`. With the guard removed: SIGSEGV (exit 139). With the guard restored: clean
+exit reporting the expected empty result. The permanent, safe-to-run-in-process regression tests
+landed only once both were confirmed.
+
+Bridge and Swift only: no kernel patch, no `OCCT.xcframework` rebuild.
+
+### Prepared the upstream kernel fix for `Extrema_ExtCC::Points()` on parallel curves (#636)
+
+`Extrema_ExtCC::NbExt()` counts `mySqDist`; `Extrema_ExtCC::Points()` reads a different container,
+`mypoints`, but bounds-checked the request against `NbExt()`. Several branches of
+`PrepareParallelResult` leave a distance in `mySqDist` with no matching pair in `mypoints` (a
+genuinely parallel curve pair has no unique closest point, only a distance), so `NbExt()` reported
+`1` in exactly the cases `Points(1)` indexed an empty sequence — a SIGSEGV under this project's
+`No_Exception` Release build, already mitigated bridge-side in PR #730. `Scripts/patches/0024-*`
+bounds `Points()` against `mypoints.Length()` instead, validated via override-link against the
+pinned kernel (not a full rebuild): the crash becomes a catchable `Standard_OutOfRange`, and the two
+non-crashing fixtures are byte-identical before and after. Includes a companion, behavior-neutral
+`IsParallel()` forwarder on `Geom2dAPI_ExtremaCurveCurve`, closing an ergonomic (not crash) gap
+between the 2D and 3D wrappers. Upstream issue/PR text drafted, not filed. See
+`Scripts/repro/636-extrema-parallel/`.
+
+### Verified the status of ten open upstream OCCT PRs and assessed patch 0020 for filing (#657)
+
+Re-verified all ten upstream OCCT PRs behind our pre-8.0.1-base carried patches (`0010`-`0012`,
+`0014`-`0021`) against the GitHub API rather than trusting recorded status: all ten remain open
+with green CI, none needs a conflict-resolving rebase (each patch still applies to current
+upstream `master` with zero rejected hunks), and the belief that OCCT#1399 (patch `0016`) still
+needed its `Storage_Schema` fix updated to match maintainer review was already stale, that update
+shipped three days before it was recorded. Flagged OCCT#1417 and OCCT#1418 as carrying unanswered
+maintainer feedback. Confirmed carried patch `0020` (`BRepFeat_MakeCylindricalHole` part
+selection, #532), still unfiled upstream, is ready to submit: still applies, its reproducer runs
+and matches its documented post-fix measurements, and it needs no reformatting against OCCT's own
+`.clang-format`. Drafted the upstream PR text; no upstream issue, PR, comment or push was made.
+See `Scripts/repro/657-upstream-pr-status/`.
 
 ### `detectPocketsAAG()` now finds a pocket whose floor/wall junction is filleted or chamfered (#762)
 
