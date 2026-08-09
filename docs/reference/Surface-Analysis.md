@@ -511,7 +511,7 @@ Uses `ProjLib_CompProjectedCurve`, which handles cases where the curve projectio
 - **Example:**
   ```swift
   if let srf    = Surface.sphere(radius: 10),
-     let spiral = Curve3D.helix(radius: 10, pitch: 2, turns: 3) {
+     let spiral = Curve3D.circularHelix(radius: 10, pitch: 2) {
       let segs = srf.projectCurveSegments(spiral)
       // segs may contain multiple UV segments when the helix crosses the seam
   }

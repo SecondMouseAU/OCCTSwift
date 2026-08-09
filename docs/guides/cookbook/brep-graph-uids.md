@@ -109,14 +109,14 @@ what makes a decoded UID from another process resolve nowhere rather than by acc
 > to whatever node held that counter, which on any other model is the wrong node. If you persisted UIDs
 > under an older version, re-read the persistence section below.
 
-### `generation` is always 1: do not use it
+### `generation` was always 1: removed in v2.0.0
 
 OCCT has a graph generation counter, but OCCTSwift clears a graph exactly once when it builds it and
 never rebuilds an existing one ([#303](https://github.com/SecondMouseAU/OCCTSwift/issues/303)), so the
-counter lands at 1 and never moves. It is the same 1 for every graph, so it cannot tell two graphs
-apart or detect a stale reference. The `generation` property is deprecated for exactly this reason.
-`node(forUID:)` already rejects a foreign UID on its own, and `instanceID` compares graph identity
-directly; use those.
+counter landed at 1 and never moved. It was the same 1 for every graph, so it could tell neither two
+graphs apart nor detect a stale reference. `BRepGraph.generation` was removed at v2.0.0
+([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)); `node(forUID:)` already rejects a
+foreign UID on its own, and `instanceID` compares graph identity directly, so use those instead.
 
 ## What preserves identity, and what mints a new one
 

@@ -2339,17 +2339,12 @@ Small solids are merged into their neighbors rather than removed.
 
 ---
 
-### `BSplineContinuity`
+### `BSplineContinuity` *(removed in v2.0.0)*
 
-> **Deprecated in #398.** `BSplineContinuity` was one of several copies of the same continuity-floor
-> vocabulary and is now a typealias of
-> [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) (`.c0` ... `.c3`). No raw
-> value moved.
-
-```swift
-@available(*, deprecated, renamed: "ParametricContinuity")
-public typealias BSplineContinuity = ParametricContinuity
-```
+Renamed to `ParametricContinuity` in #398; the compatibility typealias itself was removed at
+v2.0.0 ([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use
+[`ParametricContinuity`](Shape-Healing.md#parametriccontinuity) (`.c0` ... `.c3`) directly. No raw
+value moved.
 
 ---
 

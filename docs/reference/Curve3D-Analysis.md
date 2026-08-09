@@ -124,7 +124,7 @@ Torsion is zero for planar curves. Non-zero values indicate the curve is twistin
 - **OCCT:** `GeomLProp_CLProps::Torsion`.
 - **Example:**
   ```swift
-  if let helix = Curve3D.helix(radius: 5, pitch: 2, turns: 3) {
+  if let helix = Curve3D.circularHelix(radius: 5, pitch: 2) {
       let tau = helix.torsion(at: 0)  // non-zero for a helix
   }
   if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 4) {
@@ -233,7 +233,7 @@ Uses `GeomProjLib::ProjectOnPlane`. The result is a 3D curve lying in the target
 - **OCCT:** `GeomProjLib::ProjectOnPlane`.
 - **Example:**
   ```swift
-  if let helix = Curve3D.helix(radius: 5, pitch: 2, turns: 3),
+  if let helix = Curve3D.circularHelix(radius: 5, pitch: 2),
      let proj  = helix.projectedOnPlane(
          origin: .zero,
          normal: SIMD3(0, 0, 1),

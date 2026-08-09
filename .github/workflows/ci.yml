@@ -112,6 +112,18 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-docs-defaults.py
 
+      # #802: checks that a symbol docs/ documents as current API still exists in
+      # Sources/OCCTSwift. Sibling of check-docs-defaults.py above (which checks a documented
+      # *default*, not existence) — a symbol check-docs-defaults never sees because it was already
+      # resolved to a live declaration is exactly the gap this closes.
+      - name: check-docs-existence.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py --self-test
+
+      - name: check-docs-existence.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-docs-existence.py
+
       - name: derive-bridge-header-split.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/derive-bridge-header-split.py --self-test

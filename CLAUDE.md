@@ -41,7 +41,7 @@ Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concur
 
 ### Static Gate Scripts
 
-Five gates, one census and one merge-history audit, all pure Python over the repo's own text. No
+Six gates, one census and one merge-history audit, all pure Python over the repo's own text. No
 OCCT, no build, no network, ~3s for the lot. **CI runs every gate, plus every `--self-test` including the census's, in `ci.yml`'s
 `gate-scripts` job** — a separate
 `ubuntu-latest` job, not a step inside the macOS build, so it reports in under a minute and keeps
@@ -71,6 +71,7 @@ repo's only branch protection. Three consequences worth knowing before you touch
 python3 Scripts/check-bridge-index.py            # OCCTBridge.h's class → symbol index: stale / misfiled entries
 python3 Scripts/check-null-handle-guards.py      # every bridge fn guards the Handle, not just the pointer
 python3 Scripts/check-docs-defaults.py           # every default docs/reference/ restates matches its declaration
+python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/count-operations.py              # README + API_REFERENCE totals match the derived count
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
@@ -83,7 +84,7 @@ the tree. CI therefore runs only its `--self-test`: a bare run could never fail 
 signal. Its detector can still go blind, which is the failure every other entry here exists to
 prevent, so that is what CI holds it to.
 
-Four of the five gates take `--self-test`, as do the census and the merge-history audit, each running a fixture battery proving the *detector* catches each
+Five of the six gates take `--self-test`, as do the census and the merge-history audit, each running a fixture battery proving the *detector* catches each
 failure mode. Run it whenever you change one of these scripts — three gate scripts on this branch
 were confidently wrong (#618, #624/#630, #626), and a detector that reports "all clear" because it
 is blind looks exactly like one reporting "all clear" because the tree is clean.
@@ -91,7 +92,7 @@ is blind looks exactly like one reporting "all clear" because the tree is clean.
 running the report, so writing `count-operations.py --self-test` to match its siblings fails loudly
 instead of passing forever.
 
-**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs eleven of CI's twelve
+**Optional pre-commit hook** (`Scripts/git-hooks/pre-commit`) runs thirteen of CI's fourteen
 invocations, flag for flag. The one it omits is `check-changelog-transcription.py`'s real run, which
 audits the branch's merge history and so answers a question about the branch rather than about the
 commit you are making; its `--self-test` does run. That is the only deliberate divergence between

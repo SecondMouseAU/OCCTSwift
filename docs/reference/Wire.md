@@ -158,7 +158,7 @@ Returns `nil` if `start` and `end` are within 1e-10 of each other (degenerate ed
 - **Example:**
   ```swift
   if let spine = Wire.line(from: .zero, to: SIMD3(100, 0, 0)) {
-      let pipe = Shape.pipe(profile: Wire.circle(radius: 5)!, path: spine)
+      let pipe = Shape.pipeShell(spine: spine, profile: Wire.circle(radius: 5)!)
   }
   ```
 
@@ -458,7 +458,7 @@ Wires should be geometrically connected (end of one near the start of the next).
                      startAngle: -.pi/2, endAngle: 0)!
   let s2 = Wire.line(from: SIMD3(150, 50, 0), to: SIMD3(150, 200, 0))!
   if let path = Wire.join([s1, arc, s2]) {
-      let swept = Shape.pipe(profile: Wire.circle(radius: 5)!, path: path)
+      let swept = Shape.pipeShell(spine: path, profile: Wire.circle(radius: 5)!)
   }
   ```
 
@@ -888,7 +888,7 @@ All of `radius`, `pitch`, and `turns` must be > 0. The default winding is counte
 - **Example:**
   ```swift
   if let spring = Wire.helix(radius: 5, pitch: 2, turns: 10) {
-      let coil = Shape.pipe(profile: Wire.circle(radius: 0.5)!, path: spring)
+      let coil = Shape.pipeShell(spine: spring, profile: Wire.circle(radius: 0.5)!)
   }
   ```
 

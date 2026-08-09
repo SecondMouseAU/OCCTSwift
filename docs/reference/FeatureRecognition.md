@@ -78,7 +78,7 @@ public struct AAGEdge: Sendable {
 }
 ```
 
-`convexity` is taken from the first shared edge between the two faces. `sharedEdgeCount` is the total number of B-Rep edges shared by the pair.
+`convexity` is taken from the first shared edge between the two faces. `sharedEdgeCount` is the total number of B-Rep edges shared by the pair, uncapped: before v2.0.0 (#761) it silently capped at 10 (`OCCTFaceGetSharedEdges`'s buffer was sized by a hardcoded caller argument, not the true count, confirmed wrong on a synthetic fixture at 12 real shared edges, reported as 10); a new `OCCTFaceGetSharedEdgeCount` now sizes the buffer exactly before it is filled.
 
 ---
 
@@ -349,7 +349,14 @@ Detects pocket features in the shape by AAG analysis.
 public func detectPockets(tolerance: Double = defaultFloorRestsOnWallTolerance) -> [PocketFeature]
 ```
 
-A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) that floor has at least one concave-edge neighbor; (3) the concave neighbors are vertical faces (walls); (4) each such wall's own bounding-box minimum Z matches the floor's Z within `tolerance` (#724), meaning the wall must actually rest ON that floor, not merely open past it. Results are sorted by ascending `zLevel` (deepest pocket first).
+A pocket is identified when: (1) an upward-facing, horizontal, planar face exists as the floor; (2) tracing outward from that floor, at least one true vertical wall is reached, either directly via a concave edge or through a filleted or chamfered floor/wall junction absorbed along the way (#762, below); (3) each directly-reached wall's own bounding-box minimum Z matches the floor's Z within `tolerance` (#724), meaning the wall must actually rest ON that floor, not merely open past it. (A wall reached only after absorbing a junction face skips this check, since the junction itself is what bottoms out at the floor's Z, not the wall's own remaining planar remnant.) Results are sorted by ascending `zLevel` (deepest pocket first).
+
+**A filleted or chamfered junction is absorbed, not reclassified (#762).** Before this fix, condition (2) required a DIRECT concave neighbor. Nearly every real machined pocket has a filleted floor/wall junction, since an endmill cannot cut a sharp internal corner, so `detectPocketsAAG()` could not see the pockets anyone would actually machine. `ChFi3d::DefineConnectType` is not wrong to call a fillet junction `.smooth` (a fillet is G1-continuous with both faces it blends, so there is no local sign to read at either new edge); the pocket's concavity moved into the fillet FACE's own curvature, not its edges. The fix traces outward through:
+
+- a `.concave` edge into a non-wall face (a chamfer, unconditionally: its own two new edges are still `.concave`, just planar at an intermediate angle that fails the wall's own vertical-face test), or
+- a `.smooth` edge into a face confirmed to curve the right way: cylindrical, conical or spherical, with its own outward normal pointing back toward its axis (radially inward), the same material-side test `detectHoles()` uses to tell a bore from a boss. This refuses to cross into an ordinary convex exterior rounding (radially outward) or an unrelated, incidentally-tangent planar pair.
+
+Each absorbed junction face is tracked separately from the true walls it leads to: `PocketFeature.wallFaceIndices` still reports only the true (vertical) walls, unchanged in meaning, but the pocket's bounds and its open/enclosed test both use walls UNION absorbed junctions, since a junction's own extent reaches past where the trimmed wall now starts, and the floor's own outer-wire boundary borders the junction face, not the far wall, whenever one is interposed.
 
 Requirement (4) exists because a wall's own exterior opening can satisfy (1)-(3) too: the exterior
 surface a pocket opens through is upward-facing, horizontal and planar exactly like the real floor,
@@ -407,25 +414,53 @@ library's own default rather than hardcoding `1e-4` again.
 
 ### `AAG.detectHoles()`
 
-Detects candidate hole features (cylindrical or conical faces with all-concave adjacency).
+Detects cylindrical or conical bore features (through or blind) by the wall's own geometry.
 
 ```swift
 public func detectHoles() -> [(faceIndex: Int, radius: Double, depth: Double)]
 ```
 
-Identifies faces where every adjacent face is connected via a concave edge and the face's XY bounding box has an aspect ratio under 1.2 (roughly circular) while being non-planar. `radius` and `depth` are estimated from the bounding box.
+**Rewritten in #747; the criterion is not neighbor convexity any more.** The original criterion,
+requiring every neighbor to connect via a concave edge, was written against a convexity formula (pre-#723)
+that sometimes misclassified a curved rim as concave when it geometrically should not be. Under
+the correct classifier that criterion is unsatisfiable for either ordinary hole shape: a
+through-hole's wall has **zero** concave neighbors (both rims are convex), and a blind hole's wall
+has exactly **one** out of two (the floor, not the rim where it opens), so "all neighbors concave"
+reported zero holes for both, the two shapes anyone would actually drill.
 
-- **Returns:** Array of `(faceIndex, radius, depth)` tuples; `radius` is `(width + height) / 4`, `depth` is `bounds.max.z - bounds.min.z`.
-- **Note:** This is a heuristic approximation, it does not inspect the surface type. For precise cylindrical detection, check `Face.surfaceType == .cylinder`.
+A hole is now identified by the wall's own intrinsic shape, independent of what borders it:
+
+1. `Face.surfaceType` is `.cylinder` or `.cone` (a countersink/counterbore transition is conical).
+2. **Closed in U by its own seam**: the wall wraps a full 2π around its axis
+   (`face.uvBounds`), not partially, so a fillet (a partial revolve) is excluded.
+3. **Material lies radially outside the wall** (`AAG.isMaterialRadiallyInward(of:revolution:uv:)`):
+   a hole is a void, so the face's own outward normal points back toward the axis. A boss or a
+   standalone cylinder has the identical surface type and the identical closed-in-U shape,
+   sometimes even the identical zero-concave-neighbor signature, but its material fills the
+   inside, so its normal points *away* from the axis. This is the only test that tells the two
+   apart; neighbor convexity cannot.
+
+None of this assumes a vertical axis: `radius` and `depth` are read from the wall's own measured
+axis (`Face.revolutionProperties`, `Face.point(atU:v:)`) rather than a Z-aligned bounding box, so a
+hole bored on any axis, or a pipe's bore (material lies radially outside its inner wall; a pipe's
+*outer* wall is correctly excluded, since material there lies radially inside), reports correctly.
+
+- **Returns:** Array of `(faceIndex, radius, depth)` tuples. `radius` is the wall's own measured
+  revolution radius (`Face.revolutionProperties`), not a bounding-box estimate. `depth` is measured
+  along the wall's own axis between its two V-bound points, not `bounds.max.z - bounds.min.z`.
 - **Note:** `faceIndex` is an **occurrence** index into `Shape.orientedFaces()`, not `Shape.faces()`
   (#642), matching `AAGNode.faceIndex`. A hole's face is rarely shared between two solids, so the
   two usually coincide, but only the occurrence index is correct here.
 - **Example:**
   ```swift
-  let holes = aag.detectHoles()
-  for h in holes {
-      print("face \(h.faceIndex), r≈\(h.radius), d≈\(h.depth)")
-  }
+  let box  = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
+  let tool = Shape.cylinder(at: .zero, direction: SIMD3(0, 0, 1), radius: 4, height: 20)!
+  let blind = box.subtracting(tool)!
+  print(blind.buildAAG().detectHoles().count)   // 1 (was 0 before #747)
+
+  let tool2 = Shape.cylinder(at: SIMD3(0, 0, -15), direction: SIMD3(0, 0, 1), radius: 4, height: 30)!
+  let through = box.subtracting(tool2)!
+  print(through.buildAAG().detectHoles().count) // 1 (was 0 before #747)
   ```
 
 ---
@@ -537,8 +572,8 @@ Extracts the first face via `TopExp_Explorer`, runs `BRepMAT2d_Explorer::Perform
 - **OCCT:** `BRepMAT2d_Explorer::Perform` + `BRepMAT2d_BisectingLocus::Compute` + `MAT_Graph`.
 - **Example:**
   ```swift
-  let rect = Shape.makeFace(
-      wire: Shape.makePolygon([
+  let rect = Shape.face(
+      from: Wire.polygon3D([
           SIMD3(0, 0, 0), SIMD3(10, 0, 0),
           SIMD3(10, 4, 0), SIMD3(0, 4, 0)
       ], closed: true)!

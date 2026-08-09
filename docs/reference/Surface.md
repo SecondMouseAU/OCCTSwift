@@ -52,15 +52,12 @@ public var surfaceKind: SurfaceType { get }
 
 ---
 
-### `Continuity`
+### `Continuity` *(removed in v2.0.0)*
 
-Deprecated alias of the top-level `ContinuityClass`, which `Curve3D` and `Curve2D` now share
-(#485). The raw values are unchanged.
-
-```swift
-@available(*, deprecated, renamed: "ContinuityClass")
-public typealias Continuity = ContinuityClass
-```
+Was a deprecated alias of the top-level `ContinuityClass`, which `Curve3D` and `Curve2D` now
+share (#485); the alias itself was removed at v2.0.0
+([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use `ContinuityClass` directly.
+The raw values are unchanged.
 
 ---
 

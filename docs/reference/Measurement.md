@@ -5,7 +5,7 @@ parent: API Reference
 
 # Measurement
 
-OCCTSwift's measurement layer adds ergonomic, one-liner accessors for the most common spatial queries — angles between edges, faces, axes, and planes; circle/arc geometry extraction; revolution-surface properties; and a snapshot type (`ShapeMeasurements`) that pre-computes per-face areas/centroids/perimeters and per-edge arc lengths for the whole shape in a single call. These are convenience wrappers over OCCTSwift's existing geometry coverage (no new OCCT calls are introduced for angle computation; bridge calls are confined to `circleProperties` geometry recovery and `ShapeMeasurements.measure`).
+OCCTSwift's measurement layer adds ergonomic, one-liner accessors for the most common spatial queries: angles between edges, faces, axes, and planes; circle/arc geometry extraction; revolution-surface properties; and a snapshot type (`ShapeMeasurements`) that pre-computes per-face areas/centroids/perimeters and per-edge arc lengths for the whole shape in a single call. These are convenience wrappers over OCCTSwift's existing geometry coverage (no new OCCT calls are introduced for angle computation; bridge calls are confined to `circleProperties` geometry recovery and `Shape.measure(linearTolerance:)`, which produces a `ShapeMeasurements`).
 
 ## Topics
 

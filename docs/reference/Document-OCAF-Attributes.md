@@ -2158,50 +2158,20 @@ public func childIDCount(labelId: Int64, guid: String, allLevels: Bool = false) 
 
 ---
 
-## TDocStd_PathParser
+## TDocStd_PathParser *(removed in v2.0.0)*
 
-Static utilities for decomposing a file path into its components, wrapping `TDocStd_PathParser`.
+The whole `PathParser` enum (`trek(_:)`/`name(_:)`/`fileExtension(_:)`, wrapping
+`TDocStd_PathParser`) was removed at v2.0.0
+([#784](https://github.com/SecondMouseAU/OCCTSwift/issues/784)). Use
+[`OSDPath`](Document-Math-Bounds.md#osdpathname_) instead, which wraps `OSD_Path` rather than
+`TDocStd_PathParser` and covers the same operations plus more (`systemName`, `folderAndFile`,
+`isValid`, `isUnixPath`, `isRelative`, `isAbsolute`): `OSDPath.folder(_:)` in place of
+`trek(_:)`, `OSDPath.name(_:)`, and `OSDPath.fileExtension(_:)`.
 
-### `PathParser.trek(_:)`
-
-Extract the directory (trek) component from a file path.
-
-```swift
-public static func trek(_ path: String) -> String?
-```
-
-- **Returns:** Directory portion, or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Trek`.
-- **Example:**
-  ```swift
-  PathParser.trek("/Users/foo/model.stp")   // → "/Users/foo"
-  ```
-
----
-
-### `PathParser.name(_:)`
-
-Extract the filename without extension from a file path.
-
-```swift
-public static func name(_ path: String) -> String?
-```
-
-- **Returns:** Base name, or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Name`.
-
----
-
-### `PathParser.fileExtension(_:)`
-
-Extract the file extension from a file path.
-
-```swift
-public static func fileExtension(_ path: String) -> String?
-```
-
-- **Returns:** Extension (without leading `.`), or `nil` on parse failure.
-- **OCCT:** `TDocStd_PathParser::Extension`.
+Two format differences to check if you are migrating a caller: `OSDPath.folder(_:)` keeps the
+trailing separator (`"/home/user/"`, not `"/home/user"`) and returns a real directory for an
+extension-less path instead of an empty string; `OSDPath.fileExtension(_:)` includes the leading
+dot (`".step"`, not `"step"`).
 
 ---
 
