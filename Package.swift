@@ -76,9 +76,10 @@ let occtTarget: Target = useLocalBinary
     //     They are the only two patches in the tree with no CI coverage of any kind, which is
     //     worth knowing before trusting "the fix is in the kernel" about either.
     //
-    // Pinned to the v2.0.0-kernel.3 PRE-RELEASE: upstream V8_0_1 plus the fifteen patches listed
-    // above. This is a kernel-only pre-release, not a library release, and it exists so ci.yml
-    // builds the same kernel this branch's tests are written against.
+    // Pinned to the v2.0.0 RELEASE asset: upstream V8_0_1 plus the fifteen patches listed above.
+    // The v2.0.0-kernel.1/.2/.3 pre-releases carried the same kernel while the work was in flight,
+    // so ci.yml built what the branch's tests were written against; kernel.3's asset and this one
+    // are the same file, same sha256.
     //
     // Until it was published, ci.yml resolved v1.15.18 (V8_0_0_p1 + patches 0001-0016) while the
     // branch built V8_0_1 + 0010-0021, so every test asserting a newer patch's fix failed in CI
@@ -91,26 +92,33 @@ let occtTarget: Target = useLocalBinary
     // asset with it and makes those commits unbuildable from a clean checkout, which breaks
     // git bisect and any historical re-measurement.
     //
-    // SEQUENCING, and why this still says kernel.3 after the release check ran. SwiftPM resolves
-    // `url:` at build time, so the moment this points at a v2.0.0 asset that has not been uploaded
-    // yet, every CI run on the branch fails to resolve, and a wrong checksum is not the only way
-    // that happens: a correct checksum against a 404 fails just the same, which is how the
-    // kernel.3 asset was published under the wrong filename and passed a checksum check while
-    // resolving to nothing. So the URL swap belongs in the same commit as the tag, in this order:
+    // SEQUENCING. SwiftPM resolves `url:` at build time, so a URL pointing at an asset that is not
+    // uploaded yet fails every build, and a wrong checksum is not the only way that happens: a
+    // correct checksum against a 404 fails just the same, which is how the kernel.3 asset was once
+    // published under the wrong filename and passed a checksum check while resolving to nothing.
     //
-    //   1. gh release create v2.0.0 ... and upload OCCT.xcframework.zip to it
-    //   2. confirm the uploaded asset RESOLVES (curl -fsIL the download URL), not merely that its
-    //      checksum matches
-    //   3. change `url:` below to .../download/v2.0.0/OCCT.xcframework.zip
+    // The order below is the one that works. An earlier draft of this comment put "create the
+    // release" first, which cannot be right: the tag has to point at the commit that carries the
+    // swapped URL, so the commit must exist before the release is cut from it.
     //
-    // `checksum:` does NOT change: the v2.0.0 asset is the identical file. Verified by downloading
-    // the pinned kernel.3 asset and hashing it, which reproduces the value below exactly.
+    //   1. commit the `url:` change and push it
+    //   2. gh release create <tag> --target <that commit> with OCCT.xcframework.zip attached, so
+    //      tag, release and asset land together
+    //   3. confirm the asset RESOLVES (curl -fsIL the download URL), not merely that its checksum
+    //      matches, and re-run anything that built in the gap
+    //
+    // There is a window between 1 and 2 where the URL 404s. It is unavoidable and it is short; what
+    // matters is checking step 3 rather than assuming.
+    //
+    // `checksum:` does NOT change between the kernel.N pre-release and the release when the asset
+    // is the identical file, which it is here: downloading the kernel.3 asset and hashing it
+    // reproduces the value below exactly.
     // Bump BOTH url and checksum whenever the xcframework is rebuilt, or
     // URL-resolving consumers silently keep the previous kernel while local sibling builds get the
     // new one.
     : .binaryTarget(
         name: "OCCT",
-        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0-kernel.3/OCCT.xcframework.zip",
+        url: "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v2.0.0/OCCT.xcframework.zip",
         checksum: "8da567699b0ed1fcd0033373d64c2ee97052c57ee2dffe3091d6d55addc41f2a"
     )
 
@@ -135,6 +143,14 @@ let occtTarget: Target = useLocalBinary
 //
 // To restore (release commit, once the bridge stops changing every PR): delete the `false &&` and
 // bump the url:/checksum: below to a freshly built asset.
+//
+// REVIEWED AT THE v2.0.0 RELEASE COMMIT, and left disabled. The condition is "once the bridge stops
+// changing every PR", and it has not been met: passes 2a through 5d (#382-#392) are duplication
+// audits over the same `Sources/OCCTBridge/src/*.mm` this switch exists to protect, so the next
+// phase edits the bridge as heavily as this one did. The url:/checksum: below therefore still name
+// the v1.17.0 asset and are unreachable dead code, which is safe while `false &&` stands and is a
+// trap the moment anyone deletes it without also rebuilding. Whoever restores this path bumps both,
+// or links a bridge that predates two years of edits.
 let useBridgePrebuilt = false
     && ProcessInfo.processInfo.environment["OCCTSWIFT_BRIDGE_PREBUILT"] == "1"
 let useBridgeLocalBinary = useBridgePrebuilt

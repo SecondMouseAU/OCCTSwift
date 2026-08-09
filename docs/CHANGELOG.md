@@ -7,13 +7,17 @@ nav_order: 13
 
 All notable changes to OCCTSwift.
 
-## Current: v1.17.0
+## Current: v2.0.0
 
-**macOS / iOS (device + simulator) | OCCT 8.0.0p1 (+ #263, #280, #298, #310, #317, #318, #319, #323, #341, #344, #348, #349, #353, #374 kernel patches)**
+**macOS / iOS (device + simulator) | OCCT 8.0.1 (+ the fifteen carried patches `0010`-`0012` and
+`0014`-`0025`; ten earlier patches were absorbed by 8.0.1 itself and retired)**
+
+A correctness release, not a wrapping one: it adds almost no operations. Seventeen breaking changes,
+each named with its migration in [`SEMVER.md`](SEMVER.md#v200).
 
 ---
 
-## Unreleased
+## v2.0.0
 
 <!--
 TRANSCRIPTION NOTE, written while preparing v2.0.0.
