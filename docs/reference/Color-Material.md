@@ -216,6 +216,16 @@ public struct HLS: Sendable, Equatable {
 
 Returned by `Color.hls`. Corresponds to `Quantity_Color` component values when queried in `Quantity_TOC_HLS` mode.
 
+| Field | Range | Meaning |
+|---|---|---|
+| `hue` | 0–360° | Hue angle. |
+| `lightness` | 0–1 | Perceived brightness. |
+| `saturation` | 0–1 | Colorfulness relative to lightness. |
+
+#### `Color.HLS.hue`: hue angle, 0–360 degrees.
+#### `Color.HLS.lightness`: perceived brightness, 0–1.
+#### `Color.HLS.saturation`: colorfulness relative to lightness, 0–1.
+
 ---
 
 ### `Lab`

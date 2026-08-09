@@ -590,6 +590,13 @@ public struct EdgeDivideResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `hasCurve2d` | `true` if the edge carries a 2D (pcurve) representation on the analysed face. |
+| `hasCurve3d` | `true` if the edge carries a 3D curve representation. |
+
+#### `Shape.EdgeDivideResult.hasCurve2d`
+
 ---
 
 ### `analyzeEdgeDivide(onFace:)`
@@ -1421,6 +1428,14 @@ public struct FaceFaceResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `curves` | Intersection curves between the two faces. |
+| `isTangent` | `true` if the two faces are tangent at the intersection rather than transversally crossing. |
+
+#### `Shape.FaceFaceResult.curves`
+#### `Shape.FaceFaceResult.isTangent`
+
 ---
 
 ### `faceFaceIntersection(with:tolerance:)`
@@ -2228,6 +2243,16 @@ public struct Fillet2DEdgeResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `filletEdge` | The new fillet arc edge. |
+| `modifiedEdge1` | `edge1`, trimmed to meet the fillet arc. |
+| `modifiedEdge2` | `edge2`, trimmed to meet the fillet arc. |
+
+#### `Shape.Fillet2DEdgeResult.filletEdge`
+#### `Shape.Fillet2DEdgeResult.modifiedEdge1`
+#### `Shape.Fillet2DEdgeResult.modifiedEdge2`
+
 ---
 
 ### `Shape.fillet2dEdges(edge1:edge2:planeNormal:radius:nearPoint:)`
@@ -2276,6 +2301,20 @@ public struct FilletSurfaceInfo: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `supportFace1` | The first of the two original faces this fillet surface blends between. |
+| `supportFace2` | The second of the two original faces this fillet surface blends between. |
+| `tolerance` | Geometric tolerance achieved for this fillet surface. |
+| `startStatus` | `FilletSurf_Builder` status code at the fillet's start extremity (0 = ok, 1 = not ok, 2 = partial). |
+| `endStatus` | `FilletSurf_Builder` status code at the fillet's end extremity (0 = ok, 1 = not ok, 2 = partial). |
+
+#### `Shape.FilletSurfaceInfo.supportFace1`
+#### `Shape.FilletSurfaceInfo.supportFace2`
+#### `Shape.FilletSurfaceInfo.tolerance`
+#### `Shape.FilletSurfaceInfo.startStatus`
+#### `Shape.FilletSurfaceInfo.endStatus`
+
 ---
 
 ### `FilletSurfaceResult`
@@ -2288,6 +2327,12 @@ public struct FilletSurfaceResult: Sendable {
     public let status: Int  // 0=ok, 1=notOk, 2=partial
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `surfaces` | One `FilletSurfaceInfo` per requested edge that produced a fillet surface. |
+
+#### `Shape.FilletSurfaceResult.surfaces`
 
 ---
 

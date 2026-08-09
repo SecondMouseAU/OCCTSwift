@@ -32,6 +32,16 @@ public enum Orientation: Int32, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.forward` | Sub-shape traversed in its natural direction (`TopAbs_FORWARD`). |
+| `.reversed` | Sub-shape traversed against its natural direction (`TopAbs_REVERSED`). |
+| `.internal` | Sub-shape used for construction only, ignored by most boundary algorithms (`TopAbs_INTERNAL`). |
+| `.external` | Sub-shape lies outside the normal boundary role, ignored by most boundary algorithms (`TopAbs_EXTERNAL`). |
+
+#### `Shape.Orientation.forward`
+#### `Shape.Orientation.external`
+
 - **OCCT:** `TopAbs_Orientation`.
 
 ---

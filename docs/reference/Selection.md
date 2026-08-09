@@ -304,13 +304,18 @@ public struct RayHit: Sendable {
 }
 ```
 
-- `point` — 3D world-space intersection point on the surface.
-- `normal` — unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point.
-- `faceIndex` — 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`.
-- `distance` — signed ray parameter (distance from origin along the ray direction).
-- `uv` — UV surface parameters at the intersection point.
-- `normalDefined` — whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which
-  is otherwise indistinguishable from a real upward normal (added by #529).
+| Field | Meaning |
+|---|---|
+| `point` | 3D world-space intersection point on the surface. |
+| `normal` | Unit outward normal at the intersection; respects face orientation (`TopAbs_REVERSED`). Falls back to `(0, 0, 1)` if the normal is undefined at the hit point. |
+| `faceIndex` | 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`. |
+| `distance` | Signed ray parameter (distance from origin along the ray direction). |
+| `uv` | UV surface parameters at the intersection point. |
+| `normalDefined` | Whether `normal` is the surface's own normal or the `(0, 0, 1)` fallback, which is otherwise indistinguishable from a real upward normal (added by #529). |
+
+### `RayHit.faceIndex`: 0-based index of the intersected face within the shape's `TopTools_IndexedMapOfShape`.
+### `RayHit.uv`: UV surface parameters at the intersection point.
+### `RayHit.normalDefined`: whether `normal` is the surface's own normal, or the `(0, 0, 1)` fallback.
 
 ---
 

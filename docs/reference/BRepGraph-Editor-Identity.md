@@ -683,9 +683,47 @@ public struct FaceGridSample: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `positions` | Surface positions at grid points, U-major |
+| `normals` | Surface normals at grid points, U-major |
+| `gaussianCurvatures` | Gaussian curvature at each grid point, U-major |
+| `meanCurvatures` | Mean curvature at each grid point, U-major |
+| `uSamples` | Number of samples in the U direction |
+| `vSamples` | Number of samples in the V direction |
+
+#### `BRepGraph.FaceGridSample.positions`: surface positions at grid points, U-major (read via `at(u:v:)` rather than the flat index).
+#### `BRepGraph.FaceGridSample.gaussianCurvatures`: Gaussian curvature at each grid point, U-major.
+#### `BRepGraph.FaceGridSample.meanCurvatures`: mean curvature at each grid point, U-major.
+#### `BRepGraph.FaceGridSample.uSamples`: number of samples in the U direction.
+#### `BRepGraph.FaceGridSample.vSamples`: number of samples in the V direction.
+
 All four arrays share one layout: **U-major**, u varying slowest and v fastest, so grid position `(u, v)` sits at `index = u * vSamples + v` for `u ∈ [0, uSamples)` and `v ∈ [0, vSamples)`. This is the layout `SurfaceGrid` and `SurfaceGridD1` use, and the one #486 declared for the whole API.
 
-Read through `at(u:v:)` rather than spelling the index out. Until #617 the bridge wrote these buffers *transposed* (`v * uSamples + u`) while this page already documented the U-major index above, so a caller who followed the docs read the wrong point of the face; getting the stride wrong instead (`u * uSamples + v`) is silently in range on a 3×10 grid and out of bounds on a 10×3 one. `at(u:v:)` removes both failure modes by owning the index.
+---
+
+#### `BRepGraph.FaceGridSample.at(u:v:)`
+
+Position, normal and curvatures at the given U/V grid index. Read through this rather than spelling the flat index out yourself. Until #617 the bridge wrote these buffers *transposed* (`v * uSamples + u`) while this page already documented the U-major index above, so a caller who followed the docs read the wrong point of the face; getting the stride wrong instead (`u * uSamples + v`) is silently in range on a 3×10 grid and out of bounds on a 10×3 one. `at(u:v:)` removes both failure modes by owning the index.
+
+```swift
+public func at(u: Int, v: Int) -> (position: SIMD3<Double>, normal: SIMD3<Double>,
+                                   gaussianCurvature: Double, meanCurvature: Double)
+```
+
+- **Parameters:** `u`: U grid index, `0..<uSamples`; `v`: V grid index, `0..<vSamples`.
+- **Returns:** The position, normal, Gaussian curvature and mean curvature at that grid point.
+- **Example:**
+  ```swift
+  if let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 3, vSamples: 10) {
+      let corner = sample.at(u: 2, v: 9)
+      print(corner.position, corner.meanCurvature)
+  }
+  ```
+
+---
+
+Walk the whole grid row by row (U outer, V inner) to visit every point in storage order:
 
 ```swift
 guard let sample = graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 10, vSamples: 3)
@@ -857,6 +895,15 @@ public struct GraphRefUID: Sendable, Hashable, Codable {
 | 4 | Solid |
 | 5 | Child |
 | 6 | Occurrence |
+
+| Field | Meaning |
+|---|---|
+| `kind` | Raw `BRepGraph_RefId::Kind` ordinal, see the table above |
+| `counter` | Per-kind sequence number minted when the reference was created; `0` means invalid |
+| `graphID` | The `BRepGraph` instance ID that minted this UID; `0` means unstamped, resolving in no graph |
+
+#### `BRepGraph.GraphRefUID.counter`: per-kind sequence number minted when the reference entry was created; `0` means invalid, mirroring `isValid`.
+#### `BRepGraph.GraphRefUID.graphID`: the minting graph's own `instanceID`; `0` means unstamped, which resolves in no graph.
 
 ---
 

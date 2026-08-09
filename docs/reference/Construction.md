@@ -44,6 +44,18 @@ All four vectors must be provided by the caller; no normalisation is performed. 
 
 ---
 
+### `Placement.zAxis`
+
+Unit vector along the local Z axis: the frame's third basis vector, and the plane normal for a construction plane.
+
+```swift
+public let zAxis: SIMD3<Double>   // unit
+```
+
+- **Returns:** The Z basis vector supplied at construction (or derived from `normal` by `init(origin:normal:)`); not re-normalised on read.
+
+---
+
 ### `Placement.init(origin:normal:)`
 
 Constructs a placement from an origin and a normal, deriving deterministic X/Y axes perpendicular to the normal.
@@ -436,6 +448,8 @@ public struct AxisID: Sendable, Hashable {
     public init()
 }
 ```
+
+#### `ConstructionContext.AxisID.raw`: the backing `UUID`; equality and hashing are `UUID`'s own.
 
 ---
 
@@ -857,6 +871,9 @@ public struct MaterializeOptions: Sendable {
 - `planeHalfSize` — half-side of the square face representing each plane (default 100 mm).
 - `axisHalfLength` — half-length of the edge representing each axis (default 100 mm).
 
+#### `ConstructionContext.MaterializeOptions.planeHalfSize`: half-side of the square face representing each plane.
+#### `ConstructionContext.MaterializeOptions.axisHalfLength`: half-length of the edge representing each axis.
+
 ---
 
 ### `ConstructionContext.MaterializationResult`
@@ -874,6 +891,20 @@ public struct MaterializationResult: Sendable {
 ```
 
 - `totalMaterialized` — combined count of successfully materialised planes, axes, and points.
+
+| Field | Meaning |
+|---|---|
+| `planeShapes` | `(PlaneID, labelId)` pairs for each plane successfully materialised. |
+| `axisShapes` | `(AxisID, labelId)` pairs for each axis successfully materialised. |
+| `pointShapes` | `(PointID, labelId)` pairs for each point successfully materialised. |
+| `failures` | One `MaterializationFailure` per entity that failed to resolve or could not become a shape. |
+| `totalMaterialized` | `planeShapes.count + axisShapes.count + pointShapes.count`. |
+
+#### `ConstructionContext.MaterializationResult.planeShapes`: `(PlaneID, labelId)` pairs for each plane successfully materialised.
+#### `ConstructionContext.MaterializationResult.axisShapes`: `(AxisID, labelId)` pairs for each axis successfully materialised.
+#### `ConstructionContext.MaterializationResult.pointShapes`: `(PointID, labelId)` pairs for each point successfully materialised.
+#### `ConstructionContext.MaterializationResult.failures`: one entry per entity that failed to resolve or could not become a shape.
+#### `ConstructionContext.MaterializationResult.totalMaterialized`: combined count of successfully materialised planes, axes, and points.
 
 ---
 

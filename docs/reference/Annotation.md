@@ -387,6 +387,12 @@ public var geometry: DimensionGeometry? { get }
 
 Measures the diameter of circular geometry (edge, arc, or cylindrical face).
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTDimensionRef` this wrapper owns. |
+
+#### `DiameterDimension.handle`
+
 ### `DiameterDimension.init?(shape:)`
 
 Creates a diameter dimension from a shape with circular geometry.
@@ -679,7 +685,82 @@ public enum DimensionType: Int32, Sendable, CaseIterable {
 }
 ```
 
-Raw values match `XCAFDimTolObjects_DimensionType` integer codes directly.
+Raw values match `XCAFDimTolObjects_DimensionType` integer codes directly. The enum has two
+families: `location*` cases (a dimension between two features, distinguished by which boundary of
+each feature the measurement runs between: center, inner, or outer) and `size*` cases (a single
+feature's own extent). Neither OCCT's header nor the STEP AP242 mapping documents each case beyond
+its name; the meanings below are a direct, literal reading of that name, not a separate source.
+
+| Case | Meaning |
+|---|---|
+| `.locationNone` | Location dimension with no more specific sub-type. |
+| `.locationCurvedDistance` | Location distance measured along a curved path. |
+| `.locationLinearDistance` | Location distance measured as a straight line. |
+| `.locationLinearDistanceFromCenterToOuter` | Linear distance from one feature's center to another feature's outer boundary. |
+| `.locationLinearDistanceFromCenterToInner` | Linear distance from one feature's center to another feature's inner boundary. |
+| `.locationLinearDistanceFromOuterToCenter` | Linear distance from one feature's outer boundary to another feature's center. |
+| `.locationLinearDistanceFromOuterToOuter` | Linear distance between two features' outer boundaries. |
+| `.locationLinearDistanceFromOuterToInner` | Linear distance from one feature's outer boundary to another feature's inner boundary. |
+| `.locationLinearDistanceFromInnerToCenter` | Linear distance from one feature's inner boundary to another feature's center. |
+| `.locationLinearDistanceFromInnerToOuter` | Linear distance from one feature's inner boundary to another feature's outer boundary. |
+| `.locationLinearDistanceFromInnerToInner` | Linear distance between two features' inner boundaries. |
+| `.locationAngular` | Location expressed as an angle between two features. |
+| `.locationOriented` | Location dimension oriented against a specified reference direction rather than a plain distance. |
+| `.locationWithPath` | Location dimension measured along an explicit path curve. |
+| `.sizeCurveLength` | Size given as the length of a curve. |
+| `.sizeDiameter` | Size given as a diameter. |
+| `.sizeSphericalDiameter` | Size given as a spherical feature's diameter. |
+| `.sizeRadius` | Size given as a radius. |
+| `.sizeSphericalRadius` | Size given as a spherical feature's radius. |
+| `.sizeToroidalMinorDiameter` | Size given as a torus's minor (tube) diameter. |
+| `.sizeToroidalMajorDiameter` | Size given as a torus's major diameter. |
+| `.sizeToroidalMinorRadius` | Size given as a torus's minor (tube) radius. |
+| `.sizeToroidalMajorRadius` | Size given as a torus's major radius. |
+| `.sizeToroidalHighMajorDiameter` | Size given as a torus's major diameter at its highest point. |
+| `.sizeToroidalLowMajorDiameter` | Size given as a torus's major diameter at its lowest point. |
+| `.sizeToroidalHighMajorRadius` | Size given as a torus's major radius at its highest point. |
+| `.sizeToroidalLowMajorRadius` | Size given as a torus's major radius at its lowest point. |
+| `.sizeThickness` | Size given as a material thickness. |
+| `.sizeAngular` | Size given as an angle. |
+| `.sizeWithPath` | Size measured along an explicit path curve. |
+| `.commonLabel` | Generic dimension label carrying no specific size or location sub-type. |
+| `.dimensionPresentation` | Presentation-only dimension value, not a distinct measured sub-type. |
+
+Each case is indexed below too, so a reference link can land on one directly; the table above is
+the authoritative description.
+
+#### `Document.DimensionType.locationNone`
+#### `Document.DimensionType.locationCurvedDistance`
+#### `Document.DimensionType.locationLinearDistance`
+#### `Document.DimensionType.locationLinearDistanceFromCenterToOuter`
+#### `Document.DimensionType.locationLinearDistanceFromCenterToInner`
+#### `Document.DimensionType.locationLinearDistanceFromOuterToCenter`
+#### `Document.DimensionType.locationLinearDistanceFromOuterToOuter`
+#### `Document.DimensionType.locationLinearDistanceFromOuterToInner`
+#### `Document.DimensionType.locationLinearDistanceFromInnerToCenter`
+#### `Document.DimensionType.locationLinearDistanceFromInnerToOuter`
+#### `Document.DimensionType.locationLinearDistanceFromInnerToInner`
+#### `Document.DimensionType.locationAngular`
+#### `Document.DimensionType.locationOriented`
+#### `Document.DimensionType.locationWithPath`
+#### `Document.DimensionType.sizeCurveLength`
+#### `Document.DimensionType.sizeDiameter`
+#### `Document.DimensionType.sizeSphericalDiameter`
+#### `Document.DimensionType.sizeRadius`
+#### `Document.DimensionType.sizeSphericalRadius`
+#### `Document.DimensionType.sizeToroidalMinorDiameter`
+#### `Document.DimensionType.sizeToroidalMajorDiameter`
+#### `Document.DimensionType.sizeToroidalMinorRadius`
+#### `Document.DimensionType.sizeToroidalMajorRadius`
+#### `Document.DimensionType.sizeToroidalHighMajorDiameter`
+#### `Document.DimensionType.sizeToroidalLowMajorDiameter`
+#### `Document.DimensionType.sizeToroidalHighMajorRadius`
+#### `Document.DimensionType.sizeToroidalLowMajorRadius`
+#### `Document.DimensionType.sizeThickness`
+#### `Document.DimensionType.sizeAngular`
+#### `Document.DimensionType.sizeWithPath`
+#### `Document.DimensionType.commonLabel`
+#### `Document.DimensionType.dimensionPresentation`
 
 ---
 

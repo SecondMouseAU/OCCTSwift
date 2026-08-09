@@ -244,6 +244,21 @@ public func encode(to encoder: Encoder) throws
 
 ---
 
+### `NodeAttributeStore.Entry`
+
+*(private, not part of the public API)*: one `{node, attrs}` pair in the Codable array `init(from:)`/`encode(to:)` serialize `storage` as. Not a stored property of `NodeAttributeStore` itself; a nested serialization-only wire type.
+
+```swift
+private struct Entry: Codable {
+    let node: BRepGraph.NodeRef
+    let attrs: [KeyValue]
+}
+```
+
+#### `NodeAttributeStore.Entry.attrs`: the node's attributes, encoded as a sorted `[KeyValue]` array rather than a `[String: AttrValue]` dictionary, so JSON key order stays deterministic.
+
+---
+
 ## GraphSnapshot
 
 `GraphSnapshot` bundles everything needed to persist a `BRepGraph` session: the source shape as a BREP string (which is sufficient to re-derive the graph structure), plus the attribute store. The graph topology is NOT stored — it is reconstructed from `brep` on `BRepGraph.init(snapshot:)`, relying on the fact that `BRepGraph.init(shape:)` produces identical node indexing for the same BREP.

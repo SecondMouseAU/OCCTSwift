@@ -9,7 +9,44 @@ parent: API Reference
 
 ## Topics
 
-- [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
+- [ArcLengthCurveAdaptor](#arclengthcurveadaptor) · [WireCurve](#wirecurve) · [EdgeCurve](#edgecurve) · [WireOrder](#wireorder) · [Sampling](#sampling)
+
+---
+
+## ArcLengthCurveAdaptor
+
+The shared protocol `WireCurve` and `EdgeCurve` both conform to. Each type supplies its own native-parameter primitives (`length`, `point(atParameter:)`, `tangent(atParameter:)`, `parameter(atAbscissa:)`, `points(count:)`) over a distinct OCCT adaptor (`BRepAdaptor_CompCurve` vs. `BRepAdaptor_Curve`); a protocol extension then supplies the arc-length *composition* (`point`/`tangent(atAbscissa:)`, `points(spacing:)`, `maximumSampleCount`) exactly once for both.
+
+```swift
+public protocol ArcLengthCurveAdaptor: AnyObject {
+    var length: Double { get }
+    var parameterRange: (first: Double, last: Double) { get }
+    func point(atParameter u: Double) -> SIMD3<Double>?
+    func tangent(atParameter u: Double) -> SIMD3<Double>?
+    func parameter(atAbscissa s: Double) -> Double?
+    func points(count: Int) -> [SIMD3<Double>]
+}
+```
+
+---
+
+### `ArcLengthCurveAdaptor.sampledPoints(count:_:)`
+
+Internal helper, declared in the protocol extension, that both `WireCurve.points(count:)` and `EdgeCurve.points(count:)` delegate to. It applies the sample-count contract once, allocates the packed `(x, y, z)` buffer the bridge writes into, and unpacks exactly as many points as the bridge reports writing.
+
+```swift
+internal func sampledPoints(
+    count: Int,
+    _ sample: (Int32, UnsafeMutablePointer<Double>) -> Int32
+) -> [SIMD3<Double>]
+```
+
+Not part of the public API.
+
+- **Parameters:**
+  - `count`: the requested sample count, honoured only within `2...maximumSampleCount` (empty result outside that range, #479/#501).
+  - `sample`: the conforming type's own bridge call, taking the count and the buffer and returning how many points it wrote.
+- **Returns:** Unpacked `SIMD3<Double>` points, or `[]` if `count` is out of range.
 
 ---
 
@@ -208,6 +245,20 @@ One bridge call — cheaper than calling `point(atAbscissa:)` in a loop.
   let wc = WireCurve(profileWire)!
   let pts = wc.points(count: 21)  // 21 points including both endpoints
   ```
+
+---
+
+### `WireCurve.sampledPoints(count:_:)`
+
+`WireCurve` does not re-implement the shared sampling helper: it inherits `sampledPoints(count:_:)` from the `ArcLengthCurveAdaptor` protocol extension (see [ArcLengthCurveAdaptor](#arclengthcurveadaptor)) and plugs in its own bridge call as the `sample` closure. This is the entire body of `WireCurve.points(count:)`:
+
+```swift
+public func points(count: Int) -> [SIMD3<Double>] {
+    sampledPoints(count: count) { n, buf in OCCTCompCurveSampleUniform(ref, n, buf) }
+}
+```
+
+- **OCCT:** `OCCTCompCurveSampleUniform` → `GCPnts_UniformAbscissa(BRepAdaptor_CompCurve&, count)`.
 
 ---
 

@@ -608,6 +608,15 @@ public enum PipeShellTransition: Int32, Sendable {
 
 - **OCCT:** `BRepFill_TransitionStyle`
 
+| Case | Meaning |
+|---|---|
+| `modified` | The two swept faces are extended/trimmed to meet exactly at the transition (the default OCCT behaviour). |
+| `right` | A sharp, square ("right-angle") corner is built at the transition. |
+| `round` | A rounded (filleted) corner is built at the transition. |
+
+#### `PipeShellTransition.right`: a sharp, square corner at the transition between spine segments.
+#### `PipeShellTransition.round`: a rounded (filleted) corner at the transition between spine segments.
+
 ---
 
 ### `PipeShellBuilder.init?(spine:)`

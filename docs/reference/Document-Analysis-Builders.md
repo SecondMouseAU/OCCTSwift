@@ -359,6 +359,14 @@ public struct OverlapPair: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `faceIndex1` | 0-based index of the first overlapping face. |
+| `faceIndex2` | 0-based index of the second overlapping face. |
+
+#### `Shape.OverlapPair.faceIndex1`
+#### `Shape.OverlapPair.faceIndex2`
+
 ---
 
 ### `selfIntersectionPairs(tolerance:maxPairs:deflection:)`
@@ -1063,6 +1071,19 @@ public enum ConcavityType: Int, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.convex` | Edge is convex: the two adjacent faces bulge away from each other across it. |
+| `.concave` | Edge is concave: the two adjacent faces fold toward each other across it. |
+| `.tangent` | Adjacent faces meet tangentially (smooth, no sharp convex/concave transition) at this edge. |
+| `.freeBound` | Edge borders only one face (an open boundary), so convexity is not applicable. |
+| `.other` | Classification could not be determined as convex, concave, tangent, or a free bound. |
+
+#### `Shape.ConcavityType.convex`
+#### `Shape.ConcavityType.concave`
+#### `Shape.ConcavityType.freeBound`
+#### `Shape.ConcavityType.other`
+
 ---
 
 ### `analyseEdgeConcavity(angle:)`
@@ -1214,6 +1235,17 @@ public struct AnalyticBounds: Sendable {
     public let min: SIMD3<Double>
     public let max: SIMD3<Double>
 }
+```
+
+| Field | Meaning |
+|---|---|
+| `min` | Minimum corner of the axis-aligned bounding box. |
+| `max` | Maximum corner of the axis-aligned bounding box. |
+
+#### `AnalyticBounds.min`
+#### `AnalyticBounds.max`
+
+```swift
 ```
 
 ---

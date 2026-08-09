@@ -9,7 +9,7 @@ This page covers the math solvers, bounding-box types, quaternion/timer utilitie
 
 ## Topics
 
-- [gp_Quaternion](#gp_quaternion) · [OSD_Timer](#osd_timer) · [Bnd_OBB](#bnd_obb) · [Bnd_Range](#bnd_range) · [BRepClass3d Point Classification](#brepclass3d-point-classification) · [TDataXtd_Constraint](#tdataxtd_constraint) · [OSD_MemInfo](#osd_meminfo) · [ShapeFix_EdgeProjAux](#shapefix_edgeprojaux) · [Geom2dAPI_Interpolate](#geom2dapi_interpolate) · [Geom2dAPI_PointsToBSpline](#geom2dapi_pointstobspline) · [TDataXtd_PatternStd](#tdataxtd_patternstd) · [BRepAlgo_FaceRestrictor](#brepalgo_facerestrictor) · [math_Matrix](#math_matrix) · [math_Gauss](#math_gauss) · [math_SVD](#math_svd) · [math_DirectPolynomialRoots](#math_directpolynomialroots) · [math_Jacobi](#math_jacobi) · [Convert_CircleToBSplineCurve](#convert_circletobsplinecurve) · [Convert_SphereToBSplineSurface](#convert_spheretobsplinesurface) · [Convert Conic Curves to BSpline](#convert-conic-curves-to-bspline) · [Convert Elementary Surfaces to BSpline](#convert-elementary-surfaces-to-bspline) · [math_Householder](#math_householder) · [math_Crout](#math_crout) · [ShapeFix_IntersectionTool](#shapefix_intersectiontool) · [XCAFDoc_AssemblyItemRef](#xcafdoc_assemblyitemref) · [BRepAlgo_Image](#brepalgo_image) · [OSD_Path](#osd_path) · [BRepClass_FClassifier](#brepclass_fclassifier) · [Bnd_BoundSortBox](#bnd_boundsortbox) · [TNaming_Naming](#tnaming_naming) · [Precision Constants](#precision-constants) · [IntAna Analytic Intersections](#intana-analytic-intersections) · [OSD_Chronometer](#osd_chronometer) · [OSD_Process](#osd_process) · [Draft_Modification](#draft_modification) · [Convert_CompBezierCurvesToBSplineCurve](#convert_compbezierperformancetobsplinecurve) · [Geom_OffsetSurface Extensions](#geom_offsetsurface-extensions)
+- [gp_Quaternion](#gp_quaternion) · [OSD_Timer](#osd_timer) · [Bnd_OBB](#bnd_obb) · [Bnd_Range](#bnd_range) · [BRepClass3d Point Classification](#brepclass3d-point-classification) · [TDataXtd_Constraint](#tdataxtd_constraint) · [OSD_MemInfo](#osd_meminfo) · [ShapeFix_EdgeProjAux](#shapefix_edgeprojaux) · [Geom2dAPI_Interpolate](#geom2dapi_interpolate) · [Geom2dAPI_PointsToBSpline](#geom2dapi_pointstobspline) · [TDataXtd_PatternStd](#tdataxtd_patternstd) · [BRepAlgo_FaceRestrictor](#brepalgo_facerestrictor) · [MathDimension](#mathdimension) · [math_Matrix](#math_matrix) · [math_Gauss](#math_gauss) · [math_SVD](#math_svd) · [math_DirectPolynomialRoots](#math_directpolynomialroots) · [math_Jacobi](#math_jacobi) · [Convert_CircleToBSplineCurve](#convert_circletobsplinecurve) · [Convert_SphereToBSplineSurface](#convert_spheretobsplinesurface) · [Convert Conic Curves to BSpline](#convert-conic-curves-to-bspline) · [Convert Elementary Surfaces to BSpline](#convert-elementary-surfaces-to-bspline) · [math_Householder](#math_householder) · [math_Crout](#math_crout) · [ShapeFix_IntersectionTool](#shapefix_intersectiontool) · [XCAFDoc_AssemblyItemRef](#xcafdoc_assemblyitemref) · [BRepAlgo_Image](#brepalgo_image) · [OSD_Path](#osd_path) · [BRepClass_FClassifier](#brepclass_fclassifier) · [Bnd_BoundSortBox](#bnd_boundsortbox) · [TNaming_Naming](#tnaming_naming) · [Precision Constants](#precision-constants) · [IntAna Analytic Intersections](#intana-analytic-intersections) · [OSD_Chronometer](#osd_chronometer) · [OSD_Process](#osd_process) · [Draft_Modification](#draft_modification) · [Convert_CompBezierCurvesToBSplineCurve](#convert_compbezierperformancetobsplinecurve) · [Geom_OffsetSurface Extensions](#geom_offsetsurface-extensions)
 
 ---
 
@@ -687,6 +687,42 @@ public enum ConstraintType: Int32 {
 }
 ```
 
+| Case | `TDataXtd_ConstraintEnum` | Meaning |
+|---|---|---|
+| `radius` | `TDataXtd_RADIUS` | Circle/arc radius value |
+| `diameter` | `TDataXtd_DIAMETER` | Circle/arc diameter value |
+| `minorRadius` | `TDataXtd_MINOR_RADIUS` | Ellipse minor-axis radius value |
+| `majorRadius` | `TDataXtd_MAJOR_RADIUS` | Ellipse major-axis radius value |
+| `tangent` | `TDataXtd_TANGENT` | Two entities forced tangent |
+| `parallel` | `TDataXtd_PARALLEL` | Two lines/planes forced parallel |
+| `perpendicular` | `TDataXtd_PERPENDICULAR` | Two lines/planes forced perpendicular |
+| `concentric` | `TDataXtd_CONCENTRIC` | Two circular/curved entities forced to share a centre |
+| `coincident` | `TDataXtd_COINCIDENT` | Two point/curve entities forced to the same location |
+| `distance` | `TDataXtd_DISTANCE` | Linear distance value between two entities |
+| `angle` | `TDataXtd_ANGLE` | Angular value between two entities |
+| `equalRadius` | `TDataXtd_EQUAL_RADIUS` | Two circles/arcs forced to equal radius |
+| `symmetry` | `TDataXtd_SYMMETRY` | Two entities forced symmetric about a third |
+| `midPoint` | `TDataXtd_MIDPOINT` | A point forced to the midpoint of two others |
+| `equalDistance` | `TDataXtd_EQUAL_DISTANCE` | Two distances forced equal |
+| `fix` | `TDataXtd_FIX` | An entity's position/orientation forced fixed |
+| `rigid` | `TDataXtd_RIGID` | An entity forced not to deform under the solver |
+| `from` | `TDataXtd_FROM` | A distance/angle constraint's reference origin entity |
+
+Eighteen of the 26 `TDataXtd_ConstraintEnum` cases are wrapped; `TDataXtd_AXIS`, `TDataXtd_MATE`, `TDataXtd_ALIGN_FACES`, `TDataXtd_ALIGN_AXES`, `TDataXtd_AXES_ANGLE`, `TDataXtd_FACES_ANGLE`, `TDataXtd_ROUND`, and `TDataXtd_OFFSET` have no Swift case yet. The upstream header carries no per-case documentation beyond the enumerator names themselves, so the meanings above are read directly off the OCCT constraint-solver vocabulary each name names.
+
+#### `Document.ConstraintType.coincident`: two point/curve entities forced to the same location.
+#### `Document.ConstraintType.concentric`: two circular/curved entities forced to share a centre.
+#### `Document.ConstraintType.diameter`: circle/arc diameter value.
+#### `Document.ConstraintType.equalDistance`: two distances forced equal.
+#### `Document.ConstraintType.equalRadius`: two circles/arcs forced to equal radius.
+#### `Document.ConstraintType.fix`: an entity's position/orientation forced fixed.
+#### `Document.ConstraintType.from`: a distance/angle constraint's reference origin entity.
+#### `Document.ConstraintType.midPoint`: a point forced to the midpoint of two others.
+#### `Document.ConstraintType.parallel`: two lines/planes forced parallel.
+#### `Document.ConstraintType.perpendicular`: two lines/planes forced perpendicular.
+#### `Document.ConstraintType.rigid`: an entity forced not to deform under the solver.
+#### `Document.ConstraintType.symmetry`: two entities forced symmetric about a third.
+
 ---
 
 ### `setConstraint(labelId:)`
@@ -1044,6 +1080,77 @@ public func faceRestrictAlgo(faceIndex: Int) -> Int
   ```swift
   let n = shape.faceRestrictAlgo(faceIndex: 0)
   print("result faces:", n)
+  ```
+
+---
+
+## MathDimension
+
+*(internal, not part of the public API)*: `internal enum MathDimension` in `MathDimension.swift`, the one problem-dimension validator every `n`/`rows`/`cols` argument in `MathMatrix`, `math_Gauss`, `math_SVD` and the rest of this page's `MathLibrary`/`MathSolver` wrappers is checked against. Has no stored state: four static validators over one shared shape ("does this dimension agree with the array(s) it sizes"), factored out so eighteen previously hand-duplicated call sites can't drift apart again (#640).
+
+### `MathDimension.valid(_:matches:)`
+
+`n` must be positive, and every array length in `counts` must equal it exactly: the `startPoint.count == variables` shape, one dimension sizing one or more flat, `n`-length arrays.
+
+```swift
+static func valid(_ n: Int, matches counts: Int...) -> Bool
+```
+
+- **Parameters:** `n`: the problem dimension; `counts`: one or more array lengths that must equal `n`.
+- **Returns:** `false` if `n` is not positive, or any count differs from `n`.
+- **Example:**
+  ```swift
+  MathDimension.valid(3, matches: 3, 3)   // true
+  MathDimension.valid(-1, matches: 0)     // false: not positive
+  MathDimension.valid(3, matches: 1)      // false: length mismatch
+  ```
+
+---
+
+### `MathDimension.consistent(_:matches:)`
+
+Every array length in `counts` must equal `n` exactly, without also requiring `n` to be positive, unlike `valid(_:matches:)`. This is for the sites where `n` is itself another array's `.count` and can never be negative, so requiring positivity there would reject a legitimate empty input the original code accepted.
+
+```swift
+static func consistent(_ n: Int, matches counts: Int...) -> Bool
+```
+
+- **Example:**
+  ```swift
+  MathDimension.consistent(0, matches: 0)    // true: two empty arrays agree
+  MathDimension.consistent(50, matches: 1)   // false: length mismatch
+  ```
+
+---
+
+### `MathDimension.validSquare(_:count:)`
+
+`n` must be positive, and `count` must equal `n * n` exactly, checked with an overflow-reporting multiplication so a large enough positive `n` is rejected instead of trapping the process before the equality check ever runs.
+
+```swift
+static func validSquare(_ n: Int, count: Int) -> Bool
+```
+
+- **Example:**
+  ```swift
+  MathDimension.validSquare(2, count: 4)      // true
+  MathDimension.validSquare(.max, count: 1)   // false: rejected, not trapped
+  ```
+
+---
+
+### `MathDimension.validRectangle(rows:cols:count:)`
+
+`rows` and `cols` must both be positive, and `count` must equal `rows * cols` exactly, checked the same overflow-safe way as `validSquare(_:count:)`.
+
+```swift
+static func validRectangle(rows: Int, cols: Int, count: Int) -> Bool
+```
+
+- **Example:**
+  ```swift
+  MathDimension.validRectangle(rows: 3, cols: 2, count: 6)      // true
+  MathDimension.validRectangle(rows: .max, cols: 2, count: 1)   // false: rejected, not trapped
   ```
 
 ---
@@ -2156,7 +2263,13 @@ public struct ConicQuadResult {
 }
 ```
 
-- `points` — intersection points in 3D; `params` — corresponding parameters on the line; `isParallel` — the line is parallel to the quadric surface.
+| Field | Meaning |
+|---|---|
+| `points` | Intersection points in 3D |
+| `params` | Parameter on the line for each point, aligned index-for-index with `points` |
+| `isParallel` | The line is parallel to the quadric surface |
+
+#### `IntAna.ConicQuadResult.params`: parameter on the line for each intersection point, index-aligned with `points`.
 
 ---
 

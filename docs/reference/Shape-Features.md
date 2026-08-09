@@ -503,6 +503,16 @@ public enum ImportError: Error, LocalizedError {
 - `importFailed` — carries a human-readable message describing why the import failed.
 - `cancelled` — the import was cancelled via `ImportProgress.shouldCancel()`.
 
+| Case / Property | Meaning |
+|---|---|
+| `.importFailed(_:)` | The import failed; the associated string is a human-readable reason. |
+| `.cancelled` | The import was cancelled via `ImportProgress.shouldCancel()`. |
+| `errorDescription` | `LocalizedError` conformance: the associated message for `.importFailed`, or a fixed string for `.cancelled`. |
+
+#### `ImportError.importFailed`
+#### `ImportError.cancelled`
+#### `ImportError.errorDescription`
+
 ---
 
 ### `ShapeType` (companion enum to `Shape.shapeType`)
@@ -1137,6 +1147,9 @@ public struct FilletResult: Sendable {
   `overwrittenDuplicateIndices`: 0-based edge indices whose radius a *later* entry in the same
   request overwrote. Empty for every `WithReport` sibling except `blendedEdgesWithReport(_:)`, the
   one entry point whose per-edge radius array can name the same edge twice.
+
+#### `Shape.FilletResult.declinedEdgeIndices`
+#### `Shape.FilletResult.overwrittenDuplicateIndices`
 - **Notes:** there is no *reason* alongside either list. `BRepFilletAPI_MakeFillet::Add` returns
   nothing, and `NbFaultyContours()`/`BadShape()`/`StripeStatus()` describe a contour that failed
   during `Build()`, which an edge OCCT never added to any contour never reaches. `Contour(edge) ==
@@ -1776,6 +1789,34 @@ public enum SurfaceContinuity: Int32, Sendable, CaseIterable {
     case g2 = 2   // curvature (G2): the surface matches curvature along the constraint
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `.g0` | Positional continuity: the surface passes through the constraint. |
+| `.g1` | Tangent continuity: the surface is tangent along the constraint. |
+| `.g2` | Curvature continuity: the surface matches curvature along the constraint. Rejected for a bare point constraint (see below). |
+
+#### `SurfaceContinuity.g0`
+#### `SurfaceContinuity.g1`
+#### `SurfaceContinuity.g2`
+
+#### `SurfaceContinuity.isUnsupportedForPointConstraint`
+
+Whether this continuity order cannot be satisfied by a bare point constraint. Internal
+(`var`, no access modifier), not part of the public API.
+
+```swift
+var isUnsupportedForPointConstraint: Bool { get }
+```
+
+`true` for `.g2` only: a point carries no curvature to match, so `GeomPlate_PointConstraint`
+throws above order 1. Checked in Swift by `Shape.plateSurface(through:orders:)` and the point half
+of `Shape.plateSurface(pointConstraints:curveConstraints:)` before building any constraint, so a
+point given `.g2` returns `nil` deliberately (#437) rather than relying on OCCT's own throw being
+caught.
+
+- **Returns:** `true` for `.g2`; `false` for `.g0`/`.g1`.
+- **OCCT:** Pure-Swift; mirrors `GeomPlate_PointConstraint`'s own order ceiling.
 
 Not every API accepts every order. A bare point carries no curvature to match, so
 `GeomPlate_PointConstraint` throws above order 1. `Shape.plateSurface(through:orders:)` and the

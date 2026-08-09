@@ -14,7 +14,7 @@ formats (STL, OBJ, PLY). Obtain one by calling `Shape.mesh(linearDeflection:)` o
 
 ## Topics
 
-- [Initializers](#initializers) · [Mesh Data](#mesh-data) · [Statistics](#statistics) · [Triangle Access with Face Info](#triangle-access-with-face-info) · [Mesh to Shape Conversion](#mesh-to-shape-conversion) · [Mesh Boolean Operations](#mesh-boolean-operations) · [SceneKit Integration](#scenekit-integration) · [Metal Integration](#metal-integration) · [RealityKit Integration](#realitykit-integration)
+- [Initializers](#initializers) · [Mesh Data](#mesh-data) · [Statistics](#statistics) · [Triangle Access with Face Info](#triangle-access-with-face-info) · [Mesh to Shape Conversion](#mesh-to-shape-conversion) · [Mesh Boolean Operations](#mesh-boolean-operations) · [SceneKit Integration](#scenekit-integration) · [Metal Integration](#metal-integration) · [RealityKit Integration](#realitykit-integration) · [Supporting Types](#supporting-types)
 
 ---
 
@@ -56,6 +56,18 @@ by averaging the face normals of adjacent triangles (smooth shading).
   let idx: [UInt32] = [0,1,2, 0,2,3, 0,3,4, 0,4,1, 5,2,1, 5,3,2, 5,4,3, 5,1,4]
   guard let mesh = Mesh(vertices: v, indices: idx) else { return }
   ```
+
+---
+
+### `Mesh.handle`
+
+The opaque `OCCTMeshRef` handle this wrapper owns.
+
+```swift
+internal let handle: OCCTMeshRef
+```
+
+Internal, not part of the public API. Set once at construction (either from `Mesh.init(vertices:normals:indices:)` or from an OCCT-side tessellation such as `Shape.mesh(...)`) and released in `deinit` via `OCCTMeshRelease`.
 
 ---
 
@@ -631,6 +643,16 @@ needed.
 | `adjustMinSize` | `false` | Auto-adjust minSize from edge size |
 | `allowQualityDecrease` | `false` | Allow replacing an existing finer triangulation with a coarser one |
 
+#### `MeshParameters.deflectionInterior`: interior face deflection, 0 meaning "same as `deflection`".
+#### `MeshParameters.angleInterior`: interior face angular deflection, 0 meaning "same as `angle`".
+#### `MeshParameters.minSize`: minimum element size, 0 meaning no minimum.
+#### `MeshParameters.relative`: when `true`, deflection is a proportion of each edge's own length rather than an absolute value.
+#### `MeshParameters.inParallel`: enables multi-threaded meshing via `OSD_Parallel`.
+#### `MeshParameters.internalVertices`: generate vertices inside face interiors, not only along edges.
+#### `MeshParameters.controlSurfaceDeflection`: validate the surface approximation quality during meshing.
+#### `MeshParameters.adjustMinSize`: auto-adjust `minSize` from the shape's own edge sizes.
+#### `MeshParameters.allowQualityDecrease`: allow replacing an existing finer triangulation with a coarser one.
+
 - **OCCT:** `IMeshTools_Parameters` + `BRepMesh_IncrementalMesh`.
 - **Example:**
   ```swift
@@ -642,6 +664,18 @@ needed.
 - **Note:** `allowQualityDecrease` (added in issue #211): when re-meshing an already-tessellated
   shape at a different deflection, OCCT keeps the existing mesh if it's "good enough" unless this
   is `true`. Set it when the new deflection must actually take effect.
+
+---
+
+### `MeshParameters.toBridge()`
+
+Internal conversion to the C bridge's `OCCTMeshParameters` struct, used by `Shape.mesh(parameters:)` to pass the Swift-side value across the bridge boundary.
+
+```swift
+internal func toBridge() -> OCCTMeshParameters
+```
+
+Not part of the public API: every field is copied across verbatim, in the same order the table above lists them.
 
 ---
 
@@ -675,3 +709,43 @@ position in a `TopExp_Explorer` walk instead, which on a two-solid split compoun
   - `v1`, `v2`, `v3` — vertex indices into `Mesh.vertices`.
   - `faceIndex` — source B-Rep face index; −1 if unknown.
   - `normal` — per-triangle surface normal (computed from the cross product of two edges).
+
+---
+
+### `Polygon2D`
+
+A wrapper around `Poly_Polygon2D`: a standalone 2D polygon (sequence of 2D nodes with a deflection value), independent of `Mesh`'s own triangulation. Used for pcurve tessellation data attached to an edge, separately from the 3D triangle mesh above.
+
+```swift
+public final class Polygon2D: @unchecked Sendable
+```
+
+#### `Polygon2D.handle`
+
+The opaque `OCCTPolyPolygon2DRef` handle this wrapper owns.
+
+```swift
+let handle: OCCTPolyPolygon2DRef
+```
+
+Internal, not part of the public API. Released in `deinit` via `OCCTPolyPolygon2DRelease`.
+
+---
+
+### `PolygonOnTriangulation`
+
+A wrapper around `Poly_PolygonOnTriangulation`: a polygon defined as a sequence of node indices into a shared `Triangulation`, rather than owning its own point positions.
+
+```swift
+public final class PolygonOnTriangulation: @unchecked Sendable
+```
+
+#### `PolygonOnTriangulation.handle`
+
+The opaque `OCCTPolyPolygonOnTriRef` handle this wrapper owns.
+
+```swift
+let handle: OCCTPolyPolygonOnTriRef
+```
+
+Internal, not part of the public API. Released in `deinit` via `OCCTPolyPolygonOnTriRelease`.

@@ -38,8 +38,14 @@ public enum ProjectionType: UInt32 {
 }
 ```
 
-- `.orthographic` — parallel-line projection (engineering drawings).
-- `.perspective` — converging-line projection.
+| Case | Meaning |
+|---|---|
+| `orthographic` | Parallel-line projection (engineering drawings) |
+| `perspective` | Converging-line projection |
+
+#### `Drawing.ProjectionType.orthographic`: parallel-line projection, the standard engineering-drawing convention.
+#### `Drawing.ProjectionType.perspective`: converging-line projection.
+
 - **OCCT:** Passed as `OCCTProjectionType` to `HLRAlgo_Projector` construction inside `OCCTDrawingCreate`.
 
 ---
@@ -770,6 +776,18 @@ case projectionFailed
 
 ---
 
+### `DrawingError.errorDescription`
+
+`LocalizedError` conformance: a human-readable message for the current case.
+
+```swift
+public var errorDescription: String? { get }
+```
+
+- **Returns:** `"Failed to create 2D projection"` for `.projectionFailed` (the only case).
+
+---
+
 ## PaperSize
 
 ISO 5457 paper size enumeration.
@@ -823,6 +841,16 @@ public enum Orientation: String, Sendable, Hashable {
     case portrait
 }
 ```
+
+Not to be confused with `Shape.Orientation` (forward/reversed B-Rep topology orientation, declared in `Shape+Topology.swift`): this is a distinct, top-level enum for sheet layout only.
+
+| Case | Meaning |
+|---|---|
+| `landscape` | Sheet wider than tall (the default; see `PaperSize.dimensions`) |
+| `portrait` | Sheet taller than wide (`PaperSize.size(in:)` swaps X and Y) |
+
+### `Orientation.landscape`: sheet wider than tall, the default orientation `PaperSize.dimensions` is expressed in.
+### `Orientation.portrait`: sheet taller than wide; `PaperSize.size(in:)` swaps X and Y to produce it.
 
 ---
 
@@ -903,6 +931,16 @@ All stored as `var` so they can be mutated after construction.
 | `material` | `String?` | optional |
 | `weight` | `String?` | optional |
 | `scale` | `String?` | optional |
+
+### `TitleBlock.drawingNumber`: the drawing's own identifying number, an ISO 7200 optional field.
+### `TitleBlock.owner`: the organisation that owns the drawing, an ISO 7200 optional field.
+### `TitleBlock.creator`: the person or role that authored the drawing, an ISO 7200 optional field.
+### `TitleBlock.approver`: the person or role that approved the drawing for release, an ISO 7200 optional field.
+### `TitleBlock.documentType`: the ISO 7200 document-type classification (e.g. "Drawing", "Assembly"), an optional field.
+### `TitleBlock.dateOfIssue`: the issue date, recommended in ISO 8601 form, an ISO 7200 optional field.
+### `TitleBlock.revision`: the revision/version identifier, an ISO 7200 optional field.
+### `TitleBlock.sheetNumber`: this sheet's number within a multi-sheet set, an ISO 7200 optional field.
+### `TitleBlock.language`: the language the drawing is authored in, an ISO 7200 optional field.
 
 ---
 
@@ -1274,6 +1312,20 @@ public enum DrawingScale: Sendable, Hashable {
     case custom(Double)     // any ratio
 }
 ```
+
+| Case | Ratio | Meaning |
+|---|---|---|
+| `one` | 1:1 | Full scale |
+| `reduction(N)` | 1:N, N > 1 | Drawing smaller than the model |
+| `enlargement(N)` | N:1, N > 1 | Drawing larger than the model |
+| `custom(f)` | `f`:1 | Any other ratio, e.g. a non-ISO-preferred value |
+
+### `DrawingScale.one`: full scale, 1:1.
+### `DrawingScale.reduction(_:)`: a 1:N reduction (N > 1), the drawing smaller than the model.
+### `DrawingScale.enlargement(_:)`: an N:1 enlargement (N > 1), the drawing larger than the model.
+### `DrawingScale.custom(_:)`: any other scale ratio not covered by `.one`, `.reduction`, or `.enlargement`.
+
+---
 
 ### `DrawingScale.factor`
 

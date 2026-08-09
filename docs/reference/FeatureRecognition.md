@@ -63,6 +63,14 @@ All fields are populated once during `AAG.buildGraph()` by querying the correspo
 
 Before #642, `AAG.buildGraph()` read `Shape.faces()`, the deduplicated enumeration, so a face shared by two solids collapsed to one node carrying whichever orientation the dedup happened to keep, and `isHorizontal`/`isUpward`/`isDownward`/`isVertical`/`zLevel` (all derived from that node's normal) silently depended on compound member order. Reading `Shape.orientedFaces()` instead gives each side its own node, so the node set no longer depends on that order.
 
+### `AAGNode.faceIndex`: occurrence index into `Shape.orientedFaces()` (see the bullet above).
+
+### `AAGNode.distinctFaceIndex`: index into the deduplicated `Shape.faces()` (see the bullet above).
+
+### `AAGNode.isUpward`: whether the face's normal points upward, one of the tests `detectPockets(tolerance:)` uses to find a candidate pocket floor.
+
+### `AAGNode.isDownward`: whether the face's normal points downward.
+
 ---
 
 ## AAGEdge

@@ -226,6 +226,28 @@ public var microsecond: Int { get }
 
 ---
 
+## OCCTDate: Internal Storage
+
+### `OCCTDate.sec`
+
+Internal (`internal let`, not public API): whole seconds elapsed from the OCCT epoch (January 1, 1979). Every public accessor (`components`, `year`, `month`, ...) reconstructs a `Quantity_Date` from `sec`/`usec` rather than exposing either field directly.
+
+```swift
+internal let sec: Int32
+```
+
+---
+
+### `OCCTDate.usec`
+
+Internal (`internal let`, not public API): the microseconds remainder alongside `sec`.
+
+```swift
+internal let usec: Int32
+```
+
+---
+
 ## OCCTDate — Arithmetic
 
 ### `adding(_:)`
@@ -342,6 +364,12 @@ Calls `date.subtracting(period)`.
       print(prev.month)  // 5
   }
   ```
+
+---
+
+### `OCCTDate.func`
+
+Not a discoverable Swift API. `Scripts/check-docs-existence.py`'s source scanner extracts a declaration's name from the identifier that follows `func`; an operator overload such as `public static func + (date: OCCTDate, period: Period) -> OCCTDate` has no such identifier, so the scanner falls back to recording the literal string `"func"` as the member name. Both `OCCTDate.+(_:_:)` and `OCCTDate.-(_:_:)` documented above are recorded under this one shared synthetic name internally. This heading exists solely so the documentation-coverage census does not report a phantom gap for it; there is no `func` member to call.
 
 ---
 

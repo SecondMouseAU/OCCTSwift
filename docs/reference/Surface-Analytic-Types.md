@@ -343,6 +343,23 @@ Meaningful only when the surface wraps a `Geom_ToroidalSurface`. Members return 
 
 ---
 
+### `Surface.TorusProperties.handle`
+
+The opaque OCCT handle this wrapper owns.
+
+```swift
+fileprivate let handle: OCCTSurfaceRef
+```
+
+`fileprivate`, not part of the public API. `TorusProperties` is a thin, `@unchecked Sendable`
+accessor struct: it holds no state of its own beyond this handle, and every property/method on it
+(`majorRadius`, `setMajorRadius(_:)`, `area`, `volume`, ...) is a direct bridge call against the
+*same* `OCCTSurfaceRef` as the parent `Surface` it was created from (`torusProperties` constructs
+it as `TorusProperties(handle: handle)`), which is why mutating it (`setMajorRadius(_:)`) is
+visible through every other `Surface`/`TorusProperties` value sharing that handle.
+
+---
+
 ### `TorusProperties.majorRadius`
 
 The major radius of the torus (distance from the torus centre to the tube centre).

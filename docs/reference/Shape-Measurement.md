@@ -263,6 +263,14 @@ public struct EvolvingFilletEdge: Sendable {
   edge. Parameters are relative: `0.0` is the start of the edge, `1.0` its end. Every radius must
   be positive, and the parameters must lie in `0...1` and strictly increase.
 
+| Field | Meaning |
+|---|---|
+| `edgeIndex` | 0-based index of the edge to fillet, per `Edge.index`. |
+| `radiusPoints` | `(parameter, radius)` pairs defining the radius law along the edge. |
+
+#### `EvolvingFilletEdge.edgeIndex`
+#### `EvolvingFilletEdge.radiusPoints`
+
 > OCCT stretches the law across the whole edge, so a profile cannot fillet part of one and leave
 > the rest alone. With one or two points the parameters are ignored entirely (a single point is a
 > constant radius); with three or more only the *relative* spacing of the interior points survives,
@@ -662,6 +670,18 @@ public struct DistanceSolutionDetail: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `paramEdge1` | Curve parameter of the closest point on `self`'s support, when `supportType1 == .onEdge`; meaningless otherwise. |
+| `paramEdge2` | Curve parameter of the closest point on `other`'s support, when `supportType2 == .onEdge`; meaningless otherwise. |
+| `paramFaceUV1` | Surface UV parameters of the closest point on `self`'s support, when `supportType1 == .inFace`; meaningless otherwise. |
+| `paramFaceUV2` | Surface UV parameters of the closest point on `other`'s support, when `supportType2 == .inFace`; meaningless otherwise. |
+
+#### `Shape.DistanceSolutionDetail.paramEdge1`
+#### `Shape.DistanceSolutionDetail.paramEdge2`
+#### `Shape.DistanceSolutionDetail.paramFaceUV1`
+#### `Shape.DistanceSolutionDetail.paramFaceUV2`
+
 ---
 
 ### `distanceSolutionDetail(to:solutionIndex:)`
@@ -942,6 +962,9 @@ public enum PointCloudGeometry {
 - `.planar` — Points are coplanar.
 - `.space` — Points are dispersed in 3D space.
 
+#### `Shape.PointCloudGeometry.planar`
+#### `Shape.PointCloudGeometry.space`
+
 ---
 
 ### `analyzePointCloud(_:tolerance:)`
@@ -1110,6 +1133,13 @@ public struct SelfIntersectionResult: Sendable {
     public let isDone: Bool
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `overlapCount` | Number of overlapping triangle pairs found between BVH-accelerated mesh triangles. |
+| `isDone` | `true` if the check completed; `false` if the underlying mesh/BVH computation failed. |
+
+#### `Shape.SelfIntersectionResult.overlapCount`
 
 ---
 
@@ -2081,6 +2111,18 @@ public struct EdgeEdgeExtrema: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `paramOnEdge1` | Curve parameter of the closest point on the first edge. |
+| `paramOnEdge2` | Curve parameter of the closest point on the second edge. |
+| `pointOnEdge1` | World-space closest point on the first edge. |
+| `pointOnEdge2` | World-space closest point on the second edge. |
+
+#### `Shape.EdgeEdgeExtrema.paramOnEdge1`
+#### `Shape.EdgeEdgeExtrema.paramOnEdge2`
+#### `Shape.EdgeEdgeExtrema.pointOnEdge1`
+#### `Shape.EdgeEdgeExtrema.pointOnEdge2`
+
 ---
 
 ### `edgeEdgeExtrema(edgeIndex1:other:edgeIndex2:)`
@@ -2191,6 +2233,24 @@ public enum ContinuityLevel: Int32, Sendable, CaseIterable {
     case c0 = 0, c1 = 1, c2 = 2, c3 = 3, cn = 4, g1 = 5, g2 = 6
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `.c0` | Positional continuity only (touching, no derivative match). |
+| `.c1` | First-derivative (tangent vector) continuity. |
+| `.c2` | Second-derivative (curvature vector) continuity. |
+| `.c3` | Third-derivative continuity. |
+| `.cn` | Continuity to the geometry's own maximum available derivative order. |
+| `.g1` | Geometric tangent continuity (parallel tangent direction, not equal derivative magnitude). |
+| `.g2` | Geometric curvature continuity (parallel principal curvature direction). |
+
+#### `Shape.ContinuityLevel.c0`
+#### `Shape.ContinuityLevel.c1`
+#### `Shape.ContinuityLevel.c2`
+#### `Shape.ContinuityLevel.c3`
+#### `Shape.ContinuityLevel.cn`
+#### `Shape.ContinuityLevel.g1`
+#### `Shape.ContinuityLevel.g2`
 
 > **Deliberately kept separate from
 > [`ParametricContinuity`](Shape-Healing.md#parametriccontinuity)** (#398). This is a strict
@@ -2403,6 +2463,16 @@ public struct FreeBoundInfo: Sendable {
   "degenerate contour"; `area` and `perimeter` are still good in that case.
 - `width`, the average contour width, on the same "0 means unsolved" contract as `ratio`.
 - `notchCount`, the narrow 'V'-like sub-contours found on the bound.
+
+| Field | Meaning |
+|---|---|
+| `perimeter` | Total length of the bound's contour. |
+| `ratio` | Contour length over contour width (0 when OCCT's solve has no real root; see above). |
+| `notchCount` | Count of narrow 'V'-like sub-contours (notches) found on the bound. |
+
+#### `Shape.FreeBoundInfo.perimeter`
+#### `Shape.FreeBoundInfo.ratio`
+#### `Shape.FreeBoundInfo.notchCount`
 
 ---
 

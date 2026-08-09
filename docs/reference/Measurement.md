@@ -320,6 +320,10 @@ public struct CircleProperties: Sendable, Hashable {
 - `isFullCircle` — `true` when `endAngle - startAngle ≈ 2π`.
 - `startAngle` / `endAngle` — parameter range in radians (equal to `parameterBounds` for a `Geom_Circle`).
 
+#### `Edge.CircleProperties.isFullCircle`: `true` when `endAngle - startAngle` is within `1e-6` of `2π`.
+#### `Edge.CircleProperties.startAngle`: start of the parameter range in radians; `0` for a full circle.
+#### `Edge.CircleProperties.endAngle`: end of the parameter range in radians; `2π` for a full circle.
+
 ---
 
 ### `Edge.circleProperties`

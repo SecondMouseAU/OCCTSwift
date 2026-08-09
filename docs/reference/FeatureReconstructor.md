@@ -11,7 +11,7 @@ Obtain a result by calling `FeatureReconstructor.build(from:inputBody:)` or the 
 
 ## Topics
 
-- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor — Entry point](#featurereconstructor--entry-point) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
+- [FeatureSpec](#featurespec) · [FeatureSpec.Revolve](#featurespecrevolve) · [FeatureSpec.Extrude](#featurespecextrude) · [FeatureSpec.Hole](#featurespechole) · [FeatureSpec.Thread](#featurespecthread) · [FeatureSpec.EdgeSelector](#featurespecedgeselector) · [FeatureSpec.Fillet](#featurespecfillet) · [FeatureSpec.Chamfer](#featurespecchamfer) · [FeatureSpec.Boolean](#featurespecboolean) · [FeatureReconstructor: Entry point](#featurereconstructor-entry-point) · [FeatureReconstructor.BuildContext](#featurereconstructorbuildcontext) · [BuildResult](#buildresult) · [Skipped](#skipped) · [Annotation](#annotation) · [JSON front end](#json-front-end)
 
 ---
 
@@ -131,6 +131,8 @@ public struct Extrude: Sendable, Hashable, Codable {
 
 The 2D profile is projected into 3D using a `Placement` derived from `planeOrigin` and `planeNormal`. The profile must have at least 3 points.
 
+#### `FeatureSpec.Extrude.profilePoints2D`: profile polygon, in the sketch plane's local 2D coordinate system.
+
 ---
 
 ### `FeatureSpec.Extrude.init(profilePoints2D:planeOrigin:planeNormal:length:id:)`
@@ -183,6 +185,10 @@ public struct Hole: Sendable, Hashable, Codable {
 
 When `depth` is `nil`, a through-hole cutter of depth `100.0` is used (sufficient for most models). Supply an explicit `depth` to limit the cutter.
 
+#### `FeatureSpec.Hole.axisPoint`: a point on the hole axis, typically the centre of the entry face.
+#### `FeatureSpec.Hole.axisDirection`: unit vector pointing into the material along the hole axis.
+#### `FeatureSpec.Hole.diameter`: hole diameter in model units; the cutter radius is `diameter / 2`.
+
 ---
 
 ### `FeatureSpec.Hole.init(axisPoint:axisDirection:diameter:depth:id:)`
@@ -232,6 +238,9 @@ public struct Thread: Sendable, Hashable, Codable {
 ```
 
 Thread specs produce `Annotation` entries in `BuildResult.annotations` rather than actual thread geometry. To produce real thread geometry, call `Shape.threadedHole(...)` or `Shape.threadedShaft(...)` directly.
+
+#### `FeatureSpec.Thread.holeRef`: the `id` of the `FeatureSpec.Hole` this thread annotates.
+#### `FeatureSpec.Thread.spec`: thread designation string (e.g. `"M5x0.8"`, `"1/4-20 UNC"`), stored verbatim, not parsed.
 
 ---
 
@@ -406,7 +415,7 @@ public init(op: Op, leftID: String, rightID: String, id: String? = nil)
 
 ---
 
-## FeatureReconstructor — Entry point
+## FeatureReconstructor: Entry point
 
 ### `FeatureReconstructor.inputBodySentinel`
 
@@ -465,6 +474,40 @@ Within each stage, features are processed in array order. Failures append to `Bu
 
 ---
 
+### `FeatureReconstructor.BuildContext`
+
+Private mutable state threaded through `build(from:inputBody:)`'s four dispatch stages. Not part of the public API: `BuildResult` is the value callers actually see; this is the accumulator the stage handlers (`applyRevolve`, `applyHole`, `applyFillet`, …) read and write as they walk `specs`.
+
+```swift
+fileprivate struct BuildContext {
+    var current: Shape? = nil
+    var fulfilled: [String] = []
+    var skipped: [Skipped] = []
+    var annotations: [Annotation] = []
+    var namedShapes: [String: Shape] = [:]
+    var histories: [String: ShapeHistoryRef] = [:]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `current` | The in-progress shape after the features processed so far. `nil` until the first additive feature (or `inputBody`) seeds it. |
+| `fulfilled` | Ids of features that have completed successfully so far. |
+| `skipped` | `Skipped` diagnostics accumulated so far. |
+| `annotations` | `.thread` spec annotations accumulated so far. |
+| `namedShapes` | Registry of feature id → produced shape, used to resolve boolean operands and `EdgeSelector.onFeature`. |
+| `histories` | Per-feature `ShapeHistoryRef` from history-recording builders, keyed by feature id. |
+
+#### `FeatureReconstructor.BuildContext.current`: the in-progress shape after the features processed so far.
+#### `FeatureReconstructor.BuildContext.fulfilled`: ids of features that have completed successfully so far.
+#### `FeatureReconstructor.BuildContext.skipped`: `Skipped` diagnostics accumulated so far.
+#### `FeatureReconstructor.BuildContext.namedShapes`: registry of feature id to produced shape, for resolving boolean operands and `EdgeSelector.onFeature`.
+#### `FeatureReconstructor.BuildContext.histories`: per-feature `ShapeHistoryRef` accumulated so far, keyed by feature id.
+
+At the end of dispatch, `build(from:inputBody:)` copies these fields straight into the returned `BuildResult`.
+
+---
+
 ## BuildResult
 
 ### `FeatureReconstructor.BuildResult`
@@ -486,6 +529,10 @@ public struct BuildResult: Sendable {
 - `skipped` — diagnostics for features that failed (see `Skipped`).
 - `annotations` — thread callout metadata from `.thread` specs.
 - `histories` — per-feature `ShapeHistoryRef` keyed by feature id. Only features with a non-nil id that used a history-recording builder are present. Use `histories["id"]?.record(of: face)` to walk selection ids across chained operations.
+
+#### `FeatureReconstructor.BuildResult.fulfilled`: ids of features that completed successfully, in dispatch order.
+#### `FeatureReconstructor.BuildResult.skipped`: diagnostics for features that failed.
+#### `FeatureReconstructor.BuildResult.histories`: per-feature `ShapeHistoryRef`, keyed by feature id.
 
 ---
 
@@ -525,6 +572,11 @@ public enum Reason: Sendable {
 - `.unresolvedRef(message)` — a `leftID`, `rightID`, or `EdgeSelector.onFeature` id was not found in the named-shape registry.
 - `.unsupported(message)` — the JSON front end encountered an unknown `kind` string or unrecognised boolean op.
 
+#### `FeatureReconstructor.Skipped.Reason.underDetermined`: the spec is geometrically incomplete.
+#### `FeatureReconstructor.Skipped.Reason.occtFailure`: the OCCT builder returned `nil` or failed.
+#### `FeatureReconstructor.Skipped.Reason.unresolvedRef`: a referenced feature id was not found in the named-shape registry.
+#### `FeatureReconstructor.Skipped.Reason.unsupported`: the JSON front end encountered an unrecognised `kind` or boolean op.
+
 ---
 
 ### `FeatureReconstructor.Skipped.Stage`
@@ -553,6 +605,8 @@ public struct Annotation: Sendable {
 ```
 
 Annotations carry no geometry — they describe intent (e.g. "this hole has an M6×1 thread"). Generate actual thread geometry by calling `Shape.threadedHole` or `Shape.threadedShaft` separately.
+
+#### `FeatureReconstructor.Annotation.featureID`: the id of the `.thread` spec that produced this annotation.
 
 ---
 

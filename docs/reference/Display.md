@@ -40,6 +40,12 @@ public static let topOSD: Int32      // -4 — 2D overlay for annotations and UI
   let overlayLayerId = ZLayerSettings.topOSD
   ```
 
+### `ZLayerSettings.bottomOSD`: id `-5`, the 2D underlay layer drawn behind everything.
+
+### `ZLayerSettings.topOSD`: id `-4`, the 2D overlay layer for annotations and UI.
+
+### `ZLayerSettings.topmost`: id `-3`, a 3D overlay layer with its own independent depth buffer.
+
 ---
 
 ### `PolygonOffsetMode`
@@ -75,6 +81,16 @@ public struct PolygonOffset: Sendable {
 
 Maps to Metal's `setDepthBias(depthBias:slopeScale:clamp:)`: `factor` → `slopeScale`, `units` → `depthBias`.
 
+| Field | Meaning |
+|---|---|
+| `mode` | Which primitive types receive the offset (`PolygonOffsetMode`). |
+| `factor` | Slope-scale term, maps to Metal's `slopeScale`. |
+| `units` | Constant depth-bias term, maps to Metal's `depthBias`. |
+
+#### `PolygonOffset.mode`
+
+#### `PolygonOffset.units`
+
 ---
 
 ### `ZLayerSettings.init()`
@@ -92,6 +108,16 @@ public init()
   layer.depthTestEnabled = true
   layer.clearDepth = false
   ```
+
+---
+
+### `ZLayerSettings.handle`
+
+Internal (`internal let`, not public API): the opaque `OCCTZLayerSettingsRef` handle this wrapper owns and releases in `deinit`.
+
+```swift
+internal let handle: OCCTZLayerSettingsRef
+```
 
 ---
 
@@ -337,6 +363,16 @@ When working with very large world coordinates (e.g. geospatial), set the layer 
 `ClipPlane` defines a half-space clipping plane using the equation `Ax + By + Cz + D = 0`. Points satisfying `Ax + By + Cz + D > 0` are considered visible. Planes can be chained for compound (AND) clipping regions. Wraps OCCT's `Graphic3d_ClipPlane`.
 
 On Apple Silicon, the equation maps directly to `[[clip_distance]]` in a Metal vertex shader; up to 8 hardware-accelerated clip distances are supported.
+
+---
+
+### `ClipPlane.handle`
+
+Internal (`internal let`, not public API): the opaque `OCCTClipPlaneRef` handle this wrapper owns and releases in `deinit`.
+
+```swift
+internal let handle: OCCTClipPlaneRef
+```
 
 ---
 

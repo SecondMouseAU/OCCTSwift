@@ -105,9 +105,24 @@ DOCS_GLOB = 'docs/reference/*.md'
 # parameter on one side moves it here, and an unpinned bucket would absorb that silently. Raise it
 # only after checking each new entry (`--list-unmatched`).
 #
-# The three today: a `requestCancel()` and a `printTree(_:indent:)` defined inside example
+# The original three: a `requestCancel()` and a `printTree(_:indent:)` defined inside example
 # snippets, and `Shape.init(handle:)`, which the page restates as `internal init` on purpose.
-EXPECTED_UNMATCHED = 3
+#
+# #802 item 5 (docs-coverage bucket 2) raised this to 66: closing the coverage gap meant
+# documenting `internal`/`private`/`fileprivate` implementation members too (this codebase's
+# own coverage census counts those deliberately, see `check-docs-existence.py`'s docstring), and
+# each restates its real signature in a fenced ```swift block for readability, exactly like a
+# public entry does. `want_public=True` correctly excludes every one of them from the
+# comparable-declaration index on the source side, since none carries `public`/`open` and none
+# sits in a `public extension`, so all 63 land here rather than in the drift count. Verified by
+# hand, one at a time, against `Sources/OCCTSwift`: every new entry is a genuine non-public
+# declaration (`DXFWriter`/`PDFWriter`/`SVGWriter`'s private staging/serialization helpers,
+# `MathDimension`'s internal static validators, `ThreadSpec`'s private designation parsers,
+# `ThreadProfile`'s internal factory helpers, `DrawingAnnotationStore`'s internal mutators, two
+# unrelated private `toOCCT()` conversions, `Mesh.toBridge()`, `Curve3D.continuityAnalysis`, and
+# `ArcLengthCurveAdaptor.sampledPoints`), not a renamed or reordered parameter this bucket would
+# otherwise be hiding.
+EXPECTED_UNMATCHED = 66
 
 # A declaration this script can compare. The generic-parameter group follows the name, as Swift
 # writes it (`func f<T>(...)`); putting it first made every generic declaration invisible.

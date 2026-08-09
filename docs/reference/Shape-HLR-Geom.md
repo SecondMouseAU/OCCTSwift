@@ -190,6 +190,14 @@ public struct EdgeFaceTransitionResult: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `transition` | Cumulated `TopAbs_Orientation` code (0=FORWARD, 1=REVERSED, 2=INTERNAL, 3=EXTERNAL) across all supplied faces. |
+| `boundaryTransition` | Cumulated `TopAbs_Orientation` code for the boundary transition across all supplied faces. |
+
+#### `Shape.EdgeFaceTransitionResult.transition`
+#### `Shape.EdgeFaceTransitionResult.boundaryTransition`
+
 ---
 
 ### `FaceInterference`
@@ -211,6 +219,16 @@ public struct FaceInterference: Sendable {
                 tolerance: Double)
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `transition` | `TopAbs_Orientation` code for how the edge crosses this face at the interference point. |
+| `boundaryTransition` | `TopAbs_Orientation` code for how the edge crosses this face's boundary. |
+| `tolerance` | Geometric tolerance for this face's contribution to the interference test. |
+
+#### `Shape.FaceInterference.transition`
+#### `Shape.FaceInterference.boundaryTransition`
+#### `Shape.FaceInterference.tolerance`
 
 ---
 
@@ -463,6 +481,12 @@ A sorted sequence of non-overlapping `Intrv_Interval` objects supporting set-the
 ```swift
 public final class IntervalSet: @unchecked Sendable
 ```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTIntrvIntervalsRef` this wrapper owns; released in `deinit`. |
+
+#### `IntervalSet.handle`
 
 ---
 
@@ -957,6 +981,16 @@ public struct ValidateEdgeResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `isWithinTolerance` | `true` if the maximum deviation between the 3D curve and the curve-on-surface is within `tolerance`. |
+| `maxDistance` | Maximum measured deviation between the 3D curve and the curve-on-surface. |
+| `tolerance` | The tolerance value the check was run against. |
+
+#### `ValidateEdgeResult.isWithinTolerance`
+#### `ValidateEdgeResult.maxDistance`
+#### `ValidateEdgeResult.tolerance`
+
 ---
 
 ### `Edge.validate(on:tolerance:)`
@@ -1384,6 +1418,12 @@ public final class GeomPoint3D: @unchecked Sendable
 
 Useful when you need OCCT's geometry-level point entity (rather than a raw `SIMD3<Double>`) for operations that take `Handle(Geom_Point)` arguments.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomPoint3DRef` this wrapper owns; released in `deinit`. Public (unlike most wrapper handles) so other bridge-adjacent APIs can pass it through directly. |
+
+#### `GeomPoint3D.handle`
+
 ---
 
 ### `GeomPoint3D.init(x:y:z:)`
@@ -1419,6 +1459,8 @@ public var z: Double { get }
 ```
 
 - **OCCT:** `Geom_CartesianPoint::X`, `Y`, `Z`.
+
+#### `GeomPoint3D.z`
 
 ---
 
@@ -1580,6 +1622,12 @@ A Handle-managed 3D vector with arbitrary magnitude, wrapping `Geom_VectorWithMa
 ```swift
 public final class GeomVector3D: @unchecked Sendable
 ```
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | public stored property | The opaque `OCCTGeomVector3DRef` this wrapper owns; released in `deinit`. |
+
+#### `GeomVector3D.handle`
 
 ---
 

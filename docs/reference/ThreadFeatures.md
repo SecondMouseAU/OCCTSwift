@@ -144,6 +144,31 @@ Full specification of a thread's form, diameter, pitch, and handedness. `Sendabl
 public struct ThreadSpec: Sendable, Hashable, Codable
 ```
 
+The six stored properties below are set once, at construction, by whichever `init` was used; every other member on this page (`profile`, `cutDepth`, `taperRatio`, ...) is a computed property derived from them.
+
+| Property | Type | Meaning |
+|---|---|---|
+| `form` | `ThreadForm` | Which standard thread geometry this spec describes. |
+| `nominalDiameter` | `Double` | Outer (crest) diameter in mm. |
+| `pitch` | `Double` | Axial advance per revolution in mm. |
+| `leftHanded` | `Bool` | `true` for a left-hand helix. |
+| `customProfile` | `ThreadProfile?` | Cross-section for `form == .custom`; ignored for every other form. Set via the custom initializer. |
+| `customCutDepth` | `Double?` | Overrides the form's default radial depth (mm). Required for `.custom`; optional elsewhere. |
+
+### `ThreadSpec.form`
+
+### `ThreadSpec.nominalDiameter`
+
+### `ThreadSpec.pitch`
+
+### `ThreadSpec.leftHanded`
+
+### `ThreadSpec.customProfile`
+
+### `ThreadSpec.customCutDepth`
+
+---
+
 ### `ThreadSpec.init(form:nominalDiameter:pitch:leftHanded:customProfile:customCutDepth:)`
 
 General-purpose initialiser.
@@ -318,6 +343,101 @@ public var minorDiameter: Double { get }
 
 ---
 
+### Designation Parsing Internals
+
+`ThreadSpec.parse(_:)` above dispatches to seven `private static` helpers, one per designation family. None of these is part of the public API: they exist only to keep `parse(_:)` itself short, but each is a real declaration in the source, documented here for completeness.
+
+### `ThreadSpec.parseMetric(_:)`
+
+**Private.** Matches a metric designation (`M5x0.8`, `M10`). Falls back to `metricCoarsePitch(forDiameter:)`'s lookup table when no explicit pitch is given.
+
+```swift
+private static func parseMetric(_ text: String) -> ThreadSpec?
+```
+
+- **Parameters:** `text`: the designation string, already trimmed by `parse(_:)`.
+- **Returns:** A `.iso68` `ThreadSpec`, or `nil` if `text` does not start with `M`/`m` or the diameter/pitch cannot be parsed.
+
+---
+
+### `ThreadSpec.parseTrapezoidal(_:)`
+
+**Private.** Matches an ISO metric trapezoidal designation (`Tr40x7`, `Tr40x7LH`).
+
+```swift
+private static func parseTrapezoidal(_ text: String) -> ThreadSpec?
+```
+
+- **Parameters:** `text`: the designation string.
+- **Returns:** A `.trapezoidal` `ThreadSpec` (`leftHanded: true` for a trailing `LH`), or `nil` if the `Tr<diameter>x<pitch>` shape does not match.
+
+---
+
+### `ThreadSpec.parseAcme(_:)`
+
+**Private.** Matches an ACME designation (`1.5-4 ACME`), where the trailing number before `ACME` is threads-per-inch (TPI), not a pitch.
+
+```swift
+private static func parseAcme(_ text: String) -> ThreadSpec?
+```
+
+- **Parameters:** `text`: the designation string.
+- **Returns:** An `.acme` `ThreadSpec` with diameter/pitch converted from inches, or `nil` if `text` does not end in `ACME` or the `<diameter>-<TPI>` body does not parse.
+
+---
+
+### `ThreadSpec.parsePipeOrWhitworth(_:)`
+
+**Private.** Matches BSP parallel (`G1/2`), BSP taper (`R1/2`, `Rc1/2`), Whitworth (`W1/2`, `1/2 BSW`), and NPT (`1/2-14 NPT`) designations against hardcoded fraction-to-(OD, TPI) lookup tables (BS 2779 / BS 84 / ANSI B1.20.1).
+
+```swift
+private static func parsePipeOrWhitworth(_ text: String) -> ThreadSpec?
+```
+
+- **Parameters:** `text`: the designation string.
+- **Returns:** A `ThreadSpec` of the matching form, or `nil` if no recognised prefix/suffix matches or the fraction is not in the table.
+
+---
+
+### `ThreadSpec.parseUnified(_:)`
+
+**Private.** Matches a Unified/UNC/UNF designation (`1/4-20 UNC`, `3/8-16`): a fractional diameter and a threads-per-inch count separated by `-`.
+
+```swift
+private static func parseUnified(_ text: String) -> ThreadSpec?
+```
+
+- **Parameters:** `text`: the designation string.
+- **Returns:** A `.unified` `ThreadSpec`, or `nil` if the `<fraction>-<TPI>` shape does not match.
+
+---
+
+### `ThreadSpec.parseFractionOrDecimal(_:)`
+
+**Private.** Parses a diameter token written either as a decimal (`0.25`) or a fraction (`1/4`). Shared by `parseAcme(_:)` and `parseUnified(_:)`.
+
+```swift
+private static func parseFractionOrDecimal(_ text: String) -> Double?
+```
+
+- **Parameters:** `text`: the token to parse.
+- **Returns:** The decimal value, or `nil` if `text` is neither a valid `Double` literal nor a `<num>/<den>` fraction with a non-zero denominator.
+
+---
+
+### `ThreadSpec.metricCoarsePitch(forDiameter:)`
+
+**Private.** ISO coarse-pitch lookup table (M2 through M48) used by `parseMetric(_:)` when a metric designation omits an explicit pitch (e.g. `M10`).
+
+```swift
+private static func metricCoarsePitch(forDiameter d: Double) -> Double?
+```
+
+- **Parameters:** `d`: nominal diameter in mm.
+- **Returns:** The standard coarse pitch for that diameter, or `nil` if `d` is not one of the tabulated ISO coarse sizes.
+
+---
+
 ## ThreadProfile
 
 A thread's tooth cross-section over one pitch, normalised. `Sendable`, `Hashable`, `Codable`.
@@ -402,6 +522,14 @@ public struct Segment: Sendable, Hashable {
     public let a: Vertex, b: Vertex, kind: SegmentKind
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `a` | Vertex at the start of the segment (lower `axial`). |
+| `b` | Vertex at the end of the segment (higher `axial`). |
+| `kind` | Geometric classification: `.flat`, `.wall`, or `.flank` (see `SegmentKind` above). |
+
+#### `ThreadProfile.Segment.a`
 
 ---
 
@@ -531,6 +659,38 @@ Small crest/root lands are kept so the smooth direct build can attach a crest fl
 
 ---
 
+### `ThreadProfile.trapezoid(crestFlatFraction:rootFlatFraction:)`
+
+Internal (no access modifier, package-internal, not `public`) helper that builds the symmetric truncated-trapezoid shape shared by every non-rounded built-in form: root half-flats at the ends, a crest flat in the middle, straight flanks between. `iso60V(crestFlatFraction:rootFlatFraction:)`, `whitworth55`, `acme29`, `trapezoidalMetric30`, and `square` all call this with their own flat fractions.
+
+```swift
+static func trapezoid(crestFlatFraction cf: Double, rootFlatFraction rf: Double) -> ThreadProfile
+```
+
+- **Parameters:** `cf`: crest flat width as a fraction of pitch; `rf`: root flat width as a fraction of pitch.
+- **Returns:** A trusted (unvalidated) `ThreadProfile` with the six-vertex trapezoid outline.
+- **OCCT:** Pure-Swift.
+
+---
+
+### `ThreadProfile.rounded(h:halfFlankDeg:flat:samples:)`
+
+Internal (no access modifier) helper that builds a rounded thread profile: straight flanks with circular-arc crest and root fillets (radius solved for tangency), plus a small crest/root land so the smooth direct build can still attach a crest. Backs `knuckle` (and, historically, a rounded Whitworth variant).
+
+```swift
+static func rounded(h: Double, halfFlankDeg: Double, flat: Double = 0.05, samples: Int = 4) -> ThreadProfile
+```
+
+- **Parameters:**
+  - `h`: depth as a fraction of pitch (must equal the form's `cutDepth / P`).
+  - `halfFlankDeg`: half-angle of the straight flank in degrees.
+  - `flat`: crest/root land width as a fraction of pitch (default `0.05`).
+  - `samples`: number of points used to sample each fillet arc (default `4`).
+- **Returns:** A trusted `ThreadProfile` with sampled fillet vertices.
+- **OCCT:** Pure-Swift.
+
+---
+
 ## Enums
 
 ### `ThreadForm`
@@ -571,6 +731,22 @@ public enum ThreadForm: String, Sendable, Codable, CaseIterable {
 
 - **OCCT:** Pure-Swift enum; consumed by `ThreadSpec.profile`, `ThreadSpec.cutDepth`, and `ThreadSpec.taperRatio`.
 - **Note:** `.acme`, `.trapezoidal`, `.square`, `.buttress`, and `.knuckle` are open for future tolerance-class (2B, 3A, etc.) parameters — those are fit-allowance tables, not form geometry, and are not currently modelled.
+
+#### `ThreadForm.iso68`: metric M-series, 60° V (ISO 68-1).
+
+#### `ThreadForm.whitworth`: BSW Whitworth, 55° (flat-truncated crest/root, BS 84).
+
+#### `ThreadForm.bspParallel`: BSP "G" parallel, Whitworth 55° form (EN ISO 228 / BS 2779).
+
+#### `ThreadForm.acme`: ACME general-purpose, 29° trapezoidal.
+
+#### `ThreadForm.trapezoidal`: ISO metric trapezoidal "Tr", 30° (DIN 103).
+
+#### `ThreadForm.nptTapered`: NPT, 60° V on a 1:16 taper (ANSI B1.20.1).
+
+#### `ThreadForm.bsptTapered`: BSPT, 55° on a 1:16 taper (BS EN 10226).
+
+#### `ThreadForm.custom`: arbitrary cross-section, supplied via `ThreadSpec.customProfile`.
 
 ---
 

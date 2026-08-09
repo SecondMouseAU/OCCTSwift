@@ -1217,6 +1217,18 @@ public struct BezierPatchGrid {
 
 Access individual patches with `patches[u * grid.vCount + v]` (0-based).
 
+| Field | Meaning |
+|---|---|
+| `uCount` | Number of Bezier patches in the U direction. |
+| `vCount` | Number of Bezier patches in the V direction. |
+| `patches` | The `uCount × vCount` patches, row-major (U varies faster). |
+
+#### `Surface.BezierPatchGrid.uCount`
+
+#### `Surface.BezierPatchGrid.vCount`
+
+#### `Surface.BezierPatchGrid.patches`
+
 ---
 
 ### `toBezierPatchGrid()`

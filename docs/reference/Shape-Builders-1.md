@@ -29,6 +29,9 @@ public struct PolyhedralDistance {
 
 - **Fields:** `distance` — approximate distance; `point1` — closest point on the first shape; `point2` — closest point on the second shape.
 
+#### `Shape.PolyhedralDistance.point1`
+#### `Shape.PolyhedralDistance.point2`
+
 ---
 
 ### `polyhedralDistance(to:)`
@@ -793,6 +796,12 @@ public enum ContourType: Int32 {
     case other = 2
 }
 ```
+
+| Case | Meaning |
+|---|---|
+| `.other` | The contour is neither a line nor a circle (an analytical form the analysis does not further classify). |
+
+#### `Shape.ContourType.other`
 
 ---
 
@@ -1580,6 +1589,8 @@ public class SurfaceIntersectionResult {
 
 - **Members:** `curveCount` — number of intersection curves; `curve(_:)` — 1-based curve retrieval as an edge shape; `pointCount` — number of isolated points; `point(_:)` — 1-based point retrieval.
 - **OCCT:** `GeomInt_IntSS` via `OCCTGeomIntSS*`.
+
+#### `SurfaceIntersectionResult.curveCount`
 
 ---
 

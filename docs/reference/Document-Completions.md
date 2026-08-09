@@ -2038,6 +2038,18 @@ public func simulatedSurfaceCount(contour: Int) -> Int
 
 A fine-grained builder for intersecting shapes, planes, and surfaces. Wraps `BRepAlgoAPI_Section` with explicit argument-setting and PCurve controls. Added in v0.128.0.
 
+### `SectionBuilder.handle`
+
+The opaque `OCCTSectionBuilderRef` handle this wrapper owns.
+
+```swift
+let handle: OCCTSectionBuilderRef
+```
+
+Internal, not part of the public API. Set at construction (`init()` or `init(shape1:shape2:)`) and released in `deinit` via `OCCTSectionBuilderRelease`.
+
+---
+
 ### `SectionBuilder.init()`
 
 Create an empty section builder (arguments set via `init1`/`init2`).

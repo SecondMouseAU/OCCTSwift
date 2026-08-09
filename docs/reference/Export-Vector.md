@@ -369,6 +369,110 @@ table) and writes it atomically via `Data.write(to:)`.
 
 ---
 
+### `PDFWriter` internal staging and serialization
+
+Everything above this section is `PDFWriter`'s public surface. The rest of the class is
+`private`, undocumented until now only because it is not meant to be called directly; it is
+documented here for maintainers reading the writer's PDF-content-stream generation, not as a
+public contract.
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `lines` | private stored property | Staged line segments: endpoints and layer name, appended by `addLine(from:to:layer:)`. |
+| `polylines` | private stored property | Staged polylines: points, closed flag, and layer name, appended by `addPolyline(_:closed:layer:)`. |
+| `circles` | private stored property | Staged circles: centre, radius, and layer name, appended by `addCircle(centre:radius:layer:)`. |
+| `primitiveOps` | private function | Builds a `DrawingPrimitiveOps` closure bundle (`DrawingDispatch.swift`) that forwards `addLine`/`addPolyline`/`addCircle`/`addArc`/`addText` back onto this writer, so the shared annotation/dimension dispatcher can stage entities without depending on the concrete writer type. |
+| `collectProjectedEdges` | private function | Tessellates a `Shape?` compound via `allEdgePolylines(deflection:)`, translates/scales each polyline, and stages it as a line (2 points) or polyline on the given layer. |
+| `buildContentStream` | private function | Builds the PDF content-stream program: installs the mm-to-points CTM, then emits each layer's stroked geometry followed by that layer's text, in a fixed layer order. |
+| `stylePreamble(for:)` | private static function | Returns the `w`/`d` (line width, dash array) operators for a layer, from `strokeWidth(for:)` and `dashPattern(for:)`. |
+| `strokeWidth(for:)` | private static function | Per-layer stroke width in mm, following ISO 128-20: 0.5 for VISIBLE/OUTLINE/BORDER/TITLE, 0.25 for HIDDEN/CENTER/DIMENSION/TEXT, 0.18 for HATCH. |
+| `dashPattern(for:)` | private static function | Per-layer PDF dash array operator: `[3 2] 0` for HIDDEN, `[8 2 2 2] 0` for CENTER, `[] 0` (solid) otherwise. |
+| `emitLayerGeometry(layer:)` | private function | Emits `m`/`l`/`c`/`S` path operators for every staged line, polyline, circle, and arc on one layer; circles and arcs are approximated as cubic Béziers via `circlePath`/`arcPath`. |
+| `emitLayerText(layer:)` | private function | Emits `BT`/`Tf`/`Tm`/`Tj`/`ET` text-showing operators for every staged text entity on one layer, escaping each string via `escapeString`. |
+| `circlePath(centre:radius:)` | private static function | Four cubic-Bézier segments (magic constant `k = 0.5522847498 * radius`) approximating a full circle, closed with `h S`. |
+| `arcPath(centre:radius:startDeg:endDeg:)` | private static function | Splits the arc into chunks of at most 90 degrees each and emits one cubic-Bézier `c` operator per chunk; chunk count is `ceil(abs(span) / (pi/2))`. |
+| `escapeString(_:)` | private static function | Backslash-escapes `(`, `)`, and `\` and encodes `\n`/`\r`/`\t`, per the PDF literal-string syntax, before a string is placed inside `(...) Tj`. |
+| `texts` | private stored property | Staged text entities: position, string, height, rotation, and layer name, appended by `addText(_:at:height:rotationDeg:layer:)`. |
+
+#### `PDFWriter.lines`
+#### `PDFWriter.polylines`
+#### `PDFWriter.circles`
+#### `PDFWriter.texts`
+
+#### `PDFWriter.primitiveOps()`
+
+```swift
+private func primitiveOps() -> DrawingPrimitiveOps
+```
+
+- **Returns:** A `DrawingPrimitiveOps` bundle whose five closures each forward, weakly, to this
+  writer's own `add*` methods.
+- **OCCT:** Pure-Swift.
+
+#### `PDFWriter.collectProjectedEdges(_:layer:translate:scale:)`
+
+```swift
+private func collectProjectedEdges(_ compound: Shape?, layer: String,
+                                    translate: SIMD2<Double>, scale: Double)
+```
+
+- **Parameters:** `compound`: edge compound to tessellate, or `nil` (no-op); `layer`: target
+  layer name; `translate`, `scale`: applied to every projected point.
+- **OCCT:** `Shape.allEdgePolylines(deflection:)`.
+
+#### `PDFWriter.buildContentStream()`
+
+```swift
+private func buildContentStream() -> String
+```
+
+- **Returns:** The complete PDF content-stream program for object 4.
+- **OCCT:** Pure-Swift.
+
+#### `PDFWriter.stylePreamble(for:)`
+#### `PDFWriter.strokeWidth(for:)`
+#### `PDFWriter.dashPattern(for:)`
+
+```swift
+private static func stylePreamble(for layer: String) -> String
+private static func strokeWidth(for layer: String) -> Double
+private static func dashPattern(for layer: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `PDFWriter.emitLayerGeometry(layer:)`
+#### `PDFWriter.emitLayerText(layer:)`
+
+```swift
+private func emitLayerGeometry(layer: String) -> String
+private func emitLayerText(layer: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `PDFWriter.circlePath(centre:radius:)`
+#### `PDFWriter.arcPath(centre:radius:startDeg:endDeg:)`
+
+```swift
+private static func circlePath(centre: SIMD2<Double>, radius: Double) -> String
+private static func arcPath(centre: SIMD2<Double>, radius: Double,
+                             startDeg: Double, endDeg: Double) -> String
+```
+
+- **OCCT:** Pure-Swift Bézier approximation; `arcPath` returns the empty string for a
+  near-zero-span arc (`abs(totalSpan) <= 1e-9`).
+
+#### `PDFWriter.escapeString(_:)`
+
+```swift
+private static func escapeString(_ s: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
+
+---
+
 ## SVGError
 
 Error type thrown by `SVGWriter.write(to:)` and `Exporter.writeSVG` variants.
@@ -663,6 +767,106 @@ complete SVG string atomically via `String.write(to:atomically:encoding:)`.
   writer.addCircle(centre: SIMD2(50, 30), radius: 15)
   try writer.write(to: URL(fileURLWithPath: "/tmp/output.svg"))
   ```
+
+---
+
+### `SVGWriter` internal staging and serialization
+
+Everything above this section is `SVGWriter`'s public surface. The rest of the class is
+`private`, documented here for maintainers rather than as a public contract, following the same
+staging-array-plus-emit-dispatch shape as `PDFWriter` (see [`PDFWriter` internal staging and
+serialization](#pdfwriter-internal-staging-and-serialization)) but targeting SVG elements instead
+of PDF content-stream operators.
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `lines` | private stored property | Staged line segments: endpoints and layer name, appended by `addLine(from:to:layer:)`. |
+| `polylines` | private stored property | Staged polylines: points, closed flag, and layer name, appended by `addPolyline(_:closed:layer:)`. |
+| `circles` | private stored property | Staged circles: centre, radius, and layer name, appended by `addCircle(centre:radius:layer:)`. |
+| `texts` | private stored property | Staged text entities: position, string, height, rotation, and layer name, appended by `addText(_:at:height:rotationDeg:layer:)`. |
+| `primitiveOps` | private function | Builds a `DrawingPrimitiveOps` closure bundle forwarding back onto this writer's `add*` methods, for the shared annotation/dimension dispatcher. |
+| `collectProjectedEdges` | private function | Tessellates a `Shape?` compound via `allEdgePolylines(deflection:)`, translates/scales each polyline, and stages it as a line (2 points) or polyline. |
+| `computedViewBox` | private function | Computes the SVG `viewBox` (with a 5 mm pad on every side) from the bounding box of every staged line, polyline, circle, arc, and text position; used when `viewBox` is `nil`. Falls back to `(min: .zero, size: SIMD2(100, 100))` if nothing is staged. |
+| `emitLayerGeometry(layer:)` | private function | Emits `<line>`, `<polyline>`/`<polygon>`, `<circle>`, and `<path>` (via `svgArcPath`) elements for every staged non-text entity on one layer. |
+| `emitLayerText(layer:)` | private function | Emits `<text>` elements for every staged text entity on one layer, each with a counter-transform undoing the group's Y-flip and XML-escaped via `escapeXML`. |
+| `svgArcPath` | private function | Builds one SVG elliptical-arc `<path d="M … A …"/>` string, choosing the large-arc and sweep flags to account for the enclosing group's `scale(1,-1)` Y-flip. |
+| `strokeWidth(for:)` | private static function | Per-layer stroke width in mm, following ISO 128-20: 0.5 for VISIBLE/OUTLINE/BORDER/TITLE, 0.25 for HIDDEN/CENTER/DIMENSION/TEXT, 0.18 for HATCH. |
+| `dashPattern(for:)` | private static function | Per-layer SVG `stroke-dasharray` value: `"3,2"` for HIDDEN, `"8,2,2,2"` for CENTER, empty (solid) otherwise. |
+| `escapeXML` | private static function | Escapes `&`, `<`, `>`, `"`, and `'` for safe placement inside SVG text content/attributes. |
+
+#### `SVGWriter.lines`
+#### `SVGWriter.polylines`
+#### `SVGWriter.circles`
+#### `SVGWriter.texts`
+
+#### `SVGWriter.primitiveOps()`
+
+```swift
+private func primitiveOps() -> DrawingPrimitiveOps
+```
+
+- **Returns:** A `DrawingPrimitiveOps` bundle whose five closures each forward, weakly, to this
+  writer's own `add*` methods.
+- **OCCT:** Pure-Swift.
+
+#### `SVGWriter.collectProjectedEdges(_:layer:translate:scale:)`
+
+```swift
+private func collectProjectedEdges(_ compound: Shape?, layer: String,
+                                    translate: SIMD2<Double>, scale: Double)
+```
+
+- **Parameters:** `compound`: edge compound to tessellate, or `nil` (no-op); `layer`: target
+  layer name; `translate`, `scale`: applied to every projected point.
+- **OCCT:** `Shape.allEdgePolylines(deflection:)`.
+
+#### `SVGWriter.computedViewBox()`
+
+```swift
+private func computedViewBox() -> (min: SIMD2<Double>, size: SIMD2<Double>)
+```
+
+- **Returns:** The bounding box of all staged content, padded 5 mm on every side; a fixed
+  100x100 mm box at the origin if nothing was staged.
+- **OCCT:** Pure-Swift.
+
+#### `SVGWriter.emitLayerGeometry(layer:)`
+#### `SVGWriter.emitLayerText(layer:)`
+
+```swift
+private func emitLayerGeometry(layer: String) -> String
+private func emitLayerText(layer: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `SVGWriter.svgArcPath(centre:radius:startDeg:endDeg:)`
+
+```swift
+private func svgArcPath(centre: SIMD2<Double>, radius: Double,
+                         startDeg: Double, endDeg: Double) -> String
+```
+
+- **Returns:** One `<path>` element using the SVG elliptical-arc command `A`.
+- **OCCT:** Pure-Swift.
+
+#### `SVGWriter.strokeWidth(for:)`
+#### `SVGWriter.dashPattern(for:)`
+
+```swift
+private static func strokeWidth(for layer: String) -> Double
+private static func dashPattern(for layer: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `SVGWriter.escapeXML(_:)`
+
+```swift
+private static func escapeXML(_ s: String) -> String
+```
+
+- **OCCT:** Pure-Swift.
 
 ---
 
@@ -964,6 +1168,179 @@ Emits HEADER (`$ACADVER = AC1009`, `$INSUNITS = 4` mm), TABLES (LTYPE, LAYER, ST
 
 ---
 
+### `DXFWriter` internal staging and serialization
+
+Everything above this section is `DXFWriter`'s public surface. The rest of the class is
+`private`, documented here for maintainers rather than as a public contract. `DXFWriter` predates
+the shared `DrawingDispatch.swift` pipeline `PDFWriter`/`SVGWriter` route their annotation and
+dimension handling through (see [`PDFWriter` internal staging and
+serialization](#pdfwriter-internal-staging-and-serialization)): it stages the same five primitive
+kinds, but its own `collectAnnotations`/`collectDimensions`/`emit*` methods dispatch directly to
+DXF's own group-code entities rather than through `DrawingPrimitiveOps`.
+
+| Member | Kind | Meaning |
+|---|---|---|
+| `lines` | private stored property | Staged line segments: endpoints and layer name, appended by `addLine(from:to:layer:)`. |
+| `polylines` | private stored property | Staged polylines: points, closed flag, and layer name, appended by `addPolyline(_:closed:layer:)`. |
+| `circles` | private stored property | Staged circles: centre, radius, and layer name, appended by `addCircle(centre:radius:layer:)`. |
+| `texts` | private stored property | Staged text entities: position, string, height, rotation, and layer name, appended by `addText(_:at:height:rotationDeg:layer:)`. |
+| `collectProjectedEdges` | private function | Tessellates a `Shape?` compound via `allEdgePolylines(deflection:)`, translates/scales each polyline, and stages it as a line (2 points) or polyline on the given layer. |
+| `collectAnnotations` | private function | Dispatches every `DrawingAnnotation` case to its DXF rendering: `.centreline`/`.centermark` as CENTER-layer lines, `.textLabel` as TEXT, `.hatch` via `emitHatch`, `.cuttingPlaneLine` via `emitCuttingPlaneLine`, `.balloon` via `emitBalloon`. |
+| `collectDimensions` | private function | Dispatches every `DrawingDimension` case (`.linear`/`.radial`/`.diameter`/`.angular`/`.ordinate`) to its matching `emit*` method. |
+| `emitBalloon` | private function | Draws a balloon as a circle plus its item number as centred text, with an optional leader line from the circle's edge (nearest the target point) to the leader target. |
+| `emitCuttingPlaneLine` | private function | Renders an ISO 128-40 cutting-plane line: a thin-chain middle with heavy-chain ends (capped at 10 units or 20% of the trace length), a perpendicular arrow at each end, and the plane label placed beyond each arrow tip. |
+| `emitHatch` | private function | Tessellates a hatch pattern into line segments: rotates the boundary and islands into hatch-aligned coordinates so hatch lines become horizontal, scans at `spacing` intervals, intersects every boundary/island segment, pairs the intersections up (even-odd rule), and rotates each resulting segment back into world coordinates. No-op if the boundary has fewer than 3 points or `spacing <= 0`. |
+| `formatTolerance` | private function | Formats a dimension's nominal label and `DrawingTolerance` into a `main` line plus optional stacked `upper`/`lower` lines, one branch per `DrawingTolerance` case (`.symmetric`/`.fitClass` fold into `main`; `.bilateral`/`.unilateral`/`.limits` produce separate upper/lower strings). |
+| `emitTolerancedText` | private function | Places a `formatTolerance` result's `main` text at `position`, then any `upper`/`lower` lines at `position ± stackOffset` and 55% of `height`. |
+| `emitLinear` | private function | Renders a linear dimension: two extension lines from the measured endpoints out to a dimension line offset perpendicular to them, then the dimension line itself and its (possibly toleranced) label at the midpoint. |
+| `emitRadial` | private function | Renders a radial dimension: the circle itself, a leader from the circle at `leaderAngle` out to 10 units beyond the radius, and the `R`-prefixed (possibly toleranced) label at the leader tip. |
+| `emitDiameter` | private function | Renders a diameter dimension: a line through the circle along `leaderAngle`, extended 5 units past one end, and the diameter-symbol-prefixed (possibly toleranced) label at that extension. |
+| `emitAngular` | private function | Renders an angular dimension: an arc between the two rays at `arcRadius`, and the degree-suffixed (possibly toleranced) label just outside the arc at its midpoint angle. |
+| `emitOrdinate` | private function | Renders ISO 129-1 §9.3 ordinate dimensions: a small cross at the origin, then per feature an X extension line (vertical, at the feature's X) and/or a Y extension line (horizontal, at the feature's Y), each with a short perpendicular tick at the origin baseline and a (possibly toleranced) offset label. |
+| `pair` | private function (3 overloads) | Formats one DXF group-code/value pair (`"\(code)\n\(value)\n"`) for a `String`, `Double` (formatted `%.6f`), or `Int` value; every other serialization method is built from these. |
+| `header` | private function | Emits the HEADER section: `$ACADVER = AC1009` (DXF R12) and `$INSUNITS = 4` (millimetres). |
+| `tables` | private function | Emits the TABLES section: LTYPE (CONTINUOUS/DASHED/CHAIN), LAYER (one entry per fixed technical-drawing layer, via `layer(_:colour:linetype:)`), and a single required STYLE entry. |
+| `layer` | private function | Formats one LAYER table entry's group codes (name, flags, colour, linetype) for `tables()`. |
+| `blocks` | private function | Emits the empty BLOCKS section required by the DXF R12 file structure. |
+| `entities` | private function | Emits the ENTITIES section: one LINE/LWPOLYLINE/CIRCLE/ARC/TEXT group-code block per staged entity, in `lines`/`polylines`/`circles`/`arcs`/`texts` order. |
+| `eof` | private function | Emits the terminating `0\nEOF\n` group-code pair. |
+
+#### `DXFWriter.lines`
+#### `DXFWriter.polylines`
+#### `DXFWriter.circles`
+#### `DXFWriter.texts`
+
+#### `DXFWriter.collectProjectedEdges(_:layer:translate:scale:)`
+
+```swift
+private func collectProjectedEdges(_ compound: Shape?, layer: String,
+                                    translate: SIMD2<Double>, scale: Double)
+```
+
+- **OCCT:** `Shape.allEdgePolylines(deflection:)`.
+
+#### `DXFWriter.collectAnnotations(_:translate:scale:)`
+#### `DXFWriter.collectDimensions(_:translate:scale:)`
+
+```swift
+private func collectAnnotations(_ anns: [DrawingAnnotation],
+                                 translate: SIMD2<Double> = .zero,
+                                 scale: Double = 1.0)
+private func collectDimensions(_ dims: [DrawingDimension],
+                                translate: SIMD2<Double> = .zero,
+                                scale: Double = 1.0)
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitBalloon(_:)`
+
+```swift
+private func emitBalloon(_ b: DrawingAnnotation.Balloon)
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitCuttingPlaneLine(_:)`
+
+Renders an ISO 128-40 cutting-plane line: heavy-chain ends, thin-chain middle, perpendicular
+arrows, and a label at each end.
+
+```swift
+private func emitCuttingPlaneLine(_ cpl: DrawingAnnotation.CuttingPlaneLine)
+```
+
+- **Returns:** `Void`; no-op if the trace length is at or below `1e-6`.
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitHatch(_:)`
+
+Tessellates a hatch pattern into individual line segments inside its boundary using a
+rotate-scan-intersect-pair algorithm.
+
+```swift
+private func emitHatch(_ h: DrawingAnnotation.Hatch)
+```
+
+- **Returns:** `Void`; no-op if the boundary has fewer than 3 points or `spacing <= 0`.
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.formatTolerance(base:tolerance:)`
+
+```swift
+private func formatTolerance(base: String, tolerance: DrawingTolerance) -> TolerancedLabel
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitTolerancedText(_:at:height:rotationDeg:stackOffset:)`
+
+```swift
+private func emitTolerancedText(_ parts: TolerancedLabel,
+                                 at position: SIMD2<Double>,
+                                 height: Double,
+                                 rotationDeg: Double,
+                                 stackOffset: SIMD2<Double>)
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitLinear(_:)`
+#### `DXFWriter.emitRadial(_:)`
+#### `DXFWriter.emitDiameter(_:)`
+#### `DXFWriter.emitAngular(_:)`
+
+```swift
+private func emitLinear(_ d: DrawingDimension.Linear)
+private func emitRadial(_ d: DrawingDimension.Radial)
+private func emitDiameter(_ d: DrawingDimension.Diameter)
+private func emitAngular(_ d: DrawingDimension.Angular)
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.emitOrdinate(_:)`
+
+Renders ISO 129-1 §9.3 ordinate dimensions from a common origin.
+
+```swift
+private func emitOrdinate(_ d: DrawingDimension.Ordinate)
+```
+
+- **OCCT:** Pure-Swift.
+
+#### `DXFWriter.pair(_:_:)`
+
+```swift
+private func pair(_ code: Int, _ value: String) -> String
+private func pair(_ code: Int, _ value: Double) -> String
+private func pair(_ code: Int, _ value: Int) -> String
+```
+
+- **OCCT:** Pure-Swift; the `Double` overload formats with `%.6f` and forwards to the `String`
+  overload.
+
+#### `DXFWriter.header()`
+#### `DXFWriter.tables()`
+#### `DXFWriter.layer(_:colour:linetype:)`
+#### `DXFWriter.blocks()`
+#### `DXFWriter.entities()`
+#### `DXFWriter.eof()`
+
+```swift
+private func header() -> String
+private func tables() -> String
+private func layer(_ name: String, colour: Int, linetype: String) -> String
+private func blocks() -> String
+private func entities() -> String
+private func eof() -> String
+```
+
+- **OCCT:** Pure-Swift; `write(to:)` concatenates these six in order (`header` + `tables` +
+  `blocks` + `entities` + `eof`) to form the complete DXF R12 file.
+
+---
+
 ## PixMap.Format
 
 Pixel format enum wrapping `Image_Format`.
@@ -980,6 +1357,24 @@ public enum Format: Int32, Sendable {
     case bgra   = 8
 }
 ```
+
+| Case | Layout |
+|---|---|
+| `.gray` | 1 byte per pixel, single grayscale channel. |
+| `.alpha` | 1 byte per pixel, single alpha channel. |
+| `.rgb` | 3 bytes per pixel, red-green-blue byte order. |
+| `.bgr` | 3 bytes per pixel, blue-green-red byte order (the common byte order for uncompressed Windows bitmaps). |
+| `.rgb32` | 4 bytes per pixel, red-green-blue plus one padding/reserved byte. |
+| `.bgr32` | 4 bytes per pixel, blue-green-red plus one padding/reserved byte. |
+| `.rgba` | 4 bytes per pixel, red-green-blue-alpha byte order. |
+| `.bgra` | 4 bytes per pixel, blue-green-red-alpha byte order. |
+
+#### `PixMap.Format.rgb`
+#### `PixMap.Format.bgr`
+#### `PixMap.Format.rgb32`
+#### `PixMap.Format.bgr32`
+#### `PixMap.Format.rgba`
+#### `PixMap.Format.bgra`
 
 ### `PixMap.Format.bytesPerPixel`
 

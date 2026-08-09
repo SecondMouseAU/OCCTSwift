@@ -210,6 +210,16 @@ public var ellipseProperties: EllipseProperties { get }
 
 ---
 
+### `Curve2D.EllipseProperties.handle`
+
+`fileprivate` (not public API): the same `OCCTCurve2DRef` handle as the parent `Curve2D`. `EllipseProperties` is a thin, non-owning accessor over it, not a separate OCCT object.
+
+```swift
+fileprivate let handle: OCCTCurve2DRef
+```
+
+---
+
 ### `EllipseProperties.majorRadius`
 
 The major (semi-major) radius of the ellipse.
@@ -565,6 +575,16 @@ public var lineProperties: LineProperties { get }
       let props = c.lineProperties
   }
   ```
+
+---
+
+### `Curve2D.LineProperties.handle`
+
+`fileprivate` (not public API): the same `OCCTCurve2DRef` handle as the parent `Curve2D`. `LineProperties` is a thin, non-owning accessor over it, not a separate OCCT object.
+
+```swift
+fileprivate let handle: OCCTCurve2DRef
+```
 
 ---
 

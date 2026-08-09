@@ -1056,6 +1056,18 @@ public struct LocalCurvatures: Sendable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `gaussian` | Gaussian curvature (product of the two principal curvatures) at the point. |
+| `mean` | Mean curvature (average of the two principal curvatures) at the point. |
+| `maxCurvature` | The larger of the two principal curvatures at the point. |
+| `minCurvature` | The smaller of the two principal curvatures at the point. |
+
+#### `Surface.LocalCurvatures.gaussian`
+#### `Surface.LocalCurvatures.mean`
+#### `Surface.LocalCurvatures.maxCurvature`
+#### `Surface.LocalCurvatures.minCurvature`
+
 ---
 
 ### `Surface.localCurvatures(u:v:)`
@@ -1137,6 +1149,14 @@ public struct Circle2DResult: Sendable {
     public let radius: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `centerX` | U coordinate of the projected circle's center in the target surface's parameter space. |
+| `centerY` | V coordinate of the projected circle's center in the target surface's parameter space. |
+
+#### `ProjLib.Circle2DResult.centerX`
+#### `ProjLib.Circle2DResult.centerY`
 
 ---
 
@@ -1233,6 +1253,18 @@ public struct DetailedOBB: Sendable {
     public let zHalfSize: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `zDirection` | Unit vector for the box's local Z axis. |
+| `xHalfSize` | Half-extent of the box along `xDirection`. |
+| `yHalfSize` | Half-extent of the box along `yDirection`. |
+| `zHalfSize` | Half-extent of the box along `zDirection`. |
+
+#### `Shape.DetailedOBB.zDirection`
+#### `Shape.DetailedOBB.xHalfSize`
+#### `Shape.DetailedOBB.yHalfSize`
+#### `Shape.DetailedOBB.zHalfSize`
 
 ---
 
@@ -1545,6 +1577,12 @@ public struct Matrix3x4: Sendable {
     public let values: [Double] // [a11,a12,a13,a14, a21,a22,a23,a24, a31,a32,a33,a34]
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `values` | The 12 matrix elements, row-major: rotation/scale in the first 3 columns of each row, translation in the 4th. |
+
+#### `TransformUtils.Matrix3x4.values`
 
 ---
 

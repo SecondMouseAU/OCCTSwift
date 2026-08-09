@@ -231,6 +231,16 @@ A thin-plate spline solver for smooth surface deformation. Wraps OCCT's `Plate_P
 
 Unlike the higher-level NLPlate methods on `Surface`, `PlateSolver` works directly in UV parameter space and returns raw XYZ displacements.
 
+### `PlateSolver.handle`
+
+Internal (`internal let`, not public API): the opaque `OCCTPlateRef` handle this wrapper owns and releases in `deinit`.
+
+```swift
+internal let handle: OCCTPlateRef
+```
+
+---
+
 ### Loading Constraints
 
 #### `init()`
@@ -708,6 +718,16 @@ public var g2Error: Double? { get }
 ## LawFunction
 
 An evolution function defining how a scalar value varies along a parameter range. Used with `Shape.pipeShellWithLaw()` for variable-section sweeps where the cross-section scales smoothly along the spine path.
+
+### `LawFunction.handle`
+
+Internal (`internal let`, not public API): the opaque `OCCTLawFunctionRef` handle this wrapper owns and releases in `deinit`.
+
+```swift
+internal let handle: OCCTLawFunctionRef
+```
+
+---
 
 ### Evaluation
 

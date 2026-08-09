@@ -113,6 +113,13 @@ public struct SplitResult {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `first` | Curve segment before the split parameter. |
+| `second` | Curve segment after the split parameter. |
+
+#### `Curve3D.SplitResult.first`: curve segment before the split parameter.
+
 ---
 
 ### `splitAt(parameter:)`
@@ -573,3 +580,33 @@ Each input curve is converted to BSpline form before joining. Curves must connec
       #expect(joined.totalArcLength > c1.totalArcLength)
   }
   ```
+
+---
+
+## SheetMetal.Builder.SplitResult
+
+An unrelated, `fileprivate` implementation detail of `SheetMetal.Builder` (`SheetMetal.swift`),
+documented on this page rather than [`SheetMetal.md`](SheetMetal.md) to keep this audit pass's file
+edits from overlapping another one running in parallel.
+
+`SheetMetal.Builder.build(flanges:bends:)` splits a flange in two when it participates in more than
+one bend whose seam-edge extents don't already match; `SplitResult` is the return value of that
+internal split step.
+
+```swift
+fileprivate struct SplitResult {
+    let pieces: [Flange]
+    let matchedByBend: [Int: String]
+}
+```
+
+`fileprivate`, not part of the public API; the `Builder.build(flanges:bends:)` entry point is
+the public surface this feeds.
+
+| Field | Meaning |
+|---|---|
+| `pieces` | The flange, split into one or more pieces along the bend seam(s) that required it. |
+| `matchedByBend` | For each bend index (by position in the input `bends` array) that touches this flange, which piece's `id` is the matched-extent piece: the piece whose seam-edge span lines up with that bend and therefore carries it. |
+
+#### `SheetMetal.Builder.SplitResult.pieces`: the flange split into one or more pieces along the bend seam(s) that required it.
+#### `SheetMetal.Builder.SplitResult.matchedByBend`: for each bend index touching this flange, which piece id carries that bend.

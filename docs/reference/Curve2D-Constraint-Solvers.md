@@ -171,6 +171,14 @@ public enum Curve2DQualifier: Int32, Sendable {
 
 Pass these alongside curves in every `Curve2DGcc` solver call.
 
+#### `Curve2DQualifier.unqualified`: solution position relative to the curve is unconstrained.
+
+#### `Curve2DQualifier.enclosing`: the solution circle encloses the qualified curve.
+
+#### `Curve2DQualifier.enclosed`: the solution circle is enclosed by the qualified curve.
+
+#### `Curve2DQualifier.outside`: the solution circle is outside the qualified curve.
+
 ---
 
 ### `Curve2DCircleSolution`
@@ -212,6 +220,29 @@ public struct Curve2DHatchSegment: Sendable {
     public let end: SIMD2<Double>
 }
 ```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `Curve2DHatchSegment.end`
+
+---
+
+### `HatchSegment`
+
+A line segment in the general-purpose 2D hatch pattern generator, `HatchPattern.generate(boundary:direction:spacing:offset:maxSegments:)` (`Sources/OCCTSwift/HatchPattern.swift`). Structurally identical to `Curve2DHatchSegment` above but produced by the polygon-boundary hatcher rather than the `Geom2dHatch_Hatcher`-backed `Curve2DGcc.hatch(boundaries:...)`.
+
+```swift
+public struct HatchSegment: Sendable {
+    public let start: SIMD2<Double>
+    public let end: SIMD2<Double>
+}
+```
+
+- `start`: start point of the hatch line segment.
+- `end`: end point of the hatch line segment.
+
+#### `HatchSegment.end`
 
 ---
 

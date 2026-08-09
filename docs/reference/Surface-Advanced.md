@@ -682,6 +682,26 @@ never clamped or dropped: a rational patch is refused outright, not silently app
 
 ---
 
+### `Surface.AnalyticalConversion`
+
+Result of trying to recognise an analytical surface from a BSpline/Bezier surface.
+
+```swift
+public struct AnalyticalConversion {
+    public let surface: Surface
+    public let gap: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `surface` | The recognised analytical surface (plane, cylinder, cone, sphere, or torus) |
+| `gap` | Maximum deviation between `surface` and the original surface |
+
+#### `Surface.AnalyticalConversion.gap`: maximum deviation between the recognised analytical surface and the original BSpline/Bezier surface.
+
+---
+
 ### `convertToAnalytical(tolerance:)`
 
 Tries to recognise this BSpline or Bezier surface as a plane, cylinder, cone, sphere, or torus.
@@ -699,6 +719,29 @@ public func convertToAnalytical(tolerance: Double = 1e-4) -> AnalyticalConversio
       print("recognised surface, gap:", result.gap)
   }
   ```
+
+---
+
+### `Surface.SweptProperties`
+
+Accessor for the direction and basis curve of a swept surface (extrusion or revolution). Obtained via `Surface.sweptProperties` (see [Surface Analytic Types](Surface-Analytic-Types.md)); documented separately here because `Surface-Advanced.md` is this struct's assigned reference page for its internal storage.
+
+```swift
+public struct SweptProperties: @unchecked Sendable {
+    public var direction: SIMD3<Double> { get }
+    public var basisCurve: Curve3D? { get }
+}
+```
+
+#### `Surface.SweptProperties.handle`
+
+*(fileprivate, not part of the public API)*: the opaque `OCCTSurfaceRef` this value reads `direction`/`basisCurve` from.
+
+```swift
+fileprivate let handle: OCCTSurfaceRef
+```
+
+`Surface.sweptProperties` constructs a `SweptProperties` sharing the same handle as the originating `Surface`, rather than copying any state; `direction`/`basisCurve` are computed lazily on each access via `OCCTSurfaceSweptDirection`/`OCCTSurfaceSweptBasisCurve`.
 
 ---
 

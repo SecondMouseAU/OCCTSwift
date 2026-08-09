@@ -528,6 +528,18 @@ Meaningful only when the curve wraps a `Geom_Hyperbola`. Accessing members on a 
 
 ---
 
+### `HyperbolaProperties.handle`
+
+The opaque `OCCTCurve3DRef` handle this accessor reads through: the same handle as the owning `Curve3D`, not a separate object.
+
+```swift
+fileprivate let handle: OCCTCurve3DRef
+```
+
+Internal, not part of the public API.
+
+---
+
 ### `HyperbolaProperties.majorRadius`
 
 The major radius (real semi-axis).

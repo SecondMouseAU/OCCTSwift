@@ -568,6 +568,14 @@ public enum ProjectionType: Int32 {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `central` | Perspective projection (a single view point; distant geometry appears smaller). |
+| `parallel` | Orthographic projection (parallel projection rays; no perspective foreshortening). |
+
+#### `ViewObject.ProjectionType.central`: perspective projection.
+#### `ViewObject.ProjectionType.parallel`: orthographic projection.
+
 - **OCCT:** `XCAFView_Object::Type` / `XCAFView_ProjType`
 
 ---
@@ -1085,6 +1093,18 @@ public func isEqual(to other: PresentationStyle) -> Bool
 
 ---
 
+### `PresentationStyle.toOCCT()`
+
+Private conversion to the bridge's `OCCTXCAFPrsStyle` struct. Backs `isEmpty` and `isEqual(to:)`, and picks the right underlying `OCCTXCAFPrsStyleCreate*` constructor depending on which of `surfaceColor`/`curveColor` are set.
+
+```swift
+private func toOCCT() -> OCCTXCAFPrsStyle
+```
+
+Not part of the public API.
+
+---
+
 ## XCAFDoc_VisMaterialCommon
 
 `VisMaterialCommon` — Phong shading parameters (diffuse, ambient, specular, emissive, shininess, transparency).
@@ -1291,6 +1311,18 @@ public func isEqual(to other: VisMaterialPBR) -> Bool
   var m2 = VisMaterialPBR()
   print(m1.isEqual(to: m2)) // false
   ```
+
+---
+
+### `VisMaterialPBR.toOCCT()`
+
+Private conversion to the bridge's `OCCTVisMaterialPBR` struct, copying each field across verbatim. Backs `isEqual(to:)`.
+
+```swift
+private func toOCCT() -> OCCTVisMaterialPBR
+```
+
+Not part of the public API.
 
 ---
 

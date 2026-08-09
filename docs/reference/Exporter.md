@@ -43,13 +43,19 @@ public enum ExportError: Error, LocalizedError {
 }
 ```
 
-- `exportFailed(String)` — the underlying OCCT writer returned false or threw; the associated
-  string names the failing file.
-- `invalidPath` — the destination URL resolved to an empty path string.
-- `invalidShape` — `shape.isValid` returned `false` before the write was attempted.
-- `cancelled` — the export was cooperatively cancelled via `ImportProgress.shouldCancel()`.
-  Only thrown by the progress-overloads `writeSTEP(shape:to:progress:)` and
-  `writeIGES(shape:to:progress:)`.
+| Case / member | Meaning |
+|---|---|
+| `exportFailed(String)` | The underlying OCCT writer returned false or threw; the associated string names the failing file. |
+| `invalidPath` | The destination URL resolved to an empty path string. |
+| `invalidShape` | `shape.isValid` returned `false` before the write was attempted. |
+| `cancelled` | The export was cooperatively cancelled via `ImportProgress.shouldCancel()`. Only thrown by the progress-overloads `writeSTEP(shape:to:progress:)` and `writeIGES(shape:to:progress:)`. |
+| `errorDescription` | `LocalizedError` conformance: a human-readable message for each case, e.g. `"Export failed: <message>"`, `"Invalid file path"`, `"Shape is invalid or empty"`, `"Export cancelled"`. |
+
+#### `Exporter.ExportError.exportFailed`: the underlying OCCT writer returned false or threw.
+#### `Exporter.ExportError.invalidPath`: the destination URL resolved to an empty path string.
+#### `Exporter.ExportError.invalidShape`: `shape.isValid` returned `false` before the write was attempted.
+#### `Exporter.ExportError.cancelled`: the export was cooperatively cancelled via `ImportProgress.shouldCancel()`.
+#### `Exporter.ExportError.errorDescription`: `LocalizedError` conformance, a human-readable message for each case.
 
 ---
 

@@ -981,6 +981,35 @@ public struct SurfaceGridD1: Sendable {
   let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
   ```
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `uCount` | public stored property | Number of samples in the U direction. |
+| `vCount` | public stored property | Number of samples in the V direction. |
+| `d1u` | private stored property | Flat, U-major array of the surface's first partial derivative in U, one entry per grid index; backs the `d1u` field of `at(u:v:)`'s returned tuple. |
+| `d1v` | private stored property | Flat, U-major array of the surface's first partial derivative in V, one entry per grid index; backs the `d1v` field of `at(u:v:)`'s returned tuple. |
+
+#### `SurfaceGridD1.uCount`
+#### `SurfaceGridD1.vCount`
+#### `SurfaceGridD1.d1u`
+#### `SurfaceGridD1.d1v`
+
+#### `SurfaceGridD1.at(u:v:)`
+
+Point and both first partial derivatives at grid index `(u, v)`.
+
+```swift
+public func at(u: Int, v: Int) -> (point: SIMD3<Double>, d1u: SIMD3<Double>, d1v: SIMD3<Double>)
+```
+
+Looks up the flat, U-major backing arrays (`points`, `d1u`, `d1v`) at
+`surfaceGridIndex(u:v:vCount:)`, the same indexing function `SurfaceGrid.at(u:v:)` uses, so the two
+types can never disagree about which of U or V runs fastest.
+
+- **Parameters:** `u`, `v`: grid indices; `u` in `0..<uCount`, `v` in `0..<vCount`.
+- **Returns:** A tuple of the sampled point and its first partial derivatives in U and V.
+- **Precondition:** traps if either index is out of range.
+- **OCCT:** Pure-Swift indexing over buffers `Surface.evaluateGridD1(uParameters:vParameters:)` fills.
+
 ---
 
 ### `drawMesh(uCount:vCount:)`
@@ -1265,6 +1294,52 @@ public enum GordonResultStatus: Int, Sendable {
 }
 ```
 
+One case per stage of `GeomFill_Gordon::Perform()`; the descriptions below are the C++
+`ResultStatus` enum's own doc comments in `GeomFill_Gordon.hxx`, carried over case for case.
+
+| Case | Meaning |
+|---|---|
+| `.notStarted` | `Perform()` has not been called since initialization. |
+| `.done` | Surface has been constructed. |
+| `.invalidInput` | Input network has too few profile or guide curves. |
+| `.conversionFailed` | Curves could not be converted or reparametrized to B-splines. |
+| `.intersectionFailed` | Full profile/guide intersection table could not be built. |
+| `.orderingFailed` | Network curves could not be ordered consistently. |
+| `.reparametrizationFailed` | Intersections could not be equalized in parameter space. |
+| `.compatibilityFailed` | Prepared network failed geometric compatibility checks. |
+| `.curveCompatibilityFailed` | Prepared curve families are not B-spline compatible. |
+| `.rationalReparametrizationFailed` | Rational curves require unsupported exact reparametrization. |
+| `.skinningFailed` | Intermediate profile/guide skinning has failed. |
+| `.referenceSurfaceFailed` | Intersection-grid reference surface could not be built. |
+| `.knotAlignmentFailed` | Intermediate surfaces could not be aligned. |
+| `.rationalDegreeOverflow` | Exact rational product degree exceeds OCCT's B-spline limit. |
+| `.rationalConstructionFailed` | Exact rational numerator/denominator construction has failed. |
+| `.periodicityFailed` | Closed seam could not be converted to periodic form. |
+| `.approximationFailed` | Optional approximate fallback (`allowApproximateFallback`) has failed. |
+| `.constructionFailed` | Final B-spline surface construction has failed. |
+
+Each case is indexed below too, so a reference link can land on one directly; the table above is
+the authoritative description.
+
+#### `Surface.GordonResultStatus.notStarted`
+#### `Surface.GordonResultStatus.done`
+#### `Surface.GordonResultStatus.invalidInput`
+#### `Surface.GordonResultStatus.conversionFailed`
+#### `Surface.GordonResultStatus.intersectionFailed`
+#### `Surface.GordonResultStatus.orderingFailed`
+#### `Surface.GordonResultStatus.reparametrizationFailed`
+#### `Surface.GordonResultStatus.compatibilityFailed`
+#### `Surface.GordonResultStatus.curveCompatibilityFailed`
+#### `Surface.GordonResultStatus.rationalReparametrizationFailed`
+#### `Surface.GordonResultStatus.skinningFailed`
+#### `Surface.GordonResultStatus.referenceSurfaceFailed`
+#### `Surface.GordonResultStatus.knotAlignmentFailed`
+#### `Surface.GordonResultStatus.rationalDegreeOverflow`
+#### `Surface.GordonResultStatus.rationalConstructionFailed`
+#### `Surface.GordonResultStatus.periodicityFailed`
+#### `Surface.GordonResultStatus.approximationFailed`
+#### `Surface.GordonResultStatus.constructionFailed`
+
 ---
 
 ### `GordonResult`
@@ -1312,6 +1387,40 @@ public enum NetworkSurfaceStatus: Int, Sendable {
 }
 ```
 
+One case per stage of `GeomFill_NetworkSurface::Perform()`; the descriptions below are the C++
+`ResultStatus` enum's own doc comments in `GeomFill_NetworkSurface.hxx`, carried over case for case.
+`NetworkSurfaceStatus` is the low-level counterpart of [`GordonResultStatus`](#gordonresultstatus):
+fewer cases because `networkSurface(...)` receives an already-ordered, already-compatible network
+(no `orderingFailed`/`reparametrizationFailed`/`compatibilityFailed`/`conversionFailed`/
+`intersectionFailed`/`approximationFailed`, which are `GeomFill_Gordon`'s own upstream-preparation
+stages).
+
+| Case | Meaning |
+|---|---|
+| `.notStarted` | `Perform()` has not been called since initialization. |
+| `.done` | Surface has been constructed. |
+| `.invalidInput` | Prepared network does not satisfy the builder's requirements. |
+| `.curveCompatibilityFailed` | Curve families could not be converted to a compatible basis. |
+| `.skinningFailed` | Profile or guide skin interpolation has failed. |
+| `.referenceSurfaceFailed` | Intersection-grid reference surface could not be built. |
+| `.knotAlignmentFailed` | Intermediate surfaces could not be aligned to one knot basis. |
+| `.rationalDegreeOverflow` | Exact rational product degree exceeds OCCT's B-spline limit. |
+| `.rationalConstructionFailed` | Exact rational numerator/denominator construction has failed. |
+| `.constructionFailed` | Internal B-spline construction has failed. |
+| `.periodicityFailed` | Closed seam could not be converted to periodic form. |
+
+#### `Surface.NetworkSurfaceStatus.notStarted`
+#### `Surface.NetworkSurfaceStatus.done`
+#### `Surface.NetworkSurfaceStatus.invalidInput`
+#### `Surface.NetworkSurfaceStatus.curveCompatibilityFailed`
+#### `Surface.NetworkSurfaceStatus.skinningFailed`
+#### `Surface.NetworkSurfaceStatus.referenceSurfaceFailed`
+#### `Surface.NetworkSurfaceStatus.knotAlignmentFailed`
+#### `Surface.NetworkSurfaceStatus.rationalDegreeOverflow`
+#### `Surface.NetworkSurfaceStatus.rationalConstructionFailed`
+#### `Surface.NetworkSurfaceStatus.constructionFailed`
+#### `Surface.NetworkSurfaceStatus.periodicityFailed`
+
 ---
 
 ### `Surface.networkSurface(profiles:guides:tolerance:)`
@@ -1335,6 +1444,47 @@ complete can still decline here.
 - **Parameters:** `profiles` — profile curves in U, at least 2; `guides` — guide curves in V, at least 2; `tolerance` — geometric tolerance for closed-seam checks.
 - **Returns:** Tuple of the surface (or `nil`) and a status code.
 - **OCCT:** `OCCTGeomFillNetworkSurface` / `GeomFill_NetworkSurface`.
+
+---
+
+### `Surface.KnotSplitResult`
+
+Result of `knotSplitting(uContinuity:vContinuity:)` (documented in full on
+[Surface-Advanced.md](Surface-Advanced.md#knotsplittingucontinuityvcontinuity)): the split counts,
+parameter values, and knot-table indices needed to divide a BSpline surface into pieces meeting a
+requested continuity in U and V.
+
+```swift
+public struct KnotSplitResult {
+    public let uSplitCount: Int
+    public let vSplitCount: Int
+    public let uSplitParams: [Double]
+    public let vSplitParams: [Double]
+    public let uSplitIndices: [Int]
+    public let vSplitIndices: [Int]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `uSplitCount` | Number of U split locations needed for the requested continuity. |
+| `vSplitCount` | Number of V split locations needed for the requested continuity. |
+| `uSplitParams` | U parameter values (ascending, bounded by the surface's own U range) at each split. |
+| `vSplitParams` | V parameter values (ascending, bounded by the surface's own V range) at each split. |
+| `uSplitIndices` | 1-based indices into the surface's own U knot table, one per split: `uSplitParams[i] == bsplineUKnot(index: uSplitIndices[i])`. |
+| `vSplitIndices` | 1-based indices into the surface's own V knot table, one per split. |
+
+All six fields are empty/zero for a non-BSpline surface. `uSplitIndices`/`vSplitIndices` exist
+because the underlying analyzer (`GeomConvert_BSplineSurfaceKnotSplitting`) reports both the
+parameter values and the knot-table indices those values came from; before #562 only the
+parameter-value form was exposed here.
+
+#### `Surface.KnotSplitResult.uSplitCount`
+#### `Surface.KnotSplitResult.vSplitCount`
+#### `Surface.KnotSplitResult.uSplitParams`
+#### `Surface.KnotSplitResult.vSplitParams`
+#### `Surface.KnotSplitResult.uSplitIndices`
+#### `Surface.KnotSplitResult.vSplitIndices`
 
 ---
 

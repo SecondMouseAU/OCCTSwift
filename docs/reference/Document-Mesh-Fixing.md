@@ -402,6 +402,12 @@ A curve defined by an edge lying on another edge, from blend operations (`BiTgte
 public final class BiTgteCurveOnEdge: @unchecked Sendable
 ```
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTBiTgteCurveOnEdgeRef` this wrapper owns; released in `deinit`. |
+
+#### `BiTgteCurveOnEdge.handle`
+
 ---
 
 ### `BiTgteCurveOnEdge.init(edgeOnFace:edge:)`
@@ -1839,6 +1845,38 @@ Run a single fix pass directly.
 
 - **OCCT:** `ShapeFix_Face::FixIntersectingWires` / `FixPeriodicDegenerated` / `FixWiresTwoCoincEdges` / `FixLoopWire`.
 
+#### `FaceFixer.fixPeriodicDegenerated()`
+
+Runs `ShapeFix_Face::FixPeriodicDegenerated` alone: heals a wire that belts the full period of a
+periodic surface as a single closed edge (see the `ShapeFix_Face::FixPeriodicDegenerated`
+null-Context SIGSEGV entry in `CLAUDE.md`'s Known OCCT Bugs, fixed upstream in OCCT 8.0.1).
+
+```swift
+@discardableResult public func fixPeriodicDegenerated() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixPeriodicDegenerated`.
+
+#### `FaceFixer.fixWiresTwoCoincEdges()`
+
+Runs `ShapeFix_Face::FixWiresTwoCoincEdges` alone: merges a wire's two coincident edges.
+
+```swift
+@discardableResult public func fixWiresTwoCoincEdges() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixWiresTwoCoincEdges`.
+
+#### `FaceFixer.fixLoopWire()`
+
+Runs `ShapeFix_Face::FixLoopWire` alone: splits a wire that loops back on itself.
+
+```swift
+@discardableResult public func fixLoopWire() -> Bool
+```
+
+- **OCCT:** `ShapeFix_Face::FixLoopWire`.
+
 ---
 
 ### `FaceFixer.result` / `FaceFixer.status(_:)` (#266)
@@ -2472,6 +2510,24 @@ Which of the analysis' two result sequences a query addresses.
 public enum BoundKind: Sendable { case closed, open }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.closed` | Addresses the sequence of contours that close into a loop. |
+| `.open` | Addresses the sequence of contours that do not close. |
+
+#### `FreeBoundsProperties.BoundKind.closed`
+
+#### `FreeBoundsProperties.BoundKind.occt`
+
+Bridges a `BoundKind` case to the C bridge's own `OCCTFreeBoundKind` value.
+
+```swift
+fileprivate var occt: OCCTFreeBoundKind { get }
+```
+
+- **Returns:** `OCCTFreeBoundClosed` for `.closed`, `OCCTFreeBoundOpen` for `.open`.
+- **OCCT:** Pure-Swift; used internally by `info(_:at:)`/`wire(_:at:)` to select which bridge call to make.
+
 ---
 
 ### `FreeBoundsProperties.closedCount`
@@ -2790,6 +2846,20 @@ public enum GlueMode: Int32, Sendable {
 }
 ```
 
+Mirrors `BOPAlgo_GlueEnum`. Gluing skips real intersection computation between arguments that the
+caller guarantees are already coincident; setting it on shapes that are not coincident is likely to
+produce an incorrect result, since the algorithm does not check the guarantee itself.
+
+| Case | Meaning |
+|---|---|
+| `.off` | Default; gluing is disabled and full intersection computation runs. |
+| `.shift` | For partially-coincident arguments (overlapping but not fully coincident faces): skips FACE/FACE intersection computation; the overlapping faces are still split. |
+| `.full` | For fully-coincident arguments (no partial overlap): skips VERTEX/FACE, EDGE/FACE, and FACE/FACE intersection computation; faces are not split. |
+
+#### `Shape.GlueMode.off`
+#### `Shape.GlueMode.shift`
+#### `Shape.GlueMode.full`
+
 ---
 
 ### `Shape.fused(with:glue:)`
@@ -3072,6 +3142,16 @@ public struct PrincipalAxes: Sendable {
     public let axis3: SIMD3<Double>
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `axis1` | Direction of the first principal axis of inertia. |
+| `axis2` | Direction of the second principal axis of inertia. |
+| `axis3` | Direction of the third principal axis of inertia. |
+
+#### `Shape.PrincipalAxes.axis1`
+#### `Shape.PrincipalAxes.axis2`
+#### `Shape.PrincipalAxes.axis3`
 
 ---
 

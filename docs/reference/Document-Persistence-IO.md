@@ -321,6 +321,36 @@ public enum StoreStatus: Int32 {
 }
 ```
 
+| Case | `PCDM_StoreStatus` | Meaning |
+|---|---|---|
+| `ok` | `PCDM_SS_OK` | Document saved successfully. |
+| `driverFailure` | `PCDM_SS_DriverFailure` | No storage driver was found for the document's format. |
+| `writeFailure` | `PCDM_SS_WriteFailure` | Attempt to write the file to disk failed. |
+| `failure` | `PCDM_SS_Failure` | A general, unexpected error occurred. |
+| `docIsNull` | `PCDM_SS_Doc_IsNull` | Attempt to save a null document. |
+| `noObj` | `PCDM_SS_No_Obj` | The document has no objects to save. |
+| `infoSectionError` | `PCDM_SS_Info_Section_Error` | Writing the information section failed. |
+| `userBreak` | `PCDM_SS_UserBreak` | The user interrupted the save. |
+| `unrecognizedFormat` | `PCDM_SS_UnrecognizedFormat` | No storage driver exists for the document's format string. |
+
+#### `StoreStatus.ok`: document saved successfully.
+
+#### `StoreStatus.driverFailure`: no storage driver found for the document's format.
+
+#### `StoreStatus.writeFailure`: attempt to write the file to disk failed.
+
+#### `StoreStatus.failure`: a general, unexpected save error occurred.
+
+#### `StoreStatus.docIsNull`: the document being saved is null.
+
+#### `StoreStatus.noObj`: the document has no objects to save.
+
+#### `StoreStatus.infoSectionError`: writing the information section failed.
+
+#### `StoreStatus.userBreak`: the user interrupted the save.
+
+#### `StoreStatus.unrecognizedFormat`: no storage driver exists for the document's format string.
+
 - **OCCT:** `PCDM_StoreStatus`.
 
 ---
@@ -744,6 +774,21 @@ public struct STEPReaderModes: Sendable {
                 props: Bool = true, gdt: Bool = false, material: Bool = true)
 }
 ```
+
+| Field | Default | Meaning |
+|---|---|---|
+| `color` | `true` | Import color information. |
+| `name` | `true` | Import name/label information. |
+| `layer` | `true` | Import layer assignments. |
+| `props` | `true` | Import validation properties. |
+| `gdt` | `false` | Import GD&T (dimension/tolerance) data. |
+| `material` | `true` | Import material data. |
+
+#### `STEPReaderModes.layer`: import layer assignments.
+
+#### `STEPReaderModes.props`: import validation properties.
+
+#### `STEPReaderModes.gdt`: import GD&T (dimension/tolerance) data; defaults to `false`.
 
 - **OCCT:** `STEPCAFControl_Reader::SetColorMode`, `SetNameMode`, `SetLayerMode`, `SetPropsMode`, `SetGDTMode`, `SetMatMode`.
 - **Note:** `gdt` (GD&T / dimension-and-tolerance) defaults to `false` because it requires additional downstream parsing; enable explicitly when PMI data is needed.

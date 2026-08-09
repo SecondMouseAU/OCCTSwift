@@ -858,6 +858,18 @@ public func bsplineMovePointAndTangent(u: Double, point: SIMD2<Double>, tangent:
 
 Builder for applying rounded fillets to selected edges of a solid, wrapping `BRepFilletAPI_MakeFillet`.
 
+### `FilletBuilder.handle`
+
+The opaque OCCT handle this wrapper owns.
+
+```swift
+private let handle: OCCTFilletBuilderRef
+```
+
+`private`, not part of the public API. Set once in `init?(shape:)` (`OCCTFilletBuilderCreate`) and
+released in `deinit` (`OCCTFilletBuilderRelease`); every other method on `FilletBuilder`
+(`addEdge(_:radius:)`, `build()`, `contourCount`, ...) is a direct bridge call against this handle.
+
 ### `FilletBuilder.init?(shape:)`
 
 Create a fillet builder on the given shape.

@@ -86,6 +86,10 @@ public enum BendDirection: Sendable, Equatable {
 - `.convex` — the metal folds back on the opposite side (interior dihedral > 180°, reflex), as in the middle bend of a Z-section.
 - `.auto` — direction inferred from flange-body positions: concave when flange B's centroid sits on flange A's `+normal` side.
 
+### `SheetMetal.BendDirection.auto`: direction inferred from flange-body positions.
+### `SheetMetal.BendDirection.concave`: the metal folds toward itself (interior dihedral < 180°).
+### `SheetMetal.BendDirection.convex`: the metal folds back on the opposite side (reflex dihedral > 180°).
+
 ---
 
 ## SheetMetal.Bend
@@ -417,6 +421,8 @@ public struct PlacedView: Sendable {
 - `drawing` — the original unannotated `Drawing`. Mutate this (add dimensions, centrelines) before calling `render(into:)`.
 - `offset` — translation applied to the drawing's coordinate system: `apply(p) = scale * p + offset`.
 - `scale` — uniform scale factor. Computed as `min(caller's scale, fit-to-cell scale)` so no view overflows its cell.
+
+### `StandardLayout.PlacedView.drawing`: the original unannotated `Drawing`, mutable before calling `render(into:)`.
 
 ---
 

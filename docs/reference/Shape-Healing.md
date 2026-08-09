@@ -294,6 +294,18 @@ public enum PointClassification: Int32, Sendable {
 }
 ```
 
+| Case | Meaning |
+|---|---|
+| `.inside` | Point lies inside the shape/face (`TopAbs_IN`). |
+| `.outside` | Point lies outside the shape/face (`TopAbs_OUT`). |
+| `.onBoundary` | Point lies on the shape/face's boundary (`TopAbs_ON`). |
+| `.unknown` | Classification could not be determined (`TopAbs_UNKNOWN`). |
+
+#### `PointClassification.inside`
+#### `PointClassification.outside`
+#### `PointClassification.onBoundary`
+#### `PointClassification.unknown`
+
 ---
 
 ### `Shape.classify(point:tolerance:)`
@@ -379,6 +391,14 @@ public struct FaceProximityPair: Sendable {
     public let face2Index: Int
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `face1Index` | 0-based index (in `self`'s face-iteration order) of one face in the near-miss pair. |
+| `face2Index` | 0-based index (in `other`'s face-iteration order) of the other face in the near-miss pair. |
+
+#### `Shape.FaceProximityPair.face1Index`
+#### `Shape.FaceProximityPair.face2Index`
 
 Each instance identifies one pair of faces — one from `self`, one from `other` — that lie within the supplied tolerance. Indices refer to the face-iteration order of the respective shape.
 
@@ -973,6 +993,16 @@ public struct CanonicalForm: Sendable {
 - `origin` and `direction` define the axis or normal of the recognised form.
 - `radius` is the primary radius; `radius2` is the secondary radius (used for ellipses and cones).
 - `gap` reports the fitting residual.
+
+| Case / Field | Meaning |
+|---|---|
+| `FormType.unknown` | No canonical form was recognised. |
+| `radius2` | Secondary radius; the minor radius for `.ellipse`, the second cone radius for `.cone`. Unused (0) for forms with a single radius. |
+| `gap` | Fitting residual: how far the actual geometry deviates from the recognised canonical form. |
+
+#### `CanonicalForm.FormType.unknown`
+#### `CanonicalForm.radius2`
+#### `CanonicalForm.gap`
 
 ---
 
@@ -1936,6 +1966,8 @@ public struct BooleanResult: Sendable {
 
 - `shape` — the result of the boolean operation.
 - `modifiedFaces` — faces in the result that are modifications of faces from the first operand.
+
+#### `BooleanResult.modifiedFaces`
 
 ---
 

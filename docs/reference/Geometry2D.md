@@ -411,6 +411,12 @@ public func transformed(by transform: Transform2D) -> Point2D?
 
 A 2D geometric transformation backed by `Geom2d_Transformation`. Supports translation, rotation, uniform scaling, point/axis mirroring, composition, inversion, and power operations.
 
+| Member | Kind | Meaning |
+|---|---|---|
+| `handle` | internal stored property | The opaque `OCCTTransform2DRef` this wrapper owns. |
+
+#### `Transform2D.handle`
+
 ---
 
 ### Factory Methods
@@ -826,6 +832,8 @@ public enum Kind: Int32, Sendable, Hashable {
 - `.revolution` — extracted from `Geom_SurfaceOfRevolution::Axis()`.
 - `.extrusion` — extracted from `Geom_SurfaceOfLinearExtrusion::Direction()`.
 - `.symmetry` — derived from principal moments of inertia via `GProp_PrincipalProps`.
+
+#### `ShapeAxis.Kind.symmetry`
 
 ---
 

@@ -17,6 +17,18 @@ A `Curve3D` is a parametric 3D curve — the Swift analog of OCCT's `Geom_Curve`
 
 ## Properties
 
+### `handle`
+
+*(internal, not part of the public API)*: the opaque `OCCTCurve3DRef` this `Curve3D` wraps.
+
+```swift
+internal let handle: OCCTCurve3DRef
+```
+
+Every static factory and instance method on `Curve3D` ultimately passes this handle to the matching `OCCTCurve3D...` bridge function; `deinit` releases it. Not accessible outside the module.
+
+---
+
 ### `domain`
 
 The parametric domain `[first, last]` of the curve.
@@ -125,6 +137,25 @@ Convenience for `point(at: domain.upperBound)`.
   let seg = Curve3D.segment(from: SIMD3(1, 2, 3), to: SIMD3(4, 5, 6))!
   print(seg.endPoint)  // SIMD3(4.0, 5.0, 6.0)
   ```
+
+---
+
+## Continuity Analysis (internal helper)
+
+### `continuityAnalysis(with:u1:u2:rawOrder:)`
+
+*(private, not part of the public API)*: the shared implementation behind `continuityWith(_:u1:u2:order:)` (see **Curve3D Analysis**), which just forwards to this with `rawOrder: order.rawValue`.
+
+```swift
+private func continuityAnalysis(with other: Curve3D, u1: Double, u2: Double,
+                                rawOrder: Int32) -> ContinuityAnalysis?
+```
+
+Calls `OCCTLocalAnalysisCurveContinuity` and `OCCTLocalAnalysisCurveContinuityFlags` against `handle`/`other.handle` at the two parameters, and packages the raw C0/G1/C1/C2/G2 measurements into a `ContinuityAnalysis` value.
+
+- **Parameters:** `other`: the second curve; `u1`/`u2`: parameters on this curve and `other`; `rawOrder`: the requested `ContinuityClass`'s raw `Int32` value.
+- **Returns:** `nil` if the underlying OCCT call fails; otherwise a `ContinuityAnalysis` describing which continuity classes hold.
+- **OCCT:** `LocalAnalysis_CurveContinuity` (via `OCCTLocalAnalysisCurveContinuity`/`OCCTLocalAnalysisCurveContinuityFlags`).
 
 ---
 

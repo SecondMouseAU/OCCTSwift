@@ -646,6 +646,16 @@ public struct ValidatedRange: Sendable {
 - `first` / `last` — validated (and possibly clamped) parameter bounds.
 - `wasAdjusted` — `true` if the input range was outside the curve's parametric domain and was adjusted.
 
+| Field | Meaning |
+|---|---|
+| `first` | Validated (and possibly clamped) first parameter. |
+| `last` | Validated (and possibly clamped) last parameter. |
+| `wasAdjusted` | `true` if the requested range was outside the curve's parametric domain and had to be adjusted. |
+
+#### `Curve3D.ValidatedRange.first`: validated (and possibly clamped) first parameter.
+#### `Curve3D.ValidatedRange.last`: validated (and possibly clamped) last parameter.
+#### `Curve3D.ValidatedRange.wasAdjusted`: `true` if the requested range needed adjusting to fit the curve's domain.
+
 ---
 
 ### `validateRange(first:last:precision:)`
@@ -810,6 +820,18 @@ public struct LocalExtremaResult: Sendable {
 
 - `isDone` — `true` when the local solver converged.
 - Other fields are the same as `ExtremaPointPair`.
+
+| Field | Meaning |
+|---|---|
+| `isDone` | `true` when the local solver converged. |
+| `squareDistance` | Squared distance between the two extremal points (take `sqrt` for actual distance). |
+| `point1` / `param1` | Point and parameter on this curve. |
+| `point2` / `param2` | Point and parameter on the other curve. |
+
+#### `Curve3D.LocalExtremaResult.point1`: point on this curve at the local extremum.
+#### `Curve3D.LocalExtremaResult.param1`: parameter on this curve at the local extremum.
+#### `Curve3D.LocalExtremaResult.point2`: point on the other curve at the local extremum.
+#### `Curve3D.LocalExtremaResult.param2`: parameter on the other curve at the local extremum.
 
 ---
 

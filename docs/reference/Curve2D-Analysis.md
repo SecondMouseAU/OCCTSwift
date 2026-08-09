@@ -184,6 +184,16 @@ public enum Curve2DSpecialPointType: Int32, Sendable {
 }
 ```
 
+| Case | Value | Meaning |
+|---|---|---|
+| `inflection` | 0 | Curvature changes sign at this parameter (a zero-crossing). |
+| `minCurvature` | 1 | Local minimum of curvature magnitude. |
+| `maxCurvature` | 2 | Local maximum of curvature magnitude. |
+
+#### `Curve2DSpecialPointType.inflection`: curvature changes sign at this parameter.
+#### `Curve2DSpecialPointType.minCurvature`: local minimum of curvature magnitude.
+#### `Curve2DSpecialPointType.maxCurvature`: local maximum of curvature magnitude.
+
 ---
 
 ### `Curve2DSpecialPoint`
@@ -1112,6 +1122,20 @@ public struct LocalExtrema2dResult: Sendable {
 - `squareDistance` — squared distance at the local extremum.
 - `point1`/`point2` — closest points on each curve.
 - `param1`/`param2` — parameters at those points.
+
+| Field | Meaning |
+|---|---|
+| `isDone` | `true` if a local extremum was found near the seed parameters. |
+| `squareDistance` | Squared distance at the local extremum. |
+| `point1` | Closest point on `self`, the curve `locateExtremaCC` was called on. |
+| `param1` | Parameter on `self` at `point1`. |
+| `point2` | Closest point on `other`, the curve passed to `locateExtremaCC`. |
+| `param2` | Parameter on `other` at `point2`. |
+
+#### `Curve2D.LocalExtrema2dResult.point1`: closest point on `self`, the curve `locateExtremaCC` was called on.
+#### `Curve2D.LocalExtrema2dResult.param1`: parameter on `self` at `point1`.
+#### `Curve2D.LocalExtrema2dResult.point2`: closest point on `other`, the curve passed to `locateExtremaCC`.
+#### `Curve2D.LocalExtrema2dResult.param2`: parameter on `other` at `point2`.
 
 ---
 

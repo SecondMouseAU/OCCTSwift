@@ -620,6 +620,14 @@ public struct SameParameterResult: Sendable {
 
 `toleranceReached` is the maximum distance between the 3D curve and the surface-evaluated 2D curve.
 
+| Field | Meaning |
+|---|---|
+| `isSameParameter` | `true` if the curves already share the same parameterisation within `tolerance` |
+| `toleranceReached` | Maximum distance between the 3D curve and the surface-evaluated 2D curve |
+
+#### `SameParameterResult.isSameParameter`: `true` if the 3D curve and the surface-evaluated 2D curve already share the same parameterisation within the requested tolerance.
+#### `SameParameterResult.toleranceReached`: maximum distance actually measured between the 3D curve and the surface-evaluated 2D curve.
+
 ---
 
 ### `Curve3D.checkSameParameter(curve2D:surface:tolerance:)`

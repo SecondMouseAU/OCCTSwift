@@ -304,6 +304,32 @@ When `uvBounds1` or `uvBounds2` is `nil`, the bridge substitutes `(0, 1, 0, 1)` 
 
 ---
 
+### `Surface.ExtremaPointOnSurface`
+
+One point-to-surface extremum result, returned by `extremaPSPoint(point:index:)` (1-based index;
+`extremaPS(point:)` returns only the count via `PointSurfaceExtrema`).
+
+```swift
+public struct ExtremaPointOnSurface: Sendable {
+    public let squareDistance: Double
+    public let point: SIMD3<Double>
+    public let u: Double
+    public let v: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `squareDistance` | Squared distance between the query point and this extremum point. |
+| `point` | The 3D point on the surface at this extremum. |
+| `u` | Surface U parameter at this extremum. |
+| `v` | Surface V parameter at this extremum. |
+
+#### `Surface.ExtremaPointOnSurface.u`: surface U parameter at this extremum.
+#### `Surface.ExtremaPointOnSurface.v`: surface V parameter at this extremum.
+
+---
+
 ## ShapeAnalysis\_Surface Expansion (v0.49.0)
 
 UV parameter recovery via `ShapeAnalysis_Surface::ValueOfUV` and `NextValueOfUV`.
@@ -394,6 +420,40 @@ public func uvFromIso(_ point: SIMD3<Double>, precision: Double = 1e-6)
 
 ---
 
+### `Surface.Singularity`
+
+Detail of a surface singularity: a degenerate iso-line collapsing to a pole, e.g. the apex of a
+cone or a pole of a sphere. Returned by `singularity(_:precision:)`.
+
+```swift
+public struct Singularity: Sendable {
+    public let point: SIMD3<Double>
+    public let firstUV: SIMD2<Double>
+    public let lastUV: SIMD2<Double>
+    public let firstParameter: Double
+    public let lastParameter: Double
+    public let isUIso: Bool
+    public let precision: Double
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `point` | The 3D pole point. |
+| `firstUV` | First 2D `(u, v)` point of the degenerate iso-line. |
+| `lastUV` | Last 2D `(u, v)` point of the degenerate iso-line. |
+| `firstParameter` | Parameter at the first point along the iso-line. |
+| `lastParameter` | Parameter at the last point along the iso-line. |
+| `isUIso` | `true` if the degenerate iso-line is a U-iso curve; `false` if it is a V-iso curve. |
+| `precision` | The precision at which the singularity was detected. |
+
+#### `Surface.Singularity.firstUV`: first 2D `(u, v)` point of the degenerate iso-line.
+#### `Surface.Singularity.lastUV`: last 2D `(u, v)` point of the degenerate iso-line.
+#### `Surface.Singularity.isUIso`: `true` if the degenerate iso-line is a U-iso curve, else V-iso.
+#### `Surface.Singularity.precision`: the precision at which the singularity was detected.
+
+---
+
 ### `singularity(_:precision:)` (#266)
 
 Full detail of singularity `index` (**0-based**, `0..<singularityCount(...)`) — the pole point, the
@@ -401,13 +461,6 @@ degenerate iso-line's 2D endpoints + parameters, and its direction. Complements
 `singularityCount(tolerance:)` (count only).
 
 ```swift
-public struct Singularity: Sendable {
-    public let point: SIMD3<Double>       // 3D pole
-    public let firstUV, lastUV: SIMD2<Double>
-    public let firstParameter, lastParameter: Double
-    public let isUIso: Bool               // degenerate iso is U-iso (else V-iso)
-    public let precision: Double
-}
 public func singularity(_ index: Int, precision: Double = 1e-6) -> Singularity?
 ```
 
@@ -660,9 +713,14 @@ public struct CurveSurfaceIntersection: Sendable {
 }
 ```
 
-- `point` — 3D coordinates of the intersection.
-- `surfaceUV` — surface UV parameters at the intersection.
-- `curveParameter` — parameter along the curve at the intersection.
+| Field | Meaning |
+|---|---|
+| `point` | 3D coordinates of the intersection. |
+| `surfaceUV` | Surface UV parameters at the intersection. |
+| `curveParameter` | Parameter along the curve at the intersection. |
+
+#### `CurveSurfaceIntersection.surfaceUV`: surface UV parameters at the intersection.
+#### `CurveSurfaceIntersection.curveParameter`: parameter along the curve at the intersection.
 
 ---
 

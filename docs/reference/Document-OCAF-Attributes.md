@@ -114,6 +114,27 @@ public func dump(gravity: Messenger.Gravity) -> String
 
 Two free functions (module-level) for converting points between Z-up and Y-up coordinate systems with explicit unit scaling.
 
+### `CoordinateSystem`
+
+Which axis mesh I/O treats as "up".
+
+```swift
+public enum CoordinateSystem: Int32, Sendable {
+    case zUp = 0
+    case yUp = 1
+}
+```
+
+| Case | Meaning |
+|---|---|
+| `.zUp` | Z axis is up; up direction is `(0, 0, 1)`. |
+| `.yUp` | Y axis is up; up direction is `(0, 1, 0)`. |
+
+#### `CoordinateSystem.zUp`
+#### `CoordinateSystem.yUp`
+
+---
+
 ### `convertCoordinateSystem(x:y:z:from:inputUnit:to:outputUnit:)`
 
 Convert a 3D point between two coordinate systems with unit scaling.

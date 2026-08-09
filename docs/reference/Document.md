@@ -210,6 +210,22 @@ public final class AssemblyNode: @unchecked Sendable
 
 `AssemblyNode` holds an `unowned` reference to its parent `Document` and is invalidated when the document is released.
 
+### `AssemblyNode.document`
+
+The parent `Document` this node belongs to.
+
+```swift
+unowned let document: Document
+```
+
+`internal`, not public API. Every `AssemblyNode` accessor (`name`, `isAssembly`, `transform`, ...)
+reaches through this reference to call the matching `OCCTDocument*` bridge function against
+`document.handle`. Declared `unowned`, per the doc comment on the class itself ("invalidated when
+the document is released"): an `AssemblyNode` is expected to be used only while its `Document` is
+still alive, and `unowned` avoids a strong reference back to it.
+
+---
+
 ### `labelId`
 
 The XCAF label identifier for this node.
@@ -568,6 +584,25 @@ public enum NamingEvolution: Int32, Sendable {
 }
 ```
 
+Mirrors OCCT's `TNaming_Evolution` (`TNaming_PRIMITIVE`, `TNaming_GENERATED`, `TNaming_MODIFY`,
+`TNaming_DELETE`, `TNaming_SELECTED`) by name, but **not** by raw value past `.delete`: the OCCT
+enum has a sixth case, `TNaming_REPLACE`, between `DELETE` (3) and `SELECTED` (5), that this Swift
+enum has no case for at all, so `.selected` is raw value 4 here versus 5 in OCCT. `TNaming_REPLACE`
+is not currently exposed through this API.
+
+| Case | Meaning |
+|---|---|
+| `primitive` | New entity created from scratch: the old shape of the pair is null, the new shape is the created entity. |
+| `generated` | Entity created from another entity: old shape is the generator, new shape is the created entity. |
+| `modify` | Split or merged entity: old shape is the entity before the operation, new shape is the entity after (e.g. a filleted edge). |
+| `delete` | Deletion: old shape is the deleted entity, new shape is null. |
+| `selected` | Named topological entity for persistent identification: new shape is the named entity; old shape is unused. |
+
+#### `NamingEvolution.primitive`: new entity created from scratch, no predecessor.
+#### `NamingEvolution.modify`: split or merged entity (e.g. a filleted edge).
+#### `NamingEvolution.delete`: deletion; new shape is null.
+#### `NamingEvolution.selected`: named selection for persistent identification.
+
 ---
 
 ### `NamingHistoryEntry`
@@ -859,6 +894,14 @@ public struct MaterialInfo: Sendable {
     public let density: Double
 }
 ```
+
+| Field | Meaning |
+|---|---|
+| `name` | Material name. |
+| `description` | Material description. |
+| `density` | Material density, as recorded by `XCAFDoc_Material::GetDensity()`; units are whatever the source CAD/STEP data used and are not converted or interpreted by OCCTSwift. |
+
+#### `MaterialInfo.density`: material density, as recorded by `XCAFDoc_Material::GetDensity()` (units follow the source data, not converted here).
 
 ---
 
@@ -1813,6 +1856,30 @@ public enum GeometryType: Int32 {
 }
 ```
 
+Mirrors `TDataXtd_GeometryEnum` (`ANY_GEOM`, `POINT`, `LINE`, `CIRCLE`, `ELLIPSE`, `SPLINE`,
+`PLANE`, `CYLINDER`). OCCT's own header carries one blanket comment for the whole enum ("the types
+of geometric shapes available") rather than a per-case one.
+
+| Case | Meaning |
+|---|---|
+| `anyGeom` | No specific geometry type constraint. |
+| `point` | A point geometry. |
+| `line` | A line geometry. |
+| `circle` | A circle geometry. |
+| `ellipse` | An ellipse geometry. |
+| `spline` | A B-spline curve geometry. |
+| `plane` | A plane geometry. |
+| `cylinder` | A cylinder geometry. |
+
+#### `GeometryType.anyGeom`: no specific geometry type constraint.
+#### `GeometryType.point`
+#### `GeometryType.line`
+#### `GeometryType.circle`
+#### `GeometryType.ellipse`
+#### `GeometryType.spline`: a B-spline curve geometry.
+#### `GeometryType.plane`
+#### `GeometryType.cylinder`
+
 ---
 
 ### `ExecutionStatus`
@@ -1828,6 +1895,23 @@ public enum ExecutionStatus: Int32 {
     case failed          = 4
 }
 ```
+
+Mirrors `TFunction_ExecutionStatus` (`TFunction_ES_WrongDefinition`, `TFunction_ES_NotExecuted`,
+`TFunction_ES_Executing`, `TFunction_ES_Succeeded`, `TFunction_ES_Failed`) case for case.
+
+| Case | Meaning |
+|---|---|
+| `wrongDefinition` | The function's arguments/definition are invalid; it cannot run. |
+| `notExecuted` | Not yet run in this execution pass. |
+| `executing` | Currently running (set while `TFunction_Driver::Execute` is in progress). |
+| `succeeded` | Completed without error. |
+| `failed` | Ran but reported an error. |
+
+#### `ExecutionStatus.wrongDefinition`: the function's arguments/definition are invalid.
+#### `ExecutionStatus.notExecuted`: not yet run in this execution pass.
+#### `ExecutionStatus.executing`: currently running.
+#### `ExecutionStatus.succeeded`: completed without error.
+#### `ExecutionStatus.failed`: ran but reported an error.
 
 ---
 

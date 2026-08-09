@@ -288,6 +288,17 @@ public struct ArcSegment: Sendable, Hashable {
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `centre` | 2D arc centre |
+| `radius` | Arc radius |
+| `startAngle` | Start angle in radians |
+| `endAngle` | End angle in radians |
+
+#### `DrawingAnnotation.ArcSegment.centre`: 2D centre of the arc.
+#### `DrawingAnnotation.ArcSegment.startAngle`: start angle in radians.
+#### `DrawingAnnotation.ArcSegment.endAngle`: end angle in radians.
+
 Returned by `cosmeticThreadEndView(centre:majorDiameter:pitch:)`.
 
 ---
@@ -651,6 +662,8 @@ public struct AutoDimensionResult: Sendable {
 
 - `added` — the `DrawingDimension` values appended to the drawing.
 - `skipped` — human-readable reasons for features that were not dimensioned; useful for debugging missing hole dimensions.
+
+#### `Drawing.AutoDimensionResult.skipped`: human-readable reasons for edges/features that were not dimensioned, e.g. a circle below `minRadius` or outside `bounds`.
 
 ---
 

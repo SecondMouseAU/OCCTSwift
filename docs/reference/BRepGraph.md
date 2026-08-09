@@ -551,6 +551,9 @@ public struct ValidationResult: Sendable {
 - `errorCount` — number of error-severity issues.
 - `warningCount` — number of warning-severity issues.
 
+#### `BRepGraph.ValidationResult.errorCount`: number of error-severity issues found by `BRepGraph_Validate::Perform`.
+#### `BRepGraph.ValidationResult.warningCount`: number of warning-severity issues found by `BRepGraph_Validate::Perform`.
+
 ---
 
 ### `validate()`
@@ -606,6 +609,11 @@ public struct CompactResult: Sendable {
 
 - `removedVertices/Edges/Faces` — count of nodes purged per entity type.
 - `nodesAfter` — total node count after compaction.
+
+#### `BRepGraph.CompactResult.removedVertices`: count of vertex nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.removedEdges`: count of edge nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.removedFaces`: count of face nodes purged by `compact()`.
+#### `BRepGraph.CompactResult.nodesAfter`: total node count remaining after compaction.
 
 ---
 
