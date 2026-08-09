@@ -63,7 +63,7 @@ defect and 0 when clean; `check-bridge-index`, `check-null-handle-guards` and
 **`gate-scripts` is a required status check on `main`** (#649), via a repository ruleset (id
 20252636, "require gate-scripts on main") which is the repo's only branch protection. It moved there
 at the v2.0.0 release; before that it was on `refactor/381-pass1b`, the integration branch, which is
-now merged. Four things worth knowing before you touch it:
+now merged. Five things worth knowing before you touch it:
 
 - **Do not give the job a `name:` key.** The published check-run name is the job's `name:` when it
   has one and the job id otherwise, and that string is what the rule matches. A prose name reads
@@ -76,16 +76,24 @@ now merged. Four things worth knowing before you touch it:
   actually published `success` on `main`'s HEAD, not merely to exist in the workflow file. For a
   `pull_request` the workflow is read from the merge ref, so once the base has the job every PR gets
   it regardless of how stale the head is.
-- **A required check also declines direct pushes**, so `main` now takes changes by PR only. That
-  includes the release commit. This was learned on the integration branch, where a
-  CHANGELOG transcription push was refused with "Required status check \"gate-scripts\" is expected"
-  and had to become a PR; `okf/policies/changelog-on-merge.md` still describes the merger committing
-  the transcription directly, which the ruleset now forbids. Reconciling the two is open work.
+- **A required check also declines direct pushes**, so `main` now takes changes by PR only, the
+  release commit included. **Measured, not inferred**: a throwaway branch was added to this same
+  ruleset, an empty commit pushed straight at it, and the push refused with `Required status check
+  "gate-scripts" is expected` / `push declined due to repository rule violations`, then the branch
+  and the ruleset entry removed. The first draft of this bullet asserted it from a refusal seen on
+  the integration branch *before* the rule moved, which is a different ref under a different rule,
+  and a release engineer meeting this at the release commit deserves better than an extrapolation.
+  `okf/policies/changelog-on-merge.md` still describes the merger committing the transcription
+  directly onto the base, which the ruleset now forbids. Reconciling the two is open work.
 - **No pattern rule covers `refactor/**`, deliberately.** A pattern is what made #780 expensive:
   renaming a branch to move it out of the pattern **closed its open PR**, and GitHub will not
   reopen one whose head branch was renamed. Narrowing to a single explicit branch was the remedy,
-  and after the merge the natural landing place is `main` rather than a new pattern. `gate-scripts`
-  still runs on every PR regardless of target; being *required* only decides whether it blocks.
+  and after the merge the natural landing place is `main` rather than a new pattern. Being
+  *required* is a separate question from whether the job runs: `gate-scripts` runs on any PR whose
+  **base** carries `ci.yml`, which is every branch cut from `main`, and requiring it elsewhere would
+  only decide whether it blocks. Do not read that as "it runs everywhere". A PR based on a branch
+  whose `ci.yml` predates the job never dispatches it, and marking it required there is exactly the
+  unrecoverable stall the second bullet describes.
 - **`build-and-test` is required nowhere, and that is still the right call for now.** It was
   0-for-21 on the integration branch under #585, because the pinned asset was an older kernel than
   the branch's tests were written against. That cause is gone. But it failed on `main` at the
