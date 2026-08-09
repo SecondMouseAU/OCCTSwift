@@ -59,6 +59,12 @@ SCENARIOS=(
   "353-cdm-metadata-lookup-table/occt_353_barrier.cpp|8 50 @SCRATCH"
   "371-getapplication-singleton-elimination/occt_371_private_app.cpp|8 50 @SCRATCH"
   "374-resource-manager-storage-schema-race/occt_374_stress.cpp|8 50 @SCRATCH"
+  # Carried patch 0011 (#341/#363). Its own regression harness existed from the day the
+  # OwnAutoNamingScope redesign landed and was never wired in here, so the scenario that
+  # checks the property the earlier mutex fix could NOT guarantee (half the threads
+  # overriding auto-naming locally while the other half rely on the process-wide default,
+  # concurrently, on independent documents) ran in no gate at all.
+  "363-own-autonaming/occt_363_isolation.cpp|isolation 8 50 @SCRATCH"
 )
 
 MACOS_SDK=$(xcrun --sdk macosx --show-sdk-path)
@@ -83,12 +89,67 @@ apply_patches() {
     fi
 }
 
+# The OCCT tag this gate must be built from, read out of build-occt.sh rather than repeated here,
+# so a version bump cannot move one and leave the other behind.
+expected_occt_tag() {
+    local v rc
+    v=$(grep -m1 '^OCCT_VERSION=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)
+    rc=$(grep -m1 '^OCCT_RC=' "$SCRIPT_DIR/build-occt.sh" | cut -d'"' -f2)
+    if [ -n "$rc" ]; then echo "V${v//./_}_${rc}"; else echo "V${v//./_}"; fi
+}
+
+# What the instrumented kernel in $INSTALL_DIR was built from: the OCCT tag plus a digest of every
+# carried patch. `all` compares this against the current tree and rebuilds when they differ.
+#
+# Until the v2.0.0 release check, `all` was `[ -d "$INSTALL_DIR/lib" ] || do_build`, so an install
+# from any date at all counted as current. The one on the machine that check ran on was from
+# 30 July: before the V8_0_1 absorb, and before patches 0017 through 0025. Every scenario would
+# have run against a kernel that is not the release kernel, found nothing, and exited 0. That is
+# #585's failure shape (a gate validating the wrong kernel and reading as clean) moved into the
+# concurrency gate, where it is harder to notice because a race that does not reproduce looks
+# exactly like a race that is fixed.
+tsan_stamp() {
+    local tag digest
+    tag=$(git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || echo "untagged")
+    digest=$(cat "$SCRIPT_DIR"/patches/*.patch 2>/dev/null | shasum -a 256 | cut -d' ' -f1)
+    echo "$tag ${digest:0:16}"
+}
+
 do_build() {
     if [ ! -d "$SRC_DIR" ]; then
         echo "ERROR: $SRC_DIR not found. Run Scripts/build-occt.sh once first (it clones the pinned OCCT source)." >&2
         exit 1
     fi
+
+    # Same check build-occt.sh makes, for the same reason: this gate is only meaningful against the
+    # kernel the release actually ships, and reusing a tree at another tag builds the wrong one
+    # under the right name. Aborts rather than resetting, so a diagnostic probe left in the tree is
+    # not destroyed silently.
+    local want current
+    want=$(expected_occt_tag)
+    current=$(git -C "$SRC_DIR" describe --tags --exact-match HEAD 2>/dev/null || true)
+    if [ "$current" != "$want" ]; then
+        echo "ERROR: $SRC_DIR is at '${current:-an untagged commit}', but this gate must be built" >&2
+        echo "       from $want, the tag build-occt.sh names. A TSan run against another kernel" >&2
+        echo "       proves nothing about the one being released." >&2
+        echo "" >&2
+        echo "       Check for work worth keeping first:" >&2
+        echo "         git -C '$SRC_DIR' status --porcelain" >&2
+        echo "       Then:  rm -rf '$SRC_DIR' && Scripts/build-occt.sh   (re-clones at $want)" >&2
+        exit 1
+    fi
+
     apply_patches
+
+    # Wipe both trees. build-occt.sh already does this for its own install prefixes, on the grounds
+    # that "leaked headers masquerade as current API"; the same argument applies here and this
+    # script did not. Reusing them is not merely untidy: cmake reinstalls every library whether or
+    # not it rebuilt it, so a stale prefix comes out wearing today's timestamps, and an incremental
+    # build over a dependency graph recorded before a patch landed can relink an archive whose
+    # object code predates it. Measured on the v2.0.0 release check: a "rebuild" over a 3 August
+    # tree finished in 1m26s and left all 48 libraries dated today. Nothing about that result told
+    # you which of them had actually been recompiled.
+    rm -rf "$BUILD_DIR" "$INSTALL_DIR"
 
     # Minimal-module config, mirroring the proven #298/#341/#344/#349 protocol
     # builds (Libraries/occt-build-tsan344/349): FoundationClasses + ModelingData
@@ -116,6 +177,9 @@ do_build() {
     cmake --build "$BUILD_DIR" --parallel "$JOBS"
     cmake --install "$BUILD_DIR"
     echo ">>> TSan OCCT installed at $INSTALL_DIR"
+
+    tsan_stamp > "$INSTALL_DIR/.tsan-stamp"
+    echo ">>> instrumented kernel stamped: $(cat "$INSTALL_DIR/.tsan-stamp")"
 }
 
 do_run() {
@@ -194,7 +258,16 @@ case "${1:-}" in
     run)   do_run ;;
     swift) do_swift ;;
     all)
-        [ -d "$INSTALL_DIR/lib" ] || do_build
+        want_stamp=$(tsan_stamp)
+        have_stamp=$(cat "$INSTALL_DIR/.tsan-stamp" 2>/dev/null || echo "(never built)")
+        if [ ! -d "$INSTALL_DIR/lib" ] || [ "$want_stamp" != "$have_stamp" ]; then
+            echo ">>> instrumented kernel is absent or was built from something else; rebuilding"
+            echo "    want: $want_stamp"
+            echo "    have: $have_stamp"
+            do_build
+        else
+            echo ">>> instrumented kernel matches occt-src + Scripts/patches ($have_stamp)"
+        fi
         do_run
         do_swift
         ;;
